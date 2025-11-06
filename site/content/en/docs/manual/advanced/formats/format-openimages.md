@@ -22,7 +22,8 @@ For more information, see:
 For export of images:
 
 - Supported annotations: Bounding Boxes (detection),
-  Tags (classification), Polygons (segmentation).
+  Tags (classification), Polygons (segmentation), Masks (segmentation),
+  Ellipses (segmentation, as masks).
 
 - Supported attributes:
   - Tags: `score` must be defined for labels as `text` or `number`.
@@ -43,7 +44,7 @@ For export of images:
     Predicted IoU value with respect to the ground truth.
 - Tracks: Not supported.
 
-The downloaded file is a .zip archive with the following structure:
+The downloaded file is a `.zip` archive with the following structure:
 
 ```
 └─ taskname.zip/
@@ -79,7 +80,7 @@ The downloaded file is a .zip archive with the following structure:
 
 ## Open Images import
 
-Uploaded file: a zip archive of the following structure:
+Uploaded file: a `.zip` archive of the following structure:
 
 ```
 └─ upload.zip/

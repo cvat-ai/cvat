@@ -203,8 +203,9 @@ class ApiTestBase(APITestCase):
         if expected_4xx_status_code is not None:
             return
 
-        request_status = response.json()["status"]
-        assert request_status == "finished", f"The last request status was {request_status}"
+        response_json = response.json()
+        request_status = response_json["status"]
+        self.assertEqual(request_status, "finished", "Message:\n" + response_json["message"])
         return response
 
 

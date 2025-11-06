@@ -57,19 +57,15 @@ class AccessTokensViewSet(
     search_fields = ("name",)
     filter_fields = list(search_fields) + [
         "id",
-        "owner",
         "created_date",
         "updated_date",
         "expiry_date",
         "last_used_date",
         "read_only",
     ]
-    simple_filters = list(search_fields) + ["owner"]
+    simple_filters = list(search_fields)
     ordering_fields = list(filter_fields)
     ordering = "-id"
-    lookup_fields = {
-        "owner": "owner__id",
-    }
 
     iam_organization_field = None
     iam_permission_class = AccessTokenPermission

@@ -10,9 +10,14 @@ context('The UI remains stable even when the metadata request fails.', () => {
     const issueId = '8785';
 
     before(() => {
+        cy.prepareUserSession();
         cy.checkDeletedFrameVisibility();
         cy.openTaskJob(taskName);
         cy.goToNextFrame(1);
+    });
+    after(() => {
+        // restore main task state for the next test
+        cy.deleteFrame('restore');
     });
 
     describe(`Testing issue ${issueId}`, () => {

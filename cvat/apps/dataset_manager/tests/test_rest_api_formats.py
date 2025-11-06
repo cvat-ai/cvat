@@ -33,7 +33,7 @@ from PIL import Image
 from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
+from cvat.apps.dataset_manager.bindings import CvatDataExtractor, TaskData
 from cvat.apps.dataset_manager.cron import clear_export_cache
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import (
@@ -262,7 +262,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
         task_ann = TaskAnnotation(task_id)
         task_ann.init_from_db()
         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
-        extractor = CvatTaskOrJobDataExtractor(task_data, include_images=include_images)
+        extractor = CvatDataExtractor(task_data, include_images=include_images)
         return Dataset.from_extractors(extractor)
 
     def _delete_request(self, path, user):

@@ -42,6 +42,11 @@ export function translatePoints(points, delta, axis) {
     return points;
 }
 
+export function fullMatch(string) {
+    // eslint-disable-next-line security/detect-non-literal-regexp
+    return new RegExp(`^${string}$`);
+}
+
 export function convertClasses(data, $win) {
     if (typeof data !== 'object' || data === null) {
         return data;

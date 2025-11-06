@@ -41,7 +41,7 @@ import User from 'cvat-core/src/user';
 import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
 import { JobValidationLayout, TaskValidationLayout } from 'cvat-core/src/validation-layout';
-import { Dumper } from 'cvat-core/src/annotation-formats';
+import AnnotationFormats, { Dumper, Loader } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 import { BaseShapesAction } from 'cvat-core/src/annotations-actions/base-shapes-action';
@@ -92,7 +92,9 @@ export {
     ModelKind,
     ModelProviders,
     DimensionType,
+    AnnotationFormats,
     Dumper,
+    Loader,
     JobType,
     JobStage,
     JobState,

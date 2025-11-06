@@ -525,7 +525,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                 {credentialsBlock()}
                 <Form.Item
                     label='Endpoint URL'
-                    help='You can specify an endpoint for your storage when using the AWS S3 cloud storage compatible API'
+                    help='You can specify an endpoint for your storage when using an S3-compatible cloud storage API'
                     name='endpoint_url'
                     {...internalCommonProps}
                 >
@@ -656,13 +656,13 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Select.Option value={ProviderType.AWS_S3_BUCKET}>
                         <span className='cvat-cloud-storage-select-provider'>
                             <S3Provider />
-                            AWS S3
+                            Amazon S3
                         </span>
                     </Select.Option>
                     <Select.Option value={ProviderType.AZURE_CONTAINER}>
                         <span className='cvat-cloud-storage-select-provider'>
                             <AzureProvider />
-                            Azure Blob Container
+                            Azure Blob Storage
                         </span>
                     </Select.Option>
                     <Select.Option value={ProviderType.GOOGLE_CLOUD_STORAGE}>

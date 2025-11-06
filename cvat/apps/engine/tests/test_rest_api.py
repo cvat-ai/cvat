@@ -47,7 +47,7 @@ from rq.queue import Queue as RQQueue
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.engine.cloud_provider import AWS_S3, Status
+from cvat.apps.engine.cloud_provider import S3CloudStorage, Status
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
     AttributeSpec,
@@ -1828,7 +1828,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 class _CloudStorageTestBase(ApiTestBase):
     @classmethod
     def _start_aws_patch(cls):
-        class MockAWS(AWS_S3):
+        class MockS3(S3CloudStorage):
             _files = {}
 
             def get_status(self):
@@ -1847,10 +1847,10 @@ class _CloudStorageTestBase(ApiTestBase):
             def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /):
                 stream.write(self._files[key])
 
-        cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.AWS_S3", MockAWS)
+        cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.S3CloudStorage", MockS3)
         cls._aws_patch.start()
 
-        return MockAWS
+        return MockS3
 
     @classmethod
     def _stop_aws_patch(cls):

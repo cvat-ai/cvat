@@ -11,6 +11,7 @@ context('Value must be a user instance.', () => {
     const issueId = '2440';
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
     });
 

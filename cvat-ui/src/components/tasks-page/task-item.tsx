@@ -42,11 +42,13 @@ interface State {
 
 class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps, State> {
     #isUnmounted: boolean;
+    #itemRef: React.RefObject<HTMLDivElement>;
 
     constructor(props: TaskItemProps & RouteComponentProps) {
         super(props);
         const { taskInstance } = props;
         this.#isUnmounted = false;
+        this.#itemRef = React.createRef<HTMLDivElement>();
         this.state = {
             importingState: taskInstance.size > 0 ? null : {
                 state: null,
@@ -236,6 +238,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { taskInstance, history } = this.props;
         const { id } = taskInstance;
 
+        /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
         return (
             <Col span={3}>
                 <Row justify='end'>
@@ -258,15 +261,28 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 </Row>
                 <Row justify='end'>
                     <Col className='cvat-item-open-task-actions'>
-                        <TaskActionsComponent
-                            taskInstance={taskInstance}
-                            triggerElement={(
-                                <div className='cvat-task-item-actions-button cvat-actions-menu-button'>
-                                    <Text className='cvat-text-color'>Actions</Text>
-                                    <MoreOutlined className='cvat-menu-icon' />
-                                </div>
-                            )}
-                        />
+                        <div
+                            onClick={(e) => {
+                                setTimeout(() => {
+                                    if (this.#itemRef.current) {
+                                        e.preventDefault();
+                                        this.#itemRef.current.dispatchEvent(
+                                            new MouseEvent('contextmenu', {
+                                                bubbles: true,
+                                                cancelable: true,
+                                                button: 2,
+                                                clientX: e.clientX,
+                                                clientY: e.clientY,
+                                            }),
+                                        );
+                                    }
+                                });
+                            }}
+                            className='cvat-task-item-actions-button cvat-actions-menu-button'
+                        >
+                            <Text className='cvat-text-color'>Actions</Text>
+                            <MoreOutlined className='cvat-menu-icon' />
+                        </div>
                     </Col>
                 </Row>
             </Col>
@@ -302,10 +318,11 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 )}
             >
                 <TaskActionsComponent
-                    taskInstance={taskInstance}
                     dropdownTrigger={['contextMenu']}
+                    taskInstance={taskInstance}
                     triggerElement={(
                         <Row
+                            ref={this.#itemRef}
                             className={`cvat-tasks-list-item${selected ? ' cvat-item-selected' : ''}`}
                             justify='center'
                             align='top'

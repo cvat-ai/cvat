@@ -32,6 +32,11 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     });
 });
 
+Cypress.Commands.add('prepareUserSession', (nextURL = '/tasks') => {
+    cy.visit('/auth/login');
+    cy.headlessLogin({ nextURL });
+});
+
 Cypress.Commands.add('logout', () => {
     cy.get('.cvat-header-menu-user-dropdown-user').click();
     cy.get('span[aria-label="logout"]').click();
@@ -181,7 +186,7 @@ Cypress.Commands.add(
         labelName = 'Some label',
         attrName = 'Some attr name',
         textDefaultValue = 'Some default value for type Text',
-        image = 'image.png',
+        fileName = 'image.png',
         multiAttrParams = null,
         advancedConfigurationParams = null,
         forProject = false,
@@ -190,6 +195,7 @@ Cypress.Commands.add(
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
         qualityConfigurationParams = null,
+        fromShare = false,
     ) => {
         cy.url().then(() => {
             cy.get('.cvat-create-task-dropdown').click();
@@ -223,7 +229,11 @@ Cypress.Commands.add(
                 cy.get('.cvat-project-subset-field').type(`${projectSubsetFieldValue}{Enter}`);
                 cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
             }
-            cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
+            if (fromShare) {
+                cy.selectFilesFromShare([fileName]);
+            } else {
+                cy.get('input[type="file"]').attachFile(fileName, { subjectType: 'drag-n-drop' });
+            }
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
             }
@@ -278,7 +288,7 @@ Cypress.Commands.add('selectFilesFromShare', (serverFiles) => {
 Cypress.Commands.add('headlessLogin', ({
     username,
     password,
-    nextURL,
+    nextURL = null,
 } = {}) => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     return cy.window().then((win) => (
@@ -372,8 +382,8 @@ Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
 });
 
 Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
-    cy.window().then(async ($win) => {
-        const task = new $win.cvat.classes.Task({
+    cy.window().its('cvat').should('not.be.undefined').then(async (cvat) => {
+        const task = new cvat.classes.Task({
             ...taskSpec,
             ...dataSpec,
         });
@@ -396,8 +406,8 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
 });
 
 Cypress.Commands.add('headlessCreateProject', (projectSpec) => {
-    cy.window().then(async ($win) => {
-        const project = new $win.cvat.classes.Project({
+    cy.window().its('cvat').should('not.be.undefined').then(async (cvat) => {
+        const project = new cvat.classes.Project({
             ...projectSpec,
         });
 
@@ -424,7 +434,7 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
     cy.intercept('POST', '/api/auth/register**', (req) => {
         req.continue((response) => {
             delete response.headers['set-cookie'];
-            expect(response.statusCode).to.eq(201);
+            expect(response.statusCode).to.eq(201, response.statusMessage);
             expect(response.body.username).to.eq(userSpec.username);
             expect(response.body.email).to.eq(userSpec.email);
         });
@@ -1545,8 +1555,10 @@ Cypress.Commands.add('verifyNotification', () => {
 });
 
 Cypress.Commands.add('goToCloudStoragesPage', () => {
+    cy.intercept('GET', '/api/cloudstorages?**').as('getCloudStorages');
     cy.get('a[value="cloudstorages"]').click();
     cy.url().should('include', '/cloudstorages');
+    cy.wait('@getCloudStorages');
 });
 
 Cypress.Commands.add('deleteCloudStorage', (displayName) => {
@@ -1556,7 +1568,7 @@ Cypress.Commands.add('deleteCloudStorage', (displayName) => {
         .within(() => {
             cy.contains('[role="menuitem"]', 'Delete').click();
         });
-    cy.get('.cvat-delete-cloud-storage-modal')
+    cy.get('.cvat-modal-confirm-delete-cloud-storage')
         .should('contain', `You are going to remove the cloudstorage "${displayName}"`)
         .within(() => {
             cy.contains('button', 'Delete').click();

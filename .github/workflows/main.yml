@@ -301,10 +301,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
-                'issues_prs', 'issues_prs2', 'features']
+                'actions_projects_models', 'canvas3d_functionality',
+                'issues_prs', 'issues_prs2', 'features', 'features2']
     steps:
       - uses: actions/checkout@v4
 
@@ -373,11 +373,11 @@ jobs:
               --headed \
               --browser chrome \
               --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
           mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
 
