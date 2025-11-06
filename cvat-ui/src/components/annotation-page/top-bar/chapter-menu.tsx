@@ -1,3 +1,7 @@
+// Copyright (C) 2020-2025 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import Icon from '@ant-design/icons';
 import { List, Popover } from 'antd';
