@@ -685,6 +685,8 @@ class MediaCache:
              share_root = db_data.get_raw_data_dirname()
 
         def _validate_ri_path(path: str) -> str:
+            if not path:
+                raise ValueError("Path cannot be empty")
             path_normalized = os.path.normpath(path)
             if os.path.isabs(path_normalized):
                 # Check upload directory
@@ -694,7 +696,10 @@ class MediaCache:
                 if share_root and path_normalized.startswith(share_root + os.sep):
                     return os.path.relpath(path_normalized, share_root)
                 
-                raise Exception("Invalid related image path")
+                raise ValueError(
+                    f"Invalid related image path '{path}': "
+                    f"not in allowed directories"
+                )
 
                 
             else:
@@ -707,7 +712,7 @@ class MediaCache:
                     full_path = os.path.normpath(os.path.join(share_root, path_normalized))
                     if full_path.startswith(share_root + os.sep):
                         return path_normalized
-                raise Exception("Invalid related image path")
+                raise ValueError(f"Invalid related image path '{path}'")
                 
 
             return path_normalized
