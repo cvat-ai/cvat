@@ -4,7 +4,7 @@ linkTitle: 'ImageNet'
 weight: 9
 description: 'How to export and import data in ImageNet format'
 aliases:
- - /docs/manual/advanced/format/format-imagenet/
+ - /docs/manual/advanced/formats/format-imagenet/
 ---
 
 The ImageNet is typically used for a variety of computer vision tasks,

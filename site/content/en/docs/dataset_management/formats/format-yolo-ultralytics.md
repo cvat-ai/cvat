@@ -4,7 +4,7 @@ linkTitle: 'Ultralytics YOLO'
 weight: 7
 description: 'How to export and import data in Ultralytics YOLO formats'
 aliases:
- - /docs/manual/advanced/format/format-yolo-ultralytics/
+ - /docs/manual/advanced/formats/format-yolo-ultralytics/
 ---
 
 Ultralytics YOLO is a format family which consists of four formats:

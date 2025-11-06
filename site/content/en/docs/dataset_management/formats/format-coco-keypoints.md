@@ -4,8 +4,8 @@ linkTitle: 'COCO Keypoints'
 weight: 5
 description: 'How to export and import data in COCO Keypoints format'
 aliases:
- - /docs/manual/advanced/format/coco-keypoints/
- - /docs/manual/advanced/format/format-coco-keypoints/
+ - /docs/manual/advanced/formats/coco-keypoints/
+ - /docs/manual/advanced/formats/format-coco-keypoints/
 ---
 
 The COCO Keypoints format is designed specifically for human pose estimation tasks,

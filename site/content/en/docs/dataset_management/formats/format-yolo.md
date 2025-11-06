@@ -4,7 +4,7 @@ linkTitle: 'YOLO'
 weight: 7
 description: 'How to export and import data in YOLO format'
 aliases:
- - /docs/manual/advanced/format/format-yolo/
+ - /docs/manual/advanced/formats/format-yolo/
 ---
 
 YOLO, which stands for "You Only Look Once," is a renowned framework

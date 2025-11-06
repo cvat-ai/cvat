@@ -4,7 +4,7 @@ linkTitle: 'CVAT for image'
 weight: 1
 description: 'How to export and import data in CVAT for image format'
 aliases:
- - /docs/manual/advanced/format/format-cvat/
+ - /docs/manual/advanced/formats/format-cvat/
 ---
 
 This is CVAT's native annotation format,

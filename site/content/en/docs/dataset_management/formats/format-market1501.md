@@ -4,7 +4,7 @@ linkTitle: 'Market-1501'
 weight: 13
 description: 'How to export and import data in Market-1501 format'
 aliases:
- - /docs/manual/advanced/format/format-market1501/
+ - /docs/manual/advanced/formats/format-market1501/
 ---
 
 The Market-1501 dataset is widely used for person re-identification tasks.

@@ -4,7 +4,7 @@ linkTitle: 'CamVid'
 weight: 10
 description: 'How to export and import data in CamVid format'
 aliases:
- - /docs/manual/advanced/format/format-camvid/
+ - /docs/manual/advanced/formats/format-camvid/
 ---
 
 The CamVid (Cambridge-driving Labeled Video Database) format is most commonly used

@@ -4,7 +4,7 @@ linkTitle: 'Wider Face'
 weight: 9
 description: 'How to export and import data in Wider Face format'
 aliases:
- - /docs/manual/advanced/format/format-widerface/
+ - /docs/manual/advanced/formats/format-widerface/
 ---
 
 The WIDER Face dataset is widely used for face detection tasks.

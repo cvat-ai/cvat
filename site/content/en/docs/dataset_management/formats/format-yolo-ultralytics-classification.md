@@ -4,7 +4,7 @@ linkTitle: 'Ultralytics-YOLO-Classification'
 weight: 7
 description: 'How to export and import data in Ultralytics YOLO Classification format'
 aliases:
- - /docs/manual/advanced/format/format-yolo-ultralytics-classification/
+ - /docs/manual/advanced/formats/format-yolo-ultralytics-classification/
 ---
 
 For more information, see:

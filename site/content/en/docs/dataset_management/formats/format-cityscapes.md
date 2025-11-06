@@ -4,7 +4,7 @@ linkTitle: 'Cityscapes'
 weight: 16
 description: 'How to export and import data in Cityscapes format'
 aliases:
- - /docs/manual/advanced/format/format-cityscapes/
+ - /docs/manual/advanced/formats/format-cityscapes/
 ---
 
 The Cityscapes format is a widely-used standard in the field of computer vision,

@@ -1,11 +1,11 @@
-<!--lint disable maximum-heading-length-->
-
 ---
 
 title: 'Dataset Manifest'
 linkTitle: 'Dataset manifest'
 weight: 30
 description:
+aliases:
+ - /docs/manual/advanced/dataset_manifest/
 
 ---
 

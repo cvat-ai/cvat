@@ -3,6 +3,8 @@ title: 'Export annotations and data from CVAT'
 linkTitle: 'Export annotations and data from CVAT'
 weight: 20
 description: 'List of data export formats supported by CVAT.'
+aliases:
+ - /docs/manual/advanced/formats/
 ---
 
 In CVAT, you have the option to export data in various formats.

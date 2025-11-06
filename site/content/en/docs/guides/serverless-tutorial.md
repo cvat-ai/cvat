@@ -4,7 +4,6 @@ linkTitle: 'Serverless tutorial'
 weight: 2
 aliases:
   - /docs/manual/advanced/serverless-tutorial/
-  - /docs/annotation/tools/serverless-tutorial/
 ---
 
 ## Introduction

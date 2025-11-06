@@ -4,7 +4,7 @@ linkTitle: 'MOTS'
 weight: 4
 description: 'How to export and import data in MOTS format'
 aliases:
- - /docs/manual/advanced/format/format-mots/
+ - /docs/manual/advanced/formats/format-mots/
 ---
 
 The MOT (Multiple Object Tracking) sequence format is widely

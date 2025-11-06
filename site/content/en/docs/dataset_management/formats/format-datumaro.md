@@ -4,7 +4,7 @@ linkTitle: 'Datumaro'
 weight: 1.5
 description: 'How to export and import data in Datumaro format'
 aliases:
- - /docs/manual/advanced/format/format-datumaro/
+ - /docs/manual/advanced/formats/format-datumaro/
 ---
 
 The Datumaro format is a universal format, capable of handling arbitrary datasets and annotations.

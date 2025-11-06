@@ -4,7 +4,7 @@ linkTitle: 'LFW'
 weight: 17
 description: 'How to export and import data in LFW format'
 aliases:
- - /docs/manual/advanced/format/format-lfw/
+ - /docs/manual/advanced/formats/format-lfw/
 ---
 
 The Labeled Faces in the Wild (LFW) format

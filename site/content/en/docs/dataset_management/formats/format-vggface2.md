@@ -4,7 +4,7 @@ linkTitle: 'VGGFace2'
 weight: 12
 description: 'How to export and import data in VGGFace2 format'
 aliases:
- - /docs/manual/advanced/format/format-vggface2/
+ - /docs/manual/advanced/formats/format-vggface2/
 ---
 
 The VGGFace2 is primarily designed for face recognition tasks and is

@@ -4,7 +4,7 @@ linkTitle: 'LabelMe'
 weight: 2
 description: 'How to export and import data in LabelMe format'
 aliases:
- - /docs/manual/advanced/format/format-labelme/
+ - /docs/manual/advanced/formats/format-labelme/
 ---
 
 The LabelMe format is often used for image segmentation tasks in computer vision.

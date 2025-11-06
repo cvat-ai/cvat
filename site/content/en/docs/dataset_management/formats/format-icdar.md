@@ -4,7 +4,7 @@ linkTitle: 'ICDAR13/15'
 weight: 14
 description: 'How to export and import data in ICDAR13/15 format'
 aliases:
- - /docs/manual/advanced/format/format-icdar/
+ - /docs/manual/advanced/formats/format-icdar/
 ---
 
 ICDAR 13/15 formats are typically used for text detection and recognition tasks

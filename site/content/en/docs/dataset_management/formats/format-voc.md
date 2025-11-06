@@ -4,7 +4,7 @@ linkTitle: 'Pascal VOC'
 weight: 6
 description: 'How to export and import data in Pascal VOC format'
 aliases:
- - /docs/manual/advanced/format/format-voc/
+ - /docs/manual/advanced/formats/format-voc/
 ---
 
 The Pascal VOC (Visual Object Classes) format

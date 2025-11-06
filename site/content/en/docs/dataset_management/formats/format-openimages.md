@@ -4,7 +4,7 @@ linkTitle: 'Open Images'
 weight: 15
 description: 'How to export and import data in Open Images format'
 aliases:
- - /docs/manual/advanced/format/format-openimages/
+ - /docs/manual/advanced/formats/format-openimages/
 ---
 
 The Open Images format is based on a large-scale, diverse dataset

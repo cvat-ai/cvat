@@ -4,7 +4,7 @@ linkTitle: 'Segmentation Mask'
 weight: 6
 description: 'How to export and import data in Segmentation Mask format'
 aliases:
- - /docs/manual/advanced/format/format-smask/
+ - /docs/manual/advanced/formats/format-smask/
 ---
 
 Segmentation Mask format is a simple format for image segmentation tasks

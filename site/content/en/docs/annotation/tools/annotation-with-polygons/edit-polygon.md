@@ -2,6 +2,8 @@
 title: "Edit polygon"
 linkTitle: "Edit polygon"
 weight: 4
+aliases:
+  - /docs/manual/advanced/annotation-with-polygons/edit-polygon/
 ---
 
 To edit a polygon you have to click on it while holding `Shift`, it will open the polygon editor.

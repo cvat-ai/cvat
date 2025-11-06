@@ -4,7 +4,7 @@ linkTitle: 'KITTI'
 weight: 17
 description: 'How to export and import data in KITTI format'
 aliases:
- - /docs/manual/advanced/format/format-kitti/
+ - /docs/manual/advanced/formats/format-kitti/
 ---
 
 The KITTI format is widely used for a range of computer

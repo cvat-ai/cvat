@@ -4,7 +4,7 @@ linkTitle: 'COCO'
 weight: 5
 description: 'How to export and import data in COCO format'
 aliases:
- - /docs/manual/advanced/format/format-coco/
+ - /docs/manual/advanced/formats/format-coco/
 ---
 
 The COCO dataset format is a popular format, designed

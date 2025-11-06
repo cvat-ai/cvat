@@ -4,7 +4,6 @@ linkTitle: 'Complete workflow guide for organizations'
 weight: 1
 aliases:
   - /docs/getting_started/workflow-org/
-  - /docs/other/workflow-org/
 ---
 
 Welcome to CVAT, this page is the place to start your team’s
