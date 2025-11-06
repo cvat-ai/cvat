@@ -42,7 +42,7 @@ module.exports = (on, config) => {
     });
     on('task', {
         async getAuthHeaders() {
-            const loginResp = await fetch(`${config.e2e.baseUrl}/api/auth/login`, {
+            const loginResp = await fetch(`${config.baseUrl}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
