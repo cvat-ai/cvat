@@ -19,7 +19,7 @@ function ChapterMenu(props: Readonly<Props>): JSX.Element {
     } = props;
 
     const content = (
-        <div style={{ maxHeight: 300, overflowY: 'auto', overflowX: 'hidden' }}>
+        <div className='cvat-player-chapter-menu-wrapper'>
             <List
                 className='cvat-player-chapter-menu-list'
                 size='small'

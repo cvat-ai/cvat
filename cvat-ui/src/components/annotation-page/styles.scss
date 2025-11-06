@@ -482,6 +482,11 @@
     }
 }
 
+.cvat-player-chapter-menu-wrapper {
+    max-height: 300px;
+    max-width: 177px;
+    overflow: auto;
+}
 .cvat-player-chapter-menu-list {
     .cvat-player-chapter-menu-list-item {
         &:hover {
