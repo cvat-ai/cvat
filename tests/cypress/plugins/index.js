@@ -55,7 +55,7 @@ module.exports = (on, config) => {
             const csrfToken = loginResp.headers.get('set-cookie').match(/csrftoken=[^;]+/)[0];
 
             const cookieHeader = `${sessionId}; ${csrfToken}`;
-            return { Cookie: cookieHeader };
+            return { Cookie: cookieHeader, 'x-csrftoken': csrfToken.split('=')[1] };
         },
     });
     on('task', { isFileExist });
