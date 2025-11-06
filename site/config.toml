@@ -52,7 +52,7 @@ anchor = "smart"
 [[menu.main]]
     name = "✍︎ Guides"
     weight = 40
-    url = "/docs/manual/"
+    url = "/docs/guides/"
 [[menu.main]]
     name = "Sign in"
     weight = 50
@@ -73,7 +73,7 @@ anchor = "smart"
     weight = 2
 [[menu.main]]
     name = "CVAT Enterprise"
-    url = "#"
+    url = "https://www.cvat.ai/sales#enterprise"
     parent = "Get started"
     weight = 3
 [[menu.main]]
