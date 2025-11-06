@@ -677,17 +677,22 @@ class MediaCache:
         decode: bool = True,
     ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str, str]], None, None]:
         data_upload_dir = db_data.get_upload_dirname()
+        raw_data_dir = db_data.get_raw_data_dirname()
 
         def _validate_ri_path(path: str) -> str:
             if os.path.isabs(path):
-                if not path.startswith(data_upload_dir + os.sep):
+                if path.startswith(raw_data_dir + os.sep):
+                    path = os.path.relpath(path, raw_data_dir)
+                elif path.startswith(data_upload_dir + os.sep):
+                    path = os.path.relpath(path, raw_data_dir)
+                else:
                     raise Exception("Invalid related image path")
-
-                path = os.path.relpath(path, data_upload_dir)
             else:
-                if not os.path.normpath(os.path.join(data_upload_dir, path)).startswith(
-                    data_upload_dir + os.sep
-                ):
+                normalized_upload_path = os.path.normpath(os.path.join(data_upload_dir, path))
+                normalized_raw_path = os.path.normpath(os.path.join(raw_data_dir, path))
+                
+                if not (normalized_raw_path.startswith(raw_data_dir + os.sep) or
+                        normalized_upload_path.startswith(data_upload_dir + os.sep)):
                     raise Exception("Invalid related image path")
 
             return path

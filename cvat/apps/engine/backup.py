@@ -421,6 +421,26 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
 
+            related_files_to_copy = []
+            for related_file in self._db_data.related_files.all():
+                related_file_path = related_file.path.path
+                if os.path.isabs(related_file_path):
+                    if related_file_path.startswith(data_dir + os.sep):
+                        if os.path.exists(related_file_path):
+                            related_files_to_copy.append(related_file_path)
+                else:
+                    related_file_path = os.path.join(data_dir, related_file_path)
+                    if os.path.exists(related_file_path):
+                        related_files_to_copy.append(related_file_path)
+
+            if related_files_to_copy:
+                self._write_files(
+                    source_dir=data_dir,
+                    zip_object=zip_object,
+                    files=related_files_to_copy,
+                    target_dir=target_data_dir,
+                )
+
             self._write_files(
                 source_dir=self._db_data.get_upload_dirname(),
                 zip_object=zip_object,
