@@ -40,6 +40,24 @@ module.exports = (on, config) => {
             return files;
         },
     });
+    on('task', {
+        async getAuthHeaders() {
+            const loginResp = await fetch(`${config.e2e.baseUrl}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    username: config.env.user,
+                    password: config.env.password,
+                }),
+            });
+
+            const sessionId = loginResp.headers.get('set-cookie').match(/sessionid=[^;]+/)[0];
+            const csrfToken = loginResp.headers.get('set-cookie').match(/csrftoken=[^;]+/)[0];
+
+            const cookieHeader = `${sessionId}; ${csrfToken}`;
+            return { Cookie: cookieHeader };
+        },
+    });
     on('task', { isFileExist });
     // Try to resolve "Cypress failed to make a connection to the Chrome DevTools Protocol"
     // https://github.com/cypress-io/cypress/issues/7450

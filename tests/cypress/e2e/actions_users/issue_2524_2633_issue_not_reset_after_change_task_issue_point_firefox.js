@@ -52,8 +52,8 @@ context('Some parts of the Redux state (issues) is not reset after changing a ta
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteTasks(authKey, [taskName.firstTaskName, taskName.secondTaskName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteTasks(authHeaders, [taskName.firstTaskName, taskName.secondTaskName]);
         });
     });
 
