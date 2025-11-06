@@ -677,20 +677,40 @@ class MediaCache:
         decode: bool = True,
     ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str, str]], None, None]:
         data_upload_dir = db_data.get_upload_dirname()
+        # Get share root directory
+        share_root = None
+        if hasattr(db_data, 'get_share_root'):
+             share_root = db_data.get_share_root()
+        elif db_data.storage == models.StorageChoice.SHARE:
+             share_root = db_data.get_raw_data_dirname()
 
         def _validate_ri_path(path: str) -> str:
-            if os.path.isabs(path):
-                if not path.startswith(data_upload_dir + os.sep):
-                    raise Exception("Invalid related image path")
+            path_normalized = os.path.normpath(path)
+            if os.path.isabs(path_normalized):
+                # Check upload directory
+                if path_normalized.startswith(data_upload_dir + os.sep):
+                    return os.path.relpath(path_normalized, data_upload_dir)
+                # Check share directory
+                if share_root and path_normalized.startswith(share_root + os.sep):
+                    return os.path.relpath(path_normalized, share_root)
+                
+                raise Exception("Invalid related image path")
 
-                path = os.path.relpath(path, data_upload_dir)
+                
             else:
-                if not os.path.normpath(os.path.join(data_upload_dir, path)).startswith(
-                    data_upload_dir + os.sep
-                ):
-                    raise Exception("Invalid related image path")
+                # Check upload directory
+                full_path = os.path.normpath(os.path.join(data_upload_dir, path_normalized))
+                if full_path.startswith(data_upload_dir + os.sep):
+                    return path_normalized
+                # Check share directory
+                if share_root:
+                    full_path = os.path.normpath(os.path.join(share_root, path_normalized))
+                    if full_path.startswith(share_root + os.sep):
+                        return path_normalized
+                raise Exception("Invalid related image path")
+                
 
-            return path
+            return path_normalized
 
         manifest_path = db_data.get_manifest_path()
 
