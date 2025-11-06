@@ -1,5 +1,0 @@
-nano site/content/en/docs/manual/advanced/xml_format.md
-grep -R "/docs/manual/advanced/xml_format" content/en/docs
-
-
-
