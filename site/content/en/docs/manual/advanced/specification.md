@@ -105,8 +105,6 @@ You can write in raw markdown or use the toolbar on the top of the editor.
 
 ![Markdown editor](/images/editor_toolbar.jpg)
 
-<!--lint disable maximum-line-length-->
-
 | Element | Description                                                                                                                                                                                                                                                        |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1       | Text formatting: bold, cursive, and strikethrough.                                                                                                                                                                                                                 |
@@ -122,14 +120,8 @@ You can write in raw markdown or use the toolbar on the top of the editor.
 | 11      | Hide the editor pane: options to hide the right pane, show both panes or hide the left pane.                                                                                                                                                                       |
 | 12      | Enable full-screen mode.                                                                                                                                                                                                                                           |
 
-<!--lint enable maximum-line-length-->
-
 ## Specification for annotators' video tutorial
 
 Video tutorial on how to use the **Guide** feature.
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/hAN9UGRvwOk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->

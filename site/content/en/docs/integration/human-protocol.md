@@ -14,12 +14,9 @@ efficient workflow for crowdsourcing annotations.
 For more details on how to leverage the features of both platforms
 for your projects, check out these articles:
 
-<!--lint disable maximum-line-length-->
-
 - [CVAT.ai & HUMAN Protocol: A New Dawn in Visual Data Annotation](https://www.cvat.ai/post/cvat-ai-human-protocol-a-new-dawn-in-visual-data-annotation)
 - [Mastering Image Annotation Crowdsourcing for Computer Vision with CVAT.ai and HUMAN Protocol](https://www.cvat.ai/post/crowdsourcing-annotation-cvat-human-protocol)
 - [Crowdsourcing Annotation with CVAT and Human Protocol: Real Data Experiment Showed Amazing Results](https://www.cvat.ai/post/crowdsource-annotations-with-cvat-and-human-protocol)
-<!--lint enable maximum-line-length-->
 
 <br>
 See:
@@ -37,15 +34,11 @@ annotation projects is crucial.
 Here's a quick overview of basic terms related to CVAT and Human Protocol
 integration, providing a clear picture of the workflow and participants involved.
 
-<!--lint disable maximum-line-length-->
-
 | Term      | Explanation                                                                |
 | --------- | -------------------------------------------------------------------------- |
 | Requester | An individual or organization that needs data annotated for AI models.     |
 | Annotator | A person who labels data, such as images or videos, for machine learning.  |
 | Dataset   | A collection of data, often images or videos, used for training AI models. |
-
-<!--lint enable maximum-line-length-->
 
 ## Requester: How to get data annotated?
 
@@ -84,8 +77,4 @@ the money will be deposited into your account.
 
 ## Video tutorial
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/XHQ25vhx0xE?si=6q2KVLfK2Tg62Xyj" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->

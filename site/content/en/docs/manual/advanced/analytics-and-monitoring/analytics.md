@@ -148,8 +148,6 @@ You can search entries by the **Label name** column:
 
 The **Detection** tab table contains the columns:
 
-<!--lint disable maximum-line-length-->
-
 | **Column name** | **Content** |
 | --------------- | ----------- |
 | **Label ID** | The ID of the label. |
@@ -158,11 +156,7 @@ The **Detection** tab table contains the columns:
 | **Total shapes** | The total number of all label shapes. |
 
 
-<!--lint enable maximum-line-length-->
-
 The **Tracking** tab table contains the columns:
-
-<!--lint disable maximum-line-length-->
 
 | **Column name** | **Content** |
 | --------------- | ----------- |
@@ -173,8 +167,6 @@ The **Tracking** tab table contains the columns:
 | **Interpolated** | The number of {{< ilink "/docs/manual/basics/vocabulary#interpolation" "interpolated frames" >}} with the label. |
 | **Tracks** | The number of the label {{< ilink "/docs/manual/basics/vocabulary#track" "tracks" >}}. |
 | **Total objects** | The total number of all label objects. |
-
-<!--lint enable maximum-line-length-->
 
 ### Events tab
 
@@ -219,8 +211,6 @@ Other common operations with tables are described in the [**Working with tables*
 
 The events table columns:
 
-<!--lint disable maximum-line-length-->
-
 | **Column name** | **Content** |
 | --------------- | ----------- |
 | **Task ID** | The ID of the task. If the task exists (the **Exists** column has the value `true`), you can select the value to open the task. |
@@ -240,8 +230,6 @@ The events table columns:
 | **Created objects** | The total number of created objects. By default, the column is hidden. |
 | **Updated objects** | The total number of updated objects. By default, the column is hidden. |
 | **Deleted objects** | The total number of deleted objects. By default, the column is hidden. |
-
-<!--lint enable maximum-line-length-->
 
 ## Working with tables
 

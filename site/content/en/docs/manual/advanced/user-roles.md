@@ -47,15 +47,11 @@ Global roles can be adjusted only on self-hosted solution.
 
 CVAT has implemented three Global roles, categorized as user Groups. These roles are:
 
-<!--lint disable maximum-line-length-->
-
 | Role                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Administrator**           | An administrator possesses unrestricted access to the CVAT instance and all activities within this instance. The administrator has visibility over all tasks and projects, with the ability to modify or manage each comprehensively. This role is exclusive to self-hosted instances, ensuring comprehensive oversight and control.                                                                                                                                                                                            |
 | **User <br>(default role)** | A User is a default role who is assigned to any user who is registered in CVAT*. Users can view and manage all tasks and projects within their registered accounts, but their activities are subject to specific limitations, see Free plan. <br><br>* If a user, that did not have a CVAT account, has been invited to the organization by the organization owner or maintainer, it will be automatically assigned the Organization role and will be subject to the role's limitations when operating within the Organization. |
 | **Worker**                  | Workers are limited to specific functionalities and do not have the permissions to create tasks, assign roles, or perform other administrative actions. Their activities are primarily focused on viewing and interacting with the content within the boundaries of their designated roles (validation or annotation of the jobs).                                                                                                                                                                                              |
-
-<!--lint enable maximum-line-length-->
 
 ## Organization roles in CVAT
 
@@ -70,16 +66,12 @@ Organization roles are assigned when users are invited to the Organization.
 
 There are the following roles available in CVAT:
 
-<!--lint disable maximum-line-length-->
-
 | Role           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Owner**      | The Owner is the person who created the Organization. The Owner role is assigned to the creator of the organization by default. This role has maximum capabilities and cannot be changed or assigned to the other user. <br><br>The Owner has no extra restrictions in the organization and is only limited by the chosen organization plan (see [Free and Team](https://www.cvat.ai/pricing/cloud) plans). <br><br>Owners can invite other users to the Organization and assign roles to the invited users so the team can collaborate. |
 | **Maintainer** | The maintainer is the person who can invite users to organization, create and update tasks and jobs, and see all tasks within the organization. Maintainer has complete access to Cloud Storages, and the ability to modify members and their roles.                                                                                                                                                                                                                                                                                     |
 | **Supervisor** | The supervisor is a manager role. Supervisor can create and assign jobs, tasks, and projects to the Organization members. Supervisor cannot invite new members and modify members roles.                                                                                                                                                                                                                                                                                                                                                 |
 | **Worker**     | Workers' primary focus is actual annotation and reviews. They are limited to specific functionalities and has access only to the jobs assigned to them.                                                                                                                                                                                                                                                                                                                                                                                  |
-
-<!--lint enable maximum-line-length-->
 
 ## Job Stage
 
@@ -95,15 +87,11 @@ validate, or accept the job.
 
 Job **Stage** can be:
 
-<!--lint disable maximum-line-length-->
-
 | Stage          | Description                                                                                                                                                                                                          |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Annotation** | Provides access to annotation tools. Assignees will be able to see their assigned jobs and annotate them. By default, assignees with the **Annotation** stage cannot report annotation errors or issues.             |
 | **Validation** | Grants access to QA tools. Assignees will see their assigned jobs and can validate them while also reporting issues. By default, assignees with the **Validation** stage cannot correct errors or annotate datasets. |
 | **Acceptance** | Does not grant any additional access or change the annotator’s interface. It just marks the job as done.                                                                                                             |
-
-<!--lint enable maximum-line-length-->
 
 Any **Assignee** can modify their assigned **Stage** specific
 functions via the annotation interface toolbar:

@@ -188,8 +188,6 @@ The updated settings will take effect on the next merging.
 
 The following parameters are available:
 
-<!--lint disable maximum-line-length-->
-
 | **Parameter** | **Description** |
 | - | - |
 | _General_ |
@@ -198,5 +196,3 @@ The following parameters are available:
 | _Shape matching_ | |
 | - | - |
 | Min overlap | Min overlap threshold used for the distinction between matched and unmatched annotations. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. Read more about annotation matching {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#comparisons" "here" >}}. Keep in mind that quality settings do not affect consensus merging. |
-
-<!--lint enable maximum-line-length-->

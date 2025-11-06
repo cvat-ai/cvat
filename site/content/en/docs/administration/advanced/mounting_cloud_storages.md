@@ -5,8 +5,6 @@ weight: 30
 description: 'Instructions on how to mount an Amazon S3 bucket, Microsoft Azure Blob Storage container or Google Drive as a filesystem.'
 ---
 
-<!--lint disable heading-style-->
-
 ## Amazon S3 bucket as filesystem
 
 ### <a name="amazon_s3_ubuntu_2004">Ubuntu 20.04</a>

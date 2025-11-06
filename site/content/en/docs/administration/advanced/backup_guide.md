@@ -5,8 +5,6 @@ weight: 50
 description: 'Instructions on how to backup CVAT data with Docker.'
 ---
 
-<!--lint disable heading-style-->
-
 ## About CVAT data volumes
 
 Docker volumes are used to store all CVAT data:
