@@ -37,14 +37,18 @@
 
       {{ if $hasChildren }}
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle {{ if $active }}active{{ end }}"
-             href="#"
-             id="nav-{{ $id }}"
-             role="button"
-             data-bs-toggle="dropdown"
-             aria-expanded="false">
-            {{- .Pre -}}<span>{{ .Name }}</span>{{- .Post -}}
-          </a>
+          <a
+          class="nav-link dropdown-toggle {{ if $active }}active{{ end }}"
+          href="#"
+          id="nav-{{ $id }}"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle {{ .Name }} dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        >
+          {{- .Pre -}}<span>{{ .Name }}</span>{{- .Post -}}
+        </a>
           <ul class="dropdown-menu" aria-labelledby="nav-{{ $id }}">
             {{ range .Children }}
               {{ $childHref := "" -}}

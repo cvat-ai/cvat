@@ -41,11 +41,18 @@
     --cvat-footer-border: rgba(255,255,255,15%);
   }
 
-  /* The Docsy footer in your markup is <footer class="bg-dark ..."> */
-  footer.bg-dark {
-    background-color: var(--cvat-footer-bg) !important;
-    color: var(--cvat-footer-text) !important;
-  }
+/* === Footer recolor === */
+footer.bg-dark {
+  /* Palette */
+  background-color: var(--cvat-footer-bg) !important;
+  color: var(--cvat-footer-text) !important;
+
+  /* Typography & layout */
+  font-size: 0.75rem;
+  line-height: 1.35;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
 
   /* Links and icons */
   footer.bg-dark a,
@@ -71,14 +78,6 @@ footer.bg-dark .col-12.col-lg-4 .list-inline-item a:focus i {
     border-color: var(--cvat-footer-border) !important;
     color: var(--cvat-footer-text) !important;
   }
-
-/* Footer: vertical centering, compact text, large icons */
-footer.bg-dark {
-  font-size: 0.75rem;
-  line-height: 1.35;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
 
 /* Align list items */
 footer.bg-dark .list-inline {
