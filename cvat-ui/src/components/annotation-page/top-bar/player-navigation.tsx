@@ -11,7 +11,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Icon, {
     LinkOutlined, DeleteOutlined, CopyOutlined, SearchOutlined,
 } from '@ant-design/icons';
-import Slider from 'antd/lib/slider';
+import Slider, {SliderMarks} from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
@@ -162,26 +162,17 @@ function PlayerNavigation(props: Props): JSX.Element {
         opacity: 0.5,
     } : {};
 
-    const formatChapterMarks = (
-        labelName: string,
-        active: boolean,
-    ): {
-        style: React.CSSProperties;
-        label: React.ReactNode;
-    } => ({
-        style: { marginTop: '-4px' },
-        label:
-                <Tooltip title={`${labelName}`}>
-                    <span className={`ant-slider-mark-chapter ${active ? 'active' : ''}`} />
-                </Tooltip>,
-
-    });
-
-    const marks: Record<number, { style: React.CSSProperties; label: React.ReactNode } | undefined> = {};
-    for (const chapter of chapters ?? []) {
+    const marks: SliderMarks = (chapters ?? []).reduce<SliderMarks>((acc, chapter) => {
         const active = hoveredChapter === chapter.id;
-        marks[chapter.start] = formatChapterMarks(chapter.metadata.title, active);
-    }
+        const innerAcc = acc ?? {};
+        innerAcc[chapter.start] = {
+            label:
+                    <Tooltip title={`${chapter.metadata.title}`}>
+                        <span className={`ant-slider-mark-chapter ${active ? 'active' : ''}`} />
+                    </Tooltip>,
+        };
+        return innerAcc;
+    }, {});
 
     const deleteFrameIcon = !frameDeleted ? (
         <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
