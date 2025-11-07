@@ -162,5 +162,6 @@ print(response.json()["results"])
 Personal Access Tokens can also be used for authentication in other CVAT components:
 - in the {{< ilink "/docs/api_sdk/sdk/lowlevel-api#authentication" "low-level" >}} and
   {{< ilink "/docs/api_sdk/sdk/highlevel-api#authentication" "high-level" >}} API of the CVAT SDK
+- in the {{< ilink "/docs/api_sdk/cli#authentication" "CVAT CLI" >}}
 
 Write requests to `api/users`, `api/auth/password` and `api/auth/access_tokens` are forbidden.
