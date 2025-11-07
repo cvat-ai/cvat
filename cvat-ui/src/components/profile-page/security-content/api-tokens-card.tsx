@@ -162,7 +162,7 @@ function ApiTokensCard(): JSX.Element {
             key: 'createdDate',
             sorter: (a: RowData, b: RowData) => new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime(),
             render: (date: string) => new Date(date).toLocaleDateString(),
-            className: 'cvat-api-token-created',
+            className: 'cvat-api-token-created-date',
         },
         {
             title: 'Expires',
