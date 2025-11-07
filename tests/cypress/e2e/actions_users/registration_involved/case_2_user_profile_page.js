@@ -5,8 +5,9 @@
 
 /// <reference types="cypress" />
 
+import { inspect } from 'util';
 import {
-    toSnakeCase, aMonthFrom, aYearFrom, parseDatetime, format,
+    toSnakeCase, aMonthFrom, aYearFrom, parseDatetime, format, prettify,
 } from '../../../support/utils';
 import { ClipboardCtx } from '../../../support/const';
 import { projectSpec } from '../../../support/const_project';
@@ -167,19 +168,24 @@ context('User page, password change, token handling', () => {
             it("Change user's personal info. Update is handled correctly", () => {
                 cy.intercept('PATCH', '/api/users/**', (req) => {
                     const expectedFields = toSnakeCase({ firstName: firstNameNew, lastName: lastNameNew });
-                    assert(Cypress._.isEqual(req.body, expectedFields),
-                        `Unexpected response fields: ${req.body} !== ${expectedFields}`,
+                    assert(
+                        Cypress._.isEqual(req.body, expectedFields),
+                        'Unexpected request fields:\n' +
+                        `${prettify(req.body)} !== ${prettify(expectedFields)}`,
                     );
                     req.continue((res) => {
                         const resFields = Cypress._.pick(res.body, ['first_name', 'last_name']);
                         assert(
                             Cypress._.isEqual(expectedFields, resFields),
-                            `Unexpected response fields: ${resFields} !== ${expectedFields}`,
+                            'Unexpected response fields:\n' +
+                            `${prettify(resFields)} !== ${prettify(expectedFields)}`,
                         );
                     });
                 }).as('updateFirstLastName');
 
+                cy.get('input[id="firstName"]').clear();
                 cy.get('input[id="firstName"]').type(firstNameNew);
+                cy.get('input[id="lastName"]').clear();
                 cy.get('input[id="lastName"]').type(lastNameNew);
 
                 cy.contains('button', 'Save changes').click();
