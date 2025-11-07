@@ -33,7 +33,8 @@ To use CVAT within your organization, please follow these steps:
 
 1. {{< ilink "/docs/account_management/registration" "Create an account in CVAT" >}}.
 2. {{< ilink "/docs/account_management/organization" "Create **Organization**" >}}.
-3. Switch to the **Organization** that you've created and {{< ilink "/docs/account_management/subscription-management#team-plan" "subscribe to the **Team plan**" >}}.
+3. Switch to the **Organization** that you've created
+and {{< ilink "/docs/account_management/subscription-management#team-plan" "subscribe to the **Team plan**" >}}.
 4. {{< ilink "/docs/account_management/organization#invite-members-into-organization"
      "Invite members to **Organization**" >}} and
 assign {{< ilink "/docs/account_management/user-roles" "User roles" >}} to invited members.
