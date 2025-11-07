@@ -48,6 +48,64 @@ Cypress.Commands.add('addFiltersGroup', (groupIndex) => {
     });
 });
 
+// Filter export/import/share functionality commands
+Cypress.Commands.add('exportFilter', () => {
+    cy.checkFiltersModalOpened();
+    cy.get('.cvat-filters-modal-export-button').should('be.visible').click();
+});
+
+Cypress.Commands.add('importFilter', (filterData) => {
+    cy.checkFiltersModalOpened();
+    cy.get('.cvat-filters-modal-import-button').should('be.visible').click();
+    cy.get('.cvat-filters-text-input').should('be.visible').type(JSON.stringify(filterData), { parseSpecialCharSequences: false });
+    cy.contains('button', 'Apply Filter').click();
+});
+
+Cypress.Commands.add('shareFilterURL', () => {
+    cy.checkFiltersModalOpened();
+    cy.get('.cvat-filters-modal-share-button').should('be.visible').click();
+});
+
+Cypress.Commands.add('checkFilterExportSuccess', () => {
+    cy.get('.ant-message-success').should('contain', 'Filter exported to clipboard');
+});
+
+Cypress.Commands.add('checkFilterImportSuccess', () => {
+    cy.get('.ant-message-success').should('contain', 'Filter imported successfully');
+});
+
+Cypress.Commands.add('checkShareURLSuccess', () => {
+    cy.get('.ant-message-success').should('contain', 'Shareable URL copied to clipboard');
+});
+
+Cypress.Commands.add('openImportTextEditor', () => {
+    cy.checkFiltersModalOpened();
+    cy.get('.cvat-filters-modal-import-button').click();
+    cy.get('.cvat-filters-text-editor').should('be.visible');
+});
+
+Cypress.Commands.add('closeImportTextEditor', () => {
+    cy.get('.cvat-filters-text-editor').within(() => {
+        cy.contains('button', 'Cancel').click();
+    });
+    cy.get('.cvat-filters-text-editor').should('not.exist');
+});
+
+Cypress.Commands.add('checkFilterTextEditorVisible', () => {
+    cy.get('.cvat-filters-text-editor').should('be.visible');
+    cy.get('.cvat-filters-text-input').should('be.visible');
+});
+
+// Mock clipboard operations for testing
+Cypress.Commands.add('mockClipboard', () => {
+    cy.window().then((win) => {
+        win.navigator.clipboard = {
+            writeText: cy.stub().resolves(),
+            readText: cy.stub().resolves('mocked clipboard content')
+        };
+    });
+});
+
 Cypress.Commands.add('addFiltersRule', (groupIndex) => {
     cy.checkFiltersModalOpened();
     cy.collectGroupID().then((groupIdIndex) => {
