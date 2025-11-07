@@ -62,8 +62,9 @@ module.exports = (on, config) => {
         async nodeJSONRequest({ url, options }) {
             const finalUrl = url.startsWith('/') ? `${config.baseUrl}${url}` : url;
             const response = await fetch(finalUrl, options);
-            const data = await response.json();
-            return {
+            const text = await response.text();
+            const data = text ? JSON.parse(text) : null;
+            const result = {
                 body: data,
                 status: response.status,
                 statusText: response.statusText,
@@ -71,6 +72,12 @@ module.exports = (on, config) => {
                 url: response.url,
                 ok: response.ok,
             };
+
+            if (result.status >= 400) {
+                console.log(result);
+            }
+
+            return result;
         },
     });
     on('task', { isFileExist });
