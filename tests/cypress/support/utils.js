@@ -94,7 +94,7 @@ export const aYearFrom = (date) => new Date(
 );
 export const aMonthFrom = (date) => new Date(
     new Date(date.getTime())
-        .setMonth((date.getMonth() + 1) % 12),
+        .setMonth(date.getMonth() + 1),
 );
 
 /**
