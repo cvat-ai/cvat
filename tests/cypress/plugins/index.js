@@ -55,7 +55,21 @@ module.exports = (on, config) => {
             const csrfToken = loginResp.headers.get('set-cookie').match(/csrftoken=[^;]+/)[0];
 
             const cookieHeader = `${sessionId}; ${csrfToken}`;
-            return { Cookie: cookieHeader, 'x-csrftoken': csrfToken.split('=')[1] };
+            return { cookie: cookieHeader, 'x-csrftoken': csrfToken.split('=')[1] };
+        },
+    });
+    on('task', {
+        async nodeJSONRequest({ url, options }) {
+            const response = await fetch(url, options);
+            const data = await response.json();
+            return {
+                data,
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries()),
+                url: response.url,
+                ok: response.ok,
+            };
         },
     });
     on('task', { isFileExist });

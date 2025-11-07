@@ -100,11 +100,13 @@ Cypress.Commands.add('headlessUpdateUser', (username, body) => {
             const responseResult = response.body.results;
             responseResult.forEach((user) => {
                 if (user.username === username) {
-                    cy.request({
-                        method: 'PATCH',
+                    cy.task('nodeJSONRequest', {
                         url: `/api/users/${user.id}`,
-                        headers: authHeaders,
-                        body,
+                        options: {
+                            method: 'PATCH',
+                            headers: authHeaders,
+                            body,
+                        },
                     });
                 }
             });
