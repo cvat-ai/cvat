@@ -167,7 +167,9 @@ context('User page, password change, token handling', () => {
             it("Change user's personal info. Update is handled correctly", () => {
                 cy.intercept('PATCH', '/api/users/**', (req) => {
                     const expectedFields = toSnakeCase({ firstName: firstNameNew, lastName: lastNameNew });
-                    assert(Cypress._.isEqual(req.body, expectedFields));
+                    assert(Cypress._.isEqual(req.body, expectedFields),
+                        `Unexpected response fields: ${req.body} !== ${expectedFields}`,
+                    );
                     req.continue((res) => {
                         const resFields = Cypress._.pick(res.body, ['first_name', 'last_name']);
                         assert(
