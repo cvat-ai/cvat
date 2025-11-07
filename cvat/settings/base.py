@@ -634,6 +634,7 @@ SPECTACULAR_SETTINGS = {
     },
     "SERVE_PUBLIC": True,
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_GENERATOR_CLASS": "cvat.apps.engine.drf_spectacular.SchemaGenerator",
     # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
