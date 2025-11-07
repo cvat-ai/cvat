@@ -214,7 +214,7 @@ function ApiTokensCard(): JSX.Element {
                             },
                         ],
                     }}
-                    className='cvat-api-token-action-menu'
+                    className='cvat-api-token-actions-menu'
                     trigger={['click']}
                 >
                     <Button type='text' icon={<MoreOutlined />} />
