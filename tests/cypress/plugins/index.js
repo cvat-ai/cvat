@@ -60,10 +60,11 @@ module.exports = (on, config) => {
     });
     on('task', {
         async nodeJSONRequest({ url, options }) {
-            const response = await fetch(url, options);
+            const finalUrl = url.startsWith('/') ? `${config.baseUrl}${url}` : url;
+            const response = await fetch(finalUrl, options);
             const data = await response.json();
             return {
-                data,
+                body: data,
                 status: response.status,
                 statusText: response.statusText,
                 headers: Object.fromEntries(response.headers.entries()),

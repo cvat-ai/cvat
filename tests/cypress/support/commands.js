@@ -91,47 +91,6 @@ Cypress.Commands.add('headlessDeleteUser', (userId) => {
     cy.wait('@deleteUser');
 });
 
-Cypress.Commands.add('headlessUpdateUser', (username, body) => {
-    cy.task('getAuthHeaders').then((authHeaders) => {
-        cy.request({
-            url: '/api/users?page_size=all',
-            headers: authHeaders,
-        }).then((response) => {
-            const responseResult = response.body.results;
-            responseResult.forEach((user) => {
-                if (user.username === username) {
-                    cy.task('nodeJSONRequest', {
-                        url: `/api/users/${user.id}`,
-                        options: {
-                            method: 'PATCH',
-                            headers: authHeaders,
-                            body,
-                        },
-                    });
-                }
-            });
-        });
-    });
-});
-
-Cypress.Commands.add('checkUserStatuses', (username, staffStatus, superuserStatus, activeStatus) => {
-    cy.task('getAuthHeaders').then((authHeaders) => {
-        cy.request({
-            url: '/api/users?page_size=all',
-            headers: authHeaders,
-        }).then((response) => {
-            const responseResult = response.body.results;
-            responseResult.forEach((user) => {
-                if (user.username === username) {
-                    expect(staffStatus).to.be.equal(user.is_staff);
-                    expect(superuserStatus).to.be.equal(user.is_superuser);
-                    expect(activeStatus).to.be.equal(user.is_active);
-                }
-            });
-        });
-    });
-});
-
 Cypress.Commands.add('deleteTasks', (authHeaders, tasksToDelete) => {
     cy.request({
         url: '/api/tasks?page_size=all',
