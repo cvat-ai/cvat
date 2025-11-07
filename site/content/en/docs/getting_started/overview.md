@@ -41,8 +41,6 @@ For annotation export and import formats, see
 CVAT offers a wide range of annotation tools, each catering to different aspects of
 image and video labeling:
 
-<!--lint disable maximum-line-length-->
-
 | Annotation Tool                                                                                          | Use Cases                                                                                                      |
 | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | {{< ilink "/docs/annotation/tools/3d-object-annotation-advanced" "**3D Object Annotation**" >}}           | Ideal for projects that require depth perception and volume estimation, like autonomous vehicle training.      |
@@ -55,8 +53,6 @@ image and video labeling:
 | {{< ilink "/docs/annotation/tools/skeletons" "**Annotation with Skeletons**" >}}                          | Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.                 |
 | {{< ilink "/docs/annotation/tools/annotation-with-brush-tool" "**Annotation with Brush Tool**" >}}        | Perfect for intricate and detailed annotations where precision is key, such as in medical imaging.             |
 | {{< ilink "/docs/annotation/tools/annotation-with-tags" "**Annotation with Tags**" >}}                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
-
-<!--lint enable maximum-line-length-->
 
 These tools make CVAT a versatile platform for a range of annotation
 needs, from basic labeling to complex, multidimensional
@@ -73,8 +69,6 @@ see {{< ilink "/docs/annotation/tools/ai-tools" "**OpenCV and AI Tools**" >}}
 {{% /alert %}}
 
 Below is a detailed table of the supported algorithms and the platforms they operate on:
-
-<!--lint disable maximum-line-length-->
 
 | Algorithm Name                                                                                                                                      | Category   | Framework  | CPU Support | GPU Support |
 | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------- | ----------- | ----------- |
@@ -94,13 +88,9 @@ Below is a detailed table of the supported algorithms and the platforms they ope
 | [RetinaNet](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio)                      | Detector   | PyTorch    | ✔️          | ✔️          |
 | [Face Detection](https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | Detector   | OpenVINO   | ✔️          |             |
 
-<!--lint enable maximum-line-length-->
-
 ## Useful links
 
 Start here if you're unsure where to begin with CVAT.
-
-<!--lint disable maximum-line-length-->
 
 ### CVAT Online
 
@@ -124,8 +114,6 @@ Start here if you're unsure where to begin with CVAT.
 | {{< ilink "/docs/administration/basics/aws-deployment-guide" "**AWS Deployment Guide**" >}}    | A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.                                                                                                                |
 | {{< ilink "/docs/faq" "**Frequently Asked Questions**" >}}                                     | This section addresses common queries and provides helpful answers and insights about using CVAT.                                                                                                                          |
 
-<!--lint enable maximum-line-length-->
-
 ## Integrations
 
 CVAT is a global tool, trusted and utilized by teams worldwide.
@@ -137,21 +125,15 @@ If you want to integrate CVAT with other MLOps tools, we'd love to
 hear from you at [contact@cvat.ai](mailto:contact+github@cvat.ai).
 {{% /alert %}}
 
-<!--lint disable maximum-line-length-->
-
 | Integrated Service                                                                  | Available In           | Description                                                                                                                                                                                                                                           |
 | ----------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [**Human Protocol**](https://hmt.ai)                                                | Online and Self-hosted | Incorporates CVAT to augment annotation services within the Human Protocol framework, enhancing its capabilities in data labeling.                                                                                                                    |
 | [**FiftyOne**](https://fiftyone.ai)                                                 | Online and Self-hosted | An open-source tool for dataset management and model analysis in computer vision, FiftyOne is [closely integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT to enhance annotation capabilities and label refinement.       |
 | [**Hugging Face**](https://huggingface.co/) & [**Roboflow**](https://roboflow.com/) | Online                 | In CVAT Online, models from Hugging Face and Roboflow can be added to enhance computer vision tasks. For more information, see [**Integration with Hugging Face and Roboflow**](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models) |
 
-<!--lint enable maximum-line-length-->
-
 ## License Information
 
 CVAT includes the following licenses:
-
-<!--lint disable maximum-line-length-->
 
 | License Type                                           | Applicable To          | Description                                                                                                                                                                                                                                   |
 | ------------------------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -161,13 +143,9 @@ CVAT includes the following licenses:
 | [**Terms of Use**](https://www.cvat.ai/terms-of-use)   | Online and Self-hosted | Outlines the terms of use and confidential information handling for CVAT. Important for understanding the legal framework of using the platform.                                                                                              |
 | [**Privacy Policy**](https://www.cvat.ai/privacy)      | Online                 | Our Privacy Policy governs your visit to <https://cvat.ai> and your use of <https://app.cvat.ai>, and explains how we collect, safeguard and disclose information that results from your use of our Service.                                  |
 
-<!--lint enable maximum-line-length-->
-
 ## Get in touch
 
 To get in touch, use one of the following channels:
-
-<!--lint disable maximum-line-length-->
 
 | Type of inquiry                                                                                    | Applicable to          | Description                                                                                          |
 | -------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -175,5 +153,3 @@ To get in touch, use one of the following channels:
 | [**General Inquiries**](https://www.cvat.ai/general)                                               | All products and services | Reach out to discuss partnership, co-marketing or investment opportunities with CVAT team. |                                                     |
 | [**CVAT Online Customer Support**](https://youtrack.cvat.ai/form/447d9c98-ab4b-466e-bf9d-004f01b22f73)                                        | CVAT Online (Pro and Team plans) | Chat with us about product support, resolve billing questions, or provide feedback.                                        |
 | [**CVAT Community Customer Support**](https://github.com/cvat-ai/cvat/issues) | CVAT Community    | Report a bug or submit a feature request in out GitHub repository.                                                        |
-
-<!--lint enable maximum-line-length-->

@@ -158,21 +158,15 @@ By default, only three contextual images will be visible.
 When you add contextual images to the set,
 small toolbar will appear on the top of the screen, with the following elements:
 
-<!--lint disable maximum-line-length-->
-
 | Element                                        | Description |
 | ---------------------------------------------- | ----------- |
 | ![context_images_4](/images/context_img_04.jpg) | **Fit views**. Click to restore the layout to its original appearance. <p>If you've expanded any images in the layout, they will returned to their original size. <p>This won't affect the number of context images on the screen. |
 | ![context_images_5](/images/context_img_05.jpg) | **Add new image**. Click to add context image to the layout. |
 | ![context_images_6](/images/context_img_06.jpg) | **Reload layout**. Click to reload layout to the default view. <p>Note, that this action can change the number of context images resetting them back to three. |
 
-<!--lint enable maximum-line-length-->
-
 Each context image has the following elements:
 
 ![context_images_2](/images/context_img_02.jpg)
-
-<!--lint disable maximum-line-length-->
 
 | Element | Description                                                                                                                             |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -182,5 +176,3 @@ Each context image has the following elements:
 | 4       | **Select contextual image**. Click to open a horizontal listview of all available contextual images. <p>Click on one to select.               |
 | 5       | **Close**. Click to remove image from contextual images menu.                                                         |
 | 6       | **Extend** Hold and pull to extend the image.                                                                                           |
-
-<!--lint enable maximum-line-length-->

@@ -30,9 +30,6 @@ CVAT GitHub repository.
 
 {{% /blocks/feature %}}
 
-
-<!--lint disable maximum-line-length-->
-
 {{% blocks/feature icon="fa-book" title="[Manual](manual/)" %}}
 
 This section contains documents for CVAT simple and advanced users.

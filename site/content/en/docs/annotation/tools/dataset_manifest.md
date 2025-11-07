@@ -9,8 +9,6 @@ aliases:
 
 ---
 
-<!--lint disable heading-style-->
-
 ## Overview
 
 When we create a new task in CVAT, we need to specify where to get the input data from.

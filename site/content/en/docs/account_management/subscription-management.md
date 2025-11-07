@@ -49,14 +49,10 @@ This section outlines the paid plans available on CVAT Online.
 
 ### Monthly plans
 
-<!--lint disable maximum-line-length-->
-
 | Name     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Solo** | The **Solo** plan has a fixed price and is designed **for personal use only**. <br><br>It does not assume collaboration with team members and is not suitable for use within organizations, but it removes all other limitations of the **Free** plan. <Br><br> **Note**: Although it allows the creation of an organization and access for up to 2 members -- it is _for trial purposes_ only! <br>Organization and members _will have all the limitations of the **Free** plan_.                           |
 | **Team** | The **Team** is **for collaboration**, it removes limitations of the **Free** plan for the whole organization, allowing you to share paid benefits with your colleagues. <br><br>The **monthly payment for the plan depends on the number of team members you've added**. All limits of the **Free** plan will be removed. <Br><br> **Note**: The organization owner is also part of the team. So, if you have two annotators working, you'll need to pay for 3 seats (2 annotators + 1 organization owner). |
-
-<!--lint enable maximum-line-length-->
 
 ### Annual plans
 
@@ -333,8 +329,4 @@ click on the arrow> manage plan > **Renew plan**.
 
 ## Subscription management video tutorial
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/AMPtbmqZKNY?si=2TLhdytDIlSJ3Fwd" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->

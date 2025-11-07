@@ -6,8 +6,6 @@ aliases:
   - /docs/manual/advanced/data-on-fly/
 ---
 
-<!--lint disable heading-style-->
-
 ## Description
 
 Data on the fly processing is a way of working with data, the main idea of which is as follows: when creating a task,

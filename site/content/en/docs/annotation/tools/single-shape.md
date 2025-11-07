@@ -44,8 +44,6 @@ The interface will be different if the shape type was set to **Any** in the labe
 
 The **Single Shape** annotation mode has the following fields:
 
-<!--lint disable maximum-line-length-->
-
 | Feature                          | Explanation                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Prompt for Shape and Label**   | Displays the selected shape and label for the annotation task, for example: "Annotate **cat** on the image using **rectangle**".                                                                                                                                                                                                                                                                                                                  |
@@ -55,8 +53,6 @@ The **Single Shape** annotation mode has the following fields:
 | **Label type selector**          | A drop-down list to select type of the label (rectangle, ellipse, etc). Only visible when the type of the shape is **Any**.                                                                                                                                                                                                                                                                                                                       |
 | **Options to Enable or Disable** | Provides configurable options to streamline the annotation process, such as: <br> - **Automatically go to the next frame**. <br> - **Automatically save when finish**. <br> - **Navigate only empty frames**. <br> - **Predefined number of points** - Specific to polyshape annotations, enabling this option auto-completes a shape once a predefined number of points is reached. Otherwise, pressing **N** is required to finalize the shape. |
 | **Number of Points**             | Applicable for polyshape annotations, indicating the number of points to use for image annotation.                                                                                                                                                                                                                                                                                                                                                |
-
-<!--lint enable maximum-line-length-->
 
 ## Annotating in Single Shape mode
 
@@ -75,15 +71,11 @@ To annotate in Single Shape mode, follow these steps:
 Also, we introduced additional query parameters, which you may append to
 the job link, to initialize the annotation process and automate workflow:
 
-<!--lint disable maximum-line-length-->
-
 | Query Parameter      | Possible Values                                                             | Explanation                                                                                          |
 | -------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `defaultWorkspace`   | Workspace identifier (e.g., `single_shape`, `tags`, `review`, `attributes`) | Specifies the workspace to be used initially, streamlining the setup for different annotation tasks. |
 | `defaultLabel`       | A string representation of a label (label name)                             | Sets a default label for the annotation session, facilitating consistency across similar tasks.      |
 | `defaultPointsCount` | Integer - number of points for polyshapes                                   | Defines a preset number of points for polyshape annotations, optimizing the annotation process.      |
-
-<!--lint enable maximum-line-length-->
 
 You can combine these parameters to customize the workspace for an annotator, for example:
 
@@ -100,8 +92,4 @@ Will open the following job:
 For a better understanding of how Single Shape mode operates,
 we recommend watching the following tutorial.
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/u17OXSD7Y4U?si=4z-f52lbxe0CpZEg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->

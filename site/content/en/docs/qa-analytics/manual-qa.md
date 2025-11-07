@@ -162,16 +162,12 @@ The created issue will appear on the **Objects** sidebar, in the **Issues** tab.
 
 It has has the following elements:
 
-<!--lint disable maximum-line-length-->
-
 | Element              | Description                                          |
 | -------------------- | ---------------------------------------------------- |
 | Arrows               | You can switch between issues by clicking on arrows  |
 | Hide all issues      | Click on the eye icon to hide all issues             |
 | Hide resolved issues | Click on the check mark to hide only resolved issues |
 | Ground truth         | Show ground truth annotations and objects            |
-
-<!--lint enable maximum-line-length-->
 
 ### Issues workspace
 
@@ -201,8 +197,4 @@ You can copy and paste comments text.
 
 This video demonstrates the process:
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/7HxCpjdQt-c?si=xIho-KJLv4b__tRo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->

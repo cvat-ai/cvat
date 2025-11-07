@@ -25,8 +25,6 @@ See:
 Use the **Menu** options to upload and download annotations, change the status of the job,
 and access other features listed in the table below:
 
-<!--lint disable maximum-line-length-->
-
 | Panel Item              | Description              |
 | ----------------------- | ------------------------ |
 | **Upload annotations**  | Upload annotations into a task. |
@@ -37,14 +35,10 @@ and access other features listed in the table below:
 | **Change job state**    | Changes the state of the job: <br><ul><li>**New**: The job is newly created and has not been started yet. It is waiting for annotation work to begin.<li> **In Progress**: The job is currently being worked on. Annotations are being added or edited.<li>**Rejected**: The job has been reviewed and deemed unsatisfactory or incorrect. It requires revisions and further work.<li>**Completed**: The job has been finished, reviewed, and approved. No further changes are necessary.<ul> |
 | **Finish the job**      | Saves annotations and sets **job state** to **Completed**. |
 
-<!--lint enable maximum-line-length-->
-
 ## Navigation bar
 
 Use the navigation bar to save annotation results, switch between frames,
 and access other features listed in the tables below.
-
-<!--lint disable maximum-line-length-->
 
 ### Save, Undo, Done
 
@@ -88,5 +82,3 @@ toggle between different annotation and QA modes.
 | **Info**<br><br>![Info](/images/image143_2.png)           | Open the job info. <br><br>![Example of a job information shown in interface](/images/image144_detrac.png)<br><br>Overview:<ul><li>**Assignee** - the individual to whom the job is assigned.</li> <li>**Reviewer**– the user tasked with conducting the review. For more information, see {{< ilink "/docs/qa-analytics/manual-qa" "**Manual QA**" >}}</li><li>**Start frame** - the number of the first frame in this job.</li><li>**Stop frame** - the number of the last frame in this job.</li><li>**Frames** - the total number of frames in the job.</li></ul><br>**Annotations Statistics** table displays the number of created shapes, categorized by labels (e.g., vehicle, person) and the type of annotation (shape, track), as well as the count of manual and interpolated frames.     |
 | **Filters**<br><br>![Filters icon](/images/image143_3.png) | Switches on {{< ilink "/docs/annotation/tools/filter" "**Filters**" >}}.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | **Workplace Switcher**                                    | The drop-down list to switch between different annotation modes: <br><br>![User interface with opened menu for switching annotation mode](/images/ui-swithcer.png)<br><br>Overview:<ul><li>**Standard** -- default mode.</li><li>**Attribute** -- annotation with {{< ilink "/docs/annotation/tools/attribute-annotation-mode-advanced" "**Attributes**" >}}</li><li>**Single Shape** -- {{< ilink "/docs/annotation/tools/single-shape" "**Single shape**" >}} annotation mode.</li><li>**Tag annotation**- annotation with {{< ilink "/docs/annotation/tools/annotation-with-tags" "Tags" >}}</li><li>**Review** -- {{< ilink "/docs/qa-analytics/manual-qa" "**Manual QA**" >}} mode.                                                                                                                                                                               |
-
-<!--lint enable maximum-line-length-->

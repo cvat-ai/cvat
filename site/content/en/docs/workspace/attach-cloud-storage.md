@@ -121,8 +121,6 @@ To attach storage, do the following:
 
 Fill in the following fields:
 
-<!--lint disable maximum-line-length-->
-
 | CVAT                    | Amazon S3 |
 | ----------------------- | --------- |
 | **Display name**        | Preferred display name for your storage. |
@@ -133,8 +131,6 @@ Fill in the following fields:
 | **Region**              | (Optional) Choose a region from the list or add a new one. For more information, consult [**Available locations**](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions). |
 | **Prefix**              | (Optional) Prefix is used to filter bucket content. By setting a default prefix, you ensure that only data from a specific folder in the cloud is used in CVAT. This will affect which files you see when creating a task with cloud data. |
 | **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
-
-<!--lint enable maximum-line-length-->
 
 After filling in all the fields, select **Submit**.
 
@@ -186,10 +182,7 @@ To prepare the manifest file, do the following:
 
 ### Video tutorial: Add Amazon S3 as Cloud Storage in CVAT
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/y6fgZ4X87Lc?si=5EewLS4XA7birS25" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-<!--lint enable maximum-line-length-->
 
 ## Google Cloud Storage
 
@@ -291,8 +284,6 @@ To attach storage, do the following:
 
 Fill in the following fields:
 
-<!--lint disable maximum-line-length-->
-
 | CVAT                    | Google Cloud Storage |
 | ----------------------- | -------------------- |
 | **Display name**        | Preferred display name for your storage. |
@@ -305,17 +296,11 @@ Fill in the following fields:
 | **Location**            | (Optional) Choose a region from the list or add a new one. For more information, consult [**Available locations**](https://cloud.google.com/storage/docs/locations#available-locations). |
 | **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
 
-<!--lint enable maximum-line-length-->
-
 After filling in all the fields, select **Submit**.
 
 ### Video tutorial: Add Google Cloud Storage as Cloud Storage in CVAT
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/pl2KZqJouvI?si=58sziJGbHHc-Mcom" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->
 
 ## Microsoft Azure Blob Storage
 
@@ -438,8 +423,6 @@ To attach storage, do the following:
 
 Fill in the following fields:
 
-<!--lint disable maximum-line-length-->
-
 | CVAT                    | Azure |
 | ----------------------- | ----- |
 | **Display name**        | Preferred display name for your storage. |
@@ -450,17 +433,11 @@ Fill in the following fields:
 | **Prefix**              | (Optional) Used to filter data from the bucket. By setting a default prefix, you ensure that only data from a specific folder in the cloud is used in CVAT. This will affect which files you see when creating a task with cloud data. |
 | **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
 
-<!--lint enable maximum-line-length-->
-
 After filling in all the fields, select **Submit**.
 
 ### Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/nvrm8oFBKMY?si=v2z6Rjlc250niXPX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->
 
 ## Prepare the dataset
 

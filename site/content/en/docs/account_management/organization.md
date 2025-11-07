@@ -49,8 +49,6 @@ To create an organization, do the following:
 
    !["Create a new organization" window with options and parameters](/images/create_organization_form.png)
 
-<!--lint disable maximum-line-length-->
-
 | Field            | Description                                                         |
 | ---------------- | ------------------------------------------------------------------- |
 | **Short name**   | A name of the organization that will be displayed in the CVAT menu. |
@@ -59,8 +57,6 @@ To create an organization, do the following:
 | **Email**        | Optional. Your email.                                               |
 | **Phone number** | Optional. Your phone number.                                        |
 | **Location**     | Optional. Organization address.                                     |
-
-<!--lint enable maximum-line-length-->
 
 Upon creation, the organization page will open automatically.
 
@@ -150,15 +146,11 @@ It has the following fields:
 
 ![Form for inviting users to organization](/images/invite_org_members.png)
 
-<!--lint disable maximum-line-length-->
-
 | Field               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Email**           | Specifies the email address of the user who is being added to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Role drop-down list | Defines the role of the user which sets the level of access within the **Organization**: <br><li>**Worker**: Has access only to the tasks, projects, and jobs assigned to them. <li>**Supervisor**: Can create and assign jobs, tasks, and projects to the **Organization** members. <li>**Maintainer**: Has the same capabilities as the **Supervisor**, but with additional visibility over all tasks and projects created by other members, complete access to **Cloud Storages**, and the ability to modify members and their roles. <li>**Owner**: role assigned to the creator of the organization by default. Has maximum capabilities and cannot be changed or assigned to the other user. |
 | **Invite more**     | Button to add another user to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-
-<!--lint enable maximum-line-length-->
 
 Members of **Organization** will appear on the **Organization page**:
 

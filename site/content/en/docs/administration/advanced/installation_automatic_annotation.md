@@ -1,5 +1,3 @@
-<!--lint disable maximum-heading-length-->
-
 ---
 
 title: 'Semi-automatic and Automatic Annotation'

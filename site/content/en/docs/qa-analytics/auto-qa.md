@@ -392,8 +392,6 @@ The updated settings will take effect on the next quality update.
 
 Annotation quality settings have the following parameters:
 
-<!--lint disable maximum-line-length-->
-
 | **Parameter** | **Description** |
 | - | - |
 | _General reporting_ |
@@ -435,8 +433,6 @@ Annotation quality settings have the following parameters:
 | Check object visibility | Check for partially-covered annotations. Masks and polygons will be compared to each other. |
 | Min visibility threshold | Minimal visible area percent of the mask annotations (polygons, masks). Used for reporting _Covered annotation_ warnings, useful with the _Check object visibility_ option. |
 | Match only visible parts | Use only the visible part of the masks and polygons in comparisons. |
-
-<!--lint enable maximum-line-length-->
 
 ### Project quality settings
 
@@ -582,8 +578,6 @@ The Analytics page has the following elements:
 
 ![Quality Analytics page](/images/honeypot05.png)
 
-<!--lint disable maximum-line-length-->
-
 | Field | Description |
 | - | - |
 | Mean annotation quality | Displays the average quality of annotations, which includes: counts of the accurate annotations, total task annotations, ground truth annotations, accuracy, precision, and recall. The currently selected _Target metric_ is displayed as the primary score. |
@@ -592,8 +586,6 @@ The Analytics page has the following elements:
 | Quality report | Quality report in JSON format. |
 | Ground truth job data | Information about ground truth job, including date, time, and number of issues. |
 | List of jobs | List of all the jobs in the task  |
-
-<!--lint enable maximum-line-length-->
 
 ![Jobs list](/images/honeypot12.jpg)
 

@@ -34,8 +34,6 @@ All **Shapes converter** functions work in alignment with set up filter.
 
 You will see the following dialog:
 
-<!--lint disable maximum-line-length-->
-
 ![Dialog for removing filtered shapes](/images/shapes-converter-dialog.jpg)
 
 With the following fields:
@@ -46,8 +44,6 @@ With the following fields:
 | **Select action**                        | Drop-down list with available actions: <br><li>**Remove filtered shapes** - removes all shapes in alignment with the set-up filter. Doesn't work with tracks.</li><li>**Propagate shapes** - propagates all the filtered shapes from the current frame to the target frame.</li><li>**Shapes converter: masks to polygons** - converts all masks to polygons.</li><li>**Shapes converter: masks to rectangles** - converts all masks to rectangles in alignment with the set-up filter.</li><li>**Shapes converter: polygon to masks** - converts all polygons to masks.</li><li>**Shapes converter: polygon to rectangles** - converts all polygons to rectangles.</li><li>**Shapes converter: rectangles to masks** - converts all rectangles to masks.</li><li>**Shapes converter: rectangles to polygons** - converts all rectangles to polygons.</li><br>**Note:** only **Propagate shapes** and **Remove filtered shapes** is available in the community version. |
 | **Specify frames to run action**         | Field where you can specify the frame range for the selected action. Enter the starting frame in the **Starting from frame:** field, and the ending frame in the **up to frame** field. <br><br>If nothing is selected here or in **Choose one of the predefined options** section, the action will be applied to all fields.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | **Choose one of the predefined options** | Predefined options to apply to frames. Selection here is mutually exclusive with **Specify frames to run action**. <br><br>If nothing is selected here or in **Specify frames to run action** section, the action will be applied to all fields.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-
-<!--lint enable maximum-line-length-->
 
 ## Convert shapes
 
@@ -90,8 +86,4 @@ Once the action is applied, it cannot be undone.
 
 ## Convert shapes video tutorial
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/sAVEdjmw0C0?si=ZhRuwdAMSNrdieBp" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->

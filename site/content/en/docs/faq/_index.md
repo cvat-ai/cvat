@@ -5,8 +5,6 @@ weight: 10
 description: 'Answers to frequently asked questions'
 ---
 
-<!--lint disable heading-style-->
-
 ## How to migrate data from CVAT.org to CVAT Online
 
 Please follow the {{< ilink "/docs/annotation/tools/backup#backup" "export tasks and projects guide" >}} to

@@ -621,6 +621,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             if self._db_data.storage == StorageChoice.CLOUD_STORAGE and not self._lightweight:
                 data["storage"] = StorageChoice.LOCAL
+            else:
+                data["storage"] = self._db_data.storage
 
             return self._prepare_data_meta(data)
 
@@ -966,7 +968,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if validation_params:
             data['validation_params'] = validation_params
 
-        if data["storage"] == StorageChoice.CLOUD_STORAGE:
+        if data_serializer.initial_data["storage"] == StorageChoice.CLOUD_STORAGE:
+            db_data.storage = StorageChoice.CLOUD_STORAGE
             if data['client_files'] != [self.MEDIA_MANIFEST_FILENAME]:
                 raise ValidationError(f"Expected {self.MEDIA_MANIFEST_FILENAME} in backup files")
 
@@ -979,15 +982,20 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 data['server_files'].extend(
                     manifest_entry.get("meta", {}).get("related_images", [])
                 )
+        else:
+            if data_serializer.initial_data["storage"] != StorageChoice.LOCAL:
+                raise ValidationError(f"Unexpected storage type in the backup files")
+
+            db_data.storage = StorageChoice.LOCAL
+
+        db_data.save(update_fields=['storage'])
 
         create_task(self._db_task.pk, data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 
         db_data.deleted_frames = data_serializer.initial_data.get('deleted_frames', [])
-        if db_data.storage != StorageChoice.CLOUD_STORAGE:
-            db_data.storage = StorageChoice.LOCAL
-        db_data.save(update_fields=['storage', 'deleted_frames'])
+        db_data.save(update_fields=['deleted_frames'])
 
         if not validation_params:
             # In backups created before addition of GT pools there was no validation_layout field
