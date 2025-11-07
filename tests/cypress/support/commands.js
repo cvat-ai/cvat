@@ -460,7 +460,7 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
     cy.intercept('POST', '/api/auth/register**', (req) => {
         req.continue((response) => {
             delete response.headers['set-cookie'];
-            expect(response.statusCode).to.eq(201, response.body.username); // contains msg
+            expect(response.statusCode).to.eq(201, response.body.username);
             expect(response.body.username).to.eq(userSpec.username);
             expect(response.body.email).to.eq(userSpec.email);
         });
