@@ -125,6 +125,7 @@ footer.bg-dark .col-12.col-lg-4 {
 footer.bg-dark .col-12.col-lg-8 { justify-content: flex-start; }
 footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
 
+/* stylelint-disable media-feature-range-notation */
 @media (max-width: 991.98px) {
   footer.bg-dark .col-12.col-lg-4 { justify-content: center; }
 }
