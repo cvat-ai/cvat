@@ -432,15 +432,16 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
 });
 
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
-    // eslint-disable-next-line no-param-reassign
-    userSpec = toSnakeCase(userSpec);
+    const userSpecSnake = toSnakeCase(userSpec);
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.intercept('POST', '/api/auth/register**', (req) => {
         req.continue((response) => {
             delete response.headers['set-cookie'];
             expect(response.statusCode).to.eq(201, response.body.username);
-            expect(response.body.username).to.eq(userSpec.username);
-            expect(response.body.email).to.eq(userSpec.email);
+            expect(response.body.username).to.eq(userSpecSnake.username);
+            expect(response.body.email).to.eq(userSpecSnake.email);
+            expect(response.body.first_name).to.eq(userSpecSnake.first_name);
+            expect(response.body.last_name).to.eq(userSpecSnake.last_name);
         });
     }).as('registerRequest');
 
