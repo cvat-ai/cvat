@@ -103,7 +103,7 @@ Cypress.Commands.add('headlessUpdateUser', (username, body) => {
                     cy.request({
                         method: 'PATCH',
                         url: `/api/users/${user.id}`,
-                        authHeaders,
+                        headers: authHeaders,
                         body,
                     });
                 }
