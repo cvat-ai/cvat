@@ -21,8 +21,6 @@ See:
 
 The table below outlines the available formats for data export in CVAT.
 
-<!--lint disable maximum-line-length-->
-
 | Format                                                                                                                      | Type          | Computer Vision Task                                        | Models                                                                                                                                                                                  | Shapes                                                                                          | Attributes           | Video Tracks  |
 | --------------------------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------- | ------------- |
 | [CamVid 1.0](format-camvid)                                                                                                 | .txt <br>.png | Semantic <br>Segmentation                                   | U-Net, SegNet, DeepLab, <br>PSPNet, FCN, Mask R-CNN, <br>ICNet, ERFNet, HRNet, <br>V-Net, and others.                                                                                   | Polygons, Masks                                                                                 | Not supported        | Not supported |
@@ -51,9 +49,6 @@ The table below outlines the available formats for data export in CVAT.
 | [Ultralytics YOLO Pose 1.0](format-yolo-ultralytics)                                                                        | .txt          | Keypoints                                                   | YOLOv8                                                                                                                                                                                  | Skeletons                                                                                       | No attributes        | Supported     |
 | [Ultralytics YOLO Oriented Bounding Boxes 1.0](format-yolo-ultralytics)                                                     | .txt          | Detection                                                   | YOLOv8                                                                                                                                                                                  | Bounding Boxes                                                                                  | No attributes        | Supported     |
 | [Ultralytics YOLO Classification 1.0](format-yolo-ultralytics-classification)                                               | .jpg          | Classification                                              | YOLOv8                                                                                                                                                                                  | Tags                                                                                            | No attributes        | Not supported |
-
-
-<!--lint enable maximum-line-length-->
 
 ## Exporting dataset in CVAT
 
@@ -105,8 +100,4 @@ To export a dataset from Job follow these steps:
 
 For more information on the process, see the following tutorial:
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/gzjVpVV9orE?si=2tiBIqts8nk_byTH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->

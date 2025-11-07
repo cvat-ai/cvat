@@ -76,11 +76,12 @@ context('New organization pipeline.', () => {
     }
     function tearDown() {
         cy.headlessLogout().then(() => {
-            cy.getAuthKey().then((authKey) => {
-                cy.deleteUsers(authKey, [firstUserName, secondUserName, thirdUserName]);
-                cy.deleteTasks(authKey, [newTaskName]);
-                cy.deleteProjects(authKey, [project.name]);
-                cy.deleteOrganizations(authKey, [organizationParams.shortName]);
+            cy.task('getAuthHeaders').then((authHeaders) => {
+                cy.deleteUsers(authHeaders, [firstUserName, secondUserName, thirdUserName]);
+                cy.deleteTasks(authHeaders, [newTaskName]);
+                cy.deleteProjects(authHeaders, [project.name]);
+                cy.deleteOrganizations(authHeaders, [organizationParams.shortName]);
+                cy.headlessLogout();
             });
         });
     }
@@ -300,8 +301,8 @@ context('New organization pipeline.', () => {
 
         it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
             cy.headlessLogout();
-            cy.getAuthKey().then((authKey) => {
-                cy.deleteUsers(authKey, [firstUserName, secondUserName]);
+            cy.task('getAuthHeaders').then((authHeaders) => {
+                cy.deleteUsers(authHeaders, [firstUserName, secondUserName]);
             });
         });
 

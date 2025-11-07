@@ -81,8 +81,6 @@ see {{< ilink "/docs/contributing/development-environment#cvat-analytics-ports" 
 [Relational database](https://github.com/cvat-ai/cvat/blob/develop/components/analytics/clickhouse/init.sh)
 schema with the following fields:
 
-<!--lint disable maximum-line-length-->
-
 | Field      | Description                                                                                      |
 | ---------- | ------------------------------------------------------------------------------------------------ |
 | scope      | Scope of the event (e.g., `zoomin:image`, `add:annotations`, `delete:image`, `update:assignee`). |
@@ -102,8 +100,6 @@ schema with the following fields:
 | org_id     | Organization ID or None.                                                                         |
 | org_slug   | Organization slug or None.                                                                       |
 | payload    | JSON payload or None. Extra fields can be added to the JSON blob.                                |
-
-<!--lint enable maximum-line-length-->
 
 ### Types of supported events
 
@@ -265,23 +261,17 @@ page with available dashboards.
 
 ![List of dashboards](/images/dashboard_00.jpg)
 
-<!--lint disable maximum-line-length-->
-
 | Dashboard      | Description                                                                             |
 | -------------- | --------------------------------------------------------------------------------------- |
 | **All Events** | Dashboard that shows all event logs, timestamps, and source.                            |
 | **Management** | Dashboard with information about user activities such as working time by job and so on. |
 | **Monitoring** | Dashboard showing server logs, including errors.                                        |
 
-<!--lint enable maximum-line-length-->
-
 ### Dashboard: All Events
 
 The dashboard shows all events, their timestamps, and their source.
 
 ![Dashboard: All Events](/images/dashboard_01.jpg)
-
-<!--lint disable maximum-line-length-->
 
 | Element              | Description                                                                                                                |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -299,8 +289,6 @@ The dashboard shows all events, their timestamps, and their source.
 | **task_id**          | ID of the task.                                                                                                            |
 | **job_id**           | ID of the job.                                                                                                             |
 
-<!--lint enable maximum-line-length-->
-
 There are two fields with statistics at the bottom of the dashboard,
 about browser and OS users use.
 
@@ -315,8 +303,6 @@ The dashboard shows user activity.
 
 ![Dashboard: Management](/images/dashboard_02.jpg)
 
-<!--lint disable maximum-line-length-->
-
 | Element              | Description                                                                                                                     |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | **Filters**          | Can be used as drop-down lists or search fields. Click on the arrow to activate.                                                |
@@ -329,8 +315,6 @@ The dashboard shows user activity.
 | **Working time(h)**  | Time spent on task in hours.                                                                                                    |
 | **Activity**         | Number of events for each user.                                                                                                 |
 
-<!--lint enable maximum-line-length-->
-
 Click on the column name to enable a filter.
 
 If you want to inspect the value, hover over it and click
@@ -341,8 +325,6 @@ on the eye icon.
 The dashboard shows server logs, helps handle errors, and shows user activity.
 
 ![Dashboard: Monitoring](/images/dashboard_03.jpg)
-
-<!--lint disable maximum-line-length-->
 
 | Element                | Description                                                                                                                                                                                                                        |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -361,8 +343,6 @@ The dashboard shows server logs, helps handle errors, and shows user activity.
 | **payload**            | Error description                                                                                                                                                                                                                  |
 | **stack**              | Stack trace, which is a report of the active stack frames at a certain point in time during the execution. This information is typically used for debugging purposes to locate where an issue occurred.                            |
 | **payload**            | JSON that describes the entire object, which contains several properties. This data in the payload is related to an event that was created as a result of a failed API request. The payload contains information about this event. |
-
-<!--lint enable maximum-line-length-->
 
 Click on the column name to enable a filter.
 
@@ -438,8 +418,4 @@ see [Grafana Dashboards](https://grafana.com/docs/grafana/latest/dashboards/).
 
 This video demonstrates available by default CVAT analytics features.
 
-<!--lint disable maximum-line-length-->
-
 <iframe width="560" height="315" src="https://www.youtube.com/embed/-1kiLPidXpI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->

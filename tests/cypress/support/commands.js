@@ -59,25 +59,10 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     }
 });
 
-Cypress.Commands.add('getAuthKey', () => {
-    cy.request({
-        method: 'POST',
-        url: '/api/auth/login',
-        body: {
-            username: Cypress.env('user'),
-            email: Cypress.env('email'),
-            password: Cypress.env('password'),
-        },
-    });
-});
-
-Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
-    const authKey = authResponse.body.key;
+Cypress.Commands.add('deleteUsers', (authHeaders, accountsToDelete) => {
     cy.request({
         url: '/api/users?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
+        headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
         for (const user of responseResult) {
@@ -87,9 +72,7 @@ Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
                     cy.request({
                         method: 'DELETE',
                         url: `/api/users/${id}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
+                        headers: authHeaders,
                     });
                 }
             }
@@ -177,13 +160,10 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
     });
 });
 
-Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
-    const authKey = authResponse.body.key;
+Cypress.Commands.add('deleteTasks', (authHeaders, tasksToDelete) => {
     cy.request({
         url: '/api/tasks?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
+        headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
         for (const task of responseResult) {
@@ -193,9 +173,7 @@ Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
                     cy.request({
                         method: 'DELETE',
                         url: `/api/tasks/${id}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
+                        headers: authHeaders,
                     });
                 }
             }

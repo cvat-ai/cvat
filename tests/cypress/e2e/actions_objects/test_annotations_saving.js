@@ -208,14 +208,11 @@ context('Test annotations saving works correctly', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((response) => {
-            const authKey = response.body.key;
+        cy.task('getAuthHeaders').then((authHeaders) => {
             cy.request({
                 method: 'DELETE',
                 url: `/api/tasks/${taskID}`,
-                headers: {
-                    Authorization: `Token ${authKey}`,
-                },
+                headers: authHeaders,
             });
         });
     });

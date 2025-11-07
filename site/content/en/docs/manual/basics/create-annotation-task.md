@@ -173,16 +173,12 @@ To delete an attribute, select **Delete attribute**.
 
 There are several ways to upload files:
 
-<!--lint disable maximum-line-length-->
-
 | Data source          | Description                                                                                                                                                                                                                                                                                                                                           |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | My computer          | Use this option to select files from your laptop or PC. <br> To select file: <br>1. Select **Select files** field: <br>![Select files](/images/select_files.jpg). <br> 2. Select files to upload.                                                                                                                                               |
 | Connected file share | **Advanced option**. <br>Upload files from a local or cloud shared folder. <br>**Note**, that you need to mount a fileshare first. <br>For more information, consult {{< ilink "/docs/administration/basics/installation#share-path" "Share path" >}}                                                                                                                   |
 | Remote source        | Enter a list of URLs (one per line) in the field.                                                                                                                                                                                                                                                                                                     |
 | Cloud Storage        | **Advanced option**. <br>To upload files from cloud storage, type the cloud storage name, (optional) choose the manifest file, and select the required files. <br> For more information, consult {{< ilink "/docs/manual/basics/attach-cloud-storage" "Attach cloud storage" >}}. Use the search feature to find a file (by file name) from the connected cloud storage. |
-
-<!--lint enable maximum-line-length-->
 
 ### Editing labels in RAW format
 
@@ -261,8 +257,6 @@ and customize it to meet specific needs or requirements.
 
 The following parameters are available:
 
-<!--lint disable maximum-line-length-->
-
 | Element           | Description |
 | ----------------- | ----------- |
 | Sorting method    | **Note:** Does not work for the video data. <br><br>Several methods to sort the data. <br> For example, the sequence `2.jpeg`, `10.jpeg`, `1.jpeg` after sorting will be: <br><br><li> **Lexicographical**: `1.jpeg`, `10.jpeg`, `2.jpeg` <li> **Natural**: `1.jpeg`, `2.jpeg`, `10.jpeg` <li> **Predefined**: `2.jpeg`, `10.jpeg`, `1.jpeg` <li> **Random** uploads data in random order. |
@@ -278,8 +272,6 @@ The following parameters are available:
 | Issue tracker     | Use this parameter to specify the issue tracker URL. |
 | Source storage    | Specify the source storage for importing resources like annotations and backups. <br>If the task was assigned to the project, use the **Use project source storage** toggle to determine whether to <br>use project values or specify new ones. |
 | Target storage    | Specify the target storage (local or cloud) for exporting resources like annotations and backups. <br>If the task is created in the project, use the **Use project target storage** toggle to determine whether to<br> use project values or specify new ones. |
-
-<!--lint enable maximum-line-length-->
 
 To save and open the task, select **Submit & Open** .
 
