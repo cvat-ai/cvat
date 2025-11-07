@@ -43,14 +43,11 @@ context('Creating a task with only bounding boxes', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((response) => {
-            const authKey = response.body.key;
+        cy.task('getAuthHeaders').then((authHeaders) => {
             cy.request({
                 method: 'DELETE',
                 url: `/api/tasks/${taskID}`,
-                headers: {
-                    Authorization: `Token ${authKey}`,
-                },
+                headers: authHeaders,
             });
         });
     });

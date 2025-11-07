@@ -90,14 +90,10 @@ The result will look like the following:
 
 During the process of adding multiple tasks, the following errors may occur:
 
-<!--lint disable maximum-line-length-->
-
 | Error                     | Description                                                                                                                                                                                                                                                                                      |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | ![Wrong file format error in user interface](/images/create_multi_tasks_8.png) | Wrong file format. You can add only video files.                                                                                                                                                                                                                                                 |
 | ![Failed to process file error in user interface](/images/create_multi_tasks_9.png) | In the process of creating a task, CVAT was not able to process the video file. <br>The name of the failed file will be displayed on the progress bar. <br><br> To fix this issue: <li> If you want to try again, click **Retry failed tasks**. <li> If you want to skip the file, click **OK**. |
-
-<!--lint enable maximum-line-length-->
 
 ## Advanced configuration
 

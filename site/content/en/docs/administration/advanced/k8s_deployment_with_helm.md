@@ -7,9 +7,6 @@ description: 'Instructions for deploying CVAT on a Kubernetes cluster.'
 
 ---
 
-<!--lint disable heading-style-->
-
-
 - [Prerequisites](#prerequisites)
   - [Installing dependencies](#installing-dependencies)
   - [Optional steps](#optional-steps)

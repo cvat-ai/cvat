@@ -76,8 +76,6 @@ The **Setup a webhook** forms look like the following.
 
 Forms have the following fields:
 
-<!--lint disable maximum-line-length-->
-
 | Field                     | Description                                                                                                                                                      |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Target URL                | The URL where the event data will be sent.                                                                                                                       |
@@ -90,13 +88,9 @@ Forms have the following fields:
 | Send everything           | Check this box to send all event types through the webhook.                                                                                                      |
 | Specify individual events | Choose this option to send only certain event types. <br>Refer to the [List of available events](#list-of-available-events) for more information on event types. |
 
-<!--lint enable maximum-line-length-->
-
 ### List of events
 
 The following events are available for webhook alerts.
-
-<!--lint disable maximum-line-length-->
 
 | Resource     | Create | Update | Delete | Description                                                                         |
 | ------------ | ------ | ------ | ------ | ----------------------------------------------------------------------------------- |
@@ -109,15 +103,11 @@ The following events are available for webhook alerts.
 | Issue        | ✅     | ✅     | ✅     | Alerts for any activities involving issues.                                         |
 | Comment      | ✅     | ✅     | ✅     | Alerts for actions involving comments, such as creation, deletion, or modification. |
 
-<!--lint enable maximum-line-length-->
-
 ## Payloads
 
 ### Create event
 
 Webhook payload object for `create:<resource>` events:
-
-<!--lint disable maximum-line-length-->
 
 | Key          | Type      | Description |
 | ------------ | --------- | ----------- |
@@ -125,8 +115,6 @@ Webhook payload object for `create:<resource>` events:
 | `<resource>` | `object`  | Complete information about the created resource. Refer to the [Swagger](#webhooks-with-api-calls) docs for individual resource details. |
 | `webhook_id` | `integer` | The identifier for the webhook that sends the payload. |
 | `sender`     | `object`  | Details about the user that triggered the webhook. |
-
-<!--lint enable maximum-line-length-->
 
 An example of payload for the `create:task` event:
 
@@ -194,8 +182,6 @@ An example of payload for the `create:task` event:
 
 Webhook payload object for `update:<resource>` events:
 
-<!--lint disable maximum-line-length-->
-
 | Key             | Type      | Description                                                                                          |
 | --------------- | --------- | ---------------------------------------------------------------------------------------------------- |
 | `event`         | `string`  | Identifies the event that triggered the webhook, following the `update:<resource>` pattern.          |
@@ -203,8 +189,6 @@ Webhook payload object for `update:<resource>` events:
 | `before_update` | `object`  | Contains keys of `<resource>` that were updated, along with their old values.                        |
 | `webhook_id`    | `integer` | The identifier for the webhook that dispatched the payload.                                          |
 | `sender`        | `object`  | Details about the user that triggered the webhook.                                                   |
-
-<!--lint enable maximum-line-length-->
 
 An example of `update:<resource>` event:
 
@@ -296,16 +280,12 @@ An example of `update:<resource>` event:
 
 Webhook payload object for `delete:<resource>` events:
 
-<!--lint disable maximum-line-length-->
-
 | Key          | Type      | Description                                                                                          |
 | ------------ | --------- | ---------------------------------------------------------------------------------------------------- |
 | `event`      | `string`  | Identifies the event that triggered the webhook, following the `delete:<resource>` pattern.          |
 | `<resource>` | `object`  | Provides complete information about the deleted resource. See the Swagger docs for resource details. |
 | `webhook_id` | `integer` | The identifier for the webhook that dispatched the payload.                                          |
 | `sender`     | `object`  | Details about the user that triggered the webhook.                                                   |
-
-<!--lint enable maximum-line-length-->
 
 Here is an example of the payload for the `delete:task` event:
 
@@ -496,5 +476,3 @@ For implementation examples, check the [REST API tests](https://github.com/cvat-
 This video demonstrates configuring email alerts for a project using Zapier and Gmail:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/x87CsGsd-3I" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-<!--lint enable maximum-line-length-->

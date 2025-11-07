@@ -5,8 +5,6 @@ weight: 3
 description: 'Answers to frequently asked questions'
 ---
 
-<!--lint disable heading-style-->
-
 ## How to migrate data from CVAT.org to CVAT.ai
 
 Please follow the {{< ilink "/docs/manual/advanced/backup#backup" "export tasks and projects guide" >}} to

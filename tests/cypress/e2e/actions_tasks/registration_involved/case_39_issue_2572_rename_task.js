@@ -60,9 +60,9 @@ context('Rename a task.', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [secondUserName]);
-            cy.deleteTasks(authKey, [newTaskNameSecondUser]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteUsers(authHeaders, [secondUserName]);
+            cy.deleteTasks(authHeaders, [newTaskNameSecondUser]);
         });
     });
 
