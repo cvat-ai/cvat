@@ -177,7 +177,7 @@ function ApiTokensCard(): JSX.Element {
             render: (date: string | null) => (
                 date ? new Date(date).toLocaleDateString() : <Text underline>Never</Text>
             ),
-            className: 'cvat-api-token-expires',
+            className: 'cvat-api-token-expire-date',
         },
         {
             title: 'Last Used',
