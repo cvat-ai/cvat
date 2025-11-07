@@ -501,7 +501,9 @@ ingress:
   ## annotations:
   ##   kubernetes.io/ingress.class: nginx
   ##
-  annotations: {}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 800m # choose a higher value based on your data size
+  
   ## @param ingress.className IngressClass that will be used to implement the Ingress (Kubernetes 1.18+)
   ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
