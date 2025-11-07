@@ -96,9 +96,19 @@ export const aMonthFrom = (date) => new Date(
     new Date(date.getTime())
         .setMonth((date.getMonth() + 1) % 12),
 );
+
+/**
+ * Build a Date object from Date Time String Format
+ * @param {string} s - YYYY-MM-DDTHH:mm:ss.sssZ
+ * @returns {Date}
+ */
 export const parseDatetime = (s) => new Date(Date.parse(s));
 
-/** @param {Date} date */
+/**
+ * Transform Date object to datetime string with format DD/MM/YYYY
+ * @param {Date} date
+ * @returns {String}
+ */
 export function format(date) {
     // converts Date object to DD/MM/YYYY
     const [yyyy, mm, dd] = [
