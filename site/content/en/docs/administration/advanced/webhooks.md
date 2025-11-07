@@ -47,7 +47,7 @@ See:
 
 To create a webhook for **Project**, do the following:
 
-1. {{< ilink "/docs/manual/advanced/projects" "Create a Project" >}}.
+1. {{< ilink "/docs/workspace/projects" "Create a Project" >}}.
 2. Go to the **Projects** and click on the project's widget.
 3. In the top right corner, click **Actions** > **Setup Webhooks**.
 4. In the top right corner click **+**
@@ -60,7 +60,7 @@ To create a webhook for **Project**, do the following:
 
 To create a webhook for **Organization**, do the following:
 
-1. {{< ilink "/docs/manual/advanced/organization" "Create Organization" >}}
+1. {{< ilink "/docs/account_management/organization" "Create Organization" >}}
 2. Go to the **Organization** > **Settings** > **Actions** > **Setup Webhooks**.
 3. In the top right corner click **+**
 
