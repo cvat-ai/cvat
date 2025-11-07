@@ -90,7 +90,8 @@ You can change the way an object is displayed on a frame (show or hide).
 
 ![Objects sidebar with highlighted button for pinning object](/images/image052.jpg)
 
-**Tracker switcher** - enable/disable {{< ilink "/docs/annotation/tools/ai-tools#trackers" "tracking" >}} for the object.
+**Tracker switcher** - enable/disable {{< ilink "/docs/annotation/tools/ai-tools#trackers" "tracking" >}} for
+the object.
 
 ![Objects sidebar with highlighted button for tracking](/images/tracker_switcher.png)
 

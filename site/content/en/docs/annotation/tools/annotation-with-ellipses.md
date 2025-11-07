@@ -14,7 +14,8 @@ First of all you need to select the `ellipse` on the controls sidebar.
 ![Highlighted "Ellipse" button with open "Draw new ellipse" window](/images/image239.jpg)
 
 Choose a `Label` and click `Shape` or `Track` to start drawing. An ellipse can be created the same way as
-a {{< ilink "/docs/annotation/tools/annotation-with-rectangles" "rectangle" >}}, you need to specify two opposite points,
+a {{< ilink "/docs/annotation/tools/annotation-with-rectangles" "rectangle" >}},
+you need to specify two opposite points,
 and the ellipse will be inscribed in an imaginary rectangle. Press `N` or click the `Done` button on the top panel
 to complete the shape.
 

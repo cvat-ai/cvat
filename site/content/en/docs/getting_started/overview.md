@@ -5,9 +5,14 @@ weight: 1
 description:
 ---
 
-CVAT is an enterprise-grade platform for managing high-quality visual datasets for computer vision applications. It offers advanced tools for image, video, and 3D annotation, built-in quality assurance (QA), automation, and secure team collaboration.
+CVAT is an enterprise-grade platform for managing high-quality visual
+ datasets for computer vision applications.
+It offers advanced tools for image, video, and 3D annotation,
+built-in quality assurance (QA), automation, and secure team collaboration.
 
-Backed by an active open-source community with over 14,500 GitHub stars and trusted by hundreds of organizations worldwide, CVAT helps organizations streamline data labeling for faster, more accurate model development.
+Backed by an active open-source community with over 14,500 GitHub stars
+ and trusted by hundreds of organizations worldwide, CVAT helps organizations streamline
+ data labeling for faster, more accurate model development.
 
 CVAT comes in three editions: CVAT Community, CVAT Online, and CVAT Enterprise.
 
@@ -150,6 +155,7 @@ To get in touch, use one of the following channels:
 | Type of inquiry                                                                                    | Applicable to          | Description                                                                                          |
 | -------------------------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------- |
 | [**Commercial Inquiries**](https://www.cvat.ai/sales)                             | CVAT Online, CVAT Enterprise, Labeling Services | Request a quote for CVAT Enterprise, CVAT Online Team subscription or order our labeling services. |
-| [**General Inquiries**](https://www.cvat.ai/general)                                               | All products and services | Reach out to discuss partnership, co-marketing or investment opportunities with CVAT team. |                                                     |
-| [**CVAT Online Customer Support**](https://youtrack.cvat.ai/form/447d9c98-ab4b-466e-bf9d-004f01b22f73)                                        | CVAT Online (Pro and Team plans) | Chat with us about product support, resolve billing questions, or provide feedback.                                        |
-| [**CVAT Community Customer Support**](https://github.com/cvat-ai/cvat/issues) | CVAT Community    | Report a bug or submit a feature request in out GitHub repository.                                                        |
+| [**General Inquiries**](https://www.cvat.ai/general)                                               | All products and services | Reach out to discuss partnership, co-marketing or investment opportunities with CVAT team. | |
+| [**CVAT Online Customer Support**](https://youtrack.cvat.ai/form/447d9c98-ab4b-466e-bf9d-004f01b22f73) | CVAT Online (Pro and Team plans) | Chat with us about product support, resolve billing questions, or provide feedback. |
+| [**CVAT Community Customer Support**](https://github.com/cvat-ai/cvat/issues) | CVAT Community    | Report a bug or submit a feature request in out GitHub repository. |
+

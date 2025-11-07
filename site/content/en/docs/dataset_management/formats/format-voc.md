@@ -98,11 +98,12 @@ There are 2 options:
    attributes for each label if you want to use them.
 
    Select interesting image files
-   (See {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "Creating an annotation task" >}} guide for details)
+   (See {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "Creating an annotation task" >}}
+   guide for details).
 
-1. zip the corresponding annotation files
+1. Zip the corresponding annotation files
 
-1. click `Upload annotation` button, choose `Pascal VOC ZIP 1.1`
+1. Click `Upload annotation` button, choose `Pascal VOC ZIP 1.1`
 
    and select the zip file with annotations from previous step.
    It may take some time.

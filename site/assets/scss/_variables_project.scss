@@ -38,11 +38,13 @@ $info: #f1f1f1;
   --bs-link-hover-color: #f97526;
   --bs-link-hover-color-rgb: 249, 117, 38;
 }
+
 /* Ensure section index tiles use our link colors */
 .td-box-docs h4 a {
   color: var(--bs-link-color) !important;
   text-decoration: none;
 }
+
 .td-box-docs h4 a:hover,
 .td-box-docs h4 a:focus {
   color: var(--bs-link-hover-color) !important;
