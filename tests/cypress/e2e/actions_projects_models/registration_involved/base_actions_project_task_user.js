@@ -61,8 +61,8 @@ context('Base actions on the project', () => {
     });
 
     after(() => {
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [userName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteUsers(authHeaders, [userName]);
         });
     });
 
