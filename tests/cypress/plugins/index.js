@@ -60,10 +60,15 @@ module.exports = (on, config) => {
     });
     on('task', {
         async nodeJSONRequest({ url, options }) {
-            console.log('call "nodeJSONRequest" ', url, options);
-
             const finalUrl = url.startsWith('/') ? `${config.baseUrl}${url}` : url;
-            const response = await fetch(finalUrl, options);
+            const response = await fetch(finalUrl, {
+                ...(options || {}),
+                headers: {
+                    'content-type': 'application/json',
+                    ...(options && options.headers ? options.headers : {}),
+                },
+            });
+
             const text = await response.text();
             const data = text ? JSON.parse(text) : null;
             const result = {
@@ -77,6 +82,7 @@ module.exports = (on, config) => {
 
             if (result.status >= 400) {
                 console.log(result);
+                throw new Error(`HTTP error ${result.status} on ${result.url}. Status text: ${result.statusText}`);
             }
 
             return result;
