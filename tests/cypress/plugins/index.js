@@ -64,9 +64,10 @@ module.exports = (on, config) => {
             const response = await fetch(finalUrl, {
                 ...(options || {}),
                 headers: {
-                    'content-type': 'application/json',
                     ...(options && options.headers ? options.headers : {}),
+                    'content-type': 'application/json',
                 },
+                body: options && options.body ? JSON.stringify(options.body) : undefined,
             });
 
             const text = await response.text();
