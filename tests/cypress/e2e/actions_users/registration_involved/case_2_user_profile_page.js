@@ -5,7 +5,6 @@
 
 /// <reference types="cypress" />
 
-import { inspect } from 'util';
 import {
     toSnakeCase, aMonthFrom, aYearFrom, parseDatetime, format, prettify,
 } from '../../../support/utils';
