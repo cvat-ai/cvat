@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState } from 'react';
 import dayjs from 'dayjs';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
@@ -64,8 +64,7 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
     const { lastStatus } = webhookInstance;
     const [webhookStatus, setWebhookStatus] = useState<WebhookStatus>(setUpWebhookStatus(lastStatus));
 
-    const itemRef = useRef<HTMLDivElement>(null);
-    const handleContextMenuClick = useContextMenuClick(itemRef);
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
 
     const deletes = useSelector((state: CombinedState) => state.webhooks.activities.deletes);
     const deleted = webhookInstance.id in deletes ? deletes[webhookInstance.id] : false;

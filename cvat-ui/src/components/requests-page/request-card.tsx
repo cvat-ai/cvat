@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 
@@ -144,8 +144,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
         request, cancelled, selected, onClick,
     } = props;
     const { operation } = request;
-    const itemRef = useRef<HTMLDivElement>(null);
-    const handleContextMenuClick = useContextMenuClick(itemRef);
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
     const { type } = operation;
 
     const linkToEntity = constructLink(request);

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import dayjs from 'dayjs';
@@ -33,8 +33,7 @@ interface Props {
 export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
-    const itemRef = useRef<HTMLDivElement>(null);
-    const handleContextMenuClick = useContextMenuClick(itemRef);
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
 
     const { cloudStorage, selected = false, onClick = () => {} } = props;
     const {

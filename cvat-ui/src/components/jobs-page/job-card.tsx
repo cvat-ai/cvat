@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
@@ -38,8 +38,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
 
     const history = useHistory();
     const height = useCardHeight();
-    const itemRef = useRef<HTMLDivElement>(null);
-    const handleContextMenuClick = useContextMenuClick(itemRef);
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
     const handleCardClick = useCallback((event: React.MouseEvent): void => {
         const cancel = onClick(event);
         if (!cancel) {

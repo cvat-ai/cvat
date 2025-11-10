@@ -282,12 +282,19 @@ export function useResourceQuery<QueryType extends {
     return updatedQuery;
 }
 
-export function useContextMenuClick(
-    targetRef: React.RefObject<HTMLElement>,
-): (e: React.MouseEvent) => void {
-    return useCallback((e: React.MouseEvent) => {
-        if (targetRef.current) {
-            dispatchContextMenuEvent(targetRef.current, e);
+export interface ContextMenuClick<T extends HTMLElement = HTMLElement> {
+    itemRef: React.RefObject<T>;
+    handleContextMenuClick: (e: React.MouseEvent) => void;
+}
+
+export function useContextMenuClick<T extends HTMLElement = HTMLElement>(): ContextMenuClick<T> {
+    const itemRef = useRef<T>(null);
+
+    const handleContextMenuClick = useCallback((e: React.MouseEvent) => {
+        if (itemRef.current) {
+            dispatchContextMenuEvent(itemRef.current, e);
         }
-    }, [targetRef]);
+    }, []);
+
+    return { itemRef, handleContextMenuClick };
 }

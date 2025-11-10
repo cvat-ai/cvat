@@ -5,7 +5,7 @@
 import './styles.scss';
 
 import React, {
-    useCallback, useEffect, useState, useRef,
+    useCallback, useEffect, useState,
 } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -117,8 +117,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
-    const itemRef = useRef<HTMLDivElement>(null);
-    const handleContextMenuClick = useContextMenuClick(itemRef);
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
 
     const { stage, state } = job;
     const created = dayjs(job.createdDate);

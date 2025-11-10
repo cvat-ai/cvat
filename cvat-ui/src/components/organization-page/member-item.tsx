@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import dayjs from 'dayjs';
 import Text from 'antd/lib/typography/Text';
@@ -46,8 +46,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
         selfUserName: state.auth.user?.username ?? '',
     }), shallowEqual);
 
-    const itemRef = useRef<HTMLDivElement>(null);
-    const handleContextMenuClick = useContextMenuClick(itemRef);
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
 
     const rowClassName = `cvat-organization-member-item${selected ? ' cvat-item-selected' : ''}`;
     const canUpdateRole = (membership: Membership): boolean => (membership.role !== 'owner');

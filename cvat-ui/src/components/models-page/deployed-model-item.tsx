@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
@@ -40,8 +40,7 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
     const { model, selected, onClick } = props;
     const [isModalShown, setIsModalShown] = useState(false);
     const height = useCardHeight();
-    const itemRef = useRef<HTMLDivElement>(null);
-    const handleContextMenuClick = useContextMenuClick(itemRef);
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
     const style: React.CSSProperties = { height };
 
     const systemModel = model.provider === ModelProviders.CVAT;
