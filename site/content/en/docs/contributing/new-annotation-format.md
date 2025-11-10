@@ -142,17 +142,17 @@ task_data.add_shape(shape)
 
 ## Format specifications
 
-- {{< ilink "/docs/manual/advanced/formats/format-cvat" "CVAT" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-datumaro" "Datumaro" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-labelme" "LabelMe" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-mot" "MOT" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-mots" "MOTS" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-coco" "COCO" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-voc" "PASCAL VOC and mask" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-yolo" "YOLO" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-imagenet" "ImageNet" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-camvid" "CamVid" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-widerface" "WIDER Face" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-vggface2" "VGGFace2" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-market1501" "Market-1501" >}}
-- {{< ilink "/docs/manual/advanced/formats/format-icdar" "ICDAR13/15" >}}
+- {{< ilink "/docs/dataset_management/formats/format-cvat" "CVAT" >}}
+- {{< ilink "/docs/dataset_management/formats/format-datumaro" "Datumaro" >}}
+- {{< ilink "/docs/dataset_management/formats/format-labelme" "LabelMe" >}}
+- {{< ilink "/docs/dataset_management/formats/format-mot" "MOT" >}}
+- {{< ilink "/docs/dataset_management/formats/format-mots" "MOTS" >}}
+- {{< ilink "/docs/dataset_management/formats/format-coco" "COCO" >}}
+- {{< ilink "/docs/dataset_management/formats/format-voc" "PASCAL VOC and mask" >}}
+- {{< ilink "/docs/dataset_management/formats/format-yolo" "YOLO" >}}
+- {{< ilink "/docs/dataset_management/formats/format-imagenet" "ImageNet" >}}
+- {{< ilink "/docs/dataset_management/formats/format-camvid" "CamVid" >}}
+- {{< ilink "/docs/dataset_management/formats/format-widerface" "WIDER Face" >}}
+- {{< ilink "/docs/dataset_management/formats/format-vggface2" "VGGFace2" >}}
+- {{< ilink "/docs/dataset_management/formats/format-market1501" "Market-1501" >}}
+- {{< ilink "/docs/dataset_management/formats/format-icdar" "ICDAR13/15" >}}

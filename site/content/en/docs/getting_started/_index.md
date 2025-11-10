@@ -1,5 +1,5 @@
 ---
 title: 'Getting started'
-linkTitle: 'Getting started'
+linkTitle: 'GETTING STARTED'
 weight: 1
 ---
