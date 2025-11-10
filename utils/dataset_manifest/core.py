@@ -75,6 +75,7 @@ class VideoStreamReader:
         container: av.container.InputContainer,
         video_stream: av.video.stream.VideoStream,
         key_frame: dict,
+        prev_seek_pts: Optional[int],
     ) -> tuple[bool, Optional[int]]:
         """
         Returns a tuple
@@ -88,6 +89,9 @@ class VideoStreamReader:
             for frame in packet.decode():
                 if seek_pts is None:
                     seek_pts = frame.pts
+                    # if seek landed on the same frame as previous seek, it is redundant
+                    if prev_seek_pts == seek_pts:
+                        return False, None
                 if frame.pts < key_frame["pts"]:
                     continue
                 if md5_hash(frame) != key_frame["md5"] or frame.pts != key_frame["pts"]:
@@ -134,15 +138,15 @@ class VideoStreamReader:
                             checking_container,
                             checking_v_stream,
                             key_frame_data,
+                            prev_seek_pts,
                         )
+                        prev_seek_pts = seek_pts
 
-                        # if seek landed on the same frame as previous seek, it is redundant
-                        if is_valid_key_frame and seek_pts != prev_seek_pts:
+                        if is_valid_key_frame:
                             key_frame_count += 1
                             yield (index, key_frame_data["pts"], key_frame_data["md5"])
                         else:
                             yield index
-                        prev_seek_pts = seek_pts
                     else:
                         yield index
 
