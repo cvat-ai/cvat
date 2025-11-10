@@ -76,6 +76,9 @@ const defaultState: PluginsState = {
         jobActions: {
             items: [],
         },
+        annotationActions: {
+            items: [],
+        },
         taskItem: {
             // not used
             ribbon: [],

@@ -416,6 +416,9 @@ export interface PluginsState {
         jobActions: {
             items: PluginComponent[];
         };
+        annotationActions: {
+            items: PluginComponent[];
+        };
         taskItem: {
             ribbon: PluginComponent[];
         };
