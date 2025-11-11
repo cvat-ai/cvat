@@ -808,7 +808,6 @@ class TrackManager(ObjectManager):
             return angle_diff
 
         def simple_interpolation(shape0, shape1):
-            shapes = []
             distance = shape1["frame"] - shape0["frame"]
             diff = np.subtract(shape1["points"], shape0["points"])
 
@@ -822,16 +821,13 @@ class TrackManager(ObjectManager):
                 points = shape0["points"] + diff * offset
 
                 if included_frames is None or frame in included_frames:
-                    shapes.append(copy_shape(shape0, frame, points, rotation))
-
-            return shapes
+                    yield copy_shape(shape0, frame, points, rotation)
 
         def simple_3d_interpolation(shape0, shape1):
-            result = simple_interpolation(shape0, shape1)
             angles = shape0["points"][3:6] + shape1["points"][3:6]
             distance = shape1["frame"] - shape0["frame"]
 
-            for shape in result:
+            for shape in simple_interpolation(shape0, shape1):
                 offset = (shape["frame"] - shape0["frame"]) / distance
                 for i, angle0 in enumerate(angles):
                     if i < 3:
@@ -841,18 +837,15 @@ class TrackManager(ObjectManager):
                         angle = angle0 + find_angle_diff(angle1, angle0) * offset * math.pi / 180
                         shape["points"][i + 3] = angle if angle <= math.pi else angle - math.pi * 2
 
-            return result
+                yield shape
 
         def points_interpolation(shape0, shape1):
             if len(shape0["points"]) == 2 and len(shape1["points"]) == 2:
-                return simple_interpolation(shape0, shape1)
+                yield from simple_interpolation(shape0, shape1)
             else:
-                shapes = []
                 for frame in range(shape0["frame"] + 1, shape1["frame"]):
                     if included_frames is None or frame in included_frames:
-                        shapes.append(copy_shape(shape0, frame))
-
-            return shapes
+                        yield copy_shape(shape0, frame)
 
         def interpolate_position(left_position, right_position, offset):
             def to_array(points):
@@ -1082,19 +1075,16 @@ class TrackManager(ObjectManager):
             if not is_same_type:
                 raise NotImplementedError()
 
-            shapes = []
             if dimension == DimensionType.DIM_3D:
-                shapes = simple_3d_interpolation(shape0, shape1)
+                yield from simple_3d_interpolation(shape0, shape1)
             if is_rectangle or is_cuboid or is_ellipse or is_skeleton:
-                shapes = simple_interpolation(shape0, shape1)
+                yield from simple_interpolation(shape0, shape1)
             elif is_points:
-                shapes = points_interpolation(shape0, shape1)
+                yield from points_interpolation(shape0, shape1)
             elif is_polygon or is_polyline:
-                shapes = polyshape_interpolation(shape0, shape1)
+                yield from polyshape_interpolation(shape0, shape1)
             else:
                 raise NotImplementedError()
-
-            return shapes
 
         def propagate(shape: dict, end_frame, *, included_frames=None):
             return (
@@ -1117,9 +1107,9 @@ class TrackManager(ObjectManager):
                     # ---- | ------- | ----- | ----->
                     #     prev      end   cur kf
                     interpolated = interpolate(prev_shape, shape)
-                    interpolated.append(shape)
+                    interpolated = heapq.merge(interpolated, [shape], key=lambda sh: sh["frame"])
 
-                    for shape in sorted(interpolated, key=lambda shape: shape["frame"]):
+                    for shape in interpolated:
                         if shape["frame"] < end_frame:
                             yield shape
                         else:
