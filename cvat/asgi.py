@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.2/howto/deployment/asgi/
 
 import os
 
+import django
 from django.core.asgi import get_asgi_application
 from django.core.handlers.asgi import ASGIHandler
 
@@ -20,7 +21,26 @@ import cvat.utils.remote_debugger as debug
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cvat.settings.development")
 
-application = get_asgi_application()
+class ProfilingApp(ASGIHandler):
+    def __init__(self) -> None:
+        import memray
+        import os
+        from django.utils.timezone import now
+
+        pid = os.getpid()
+        timestamp = now().timestamp()
+        filename = f"memray-pid{pid}-{timestamp}.bin"
+        self.__tracker = memray.Tracker(filename)
+        self.__tracker.__enter__()
+
+        super().__init__()
+
+    def __del__(self):
+        if self.__tracker:
+            self.__tracker.__exit__(None, None, None)
+            self.__tracker = None
+django.setup(set_prefix=False)
+application = ProfilingApp()
 
 
 if debug.is_debugging_enabled():

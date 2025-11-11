@@ -5,3 +5,4 @@
 coverage==7.2.3
 
 uvicorn[standard]==0.22.0
+memray==1.19.1
