@@ -614,7 +614,7 @@ class TrackManager(ObjectManager):
         deleted_frames: Sequence[int] | None = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False,
-    ) -> Iterable:
+    ) -> Generator[dict, None, None]:
         def generate_track_shapes(track, idx):
             track_id = track["id"] if use_server_track_ids else idx
 
@@ -677,12 +677,10 @@ class TrackManager(ObjectManager):
 
             yield from track_shapes
 
-        merger = StreamMerger(lambda int_objects, _: int_objects)
-
-        for idx, track in enumerate(self.objects):
-            merger.add(generate_track_shapes(track, idx))
-
-        return merger
+        yield from heapq.merge(
+            *[generate_track_shapes(track, idx) for idx, track in enumerate(self.objects)],
+            key=lambda shape: shape["frame"],
+        )
 
     @staticmethod
     def _get_objects_by_frame(objects, start_frame):
@@ -768,7 +766,7 @@ class TrackManager(ObjectManager):
         deleted_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
         streaming: bool = False,
-    ):
+    ) -> Generator[dict, None, None]:
         # If a task or job contains deleted frames that contain track keyframes,
         # these keyframes should be excluded from the interpolation.
         # In jobs having specific frames included (e.g. GT jobs),
