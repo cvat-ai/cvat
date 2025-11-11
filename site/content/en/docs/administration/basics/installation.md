@@ -122,8 +122,8 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
-  button. Now you should be able to create a new annotation task. Please read the
-  {{< ilink "/docs/manual" "CVAT manual" >}} for more details.
+  button. Now you should be able to create a new annotation task. Please refer to the
+  {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "Annotation" >}} section for more details.
 
 ## Windows 10
 
@@ -205,8 +205,8 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
-  button. Now you should be able to create a new annotation task. Please read the
-  {{< ilink "/docs/manual" "CVAT manual" >}} for more details.
+  button. Now you should be able to create a new annotation task. Please refer to the
+  {{< ilink "/docs/annotation" "Annotation" >}} section for more details.
 
 ## Mac OS Mojave
 
@@ -281,8 +281,8 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
-  button. Now you should be able to create a new annotation task. Please read the
-  {{< ilink "/docs/manual" "CVAT manual" >}} for more details.
+  button. Now you should be able to create a new annotation task. Please refer to the
+  {{< ilink "/docs/annotation" "Annotation" >}} section for more details.
 
 ## Advanced Topics
 

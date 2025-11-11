@@ -72,81 +72,95 @@ from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
 
+
 class Version(Enum):
-    V1 = '1.0'
+    V1 = "1.0"
+
 
 def _get_label_mapping(db_labels):
     label_mapping = {db_label.id: db_label.name for db_label in db_labels}
     for db_label in db_labels:
         label_mapping[db_label.id] = {
-            'value': db_label.name,
-            'attributes': {},
+            "value": db_label.name,
+            "attributes": {},
         }
         for db_attribute in db_label.attributespec_set.all():
-            label_mapping[db_label.id]['attributes'][db_attribute.id] = db_attribute.name
+            label_mapping[db_label.id]["attributes"][db_attribute.id] = db_attribute.name
 
     return label_mapping
 
-def _write_annotation_guide(zip_object, annotation_guide, guide_filename, assets_dirname, target_dir=None):
+
+def _write_annotation_guide(
+    zip_object, annotation_guide, guide_filename, assets_dirname, target_dir=None
+):
     if annotation_guide is not None:
         md = annotation_guide.markdown
         assets = annotation_guide.assets.all()
-        assets_dirname = os.path.join(target_dir or '', assets_dirname)
-        guide_filename = os.path.join(target_dir or '', guide_filename)
+        assets_dirname = os.path.join(target_dir or "", assets_dirname)
+        guide_filename = os.path.join(target_dir or "", guide_filename)
 
         for db_asset in assets:
-            md = md.replace(f'/api/assets/{str(db_asset.pk)}', os.path.join(assets_dirname, db_asset.filename))
+            md = md.replace(
+                f"/api/assets/{str(db_asset.pk)}", os.path.join(assets_dirname, db_asset.filename)
+            )
             file = os.path.join(settings.ASSETS_ROOT, str(db_asset.pk), db_asset.filename)
-            with open(file, 'rb') as asset_file:
-                zip_object.writestr(os.path.join(assets_dirname, db_asset.filename), asset_file.read())
+            with open(file, "rb") as asset_file:
+                zip_object.writestr(
+                    os.path.join(assets_dirname, db_asset.filename), asset_file.read()
+                )
         zip_object.writestr(guide_filename, data=md)
+
 
 def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
     files = zip_object.namelist()
     if guide_filename in files:
         annotation_guide = io.BytesIO(zip_object.read(guide_filename))
-        assets = filter(lambda x: x.startswith(f'{assets_dirname}/'), files)
+        assets = filter(lambda x: x.startswith(f"{assets_dirname}/"), files)
         assets = [(x, zip_object.read(x)) for x in assets]
 
         if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f'Maximum number of assets per guide reached')
+            raise ValidationError(f"Maximum number of assets per guide reached")
         for asset in assets:
             if len(asset[1]) / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
-                raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
+                raise ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
             if mimetypes.guess_type(asset[0])[0] not in settings.ASSET_SUPPORTED_TYPES:
-                raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
+                raise ValidationError(
+                    f"File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}"
+                )
 
         return annotation_guide.getvalue(), assets
 
     return None, []
 
+
 def _import_annotation_guide(owner, guide_data, assets):
     guide_serializer = AnnotationGuideWriteSerializer(data=guide_data)
-    markdown = guide_data['markdown']
+    markdown = guide_data["markdown"]
     if guide_serializer.is_valid(raise_exception=True):
         guide_serializer.save()
 
     for asset in assets:
         name, data = asset
-        asset_serializer = AssetWriteSerializer(data={
-            "file": SimpleUploadedFile(
-                os.path.basename(name),
-                data,
-                mimetypes.guess_type(name)[0]
-            ),
-            "guide_id": guide_serializer.instance.id,
-        })
+        asset_serializer = AssetWriteSerializer(
+            data={
+                "file": SimpleUploadedFile(
+                    os.path.basename(name), data, mimetypes.guess_type(name)[0]
+                ),
+                "guide_id": guide_serializer.instance.id,
+            }
+        )
 
         asset_serializer.is_valid(raise_exception=True)
         asset_serializer.save(owner=owner)
-        markdown = markdown.replace(f'{name}', f'/api/assets/{asset_serializer.instance.pk}')
+        markdown = markdown.replace(f"{name}", f"/api/assets/{asset_serializer.instance.pk}")
 
     guide_serializer.instance.markdown = markdown
     guide_serializer.instance.save()
 
-class _BackupBase():
-    ANNOTATION_GUIDE_FILENAME = 'annotation_guide.md'
-    ASSETS_DIRNAME = 'assets'
+
+class _BackupBase:
+    ANNOTATION_GUIDE_FILENAME = "annotation_guide.md"
+    ASSETS_DIRNAME = "assets"
 
     def __init__(self, *args, logger=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -156,7 +170,7 @@ class _BackupBase():
         keys_to_drop = set(meta.keys()) - allowed_keys
         if keys_to_drop:
             if self._logger:
-                self._logger.warning('the following keys are dropped {}'.format(keys_to_drop))
+                self._logger.warning("the following keys are dropped {}".format(keys_to_drop))
             for key in keys_to_drop:
                 del meta[key]
 
@@ -164,158 +178,163 @@ class _BackupBase():
 
     def _prepare_label_meta(self, label):
         allowed_fields = {
-            'name',
-            'color',
-            'attributes',
-            'type',
-            'svg',
-            'sublabels',
+            "name",
+            "color",
+            "attributes",
+            "type",
+            "svg",
+            "sublabels",
         }
         self._prepare_meta(allowed_fields, label)
-        for sublabel in label['sublabels']:
-            sublabel_id = sublabel['id']
-            sublabel_name = sublabel['name']
-            label['svg'] = label['svg'].replace(f'data-label-id="{sublabel_id}"', f'data-label-name="{sublabel_name}"')
+        for sublabel in label["sublabels"]:
+            sublabel_id = sublabel["id"]
+            sublabel_name = sublabel["name"]
+            label["svg"] = label["svg"].replace(
+                f'data-label-id="{sublabel_id}"', f'data-label-name="{sublabel_name}"'
+            )
 
             self._prepare_meta(allowed_fields, sublabel)
-            sublabel['attributes'] = [self._prepare_attribute_meta(a) for a in sublabel['attributes']]
+            sublabel["attributes"] = [
+                self._prepare_attribute_meta(a) for a in sublabel["attributes"]
+            ]
         return label
 
     def _prepare_attribute_meta(self, attribute):
         allowed_fields = {
-            'name',
-            'mutable',
-            'input_type',
-            'default_value',
-            'values',
+            "name",
+            "mutable",
+            "input_type",
+            "default_value",
+            "values",
         }
         return self._prepare_meta(allowed_fields, attribute)
 
+
 class _TaskBackupBase(_BackupBase):
-    MANIFEST_FILENAME = 'task.json'
-    MEDIA_MANIFEST_FILENAME = 'manifest.jsonl'
-    MEDIA_MANIFEST_INDEX_FILENAME = 'index.json'
-    ANNOTATIONS_FILENAME = 'annotations.json'
-    DATA_DIRNAME = 'data'
-    TASK_DIRNAME = 'task'
+    MANIFEST_FILENAME = "task.json"
+    MEDIA_MANIFEST_FILENAME = "manifest.jsonl"
+    MEDIA_MANIFEST_INDEX_FILENAME = "index.json"
+    ANNOTATIONS_FILENAME = "annotations.json"
+    DATA_DIRNAME = "data"
+    TASK_DIRNAME = "task"
 
     def _prepare_task_meta(self, task):
         allowed_fields = {
-            'name',
-            'bug_tracker',
-            'status',
-            'subset',
-            'labels',
-            'consensus_replicas',
+            "name",
+            "bug_tracker",
+            "status",
+            "subset",
+            "labels",
+            "consensus_replicas",
         }
 
         return self._prepare_meta(allowed_fields, task)
 
     def _prepare_data_meta(self, data):
         allowed_fields = {
-            'chunk_size',
-            'image_quality',
-            'start_frame',
-            'stop_frame',
-            'frame_filter',
-            'chunk_type',
-            'storage_method',
-            'storage',
-            'sorting_method',
-            'deleted_frames',
-            'custom_segments',
-            'job_file_mapping',
-            'validation_layout'
+            "chunk_size",
+            "image_quality",
+            "start_frame",
+            "stop_frame",
+            "frame_filter",
+            "chunk_type",
+            "storage_method",
+            "storage",
+            "sorting_method",
+            "deleted_frames",
+            "custom_segments",
+            "job_file_mapping",
+            "validation_layout",
         }
 
         self._prepare_meta(allowed_fields, data)
 
-        if 'validation_layout' in data:
+        if "validation_layout" in data:
             self._prepare_meta(
-                allowed_keys={'mode', 'frames', 'frames_per_job_count'},
-                meta=data['validation_layout']
+                allowed_keys={"mode", "frames", "frames_per_job_count"},
+                meta=data["validation_layout"],
             )
 
-        if 'frame_filter' in data and not data['frame_filter']:
-            data.pop('frame_filter')
+        if "frame_filter" in data and not data["frame_filter"]:
+            data.pop("frame_filter")
 
         return data
 
     def _prepare_job_meta(self, job):
         allowed_fields = {
-            'status',
-            'type',
+            "status",
+            "type",
         }
         return self._prepare_meta(allowed_fields, job)
 
     def _prepare_annotations(self, annotations, label_mapping):
         allowed_fields = {
-            'label',
-            'label_id',
-            'type',
-            'occluded',
-            'outside',
-            'z_order',
-            'points',
-            'rotation',
-            'frame',
-            'group',
-            'source',
-            'attributes',
-            'shapes',
-            'elements',
+            "label",
+            "label_id",
+            "type",
+            "occluded",
+            "outside",
+            "z_order",
+            "points",
+            "rotation",
+            "frame",
+            "group",
+            "source",
+            "attributes",
+            "shapes",
+            "elements",
         }
 
         def _update_attribute(attribute, label):
-            if 'name' in attribute:
-                source, dest = attribute.pop('name'), 'spec_id'
+            if "name" in attribute:
+                source, dest = attribute.pop("name"), "spec_id"
             else:
-                source, dest = attribute.pop('spec_id'), 'name'
-            attribute[dest] = label_mapping[label]['attributes'][source]
+                source, dest = attribute.pop("spec_id"), "name"
+            attribute[dest] = label_mapping[label]["attributes"][source]
 
-        def _update_label(shape, parent_label=''):
-            if 'label_id' in shape:
-                source = shape.pop('label_id')
-                shape['label'] = label_mapping[source]['value']
-            elif 'label' in shape:
-                source = parent_label + shape.pop('label')
-                shape['label_id'] = label_mapping[source]['value']
+        def _update_label(shape, parent_label=""):
+            if "label_id" in shape:
+                source = shape.pop("label_id")
+                shape["label"] = label_mapping[source]["value"]
+            elif "label" in shape:
+                source = parent_label + shape.pop("label")
+                shape["label_id"] = label_mapping[source]["value"]
 
             return source
 
-        def _prepare_shapes(shapes, parent_label=''):
+        def _prepare_shapes(shapes, parent_label=""):
             for shape in shapes:
                 label = _update_label(shape, parent_label)
-                for attr in shape['attributes']:
+                for attr in shape["attributes"]:
                     _update_attribute(attr, label)
 
-                deque(_prepare_shapes(shape.get('elements', []), label), maxlen=0)
+                deque(_prepare_shapes(shape.get("elements", []), label), maxlen=0)
 
                 self._prepare_meta(allowed_fields, shape)
                 yield shape
 
-        def _prepare_tracks(tracks, parent_label=''):
+        def _prepare_tracks(tracks, parent_label=""):
             for track in tracks:
                 label = _update_label(track, parent_label)
-                for shape in track['shapes']:
-                    for attr in shape['attributes']:
+                for shape in track["shapes"]:
+                    for attr in shape["attributes"]:
                         _update_attribute(attr, label)
                     self._prepare_meta(allowed_fields, shape)
 
-                _prepare_tracks(track.get('elements', []), label)
+                _prepare_tracks(track.get("elements", []), label)
 
-                for attr in track['attributes']:
+                for attr in track["attributes"]:
                     _update_attribute(attr, label)
                 self._prepare_meta(allowed_fields, track)
 
-        for tag in annotations['tags']:
+        for tag in annotations["tags"]:
             label = _update_label(tag)
-            for attr in tag['attributes']:
+            for attr in tag["attributes"]:
                 _update_attribute(attr, label)
             self._prepare_meta(allowed_fields, tag)
 
-        annotations['shapes'] = _prepare_shapes(annotations['shapes'])
-        _prepare_tracks(annotations['tracks'])
+        annotations["shapes"] = _prepare_shapes(annotations["shapes"])
+        _prepare_tracks(annotations["tracks"])
 
         return annotations
 
@@ -323,11 +342,12 @@ class _TaskBackupBase(_BackupBase):
         if not self._db_task:
             return
 
-        db_segments = list(self._db_task.segment_set.all().prefetch_related('job_set'))
+        db_segments = list(self._db_task.segment_set.all().prefetch_related("job_set"))
         db_segments.sort(key=lambda i: i.job_set.first().id)
 
         for db_segment in db_segments:
             yield from sorted(db_segment.job_set.all(), key=lambda db_job: db_job.id)
+
 
 class _ExporterBase(metaclass=ABCMeta):
     ModelClass: ClassVar[models.Project | models.Task]
@@ -346,7 +366,9 @@ class _ExporterBase(metaclass=ABCMeta):
             )
             zip_object.write(filename=filename, arcname=arcname)
 
-    def _write_directory(self, source_dir, zip_object, target_dir, recursive=True, exclude_files=None):
+    def _write_directory(
+        self, source_dir, zip_object, target_dir, recursive=True, exclude_files=None
+    ):
         for root, dirs, files in os.walk(source_dir, topdown=True):
             if not recursive:
                 dirs.clear()
@@ -355,13 +377,16 @@ class _ExporterBase(metaclass=ABCMeta):
                 self._write_files(
                     source_dir=source_dir,
                     zip_object=zip_object,
-                    files=(os.path.join(root, f) for f in files if not exclude_files or f not in exclude_files),
+                    files=(
+                        os.path.join(root, f)
+                        for f in files
+                        if not exclude_files or f not in exclude_files
+                    ),
                     target_dir=target_dir,
                 )
 
     @abstractmethod
-    def export_to(self, file: str | ZipFile, target_dir: str | None = None):
-        ...
+    def export_to(self, file: str | ZipFile, target_dir: str | None = None): ...
 
     @classmethod
     def get_object(cls, pk: int) -> models.Project | models.Task:
@@ -369,7 +394,7 @@ class _ExporterBase(metaclass=ABCMeta):
         try:
             return cls.ModelClass.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            raise ValidationError(f'Such a {cls.ModelClass.__name__.lower()} does not exist')
+            raise ValidationError(f"Such a {cls.ModelClass.__name__.lower()} does not exist")
 
 
 class TaskExporter(_ExporterBase, _TaskBackupBase):
@@ -379,38 +404,50 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         super().__init__(logger=slogger.task[pk])
 
         self._db_task: models.Task = (
-            models.Task.objects
-            .prefetch_related('data__images', 'annotation_guide__assets')
-            .select_related('data__video', 'data__validation_layout', 'annotation_guide')
+            models.Task.objects.prefetch_related("data__images", "annotation_guide__assets")
+            .select_related("data__video", "data__validation_layout", "annotation_guide")
             .get(pk=pk)
         )
 
         self._db_data: models.Data = self._db_task.data
         self._version = version
 
-        db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
-            'attributespec_set')
+        db_labels = (
+            (self._db_task.project if self._db_task.project_id else self._db_task)
+            .label_set.all()
+            .prefetch_related("attributespec_set")
+        )
         self._label_mapping = _get_label_mapping(db_labels)
         self._lightweight = lightweight
 
     def _write_annotation_guide(self, zip_object, target_dir=None):
-        annotation_guide = self._db_task.annotation_guide if hasattr(self._db_task, 'annotation_guide') else None
-        _write_annotation_guide(zip_object, annotation_guide, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME, target_dir = target_dir)
+        annotation_guide = (
+            self._db_task.annotation_guide if hasattr(self._db_task, "annotation_guide") else None
+        )
+        _write_annotation_guide(
+            zip_object,
+            annotation_guide,
+            self.ANNOTATION_GUIDE_FILENAME,
+            self.ASSETS_DIRNAME,
+            target_dir=target_dir,
+        )
 
     def _write_data(self, zip_object, target_dir=None):
-        target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
+        target_data_dir = (
+            os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
+        )
         if self._db_data.storage == StorageChoice.LOCAL:
             data_dir = self._db_data.get_upload_dirname()
             self._write_directory(
                 source_dir=data_dir,
                 zip_object=zip_object,
                 target_dir=target_data_dir,
-                exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME]
+                exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME],
             )
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
-            if hasattr(self._db_data, 'video'):
-                media_files = (os.path.join(data_dir, self._db_data.video.path), )
+            if hasattr(self._db_data, "video"):
+                media_files = (os.path.join(data_dir, self._db_data.video.path),)
             else:
                 media_files = (os.path.join(data_dir, im.path) for im in self._db_data.images.all())
 
@@ -428,7 +465,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
-            assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
+            assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
 
             data_dir = self._db_data.get_upload_dirname()
 
@@ -474,18 +511,19 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                         self._write_files(
                             source_dir=tmp_dir,
                             zip_object=zip_object,
-                            files=[
-                                os.path.join(tmp_dir, file)
-                                for file in media_files_to_download
-                            ],
+                            files=[os.path.join(tmp_dir, file) for file in media_files_to_download],
                             target_dir=target_data_dir,
                         )
 
                 if frame_ids_to_download:
                     media_cache = MediaCache()
-                    with closing(iter(media_cache.read_raw_images(
-                        self._db_task, frame_ids=frame_ids_to_download, decode=False,
-                    ))) as frame_iter:
+                    with closing(
+                        iter(
+                            media_cache.read_raw_images(
+                                self._db_task, frame_ids=frame_ids_to_download, decode=False
+                            )
+                        )
+                    ) as frame_iter:
                         # Avoid closing the frame iter before the files are copied
                         downloaded_paths = []
                         for _ in frame_ids_to_download:
@@ -511,7 +549,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
     def _write_task(self, zip_object, target_dir=None):
         task_dir = self._db_task.get_dirname()
-        target_task_dir = os.path.join(target_dir, self.TASK_DIRNAME) if target_dir else self.TASK_DIRNAME
+        target_task_dir = (
+            os.path.join(target_dir, self.TASK_DIRNAME) if target_dir else self.TASK_DIRNAME
+        )
         self._write_directory(
             source_dir=task_dir,
             zip_object=zip_object,
@@ -522,30 +562,33 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
     def _write_manifest(self, zip_object, target_dir=None):
         def serialize_task():
             task_serializer = TaskReadSerializer(self._db_task)
-            for field in ('url', 'owner', 'assignee'):
+            for field in ("url", "owner", "assignee"):
                 task_serializer.fields.pop(field)
 
             task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
 
             serialized_task = task_serializer.data
-            if serialized_task.pop('consensus_enabled', False):
-                serialized_task['consensus_replicas'] = self._db_task.consensus_replicas
+            if serialized_task.pop("consensus_enabled", False):
+                serialized_task["consensus_replicas"] = self._db_task.consensus_replicas
 
             task = self._prepare_task_meta(serialized_task)
-            task['labels'] = [self._prepare_label_meta(l) for l in task_labels.data if not l['has_parent']]
-            for label in task['labels']:
-                label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
+            task["labels"] = [
+                self._prepare_label_meta(l) for l in task_labels.data if not l["has_parent"]
+            ]
+            for label in task["labels"]:
+                label["attributes"] = [self._prepare_attribute_meta(a) for a in label["attributes"]]
 
             return task
 
         def serialize_segment(db_segment):
             segment_serializer = SegmentSerializer(db_segment)
-            segment_serializer.fields.pop('jobs')
+            segment_serializer.fields.pop("jobs")
             serialized_segment = segment_serializer.data
 
             segment_type = serialized_segment.pop("type")
             if (
-                self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE
+                self._db_task.segment_size == 0
+                and segment_type == models.SegmentType.RANGE
                 or self._db_data.validation_mode == models.ValidationMode.GT_POOL
             ):
                 serialized_segment.update(serialize_segment_file_names(db_segment))
@@ -564,7 +607,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 db_jobs.sort(key=lambda v: v.id)
                 for db_job in db_jobs:
                     job_serializer = SimpleJobSerializer(db_job)
-                    for field in ('url', 'assignee'):
+                    for field in ("url", "assignee"):
                         job_serializer.fields.pop(field)
 
                     serialized_job = self._prepare_job_meta(job_serializer.data)
@@ -574,9 +617,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return serialized_jobs
 
         def serialize_segment_file_names(db_segment: models.Segment):
-            if self._db_task.mode == 'annotation':
-                files: Iterable[models.Image] = self._db_data.images.order_by('frame').all()
-                return {'files': [files[f].path for f in sorted(db_segment.frame_set)]}
+            if self._db_task.mode == "annotation":
+                files: Iterable[models.Image] = self._db_data.images.order_by("frame").all()
+                return {"files": [files[f].path for f in sorted(db_segment.frame_set)]}
             else:
                 assert False, (
                     "Backups with custom file mapping are not supported"
@@ -586,38 +629,38 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         def serialize_data():
             data_serializer = DataSerializer(self._db_data)
             data = data_serializer.data
-            data['chunk_type'] = self._db_data.compressed_chunk_type
+            data["chunk_type"] = self._db_data.compressed_chunk_type
 
             # There are no deleted frames in DataSerializer so we need to pick it
-            data['deleted_frames'] = self._db_data.deleted_frames
+            data["deleted_frames"] = self._db_data.deleted_frames
 
             if self._db_task.segment_size == 0:
-                data['custom_segments'] = True
+                data["custom_segments"] = True
 
             if (
-                (validation_layout := getattr(self._db_data, 'validation_layout', None)) and
-                validation_layout.mode == models.ValidationMode.GT_POOL
-            ):
-                validation_params_serializer = ValidationParamsSerializer({
-                    "mode": validation_layout.mode,
-                    "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-                    "frames_per_job_count": validation_layout.frames_per_job_count,
-                })
+                validation_layout := getattr(self._db_data, "validation_layout", None)
+            ) and validation_layout.mode == models.ValidationMode.GT_POOL:
+                validation_params_serializer = ValidationParamsSerializer(
+                    {
+                        "mode": validation_layout.mode,
+                        "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+                        "frames_per_job_count": validation_layout.frames_per_job_count,
+                    }
+                )
                 validation_params = validation_params_serializer.data
                 media_filenames = dict(
-                    self._db_data.images
-                    .order_by('frame')
+                    self._db_data.images.order_by("frame")
                     .filter(
                         frame__gte=min(validation_layout.frames),
                         frame__lte=max(validation_layout.frames),
                     )
-                    .values_list('frame', 'path')
+                    .values_list("frame", "path")
                     .all()
                 )
-                validation_params['frames'] = [
+                validation_params["frames"] = [
                     media_filenames[frame] for frame in validation_layout.frames
                 ]
-                data['validation_layout'] = validation_params
+                data["validation_layout"] = validation_params
 
             if self._db_data.storage == StorageChoice.CLOUD_STORAGE and not self._lightweight:
                 data["storage"] = StorageChoice.LOCAL
@@ -627,11 +670,15 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return self._prepare_data_meta(data)
 
         task = serialize_task()
-        task['version'] = self._version.value
-        task['data'] = serialize_data()
-        task['jobs'] = serialize_jobs()
+        task["version"] = self._version.value
+        task["data"] = serialize_data()
+        task["jobs"] = serialize_jobs()
 
-        target_manifest_file = os.path.join(target_dir, self.MANIFEST_FILENAME) if target_dir else self.MANIFEST_FILENAME
+        target_manifest_file = (
+            os.path.join(target_dir, self.MANIFEST_FILENAME)
+            if target_dir
+            else self.MANIFEST_FILENAME
+        )
         zip_object.writestr(target_manifest_file, data=JSONRenderer().render(task))
 
     def _write_annotations(self, zip_object: ZipFile, target_dir: Optional[str] = None) -> None:
@@ -644,7 +691,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     assert not isinstance(annotations["shapes"], list)
                     # Django many=True fields can only handle the list type
                     # we're using a generator here, so it's processed separately
-                    annotations_serializer = LabeledDataSerializer(data=dict(annotations, shapes=[]))
+                    annotations_serializer = LabeledDataSerializer(
+                        data=dict(annotations, shapes=[])
+                    )
                     annotations_serializer.is_valid(raise_exception=True)
                     annotation_data = annotations_serializer.data
 
@@ -659,8 +708,12 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     yield self._prepare_annotations(annotation_data, self._label_mapping)
 
         annotations = serialize_annotations()
-        target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
-        with zip_object.open(target_annotations_file, 'w') as f:
+        target_annotations_file = (
+            os.path.join(target_dir, self.ANNOTATIONS_FILENAME)
+            if target_dir
+            else self.ANNOTATIONS_FILENAME
+        )
+        with zip_object.open(target_annotations_file, "w") as f:
             rapidjson.dump(annotations, f)
 
     def _export_task(self, zip_obj, target_dir=None):
@@ -671,29 +724,32 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         self._write_annotation_guide(zip_obj, target_dir)
 
     def export_to(self, file: str | ZipFile, target_dir: str | None = None):
-        if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
-                self._db_task.data.storage == StorageChoice.SHARE:
-            raise Exception('The task cannot be exported because it does not contain any raw data')
+        if (
+            self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM
+            and self._db_task.data.storage == StorageChoice.SHARE
+        ):
+            raise Exception("The task cannot be exported because it does not contain any raw data")
 
         if isinstance(file, str):
-            with ZipFile(file, 'w') as zf:
+            with ZipFile(file, "w") as zf:
                 self._export_task(zip_obj=zf, target_dir=target_dir)
         elif isinstance(file, ZipFile):
             self._export_task(zip_obj=file, target_dir=target_dir)
         else:
-            raise ValueError('Unsupported type of file argument')
+            raise ValueError("Unsupported type of file argument")
 
-class _ImporterBase():
+
+class _ImporterBase:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @staticmethod
     def _read_version(manifest):
-        version = manifest.pop('version')
+        version = manifest.pop("version")
         try:
             return Version(version)
         except ValueError:
-            raise ValueError('{} version is not supported'.format(version))
+            raise ValueError("{} version is not supported".format(version))
 
     @staticmethod
     def _prepare_dirs(filepath):
@@ -704,45 +760,47 @@ class _ImporterBase():
     def _create_labels(self, labels, db_task=None, db_project=None, parent_label=None):
         label_mapping = {}
         if db_task:
-            label_relation = {
-                'task': db_task
-            }
+            label_relation = {"task": db_task}
         else:
-            label_relation = {
-                'project': db_project
-            }
-
+            label_relation = {"project": db_project}
 
         for label in labels:
-            label_name = label['name']
-            attributes = label.pop('attributes', [])
-            svg = label.pop('svg', '')
-            sublabels  = label.pop('sublabels', [])
+            label_name = label["name"]
+            attributes = label.pop("attributes", [])
+            svg = label.pop("svg", "")
+            sublabels = label.pop("sublabels", [])
 
             db_label = models.Label.objects.create(**label_relation, parent=parent_label, **label)
-            label_mapping[(parent_label.name if parent_label else '') + label_name] = {
-                'value': db_label.id,
-                'attributes': {},
+            label_mapping[(parent_label.name if parent_label else "") + label_name] = {
+                "value": db_label.id,
+                "attributes": {},
             }
 
             label_mapping.update(self._create_labels(sublabels, db_task, db_project, db_label))
 
             if db_label.type == str(models.LabelType.SKELETON):
                 for db_sublabel in list(db_label.sublabels.all()):
-                    svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    svg = svg.replace(
+                        f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"'
+                    )
                 models.Skeleton.objects.create(root=db_label, svg=svg)
 
             for attribute in attributes:
-                attribute_name = attribute['name']
+                attribute_name = attribute["name"]
                 attribute_serializer = AttributeSerializer(data=attribute)
                 attribute_serializer.is_valid(raise_exception=True)
                 db_attribute = attribute_serializer.save(label=db_label)
-                label_mapping[(parent_label.name if parent_label else '') + label_name]['attributes'][attribute_name] = db_attribute.id
+                label_mapping[(parent_label.name if parent_label else "") + label_name][
+                    "attributes"
+                ][attribute_name] = db_attribute.id
 
         return label_mapping
 
+
 class TaskImporter(_ImporterBase, _TaskBackupBase):
-    def __init__(self, file, user_id, org_id=None, project_id=None, subdir=None, label_mapping=None):
+    def __init__(
+        self, file, user_id, org_id=None, project_id=None, subdir=None, label_mapping=None
+    ):
         super().__init__(logger=slogger.glob)
         self._file = file
         self._subdir = subdir
@@ -754,29 +812,29 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._version = self._read_version(self._manifest)
         self._labels_mapping = label_mapping
         self._db_task = None
-        self._project_id=project_id
+        self._project_id = project_id
 
     def _read_annotation_guide(self, zip_object):
-        annotation_guide_filename = os.path.join(self._subdir or '', self.ANNOTATION_GUIDE_FILENAME)
-        assets_dirname = os.path.join(self._subdir or '', self.ASSETS_DIRNAME)
+        annotation_guide_filename = os.path.join(self._subdir or "", self.ANNOTATION_GUIDE_FILENAME)
+        assets_dirname = os.path.join(self._subdir or "", self.ASSETS_DIRNAME)
         return _read_annotation_guide(zip_object, annotation_guide_filename, assets_dirname)
 
     def _read_meta(self):
         def read(zip_object):
-            manifest_filename = os.path.join(self._subdir or '', self.MANIFEST_FILENAME)
-            annotations_filename = os.path.join(self._subdir or '', self.ANNOTATIONS_FILENAME)
+            manifest_filename = os.path.join(self._subdir or "", self.MANIFEST_FILENAME)
+            annotations_filename = os.path.join(self._subdir or "", self.ANNOTATIONS_FILENAME)
             manifest = JSONParser().parse(io.BytesIO(zip_object.read(manifest_filename)))
             annotations = JSONParser().parse(io.BytesIO(zip_object.read(annotations_filename)))
             annotation_guide, assets = self._read_annotation_guide(zip_object)
             return manifest, annotations, annotation_guide, assets
 
         if isinstance(self._file, str):
-            with ZipFile(self._file, 'r') as input_file:
+            with ZipFile(self._file, "r") as input_file:
                 return read(input_file)
         elif isinstance(self._file, ZipFile):
             return read(self._file)
 
-        raise ValueError('Unsupported type of file argument')
+        raise ValueError("Unsupported type of file argument")
 
     def _create_annotations(self, db_job, annotations):
         self._prepare_annotations(annotations, self._labels_mapping)
@@ -791,12 +849,11 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
     def _calculate_segment_size(jobs: list[dict[str, Any]]) -> tuple[int, int]:
         # The type field will be missing in backups create before the GT jobs were introduced
         jobs = [
-            j for j in jobs
-            if j.get("type", models.JobType.ANNOTATION) == models.JobType.ANNOTATION
+            j for j in jobs if j.get("type", models.JobType.ANNOTATION) == models.JobType.ANNOTATION
         ]
 
-        segment_size = jobs[0]['stop_frame'] - jobs[0]['start_frame'] + 1
-        overlap = 0 if len(jobs) == 1 else jobs[0]['stop_frame'] - jobs[1]['start_frame'] + 1
+        segment_size = jobs[0]["stop_frame"] - jobs[0]["start_frame"] + 1
+        overlap = 0 if len(jobs) == 1 else jobs[0]["stop_frame"] - jobs[1]["start_frame"] + 1
 
         return segment_size, overlap
 
@@ -805,10 +862,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         segments = []
 
         for i, segment in enumerate(jobs):
-            segment_size = segment['stop_frame'] - segment['start_frame'] + 1
-            if segment_frames := segment.get('frames'):
+            segment_size = segment["stop_frame"] - segment["start_frame"] + 1
+            if segment_frames := segment.get("frames"):
                 segment_frames = set(segment_frames)
-                segment_range = range(segment['start_frame'], segment['stop_frame'] + 1)
+                segment_range = range(segment["start_frame"], segment["stop_frame"] + 1)
                 if not segment_frames.issubset(segment_range):
                     raise ValidationError(
                         "Segment frames must be inside the range [start_frame; stop_frame]"
@@ -816,7 +873,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
                 segment_size = len(segment_frames)
 
-            segment_files = segment['files']
+            segment_files = segment["files"]
             if len(segment_files) != segment_size:
                 raise ValidationError(f"segment {i}: segment files do not match segment size")
 
@@ -832,7 +889,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         excluded_filenames: Optional[Collection[str]] = None,
     ) -> list[str]:
         if isinstance(input_archive, str):
-            with ZipFile(input_archive, 'r') as zf:
+            with ZipFile(input_archive, "r") as zf:
                 return self._copy_input_files(
                     input_archive=zf,
                     output_task_path=output_task_path,
@@ -844,14 +901,14 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         output_data_path = self._db_task.data.get_upload_dirname()
         uploaded_files = []
         for file_path in input_archive.namelist():
-            if file_path.endswith('/') or self._subdir and not file_path.startswith(self._subdir):
+            if file_path.endswith("/") or self._subdir and not file_path.startswith(self._subdir):
                 continue
 
             file_name = os.path.relpath(file_path, self._subdir)
             if excluded_filenames and file_name in excluded_filenames:
                 continue
 
-            if file_name.startswith(input_data_dirname + '/'):
+            if file_name.startswith(input_data_dirname + "/"):
                 target_file = os.path.join(
                     output_data_path, os.path.relpath(file_name, input_data_dirname)
                 )
@@ -861,7 +918,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                     shutil.copyfileobj(source, out)
 
                 uploaded_files.append(os.path.relpath(file_name, input_data_dirname))
-            elif file_name.startswith(input_task_dirname + '/'):
+            elif file_name.startswith(input_task_dirname + "/"):
                 target_file = os.path.join(
                     output_task_path, os.path.relpath(file_name, input_task_dirname)
                 )
@@ -873,52 +930,58 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return uploaded_files
 
     def _import_task(self):
-        data = self._manifest.pop('data')
-        labels = self._manifest.pop('labels')
-        jobs = self._manifest.pop('jobs')
+        data = self._manifest.pop("data")
+        labels = self._manifest.pop("labels")
+        jobs = self._manifest.pop("jobs")
 
         self._prepare_task_meta(self._manifest)
-        self._manifest['owner_id'] = self._user_id
-        self._manifest['project_id'] = self._project_id
+        self._manifest["owner_id"] = self._user_id
+        self._manifest["project_id"] = self._project_id
 
         self._prepare_data_meta(data)
 
         excluded_input_files = [os.path.join(self.DATA_DIRNAME, self.MEDIA_MANIFEST_INDEX_FILENAME)]
 
         job_file_mapping = None
-        if data.pop('custom_segments', False):
-            job_file_mapping = self._parse_segment_frames(jobs=[
-                v for v in jobs if v.get('type') == models.JobType.ANNOTATION
-            ])
+        if data.pop("custom_segments", False):
+            job_file_mapping = self._parse_segment_frames(
+                jobs=[v for v in jobs if v.get("type") == models.JobType.ANNOTATION]
+            )
 
             for d in [self._manifest, data]:
                 for k in [
-                    'segment_size', 'overlap', 'start_frame', 'stop_frame',
-                    'sorting_method', 'frame_filter', 'filename_pattern'
+                    "segment_size",
+                    "overlap",
+                    "start_frame",
+                    "stop_frame",
+                    "sorting_method",
+                    "frame_filter",
+                    "filename_pattern",
                 ]:
                     d.pop(k, None)
         else:
-            self._manifest['segment_size'], self._manifest['overlap'] = \
+            self._manifest["segment_size"], self._manifest["overlap"] = (
                 self._calculate_segment_size(jobs)
+            )
 
-        validation_params = data.pop('validation_layout', None)
+        validation_params = data.pop("validation_layout", None)
         if validation_params:
-            validation_params['frame_selection_method'] = models.JobFrameSelectionMethod.MANUAL
+            validation_params["frame_selection_method"] = models.JobFrameSelectionMethod.MANUAL
             validation_params_serializer = ValidationParamsSerializer(data=validation_params)
             validation_params_serializer.is_valid(raise_exception=True)
             validation_params = validation_params_serializer.data
 
-            gt_jobs = [v for v in jobs if v.get('type') == models.JobType.GROUND_TRUTH]
+            gt_jobs = [v for v in jobs if v.get("type") == models.JobType.GROUND_TRUTH]
             if not gt_jobs:
                 raise ValidationError("Can't find any GT jobs info in the backup files")
             elif len(gt_jobs) != 1:
                 raise ValidationError("A task can have only one GT job info in the backup files")
 
-            validation_params['frames'] = validation_params_serializer.initial_data['frames']
+            validation_params["frames"] = validation_params_serializer.initial_data["frames"]
 
-            if validation_params['mode'] == models.ValidationMode.GT_POOL:
+            if validation_params["mode"] == models.ValidationMode.GT_POOL:
                 gt_job_frames = self._parse_segment_frames(jobs=gt_jobs)[0]
-                if set(gt_job_frames) != set(validation_params_serializer.initial_data['frames']):
+                if set(gt_job_frames) != set(validation_params_serializer.initial_data["frames"]):
                     raise ValidationError("GT job frames do not match validation frames")
 
                 # Validation frames can have a different order, we must use the GT job order
@@ -927,14 +990,14 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
                 job_file_mapping.append(gt_job_frames)
 
-            data['validation_params'] = validation_params
+            data["validation_params"] = validation_params
 
         if job_file_mapping and (
-            not validation_params or validation_params['mode'] != models.ValidationMode.GT_POOL
+            not validation_params or validation_params["mode"] != models.ValidationMode.GT_POOL
         ):
             # It's currently prohibited to have repeated file names in jobs.
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
-            data['job_file_mapping'] = job_file_mapping
+            data["job_file_mapping"] = job_file_mapping
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
@@ -956,30 +1019,30 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             self._file, task_data_path, excluded_filenames=excluded_input_files
         )
 
-        data['use_zip_chunks'] = data.pop('chunk_type') == DataChoice.IMAGESET
+        data["use_zip_chunks"] = data.pop("chunk_type") == DataChoice.IMAGESET
         data = data_serializer.data
-        data['client_files'] = uploaded_files
+        data["client_files"] = uploaded_files
 
         if job_file_mapping or (
-            validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL
+            validation_params and validation_params["mode"] == models.ValidationMode.GT_POOL
         ):
-            data['job_file_mapping'] = job_file_mapping
+            data["job_file_mapping"] = job_file_mapping
 
         if validation_params:
-            data['validation_params'] = validation_params
+            data["validation_params"] = validation_params
 
         if data_serializer.initial_data["storage"] == StorageChoice.CLOUD_STORAGE:
             db_data.storage = StorageChoice.CLOUD_STORAGE
-            if data['client_files'] != [self.MEDIA_MANIFEST_FILENAME]:
+            if data["client_files"] != [self.MEDIA_MANIFEST_FILENAME]:
                 raise ValidationError(f"Expected {self.MEDIA_MANIFEST_FILENAME} in backup files")
 
             manifest = ImageManifestManager(
                 os.path.join(self._db_task.data.get_upload_dirname(), self.MEDIA_MANIFEST_FILENAME)
             )
-            data['server_files'] = []
+            data["server_files"] = []
             for _, manifest_entry in manifest:
-                data['server_files'].append(manifest_entry.full_name)
-                data['server_files'].extend(
+                data["server_files"].append(manifest_entry.full_name)
+                data["server_files"].extend(
                     manifest_entry.get("meta", {}).get("related_images", [])
                 )
         else:
@@ -988,14 +1051,14 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
             db_data.storage = StorageChoice.LOCAL
 
-        db_data.save(update_fields=['storage'])
+        db_data.save(update_fields=["storage"])
 
         create_task(self._db_task.pk, data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 
-        db_data.deleted_frames = data_serializer.initial_data.get('deleted_frames', [])
-        db_data.save(update_fields=['deleted_frames'])
+        db_data.deleted_frames = data_serializer.initial_data.get("deleted_frames", [])
+        db_data.save(update_fields=["deleted_frames"])
 
         if not validation_params:
             # In backups created before addition of GT pools there was no validation_layout field
@@ -1003,7 +1066,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             self._import_gt_jobs(jobs)
 
         for db_job, job in zip(self._get_db_jobs(), jobs):
-            db_job.status = job['status']
+            db_job.status = job["status"]
             db_job.save()
 
     def _import_gt_jobs(self, jobs):
@@ -1016,12 +1079,14 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 raise ValidationError(f"Unexpected job type {raw_job_type}")
 
             if job_type == models.JobType.GROUND_TRUTH:
-                job_serializer = JobWriteSerializer(data={
-                    'task_id': self._db_task.id,
-                    'type': job_type.value,
-                    'frame_selection_method': models.JobFrameSelectionMethod.MANUAL.value,
-                    'frames': job['frames']
-                })
+                job_serializer = JobWriteSerializer(
+                    data={
+                        "task_id": self._db_task.id,
+                        "type": job_type.value,
+                        "frame_selection_method": models.JobFrameSelectionMethod.MANUAL.value,
+                        "frames": job["frames"],
+                    }
+                )
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
             elif job_type in [models.JobType.ANNOTATION, models.JobType.CONSENSUS_REPLICA]:
@@ -1039,8 +1104,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             markdown = self._annotation_guide.decode()
             _import_annotation_guide(
                 self._db_task.owner,
-                { 'markdown': markdown, 'task_id': self._db_task.id },
-                self._assets
+                {"markdown": markdown, "task_id": self._db_task.id},
+                self._assets,
             )
 
     def import_task(self):
@@ -1049,6 +1114,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._import_annotation_guide()
         return self._db_task
 
+
 @transaction.atomic
 def import_task(filename, user, org_id):
     av_scan_paths(filename)
@@ -1056,38 +1122,54 @@ def import_task(filename, user, org_id):
     db_task = task_importer.import_task()
     return db_task.id
 
+
 class _ProjectBackupBase(_BackupBase):
-    MANIFEST_FILENAME = 'project.json'
-    TASKNAME_TEMPLATE = 'task_{}'
+    MANIFEST_FILENAME = "project.json"
+    TASKNAME_TEMPLATE = "task_{}"
 
     def _prepare_project_meta(self, project):
         allowed_fields = {
-            'bug_tracker',
-            'labels',
-            'name',
-            'status',
+            "bug_tracker",
+            "labels",
+            "name",
+            "status",
         }
 
         return self._prepare_meta(allowed_fields, project)
+
 
 class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     ModelClass: ClassVar[models.Project] = models.Project
 
     def __init__(self, pk, *, lightweight: bool, version: Version = Version.V1):
         super().__init__(logger=slogger.project[pk])
-        self._db_project = self.ModelClass.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
+        self._db_project = (
+            self.ModelClass.objects.prefetch_related("tasks", "annotation_guide__assets")
+            .select_related("annotation_guide")
+            .get(pk=pk)
+        )
         self._version = version
 
-        db_labels = self._db_project.label_set.all().prefetch_related('attributespec_set')
+        db_labels = self._db_project.label_set.all().prefetch_related("attributespec_set")
         self._label_mapping = _get_label_mapping(db_labels)
         self._lightweight = lightweight
 
     def _write_annotation_guide(self, zip_object, target_dir=None):
-        annotation_guide = self._db_project.annotation_guide if hasattr(self._db_project, 'annotation_guide') else None
-        _write_annotation_guide(zip_object, annotation_guide, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME, target_dir = target_dir)
+        annotation_guide = (
+            self._db_project.annotation_guide
+            if hasattr(self._db_project, "annotation_guide")
+            else None
+        )
+        _write_annotation_guide(
+            zip_object,
+            annotation_guide,
+            self.ANNOTATION_GUIDE_FILENAME,
+            self.ASSETS_DIRNAME,
+            target_dir=target_dir,
+        )
 
     def _write_tasks(self, zip_object):
-        for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
+        for idx, db_task in enumerate(self._db_project.tasks.all().order_by("id")):
             if db_task.data is not None:
                 TaskExporter(
                     db_task.id,
@@ -1098,31 +1180,36 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     def _write_manifest(self, zip_object):
         def serialize_project():
             project_serializer = ProjectReadSerializer(self._db_project)
-            for field in ('assignee', 'owner', 'url'):
+            for field in ("assignee", "owner", "url"):
                 project_serializer.fields.pop(field)
 
-            project_labels = LabelSerializer(self._db_project.get_labels(prefetch=True), many=True).data
+            project_labels = LabelSerializer(
+                self._db_project.get_labels(prefetch=True), many=True
+            ).data
 
             project = self._prepare_project_meta(project_serializer.data)
-            project['labels'] = [self._prepare_label_meta(l) for l in project_labels if not l['has_parent']]
-            for label in project['labels']:
-                label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
+            project["labels"] = [
+                self._prepare_label_meta(l) for l in project_labels if not l["has_parent"]
+            ]
+            for label in project["labels"]:
+                label["attributes"] = [self._prepare_attribute_meta(a) for a in label["attributes"]]
 
             return project
 
         project = serialize_project()
-        project['version'] = self._version.value
+        project["version"] = self._version.value
 
         zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(project))
 
     def export_to(self, file: str, target_dir: str | None = None):
-        with ZipFile(file, 'w') as output_file:
+        with ZipFile(file, "w") as output_file:
             self._write_annotation_guide(output_file)
             self._write_manifest(output_file)
             self._write_tasks(output_file)
 
+
 class ProjectImporter(_ImporterBase, _ProjectBackupBase):
-    TASKNAME_RE = r'task_(\d+)/'
+    TASKNAME_RE = r"task_(\d+)/"
 
     def __init__(self, filename, user_id, org_id=None):
         super().__init__(logger=slogger.glob)
@@ -1135,22 +1222,26 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         self._labels_mapping = {}
 
     def _read_annotation_guide(self, zip_object):
-        return _read_annotation_guide(zip_object, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME)
+        return _read_annotation_guide(
+            zip_object, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME
+        )
 
     def _read_meta(self):
-        with ZipFile(self._filename, 'r') as input_file:
+        with ZipFile(self._filename, "r") as input_file:
             manifest = JSONParser().parse(io.BytesIO(input_file.read(self.MANIFEST_FILENAME)))
             annotation_guide, assets = self._read_annotation_guide(input_file)
 
         return manifest, annotation_guide, assets
 
     def _import_project(self):
-        labels = self._manifest.pop('labels')
+        labels = self._manifest.pop("labels")
 
         self._prepare_project_meta(self._manifest)
         self._manifest["owner_id"] = self._user_id
 
-        self._db_project = models.Project.objects.create(**self._manifest, organization_id=self._org_id)
+        self._db_project = models.Project.objects.create(
+            **self._manifest, organization_id=self._org_id
+        )
         project_path = self._db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
@@ -1167,7 +1258,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
                     tasks[int(m.group(1))] = m.group(0)
             return [v for _, v in sorted(tasks.items())]
 
-        with ZipFile(self._filename, 'r') as zf:
+        with ZipFile(self._filename, "r") as zf:
             task_dirs = get_tasks(zf)
             for task_dir in task_dirs:
                 TaskImporter(
@@ -1176,15 +1267,16 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
                     org_id=self._org_id,
                     project_id=self._db_project.id,
                     subdir=task_dir,
-                    label_mapping=self._labels_mapping).import_task()
+                    label_mapping=self._labels_mapping,
+                ).import_task()
 
     def _import_annotation_guide(self):
         if self._annotation_guide:
             markdown = self._annotation_guide.decode()
             _import_annotation_guide(
                 self._db_project.owner,
-                { 'markdown': markdown, 'project_id': self._db_project.id },
-                self._assets
+                {"markdown": markdown, "project_id": self._db_project.id},
+                self._assets,
             )
 
     def import_project(self):
@@ -1193,6 +1285,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         self._import_tasks()
 
         return self._db_project
+
 
 @transaction.atomic
 def import_project(filename, user, org_id):
@@ -1234,7 +1327,7 @@ def create_backup(
                 return output_path
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
-            temp_file = os.path.join(tmp_dir, 'dump')
+            temp_file = os.path.join(tmp_dir, "dump")
             exporter = Exporter(db_instance.id, lightweight=lightweight)
             exporter.export_to(temp_file)
 
@@ -1265,6 +1358,7 @@ def create_backup(
     except Exception:
         log_exception(logger)
         raise
+
 
 def get_backup_dirname():
     return TmpDirManager.TMP_ROOT
