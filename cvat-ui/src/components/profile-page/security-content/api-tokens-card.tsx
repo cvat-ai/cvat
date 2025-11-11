@@ -220,7 +220,6 @@ function ApiTokensCard(): JSX.Element {
                     <Button type='text' icon={<MoreOutlined />} />
                 </Dropdown>
             ),
-            className: 'cvat-api-token-action',
         },
     ];
 
