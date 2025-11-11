@@ -112,7 +112,6 @@ export const parseDatetime = (s) => new Date(Date.parse(s));
  * @returns {String}
  */
 export function format(date) {
-    // converts Date object to DD/MM/YYYY
     const [yyyy, mm, dd] = [
         date.getFullYear(),
         date.getMonth() + 1,
