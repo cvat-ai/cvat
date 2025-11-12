@@ -16,7 +16,7 @@ import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 
-import { Workspace } from 'reducers';
+import { Workspace, CombinedState } from 'reducers';
 import { RestoreIcon } from 'icons';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -24,6 +24,7 @@ import { clamp } from 'utils/math';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { usePlugins } from 'utils/hooks';
 
 interface Props {
     startFrame: number;
@@ -101,6 +102,12 @@ function PlayerNavigation(props: Props): JSX.Element {
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
+
+    // Load plugin components for player slider
+    const playerSliderPlugins = usePlugins(
+        (state: CombinedState) => state.plugins.components.annotationPage.player.slider,
+        props,
+    );
 
     useEffect(() => {
         if (frameNumber !== frameInputValue) {
@@ -182,7 +189,7 @@ function PlayerNavigation(props: Props): JSX.Element {
             )}
             <Col className='cvat-player-controls'>
                 <Row align='bottom'>
-                    <Col>
+                    <Col style={{ position: 'relative' }}>
                         <Slider
                             className='cvat-player-slider'
                             min={startFrame}
@@ -204,6 +211,12 @@ function PlayerNavigation(props: Props): JSX.Element {
                                 })}
                             </svg>
                         )}
+                        {playerSliderPlugins
+                            .sort((a, b) => a.weight - b.weight)
+                            .map(({ component: Component }, index) => {
+                                const ComponentToRender = Component as React.ComponentType<any>;
+                                return <ComponentToRender key={index} {...props} />;
+                            })}
                     </Col>
                 </Row>
                 <Row justify='center'>

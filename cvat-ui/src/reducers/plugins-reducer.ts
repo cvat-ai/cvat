@@ -52,6 +52,11 @@ const defaultState: PluginsState = {
         loginPage: {
             loginForm: [],
         },
+        annotationPage: {
+            player: {
+                slider: [],
+            },
+        },
         modelsPage: {
             topBar: {
                 items: [],

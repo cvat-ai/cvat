@@ -392,6 +392,11 @@ export interface PluginsState {
         loginPage: {
             loginForm: PluginComponent[];
         };
+        annotationPage: {
+            player: {
+                slider: PluginComponent[];
+            };
+        }
         modelsPage: {
             topBar: {
                 items: PluginComponent[];
