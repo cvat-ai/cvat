@@ -338,6 +338,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages.auth,
                         changePasswordDone: {
                             message: 'New password has been saved.',
+                            className: 'cvat-notification-notice-change-password-success',
                         },
                     },
                 },

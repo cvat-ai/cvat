@@ -42,7 +42,13 @@ function ApiTokenCreatedModal({
             open={visible}
             onCancel={onClose}
             footer={[
-                <Button key='close' type='primary' onClick={onClose} style={{ background: '#faad14' }}>
+                <Button
+                    key='close'
+                    type='primary'
+                    onClick={onClose}
+                    style={{ background: '#faad14' }}
+                    className='cvat-api-token-created-modal-confirm-saved-button'
+                >
                     I have&nbsp;
                     <strong>securely</strong>
                     &nbsp;saved my token

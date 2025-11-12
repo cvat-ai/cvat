@@ -9,6 +9,7 @@ import { CombinedState } from 'reducers';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { Col, Row } from 'antd/lib/grid';
 import Typography from 'antd/lib/typography';
+import Text from 'antd/lib/typography/Text';
 import Menu from 'antd/lib/menu';
 
 import { getTabFromHash } from 'utils/location-utils';
@@ -35,12 +36,12 @@ function ProfilePageComponent(): JSX.Element {
         {
             key: 'profile',
             icon: <UserOutlined />,
-            label: 'Profile',
+            label: <Text className='cvat-profile-page-menu-item-profile'>Profile</Text>,
         },
         {
             key: 'security',
             icon: <LockOutlined />,
-            label: 'Security',
+            label: <Text className='cvat-profile-page-menu-item-security'>Security</Text>,
         },
     ];
 
@@ -73,7 +74,7 @@ function ProfilePageComponent(): JSX.Element {
             { fetching ? <CVATLoadingSpinner size='large' /> : null }
             <Row justify='center' align='middle'>
                 <Col {...dimensions}>
-                    <Title level={1}>
+                    <Title level={1} className='cvat-profile-page-welcome'>
                         {`Welcome, ${user?.username}`}
                     </Title>
                 </Col>

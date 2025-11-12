@@ -20,5 +20,8 @@
     "jimp": "^0.22.10"
   },
   "version": "0.0.0",
-  "packageManager": "yarn@4.9.2"
+  "packageManager": "yarn@4.9.2",
+  "devDependencies": {
+    "cypress-repeat": "^2.3.10"
+  }
 }

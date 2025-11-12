@@ -72,7 +72,7 @@ context('New organization pipeline.', () => {
     };
 
     function capitalizeEmail(email) {
-        return email.split('@').map((part) => `${part.toUpperCase()[0]}${part.slice(1)}`).join('@');
+        return email.split('@').map(Cypress._.capitalize).join('@');
     }
     function tearDown() {
         cy.headlessLogout().then(() => {
