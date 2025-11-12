@@ -483,12 +483,13 @@
 }
 
 .cvat-player-chapter-menu-wrapper {
-    max-height: 300px;
-    max-width: 177px;
+    max-height: 37 * $grid-unit-size;
+    max-width: 22 * $grid-unit-size;
     overflow: auto;
 }
 .cvat-player-chapter-menu-list {
     .cvat-player-chapter-menu-list-item {
+        margin-right: 2px;
         &:hover {
             transform: translateX(2px);
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
