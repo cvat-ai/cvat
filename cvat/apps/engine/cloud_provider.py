@@ -24,7 +24,7 @@ from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from botocore.handlers import disable_signing
 from django.conf import settings
 from google.cloud import storage
@@ -665,6 +665,11 @@ class S3CloudStorage(_CloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        except EndpointConnectionError as ex:
+            slogger.glob.warning(
+                        f"CloudStorage S3 {self.name} not available"
+                    )
+            return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
         try:

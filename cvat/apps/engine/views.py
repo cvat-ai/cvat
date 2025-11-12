@@ -2708,9 +2708,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
-        except Exception as ex:
-            msg = str(ex)
-            return HttpResponseBadRequest(msg)
 
     @extend_schema(summary='Get allowed actions for a cloud storage',
         responses={
