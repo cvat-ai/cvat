@@ -506,6 +506,7 @@ def filter_jobs(jobs):
 
     return filter_
 
+
 @pytest.fixture(scope="session")
 def filter_labels(labels):
     def filter_(**kwargs):
