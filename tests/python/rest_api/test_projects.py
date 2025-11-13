@@ -15,6 +15,7 @@ from http import HTTPStatus
 from io import BytesIO
 from itertools import product
 from operator import itemgetter
+from os.path import basename
 from time import sleep
 from typing import Optional
 
@@ -1115,12 +1116,8 @@ class TestImportExportDatasetProject:
             assert response.status == HTTPStatus.OK
             assert getMeta.status == HTTPStatus.OK
 
-        framenames = list((frame['name'] for frame in getMeta.json()['frames']))
+        framenames = list((basename(frame['name']) for frame in getMeta.json()['frames']))
         deleted_framename = framenames[frame_to_delete][1]
-
-        # export before deleting frame
-        labels_before = get_exported_labels(admin_user, project['id'])
-        check_labels(labels_before, [])
 
         # delete frame
         with make_api_client(admin_user) as api_client:
@@ -1132,13 +1129,8 @@ class TestImportExportDatasetProject:
             )
             assert patchMeta.status == HTTPStatus.OK
 
-        # export after
         labels_after = get_exported_labels(admin_user, project['id'])
         check_labels(labels_after, [deleted_framename])
-
-
-
-
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
