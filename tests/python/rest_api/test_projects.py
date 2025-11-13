@@ -18,6 +18,7 @@ from operator import itemgetter
 from time import sleep
 from typing import Optional
 
+import allure
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.api_client.api_client import Endpoint
@@ -1054,6 +1055,89 @@ class TestImportExportDatasetProject:
             with zip_file.open("annotations/instances_default.json") as anno_file:
                 annotations = json.load(anno_file)
                 assert sorted([a["file_name"] for a in annotations["images"]]) == image_names
+
+    @allure.description("Project annotations do not have tags for removed frames")
+    @allure.issue(
+        url='https://github.com/cvat-ai/cvat/issues/9918',
+        name='GH-9918'
+    ) # NOTE: should reproduce with YOLO classification or CVAT images
+    def test_export_project_with_removed_frames(self, admin_user, filter_projects, filter_jobs, filter_labels):
+
+        def get_exported_labels(user, project_id):
+            dataset_buffer = self._test_export_dataset(
+                user,
+                project_id,
+                format="Ultralytics YOLO Classification 1.0"
+            )
+            dataset = zipfile.ZipFile(io.BytesIO(dataset_buffer), 'r')
+            anno_labels_file = dataset.read('train/labels.json')
+            anno_labels = json.loads(anno_labels_file)
+            return anno_labels
+
+        def check_labels(exported_labels: dict, deleted_framenames: list):
+            if not deleted_framenames:
+                return
+            for _, value in exported_labels.items():
+                for name in deleted_framenames:
+                    assert(
+                        not value['path'].endswith(name) # ex: tag/01.jpg
+                    ), f'labels from "{name}" should not be found'
+
+        project = filter_projects(name="project with tags")[0]
+        job = filter_jobs(project_id=project['id'])[0]
+        labels = filter_labels(project_id=project['id'])
+        frame_to_delete = 1
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.jobs_api.partial_update_annotations(
+                "update",
+                job["id"],
+                patched_labeled_data_request=dict(
+                    tags=[
+                        dict(
+                            frame=0,
+                            label_id=labels[0]["id"],
+                            type="tag",
+                        ),
+                        dict(
+                            frame=frame_to_delete,
+                            label_id=labels[0]["id"],
+                            type="tag",
+                        ),
+                        dict(
+                            frame=frame_to_delete,
+                            label_id=labels[1]["id"],
+                            type="tag",
+                        ),
+                    ],
+                )
+            )
+            (_, getMeta) = api_client.jobs_api.retrieve_data_meta(job['id'])
+            assert response.status == HTTPStatus.OK
+            assert getMeta.status == HTTPStatus.OK
+
+        framenames = list((frame['name'] for frame in getMeta.json()['frames']))
+        deleted_framename = framenames[frame_to_delete][1]
+
+        # export before deleting frame
+        labels_before = get_exported_labels(admin_user, project['id'])
+        check_labels(labels_before, [])
+
+        # delete frame
+        with make_api_client(admin_user) as api_client:
+            (_, patchMeta) = api_client.jobs_api.partial_update_data_meta(
+                job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[frame_to_delete]
+                ),
+            )
+            assert patchMeta.status == HTTPStatus.OK
+
+        # export after
+        labels_after = get_exported_labels(admin_user, project['id'])
+        check_labels(labels_after, [deleted_framename])
+
+
+
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
