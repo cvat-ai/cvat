@@ -65,6 +65,7 @@ def tasks():
 def filter_assets(resources: Iterable, **kwargs):
     filtered_resources = []
     exclude_prefix = "exclude_"
+    filter_operator = lambda arg, func: bool(func(arg))
 
     for resource in resources:
         is_matched = True
@@ -76,6 +77,8 @@ def filter_assets(resources: Iterable, **kwargs):
             if key.startswith(exclude_prefix):
                 key = key[len(exclude_prefix) :]
                 op = operator.ne
+            elif callable(value):
+                op = filter_operator
 
             cur_value, rest = resource, key
             while rest:
@@ -84,8 +87,9 @@ def filter_assets(resources: Iterable, **kwargs):
                     field, rest = field_and_rest
                 else:
                     field, rest = field_and_rest[0], None
-                cur_value = cur_value[field]
+                cur_value = cur_value.get(field, None)
                 # e.g. task has null target_storage
+                # or there are mutexed project_id, task_id
                 if not cur_value:
                     break
 
@@ -493,6 +497,21 @@ def find_issue_staff_user(is_issue_staff, is_issue_admin):
         return None, None
 
     return find
+
+
+@pytest.fixture(scope="session")
+def filter_jobs(jobs):
+    def filter_(**kwargs):
+        return filter_assets(jobs, **kwargs)
+
+    return filter_
+
+@pytest.fixture(scope="session")
+def filter_labels(labels):
+    def filter_(**kwargs):
+        return filter_assets(labels, **kwargs)
+
+    return filter_
 
 
 @pytest.fixture(scope="session")
