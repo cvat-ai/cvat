@@ -336,6 +336,9 @@ export interface PluginsState {
                 };
             };
         };
+        annotationActions: {
+            beforeJobClose: ((jobInstance: Job) => CallbackReturnType)[];
+        };
     };
     overridableComponents: {
         annotationPage: {

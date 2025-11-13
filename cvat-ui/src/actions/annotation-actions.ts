@@ -863,6 +863,11 @@ export function closeJob(): ThunkAction {
         const { instance: canvasInstance } = state.annotation.canvas;
         const { jobInstance, groundTruthInstance } = receiveAnnotationsParameters();
 
+        const beforeCloseCallbacks = state.plugins.callbacks.annotationActions.beforeJobClose;
+        for await (const callback of beforeCloseCallbacks) {
+            await callback(jobInstance);
+        }
+
         if (groundTruthInstance) {
             await groundTruthInstance.close();
         }
