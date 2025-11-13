@@ -1113,6 +1113,12 @@ class TestImportExportDatasetProject:
             assert response.status == HTTPStatus.OK
             assert getMeta.status == HTTPStatus.OK
 
+        from pprint import pprint
+        from sys import version
+
+        # print(getMeta.json())
+        print(type(getMeta), type(response), f'{version=}')
+        pprint(dir(getMeta))
         framenames = list((basename(frame["name"]) for frame in getMeta.json()["frames"]))
         deleted_framename = framenames[frame_to_delete][1]
 
