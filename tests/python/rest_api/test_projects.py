@@ -1086,7 +1086,7 @@ class TestImportExportDatasetProject:
         labels = filter_labels(project_id=project["id"])
         frame_to_delete = 1
         with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.jobs_api.partial_update_annotations(
+            (_, update_job) = api_client.jobs_api.partial_update_annotations(
                 "update",
                 job["id"],
                 patched_labeled_data_request=dict(
@@ -1109,17 +1109,12 @@ class TestImportExportDatasetProject:
                     ],
                 ),
             )
-            (_, getMeta) = api_client.jobs_api.retrieve_data_meta(job["id"])
-            assert response.status == HTTPStatus.OK
-            assert getMeta.status == HTTPStatus.OK
+            (_, get_meta) = api_client.jobs_api.retrieve_data_meta(job["id"])
+            assert update_job.status == HTTPStatus.OK
+            assert get_meta.status == HTTPStatus.OK
 
-        from pprint import pprint
-        from sys import version
-
-        # print(getMeta.json())
-        print(type(getMeta), type(response), f'{version=}')
-        pprint(dir(getMeta))
-        framenames = list((basename(frame["name"]) for frame in getMeta.json()["frames"]))
+        get_meta = json.loads(get_meta.data)
+        framenames = list((basename(frame["name"]) for frame in get_meta["frames"]))
         deleted_framename = framenames[frame_to_delete][1]
 
         # delete frame
