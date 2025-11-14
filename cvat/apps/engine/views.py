@@ -892,6 +892,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         queryset = super().get_queryset()
 
         if self.action == 'list':
+            # queryset = queryset.values_list("id", flat=True)
             queryset = RecordingQuerySet(queryset)
 
             perm = TaskPermission.create_scope_list(self.request)
@@ -1698,6 +1699,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         queryset = super().get_queryset()
 
         if self.action == 'list':
+            # queryset = queryset.values_list("id", flat=True)
             queryset = RecordingQuerySet(queryset)
 
             perm = JobPermission.create_scope_list(self.request)
