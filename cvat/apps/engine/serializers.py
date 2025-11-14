@@ -745,15 +745,23 @@ class JobReadListSerializer(serializers.ListSerializer):
             # We do it explicitly here and not in the LIST queryset to avoid
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
-            page: list[models.Job] = list(models.Job.objects.filter(id__in=data).select_related(
-                'assignee',
-                "segment__task",
-                'segment__task__data',
-                'segment__task__project',
-                'segment__task__annotation_guide',
-                'segment__task__project__annotation_guide',
-                "parent_job",
-            ).all())
+            page_ids = data
+            page_data = {
+                j.pk: j
+                for j in models.Job.objects.filter(id__in=page_ids).select_related(
+                    'assignee',
+                    "segment__task",
+                    'segment__task__data',
+                    'segment__task__project',
+                    'segment__task__annotation_guide',
+                    'segment__task__project__annotation_guide',
+                    "parent_job",
+                ).all()
+            }
+
+            # Maintain input ordering
+            page: list[models.Job] = [page_data[pk] for pk in page_ids if pk in page_data]
+
             page_task_ids = set(j.get_task_id() for j in page)
 
             visible_tasks_perm = TaskPermission.create_scope_list(request)
@@ -2404,9 +2412,10 @@ class TaskReadListSerializer(serializers.ListSerializer):
             # We do it explicitly here and not in the LIST queryset to avoid
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
-            page_task_ids = data
-            page: list[models.Task] = list(
-                models.Task.objects.select_related(
+            page_ids = data
+            page_data = {
+                task.pk: task
+                for task in models.Task.objects.select_related(
                     'data',
                     'data__validation_layout',
                     'assignee',
@@ -2414,14 +2423,17 @@ class TaskReadListSerializer(serializers.ListSerializer):
                     'target_storage',
                     'source_storage',
                     'annotation_guide',
-                ).filter(id__in=page_task_ids).all()
-            )
+                ).filter(id__in=page_ids).all()
+            }
+
+            # Maintain input ordering
+            page: list[models.Task] = [page_data[pk] for pk in page_ids if pk in page_data]
 
             job_summary_fields = [m.value for m in models.TaskQuerySet.JobSummaryFields]
             job_counts = {
                 task["id"]: task
                 for task in models.Task.objects
-                .filter(id__in=page_task_ids)
+                .filter(id__in=page_ids)
                 .with_job_summary()
                 .values("id", *job_summary_fields)
             }

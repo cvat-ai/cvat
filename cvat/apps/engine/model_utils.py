@@ -336,6 +336,8 @@ class ListQueryset:
 
     def __attrs_post_init__(self):
         self._end_index = min(self.start_index + len(self.page_data), self.total)
+        if self._end_index < self.total:
+            self.total = self._end_index
 
     def count(self):
         return self.total
@@ -344,21 +346,20 @@ class ListQueryset:
         return self.total
 
     def _check_index(self, i: int):
-        if i < self.start_index or i > self._end_index:
+        if i < self.start_index or i >= self._end_index:
             raise IndexError(i)
 
     def __getitem__(self, i: int | slice):
         if isinstance(i, slice):
             slice_start = i.start
             if slice_start is not None:
-                assert isinstance(slice_start, int)
+                assert isinstance(slice_start, int) and slice_start >= 0
                 self._check_index(slice_start)
                 slice_start -= self.start_index
 
             slice_end = i.stop  # stop is not included
             if slice_end is not None:
-                assert isinstance(slice_end, int)
-                self._check_index(slice_end)
+                assert isinstance(slice_end, int) and slice_end > 0
                 slice_end -= self.start_index
 
             i = slice(slice_start, slice_end, i.step)

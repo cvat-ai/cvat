@@ -417,54 +417,6 @@ class OptimizedModelListMixin:
         if not isinstance(queryset, RecordingQuerySet):
             return queryset
 
-        queryset = queryset.only("pk").select_related(None)
-
-        # TODO: maybe get from the query directly, but it can be quite difficult
-        # q = q_from_where(queryset)
-        # queryset = queryset.model.objects.filter(q)
-        q = queryset.get_accumulated_filter()
-
-        inner_queryset = queryset.get_wrapped()
-
-        # Convert the query to a set of UNION clauses to fix bad performance of
-        # WHERE x OR y in JOINs
-        inner_queryset.query.distinct = False
-        queryset = filter_with_union(inner_queryset, q)
-
-        ids_cte = CTE(queryset, name="object_ids")
-
-        if queryset_has_joins(queryset):
-            count_ids_cte = ids_cte
-        else:
-            # This optimization is only efficient for complex requests with joins or ORs
-            # Force the default sorting. Non-default sorting doesn't affect the resulting number,
-            # but it worsens the query plan.
-            count_ids_cte = CTE(queryset.order_by(), name="objects_for_count")
-
-        # Get the total number of objects.
-        # We use a custom Func object because:
-        # Can't use the queryset.count() method - it performs the request immediately,
-        # but we need to create a queryset instead.
-        # Can't use aggregates.Count() automatically - it inserts GROUP BY,
-        # which leads to a SQL compilation error.
-        #
-        # The idea is to allow Postgres to use index only scans:
-        # https://www.postgresql.org/docs/current/indexes-index-only-scans.html
-        # It's not always possible though, because of row visibility checks and MVCC.
-        # The visibility checks are done on the index page basis. Overall, the approach
-        # requires AUTOVACUUM to be enabled and the rows to be changed not too often.
-        # This is the case for the typical hierarchy elements in CVAT -
-        # projects, tasks, jobs, orgs, users.
-        count_qs = with_cte(
-            count_ids_cte, select=count_ids_cte.queryset()
-        ).values_list(Func(
-            # Count(pk) works slower than Count(*), if pk is not in the index (the default).
-            # We could use Star() here to get COUNT(*), but this is a private symbol in Django.
-            # Count(1) does the same or better (in older DBs).
-            1,
-            function='Count',
-        ), flat=True)
-
         # TODO: maybe rewrite the paginator somehow to make just 1 request
         pagination = self.paginator
         page_size = pagination.get_page_size(self.request)
@@ -477,15 +429,91 @@ class OptimizedModelListMixin:
         except InvalidPage:
             queryset = []
 
-        if isinstance(page_number, int):
-            start_index = (page_number - 1) * page_size
-            end_index = page_number * page_size
+        if not isinstance(page_number, int):
+            return queryset
+
+        need_count = pagination.is_count_required(self.request)
+
+        start_index = (page_number - 1) * page_size
+        end_index = page_number * page_size
+
+        queryset = queryset.only("pk").select_related(None)
+
+        # TODO: maybe get from the query directly, but it can be quite difficult
+        # q = q_from_where(queryset)
+        # queryset = queryset.model.objects.filter(q)
+        q = queryset.get_accumulated_filter()
+
+        inner_queryset = queryset.get_wrapped()
+
+        if not need_count:
+            # Request an extra element to know if there is the next page
+            end_index += 1
+
+        if not need_count and end_index < settings.MIN_LIST_OFFSET_FOR_UNION:
+            # With small offset and without COUNT the performance
+            # of the unoptimized approach can be significantly better
+
+            page_ids = list(inner_queryset.filter(q).values_list("pk", flat=True)[
+                start_index:end_index
+            ])
+            return ListQueryset(end_index, page_ids, start_index=start_index)
+        else:
+            # Convert the query to a set of UNION clauses to fix bad performance of
+            # WHERE x OR y in JOINs
+            inner_queryset.query.distinct = False
+            queryset = filter_with_union(inner_queryset, q)
+
+            ids_cte = CTE(queryset, name="object_ids")
+
+        if not need_count:
+            # UNION loses ordering if used without COUNT
+            page_ids_qs = with_cte(
+                ids_cte, select=ids_cte.queryset().order_by(*(inner_queryset.query.order_by))
+            ).values_list("pk", flat=True)[start_index: end_index]
+
+            total = end_index
+            page_ids = list(page_ids_qs)
+        else:
             page_ids_qs = with_cte(
                 ids_cte, select=ids_cte.queryset()
             ).values_list("pk", flat=True)[start_index: end_index]
 
+            if queryset_has_joins(queryset):
+                count_ids_cte = ids_cte
+            else:
+                # This optimization is only efficient for complex requests with joins or ORs
+                # Force the default sorting. Non-default sorting doesn't affect the resulting number,
+                # but it worsens the query plan.
+                count_ids_cte = CTE(queryset.order_by(), name="objects_for_count")
+
+            # Get the total number of objects.
+            # We use a custom Func object because:
+            # Can't use the queryset.count() method - it performs the request immediately,
+            # but we need to create a queryset instead.
+            # Can't use aggregates.Count() automatically - it inserts GROUP BY,
+            # which leads to a SQL compilation error.
+            #
+            # The idea is to allow Postgres to use index only scans:
+            # https://www.postgresql.org/docs/current/indexes-index-only-scans.html
+            # It's not always possible though, because of row visibility checks and MVCC.
+            # The visibility checks are done on the index page basis. Overall, the approach
+            # requires AUTOVACUUM to be enabled and the rows to be changed not too often.
+            # This is the case for the typical hierarchy elements in CVAT -
+            # projects, tasks, jobs, orgs, users.
+            count_qs = with_cte(
+                count_ids_cte, select=count_ids_cte.queryset()
+            ).values_list(Func(
+                # Count(pk) works slower than Count(*), if pk is not in the index (the default).
+                # We could use Star() here to get COUNT(*), but this is a private symbol in Django.
+                # Count(1) does the same or better (in older DBs).
+                1,
+                function='Count',
+            ), flat=True)
+
             combined_qs = count_qs.union(page_ids_qs, all=True)
             total, *page_ids = list(combined_qs)
-            queryset = ListQueryset(total, page_ids, start_index=start_index)
+
+        queryset = ListQueryset(total, page_ids, start_index=start_index)
 
         return queryset
