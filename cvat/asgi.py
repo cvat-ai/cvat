@@ -30,7 +30,7 @@ class ProfilingApp(ASGIHandler):
         pid = os.getpid()
         timestamp = now().timestamp()
         filename = f"memray-pid{pid}-{timestamp}.bin"
-        self.__tracker = memray.Tracker(filename)
+        self.__tracker = memray.Tracker(filename, trace_python_allocators=True)
         self.__tracker.__enter__()
 
         super().__init__()
