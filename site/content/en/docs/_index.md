@@ -10,45 +10,60 @@ menu:
 
 <section id="docs">
 
-{{< blocks/section color="docs" type="row" >}}
+<div class="docs-card-grid">
 
-{{% blocks/feature icon="fa-sign-in-alt" title="[Getting started](getting_started/)" %}}
+{{< card icon="fas fa-rocket" title="Getting Started" url="getting_started/" >}}
+Overview, vocabulary, shortcuts.
+{{< /card >}}
 
-Basic information and sections needed for a quick start.
+{{< card icon="fa-solid fa-diagram-project" title="Workspace" url="workspace/" >}}
+Projects, tasks, jobs, cloud storages, models.
+{{< /card >}}
 
-{{% /blocks/feature %}}
+{{< card icon="fa-solid fa-user-gear" title="Account Management" url="account_management/" >}}
+Access, roles, organizations, SSO, subscriptions.
+{{< /card >}}
 
-{{% blocks/feature icon="fa-question" title="[FAQ](faq/)" %}}
+{{< card icon="fa-solid fa-database" title="Dataset Management" url="dataset_management/" >}}
+Formats, import/export, annotation spec.
+{{< /card >}}
 
-Answers to frequently asked questions.
+{{< card icon="fa-solid fa-pencil-ruler" title="Annotation" url="annotation/" >}}
+Editor, tools, automated labeling.
+{{< /card >}}
 
-{{% /blocks/feature %}}
+{{< card icon="fa-solid fa-map-signs" title="Guides" url="guides/" >}}
+Workflow examples and tutorials.
+{{< /card >}}
 
-{{% blocks/feature icon="fab fa-github" title="[GitHub Repository](https://github.com/cvat-ai/cvat)" %}}
+{{< card icon="fa-solid fa-chart-line" title="QA & Analytics" url="qa_analytics/" >}}
+Quality control, consensus, analytics.
+{{< /card >}}
 
-CVAT GitHub repository.
+{{< card icon="fa-solid fa-plug-circle-bolt" title="Integrations" url="integrations/" >}}
+FiftyOne, Human Protocol.
+{{< /card >}}
 
-{{% /blocks/feature %}}
+{{< card icon="fa-solid fa-server" title="System Administration" url="administration/" >}}
+Installation, AWS, superuser, advanced config.
+{{< /card >}}
 
-{{% blocks/feature icon="fa-book" title="[Manual](manual/)" %}}
+{{< card icon="fa-solid fa-code" title="Developers" url="developers/" >}}
+API, SDK, CLI, tokens.
+{{< /card >}}
 
-This section contains documents for CVAT simple and advanced users.
+{{< card icon="fa-solid fa-circle-question" title="FAQ" url="faq/" >}}
+Answers to common questions.
+{{< /card >}}
 
-{{% /blocks/feature %}}
+{{< card icon="fa-solid fa-handshake-angle" title="Contributing" url="contributing/" >}}
+Branching, issues, PR process.
+{{< /card >}}
 
-{{% blocks/feature icon="fa-server" title="[Administration](administration/)" %}}
+{{< card icon="fa-solid fa-circle-info" title="Other" url="other/" >}}
+Extra docs, CVAT + Datumaro intro.
+{{< /card >}}
 
-This section contains documents for system administrators.
-
-{{% /blocks/feature %}}
-
-{{% blocks/feature icon="fa-terminal" title="[Contributing](contributing/)" %}}
-
-This section contains documents for developers.
-
-{{% /blocks/feature %}}
-
-
-{{< /blocks/section >}}
+</div>
 
 </section>

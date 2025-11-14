@@ -1,7 +1,7 @@
 ---
-title: 'Export annotations and data from CVAT'
-linkTitle: 'Export annotations and data from CVAT'
-weight: 20
+title: 'Dataset formats'
+linkTitle: 'Dataset formats'
+weight: 2
 description: 'List of data export formats supported by CVAT.'
 aliases:
  - /docs/manual/advanced/formats/
@@ -27,11 +27,11 @@ The table below outlines the available formats for data export in CVAT.
 | --------------------------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------- | ------------- |
 | [CamVid 1.0](format-camvid)                                                                                                 | .txt <br>.png | Semantic <br>Segmentation                                   | U-Net, SegNet, DeepLab, <br>PSPNet, FCN, Mask R-CNN, <br>ICNet, ERFNet, HRNet, <br>V-Net, and others.                                                                                   | Polygons, Masks                                                                                 | Not supported        | Not supported |
 | [Cityscapes 1.0](format-cityscapes)                                                                                         | .txt<br>.png  | Semantic<br>Segmentation                                    | U-Net, SegNet, DeepLab, <br>PSPNet, FCN, ERFNet, <br>ICNet, Mask R-CNN, HRNet, <br>ENet, and others.                                                                                    | Polygons, Masks                                                                                 | Specific attributes  | Not supported |
-| [COCO 1.0](format-coco)                                                                                                     | .json         | Detection, Semantic <br>Segmentation                        | YOLO (You Only Look Once), <br>Faster R-CNN, Mask R-CNN, SSD (Single Shot MultiBox Detector), <br> RetinaNet, EfficientDet, UNet, <br>DeepLabv3+, CenterNet, Cascade R-CNN, and others. | Bounding Boxes, Polygons, Masks                                                                 | All attributes       | Supported     |
+| [COCO 1.0](format-coco)                                                                                                     | .json         | Detection, Semantic <br>Segmentation                        | YOLO (You Only Look Once), <br>Faster R-CNN, Mask R-CNN, SSD (Single Shot MultiBox Detector), <br> RetinaNet, EfficientDet, UNet, <br>DeepLabv3+, CenterNet, Cascade R-CNN, and others. | Bounding Boxes, OBBs, Polygons, Masks                                                                | All attributes       | Supported     |
 | [COCO Keypoints 1.0](format-coco-keypoints)                                                                                        | .json         | Keypoints                                                   | OpenPose, PoseNet, AlphaPose, <br> SPM (Single Person Model), <br>Mask R-CNN with Keypoint Detection:, and others.                                                                      | Skeletons                                                                                       | All attributes       | Supported     |
-| {{< ilink "/docs/dataset_management/formats/format-cvat#cvat-for-image-export" "CVAT for images 1.1" >}}                       | .xml          | Any in 2D except for Video Tracking                         | Any model that can decode the format.                                                                                                                                                   | Tags, Bounding Boxes, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Ellipses, Masks  | All attributes       | Supported     |
-| {{< ilink "/docs/dataset_management/formats/format-cvat#cvat-for-videos-export" "CVAT for video 1.1" >}}                       | .xml          | Any in 2D except for Classification                         | Any model that can decode the format.                                                                                                                                                   | Bounding Boxes, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Ellipses, Masks        | All attributes       | Supported     |
-| [Datumaro 1.0](format-datumaro)                                                                                             | .json         | Any                                                         | Any model that can decode the format. <br> Main format in [Datumaro](https://github.com/openvinotoolkit/datumaro) framework                                                             | Tags, Bounding Boxes, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Ellipses, Masks  | All attributes       | Supported     |
+| {{< ilink "/docs/dataset_management/formats/format-cvat#cvat-for-image-export" "CVAT for images 1.1" >}}                       | .xml          | Any in 2D except for Video Tracking                         | Any model that can decode the format.                                                                                                                                                   | Tags, Bounding Boxes, OBBs, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Ellipses, Masks | All attributes       | Supported     |
+| {{< ilink "/docs/dataset_management/formats/format-cvat#cvat-for-videos-export" "CVAT for video 1.1" >}}                       | .xml          | Any in 2D except for Classification                         | Any model that can decode the format.                                                                                                                                                   | Bounding Boxes, OBBs, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Ellipses, Masks       | All attributes       | Supported     |
+| [Datumaro 1.0](format-datumaro)                                                                                             | .json         | Any                                                         | Any model that can decode the format. <br> Main format in [Datumaro](https://github.com/openvinotoolkit/datumaro) framework                                                             | Tags, Bounding Boxes, OBBs, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Ellipses, Masks | All attributes       | Supported     |
 | [ICDAR](format-icdar)<br> Includes ICDAR Recognition 1.0, <br>ICDAR Detection 1.0, <br>and ICDAR Segmentation 1.0 <br>descriptions. | .txt          | Text recognition, <br>Text detection, <br>Text segmentation | EAST: Efficient and Accurate <br>Scene Text Detector, CRNN, Mask TextSpotter, TextSnake, <br>and others.                                                                        | Tags, Bounding Boxes, Polygons, Masks                                                           | Specific attributes  | Not supported |
 | [ImageNet 1.0](format-imagenet)                                                                                             | .jpg <br>.txt | Semantic Segmentation, <br>Classification, <br>Detection    | VGG (VGG16, VGG19), Inception, YOLO, Faster R-CNN , U-Net, and others                                                                                                                   | Tags                                                                                            | No attributes        | Not supported |
 | [KITTI 1.0](format-kitti)                                                                                                   | .txt <br>.png | Semantic Segmentation, Detection, 3D                        | PointPillars, SECOND, AVOD, YOLO, DeepSORT, PWC-Net, ORB-SLAM, and others.                                                                                                              | Bounding Boxes, Polygons, Masks                                                                 | Specific attributes  | Not supported |
@@ -49,57 +49,6 @@ The table below outlines the available formats for data export in CVAT.
 | [Ultralytics YOLO Detection 1.0](format-yolo-ultralytics)                                                                   | .txt          | Detection                                                   | YOLOv8                                                                                                                                                                                  | Bounding Boxes                                                                                  | No attributes        | Supported     |
 | [Ultralytics YOLO Segmentation 1.0](format-yolo-ultralytics)                                                                | .txt          | Instance Segmentation                                       | YOLOv8                                                                                                                                                                                  | Polygons, Masks                                                                                 | No attributes        | Supported     |
 | [Ultralytics YOLO Pose 1.0](format-yolo-ultralytics)                                                                        | .txt          | Keypoints                                                   | YOLOv8                                                                                                                                                                                  | Skeletons                                                                                       | No attributes        | Supported     |
-| [Ultralytics YOLO Oriented Bounding Boxes 1.0](format-yolo-ultralytics)                                                     | .txt          | Detection                                                   | YOLOv8                                                                                                                                                                                  | Bounding Boxes                                                                                  | No attributes        | Supported     |
+| [Ultralytics YOLO Oriented Bounding Boxes 1.0](format-yolo-ultralytics)                                                     | .txt          | Detection                                                   | YOLOv8                                                                                                                                                                                  | OBBs                                                                                  | No attributes        | Supported     |
 | [Ultralytics YOLO Classification 1.0](format-yolo-ultralytics-classification)                                               | .jpg          | Classification                                              | YOLOv8                                                                                                                                                                                  | Tags                                                                                            | No attributes        | Not supported |
 
-## Exporting dataset in CVAT
-
-### Exporting dataset from Task
-
-To export the dataset from the task, follow these steps:
-
-1. Open Task.
-2. Go to **Actions** > **Export task dataset.**
-3. Choose the desired format from the list of available options.
-
-4. (Optional) Toggle the **Save images** switch if you
-   wish to include images in the export.
-
-   {{% alert title="Note" color="primary" %}}
-   The **Save images** option is a **paid feature**.
-   {{% /alert %}}
-
-   ![Save images option](/images/export_job_as_dataset_dialog.png)
-
-5. Input a name for the resulting `.zip` archive.
-
-6. Click **OK** to initiate the export.
-
-### Exporting dataset from Job
-
-To export a dataset from Job follow these steps:
-
-1. Navigate to **Menu** > **Export job dataset**.
-
-   ![Export dataset](/images/export_job_as_dataset_menu.png)
-
-2. Choose the desired format from the list of available options.
-
-3. (Optional) Toggle the **Save images** switch
-   if you wish to include images in the export.
-
-   {{% alert title="Note" color="primary" %}}
-   The **Save images** option is a **paid feature**.
-   {{% /alert %}}
-
-   ![Save images option](/images/export_job_as_dataset_dialog.png)
-
-4. Input a name for the resulting `.zip` archive.
-
-5. Click **OK** to initiate the export.
-
-## Data export video tutorial
-
-For more information on the process, see the following tutorial:
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/gzjVpVV9orE?si=2tiBIqts8nk_byTH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>

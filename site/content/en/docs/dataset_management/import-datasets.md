@@ -1,52 +1,11 @@
 ---
-title: 'Import datasets and upload annotation'
-linkTitle: 'Import datasets and upload annotation'
-weight: 19
-description: 'This section explains how to download and upload datasets
-  (including annotation, images, and metadata) of projects, tasks, and jobs.'
+title: 'Import annotations and data to CVAT'
+linkTitle: 'Import data to CVAT'
+weight: 3
+description: 'This section explains how to upload datasets (including annotation, images, and metadata) to projects and tasks.'
 aliases:
  - /docs/manual/advanced/import-datasets/
 ---
-
-## Export dataset
-
-You can export a dataset to a project, task or job.
-
-1. To download the latest annotations, you have to save all changes first.
-   Click the `Save` button. There is a `Ctrl+S` shortcut to save annotations quickly.
-
-   ![Opened annotation menu with highlighted "Export task dataset" option](/images/image028.jpg)
-
-1. After that, click the `Menu` button.
-   Exporting and importing of task and project datasets takes place through the `Action` menu.
-1. Press the `Export task dataset` button.
-
-   !["Export task" window with marked parameters](/images/image225.jpg)
-
-1. Choose the format for exporting the dataset. Exporting and importing is available in:
-   - Standard CVAT formats:
-     - {{< ilink "/docs/other/xml_format#interpolation" "CVAT for video" >}}
-       choose if the task is created in interpolation mode.
-     - {{< ilink "/docs/other/xml_format#annotation" "CVAT for images" >}}
-       choose if a task is created in annotation mode.
-
-       <br>
-   - And also in formats from the
-     {{< ilink "/docs/dataset_management/formats" "list of annotation formats supported by CVAT" >}}.
-
-   - For 3D tasks, the following formats are available:
-     - [Kitti Raw Format 1.0](http://www.cvlibs.net/datasets/kitti/raw_data.php)
-     - Sly Point Cloud Format 1.0  - Supervisely Point Cloud dataset
-
-   <br>
-1. To download images with the dataset, enable the `Save images` option.
-1. (Optional) To name the resulting archive, use the `Custom name` field.
-1. You can choose a storage for dataset export by selecting a target storage `Local` or `Cloud storage`.
-   The default settings are the settings that had been selected when the project was created
-   (for example, if you specified a local storage when you created the project,
-   then by default, you will be prompted to export the dataset to your PC).
-   You can find out the default value by hovering the mouse over the `?`.
-   Learn more about {{< ilink "/docs/workspace/attach-cloud-storage" "attach cloud storage" >}}.
 
 ## Import dataset
 

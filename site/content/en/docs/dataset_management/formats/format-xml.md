@@ -3,7 +3,7 @@ title: 'XML annotation format'
 linkTitle: 'XML annotation format'
 weight: 1
 aliases:
-  - /docs/manual/advanced/xml_format/
+  - /docs/other/xml_format/
 ---
 
 When you want to download annotations from Computer Vision Annotation Tool (CVAT)
