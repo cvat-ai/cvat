@@ -17,7 +17,7 @@ from urllib.parse import urljoin
 import django_rq
 from django.conf import settings
 from django.core.paginator import InvalidPage, PageNotAnInteger
-from django.db.models import Func, IntegerField, QuerySet, expressions
+from django.db.models import Func, QuerySet
 from django_cte import CTE, with_cte
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
@@ -412,16 +412,6 @@ class BackupMixin:
         return downloader.download_file()
 
 
-class Star(expressions.Expression):
-    # Star is a private class in Django, so we use our own. It's a trivial class though.
-
-    def __repr__(self):
-        return "'*'"
-
-    def as_sql(self, compiler, connection):
-        return "*", []
-
-
 class OptimizedModelListMixin:
     def filter_queryset_for_list_request(self, queryset: QuerySet):
         if not isinstance(queryset, RecordingQuerySet):
@@ -468,11 +458,10 @@ class OptimizedModelListMixin:
         count_qs = with_cte(
             count_ids_cte, select=count_ids_cte.queryset()
         ).values_list(Func(
-            # Count(column) works slower than Count(*). We use Star() here to get COUNT(*)
-            # Probably, can alternatively be fixed by adding the id field into FK column indices.
-            Star(),
-            # With *, Django can't determine the output type automatically, so we specify it
-            output_field=IntegerField(),
+            # Count(pk) works slower than Count(*), if pk is not in the index (the default).
+            # We could use Star() here to get COUNT(*), but this is a private symbol in Django.
+            # Count(1) does the same or better (in older DBs).
+            1,
             function='Count',
         ), flat=True)
 
