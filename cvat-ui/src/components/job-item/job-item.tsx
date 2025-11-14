@@ -4,7 +4,9 @@
 
 import './styles.scss';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+    useCallback, useEffect, useState,
+} from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import dayjs, { Dayjs } from 'dayjs';
@@ -21,7 +23,7 @@ import { DurationIcon, FramesIcon } from 'icons';
 import {
     Job, JobStage, JobState, JobType, Task, User,
 } from 'cvat-core-wrapper';
-import { useIsMounted } from 'utils/hooks';
+import { useIsMounted, useContextMenuClick } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
@@ -115,6 +117,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
 
     const { stage, state } = job;
     const created = dayjs(job.createdDate);
@@ -159,8 +162,10 @@ function JobItem(props: Readonly<Props>): JSX.Element {
         }
     }, [onCollapseChange]);
 
+    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
     const card = (
         <Card
+            ref={itemRef}
             className={`cvat-job-item${selected ? ' cvat-item-selected' : ''}`}
             style={{ ...style }}
             data-row-id={job.id}
@@ -279,13 +284,12 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                     </Row>
                 </Col>
             </Row>
-            <JobActionsComponent
-                jobInstance={job}
-                consensusJobsPresent={(childJobs as Job[]).length > 0}
-                triggerElement={
-                    <MoreOutlined className='cvat-job-item-more-button cvat-actions-menu-button' />
-                }
-            />
+            <div
+                onClick={handleContextMenuClick}
+                className='cvat-job-item-more-button cvat-actions-menu-button'
+            >
+                <MoreOutlined className='cvat-menu-icon' />
+            </div>
             {childJobViews.length > 0 && (
                 <Collapse
                     className='cvat-consensus-job-collapse'

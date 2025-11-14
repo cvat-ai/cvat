@@ -17,6 +17,7 @@ import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import Preview from 'components/common/preview';
 import { ActiveInference, PluginComponent } from 'reducers';
 import StatusMessage from 'components/requests-page/request-status';
+import { dispatchContextMenuEvent } from 'utils/context-menu-helper';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 import TaskActionsComponent from './actions-menu';
 
@@ -263,20 +264,9 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     <Col className='cvat-item-open-task-actions'>
                         <div
                             onClick={(e) => {
-                                setTimeout(() => {
-                                    if (this.#itemRef.current) {
-                                        e.preventDefault();
-                                        this.#itemRef.current.dispatchEvent(
-                                            new MouseEvent('contextmenu', {
-                                                bubbles: true,
-                                                cancelable: true,
-                                                button: 2,
-                                                clientX: e.clientX,
-                                                clientY: e.clientY,
-                                            }),
-                                        );
-                                    }
-                                });
+                                if (this.#itemRef.current) {
+                                    dispatchContextMenuEvent(this.#itemRef.current, e);
+                                }
                             }}
                             className='cvat-task-item-actions-button cvat-actions-menu-button'
                         >

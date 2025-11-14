@@ -20,7 +20,7 @@ interface WebhookActionsMenuProps {
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
 
-export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuProps>): JSX.Element {
+export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuProps>): JSX.Element | null {
     const { webhookInstance, triggerElement, dropdownTrigger } = props;
 
     const history = useHistory();

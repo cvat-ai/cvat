@@ -13,9 +13,8 @@ import { CombinedState } from 'reducers';
 
 interface Props {
     requestInstance: Request;
-    triggerElement: JSX.Element;
+    triggerElement: (menuItems: NonNullable<MenuProps['items']>) => JSX.Element | null;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
-    renderTriggerIfEmpty?: boolean;
 }
 
 function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
@@ -23,7 +22,6 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
         requestInstance,
         triggerElement,
         dropdownTrigger,
-        renderTriggerIfEmpty = true,
     } = props;
     const dispatch = useDispatch();
     const {
@@ -107,7 +105,8 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
         });
     }
 
-    if (!renderTriggerIfEmpty && menuItems.length === 0) {
+    const renderedTrigger = triggerElement(menuItems);
+    if (!renderedTrigger) {
         return null;
     }
 
@@ -121,7 +120,7 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
                 className: 'cvat-request-menu',
             }}
         >
-            {triggerElement}
+            {renderedTrigger}
         </Dropdown>
     );
 }
