@@ -19,7 +19,7 @@ from queue import Queue
 from typing import Any, BinaryIO, Callable, Optional, TypeVar
 
 import boto3
-from azure.core.exceptions import HttpResponseError, ResourceExistsError
+from azure.core.exceptions import HttpResponseError, ResourceExistsError, ServiceRequestError
 from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
@@ -894,6 +894,11 @@ class AzureBlobCloudStorage(_CloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        except ServiceRequestError as ex:
+            slogger.glob.warning(
+                        f"CloudStorage Azure {self.name} not available"
+                    )
+            return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
         try:
@@ -966,9 +971,11 @@ def _define_gcs_status(func):
             else:
                 func(self, key)
             return Status.AVAILABLE
-        except GoogleCloudNotFound:
+        except GoogleCloudNotFound as e:
+            slogger.glob.warning(f"GoogleCloudNotFound: {e}")
             return Status.NOT_FOUND
-        except GoogleCloudForbidden:
+        except GoogleCloudForbidden as e:
+            slogger.glob.warning(f"GoogleCloudForbidden: {e}")
             return Status.FORBIDDEN
 
     return wrapper
