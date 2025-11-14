@@ -40,6 +40,7 @@ export enum SettingsActionTypes {
     CHANGE_BRIGHTNESS_LEVEL = 'CHANGE_BRIGHTNESS_LEVEL',
     CHANGE_CONTRAST_LEVEL = 'CHANGE_CONTRAST_LEVEL',
     CHANGE_SATURATION_LEVEL = 'CHANGE_SATURATION_LEVEL',
+    CHANGE_SHAPES_POINT_SIZE = 'CHANGE_SHAPES_POINT_SIZE',
     SWITCH_AUTO_SAVE = 'SWITCH_AUTO_SAVE',
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
     CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
@@ -511,4 +512,13 @@ export function updateCachedSettings(settings: CombinedState['settings'], shortc
     };
 
     localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
+}
+
+export function changeShapesPointSize(pointSize: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHAPES_POINT_SIZE,
+        payload: {
+            pointSize,
+        },
+    };
 }
