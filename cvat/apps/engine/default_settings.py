@@ -110,3 +110,13 @@ DEFAULT_DB_BULK_CREATE_BATCH_SIZE = int(os.getenv("CVAT_DEFAULT_DB_BULK_CREATE_B
 DEFAULT_DB_ANNO_CHUNK_SIZE = int(os.getenv("CVAT_DEFAULT_DB_ANNO_CHUNK_SIZE", 2000))
 
 MAX_JOBS_PER_TASK = int(os.getenv("CVAT_MAX_JOBS_PER_TASK", 5_000))
+
+MIN_LIST_OFFSET_FOR_UNION = int(os.getenv("CVAT_MIN_LIST_OFFSET_FOR_UNION", 2_000))
+"""
+Optimized SQL queries with UNION for list endpoints are only efficient
+starting from some number of rows in the table or the current query working set.
+This setting controls the minimum offset in the query table from which the optimization
+is applied. Only effective when COUNT is not required in the request.
+This affects the number of first pages in the list endpoint that do not use
+the optimized SQL query.
+"""
