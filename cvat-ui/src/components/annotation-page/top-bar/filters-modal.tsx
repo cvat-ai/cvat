@@ -53,6 +53,7 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
         };
 
         const labelSubfields = subfields[adjustedLabelName].subfields;
+        // Add root label attributes
         label.attributes.forEach((attr: any): void => {
             const adjustedAttrName = adjustName(attr.name);
             labelSubfields[adjustedAttrName] = {
@@ -68,6 +69,34 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
                 };
             }
         });
+
+        // If skeleton, add sublabel (point) attributes as nested fields
+        if (label.type === 'skeleton' && Array.isArray(label.sublabels)) {
+            label.sublabels.forEach((sublabel: any) => {
+                const adjustedSublabelName = adjustName(sublabel.name);
+                labelSubfields[adjustedSublabelName] = {
+                    type: '!struct',
+                    label: sublabel.name,
+                    subfields: {},
+                };
+                const sublabelSubfields = labelSubfields[adjustedSublabelName].subfields;
+                sublabel.attributes.forEach((attr: any) => {
+                    const adjustedAttrName = adjustName(attr.name);
+                    sublabelSubfields[adjustedAttrName] = {
+                        label: attr.name,
+                        type: getConvertedInputType(attr.inputType),
+                    };
+                    if (sublabelSubfields[adjustedAttrName].type === 'select') {
+                        sublabelSubfields[adjustedAttrName] = {
+                            ...sublabelSubfields[adjustedAttrName],
+                            fieldSettings: {
+                                listValues: attr.values,
+                            },
+                        };
+                    }
+                });
+            });
+        }
     });
 
     return subfields;
