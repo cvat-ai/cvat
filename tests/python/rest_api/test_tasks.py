@@ -1301,10 +1301,6 @@ class TestTaskBackups:
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
-        cloud_storage_content = [
-            "images_with_manifest/image_case_65_1.png",
-            "images_with_manifest/image_case_65_2.png",
-        ]
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1317,7 +1313,10 @@ class TestTaskBackups:
             "image_quality": 75,
             "use_cache": False,
             "cloud_storage_id": 1,
-            "server_files": cloud_storage_content,
+            "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
+            "start_frame": 1,
+            "stop_frame": 4,
+            "frame_filter": "step=2",
         }
         task_id, _ = create_task(self.user, task_spec, data_spec)
 
@@ -1335,7 +1334,7 @@ class TestTaskBackups:
 
         expected_media = {"manifest.jsonl"}
         if not lightweight_backup:
-            expected_media.update(cloud_storage_content)
+            expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
         assert files_in_data == expected_media
 
         self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
@@ -1401,9 +1400,20 @@ class TestTaskBackups:
         exclude_regex_paths = [r"root\['chunks_updated_date'\]"]  # must be different
 
         if old_meta["storage"] == "cloud_storage":
-            assert new_meta["storage"] == ("cloud_storage" if lightweight_backup else "local")
             assert new_meta["cloud_storage_id"] is None
-            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]", r"root\['storage'\]"])
+            exclude_regex_paths.append(r"root\['cloud_storage_id'\]")
+
+            if not lightweight_backup:
+                assert new_meta["storage"] == "local"
+                assert new_meta["start_frame"] == 0
+                assert new_meta["stop_frame"] == len(old_meta["frames"]) - 1
+                assert new_meta["frame_filter"] == ""
+                exclude_regex_paths += [
+                    r"root\['storage'\]",
+                    r"root\['start_frame'\]",
+                    r"root\['stop_frame'\]",
+                    r"root\['frame_filter'\]",
+                ]
 
         assert (
             DeepDiff(
