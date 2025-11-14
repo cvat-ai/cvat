@@ -70,12 +70,34 @@ class VideoStreamReader:
     def resolution(self):
         return (self.width, self.height)
 
-    def validate_key_frame(self, container, video_stream, key_frame):
+    def validate_key_frame(
+        self,
+        container: av.container.InputContainer,
+        video_stream: av.video.stream.VideoStream,
+        key_frame: dict,
+        prev_seek_pts: Optional[int],
+    ) -> tuple[bool, Optional[int]]:
+        """
+        Returns a tuple
+        The first element indicates whether it is possible to seek to the key_frame using its pts (possibly with some decoding after seek).
+        The second element is the pts of the first decoded frame after seeking, if it is possible to seek
+        """
+        container.seek(offset=key_frame["pts"], stream=video_stream)
+
+        seek_pts = None
         for packet in container.demux(video_stream):
             for frame in packet.decode():
+                if seek_pts is None:
+                    seek_pts = frame.pts
+                    # if seek landed on the same frame as previous seek, it is redundant
+                    if prev_seek_pts == seek_pts:
+                        return False, None
+                if frame.pts < key_frame["pts"]:
+                    continue
                 if md5_hash(frame) != key_frame["md5"] or frame.pts != key_frame["pts"]:
-                    return False
-                return True
+                    return False, None
+                return True, seek_pts
+        return False, None
 
     def __iter__(self) -> Iterator[Union[int, tuple[int, int, str]]]:
         """
@@ -94,6 +116,7 @@ class VideoStreamReader:
             prev_pts: Optional[int] = None
             prev_dts: Optional[int] = None
             index, key_frame_count = 0, 0
+            prev_seek_pts = None
 
             for packet in reading_container.demux(reading_v_stream):
                 for frame in packet.decode():
@@ -111,15 +134,13 @@ class VideoStreamReader:
                         }
 
                         # Check that it is possible to seek to this key frame using frame.pts
-                        checking_container.seek(
-                            offset=key_frame_data["pts"],
-                            stream=checking_v_stream,
-                        )
-                        is_valid_key_frame = self.validate_key_frame(
+                        is_valid_key_frame, seek_pts = self.validate_key_frame(
                             checking_container,
                             checking_v_stream,
                             key_frame_data,
+                            prev_seek_pts,
                         )
+                        prev_seek_pts = seek_pts
 
                         if is_valid_key_frame:
                             key_frame_count += 1
@@ -616,6 +637,8 @@ class VideoManifestValidator(VideoManifestManager):
     def validate_key_frame(self, container, video_stream, key_frame):
         for packet in container.demux(video_stream):
             for frame in packet.decode():
+                if frame.pts < key_frame["pts"]:
+                    continue
                 assert (
                     frame.pts == key_frame["pts"]
                 ), "The uploaded manifest does not match the video"
