@@ -1,5 +1,5 @@
 {
-  "count": 54,
+  "count": 56,
   "next": null,
   "previous": null,
   "results": [
@@ -1041,6 +1041,28 @@
       "sublabels": [],
       "task_id": 31,
       "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#3310e1",
+      "has_parent": false,
+      "id": 91,
+      "name": "tag1",
+      "parent_id": null,
+      "project_id": 18,
+      "sublabels": [],
+      "type": "tag"
+    },
+    {
+      "attributes": [],
+      "color": "#ce1a72",
+      "has_parent": false,
+      "id": 92,
+      "name": "tag2",
+      "parent_id": null,
+      "project_id": 18,
+      "sublabels": [],
+      "type": "tag"
     }
   ]
 }

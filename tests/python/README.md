@@ -82,6 +82,7 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
+cd tests/python
 docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign \
     --exclude=admin --exclude=auth.permission --exclude=authtoken --exclude=contenttypes \
     --exclude=django_rq --exclude=sessions \
