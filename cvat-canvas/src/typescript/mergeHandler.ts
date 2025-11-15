@@ -75,7 +75,7 @@ export class MergeHandlerImpl implements MergeHandler {
                 this.onMergeDone(null);
                 // here is a cycle
                 // onMergeDone => controller => model => view => closeMerging
-                // one call of closeMerging is unuseful, but it's okey
+                // one call of closeMerging is useless, but it's okey
             }
         }
     }
@@ -151,6 +151,6 @@ export class MergeHandlerImpl implements MergeHandler {
         this.onMergeDone(null);
         // here is a cycle
         // onMergeDone => controller => model => view => closeMerging
-        // one call of closeMerging is unuseful, but it's okey
+        // one call of closeMerging is useless, but it's okey
     }
 }
