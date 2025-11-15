@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
 from random import shuffle
-from typing import Any, Callable, Optional, Protocol, TypeVar, Union
+from typing import Any, Callable, Optional, Protocol, TypeVar, Union, TypedDict
 
 import av
 import av.codec
@@ -47,6 +47,12 @@ from utils.dataset_manifest.utils import PcdReader, detect_media_dimension
 
 ORIENTATION_EXIF_TAG = 274
 
+
+class Chapter(TypedDict):
+    id: int
+    metadata: dict[str, str]
+    start: int
+    stop: int
 
 class ORIENTATION(IntEnum):
     NORMAL_HORIZONTAL = 1
@@ -121,6 +127,16 @@ def load_image(image: tuple[str, str, str]) -> tuple[Image.Image, str, str]:
         pil_img.load()
         return pil_img, image[1], image[2]
 
+def get_video_chapters(manifest_path: str, segment: tuple[int, int] = None) -> list[Chapter]:
+    manifest = VideoManifestManager(manifest_path)
+
+    chapters = []
+
+    if segment:
+        chapters = [
+            chapter for chapter in manifest.chapters if segment[0] <= chapter["start"] <= segment[1]
+        ]
+    return chapters
 
 _T = TypeVar("_T")
 
