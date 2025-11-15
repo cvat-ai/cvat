@@ -498,6 +498,10 @@
     }
 }
 
+.cvat-player-chapters-menu-button svg {
+    transform: scale(0.8);
+}
+
 .cvat-annotations-filters-input.ant-select {
     > .ant-select-selector {
         height: 32px;
