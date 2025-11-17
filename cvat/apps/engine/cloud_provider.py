@@ -666,9 +666,7 @@ class S3CloudStorage(_CloudStorage):
             else:
                 return Status.NOT_FOUND
         except EndpointConnectionError as ex:
-            slogger.glob.warning(
-                        f"CloudStorage S3 {self.name} not available"
-                    )
+            slogger.glob.warning(f"CloudStorage S3 {self.name} not available")
             return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
@@ -895,9 +893,7 @@ class AzureBlobCloudStorage(_CloudStorage):
             else:
                 return Status.NOT_FOUND
         except ServiceRequestError as ex:
-            slogger.glob.warning(
-                        f"CloudStorage Azure {self.name} not available"
-                    )
+            slogger.glob.warning(f"CloudStorage Azure {self.name} not available")
             return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
