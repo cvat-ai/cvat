@@ -78,6 +78,10 @@ class Status(str, Enum):
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
 
+    @classmethod
+    def values(cls):
+        return list(i.value for i in cls)
+
     def __str__(self):
         return self.value
 
@@ -666,7 +670,7 @@ class S3CloudStorage(_CloudStorage):
             else:
                 return Status.NOT_FOUND
         except EndpointConnectionError as ex:
-            slogger.glob.warning(f"CloudStorage S3 {self.name} not available: {ex}")
+            slogger.glob.warning(f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available: {ex}", exc_info=True)
             return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
@@ -893,7 +897,7 @@ class AzureBlobCloudStorage(_CloudStorage):
             else:
                 return Status.NOT_FOUND
         except ServiceRequestError as ex:
-            slogger.glob.warning(f"CloudStorage Azure {self.name} not available {ex}")
+            slogger.glob.warning(f"CloudStorage Azure {self.account_url} not available {ex}", exc_info=True)
             return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
@@ -968,10 +972,10 @@ def _define_gcs_status(func):
                 func(self, key)
             return Status.AVAILABLE
         except GoogleCloudNotFound as e:
-            slogger.glob.warning(f"GoogleCloudNotFound: {e}")
+            slogger.glob.warning(f"GoogleCloudNotFound: {e}", exc_info=True)
             return Status.NOT_FOUND
         except GoogleCloudForbidden as e:
-            slogger.glob.warning(f"GoogleCloudForbidden: {e}")
+            slogger.glob.warning(f"GoogleCloudForbidden: {e}", exc_info=True)
             return Status.FORBIDDEN
 
     return wrapper
