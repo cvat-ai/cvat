@@ -103,7 +103,6 @@ function PlayerNavigation(props: Props): JSX.Element {
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
 
-    // Load plugin components for player slider
     const playerSliderPlugins = usePlugins(
         (state: CombinedState) => state.plugins.components.annotationPage.player.slider,
         props,
