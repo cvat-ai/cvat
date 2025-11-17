@@ -11,7 +11,7 @@ import Descriptions from 'antd/lib/descriptions';
 import { MoreOutlined } from '@ant-design/icons';
 
 import { Job, JobType } from 'cvat-core-wrapper';
-import { useCardHeightHOC } from 'utils/hooks';
+import { useCardHeightHOC, useContextMenuClick } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import { CombinedState } from 'reducers';
 import JobActionsComponent from './actions-menu';
@@ -38,6 +38,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
 
     const history = useHistory();
     const height = useCardHeight();
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
     const handleCardClick = useCallback((event: React.MouseEvent): void => {
         const cancel = onClick(event);
         if (!cancel) {
@@ -65,6 +66,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
 
     const cardClassName = `cvat-job-page-list-item${selected ? ' cvat-item-selected' : ''}`;
 
+    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
     return (
         <JobActionsComponent
             jobInstance={job}
@@ -72,6 +74,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
             dropdownTrigger={['contextMenu']}
             triggerElement={(
                 <Card
+                    ref={itemRef}
                     style={{ ...style, height }}
                     className={cardClassName}
                     cover={(
@@ -104,13 +107,12 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                             <Descriptions.Item label='Assignee'> </Descriptions.Item>
                         )}
                     </Descriptions>
-                    <JobActionsComponent
-                        jobInstance={job}
-                        consensusJobsPresent={false} // consensus merging is not allowed from jobs page
-                        triggerElement={
-                            <MoreOutlined className='cvat-job-card-more-button cvat-actions-menu-button' />
-                        }
-                    />
+                    <div
+                        onClick={handleContextMenuClick}
+                        className='cvat-job-card-more-button cvat-actions-menu-button'
+                    >
+                        <MoreOutlined className='cvat-menu-icon' />
+                    </div>
                 </Card>
             )}
         />
