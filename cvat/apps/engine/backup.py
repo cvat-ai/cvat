@@ -220,7 +220,6 @@ class _TaskBackupBase(_BackupBase):
     MEDIA_MANIFEST_INDEX_FILENAME = "index.json"
     ANNOTATIONS_FILENAME = "annotations.json"
     DATA_DIRNAME = "data"
-    TASK_DIRNAME = "task"
 
     def _prepare_task_meta(self, task):
         allowed_fields = {
@@ -550,17 +549,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         else:
             raise NotImplementedError
 
-    def _write_task(self, zip_object: ZipFile, target_dir: str) -> None:
-        task_dir = self._db_task.get_dirname()
-        target_task_dir = os.path.join(target_dir, self.TASK_DIRNAME)
-
-        self._write_directory(
-            source_dir=task_dir,
-            zip_object=zip_object,
-            target_dir=target_task_dir,
-            recursive=False,
-        )
-
     def _write_manifest(self, zip_object: ZipFile, target_dir: str) -> None:
         def serialize_task():
             task_serializer = TaskReadSerializer(self._db_task)
@@ -712,7 +700,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
     def _export_task(self, zip_obj: ZipFile, target_dir: str) -> None:
         self._write_data(zip_obj, target_dir)
-        self._write_task(zip_obj, target_dir)
         self._write_manifest(zip_obj, target_dir)
         self._write_annotations(zip_obj, target_dir)
         self._write_annotation_guide(zip_obj, target_dir)
@@ -878,7 +865,6 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
     def _copy_input_files(
         self,
         input_archive: Union[ZipFile, str],
-        output_task_path: str,
         *,
         excluded_filenames: Optional[Collection[str]] = None,
     ) -> list[str]:
@@ -886,11 +872,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             with ZipFile(input_archive, "r") as zf:
                 return self._copy_input_files(
                     input_archive=zf,
-                    output_task_path=output_task_path,
                     excluded_filenames=excluded_filenames,
                 )
 
-        input_task_dirname = self.TASK_DIRNAME
         input_data_dirname = self.DATA_DIRNAME
         output_data_path = self._db_task.data.get_upload_dirname()
         uploaded_files = []
@@ -912,14 +896,6 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                     shutil.copyfileobj(source, out)
 
                 uploaded_files.append(os.path.relpath(file_name, input_data_dirname))
-            elif file_name.startswith(input_task_dirname + "/"):
-                target_file = os.path.join(
-                    output_task_path, os.path.relpath(file_name, input_task_dirname)
-                )
-
-                self._prepare_dirs(target_file)
-                with open(target_file, "wb") as out, input_archive.open(file_path) as source:
-                    shutil.copyfileobj(source, out)
 
         return uploaded_files
 
@@ -1009,9 +985,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._db_task.data = db_data
         self._db_task.save()
 
-        uploaded_files = self._copy_input_files(
-            self._file, task_data_path, excluded_filenames=excluded_input_files
-        )
+        uploaded_files = self._copy_input_files(self._file, excluded_filenames=excluded_input_files)
 
         data["use_zip_chunks"] = data.pop("chunk_type") == DataChoice.IMAGESET
         data = data_serializer.data
