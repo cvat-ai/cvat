@@ -93,6 +93,7 @@ function ApiTokenForm({
                     style={{ width: '100%' }}
                     placeholder='Select expiration date'
                     disabledDate={(current) => current && current.valueOf() < Date.now()}
+                    format='DD/MM/YYYY'
                 />
             </Form.Item>
             <Form.Item
