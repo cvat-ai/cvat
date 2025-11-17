@@ -14,6 +14,7 @@ import { CombinedState, PluginComponent, InstanceType } from 'reducers';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { authQuery } from './auth-query';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
+import { dispatchContextMenuEvent } from './context-menu-helper';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -279,4 +280,21 @@ export function useResourceQuery<QueryType extends {
         }
     }
     return updatedQuery;
+}
+
+export interface ContextMenuClick<T extends HTMLElement = HTMLElement> {
+    itemRef: React.RefObject<T>;
+    handleContextMenuClick: (e: React.MouseEvent) => void;
+}
+
+export function useContextMenuClick<T extends HTMLElement = HTMLElement>(): ContextMenuClick<T> {
+    const itemRef = useRef<T>(null);
+
+    const handleContextMenuClick = useCallback((e: React.MouseEvent) => {
+        if (itemRef.current) {
+            dispatchContextMenuEvent(itemRef.current, e);
+        }
+    }, []);
+
+    return { itemRef, handleContextMenuClick };
 }

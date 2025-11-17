@@ -14,6 +14,7 @@ import { MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 
 import { RQStatus, Request } from 'cvat-core-wrapper';
+import { useContextMenuClick } from 'utils/hooks';
 
 import StatusMessage from './request-status';
 import RequestActionsComponent from './actions-menu';
@@ -143,6 +144,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
         request, cancelled, selected, onClick,
     } = props;
     const { operation } = request;
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
     const { type } = operation;
 
     const linkToEntity = constructLink(request);
@@ -163,8 +165,9 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
         <RequestActionsComponent
             requestInstance={request}
             dropdownTrigger={['contextMenu']}
-            triggerElement={(
+            triggerElement={(menuItems) => (
                 <Card
+                    ref={itemRef}
                     className={
                         `cvat-requests-card${selected ? ' cvat-item-selected' : ''}`
                     }
@@ -240,18 +243,17 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
                                     }
                                 </Col>
                                 <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
-                                    <RequestActionsComponent
-                                        requestInstance={request}
-                                        renderTriggerIfEmpty={false}
-                                        triggerElement={(
+                                    {
+                                        (menuItems.length > 0) ? (
                                             <Button
                                                 type='link'
                                                 size='middle'
                                                 className='cvat-requests-page-actions-button cvat-actions-menu-button'
                                                 icon={<MoreOutlined className='cvat-menu-icon' />}
+                                                onClick={handleContextMenuClick}
                                             />
-                                        )}
-                                    />
+                                        ) : null
+                                    }
                                 </Col>
                             </Row>
                         </Col>
