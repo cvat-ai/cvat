@@ -472,7 +472,7 @@ class OptimizedModelListMixin:
                 ids_cte, select=ids_cte.queryset().order_by(*(inner_queryset.query.order_by))
             ).values_list("pk", flat=True)[start_index: end_index]
 
-            total = end_index
+            total = None
             page_ids = list(page_ids_qs)
         else:
             page_ids_qs = with_cte(

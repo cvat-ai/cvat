@@ -329,14 +329,14 @@ class RecordingQuerySet(models.QuerySet[_ModelT]):
 @attrs.define
 class ListQueryset:
     # A list with virtually shifted element indices
-    total: int
+    total: int | None
     page_data: Sequence[int]
     start_index: int = attrs.field(kw_only=True)
     _end_index: int = attrs.field(init=False)
 
     def __attrs_post_init__(self):
         self._end_index = min(self.start_index + len(self.page_data), self.total)
-        if self._end_index < self.total:
+        if self.total is None:
             self.total = self._end_index
 
     def count(self):
@@ -352,13 +352,13 @@ class ListQueryset:
     def __getitem__(self, i: int | slice):
         if isinstance(i, slice):
             slice_start = i.start
-            if slice_start is not None:
+            if slice_start:
                 assert isinstance(slice_start, int) and slice_start >= 0
                 self._check_index(slice_start)
                 slice_start -= self.start_index
 
-            slice_end = i.stop  # stop is not included
-            if slice_end is not None:
+            slice_end = i.stop  # stop is not included in the range
+            if slice_end:
                 assert isinstance(slice_end, int) and slice_end > 0
                 slice_end -= self.start_index
 
