@@ -52,7 +52,7 @@ dependencies:
     condition: analytics.enabled
 
   - name: traefik
-    version: "34.4.*"
+    version: "37.3.*"
     repository: https://helm.traefik.io/traefik
     condition: traefik.enabled
 
