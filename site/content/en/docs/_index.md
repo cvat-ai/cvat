@@ -32,10 +32,6 @@ Formats, import/export, annotation spec.
 Editor, tools, automated labeling.
 {{< /card >}}
 
-{{< card icon="fa-solid fa-map-signs" title="Guides" url="guides/" >}}
-Workflow examples and tutorials.
-{{< /card >}}
-
 {{< card icon="fa-solid fa-chart-line" title="QA & Analytics" url="qa_analytics/" >}}
 Quality control, consensus, analytics.
 {{< /card >}}
@@ -50,18 +46,6 @@ Installation, AWS, superuser, advanced config.
 
 {{< card icon="fa-solid fa-code" title="Developers" url="developers/" >}}
 API, SDK, CLI, tokens.
-{{< /card >}}
-
-{{< card icon="fa-solid fa-circle-question" title="FAQ" url="faq/" >}}
-Answers to common questions.
-{{< /card >}}
-
-{{< card icon="fa-solid fa-handshake-angle" title="Contributing" url="contributing/" >}}
-Branching, issues, PR process.
-{{< /card >}}
-
-{{< card icon="fa-solid fa-circle-info" title="Other" url="other/" >}}
-Extra docs, CVAT + Datumaro intro.
 {{< /card >}}
 
 </div>

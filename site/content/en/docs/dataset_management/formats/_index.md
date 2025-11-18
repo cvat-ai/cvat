@@ -11,16 +11,6 @@ In CVAT, you have the option to export data in various formats.
 The choice of export format depends on the type of annotation as
 well as the intended future use of the dataset.
 
-See:
-
-- [Data export formats](#data-export-formats)
-- [Exporting dataset in CVAT](#exporting-dataset-in-cvat)
-  - [Exporting dataset from Task](#exporting-dataset-from-task)
-  - [Exporting dataset from Job](#exporting-dataset-from-job)
-- [Data export video tutorial](#data-export-video-tutorial)
-
-## Data export formats
-
 The table below outlines the available formats for data export in CVAT.
 
 | Format                                                                                                                      | Type          | Computer Vision Task                                        | Models                                                                                                                                                                                  | Shapes                                                                                          | Attributes           | Video Tracks  |

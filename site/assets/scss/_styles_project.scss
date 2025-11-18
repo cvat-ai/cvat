@@ -170,17 +170,17 @@ footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
 /* Modern CVAT Docs card */
 
 .cvat-card {
-  background: #ffffff;
+  background: #fff;
   border-radius: 12px;
   padding: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  box-shadow: 0 6px 18px rgba(0,0,0,6%);
   transition: transform .15s ease, box-shadow .15s ease;
   height: auto !important;
 }
 
 .cvat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,10%);
 }
 
 .cvat-card-link {
