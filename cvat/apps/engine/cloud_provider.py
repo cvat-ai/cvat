@@ -671,7 +671,7 @@ class S3CloudStorage(_CloudStorage):
                 return Status.NOT_FOUND
         except EndpointConnectionError as ex:
             slogger.glob.warning(
-                f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available: {ex}",
+                f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available",
                 exc_info=True,
             )
             return Status.NOT_FOUND
@@ -901,7 +901,7 @@ class AzureBlobCloudStorage(_CloudStorage):
                 return Status.NOT_FOUND
         except ServiceRequestError as ex:
             slogger.glob.warning(
-                f"CloudStorage Azure {self.account_url} not available {ex}", exc_info=True
+                f"CloudStorage Azure {self.account_url} not available", exc_info=True
             )
             return Status.NOT_FOUND
 
