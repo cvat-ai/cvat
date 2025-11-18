@@ -750,3 +750,4 @@ class TestListCloudStorages:
         self._test_can_see_cloud_storages(
             "admin2", list(cloud_storages), page_size="all", org_id=query_value
         )
+

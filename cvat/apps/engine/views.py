@@ -57,8 +57,8 @@ from cvat.apps.engine.cache import (
     LockError,
     MediaCache,
 )
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.frame_provider import (
     DataWithMeta,
