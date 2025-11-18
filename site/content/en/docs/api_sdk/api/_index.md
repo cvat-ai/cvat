@@ -98,6 +98,7 @@ The endpoints are grouped by APIs:
 - `server` - server information requests
 - `tasks` - requests to manage tasks
 - `users` -  user management queries
+etc.
 
 
 In the **Models** section below you can also find various data
