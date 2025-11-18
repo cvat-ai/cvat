@@ -99,9 +99,9 @@ The endpoints are grouped by APIs:
 - `tasks` - requests to manage tasks
 - `users` -  user management queries
 
-Besides it contains `Models`.
-Models - the data type is described using a 
-[schema object](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.3.md#schemaObject).
+
+In the **Models** section below you can also find various data
+structures used in the endpoints.
 
 Each group contains queries related to a different types of HTTP methods such as: `GET`, `POST`, `PATCH`, `DELETE`, etc.
 Different methods are highlighted in different color. Each item has a name and description.
