@@ -85,8 +85,8 @@ variable in docker-compose.yml file with cvat hosted machine IP or domain
 name. Example - `ALLOWED_HOSTS: 'localhost, 127.0.0.1'`.
 
 Make a request to a resource stored on a server and the server will respond with the requested information.
-The HTTP protocol is used to transport a data.
-Requests are divided into groups:
+
+The endpoints are grouped by APIs:
 
 - `auth` - user authentication queries
 - `comments` - requests to post/delete comments to issues
