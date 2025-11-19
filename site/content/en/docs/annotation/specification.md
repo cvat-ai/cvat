@@ -4,7 +4,7 @@ linkTitle: 'Specification for annotators'
 weight: 1
 description: 'Learn how to easily create and add specification for annotators using the Guide feature.'
 aliases:
- - /docs/manual/advanced/specification/
+ - /docs/dataset_management/specification/
 ---
 
 The **Guide** feature provides a built-in markdown editor that
