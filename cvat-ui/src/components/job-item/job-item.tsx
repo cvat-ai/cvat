@@ -23,7 +23,7 @@ import { DurationIcon, FramesIcon } from 'icons';
 import {
     Job, JobStage, JobState, JobType, Task, User,
 } from 'cvat-core-wrapper';
-import { useIsMounted, useContextMenuClickUpdated } from 'utils/hooks';
+import { useIsMounted, useContextMenuClick } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
@@ -117,12 +117,8 @@ function JobItem(props: Readonly<Props>): JSX.Element {
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
 
-    const {
-        menuRef,
-        onResourceContextMenu,
-        onTriggerElementContextMenu,
-    } = useContextMenuClickUpdated<HTMLDivElement>();
     const { stage, state } = job;
     const created = dayjs(job.createdDate);
     const updated = dayjs(job.updatedDate);
@@ -169,11 +165,11 @@ function JobItem(props: Readonly<Props>): JSX.Element {
     /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
     const card = (
         <Card
+            ref={itemRef}
             className={`cvat-job-item${selected ? ' cvat-item-selected' : ''}`}
             style={{ ...style }}
             data-row-id={job.id}
             onClick={onClick}
-            onContextMenu={onResourceContextMenu}
         >
             <Row align='middle'>
                 <Col span={6}>
@@ -288,12 +284,12 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                     </Row>
                 </Col>
             </Row>
-            <JobActionsComponent
-                jobInstance={job}
-                consensusJobsPresent={(childJobs as Job[]).length > 0}
-                dropdownTrigger={['click', 'contextMenu']}
-                triggerElement={<MoreOutlined ref={menuRef} onContextMenu={onTriggerElementContextMenu} className='cvat-job-item-more-button cvat-actions-menu-button cvat-menu-icon' />}
-            />
+            <div
+                onClick={handleContextMenuClick}
+                className='cvat-job-item-more-button cvat-actions-menu-button'
+            >
+                <MoreOutlined className='cvat-menu-icon' />
+            </div>
             {childJobViews.length > 0 && (
                 <Collapse
                     className='cvat-consensus-job-collapse'
@@ -313,7 +309,16 @@ function JobItem(props: Readonly<Props>): JSX.Element {
 
     return (
         <Col span={24}>
-            {card}
+            {
+                job.parentJobId === null ? (
+                    <JobActionsComponent
+                        jobInstance={job}
+                        consensusJobsPresent={(childJobs as Job[]).length > 0}
+                        dropdownTrigger={['contextMenu']}
+                        triggerElement={card}
+                    />
+                ) : card
+            }
         </Col>
     );
 }

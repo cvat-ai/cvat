@@ -298,39 +298,3 @@ export function useContextMenuClick<T extends HTMLElement = HTMLElement>(): Cont
 
     return { itemRef, handleContextMenuClick };
 }
-
-export interface ContextMenuUpdated<T extends HTMLElement = HTMLElement> {
-    menuRef: React.RefObject<T>;
-    onResourceContextMenu: (e: React.MouseEvent) => void;
-    onTriggerElementContextMenu: (e: React.MouseEvent) => void;
-}
-
-export function useContextMenuClickUpdated<T extends HTMLElement = HTMLElement>(
-    preventSelectors: string[] = [
-        'a',
-        'input',
-        '.ant-dropdown-menu-item',
-    ],
-): ContextMenuUpdated<T> {
-    const menuRef = useRef<T>(null);
-
-    const shouldPreventContextMenu = useCallback((target: EventTarget | null): boolean => {
-        if (!target || !(target instanceof Element)) return false;
-        return preventSelectors.some((selector) => target.closest(selector) !== null);
-    }, [preventSelectors]);
-
-    const onResourceContextMenu = useCallback((e: React.MouseEvent) => {
-        if (menuRef.current && !shouldPreventContextMenu(e.target)) {
-            dispatchContextMenuEvent(menuRef.current, e);
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    }, [shouldPreventContextMenu]);
-
-    const onTriggerElementContextMenu = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-    }, [shouldPreventContextMenu]);
-
-    return { menuRef, onResourceContextMenu, onTriggerElementContextMenu };
-}
