@@ -1572,27 +1572,32 @@ def create_thread(
     if not (is_data_in_cloud and is_backup_restore):
         TaskFrameProvider(db_task=db_task).get_preview()
 
+class _ChunkProgressUpdater:
+    def __init__(self):
+        self._call_counter = 0
+        rq_job = rq.get_current_job()
+        assert rq_job
+        self._rq_job = rq_job
+
+    def update_progress(self, progress: float):
+        progress_animation = '|/-\\'
+
+        status_message = 'CVAT is preparing data chunks'
+        if not progress:
+            status_message = '{} {}'.format(
+                status_message, progress_animation[self._call_counter]
+            )
+
+        rq_job_meta = ImportRQMeta.for_job(self._rq_job)
+        rq_job_meta.status = status_message
+        rq_job_meta.task_progress = progress or 0.
+        rq_job_meta.save()
+
+        self._call_counter = (self._call_counter + 1) % len(progress_animation)
+
 def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: str):
-    @attrs.define
-    class _ChunkProgressUpdater:
-        _call_counter: int = attrs.field(default=0, init=False)
-        _rq_job: rq.job.Job = attrs.field(factory=rq.get_current_job)
-
-        def update_progress(self, progress: float):
-            progress_animation = '|/-\\'
-
-            status_message = 'CVAT is preparing data chunks'
-            if not progress:
-                status_message = '{} {}'.format(
-                    status_message, progress_animation[self._call_counter]
-                )
-
-            rq_job_meta = ImportRQMeta.for_job(self._rq_job)
-            rq_job_meta.status = status_message
-            rq_job_meta.task_progress = progress or 0.
-            rq_job_meta.save()
-
-            self._call_counter = (self._call_counter + 1) % len(progress_animation)
+    db_data = db_task.data
+    assert db_data
 
     def save_chunks(
         executor: concurrent.futures.ThreadPoolExecutor,
@@ -1630,8 +1635,6 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         )
 
         fs_original.result()
-
-    db_data = db_task.data
 
     if db_data.compressed_chunk_type == models.DataChoice.VIDEO:
         compressed_chunk_writer_class = Mpeg4CompressedChunkWriter
@@ -1701,22 +1704,16 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         ) else 2
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrency) as executor:
             for segment_idx, db_segment in enumerate(db_segments):
-                frame_counter = itertools.count()
-                for chunk_idx, chunk_frame_ids in (
-                    (chunk_idx, tuple(chunk_frame_ids))
-                    for chunk_idx, chunk_frame_ids in itertools.groupby(
-                        (
-                            # Convert absolute to relative ids (extractor output positions)
-                            # Extractor will skip frames outside requested
-                            (abs_frame_id - media_extractor.start) // media_extractor.step
-                            for abs_frame_id in (
-                                frame_map.get(frame, frame)
-                                for frame in sorted(db_segment.frame_set)
-                            )
-                        ),
-                        lambda _: next(frame_counter) // db_data.chunk_size
-                    )
-                ):
-                    save_chunks(executor, db_segment, chunk_idx, chunk_frame_ids)
+                for chunk_idx, chunk_frame_ids in enumerate(take_by(
+                    (
+                        # Convert absolute to relative ids (extractor output positions)
+                        # Extractor will skip frames outside requested
+                        (abs_frame_id - media_extractor.start) // media_extractor.step
+                        for frame in sorted(db_segment.frame_set)
+                        for abs_frame_id in [frame_map.get(frame, frame)]
+                    ),
+                    db_data.chunk_size
+                )):
+                    save_chunks(executor, db_segment, chunk_idx, tuple(chunk_frame_ids))
 
                 progress_updater.update_progress(segment_idx / len(db_segments))
