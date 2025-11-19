@@ -31,6 +31,8 @@ from unittest import mock
 import av
 import django_rq
 import numpy as np
+from azure.core.exceptions import HttpResponseError, ServiceRequestError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import FileResponse, HttpResponse
@@ -47,7 +49,7 @@ from rq.queue import Queue as RQQueue
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.engine.cloud_provider import S3CloudStorage, Status
+from cvat.apps.engine.cloud_provider import AzureBlobCloudStorage, S3CloudStorage, Status
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
     AttributeSpec,
@@ -7994,3 +7996,83 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         task_id = Task.objects.latest("id").id
         job_count = Job.objects.filter(segment__task_id=task_id).count()
         self.assertEqual(job_count, 0)
+
+
+class TestCloudStorageS3Status(_CloudStorageTestBase):
+    def setUp(self):
+        self.storage = S3CloudStorage(
+            bucket="test-bucket",
+            access_key_id="test-key",
+            secret_key="test-secret",
+        )
+
+    def test_get_status_available(self):
+        def fake_head():
+            return None
+
+        self.storage._head = fake_head
+        self.assertEqual(self.storage.get_status(), Status.AVAILABLE)
+
+    def test_get_status_forbidden(self):
+        def fake_head():
+            error_response = {"Error": {"Code": "403"}}
+            raise ClientError(error_response, "head_bucket")
+
+        self.storage._head = fake_head
+        self.assertEqual(self.storage.get_status(), Status.FORBIDDEN)
+
+    def test_get_status_not_found(self):
+        def fake_head():
+            error_response = {"Error": {"Code": "404"}}
+            raise ClientError(error_response, "head_bucket")
+
+        self.storage._head = fake_head
+        self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
+
+    def test_get_status_endpoint_error(self):
+        def fake_head():
+            raise EndpointConnectionError(endpoint_url="http://fake-url")
+
+        self.storage._head = fake_head
+        self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
+
+
+class TestCloudStorageAzureStatus(_CloudStorageTestBase):
+    def setUp(self):
+        self.storage = AzureBlobCloudStorage(
+            container="test-container",
+            account_name="test-account",
+            sas_token="test-sas-token",
+        )
+
+    def test_get_status_available(self):
+        def fake_head():
+            return None
+
+        self.storage._head = fake_head
+        self.assertEqual(self.storage.get_status(), Status.AVAILABLE)
+
+    def test_get_status_forbidden(self):
+        def fake_head():
+            err = HttpResponseError(message="Forbidden", response=None)
+            err.status_code = 403
+            raise err
+
+        self.storage._head = fake_head
+        self.assertEqual(self.storage.get_status(), Status.FORBIDDEN)
+
+    def test_get_status_not_found(self):
+        def fake_head():
+            err = HttpResponseError(message="Not Found", response=None)
+            err.status_code = 404
+            raise err
+
+        self.storage._head = fake_head
+        self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
+
+    def test_get_status_endpoint_error(self):
+        def fake_head():
+            raise ServiceRequestError(message="Endpoint error")
+
+        self.storage._head = fake_head
+        self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
