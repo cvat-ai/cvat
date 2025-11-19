@@ -8031,7 +8031,7 @@ class TestCloudStorageS3Status(_CloudStorageTestBase):
 
     def test_get_status_endpoint_error(self):
         def fake_head():
-            raise EndpointConnectionError(endpoint_url="http://fake-url")
+            raise EndpointConnectionError(endpoint_url="https://fake-url")
 
         self.storage._head = fake_head
         self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
