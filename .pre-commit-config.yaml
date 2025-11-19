@@ -1,0 +1,20 @@
+repos:
+  - repo: local
+    hooks:
+      - id: black
+        name: black (local)
+        entry: black
+        language: system
+        types: [python]
+
+      - id: isort
+        name: isort (local)
+        entry: isort
+        language: system
+        types: [python]
+        args: ["--resolve-all-configs", "--filter-files", "manage.py"]
+
+      - id: husky
+        name: run husky pre-commit
+        entry: npx husky run pre-commit
+        language: system
