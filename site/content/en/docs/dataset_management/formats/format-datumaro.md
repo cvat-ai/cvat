@@ -22,7 +22,7 @@ For more information, see:
 
 ## Datumaro export
 
-- Supported annotations: Tags, Bounding Boxes, Polygons,
+- Supported annotations: Tags, Bounding Boxes, Oriented Bounding Boxes, Polygons,
   Polylines, Points, Cuboids, Ellipses, Masks, Skeletons.
 - Attributes: Supported.
 - Tracks: Supported (via the `track_id` attribute).

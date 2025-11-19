@@ -22,7 +22,7 @@ For more information, see:
  Applicable for all computer vision tasks in
  2D except for Video Tracking.
 
-- Supported annotations: Tags, Bounding Boxes, Polygons, Polylines,
+- Supported annotations: Tags, Oriented Bounding Boxes, Bounding Boxes, Polygons, Polylines,
   Points, Cuboids, Ellipses, Skeletons, Masks.
 - Attributes: Supported.
 - Tracks: Supported (via the extra `track_id` attribute).
@@ -42,7 +42,7 @@ taskname.zip/
 Applicable for all computer vision tasks
 in 2D except for Classification
 
-- Supported annotations: Bounding Boxes, Polygons, Polylines,
+- Supported annotations: Bounding Boxes, Oriented Bounding Boxes, Polygons, Polylines,
   Points, Cuboids, Ellipses, Skeletons, Masks.
 - Attributes: Supported.
 - Tracks: Supported.
