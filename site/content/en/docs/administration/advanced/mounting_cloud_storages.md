@@ -2,7 +2,7 @@
 title: 'Mounting cloud storage'
 linkTitle: 'Mounting cloud storage'
 weight: 30
-description: 'Instructions on how to mount Amazon S3 bucket, Backblaze B2, Microsoft Azure container or Google Drive as a filesystem.'
+description: 'Instructions on how to mount an Amazon S3 bucket, Backblaze B2 bucket, Microsoft Azure Blob Storage container or Google Drive as a filesystem.'
 ---
 
 ## Amazon S3 bucket as filesystem
