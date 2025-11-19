@@ -70,7 +70,7 @@ When you're developing new endpoints, follow these guidelines:
 To access swagger documentation you need to be authorized.
 
 Automatically generated Swagger documentation for Django REST API is available
-on `<cvat_origin>/api/swagger`(default: `localhost:8080/api/swagger`).
+on `<cvat_origin>/api/swagger`(default: `<http://localhost:8080/api/swagger>`).
 
 Swagger documentation is visible on allowed hosts, Update environment
 variable in docker-compose.yml file with cvat hosted machine IP or domain
