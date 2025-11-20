@@ -2,7 +2,7 @@
 title: 'Mounting cloud storage'
 linkTitle: 'Mounting cloud storage'
 weight: 30
-description: 'Instructions on how to mount an Amazon S3 bucket, Microsoft Azure Blob Storage container or Google Drive as a filesystem.'
+description: 'Instructions on how to mount an Amazon S3 bucket, Backblaze B2 bucket, Microsoft Azure Blob Storage container or Google Drive as a filesystem.'
 ---
 
 ## Amazon S3 bucket as filesystem
@@ -111,6 +111,12 @@ If you used [systemd](#amazon_s3_using_systemd) to mount a bucket:
 sudo systemctl stop s3fs.service
 sudo systemctl disable s3fs.service
 ```
+
+{{% alert title="Note" color="primary" %}}
+**Backblaze B2** is S3-compatible and can be mounted using the same s3fs instructions
+as Amazon S3. Simply configure s3fs with your B2 endpoint URL (e.g., `https://s3.us-west-004.backblazeb2.com`)
+using the `-o url=` option along with your B2 Application Keys.
+{{% /alert %}}
 
 ## Microsoft Azure Blob Storage container as filesystem
 

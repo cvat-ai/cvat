@@ -7,9 +7,8 @@ aliases:
   - /docs/manual/basics/attach-cloud-storage/
 ---
 
-In CVAT, you can use **Amazon S3**, **Azure Blob Storage**
-and **Google Cloud Storage** storages to import and export
-image datasets for your tasks.
+In CVAT, you can use **Amazon S3**, **Azure Blob Storage**, **Backblaze B2**,
+and **Google Cloud Storage** storages to import and export image datasets for your tasks.
 
 Check out:
 
@@ -19,9 +18,14 @@ Check out:
   - [Access permissions](#access-permissions)
     - [Authenticated access](#authenticated-access)
     - [Anonymous access](#anonymous-access)
-  - [Attach Amazon S3 storage](#attach-amazon-s3-storage)
-  - [Amazon S3 manifest file](#amazon-s3-manifest-file)
-  - [Video tutorial: Add Amazon S3 as Cloud Storage in CVAT](#video-tutorial-add-amazon-s3-as-cloud-storage-in-cvat)
+  - [Attach Amazon S3 storage](#attach-aws-s3-storage)
+  - [Amazon S3 manifest file](#aws-s3-manifest-file)
+  - [Video tutorial: Add Amazon S3 as Cloud Storage in CVAT](#video-tutorial-add-aws-s3-as-cloud-storage-in-cvat)
+- [Backblaze B2](#backblaze-b2)
+  - [Create a bucket](#create-a-bucket-b2)
+  - [Upload data](#upload-data-b2)
+  - [Access permissions](#access-permissions-b2)
+  - [Attach Backblaze B2 storage](#attach-backblaze-b2-storage)
 - [Google Cloud Storage](#google-cloud-storage)
   - [Create a bucket](#create-a-bucket-1)
   - [Upload data](#upload-data-1)
@@ -183,6 +187,100 @@ To prepare the manifest file, do the following:
 ### Video tutorial: Add Amazon S3 as Cloud Storage in CVAT
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/y6fgZ4X87Lc?si=5EewLS4XA7birS25" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+## Backblaze B2
+
+Backblaze B2 is an S3-compatible cloud storage service.
+It can be used in CVAT by selecting **Amazon S3** as the provider
+and specifying the Backblaze B2 endpoint (for example, <https://s3.us-west-004.backblazeb2.com>).
+
+### <a name="create-a-bucket-b2">Create a bucket</a>
+
+To create a B2 bucket, do the following:
+
+1. Create a [Backblaze account](https://www.backblaze.com/sign-up/cloud-storage) or log into an existing one.
+1. In the Backblaze console, go to **B2 Cloud Storage** > **Buckets**.
+1. Select **Create a Bucket**.
+1. Configure your bucket:
+   - **Bucket Unique Name**: Enter a globally unique name for your bucket.
+   - **Files in Bucket**: Select **Private** for secure access or **Public** for anonymous access.
+   - **Default Encryption**: (Optional) Enable server-side encryption for added security.
+   - **Object Lock**: (Optional) Enable if you need compliance features.
+1. Select **Create a Bucket**.
+
+The new bucket will appear in your buckets list.
+
+### <a name="upload-data-b2">Upload data</a>
+
+{{% alert title="Note" color="primary" %}}
+The manifest file is optional.
+{{% /alert %}}
+
+You need to upload data for annotation and optionally the `manifest.jsonl` file.
+
+1. Prepare data.
+   For more information,
+   refer on how to [prepare the dataset](#prepare-the-dataset).
+1. Open the bucket and select **Upload/Download**.
+1. Drag and drop files or folders, or select **Browse files** to upload your data.
+
+Alternatively, you can use the [Backblaze CLI](https://www.backblaze.com/docs/cloud-storage-command-line-tools)
+or any S3-compatible tool like the AWS CLI with B2 endpoints.
+
+### <a name="access-permissions-b2">Access permissions</a>
+
+To access your B2 bucket from CVAT, you need to create Application Keys:
+
+1. In the Backblaze console, go to **App Keys**.
+1. Select **Add a New Application Key**.
+1. Configure the key:
+   - **Name of Key**: Enter a descriptive name (e.g., "CVAT Access").
+   - **Allow access to Bucket(s)**: Select the specific bucket you created, or choose **All** for access to all buckets.
+   - **Type of Access**: Select **Read and Write** for full access, or **Read Only** if you only need to import data.
+   - **Allow List All Bucket Names**: Enable if you want to list all buckets.
+   - **File name prefix**: (Optional) Restrict access to specific file prefixes.
+   - **Duration**: (Optional) Set an expiration time for the key.
+1. Select **Create New Key**.
+1. **Important**: Save the **keyID** and **applicationKey** immediately.
+   The **applicationKey** is only shown once and cannot be retrieved later.
+
+{{% alert title="Warning" color="warning" %}}
+Store your **applicationKey** securely. It will only be displayed once
+during creation and cannot be recovered later.
+{{% /alert %}}
+
+For more information, consult
+[B2 Application Keys](https://www.backblaze.com/docs/cloud-storage-application-keys).
+
+### Attach Backblaze B2 storage
+
+To attach B2 storage to CVAT, do the following:
+
+1. Log into CVAT.
+1. In CVAT, on the top menu select **Cloud storages** > on the opened page select **+**.
+
+Fill in the following fields:
+
+| **CVAT field**          | **Backblaze B2 value** |
+| ------------------------ | ---------------------- |
+| **Display name**         | Preferred display name for your storage. |
+| **Description**          | (Optional) Add a description of the storage. |
+| **Provider**             | From the drop-down list, select **Amazon S3** (Backblaze B2 is S3-compatible). |
+| **Bucket name**          | Name of your B2 bucket. |
+| **Authentication type**  | Select **Key ID and secret access key pair**. |
+| **Access key ID**        | Enter the **keyID** from your [B2 Application Key](#access-permissions-b2). |
+| **Secret access key**    | Enter the **applicationKey** from your [B2 Application Key](#access-permissions-b2). |
+| **Endpoint URL**         | **Required for B2**: Enter your B2 S3 endpoint URL (for example, `https://s3.us-west-004.backblazeb2.com`). You can find the endpoint in your bucket details page. |
+| **Prefix**               | (Optional) Use to limit CVAT to a specific folder within the bucket. |
+| **Manifests**            | (Optional) Select **+ Add manifest** and specify a manifest file name such as `manifest.jsonl`. |
+
+{{% alert title="Important" color="primary" %}}
+When using Backblaze B2, you **must** specify the **Endpoint URL** field
+with your B2 S3-compatible endpoint (e.g., `https://s3.us-west-004.backblazeb2.com`).
+This tells CVAT to connect to Backblaze instead of Amazon S3.
+{{% /alert %}}
+
+After filling in all the fields, select **Submit**.
 
 ## Google Cloud Storage
 
