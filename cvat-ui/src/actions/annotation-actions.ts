@@ -361,7 +361,7 @@ export function updateCanvasBrushTools(config: {
 }
 
 export function removeAnnotationsAsync(
-    startFrame: number, stopFrame: number, delTrackKeyframesOnly: boolean,
+    startFrame: number | undefined, stopFrame: number | undefined, delTrackKeyframesOnly: boolean,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
@@ -862,11 +862,6 @@ export function closeJob(): ThunkAction {
         const state = getState();
         const { instance: canvasInstance } = state.annotation.canvas;
         const { jobInstance, groundTruthInstance } = receiveAnnotationsParameters();
-
-        const beforeCloseCallbacks = state.plugins.callbacks.annotationActions.beforeJobClose;
-        for await (const callback of beforeCloseCallbacks) {
-            await callback(jobInstance);
-        }
 
         if (groundTruthInstance) {
             await groundTruthInstance.close();

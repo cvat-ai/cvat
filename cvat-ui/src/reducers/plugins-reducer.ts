@@ -22,9 +22,6 @@ const defaultState: PluginsState = {
                 },
             },
         },
-        annotationActions: {
-            beforeJobClose: [],
-        },
     },
     overridableComponents: {
         annotationPage: {
