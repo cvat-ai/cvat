@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /docs/
+Disallow: /v*/docs/
+Sitemap: https://docs.cvat.ai/v2.47.0/sitemap.xml

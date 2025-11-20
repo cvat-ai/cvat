@@ -1,0 +1,847 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/docs/other/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Other | CVAT</title>
+<meta name="description" content="Miscellaneous documentation pages.">
+<meta property="og:title" content="Other" />
+<meta property="og:description" content="Miscellaneous documentation pages." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/docs/other/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Other">
+<meta itemprop="description" content="Miscellaneous documentation pages."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Other"/>
+<meta name="twitter:description" content="Miscellaneous documentation pages."/>
+
+
+
+
+<link rel="preload" href="/scss/main.min.eb0437b100b398a18f091ce7ae8cecf883447ba7fd9cfc361b5141922757ac86.css" as="style">
+<link href="/scss/main.min.eb0437b100b398a18f091ce7ae8cecf883447ba7fd9cfc361b5141922757ac86.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="https://www.cvat.ai/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link active"
+             href="/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/"
+             ><span>⇲ Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/guides/"
+             ><span>✍︎ Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/docs/administration/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">develop</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/">Latest version</a></li>
+    <li><a class="dropdown-item" href="/v2.49.0">v2.49.0</a></li>
+    <li><a class="dropdown-item" href="/v2.48.1">v2.48.1</a></li>
+    <li><a class="dropdown-item" href="/v2.47.0">v2.47.0</a></li>
+    <li><a class="dropdown-item" href="/v2.46.1">v2.46.1</a></li>
+    <li><a class="dropdown-item" href="/v2.45.0">v2.45.0</a></li>
+    <li><a class="dropdown-item" href="/v2.44.3">v2.44.3</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/offline-search-index.7368b27aa733b81de3f073dc9a430158.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/other/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Other</h1>
+<div class="lead">Miscellaneous documentation pages.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-433aa815513c49f425a49612b3882e21">XML annotation format</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-b8198ed3d720b5fd91d0dea9d423ee02">Introduction to CVAT and Datumaro</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-433aa815513c49f425a49612b3882e21">1 - XML annotation format</h1>
+    
+	<p>When you want to download annotations from Computer Vision Annotation Tool (CVAT)
+you can choose one of several data formats. The document describes XML annotation format.
+Each format has X.Y version (e.g. 1.0). In general the major version (X) is incremented when the data format has
+incompatible changes and the minor version (Y) is incremented when the data format is slightly modified
+(e.g. it has one or several extra fields inside meta information).
+The document will describe all changes for all versions of XML annotation format.</p>
+<h2 id="version-11">Version 1.1</h2>
+<p>There are two different formats for images and video tasks at the moment.
+The both formats have a common part which is described below. From the previous version <code>flipped</code> tag was added.
+Also <code>original_size</code> tag was added for interpolation mode to specify frame size.
+In annotation mode each image tag has <code>width</code> and <code>height</code> attributes for the same purpose.</p>
+<p>For what is <code>rle</code>, see <a href="https://en.wikipedia.org/wiki/Run-length_encoding">Run-length encoding</a></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">&lt;?xml version=&#34;1.0&#34; encoding=&#34;utf-8&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;annotations&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;version&gt;</span>1.1<span style="color:#204a87;font-weight:bold">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;meta&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;task&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;id&gt;</span>Number: id of the task<span style="color:#204a87;font-weight:bold">&lt;/id&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>String: some task name<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;size&gt;</span>Number: count of frames/images in the task<span style="color:#204a87;font-weight:bold">&lt;/size&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;mode&gt;</span>String: interpolation or annotation<span style="color:#204a87;font-weight:bold">&lt;/mode&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;overlap&gt;</span>Number: number of overlapped frames between segments<span style="color:#204a87;font-weight:bold">&lt;/overlap&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;bugtracker&gt;</span>String: URL on an page which describe the task<span style="color:#204a87;font-weight:bold">&lt;/bugtracker&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;flipped&gt;</span>Boolean: were images of the task flipped? (True/False)<span style="color:#204a87;font-weight:bold">&lt;/flipped&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;created&gt;</span>String: date when the task was created<span style="color:#204a87;font-weight:bold">&lt;/created&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;updated&gt;</span>String: date when the task was updated<span style="color:#204a87;font-weight:bold">&lt;/updated&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;labels&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>String: name of the label (e.g. car, person)<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;type&gt;</span>String: any, bbox, cuboid, ellipse, mask, polygon, polyline, points, skeleton, tag<span style="color:#204a87;font-weight:bold">&lt;/type&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#204a87;font-weight:bold">&lt;attribute&gt;</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>String: attribute name<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#204a87;font-weight:bold">&lt;mutable&gt;</span>Boolean: mutable (allow different values between frames)<span style="color:#204a87;font-weight:bold">&lt;/mutable&gt;</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#204a87;font-weight:bold">&lt;input_type&gt;</span>String: select, checkbox, radio, number, text<span style="color:#204a87;font-weight:bold">&lt;/input_type&gt;</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#204a87;font-weight:bold">&lt;default_value&gt;</span>String: default value<span style="color:#204a87;font-weight:bold">&lt;/default_value&gt;</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#204a87;font-weight:bold">&lt;values&gt;</span>String: possible values, separated by newlines
+</span></span><span style="display:flex;"><span>ex. value 2
+</span></span><span style="display:flex;"><span>ex. value 3<span style="color:#204a87;font-weight:bold">&lt;/values&gt;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;svg&gt;</span>String: label representation in svg, only for skeletons<span style="color:#204a87;font-weight:bold">&lt;/svg&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;parent&gt;</span>String: label parent name, only for skeletons<span style="color:#204a87;font-weight:bold">&lt;/parent&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/labels&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;segments&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;segment&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;id&gt;</span>Number: id of the segment<span style="color:#204a87;font-weight:bold">&lt;/id&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;start&gt;</span>Number: first frame<span style="color:#204a87;font-weight:bold">&lt;/start&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;stop&gt;</span>Number: last frame<span style="color:#204a87;font-weight:bold">&lt;/stop&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;url&gt;</span>String: URL (e.g. http://cvat.example.com/?id=213)<span style="color:#204a87;font-weight:bold">&lt;/url&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/segment&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/segments&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;owner&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;username&gt;</span>String: the author of the task<span style="color:#204a87;font-weight:bold">&lt;/username&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;email&gt;</span>String: email of the author<span style="color:#204a87;font-weight:bold">&lt;/email&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/owner&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;original_size&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;width&gt;</span>Number: frame width<span style="color:#204a87;font-weight:bold">&lt;/width&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;height&gt;</span>Number: frame height<span style="color:#204a87;font-weight:bold">&lt;/height&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/original_size&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/task&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;dumped&gt;</span>String: date when the annotation was dumped<span style="color:#204a87;font-weight:bold">&lt;/dumped&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;/meta&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;/annotations&gt;</span>
+</span></span></code></pre></div><h3 id="annotation">Annotation</h3>
+<p>Below you can find description of the data format for images tasks.
+On each image it is possible to have many different objects. Each object can have multiple attributes.
+If an annotation task is created with <code>z_order</code> flag then each object will have <code>z_order</code> attribute which is used
+to draw objects properly when they are intersected (if <code>z_order</code> is bigger the object is closer to camera).
+In previous versions of the format only <code>box</code> shape was available.
+In later releases <code>mask</code>, <code>polygon</code>, <code>polyline</code>, <code>points</code>, <code>skeletons</code> and <code>tags</code> were added.
+Please see below for more details:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">&lt;?xml version=&#34;1.0&#34; encoding=&#34;utf-8&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;annotations&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;image</span> <span style="color:#c4a000">id=</span><span style="color:#4e9a06">&#34;Number: id of the image (the index in lexical order of images)&#34;</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: path to the image&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#c4a000">width=</span><span style="color:#4e9a06">&#34;Number: image width&#34;</span> <span style="color:#c4a000">height=</span><span style="color:#4e9a06">&#34;Number: image height&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;box</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">xtl=</span><span style="color:#4e9a06">&#34;Number: float&#34;</span> <span style="color:#c4a000">ytl=</span><span style="color:#4e9a06">&#34;Number: float&#34;</span> <span style="color:#c4a000">xbr=</span><span style="color:#4e9a06">&#34;Number: float&#34;</span> <span style="color:#c4a000">ybr=</span><span style="color:#4e9a06">&#34;Number: float&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;Number: z-order of the object&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/box&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polygon</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;x0,y0;x1,y1;...&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;Number: z-order of the object&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polygon&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polyline</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;x0,y0;x1,y1;...&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;Number: z-order of the object&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polyline&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polyline</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;x0,y0;x1,y1;...&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;Number: z-order of the object&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polyline&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;x0,y0;x1,y1;...&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;Number: z-order of the object&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;tag</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual or auto&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/tag&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;skeleton</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;Number: z-order of the object&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;x0,y0;x1,y1&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/skeleton&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;mask</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual or auto&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">rle=</span><span style="color:#4e9a06">&#34;RLE mask&#34;</span> <span style="color:#c4a000">left=</span><span style="color:#4e9a06">&#34;Number: left coordinate of the image where the mask begins&#34;</span> <span style="color:#c4a000">top=</span><span style="color:#4e9a06">&#34;Number: top coordinate of the image where the mask begins&#34;</span> <span style="color:#c4a000">width=</span><span style="color:#4e9a06">&#34;Number: width of the mask&#34;</span> <span style="color:#c4a000">height=</span><span style="color:#4e9a06">&#34;Number: height of the mask&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;Number: z-order of the object&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/mask&gt;</span>
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;/image&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;/annotations&gt;</span>
+</span></span></code></pre></div><p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">&lt;?xml version=&#34;1.0&#34; encoding=&#34;utf-8&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;annotations&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;version&gt;</span>1.1<span style="color:#204a87;font-weight:bold">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;meta&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;task&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;id&gt;</span>4<span style="color:#204a87;font-weight:bold">&lt;/id&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>segmentation<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;size&gt;</span>27<span style="color:#204a87;font-weight:bold">&lt;/size&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;mode&gt;</span>annotation<span style="color:#204a87;font-weight:bold">&lt;/mode&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;overlap&gt;</span>0<span style="color:#204a87;font-weight:bold">&lt;/overlap&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;bugtracker&gt;&lt;/bugtracker&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;flipped&gt;</span>False<span style="color:#204a87;font-weight:bold">&lt;/flipped&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;created&gt;</span>2018-09-25 11:34:24.617558+03:00<span style="color:#204a87;font-weight:bold">&lt;/created&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;updated&gt;</span>2018-09-25 11:38:27.301183+03:00<span style="color:#204a87;font-weight:bold">&lt;/updated&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;labels&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>car<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>traffic_line<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>wheel<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>plate<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>s1<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;type&gt;</span>skeleton<span style="color:#204a87;font-weight:bold">&lt;/type&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;svg&gt;</span><span style="color:#ce5c00">&amp;lt;</span>line x1=&#34;36.87290954589844&#34; y1=&#34;47.732025146484375&#34; x2=&#34;86.87290954589844&#34; y2=&#34;10.775501251220703&#34; stroke=&#34;black&#34; data-type=&#34;edge&#34; data-node-from=&#34;2&#34; stroke-width=&#34;0.5&#34; data-node-to=&#34;3&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/line<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>line x1=&#34;25.167224884033203&#34; y1=&#34;22.64841079711914&#34; x2=&#34;36.87290954589844&#34; y2=&#34;47.732025146484375&#34; stroke=&#34;black&#34; data-type=&#34;edge&#34; data-node-from=&#34;1&#34; stroke-width=&#34;0.5&#34; data-node-to=&#34;2&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/line<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>circle r=&#34;1.5&#34; stroke=&#34;black&#34; fill=&#34;#b3b3b3&#34; cx=&#34;25.167224884033203&#34; cy=&#34;22.64841079711914&#34; stroke-width=&#34;0.1&#34; data-type=&#34;element node&#34; data-element-id=&#34;1&#34; data-node-id=&#34;1&#34; data-label-name=&#34;1&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/circle<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>circle r=&#34;1.5&#34; stroke=&#34;black&#34; fill=&#34;#b3b3b3&#34; cx=&#34;36.87290954589844&#34; cy=&#34;47.732025146484375&#34; stroke-width=&#34;0.1&#34; data-type=&#34;element node&#34; data-element-id=&#34;2&#34; data-node-id=&#34;2&#34; data-label-name=&#34;2&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/circle<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>circle r=&#34;1.5&#34; stroke=&#34;black&#34; fill=&#34;#b3b3b3&#34; cx=&#34;86.87290954589844&#34; cy=&#34;10.775501251220703&#34; stroke-width=&#34;0.1&#34; data-type=&#34;element node&#34; data-element-id=&#34;3&#34; data-node-id=&#34;3&#34; data-label-name=&#34;3&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/circle<span style="color:#ce5c00">&amp;gt;</span><span style="color:#204a87;font-weight:bold">&lt;/svg&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>1<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;type&gt;</span>points<span style="color:#204a87;font-weight:bold">&lt;/type&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;parent&gt;</span>s1<span style="color:#204a87;font-weight:bold">&lt;/parent&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>2<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;type&gt;</span>points<span style="color:#204a87;font-weight:bold">&lt;/type&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;parent&gt;</span>s1<span style="color:#204a87;font-weight:bold">&lt;/parent&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>3<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;type&gt;</span>points<span style="color:#204a87;font-weight:bold">&lt;/type&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;parent&gt;</span>s1<span style="color:#204a87;font-weight:bold">&lt;/parent&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/labels&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;segments&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;segment&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;id&gt;</span>4<span style="color:#204a87;font-weight:bold">&lt;/id&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;start&gt;</span>0<span style="color:#204a87;font-weight:bold">&lt;/start&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;stop&gt;</span>26<span style="color:#204a87;font-weight:bold">&lt;/stop&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;url&gt;</span>http://localhost:8080/?id=4<span style="color:#204a87;font-weight:bold">&lt;/url&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/segment&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/segments&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;owner&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;username&gt;</span>admin<span style="color:#204a87;font-weight:bold">&lt;/username&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;email&gt;&lt;/email&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/owner&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/task&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;dumped&gt;</span>2018-09-25 11:38:28.799808+03:00<span style="color:#204a87;font-weight:bold">&lt;/dumped&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;/meta&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;image</span> <span style="color:#c4a000">id=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;filename000.jpg&#34;</span> <span style="color:#c4a000">width=</span><span style="color:#4e9a06">&#34;1600&#34;</span> <span style="color:#c4a000">height=</span><span style="color:#4e9a06">&#34;1200&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;box</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;plate&#34;</span> <span style="color:#c4a000">xtl=</span><span style="color:#4e9a06">&#34;797.33&#34;</span> <span style="color:#c4a000">ytl=</span><span style="color:#4e9a06">&#34;870.92&#34;</span> <span style="color:#c4a000">xbr=</span><span style="color:#4e9a06">&#34;965.52&#34;</span> <span style="color:#c4a000">ybr=</span><span style="color:#4e9a06">&#34;928.94&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;4&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/box&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polygon</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;car&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;561.30,916.23;561.30,842.77;554.72,761.63;553.62,716.67;565.68,677.20;577.74,566.45;547.04,559.87;536.08,542.33;528.40,520.40;541.56,512.72;559.10,509.43;582.13,506.14;588.71,464.48;583.23,448.03;587.61,434.87;594.19,431.58;609.54,399.78;633.66,369.08;676.43,294.52;695.07,279.17;703.84,279.17;735.64,268.20;817.88,264.91;923.14,266.01;997.70,274.78;1047.04,283.55;1063.49,289.04;1090.90,330.70;1111.74,371.27;1135.86,397.59;1147.92,428.29;1155.60,435.97;1157.79,451.32;1156.69,462.28;1159.98,491.89;1163.27,522.59;1173.14,513.82;1199.46,516.01;1224.68,521.49;1225.77,544.52;1207.13,568.64;1181.91,576.32;1178.62,582.90;1177.53,619.08;1186.30,680.48;1199.46,711.19;1206.03,733.12;1203.84,760.53;1197.26,818.64;1199.46,840.57;1203.84,908.56;1192.88,930.49;1184.10,939.26;1162.17,944.74;1139.15,960.09;1058.01,976.54;1028.40,969.96;1002.09,972.15;931.91,974.35;844.19,972.15;772.92,972.15;729.06,967.77;713.71,971.06;685.20,973.25;659.98,968.86;644.63,984.21;623.80,983.12;588.71,985.31;560.20,966.67&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;1&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polygon&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polyline</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;traffic_line&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;462.10,0.00;126.80,1200.00&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;3&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polyline&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polyline</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;traffic_line&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;1212.40,0.00;1568.66,1200.00&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;2&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polyline&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;wheel&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;574.90,939.48;1170.16,907.90;1130.69,445.26;600.16,459.48&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;5&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;tag</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;good_frame&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/tag&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;skeleton</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;s1&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;0&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;54.47,94.81&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;2&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;68.02,162.34&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;3&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;125.87,62.85&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/skeleton&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;mask</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;car&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">rle=</span><span style="color:#4e9a06">&#34;3, 5, 7, 7, 5, 9, 3, 11, 2, 11, 2, 12, 1, 12, 1, 26, 1, 12, 1, 12, 2, 11, 3, 9, 5, 7, 7, 5, 3&#34;</span> <span style="color:#c4a000">left=</span><span style="color:#4e9a06">&#34;707&#34;</span> <span style="color:#c4a000">top=</span><span style="color:#4e9a06">&#34;888&#34;</span> <span style="color:#c4a000">width=</span><span style="color:#4e9a06">&#34;13&#34;</span> <span style="color:#c4a000">height=</span><span style="color:#4e9a06">&#34;15&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;0&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/mask&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;/image&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;/annotations&gt;</span>
+</span></span></code></pre></div><h3 id="interpolation">Interpolation</h3>
+<p>Below you can find description of the data format for video tasks.
+The annotation contains tracks. Each track corresponds to an object which can be presented on multiple frames.
+The same object cannot be presented on the same frame in multiple locations.
+Each location of the object can have multiple attributes even if an attribute is immutable for the object it will be
+cloned for each location (a known redundancy).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">&lt;?xml version=&#34;1.0&#34; encoding=&#34;utf-8&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;annotations&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;track</span> <span style="color:#c4a000">id=</span><span style="color:#4e9a06">&#34;Number: id of the track (doesn&#39;t have any special meeting)&#34;</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual or auto&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;box</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;Number: frame&#34;</span> <span style="color:#c4a000">xtl=</span><span style="color:#4e9a06">&#34;Number: float&#34;</span> <span style="color:#c4a000">ytl=</span><span style="color:#4e9a06">&#34;Number: float&#34;</span> <span style="color:#c4a000">xbr=</span><span style="color:#4e9a06">&#34;Number: float&#34;</span> <span style="color:#c4a000">ybr=</span><span style="color:#4e9a06">&#34;Number: float&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/box&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polygon</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;Number: frame&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;x0,y0;x1,y1;...&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polygon&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polyline</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;Number: frame&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;x0,y0;x1,y1;...&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polyline&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;Number: frame&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;x0,y0;x1,y1;...&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;attribute</span> <span style="color:#c4a000">name=</span><span style="color:#4e9a06">&#34;String: an attribute name&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>String: the attribute value<span style="color:#204a87;font-weight:bold">&lt;/attribute&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;mask</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;Number: frame&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">rle=</span><span style="color:#4e9a06">&#34;RLE mask&#34;</span> <span style="color:#c4a000">left=</span><span style="color:#4e9a06">&#34;Number: left coordinate of the image where the mask begins&#34;</span> <span style="color:#c4a000">top=</span><span style="color:#4e9a06">&#34;Number: top coordinate of the image where the mask begins&#34;</span> <span style="color:#c4a000">width=</span><span style="color:#4e9a06">&#34;Number: width of the mask&#34;</span> <span style="color:#c4a000">height=</span><span style="color:#4e9a06">&#34;Number: height of the mask&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;Number: z-order of the object&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/mask&gt;</span>
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;/track&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;track</span> <span style="color:#c4a000">id=</span><span style="color:#4e9a06">&#34;Number: id of the track (doesn&#39;t have any special meeting)&#34;</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual or auto&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;skeleton</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;Number: frame&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;String: the associated label&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;Number: 0 - False, 1 - True&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;x0,y0;x1,y1&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      ...
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/skeleton&gt;</span>
+</span></span><span style="display:flex;"><span>    ...
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;/track&gt;</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;/annotations&gt;</span>
+</span></span></code></pre></div><p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">&lt;?xml version=&#34;1.0&#34; encoding=&#34;utf-8&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;annotations&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;version&gt;</span>1.1<span style="color:#204a87;font-weight:bold">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;meta&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;task&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;id&gt;</span>5<span style="color:#204a87;font-weight:bold">&lt;/id&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>interpolation<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;size&gt;</span>4620<span style="color:#204a87;font-weight:bold">&lt;/size&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;mode&gt;</span>interpolation<span style="color:#204a87;font-weight:bold">&lt;/mode&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;overlap&gt;</span>5<span style="color:#204a87;font-weight:bold">&lt;/overlap&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;bugtracker&gt;&lt;/bugtracker&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;flipped&gt;</span>False<span style="color:#204a87;font-weight:bold">&lt;/flipped&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;created&gt;</span>2018-09-25 12:32:09.868194+03:00<span style="color:#204a87;font-weight:bold">&lt;/created&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;updated&gt;</span>2018-09-25 16:05:05.619841+03:00<span style="color:#204a87;font-weight:bold">&lt;/updated&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;labels&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>person<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>car<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>s1<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;type&gt;</span>skeleton<span style="color:#204a87;font-weight:bold">&lt;/type&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;svg&gt;</span><span style="color:#ce5c00">&amp;lt;</span>line x1=&#34;36.87290954589844&#34; y1=&#34;47.732025146484375&#34; x2=&#34;86.87290954589844&#34; y2=&#34;10.775501251220703&#34; stroke=&#34;black&#34; data-type=&#34;edge&#34; data-node-from=&#34;2&#34; stroke-width=&#34;0.5&#34; data-node-to=&#34;3&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/line<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>line x1=&#34;25.167224884033203&#34; y1=&#34;22.64841079711914&#34; x2=&#34;36.87290954589844&#34; y2=&#34;47.732025146484375&#34; stroke=&#34;black&#34; data-type=&#34;edge&#34; data-node-from=&#34;1&#34; stroke-width=&#34;0.5&#34; data-node-to=&#34;2&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/line<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>circle r=&#34;1.5&#34; stroke=&#34;black&#34; fill=&#34;#b3b3b3&#34; cx=&#34;25.167224884033203&#34; cy=&#34;22.64841079711914&#34; stroke-width=&#34;0.1&#34; data-type=&#34;element node&#34; data-element-id=&#34;1&#34; data-node-id=&#34;1&#34; data-label-name=&#34;1&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/circle<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>circle r=&#34;1.5&#34; stroke=&#34;black&#34; fill=&#34;#b3b3b3&#34; cx=&#34;36.87290954589844&#34; cy=&#34;47.732025146484375&#34; stroke-width=&#34;0.1&#34; data-type=&#34;element node&#34; data-element-id=&#34;2&#34; data-node-id=&#34;2&#34; data-label-name=&#34;2&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/circle<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>circle r=&#34;1.5&#34; stroke=&#34;black&#34; fill=&#34;#b3b3b3&#34; cx=&#34;86.87290954589844&#34; cy=&#34;10.775501251220703&#34; stroke-width=&#34;0.1&#34; data-type=&#34;element node&#34; data-element-id=&#34;3&#34; data-node-id=&#34;3&#34; data-label-name=&#34;3&#34;<span style="color:#ce5c00">&amp;gt;&amp;lt;</span>/circle<span style="color:#ce5c00">&amp;gt;</span><span style="color:#204a87;font-weight:bold">&lt;/svg&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>1<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;type&gt;</span>points<span style="color:#204a87;font-weight:bold">&lt;/type&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;parent&gt;</span>s1<span style="color:#204a87;font-weight:bold">&lt;/parent&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>2<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;type&gt;</span>points<span style="color:#204a87;font-weight:bold">&lt;/type&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;parent&gt;</span>s1<span style="color:#204a87;font-weight:bold">&lt;/parent&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;label&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;name&gt;</span>3<span style="color:#204a87;font-weight:bold">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;type&gt;</span>points<span style="color:#204a87;font-weight:bold">&lt;/type&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;/attributes&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;parent&gt;</span>s1<span style="color:#204a87;font-weight:bold">&lt;/parent&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/label&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/labels&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;segments&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;segment&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;id&gt;</span>5<span style="color:#204a87;font-weight:bold">&lt;/id&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;start&gt;</span>0<span style="color:#204a87;font-weight:bold">&lt;/start&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;stop&gt;</span>4619<span style="color:#204a87;font-weight:bold">&lt;/stop&gt;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#204a87;font-weight:bold">&lt;url&gt;</span>http://localhost:8080/?id=5<span style="color:#204a87;font-weight:bold">&lt;/url&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;/segment&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/segments&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;owner&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;username&gt;</span>admin<span style="color:#204a87;font-weight:bold">&lt;/username&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;email&gt;&lt;/email&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/owner&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;original_size&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;width&gt;</span>640<span style="color:#204a87;font-weight:bold">&lt;/width&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&lt;height&gt;</span>480<span style="color:#204a87;font-weight:bold">&lt;/height&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/original_size&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/task&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;dumped&gt;</span>2018-09-25 16:05:07.134046+03:00<span style="color:#204a87;font-weight:bold">&lt;/dumped&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;/meta&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;track</span> <span style="color:#c4a000">id=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;car&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polygon</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;324.79,213.16;323.74,227.90;347.42,237.37;371.11,217.37;350.05,190.00;318.47,191.58&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polygon&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polygon</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;324.79,213.16;323.74,227.90;347.42,237.37;371.11,217.37;350.05,190.00;318.47,191.58&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polygon&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polygon</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;6&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;305.32,237.90;312.16,207.90;352.69,206.32;355.32,233.16;331.11,254.74&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polygon&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polygon</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;7&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;305.32,237.90;312.16,207.90;352.69,206.32;355.32,233.16;331.11,254.74&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polygon&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polygon</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;13&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;313.74,233.16;331.11,220.00;359.53,243.16;333.21,283.16;287.95,274.74&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polygon&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;polygon</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;14&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;313.74,233.16;331.11,220.00;359.53,243.16;333.21,283.16;287.95,274.74&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/polygon&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;/track&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;track</span> <span style="color:#c4a000">id=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;s1&#34;</span> <span style="color:#c4a000">source=</span><span style="color:#4e9a06">&#34;manual&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;skeleton</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;0&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;112.07,258.59&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;2&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;127.87,333.23&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;3&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;195.37,223.27&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/skeleton&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;skeleton</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;0&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;112.07,258.59&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;2&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;127.87,333.23&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;3&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;195.37,223.27&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/skeleton&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;skeleton</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;6&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;0&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;120.07,270.59&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;2&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;140.87,350.23&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;3&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;210.37,260.27&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/skeleton&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;skeleton</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;7&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;0&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;120.07,270.59&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;2&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;140.87,350.23&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;3&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;210.37,260.27&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/skeleton&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;skeleton</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;13&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;0&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;112.07,258.59&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;2&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;127.87,333.23&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;3&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;195.37,223.27&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/skeleton&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;skeleton</span> <span style="color:#c4a000">frame=</span><span style="color:#4e9a06">&#34;14&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">z_order=</span><span style="color:#4e9a06">&#34;0&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;112.07,258.59&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;2&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;127.87,333.23&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;points</span> <span style="color:#c4a000">label=</span><span style="color:#4e9a06">&#34;3&#34;</span> <span style="color:#c4a000">outside=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">occluded=</span><span style="color:#4e9a06">&#34;0&#34;</span> <span style="color:#c4a000">keyframe=</span><span style="color:#4e9a06">&#34;1&#34;</span> <span style="color:#c4a000">points=</span><span style="color:#4e9a06">&#34;195.37,223.27&#34;</span><span style="color:#204a87;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&lt;/points&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&lt;/skeleton&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&lt;/track&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">&lt;/annotations&gt;</span>
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-b8198ed3d720b5fd91d0dea9d423ee02">2 - Introduction to CVAT and Datumaro</h1>
+    
+	<p>We are excited to introduce the first video in our course series designed to help you
+annotate data faster and better using CVAT.
+In this introductory 4 minute video, we walk through:</p>
+<ol>
+<li>what problems CVAT and Datumaro solve,</li>
+<li>how they can speed up your model training process, and</li>
+<li>some resources you can use to learn more about how to use them.</li>
+</ol>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/GgKIEFhd1CY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2025 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/js/prism.js'></script>
+<script src='/js/tabpane-persist.js'></script>
+
+  </body>
+</html>
