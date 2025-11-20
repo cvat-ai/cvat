@@ -150,16 +150,16 @@ details > .code-toolbar {
     text-decoration: underline;
   }
 
-/* 1. Убрать стрелки у верхнего уровня (ul-1) */
-.td-sidebar-nav .ul-1 > li > a.td-sidebar-link__section::after {
+/* 1. Remove arrows from the top level (ul-1) */
+.td-sidebar-nav .ul-1 > li > a.td-sidebar-link-section::after {
     content: none !important;
   }
 
-  /* 2. Добавлять стрелку только разделам, которые:
-        - не находятся в ul-1
-        - имеют вложенный ul (with-child)
+  /* 2. Add an arrow only to sections that:
+        - not in ul-1
+        - have embedded ul (with-child)
   */
-  .td-sidebar-nav li.with-child:not(.ul-1 > li) > a.td-sidebar-link__section::after {
+  .td-sidebar-nav li.with-child:not(.ul-1 > li) > a.td-sidebar-link-section::after {
     content: "▸";
     font-size: 0.75rem;
     margin-left: 6px;
@@ -168,13 +168,13 @@ details > .code-toolbar {
     transition: transform .2s ease, opacity .2s ease;
   }
 
-  /* 3. Поворот стрелки у активного раздела */
-  .td-sidebar-nav li.with-child > a.td-sidebar-link__section.active::after {
+  /* 3. Turning the arrow on the active section */
+  .td-sidebar-nav li.with-child > a.td-sidebar-link-section.active::after {
     transform: rotate(90deg);
     opacity: 1;
   }
 
-  /* Большие отступы между top-level разделами */
+  /* Large indents between top-level sections */
 .td-sidebar-nav .ul-1 > li {
     margin-bottom: 0.75rem;
   }

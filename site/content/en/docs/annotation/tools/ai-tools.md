@@ -1,6 +1,6 @@
 ---
 title: 'AI Tools'
-linkTitle: 'AI Tools'
+linkTitle: 'AI tools'
 weight: 14
 description: 'Overview of semi-automatic and automatic annotation tools available in CVAT.'
 aliases:

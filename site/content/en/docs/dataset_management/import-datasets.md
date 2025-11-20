@@ -11,9 +11,11 @@ aliases:
 
 You can import a dataset into a **project**. When you do this, CVAT:
 
-- Uses the dataset to create a **new task** inside the project.
-- Splits the data into subsets (for example, train/val/test), if the dataset format defines them.
-- Populates the task with the imported data and annotations (if the format contains annotations).
+- If the project has no defined labels, creates required labels based on the information available in the dataset.
+Only label names can be imported this way, colors, attributes, and skeleton labels must be defined manually.
+- Creates **new tasks** inside the project. If there are several subsets in the imported dataset, each one is imported
+ as a separate task with the corresponding subset name.
+- Populates each imported task with the imported data and annotations (if the format contains annotations).
 
 > Note: Importing a dataset always creates a **new** task in the project.
 
@@ -44,28 +46,22 @@ During the import process, you will be able to track the progress of the import 
 You can also add data when you **create a task**. A task can be:
 
 - Inside a **project** (linked to that project), or
-- **Standalone** (without a project).
+- Standalone.
 
-To add data when creating a task:
+After a task is created, you cannot add more data. To add extra data, create another task.
 
-1. Click **Create task**.
-2. (Optional) Select a **Project** if you want the task to belong to a project.
-3. Enter the task name and other settings.
-4. Add data:
-   - Upload files from your local machine, or
-   - Select data from attached cloud storage.
-5. Click `Submit & Continue` to create the task with the attached data.
-
-> Note: After a task is created, you cannot add more data. To add extra data, create another task.
+To learn more about creating a task in CVAT, see [How to create and configure an annotation task](/docs/workspace/tasks-page#how-to-create-and-configure-an-annotation-task).
 
 ## Uploading annotations to tasks and jobs
 
-If you already have a file with annotations, you can upload it to an entire task or to a single job.
+If you already have a file with annotations or an annotated dataset,
+you can upload it to an entire task or to a single job.
 
 ![Task with opened "Actions" menu and highlighted "Upload annotations" option](/images/image251.jpg)
 
-> Important: When you upload annotations, CVAT modifies existing ones. Depending on the format and
-> settings, the upload may replace or merge the current results.
+{{% alert title="Warning" color="warning" %}}
+When you upload annotations, CVAT removes the existing ones.
+{{% /alert %}}
 
 ### Uploading annotations to a task
 

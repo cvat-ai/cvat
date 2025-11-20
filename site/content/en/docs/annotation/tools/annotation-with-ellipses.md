@@ -1,6 +1,6 @@
 ---
 title: 'Annotation with ellipses'
-linkTitle: 'Ellipse'
+linkTitle: 'Ellipses'
 weight: 11
 description: 'Guide to annotating tasks using ellipses.'
 aliases:

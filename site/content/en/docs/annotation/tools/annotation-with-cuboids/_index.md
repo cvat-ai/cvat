@@ -1,6 +1,6 @@
 ---
 title: 'Annotation with cuboids'
-linkTitle: 'Cuboid'
+linkTitle: 'Cuboids'
 weight: 12
 description: 'Guide to creating and editing cuboids.'
 aliases:

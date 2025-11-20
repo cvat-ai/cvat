@@ -1,6 +1,6 @@
 ---
 title: 'Annotation with rectangles'
-linkTitle: 'Rectangle'
+linkTitle: 'Rectangles'
 weight: 7
 aliases:
   - /docs/manual/advanced/annotation-with-rectangles/
