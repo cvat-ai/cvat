@@ -27,6 +27,7 @@ const defaultState: SettingsState = {
             y: false,
             z: false,
         },
+        pointSize: 0.05,
     },
     workspace: {
         autoSave: false,
@@ -501,6 +502,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case SettingsActionTypes.CHANGE_SHAPES_POINT_SIZE: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    pointSize: action.payload.pointSize,
+                },
+            };
         }
         default: {
             return state;

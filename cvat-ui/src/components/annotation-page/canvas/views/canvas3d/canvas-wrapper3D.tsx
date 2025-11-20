@@ -128,6 +128,7 @@ interface StateToProps {
     workspace: Workspace;
     frame: number;
     resetZoom: boolean;
+    pointSize: number;
 }
 
 interface DispatchToProps {
@@ -166,7 +167,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 resetZoom,
             },
             shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor, orientationVisibility,
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, orientationVisibility, pointSize,
             },
         },
     } = state;
@@ -190,6 +191,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeObjectType,
         resetZoom,
         workspace,
+        pointSize,
     };
 }
 
@@ -515,6 +517,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         onMergeAnnotations,
         onSplitAnnotations,
         onGroupAnnotations,
+        pointSize,
     } = props;
 
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
@@ -661,6 +664,11 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             colorBy,
             orientationVisibility,
         });
+
+        const views = canvasInstance.html() as any;
+        if (views.perspective?.scene?.children[0]?.material) {
+            views.perspective.scene.children[0].material.size = pointSize;
+        }
     };
 
     const onContextMenu = (event: any): void => {
@@ -692,7 +700,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
 
     useEffect(() => {
         updateShapesView();
-    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy, orientationVisibility]);
+    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy, orientationVisibility, pointSize]);
 
     useEffect(() => {
         const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;
