@@ -47,7 +47,7 @@ function AnnotationMenuComponent(): JSX.Element {
     const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance as Job);
     const [jobState, setJobState] = useState(jobInstance.state);
     const pluginActions = usePlugins(
-        (state: CombinedState) => state.plugins.components.annotationActions.items,
+        (state: CombinedState) => state.plugins.components.annotationPage.menuActions.items,
         { jobInstance },
     );
     const { stopFrame } = jobInstance;

@@ -56,6 +56,9 @@ const defaultState: PluginsState = {
             player: {
                 slider: [],
             },
+            menuActions: {
+                items: [],
+            },
         },
         modelsPage: {
             topBar: {
@@ -79,9 +82,6 @@ const defaultState: PluginsState = {
             items: [],
         },
         jobActions: {
-            items: [],
-        },
-        annotationActions: {
             items: [],
         },
         taskItem: {

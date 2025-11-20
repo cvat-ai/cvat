@@ -396,6 +396,9 @@ export interface PluginsState {
             player: {
                 slider: PluginComponent[];
             };
+            menuActions: {
+                items: PluginComponent[];
+            };
         }
         modelsPage: {
             topBar: {
@@ -419,9 +422,6 @@ export interface PluginsState {
             items: PluginComponent[];
         };
         jobActions: {
-            items: PluginComponent[];
-        };
-        annotationActions: {
             items: PluginComponent[];
         };
         taskItem: {
