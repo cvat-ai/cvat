@@ -236,6 +236,15 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         return PermissionResult(allow=allow, reasons=reasons)
 
     def filter(self, queryset):
+        q = self.make_filter_query()
+
+        # By default, a QuerySet will not eliminate duplicate rows. If your
+        # query spans multiple tables (e.g. members__user_id, owner_id), it's
+        # possible to get duplicate results when a QuerySet is evaluated.
+        # That's when you'd use distinct().
+        return queryset.filter(q).distinct()
+
+    def make_filter_query(self) -> Q:
         url = self.url.replace("/allow", "/filter")
 
         with make_requests_session() as session:
@@ -263,11 +272,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         else:
             q_objects.append(Q())
 
-        # By default, a QuerySet will not eliminate duplicate rows. If your
-        # query spans multiple tables (e.g. members__user_id, owner_id), it's
-        # possible to get duplicate results when a QuerySet is evaluated.
-        # That's when you'd use distinct().
-        return queryset.filter(q_objects[0]).distinct()
+        return q_objects[0]
 
     @classmethod
     def get_per_field_update_scopes(cls, request, scopes_per_field):

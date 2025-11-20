@@ -17,11 +17,7 @@ from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import (
-    CvatDataExtractor,
-    TaskData,
-    find_dataset_root,
-)
+from cvat.apps.dataset_manager.bindings import CvatDataExtractor, TaskData, find_dataset_root
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import (
     ensure_extractors_efficiency,
