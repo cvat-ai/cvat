@@ -324,6 +324,7 @@ cvat:
 #     accessModes:
 #       - ReadWriteOnce
       size: 100Gi
+      annotations: {}
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
