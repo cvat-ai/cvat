@@ -65,6 +65,7 @@ module.exports = (env) => {
                 // https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/
                 'Cross-Origin-Opener-Policy': 'same-origin',
                 'Cross-Origin-Embedder-Policy': 'credentialless',
+                'Service-Worker-Allowed': '/',
             },
             proxy: [{
                 context: (param) =>

@@ -361,7 +361,7 @@ export function updateCanvasBrushTools(config: {
 }
 
 export function removeAnnotationsAsync(
-    startFrame: number, stopFrame: number, delTrackKeyframesOnly: boolean,
+    startFrame: number | undefined, stopFrame: number | undefined, delTrackKeyframesOnly: boolean,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
