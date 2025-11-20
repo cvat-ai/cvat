@@ -1,6 +1,6 @@
 ---
 title: 'Annotation with skeletons'
-linkTitle: 'Annotation with skeletons'
+linkTitle: 'Skeletons'
 weight: 12
 description: 'Guide to annotating tasks using Skeletons'
 aliases:

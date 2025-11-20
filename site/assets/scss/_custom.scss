@@ -178,3 +178,12 @@ details > .code-toolbar {
 .td-sidebar-nav .ul-1 > li {
     margin-bottom: 0.75rem;
   }
+
+/* Hide only the root "Home" item in sidebar */
+a#m-docs {
+    display: none !important;
+  }
+
+  .td-sidebar-nav {
+    padding-top: 1.25rem;
+  }

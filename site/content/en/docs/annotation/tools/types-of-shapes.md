@@ -14,7 +14,7 @@ There are several shapes with which you can annotate your images:
 - `Points`
 - `Ellipse`
 - `Cuboid`
-- `Cuboid in 3d task`
+- `Cuboid in 3D task`
 - `Skeleton`
 - `Tag`
 

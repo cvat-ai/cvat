@@ -1,6 +1,6 @@
 ---
-title: '3D Object annotation (advanced)'
-linkTitle: '3D Object annotation'
+title: '3D object annotation (advanced)'
+linkTitle: '3D object annotation'
 weight: 5
 description: 'Overview of advanced operations available when annotating 3D objects.'
 aliases:

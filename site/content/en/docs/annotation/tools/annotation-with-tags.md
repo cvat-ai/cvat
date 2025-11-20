@@ -1,6 +1,6 @@
 ---
 title: 'Annotation with tags'
-linkTitle: 'Annotation with tags'
+linkTitle: 'Tags'
 weight: 13
 aliases:
   - /docs/manual/advanced/annotation-with-tags/

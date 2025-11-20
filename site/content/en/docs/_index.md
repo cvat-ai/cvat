@@ -1,11 +1,8 @@
 ---
 title: 'CVAT Documentation'
-linkTitle: 'Docs'
+linkTitle: 'Home'
 description: 'Everything you need to know about CVAT, from basic data annotation tips to advanced and AI-assisted labeling guides.'
 no_list: true
-menu:
-  main:
-    weight: 20
 ---
 
 <section id="docs">

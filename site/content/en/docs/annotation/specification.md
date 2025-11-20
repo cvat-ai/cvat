@@ -1,7 +1,7 @@
 ---
 title: 'Specification for annotators'
 linkTitle: 'Specification for annotators'
-weight: 1
+weight: 6
 description: 'Learn how to easily create and add specification for annotators using the Guide feature.'
 aliases:
  - /docs/dataset_management/specification/

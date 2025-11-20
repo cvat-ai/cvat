@@ -1,6 +1,6 @@
 ---
 title: 'Annotation with brush tool'
-linkTitle: 'Annotation with brush tool'
+linkTitle: 'Brush tool'
 weight: 13
 description: 'Guide to annotating tasks using brush tools.'
 aliases:

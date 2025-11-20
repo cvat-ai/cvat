@@ -1,6 +1,6 @@
 ---
 title: 'Annotation with polylines'
-linkTitle: 'Annotation with polylines'
+linkTitle: 'Polyline'
 weight: 9
 description: 'Guide to annotating tasks using polylines.'
 aliases:

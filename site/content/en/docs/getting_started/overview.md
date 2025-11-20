@@ -10,68 +10,88 @@ CVAT is an enterprise-grade platform for managing high-quality visual
 It offers advanced tools for image, video, and 3D annotation,
 built-in quality assurance (QA), automation, and secure team collaboration.
 
-Backed by an active open-source community with over 14,500 GitHub stars
- and trusted by hundreds of organizations worldwide, CVAT helps organizations streamline
- data labeling for faster, more accurate model development.
+Backed by an active open-source community
+ and trusted by thousands of organizations worldwide, CVAT helps organizations streamline data labeling for faster, more
+ accurate model development.
+
+ ---
+
+ ## Editions and Services
 
 CVAT comes in three editions: CVAT Community, CVAT Online, and CVAT Enterprise.
 
-- [CVAT Community](https://github.com/cvat-ai/cvat) is the free, self-hosted version with core functionality.
-- [CVAT Online](https://app.cvat.ai) is the SaaS edition with three pricing tiers (Free, Solo, Team).
-- [CVAT Enterprise](https://www.cvat.ai/pricing/enterprise) is a self-hosted, premium version with enhanced security.
+### CVAT Community
 
-## Tools and formats
+- Free edition you can deploy on-premises or in your own cloud
+- Full annotation toolset, import/export formats, and core workflow
+- Ideal for technical teams comfortable managing infrastructure
+- {{< ilink "/docs/administration/basics/installation" "Installation & Setup Guide →" >}}
+- [GitHub repository](https://github.com/cvat-ai/cvat)
 
-CVAT stands as a comprehensive tool for image and video annotation,
-essential for various computer vision tasks.
+### CVAT Online
 
-It emphasizes user-friendliness, adaptability, and compatibility with
-a range of formats and tools.
+- Hosted cloud edition with automatic updates, maintenance, and managed infrastructure.
+- Available under multiple subscription tiers (Free, Solo, Team) for individual and collaborative work.
+- Designed for fast onboarding, built-in collaboration and flexible storage
+- [Pricing & Plans →](https://www.cvat.ai/pricing/cvat-online)
+- Try for free: [**app.cvat.ai**](https://app.cvat.ai)
 
-### Supported formats
+### CVAT Enterprise
 
-CVAT's supports the following formats:
+- For large organisations and regulated environments.
+- Includes advanced features such as SSO/LDAP, audit logs, dedicated support, and custom SLAs.
+- Managed deployment options, on-premises or private cloud.
+- [Pricing & Plans →](https://www.cvat.ai/pricing/enterprise)
 
-- **3D**: `.pcd`, `.bin`
-- **Image**: everything supported by the Python
+### Labeling as a Service
+
+- If you prefer not to build your own annotation team, we offer expert annotation services using CVAT.
+- Scalable annotation across projects, with QA built-in and reporting dashboards.
+- Ideal for one-time annotation projects and recurring workflows alike.
+
+[Learn more about CVAT Labeling Services →](https://www.cvat.ai/annotation-services)
+
+## Supported Data & Formats
+
+CVAT supports a wide range of file formats and includes comprehensive built-in
+annotation tools for various computer vision tasks.
+
+Input:
+
+- **Image**: All formats supported by the Python
   [**Pillow library**](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html),
-  including formats like `JPEG`, `PNG`, `BMP`, `GIF`, `PPM`and `TIFF`.
-- **Video**: all formats, supported by ffmpeg, including `MP4`, `AVI`, and `MOV`.
+  including `JPEG`, `PNG`, `BMP`, `GIF`, `PPM`and `TIFF`
+- **Video**: all formats, supported by ffmpeg, including `MP4`, `AVI`, and `MOV`
+- **3D**: `.pcd`, `.bin`
 
-For annotation export and import formats, see
-{{< ilink "/docs/dataset_management/formats" "**Export annotations and data from CVAT**" >}}
+For more information about dataset formats, see
+{{< ilink "/docs/dataset_management/formats" "**Dataset Management**" >}}.
 
-### Annotation tools
+## Annotation Tools
 
-CVAT offers a wide range of annotation tools, each catering to different aspects of
-image and video labeling:
+CVAT provides a comprehensive suite of annotation tools for various computer vision tasks.
 
-| Annotation Tool                                                                                          | Use Cases                                                                                                      |
+These tools make CVAT a versatile platform for a range of annotation needs, from basic labeling to complex
+multidimensional tasks in advanced computer vision projects.
+
+| Tool                                                                                          | Use Cases                                                                                                      |
 | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| {{< ilink "/docs/annotation/tools/3d-object-annotation-advanced" "**3D Object Annotation**" >}}           | Ideal for projects that require depth perception and volume estimation, like autonomous vehicle training.      |
-| {{< ilink "/docs/annotation/tools/attribute-annotation-mode-advanced" "**Attribute Annotation Mode**" >}} | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
-| {{< ilink "/docs/annotation/tools/annotation-with-rectangles" "**Annotation with Rectangles**" >}}        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
-| {{< ilink "/docs/annotation/tools/annotation-with-polygons" "**Annotation with Polygons**" >}}            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
-| {{< ilink "/docs/annotation/tools/annotation-with-polylines" "**Annotation with Polylines**" >}}          | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
-| {{< ilink "/docs/annotation/tools/annotation-with-ellipses" "**Annotation with Ellipses**" >}}            | Ideal for objects like plates, balls, or eyes, where a circular or oval annotation is needed.                  |
-| {{< ilink "/docs/annotation/tools/annotation-with-cuboids" "**Annotation with Cuboids**" >}}              | Useful for 3D objects in 2D images, like boxes or furniture in room layouts.                                   |
-| {{< ilink "/docs/annotation/tools/skeletons" "**Annotation with Skeletons**" >}}                          | Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.                 |
-| {{< ilink "/docs/annotation/tools/annotation-with-brush-tool" "**Annotation with Brush Tool**" >}}        | Perfect for intricate and detailed annotations where precision is key, such as in medical imaging.             |
-| {{< ilink "/docs/annotation/tools/annotation-with-tags" "**Annotation with Tags**" >}}                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
+| {{< ilink "/docs/annotation/tools/ai-tools" "**AI Tools**" >}} | Automatic object detection, segmentation, and tracking powered by pre-trained and interactive models (SAM/SAM2, DEXTR/DEC, YOLO, tracking agents). |
+| {{< ilink "/docs/annotation/tools/attribute-annotation-mode-advanced" "**Attributes**" >}} | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
+| {{< ilink "/docs/annotation/tools/annotation-with-rectangles" "**Rectangles**" >}}        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
+| {{< ilink "/docs/annotation/tools/annotation-with-polygons" "**Polygons**" >}}            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
+| {{< ilink "/docs/annotation/tools/annotation-with-polylines" "**Polylines**" >}}          | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
+| {{< ilink "/docs/annotation/tools/annotation-with-ellipses" "**Ellipses**" >}}            | Ideal for objects like plates, balls, or eyes, where a circular or oval annotation is needed.                  |
+| {{< ilink "/docs/annotation/tools/annotation-with-cuboids" "**Cuboids**" >}}              | Ideal for projects that require depth perception and volume estimation, like autonomous vehicle training.      |
+| {{< ilink "/docs/annotation/tools/skeletons" "**Skeletons**" >}}                          | Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.                 |
+| {{< ilink "/docs/annotation/tools/annotation-with-brush-tool" "**Brush Tool**" >}}        | Perfect for intricate and detailed annotations where precision is key, such as in medical imaging.             |
+| {{< ilink "/docs/annotation/tools/annotation-with-tags" "**Tags**" >}}                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
 
-These tools make CVAT a versatile platform for a range of annotation
-needs, from basic labeling to complex, multidimensional
-tasks in advanced computer vision projects.
+## Automated Labeling
 
-## Automated labeling
-
-CVAT has an automated labeling features, enhancing the annotation process significantly,
-potentially speeding it up by up to 10 times.
-
-{{% alert title="Note" color="primary" %}}
-For more information,
-see {{< ilink "/docs/annotation/tools/ai-tools" "**OpenCV and AI Tools**" >}}
-{{% /alert %}}
+CVAT makes annotation workflows faster with automated and semi-automated methods, including integrations
+with pre-trained models, AI agents (e.g., for tracking across frames) and external model sources.
+Use AI to pre-annotate data, then refine with human oversight.
 
 Below is a detailed table of the supported algorithms and the platforms they operate on:
 
@@ -93,7 +113,7 @@ Below is a detailed table of the supported algorithms and the platforms they ope
 | [RetinaNet](https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio)                      | Detector   | PyTorch    | ✔️          | ✔️          |
 | [Face Detection](https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | Detector   | OpenVINO   | ✔️          |             |
 
-## Useful links
+## How to Get Started
 
 Start here if you're unsure where to begin with CVAT.
 
@@ -104,7 +124,6 @@ Start here if you're unsure where to begin with CVAT.
 | {{< ilink "/docs/annotation/tools" "**Annotation tools**" >}}                                           | This comprehensive guide covers all CVAT tools available for work. It includes descriptions of all available tools, quality control methods, and procedures for importing and exporting data. This manual is relevant for both CVAT Online and Self-Hosted versions. |
 | {{< ilink "/docs/guides/workflow-org" "**CVAT Complete Workflow Guide for Organizations**" >}} | This guide provides a comprehensive overview of using CVAT for collaboration in organizations.                                                                                                                                                                      |
 | {{< ilink "/docs/account_management/subscription-management" "**Subscription Management**" >}} | Learn how to [**choose a plan**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs), subscribe, and manage your subscription effectively.                                                                                       |
-| {{< ilink "/docs/dataset_management/formats/format-cvat#format-specifications" "**XML Annotation Format**" >}} | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                                                                 |
 
 ### CVAT Community and Enterprise
 
@@ -125,16 +144,11 @@ CVAT is a global tool, trusted and utilized by teams worldwide.
 Below is a list of key companies that contribute significantly to our
 product support or are an integral part of our ecosystem.
 
-{{% alert title="Note" color="primary" %}}
-If you want to integrate CVAT with other MLOps tools, we'd love to
-hear from you at [contact@cvat.ai](mailto:contact+github@cvat.ai).
-{{% /alert %}}
-
-| Integrated Service                                                                  | Available In           | Description                                                                                                                                                                                                                                           |
+| Service                                                                  | Available In           | Description                                                                                                                                                                                                                                           |
 | ----------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [**Human Protocol**](https://hmt.ai)                                                | Online and Self-hosted | Incorporates CVAT to augment annotation services within the Human Protocol framework, enhancing its capabilities in data labeling.                                                                                                                    |
-| [**FiftyOne**](https://fiftyone.ai)                                                 | Online and Self-hosted | An open-source tool for dataset management and model analysis in computer vision, FiftyOne is [closely integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT to enhance annotation capabilities and label refinement.       |
-| [**Hugging Face**](https://huggingface.co/) & [**Roboflow**](https://roboflow.com/) | Online                 | In CVAT Online, models from Hugging Face and Roboflow can be added to enhance computer vision tasks. For more information, see [**Integration with Hugging Face and Roboflow**](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models) |
+| [**Human Protocol**](https://hmt.ai)                                                | CVAT Online, CVAT Community, CVAT Enterprise | Incorporates CVAT to augment annotation services within the Human Protocol framework, enhancing its capabilities in data labeling.                                                                                                                    |
+| [**FiftyOne**](https://fiftyone.ai)                                                 | CVAT Online, CVAT Community, CVAT Enterprise | An open-source tool for dataset management and model analysis in computer vision, FiftyOne is [closely integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT to enhance annotation capabilities and label refinement.       |
+| [**Hugging Face**](https://huggingface.co/),  [**Roboflow**](https://roboflow.com/) | CVAT Online          | In CVAT Online, models from Hugging Face and Roboflow can be added to enhance computer vision tasks. For more information, see [**Integration with Hugging Face and Roboflow**](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models) |
 
 ## License Information
 
@@ -142,11 +156,11 @@ CVAT includes the following licenses:
 
 | License Type                                           | Applicable To          | Description                                                                                                                                                                                                                                   |
 | ------------------------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [**MIT License**](https://opensource.org/licenses/MIT) | Self-hosted            | This code is distributed under the MIT License, a permissive free software license that allows for broad use, modification, and distribution.                                                                                                 |
-| [**LGPL License (FFmpeg)**](https://www.ffmpeg.org)    | Online and Self-hosted | Incorporates LGPL-licensed components from the FFmpeg project. Users should verify if their use of FFmpeg requires additional licenses. CVAT.ai Corporation does not provide these licenses and is not liable for any related licensing fees. |
-| **Commercial License**                                 | Self-hosted Enterprise | For commercial use of the Enterprise solution of CVAT, a separate commercial license is applicable. This is tailored for businesses and commercial entities.                                                                                  |
-| [**Terms of Use**](https://www.cvat.ai/terms-of-use)   | Online and Self-hosted | Outlines the terms of use and confidential information handling for CVAT. Important for understanding the legal framework of using the platform.                                                                                              |
-| [**Privacy Policy**](https://www.cvat.ai/privacy)      | Online                 | Our Privacy Policy governs your visit to <https://cvat.ai> and your use of <https://app.cvat.ai>, and explains how we collect, safeguard and disclose information that results from your use of our Service.                                  |
+| [**MIT License**](https://opensource.org/licenses/MIT) | CVAT Community, CVAT Enterprise | This code is distributed under the MIT License, a permissive free software license that allows for broad use, modification, and distribution.                                                                                                 |
+| [**LGPL License (FFmpeg)**](https://www.ffmpeg.org)    | CVAT Online, CVAT Community, CVAT Enterprise | Incorporates LGPL-licensed components from the FFmpeg project. Users should verify if their use of FFmpeg requires additional licenses. CVAT.ai Corporation does not provide these licenses and is not liable for any related licensing fees. |
+| **Commercial License**                                 | CVAT Enterprise | For commercial use of the Enterprise solution of CVAT, a separate commercial license is applicable. This is tailored for businesses and commercial entities.                                                                                  |
+| [**Terms of Use**](https://www.cvat.ai/terms-of-use)   | CVAT Online, CVAT Community, CVAT Enterprise | Outlines the terms of use and confidential information handling for CVAT. Important for understanding the legal framework of using the platform.                                                                                              |
+| [**Privacy Policy**](https://www.cvat.ai/privacy)      | CVAT Online, CVAT Community, CVAT Enterprise | Our Privacy Policy governs your visit to <https://cvat.ai> and your use of <https://app.cvat.ai>, and explains how we collect, safeguard and disclose information that results from your use of our Service.                                  |
 
 ## Get in touch
 
@@ -158,4 +172,3 @@ To get in touch, use one of the following channels:
 | [**General Inquiries**](https://www.cvat.ai/general)                                               | All products and services | Reach out to discuss partnership, co-marketing or investment opportunities with CVAT team. | |
 | [**CVAT Online Customer Support**](https://youtrack.cvat.ai/form/447d9c98-ab4b-466e-bf9d-004f01b22f73) | CVAT Online (Pro and Team plans) | Chat with us about product support, resolve billing questions, or provide feedback. |
 | [**CVAT Community Customer Support**](https://github.com/cvat-ai/cvat/issues) | CVAT Community    | Report a bug or submit a feature request in out GitHub repository. |
-

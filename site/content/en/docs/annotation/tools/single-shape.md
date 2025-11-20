@@ -1,6 +1,6 @@
 ---
-title: 'Single Shape'
-linkTitle: 'Single Shape Mode'
+title: 'Single shape'
+linkTitle: 'Single shape mode'
 weight: 3
 description: 'Guide to annotating tasks using Single Shape mode'
 aliases:
