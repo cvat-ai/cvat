@@ -20,7 +20,8 @@ frame. The following figure is an example of how the list might look like:
 
 ![Filter button](/images/image059.jpg)
 
-The way how to use filters is described in the advanced guide {{< ilink "/docs/annotation/manual-annotation/utilities/filter" "here" >}}.
+The way how to use filters is described in the advanced guide {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter" "here" >}}.
 
 **List of objects**
 

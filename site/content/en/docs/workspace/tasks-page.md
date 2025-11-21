@@ -39,7 +39,8 @@ Each button is responsible for a menu `Actions` specific function:
 - `Delete` — delete task.
 
 In the upper left corner, there is a search bar, using which you can find the task by assignee, task name etc.
-In the upper right corner, there are {{< ilink "/docs/annotation/manual-annotation/utilities/filter#sort-by" "sorting" >}},
+In the upper right corner, there are {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter#sort-by" "sorting" >}},
 {{< ilink "/docs/annotation/manual-annotation/utilities/filter#quick-filters" "quick filters" >}}, and filter.
 
 ### Filter

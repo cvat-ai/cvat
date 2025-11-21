@@ -244,7 +244,8 @@ The tables in the **Annotations** and **Events** tabs support:
    {{% /alert %}}
 
 1. Filtering entries by a custom rule: select **Filter**, and set filtering criteria.
-   To learn more about how to set a filter, refer to the **{{< ilink "/docs/annotation/manual-annotation/utilities/filter" "Filter" >}}**
+   To learn more about how to set a filter, refer to the **{{< ilink
+    "/docs/annotation/manual-annotation/utilities/filter" "Filter" >}}**
    article.
 1. Clearing filters: select **Clear filters**.
 1. Customizing columns:
