@@ -1,6 +1,6 @@
 ---
-title: 'Contributing to this project'
-linkTitle: 'CONTRIBUTING'
+title: 'Contributing to CVAT Community'
+linkTitle: 'Contribution'
 weight: 20
 description: 'This section contains documents for CVAT developers.'
 ---

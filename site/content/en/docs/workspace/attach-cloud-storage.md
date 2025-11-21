@@ -161,7 +161,7 @@ To prepare the manifest file, do the following:
    ```
 
 1. After copying the files, you can create a manifest file as described in
-   {{< ilink "/docs/annotation/tools/dataset_manifest" "prepare manifest file section" >}}:
+   {{< ilink "/docs/dataset_management/dataset_manifest" "prepare manifest file section" >}}:
 
    ```bash
    python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
@@ -446,7 +446,7 @@ For example, the dataset is [The Oxford-IIIT Pet Dataset](https://www.robots.ox.
 1. Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
 1. Unpack the archive into the prepared folder.
 1. Create a manifest. For more information, consult
-   {{< ilink "/docs/annotation/tools/dataset_manifest" "**Dataset manifest**" >}}:
+   {{< ilink "/docs/dataset_management/dataset_manifest" "**Dataset manifest**" >}}:
 
 ```bash
 python <cvat repository>/utils/dataset_manifest/create.py --output-dir <your_folder> <your_folder>

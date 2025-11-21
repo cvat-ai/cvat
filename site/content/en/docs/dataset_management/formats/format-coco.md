@@ -20,7 +20,7 @@ For more information, see:
 
 ## COCO export
 
-- Supported annotations: Bounding Boxes, Polygons, Masks, Ellipses (as masks).
+- Supported annotations: Bounding Boxes, Oriented Bounding Boxes, Polygons, Masks, Ellipses (as masks).
 - Attributes:
   - `is_crowd` This can either be a checkbox or an integer
     (with values of 0 or 1). It indicates whether the instance
