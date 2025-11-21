@@ -117,12 +117,15 @@ spec:
       labels:
         {{- include "cvat.labels" . | nindent 8 }}
         app: cvat-app
-        tier: kvroocks
+        tier: kvrocks
       {{- with .Values.cvat.kvrocks.defaultStorage.annotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      {{- if .Values.cvat.kvrocks.defaultStorage.volumeAttributesClassName }}
+      volumeAttributesClassName: {{ .Values.cvat.kvrocks.defaultStorage.volumeAttributesClassName }}
+      {{- end }}
       accessModes:
       {{- if .Values.cvat.kvrocks.defaultStorage.accessModes }}
       {{ .Values.cvat.kvrocks.defaultStorage.accessModes | toYaml | nindent 6 }}
