@@ -923,7 +923,11 @@ paths:
             application/vnd.cvat+json:
               schema:
                 type: string
-          description: Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)
+                enum:
+                - AVAILABLE
+                - NOT_FOUND
+                - FORBIDDEN
+          description: Cloud Storage Status
   /api/comments:
     get:
       operationId: comments_list

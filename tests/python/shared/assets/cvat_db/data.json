@@ -16627,6 +16627,25 @@
   }
 },
 {
+  "model": "engine.cloudstorage",
+  "pk": 4,
+  "fields": {
+    "created_date": "2022-06-29T12:56:18.257Z",
+    "updated_date": "2022-06-29T12:56:18.264Z",
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "importexportbucket",
+    "display_name": "Import/Export bucket",
+    "owner": [
+      "admin1"
+    ],
+    "credentials": "minio_access_key minio_secret_key",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9777",
+    "description": "Bucket with wrong endpoint for testing purposes",
+    "organization": 2
+  }
+},
+{
   "model": "engine.storage",
   "pk": 1,
   "fields": {
