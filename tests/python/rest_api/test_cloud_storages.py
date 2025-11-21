@@ -753,9 +753,14 @@ class TestListCloudStorages:
 
 
 class TestCloudStorageConnectionStatus:
-    def test_minio_connection_status(self, admin_user):
+    @pytest.mark.parametrize("cloud_storage_id, expected_response", [
+        (1, "AVAILABLE"),
+        (2, "AVAILABLE"),
+        (3, "AVAILABLE"),
+        (4, "NOT_FOUND"),
+        ])
+    def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
         with make_api_client(admin_user) as api_client:
-            id = 4
-            (data, response) = api_client.cloudstorages_api.retrieve_status(id)
+            (data, response) = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
             print(f"data: {data}, response: {response}")
-            assert data == "AVAILABLE"
+            assert data == expected_response
