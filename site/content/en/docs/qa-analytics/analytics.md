@@ -137,8 +137,8 @@ for annotation distribution by labels and types. Hover over a chart or diagram t
 ![Annotation tab in Analytics](/images/analytics/annotation-tab-detection.jpg)
 
 The **Annotations** tab shows annotation statistics for:
-- {{< ilink "/docs/annotation/tools/shape-mode-basics" "Shape mode">}} (the **Detections** tab).
-- {{< ilink "/docs/annotation/tools/track-mode-basics" "Track mode">}} (the **Tracking** tab).
+- {{< ilink "/docs/annotation/manual-annotation/modes/shape-mode-basics" "Shape mode">}} (the **Detections** tab).
+- {{< ilink "/docs/annotation/manual-annotation/modes/track-mode-basics" "Track mode">}} (the **Tracking** tab).
 
 Both tabs always reflect the current state of the resource.
 Each tab includes a filterable, customizable table
@@ -154,7 +154,7 @@ The **Detection** tab table contains the columns:
 | --------------- | ----------- |
 | **Label ID** | The ID of the label. |
 | **Label name** | The name of the label. |
-| Columns with {{< ilink "/docs/annotation/tools/types-of-shapes" "label types names">}} | The number of objects per label type. By default, the columns with zero values are hidden. |
+| Columns with {{< ilink "/docs/annotation/manual-annotation/shapes/types-of-shapes" "label types names">}} | The number of objects per label type. By default, the columns with zero values are hidden. |
 | **Total shapes** | The total number of all label shapes. |
 
 
@@ -164,7 +164,7 @@ The **Tracking** tab table contains the columns:
 | --------------- | ----------- |
 | **Label ID** | The ID of the label. |
 | **Label name** | The name of the label. |
-| Columns with {{< ilink "/docs/annotation/tools/types-of-shapes" "label type names">}} | The number of objects per label type. By default, the columns with zero values are hidden. |
+| Columns with {{< ilink "/docs/annotation/manual-annotation/shapes/types-of-shapes" "label type names">}} | The number of objects per label type. By default, the columns with zero values are hidden. |
 | **Keyframes** | The number of the label keyframes. |
 | **Interpolated** | The number of {{< ilink "/docs/getting_started/vocabulary#interpolation" "interpolated frames" >}} with the label. |
 | **Tracks** | The number of the label {{< ilink "/docs/getting_started/vocabulary#track" "tracks" >}}. |
@@ -244,7 +244,7 @@ The tables in the **Annotations** and **Events** tabs support:
    {{% /alert %}}
 
 1. Filtering entries by a custom rule: select **Filter**, and set filtering criteria.
-   To learn more about how to set a filter, refer to the **{{< ilink "/docs/annotation/tools/filter" "Filter" >}}**
+   To learn more about how to set a filter, refer to the **{{< ilink "/docs/annotation/manual-annotation/utilities/filter" "Filter" >}}**
    article.
 1. Clearing filters: select **Clear filters**.
 1. Customizing columns:

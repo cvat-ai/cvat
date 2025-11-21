@@ -76,16 +76,16 @@ multidimensional tasks in advanced computer vision projects.
 
 | Tool                                                                                          | Use Cases                                                                                                      |
 | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| {{< ilink "/docs/annotation/tools/ai-tools" "**AI Tools**" >}} | Automatic object detection, segmentation, and tracking powered by pre-trained (SAM/SAM2, YOLO, Hugging Face, Roboflow, etc) and fine-tuned models. |
-| {{< ilink "/docs/annotation/tools/attribute-annotation-mode-advanced" "**Attributes**" >}} | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
-| {{< ilink "/docs/annotation/tools/annotation-with-rectangles" "**Rectangles**" >}}        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
-| {{< ilink "/docs/annotation/tools/annotation-with-polygons" "**Polygons**" >}}            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
-| {{< ilink "/docs/annotation/tools/annotation-with-polylines" "**Polylines**" >}}          | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
-| {{< ilink "/docs/annotation/tools/annotation-with-ellipses" "**Ellipses**" >}}            | A tool for creating segmentation masks for circular or oval objects like plates, balls, or eyes.                  |
-| {{< ilink "/docs/annotation/tools/annotation-with-cuboids" "**Cuboids**" >}}              | A tool for creating 3D segmentation masks that capture object volume and position, useful for autonomous driving or robotics.      |
-| {{< ilink "/docs/annotation/tools/skeletons" "**Skeletons**" >}}                          | A tool for creating segmentation masks of articulated structures, ideal for human pose estimation, animation, and movement analysis.             |
-| {{< ilink "/docs/annotation/tools/annotation-with-brush-tool" "**Brush Tool**" >}}        | A tool for creating detailed, free-form segmentation masks where pixel-level precision is required, such as in medical imaging.             |
-| {{< ilink "/docs/annotation/tools/annotation-with-tags" "**Tags**" >}}                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
+| {{< ilink "/docs/annotation/auto-annotation/ai-tools" "**AI Tools**" >}} | Automatic object detection, segmentation, and tracking powered by pre-trained (SAM/SAM2, YOLO, Hugging Face, Roboflow, etc) and fine-tuned models. |
+| {{< ilink "/docs/annotation/manual-annotation/modes/attribute-annotation-mode-advanced" "**Attributes**" >}} | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
+| {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-rectangles" "**Rectangles**" >}}        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
+| {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons" "**Polygons**" >}}            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
+| {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polylines" "**Polylines**" >}}          | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
+| {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-ellipses" "**Ellipses**" >}}            | A tool for creating segmentation masks for circular or oval objects like plates, balls, or eyes.                  |
+| {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-cuboids" "**Cuboids**" >}}              | A tool for creating 3D segmentation masks that capture object volume and position, useful for autonomous driving or robotics.      |
+| {{< ilink "/docs/annotation/manual-annotation/shapes/skeletons" "**Skeletons**" >}}                          | A tool for creating segmentation masks of articulated structures, ideal for human pose estimation, animation, and movement analysis.             |
+| {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-brush-tool" "**Brush Tool**" >}}        | A tool for creating detailed, free-form segmentation masks where pixel-level precision is required, such as in medical imaging.             |
+| {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-tags" "**Tags**" >}}                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
 
 ## Automated Labeling
 
