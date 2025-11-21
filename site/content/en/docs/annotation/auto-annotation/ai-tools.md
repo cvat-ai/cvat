@@ -9,7 +9,8 @@ aliases:
 
 Label and annotate your data in semi-automatic and automatic mode with the help of **AI** and **OpenCV** tools.
 
-While {{< ilink "/docs/annotation/tools/annotation-with-polygons/track-mode-with-polygons" "interpolation" >}}
+While {{< ilink
+ "/docs/annotation/manual-annotation/shapes/annotation-with-polygons/track-mode-with-polygons" "interpolation" >}}
 is good for annotation of the videos made by the security cameras,
 **AI** and **OpenCV** tools are good for both:
 videos where the camera is stable and videos, where it
@@ -137,7 +138,7 @@ During the drawing process, you can remove the last point by clicking on it with
   see {{< ilink "/docs/annotation/annotation-editor/objects-sidebar" "Objects sidebar" >}}.
 
 - For more information about polygons in general, see
-  {{< ilink "/docs/annotation/tools/annotation-with-polygons" "Annotation with polygons" >}}.
+  {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons" "Annotation with polygons" >}}.
 
 ### Interactors models
 

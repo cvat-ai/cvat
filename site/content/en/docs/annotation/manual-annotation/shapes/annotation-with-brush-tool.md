@@ -12,7 +12,7 @@ such as a house hiding behind trees, a car behind a pedestrian, or a pillar behi
 traffic sign.
 The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.
 
-Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. <br>For more information about segmentation masks in CVAT, see {{< ilink "/docs/annotation/tools/annotation-with-polygons/creating-mask" "Creating masks" >}}.
+Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. <br>For more information about segmentation masks in CVAT, see {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons/creating-mask" "Creating masks" >}}.
 
 See:
 

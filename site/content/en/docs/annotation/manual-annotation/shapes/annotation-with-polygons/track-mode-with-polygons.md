@@ -15,7 +15,7 @@ Polygons in the track mode allow you to mark moving objects more accurately othe
    ![Open "Draw new polygon" window with highlighted "Track" button](/images/image184.jpg)
 
 1. Create a polygon the same way as in the case of
-   {{< ilink "/docs/annotation/tools/annotation-with-polygons" "Annotation with polygons" >}}.
+   {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons" "Annotation with polygons" >}}.
    Press `N` or click the `Done` button on the top panel to complete the polygon.
 
 1. Pay attention to the fact that the created polygon has a starting point and a direction,
