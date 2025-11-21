@@ -752,7 +752,11 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
     }
 }
 
-export async function getContextImage(jobID: number, frame: number): Promise<Record<string, ImageBitmap>> {
+export async function getContextImage(
+    jobID: number,
+    frame: number,
+    getImageContext: (frame: number) => Promise<ArrayBuffer>,
+): Promise<Record<string, ImageBitmap>> {
     const frameData = frameDataCache[jobID];
     const meta = await frameData.getMeta();
     const requestId = frame;
@@ -779,7 +783,7 @@ export async function getContextImage(jobID: number, frame: number): Promise<Rec
                 } else if (frame in frameData.contextCache) {
                     resolve(frameData.contextCache[frame].data);
                 } else {
-                    frameData.activeContextRequest = serverProxy.frames.getImageContext(jobID, frame)
+                    frameData.activeContextRequest = getImageContext(frame)
                         .then((encodedImages) => decodeContextImages(encodedImages, 0, relatedFiles));
                     frameData.activeContextRequest.then((images) => {
                         const size = Object.values(images)
