@@ -1,0 +1,405 @@
+name: Google Drive Model Registry - Regression Tests
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+  pull_request:
+    paths:
+      - 'cvat/apps/engine/**'
+      - 'cvat-ui/src/**'
+      - 'tests/cypress/**'
+      - '.github/workflows/google-drive-regression-tests.yml'
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - all
+          - historical-bugs
+          - edge-cases
+          - smoke
+          - quick
+      browser:
+        description: 'Browser to test'
+        required: true
+        type: choice
+        default: 'chrome'
+        options:
+          - chrome
+          - firefox
+          - both
+
+env:
+  CVAT_HOST: localhost:8080
+  CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+
+jobs:
+  # Quick smoke tests - runs on every commit
+  smoke-tests:
+    name: Smoke Tests (Quick)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: |
+      github.event_name != 'schedule' &&
+      (github.event.inputs.test_suite == 'smoke' ||
+       github.event.inputs.test_suite == 'quick' ||
+       github.event.inputs.test_suite == 'all' ||
+       github.event.inputs.test_suite == '')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: tests/yarn.lock
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ hashFiles('Dockerfile*') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Start CVAT services
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.dev.yml \
+            up -d --build
+        env:
+          CVAT_DEBUG_ENABLED: yes
+
+      - name: Wait for CVAT to be ready
+        run: |
+          timeout 180 bash -c 'until curl -sf http://localhost:8080/api/server/about | grep -q "name"; do
+            echo "Waiting for CVAT..."
+            sleep 3
+          done'
+
+      - name: Create test user
+        run: |
+          docker exec cvat_server python manage.py shell <<EOF
+          from django.contrib.auth.models import User
+          User.objects.get_or_create(
+              username='admin',
+              defaults={'email': 'admin@localhost', 'is_superuser': True, 'is_staff': True}
+          )
+          User.objects.filter(username='admin').update(is_superuser=True, is_staff=True)
+          EOF
+          docker exec cvat_server python manage.py shell -c "from django.contrib.auth.models import User; u = User.objects.get(username='admin'); u.set_password('12qwaszx'); u.save()"
+
+      - name: Install Cypress
+        working-directory: tests
+        run: yarn install --frozen-lockfile
+
+      - name: Run smoke tests
+        working-directory: tests
+        run: |
+          yarn run cypress:run:chrome \
+            --spec "cypress/e2e/regression/google_drive_model_registry/smoke_tests.js" \
+            --config video=false
+        env:
+          CYPRESS_baseUrl: http://localhost:8080
+
+      - name: Upload smoke test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: tests/cypress/results
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  # Regression tests - historical bugs
+  regression-tests:
+    name: Regression Tests - ${{ matrix.test-suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-suite:
+          - historical-bugs
+          - edge-cases
+        browser:
+          - chrome
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: tests/yarn.lock
+
+      - name: Start CVAT services
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.dev.yml \
+            -f tests/docker-compose.minio.yml \
+            up -d --build
+        env:
+          CVAT_DEBUG_ENABLED: yes
+
+      - name: Wait for services
+        run: |
+          timeout 180 bash -c 'until curl -sf http://localhost:8080/api/server/about; do sleep 3; done'
+
+      - name: Setup test data
+        run: |
+          docker exec cvat_server python manage.py shell <<EOF
+          from django.contrib.auth.models import User
+          User.objects.get_or_create(username='admin', defaults={'email': 'admin@localhost', 'is_superuser': True})
+          u = User.objects.get(username='admin')
+          u.set_password('12qwaszx')
+          u.is_superuser = True
+          u.is_staff = True
+          u.save()
+          EOF
+
+      - name: Install Cypress
+        working-directory: tests
+        run: yarn install --frozen-lockfile
+
+      - name: Run ${{ matrix.test-suite }} tests
+        working-directory: tests
+        run: |
+          yarn run cypress:run:${{ matrix.browser }} \
+            --spec "cypress/e2e/regression/google_drive_model_registry/${{ matrix.test-suite }}.js" \
+            --config video=true,screenshotOnRunFailure=true
+        env:
+          CYPRESS_baseUrl: http://localhost:8080
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-artifacts-${{ matrix.test-suite }}-${{ matrix.browser }}
+          path: |
+            tests/cypress/videos
+            tests/cypress/screenshots
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-results-${{ matrix.test-suite }}
+          path: tests/cypress/results
+          retention-days: 14
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  # Full regression suite - nightly only
+  full-regression-suite:
+    name: Full Regression Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    if: github.event_name == 'schedule' || github.event.inputs.test_suite == 'all'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: tests/yarn.lock
+
+      - name: Start CVAT with all dependencies
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.dev.yml \
+            -f tests/docker-compose.minio.yml \
+            -f tests/docker-compose.file_share.yml \
+            up -d --build
+        env:
+          CVAT_DEBUG_ENABLED: yes
+
+      - name: Wait for all services
+        run: |
+          timeout 300 bash -c 'until curl -sf http://localhost:8080/api/server/about; do sleep 3; done'
+
+      - name: Setup comprehensive test data
+        run: |
+          docker exec cvat_server python manage.py shell <<EOF
+          from django.contrib.auth.models import User, Group
+
+          # Create admin
+          admin, _ = User.objects.get_or_create(username='admin', defaults={'email': 'admin@localhost', 'is_superuser': True})
+          admin.set_password('12qwaszx')
+          admin.is_superuser = True
+          admin.is_staff = True
+          admin.save()
+
+          # Create test users for permission testing
+          for role in ['worker', 'supervisor', 'maintainer']:
+              user, _ = User.objects.get_or_create(username=role, defaults={'email': f'{role}@localhost'})
+              user.set_password('12qwaszx')
+              user.save()
+          EOF
+
+      - name: Install Cypress
+        working-directory: tests
+        run: yarn install --frozen-lockfile
+
+      - name: Run all regression tests
+        working-directory: tests
+        run: |
+          yarn run cypress:run:${{ matrix.browser }} \
+            --spec "cypress/e2e/regression/google_drive_model_registry/*.js" \
+            --config video=true,screenshotOnRunFailure=true
+        env:
+          CYPRESS_baseUrl: http://localhost:8080
+
+      - name: Generate test report
+        if: always()
+        working-directory: tests
+        run: |
+          npx mochawesome-merge cypress/results/*.json > mochawesome-combined.json
+          npx mochawesome-report-generator mochawesome-combined.json --reportDir reports
+        continue-on-error: true
+
+      - name: Upload full test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-regression-report-${{ matrix.browser }}
+          path: |
+            tests/cypress/videos
+            tests/cypress/screenshots
+            tests/reports
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  # Test result analysis
+  analyze-results:
+    name: Analyze Test Results
+    runs-on: ubuntu-latest
+    needs: [smoke-tests, regression-tests]
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results
+
+      - name: Analyze test results
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count passed/failed tests
+          total=0
+          passed=0
+          failed=0
+
+          for result_file in test-results/**/*.xml test-results/**/*.json; do
+            if [ -f "$result_file" ]; then
+              total=$((total + 1))
+            fi
+          done
+
+          echo "- Total test suites: $total" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ needs.smoke-tests.result }}, ${{ needs.regression-tests.result }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload combined results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-combined
+          path: test-results
+          retention-days: 30
+
+  # Notify on failure
+  notify-failure:
+    name: Notify on Regression Failure
+    runs-on: ubuntu-latest
+    needs: [smoke-tests, regression-tests, full-regression-suite]
+    if: failure() && (github.event_name == 'schedule' || github.event_name == 'push')
+
+    steps:
+      - name: Create GitHub Issue on failure
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = `Regression Test Failure - ${new Date().toISOString().split('T')[0]}`;
+            const body = `
+            ## Regression Test Failure
+
+            **Workflow:** ${{ github.workflow }}
+            **Run ID:** ${{ github.run_id }}
+            **Commit:** ${{ github.sha }}
+            **Branch:** ${{ github.ref_name }}
+
+            [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            ### Details
+            - Smoke Tests: ${{ needs.smoke-tests.result }}
+            - Regression Tests: ${{ needs.regression-tests.result }}
+            - Full Suite: ${{ needs.full-regression-suite.result }}
+
+            Please investigate the failing tests.
+            `;
+
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'regression-failure'
+            });
+
+            const existingIssue = issues.data.find(issue => issue.title === title);
+
+            if (!existingIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['regression-failure', 'automated', 'priority:high']
+              });
+            }
