@@ -82,6 +82,9 @@ from cvat.apps.engine.models import (
     JobType,
     Label,
     Location,
+    ModelDownloadLog,
+    ModelRegistry,
+    ModelVersion,
     Project,
     RequestAction,
     RequestTarget,
@@ -131,6 +134,11 @@ from cvat.apps.engine.serializers import (
     JobWriteSerializer,
     LabeledDataSerializer,
     LabelSerializer,
+    ModelDownloadLogSerializer,
+    ModelRegistryReadSerializer,
+    ModelRegistryWriteSerializer,
+    ModelVersionReadSerializer,
+    ModelVersionWriteSerializer,
     PluginsSerializer,
     ProjectFileSerializer,
     ProjectReadSerializer,
@@ -2952,3 +2960,395 @@ def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Ex
     rq_job_meta.save()
 
     return True
+
+
+@extend_schema(tags=['models'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Get model details',
+        responses={
+            '200': ModelRegistryReadSerializer,
+        }),
+    list=extend_schema(
+        summary='List models from Google Drive',
+        responses={
+            '200': ModelRegistryReadSerializer(many=True),
+        }),
+    destroy=extend_schema(
+        summary='Delete a model',
+        responses={
+            '204': OpenApiResponse(description='The model has been removed'),
+        }),
+    partial_update=extend_schema(
+        summary='Update a model',
+        request=ModelRegistryWriteSerializer(partial=True),
+        responses={
+            '200': ModelRegistryReadSerializer,
+        }),
+    create=extend_schema(
+        summary='Create a model registry entry',
+        request=ModelRegistryWriteSerializer,
+        responses={
+            '201': ModelRegistryReadSerializer,
+        })
+)
+class ModelRegistryViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
+    PartialUpdateModelMixin
+):
+    queryset = ModelRegistry.objects.all().prefetch_related('owner', 'organization', 'versions')
+
+    search_fields = ('name', 'display_name', 'framework', 'model_type', 'author', 'description')
+    filter_fields = list(search_fields) + ['id', 'tags']
+    simple_filters = list(set(search_fields) - {'description'})
+    ordering_fields = ['id', 'name', 'created_date', 'updated_date', 'framework', 'model_type']
+    ordering = "-updated_date"
+    lookup_fields = {'owner': 'owner__username'}
+    iam_organization_field = 'organization'
+
+    def get_serializer_class(self):
+        if self.request.method in ('POST', 'PATCH'):
+            return ModelRegistryWriteSerializer
+        else:
+            return ModelRegistryReadSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Filter by framework
+        framework = self.request.query_params.get('framework', None)
+        if framework:
+            queryset = queryset.filter(framework=framework)
+
+        # Filter by model_type
+        model_type = self.request.query_params.get('model_type', None)
+        if model_type:
+            queryset = queryset.filter(model_type=model_type)
+
+        # Filter by tags (supports comma-separated list)
+        tags = self.request.query_params.get('tags', None)
+        if tags:
+            tag_list = [t.strip() for t in tags.split(',')]
+            for tag in tag_list:
+                queryset = queryset.filter(tags__contains=[tag])
+
+        # Search by name or display_name
+        search = self.request.query_params.get('search', None)
+        if search:
+            from django.db.models import Q
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(display_name__icontains=search) |
+                Q(description__icontains=search)
+            )
+
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(
+            owner=self.request.user,
+            organization=self.request.iam_context.get('organization'))
+
+    @extend_schema(
+        summary='Sync models from Google Drive',
+        description='Discover and sync models from Google Drive /CVAT_Models/ directory',
+        request=None,
+        parameters=[
+            OpenApiParameter(
+                'cloud_storage_id',
+                description='Cloud storage ID with Google Drive OAuth token',
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.INT,
+                required=True
+            ),
+        ],
+        responses={
+            '200': OpenApiResponse(
+                description='Models synced successfully',
+                response={
+                    'type': 'object',
+                    'properties': {
+                        'synced_count': {'type': 'integer'},
+                        'new_models': {'type': 'array'},
+                        'updated_models': {'type': 'array'},
+                    }
+                }
+            ),
+            '400': OpenApiResponse(description='Invalid cloud storage or OAuth token'),
+        }
+    )
+    @action(detail=False, methods=['POST'], url_path='sync')
+    def sync_from_drive(self, request: ExtendedRequest):
+        """Sync models from Google Drive"""
+        from cvat.apps.engine.google_drive_service import GoogleDriveService
+
+        cloud_storage_id = request.query_params.get('cloud_storage_id')
+        if not cloud_storage_id:
+            return Response(
+                {'error': 'cloud_storage_id parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Get cloud storage with OAuth token
+            db_storage = CloudStorage.objects.get(id=cloud_storage_id)
+            if db_storage.provider_type != CloudProviderChoice.GOOGLE_DRIVE:
+                return Response(
+                    {'error': 'Cloud storage must be Google Drive provider'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Initialize Google Drive service
+            from cvat.apps.engine.cloud_provider import Credentials
+            credentials = Credentials()
+            credentials.convert_from_db({
+                'type': db_storage.credentials_type,
+                'value': db_storage.credentials,
+            })
+
+            if not credentials.oauth_token:
+                return Response(
+                    {'error': 'Cloud storage must have OAuth token credentials'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            drive_service = GoogleDriveService(credentials.oauth_token)
+
+            # List models from Google Drive
+            drive_models = drive_service.list_models()
+
+            new_models = []
+            updated_models = []
+
+            for metadata in drive_models:
+                # Check if model already exists
+                existing_model = ModelRegistry.objects.filter(
+                    drive_folder_id=metadata.drive_folder_id
+                ).first()
+
+                if existing_model:
+                    # Update existing model
+                    existing_model.display_name = metadata.display_name
+                    existing_model.version = metadata.version
+                    existing_model.framework = metadata.framework
+                    existing_model.model_type = metadata.model_type
+                    existing_model.description = metadata.description or ''
+                    existing_model.drive_file_id = metadata.drive_file_id
+                    existing_model.model_filename = metadata.model_filename
+                    existing_model.labels = metadata.labels
+                    existing_model.input_shape = metadata.input_shape
+                    existing_model.output_spec = metadata.output_spec
+                    existing_model.tags = metadata.tags
+                    existing_model.author = metadata.author or ''
+                    existing_model.save()
+                    updated_models.append(existing_model.name)
+                else:
+                    # Create new model
+                    new_model = ModelRegistry.objects.create(
+                        name=metadata.name,
+                        display_name=metadata.display_name,
+                        version=metadata.version,
+                        framework=metadata.framework,
+                        model_type=metadata.model_type,
+                        description=metadata.description or '',
+                        drive_folder_id=metadata.drive_folder_id,
+                        drive_file_id=metadata.drive_file_id,
+                        model_filename=metadata.model_filename,
+                        labels=metadata.labels,
+                        input_shape=metadata.input_shape,
+                        output_spec=metadata.output_spec,
+                        tags=metadata.tags,
+                        author=metadata.author or '',
+                        owner=request.user,
+                        organization=request.iam_context.get('organization'),
+                    )
+                    new_models.append(new_model.name)
+
+            return Response({
+                'synced_count': len(drive_models),
+                'new_models': new_models,
+                'updated_models': updated_models,
+            }, status=status.HTTP_200_OK)
+
+        except CloudStorage.DoesNotExist:
+            return Response(
+                {'error': f'Cloud storage {cloud_storage_id} not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as ex:
+            slogger.glob.error(f'Error syncing models from Google Drive: {str(ex)}')
+            return Response(
+                {'error': str(ex)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @extend_schema(
+        summary='Download model file',
+        description='Download model file from Google Drive',
+        request=None,
+        parameters=[
+            OpenApiParameter(
+                'cloud_storage_id',
+                description='Cloud storage ID with Google Drive OAuth token',
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.INT,
+                required=True
+            ),
+        ],
+        responses={
+            '200': OpenApiResponse(description='Model file download URL'),
+            '404': OpenApiResponse(description='Model not found'),
+        }
+    )
+    @action(detail=True, methods=['POST'], url_path='download')
+    def download_model(self, request: ExtendedRequest, pk=None):
+        """Download model file from Google Drive"""
+        import time
+        from cvat.apps.engine.google_drive_service import GoogleDriveService
+
+        cloud_storage_id = request.query_params.get('cloud_storage_id')
+        if not cloud_storage_id:
+            return Response(
+                {'error': 'cloud_storage_id parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            model = self.get_object()
+
+            # Get cloud storage with OAuth token
+            db_storage = CloudStorage.objects.get(id=cloud_storage_id)
+
+            # Initialize Google Drive service
+            from cvat.apps.engine.cloud_provider import Credentials
+            credentials = Credentials()
+            credentials.convert_from_db({
+                'type': db_storage.credentials_type,
+                'value': db_storage.credentials,
+            })
+
+            drive_service = GoogleDriveService(credentials.oauth_token)
+
+            # Download file
+            start_time = time.time()
+            file_content = drive_service.download_file_content(model.drive_file_id)
+            download_duration = time.time() - start_time
+
+            # Log the download
+            ModelDownloadLog.objects.create(
+                model=model,
+                user=request.user,
+                file_size=len(file_content),
+                download_duration=download_duration,
+                purpose=request.data.get('purpose', '')
+            )
+
+            # Return file as response
+            response = HttpResponse(file_content, content_type='application/octet-stream')
+            response['Content-Disposition'] = f'attachment; filename="{model.model_filename}"'
+            return response
+
+        except ModelRegistry.DoesNotExist:
+            return Response(
+                {'error': f'Model {pk} not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except CloudStorage.DoesNotExist:
+            return Response(
+                {'error': f'Cloud storage {cloud_storage_id} not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as ex:
+            slogger.glob.error(f'Error downloading model: {str(ex)}')
+            return Response(
+                {'error': str(ex)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+@extend_schema(tags=['model-versions'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Get model version details',
+        responses={
+            '200': ModelVersionReadSerializer,
+        }),
+    list=extend_schema(
+        summary='List model versions',
+        responses={
+            '200': ModelVersionReadSerializer(many=True),
+        }),
+    destroy=extend_schema(
+        summary='Delete a model version',
+        responses={
+            '204': OpenApiResponse(description='The model version has been removed'),
+        }),
+    create=extend_schema(
+        summary='Create a model version',
+        request=ModelVersionWriteSerializer,
+        responses={
+            '201': ModelVersionReadSerializer,
+        })
+)
+class ModelVersionViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin
+):
+    queryset = ModelVersion.objects.all().select_related('model')
+
+    search_fields = ('version', 'model__name')
+    filter_fields = ['id', 'model', 'version', 'is_active']
+    ordering_fields = ['id', 'version', 'created_date']
+    ordering = "-created_date"
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return ModelVersionWriteSerializer
+        else:
+            return ModelVersionReadSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Filter by model
+        model_id = self.request.query_params.get('model', None)
+        if model_id:
+            queryset = queryset.filter(model_id=model_id)
+
+        # Filter by active status
+        is_active = self.request.query_params.get('is_active', None)
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+
+        return queryset
+
+
+@extend_schema(tags=['model-downloads'])
+@extend_schema_view(
+    list=extend_schema(
+        summary='List model download logs',
+        responses={
+            '200': ModelDownloadLogSerializer(many=True),
+        }),
+)
+class ModelDownloadLogViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
+    queryset = ModelDownloadLog.objects.all().select_related('model', 'user')
+
+    filter_fields = ['id', 'model', 'user', 'purpose']
+    ordering_fields = ['id', 'downloaded_at']
+    ordering = "-downloaded_at"
+    serializer_class = ModelDownloadLogSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Filter by model
+        model_id = self.request.query_params.get('model', None)
+        if model_id:
+            queryset = queryset.filter(model_id=model_id)
+
+        # Filter by user
+        user_id = self.request.query_params.get('user', None)
+        if user_id:
+            queryset = queryset.filter(user_id=user_id)
+
+        return queryset

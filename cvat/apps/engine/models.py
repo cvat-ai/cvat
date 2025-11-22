@@ -1552,7 +1552,7 @@ class ModelRegistry(models.Model):
 
     @property
     def organization_id(self):
-        return self.organization_id if self.organization else None
+        return self.organization.id if self.organization else None
 
 
 class ModelVersion(models.Model):

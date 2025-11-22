@@ -23,6 +23,9 @@ router.register("labels", views.LabelViewSet)
 router.register("cloudstorages", views.CloudStorageViewSet)
 router.register("assets", views.AssetsViewSet)
 router.register("guides", views.AnnotationGuidesViewSet)
+router.register("models", views.ModelRegistryViewSet)
+router.register("model-versions", views.ModelVersionViewSet)
+router.register("model-downloads", views.ModelDownloadLogViewSet)
 
 urlpatterns = [
     # Entry point for a client
