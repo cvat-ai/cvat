@@ -23,6 +23,7 @@ import django_rq
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
 from django.db.models.query import Prefetch
@@ -3046,10 +3047,37 @@ class ModelRegistryViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return queryset
 
+    def _invalidate_model_cache(self, cloud_storage_id=None):
+        """Invalidate cached model listings"""
+        if cloud_storage_id:
+            org_id = self.request.iam_context.get('organization', 'none')
+            cache_key = f'drive_models_{cloud_storage_id}_{org_id}'
+            cache.delete(cache_key)
+        # Also invalidate all cache keys for this organization (wildcard delete not supported)
+        # So we just delete specific keys if cloud_storage_id is known
+
     def perform_create(self, serializer):
         serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context.get('organization'))
+
+    def perform_update(self, serializer):
+        """Update model and invalidate cache.
+
+        Note: Since ModelRegistry doesn't track which CloudStorage was used for sync,
+        we can't invalidate specific cache keys. Cache will expire naturally after TTL (5 minutes).
+        """
+        super().perform_update(serializer)
+        # Future enhancement: Add cloud_storage FK to ModelRegistry for precise cache invalidation
+
+    def perform_destroy(self, instance):
+        """Delete model and invalidate cache.
+
+        Note: Since ModelRegistry doesn't track which CloudStorage was used for sync,
+        we can't invalidate specific cache keys. Cache will expire naturally after TTL (5 minutes).
+        """
+        super().perform_destroy(instance)
+        # Future enhancement: Add cloud_storage FK to ModelRegistry for precise cache invalidation
 
     @extend_schema(
         summary='Sync models from Google Drive',
@@ -3116,8 +3144,18 @@ class ModelRegistryViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             drive_service = GoogleDriveService(credentials.oauth_token)
 
-            # List models from Google Drive
-            drive_models = drive_service.list_models()
+            # Check cache for Drive models (5 minute TTL)
+            cache_key = f'drive_models_{cloud_storage_id}_{request.iam_context.get("organization", "none")}'
+            drive_models = cache.get(cache_key)
+
+            if drive_models is None:
+                # List models from Google Drive
+                drive_models = drive_service.list_models()
+                # Cache for 5 minutes
+                cache.set(cache_key, drive_models, timeout=300)
+                slogger.glob.info(f'Cached {len(drive_models)} models from Google Drive')
+            else:
+                slogger.glob.info(f'Retrieved {len(drive_models)} models from cache')
 
             new_models = []
             updated_models = []
