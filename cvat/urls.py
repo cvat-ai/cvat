@@ -38,6 +38,9 @@ if apps.is_installed("cvat.apps.events"):
 if apps.is_installed("cvat.apps.lambda_manager"):
     urlpatterns.append(path("", include("cvat.apps.lambda_manager.urls")))
 
+if apps.is_installed("cvat.apps.inference_manager"):
+    urlpatterns.append(path("api/", include("cvat.apps.inference_manager.urls")))
+
 if apps.is_installed("cvat.apps.webhooks"):
     urlpatterns.append(path("api/", include("cvat.apps.webhooks.urls")))
 
