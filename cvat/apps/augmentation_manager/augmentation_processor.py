@@ -78,7 +78,7 @@ class AugmentationProcessor:
 
             # Get task images
             task = self.job.task
-            images = list(CVATImage.objects.filter(data__tasks=task).order_by('frame'))
+            images = list(CVATImage.objects.filter(data__task=task).order_by('frame'))
 
             if not images:
                 raise Exception(f"No images found for task {task.id}")
@@ -254,11 +254,9 @@ class AugmentationProcessor:
             metadata=metadata or {}
         )
         # Also log to server logger
-        log_level_str = level.value.upper()
-        slogger.glob.log(
-            getattr(slogger.glob, log_level_str.lower(), slogger.glob.info),
-            f"[AugJob {self.job.id}] {message}"
-        )
+        log_level_str = level.value.lower()
+        log_method = getattr(slogger.glob, log_level_str, slogger.glob.info)
+        log_method(f"[AugJob {self.job.id}] {message}")
 
 
 @django_rq.job('augmentation', timeout=3600)
