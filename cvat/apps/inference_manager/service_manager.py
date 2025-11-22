@@ -19,6 +19,7 @@ from typing import Any, Optional
 import docker
 import requests
 from django.conf import settings
+from django.utils import timezone
 from docker.errors import DockerException, NotFound
 
 from cvat.apps.engine.log import ServerLogManager
@@ -241,7 +242,7 @@ class InferenceServiceManager:
             # Update service status
             service.container_status = ServiceStatus.STOPPED
             service.health_status = HealthStatus.UNKNOWN
-            service.stopped_at = time.time()
+            service.stopped_at = timezone.now()
             service.save(update_fields=[
                 'container_status',
                 'health_status',
@@ -385,8 +386,8 @@ class InferenceServiceManager:
             if health['status'] == 'healthy':
                 service.health_status = HealthStatus.HEALTHY
                 service.container_status = ServiceStatus.RUNNING
-                service.started_at = time.time()
-                service.last_health_check = time.time()
+                service.started_at = timezone.now()
+                service.last_health_check = timezone.now()
                 service.save(update_fields=[
                     'health_status',
                     'container_status',
