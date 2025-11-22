@@ -100,6 +100,7 @@ from cvat.apps.engine.permissions import (
     IssuePermission,
     JobPermission,
     LabelPermission,
+    ModelRegistryPermission,
     ProjectPermission,
     ServerPermission,
     TaskPermission,
@@ -3005,6 +3006,7 @@ class ModelRegistryViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-updated_date"
     lookup_fields = {'owner': 'owner__username'}
     iam_organization_field = 'organization'
+    iam_permission_class = ModelRegistryPermission
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH'):
@@ -3299,6 +3301,7 @@ class ModelVersionViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     filter_fields = ['id', 'model', 'version', 'is_active']
     ordering_fields = ['id', 'version', 'created_date']
     ordering = "-created_date"
+    iam_organization_field = 'model__organization'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -3337,6 +3340,7 @@ class ModelDownloadLogViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     ordering_fields = ['id', 'downloaded_at']
     ordering = "-downloaded_at"
     serializer_class = ModelDownloadLogSerializer
+    iam_organization_field = 'model__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()

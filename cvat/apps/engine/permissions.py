@@ -34,6 +34,7 @@ from .models import (
     Job,
     Label,
     Location,
+    ModelRegistry,
     Project,
     Task,
     User,
@@ -1392,6 +1393,77 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'retrieve': Scopes.VIEW,
         }[view.action]]
+
+
+class ModelRegistryPermission(OpenPolicyAgentPermission):
+    obj: Optional[ModelRegistry]
+
+    class Scopes(StrEnum):
+        LIST = 'list'
+        CREATE = 'create'
+        VIEW = 'view'
+        UPDATE = 'update'
+        DELETE = 'delete'
+        SYNC = 'sync'
+        DOWNLOAD = 'download'
+
+    @classmethod
+    def create(cls, request: ExtendedRequest, view: ViewSet, obj: ModelRegistry | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
+        permissions = []
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            permissions.append(self)
+
+        return permissions
+
+    @classmethod
+    def create_scope_view(cls, iam_context: dict[str, Any], model_id: int, request: ExtendedRequest | None = None):
+        try:
+            obj = ModelRegistry.objects.get(id=model_id)
+        except ModelRegistry.DoesNotExist as ex:
+            raise ValidationError(str(ex))
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, obj)
+
+        return cls(**iam_context, obj=obj, scope=cls.Scopes.VIEW)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/models/allow'
+
+    @classmethod
+    def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: ModelRegistry | None):
+        Scopes = cls.Scopes
+        return [{
+            'list': Scopes.LIST,
+            'create': Scopes.CREATE,
+            'retrieve': Scopes.VIEW,
+            'partial_update': Scopes.UPDATE,
+            'destroy': Scopes.DELETE,
+            'sync_from_drive': Scopes.SYNC,
+            'download_model': Scopes.DOWNLOAD,
+        }[view.action]]
+
+    def get_resource(self):
+        data = None
+        if self.scope.startswith('create') or self.scope == self.Scopes.SYNC:
+            data = {
+                'owner': { 'id': self.user_id },
+                'organization': {
+                    'id': self.org_id,
+                } if self.org_id is not None else None,
+            }
+        elif self.obj:
+            data = {
+                'id': self.obj.id,
+                'owner': { 'id': self.obj.owner_id },
+                'organization': {
+                    'id': self.obj.organization_id
+                } if self.obj.organization_id else None
+            }
+
+        return data
 
 
 def get_cloud_storage_for_import_or_export(
