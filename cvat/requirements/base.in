@@ -1,5 +1,6 @@
 -r ../../utils/dataset_manifest/requirements.in
 
+albumentations~=1.3
 attrs==21.4.0
 
 av==15.1.0

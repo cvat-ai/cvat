@@ -41,6 +41,9 @@ if apps.is_installed("cvat.apps.lambda_manager"):
 if apps.is_installed("cvat.apps.inference_manager"):
     urlpatterns.append(path("api/", include("cvat.apps.inference_manager.urls")))
 
+if apps.is_installed("cvat.apps.augmentation_manager"):
+    urlpatterns.append(path("api/", include("cvat.apps.augmentation_manager.urls")))
+
 if apps.is_installed("cvat.apps.webhooks"):
     urlpatterns.append(path("api/", include("cvat.apps.webhooks.urls")))
 

@@ -111,6 +111,7 @@ INSTALLED_APPS = [
     "cvat.apps.dataset_repo",
     "cvat.apps.lambda_manager",
     "cvat.apps.inference_manager",
+    "cvat.apps.augmentation_manager",
     "cvat.apps.webhooks",
     "cvat.apps.health",
     "cvat.apps.events",
@@ -277,6 +278,7 @@ class CVAT_QUEUES(Enum):
     CLEANING = "cleaning"
     CHUNKS = "chunks"
     CONSENSUS = "consensus"
+    AUGMENTATION = "augmentation"
 
 
 redis_inmem_host = os.getenv("CVAT_REDIS_INMEM_HOST", "localhost")
@@ -340,6 +342,10 @@ RQ_QUEUES = {
         "DEFAULT_TIMEOUT": "1h",
         # custom fields
         "PARSED_JOB_ID_CLASS": "cvat.apps.consensus.rq.ConsensusRequestId",
+    },
+    CVAT_QUEUES.AUGMENTATION.value: {
+        **REDIS_INMEM_SETTINGS,
+        "DEFAULT_TIMEOUT": "2h",
     },
 }
 
