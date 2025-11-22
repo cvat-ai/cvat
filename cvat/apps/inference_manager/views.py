@@ -464,6 +464,7 @@ class InferenceServiceLogViewSet(viewsets.GenericViewSet, mixins.ListModelMixin)
     filter_fields = ['service', 'log_level']
     ordering_fields = ['timestamp']
     ordering = '-timestamp'
+    iam_organization_field = 'service__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -491,6 +492,7 @@ class InferencePredictionViewSet(viewsets.GenericViewSet, mixins.ListModelMixin)
     filter_fields = ['service', 'user', 'job', 'success']
     ordering_fields = ['request_timestamp']
     ordering = '-request_timestamp'
+    iam_organization_field = 'service__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
