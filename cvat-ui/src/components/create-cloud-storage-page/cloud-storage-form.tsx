@@ -281,6 +281,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             if (cloudStorageData.connection_string === fakeCredentialsData.connectionString) {
                 delete cloudStorageData.connection_string;
             }
+            if (cloudStorageData.oauth_token === fakeCredentialsData.oauthToken) {
+                delete cloudStorageData.oauth_token;
+            }
             dispatch(updateCloudStorageAsync(cloudStorageData));
         } else {
             dispatch(createCloudStorageAsync(cloudStorageData));
@@ -293,6 +296,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             secret_key: undefined,
             session_token: undefined,
             account_name: undefined,
+            oauth_token: undefined,
         });
         setUploadedKeyFile(null);
     };
