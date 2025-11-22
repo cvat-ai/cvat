@@ -1431,6 +1431,207 @@ class Asset(models.Model):
     def get_asset_dir(self):
         return os.path.join(settings.ASSETS_ROOT, str(self.uuid))
 
+
+class ModelFramework(str, Enum):
+    """ML Framework choices for model registry"""
+    PYTORCH = 'PYTORCH'
+    TENSORFLOW = 'TENSORFLOW'
+    ONNX = 'ONNX'
+    TENSORRT = 'TENSORRT'
+    KERAS = 'KERAS'
+    SCIKIT_LEARN = 'SCIKIT_LEARN'
+    XGBOOST = 'XGBOOST'
+    LIGHTGBM = 'LIGHTGBM'
+    OTHER = 'OTHER'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return [x.value for x in cls]
+
+    def __str__(self):
+        return self.value
+
+
+class ModelType(str, Enum):
+    """Model type choices for model registry"""
+    DETECTOR = 'DETECTOR'
+    CLASSIFIER = 'CLASSIFIER'
+    SEGMENTATION = 'SEGMENTATION'
+    KEYPOINT = 'KEYPOINT'
+    TRACKER = 'TRACKER'
+    REID = 'REID'
+    POSE_ESTIMATION = 'POSE_ESTIMATION'
+    OTHER = 'OTHER'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return [x.value for x in cls]
+
+    def __str__(self):
+        return self.value
+
+
+class ModelRegistry(models.Model):
+    """
+    Model Registry for ML models stored in Google Drive.
+
+    Represents a model and its metadata from the /CVAT_Models/ directory.
+    """
+    # Core fields
+    name = models.CharField(max_length=256, unique=True, db_index=True,
+                           help_text="Unique model identifier")
+    display_name = models.CharField(max_length=256,
+                                   help_text="Human-readable model name")
+    version = models.CharField(max_length=64, default="1.0.0",
+                              help_text="Model version (semantic versioning)")
+
+    # Model metadata
+    framework = models.CharField(max_length=32, choices=ModelFramework.choices(),
+                                help_text="ML framework")
+    model_type = models.CharField(max_length=32, choices=ModelType.choices(),
+                                 help_text="Type of model")
+    description = models.TextField(blank=True, default='',
+                                  help_text="Model description")
+
+    # Model location in Google Drive
+    drive_folder_id = models.CharField(max_length=128, unique=True, db_index=True,
+                                      help_text="Google Drive folder ID")
+    drive_file_id = models.CharField(max_length=128, db_index=True,
+                                    help_text="Google Drive model file ID")
+    model_filename = models.CharField(max_length=256,
+                                     help_text="Name of model file")
+
+    # Model specifications
+    labels = models.JSONField(default=list, blank=True,
+                            help_text="List of labels the model predicts")
+    input_shape = models.JSONField(null=True, blank=True,
+                                  help_text="Expected input dimensions")
+    output_spec = models.JSONField(null=True, blank=True,
+                                  help_text="Output format specification")
+
+    # Metadata
+    tags = models.JSONField(default=list, blank=True,
+                          help_text="Tags for categorization")
+    author = models.CharField(max_length=256, blank=True, default='',
+                            help_text="Model author/creator")
+
+    # Timestamps
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    # Ownership
+    owner = models.ForeignKey(User, null=True, blank=True,
+                            on_delete=models.SET_NULL,
+                            related_name='models',
+                            related_query_name='model')
+    organization = models.ForeignKey('organizations.Organization', null=True,
+                                   blank=True, on_delete=models.SET_NULL,
+                                   related_name='models',
+                                   help_text="Organization this model belongs to")
+
+    class Meta:
+        db_table = 'engine_modelregistry'
+        ordering = ['-updated_date']
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['framework']),
+            models.Index(fields=['model_type']),
+            models.Index(fields=['-updated_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.display_name} ({self.version})"
+
+    @property
+    def organization_id(self):
+        return self.organization_id if self.organization else None
+
+
+class ModelVersion(models.Model):
+    """
+    Version history for models in the registry.
+
+    Tracks different versions of the same model over time.
+    """
+    model = models.ForeignKey(ModelRegistry, on_delete=models.CASCADE,
+                            related_name='versions',
+                            help_text="Parent model")
+    version = models.CharField(max_length=64,
+                             help_text="Version identifier")
+
+    # Version-specific metadata
+    drive_file_id = models.CharField(max_length=128, db_index=True,
+                                    help_text="Google Drive file ID for this version")
+    model_filename = models.CharField(max_length=256,
+                                     help_text="Name of model file for this version")
+
+    # Version metadata
+    description = models.TextField(blank=True, default='',
+                                  help_text="Version-specific notes")
+    labels = models.JSONField(default=list, blank=True,
+                            help_text="Labels for this version")
+
+    # Timestamps
+    created_date = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True,
+                                   help_text="Whether this version is active/current")
+
+    class Meta:
+        db_table = 'engine_modelversion'
+        ordering = ['-created_date']
+        unique_together = [['model', 'version']]
+        indexes = [
+            models.Index(fields=['model', '-created_date']),
+            models.Index(fields=['version']),
+        ]
+
+    def __str__(self):
+        return f"{self.model.name} v{self.version}"
+
+
+class ModelDownloadLog(models.Model):
+    """
+    Logs model downloads for analytics and usage tracking.
+    """
+    model = models.ForeignKey(ModelRegistry, on_delete=models.CASCADE,
+                            related_name='downloads',
+                            help_text="Downloaded model")
+    user = models.ForeignKey(User, null=True, blank=True,
+                           on_delete=models.SET_NULL,
+                           related_name='model_downloads',
+                           help_text="User who downloaded the model")
+
+    # Download metadata
+    downloaded_at = models.DateTimeField(auto_now_add=True)
+    file_size = models.PositiveBigIntegerField(null=True, blank=True,
+                                              help_text="Downloaded file size in bytes")
+    download_duration = models.FloatField(null=True, blank=True,
+                                        help_text="Download duration in seconds")
+
+    # Context
+    purpose = models.CharField(max_length=64, blank=True, default='',
+                             help_text="Purpose: inference, training, etc.")
+
+    class Meta:
+        db_table = 'engine_modeldownloadlog'
+        ordering = ['-downloaded_at']
+        indexes = [
+            models.Index(fields=['model', '-downloaded_at']),
+            models.Index(fields=['user', '-downloaded_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.model.name} downloaded by {self.user} at {self.downloaded_at}"
+
+
 class RequestAction(TextChoices):
     AUTOANNOTATE = "autoannotate"
     CREATE = "create"

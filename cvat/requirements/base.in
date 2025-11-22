@@ -27,6 +27,8 @@ djangorestframework>=3.15.2,<4
 djangorestframework-api-key~=3.1
 drf-spectacular==0.26.2
 google-cloud-storage~=3.0
+google-api-python-client~=2.100
+google-auth-oauthlib~=1.1
 lxml>=5.2.1,<6
 natsort==8.0.0
 numpy~=1.22.2
