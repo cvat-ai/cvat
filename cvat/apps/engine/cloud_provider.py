@@ -1106,6 +1106,7 @@ class Credentials:
         "key_file_path",
         "credentials_type",
         "connection_string",
+        "oauth_token",
     )
 
     def __init__(self, **credentials):
@@ -1116,6 +1117,7 @@ class Credentials:
         self.key_file_path = credentials.get("key_file_path", None)
         self.credentials_type = credentials.get("credentials_type", None)
         self.connection_string = credentials.get("connection_string", None)
+        self.oauth_token = credentials.get("oauth_token", "")
 
     def convert_to_db(self):
         converted_credentials = {
@@ -1128,6 +1130,7 @@ class Credentials:
                 "" if not self.account_name else self.account_name
             ),
             CredentialsTypeChoice.CONNECTION_STRING: self.connection_string,
+            CredentialsTypeChoice.OAUTH_TOKEN: self.oauth_token,
         }
         return converted_credentials[self.credentials_type]
 
@@ -1144,6 +1147,8 @@ class Credentials:
             self.key_file_path = credentials.get("value")
         elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             self.connection_string = credentials.get("value")
+        elif self.credentials_type == CredentialsTypeChoice.OAUTH_TOKEN:
+            self.oauth_token = credentials.get("value")
         else:
             raise NotImplementedError(
                 "Found {} not supported credentials type".format(self.credentials_type)
@@ -1172,6 +1177,9 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             self.reset(exclusion={"connection_string"})
             self.connection_string = credentials.get("connection_string", self.connection_string)
+        elif self.credentials_type == CredentialsTypeChoice.OAUTH_TOKEN:
+            self.reset(exclusion={"oauth_token"})
+            self.oauth_token = credentials.get("oauth_token", self.oauth_token)
         else:
             raise NotImplementedError("Mapping credentials: unsupported credentials type")
 

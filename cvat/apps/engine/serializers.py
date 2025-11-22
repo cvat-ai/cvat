@@ -3964,3 +3964,157 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
     class Meta:
         model = models.AnnotationGuide
         fields = ('id', 'task_id', 'project_id', 'markdown', )
+
+
+class ModelRegistryReadSerializer(serializers.ModelSerializer):
+    """Read serializer for ModelRegistry with computed fields"""
+    owner = serializers.CharField(source='owner.username', allow_null=True, read_only=True)
+    organization = serializers.IntegerField(source='organization.id', allow_null=True, read_only=True)
+
+    class Meta:
+        model = models.ModelRegistry
+        fields = (
+            'id', 'name', 'display_name', 'version', 'framework', 'model_type',
+            'description', 'drive_folder_id', 'drive_file_id', 'model_filename',
+            'labels', 'input_shape', 'output_spec', 'tags', 'author',
+            'created_date', 'updated_date', 'owner', 'organization'
+        )
+        read_only_fields = fields
+
+
+class ModelRegistryWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    """Write serializer for creating/updating ModelRegistry"""
+    owner_id = serializers.IntegerField(required=False, allow_null=True)
+    organization_id = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate_name(self, value):
+        """Validate that model name is unique"""
+        if self.instance is None:  # Creating new model
+            if models.ModelRegistry.objects.filter(name=value).exists():
+                raise serializers.ValidationError(
+                    f"A model with name '{value}' already exists. "
+                    "Please choose a different name."
+                )
+        return value
+
+    def validate_drive_folder_id(self, value):
+        """Validate that drive_folder_id is unique"""
+        if self.instance is None:  # Creating new model
+            if models.ModelRegistry.objects.filter(drive_folder_id=value).exists():
+                raise serializers.ValidationError(
+                    f"A model with Google Drive folder ID '{value}' already exists."
+                )
+        return value
+
+    @transaction.atomic
+    def create(self, validated_data):
+        """Create new model registry entry"""
+        owner_id = validated_data.pop('owner_id', None)
+        organization_id = validated_data.pop('organization_id', None)
+
+        # Set owner
+        if owner_id is not None:
+            try:
+                validated_data['owner'] = User.objects.get(id=owner_id)
+            except User.DoesNotExist:
+                raise serializers.ValidationError(f'User #{owner_id} does not exist.')
+
+        # Set organization
+        if organization_id is not None:
+            try:
+                validated_data['organization'] = Organization.objects.get(id=organization_id)
+            except Organization.DoesNotExist:
+                raise serializers.ValidationError(f'Organization #{organization_id} does not exist.')
+
+        return models.ModelRegistry.objects.create(**validated_data)
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """Update existing model registry entry"""
+        # Don't allow changing owner or organization after creation
+        validated_data.pop('owner_id', None)
+        validated_data.pop('organization_id', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
+
+    class Meta:
+        model = models.ModelRegistry
+        fields = (
+            'id', 'name', 'display_name', 'version', 'framework', 'model_type',
+            'description', 'drive_folder_id', 'drive_file_id', 'model_filename',
+            'labels', 'input_shape', 'output_spec', 'tags', 'author',
+            'owner_id', 'organization_id'
+        )
+        write_once_fields = ('name', 'drive_folder_id', 'owner_id', 'organization_id')
+
+
+class ModelVersionReadSerializer(serializers.ModelSerializer):
+    """Read serializer for ModelVersion"""
+    model_name = serializers.CharField(source='model.name', read_only=True)
+
+    class Meta:
+        model = models.ModelVersion
+        fields = (
+            'id', 'model', 'model_name', 'version', 'drive_file_id',
+            'model_filename', 'description', 'labels', 'created_date', 'is_active'
+        )
+        read_only_fields = fields
+
+
+class ModelVersionWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    """Write serializer for creating/updating ModelVersion"""
+    model_id = serializers.IntegerField(write_only=True)
+
+    def validate(self, data):
+        """Validate that model+version combination is unique"""
+        if self.instance is None:  # Creating new version
+            model_id = data.get('model_id')
+            version = data.get('version')
+
+            if models.ModelVersion.objects.filter(
+                model_id=model_id, version=version
+            ).exists():
+                raise serializers.ValidationError(
+                    f"Version '{version}' already exists for this model."
+                )
+
+        return data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        """Create new model version"""
+        model_id = validated_data.pop('model_id')
+
+        try:
+            model = models.ModelRegistry.objects.get(id=model_id)
+        except models.ModelRegistry.DoesNotExist:
+            raise serializers.ValidationError(f'Model #{model_id} does not exist.')
+
+        validated_data['model'] = model
+        return models.ModelVersion.objects.create(**validated_data)
+
+    class Meta:
+        model = models.ModelVersion
+        fields = (
+            'id', 'model_id', 'version', 'drive_file_id', 'model_filename',
+            'description', 'labels', 'is_active'
+        )
+        write_once_fields = ('model_id', 'version')
+
+
+class ModelDownloadLogSerializer(serializers.ModelSerializer):
+    """Serializer for ModelDownloadLog"""
+    model_name = serializers.CharField(source='model.name', read_only=True)
+    user_name = serializers.CharField(source='user.username', allow_null=True, read_only=True)
+
+    class Meta:
+        model = models.ModelDownloadLog
+        fields = (
+            'id', 'model', 'model_name', 'user', 'user_name', 'downloaded_at',
+            'file_size', 'download_duration', 'purpose'
+        )
+        read_only_fields = ('id', 'downloaded_at')
