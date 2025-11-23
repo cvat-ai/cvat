@@ -3540,6 +3540,10 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
     connection_string = serializers.CharField(max_length=1024, allow_blank=True, required=False)
+    oauth_token = serializers.CharField(max_length=1024, allow_blank=True, required=False)
+    oauth_refresh_token = serializers.CharField(max_length=1024, allow_blank=True, required=False)
+    client_id = serializers.CharField(max_length=255, allow_blank=True, required=False)
+    client_secret = serializers.CharField(max_length=255, allow_blank=True, required=False)
 
     class Meta:
         model = models.CloudStorage
@@ -3547,7 +3551,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
             'secret_key', 'connection_string', 'key_file', 'specific_attributes', 'description', 'id',
-            'manifests', 'organization'
+            'manifests', 'organization', 'oauth_token', 'oauth_refresh_token', 'client_id', 'client_secret'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
         extra_kwargs = { 'organization': { 'allow_null': True } }
@@ -3566,6 +3570,26 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         if provider_type == models.CloudProviderChoice.AZURE_BLOB_STORAGE:
             if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
                 raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
+
+        if provider_type == models.CloudProviderChoice.GOOGLE_DRIVE:
+            # For Google Drive, validate OAuth or service account credentials
+            credentials_type = attrs.get('credentials_type')
+            if credentials_type == models.CredentialsTypeChoice.GOOGLE_DRIVE_OAUTH:
+                required_fields = ['oauth_token', 'client_id', 'client_secret']
+                missing = [f for f in required_fields if not attrs.get(f)]
+                if missing:
+                    raise serializers.ValidationError(
+                        f"Google Drive OAuth requires: {', '.join(missing)}"
+                    )
+            elif credentials_type == models.CredentialsTypeChoice.KEY_FILE_PATH:
+                if not attrs.get('key_file'):
+                    raise serializers.ValidationError('Service account JSON file is required for Google Drive')
+            else:
+                raise serializers.ValidationError(
+                    'Google Drive requires either OAuth credentials or service account key file'
+                )
+            # Skip resource name validation for Google Drive (allows folder IDs and 'root')
+            return attrs
 
         # Amazon S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
         # ABS: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
@@ -3631,6 +3655,10 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             session_token=validated_data.pop('session_token', ''),
             key_file_path=temporary_file,
             credentials_type = validated_data.get('credentials_type'),
+            oauth_token=validated_data.pop('oauth_token', ''),
+            oauth_refresh_token=validated_data.pop('oauth_refresh_token', ''),
+            client_id=validated_data.pop('client_id', ''),
+            client_secret=validated_data.pop('client_secret', ''),
             connection_string = validated_data.pop('connection_string', '')
         )
         details = {

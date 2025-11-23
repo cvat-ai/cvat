@@ -1285,6 +1285,7 @@ class CloudProviderChoice(TextChoices):
     AMAZON_S3 = "AWS_S3_BUCKET", "Amazon S3"
     AZURE_BLOB_STORAGE = "AZURE_CONTAINER", "Azure Blob Storage"
     GOOGLE_CLOUD_STORAGE = "GOOGLE_CLOUD_STORAGE", "Google Cloud Storage"
+    GOOGLE_DRIVE = "GOOGLE_DRIVE", "Google Drive"
 
 class CredentialsTypeChoice(str, Enum):
     # ignore bandit issues because false positives
@@ -1293,6 +1294,7 @@ class CredentialsTypeChoice(str, Enum):
     KEY_FILE_PATH = 'KEY_FILE_PATH'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
     CONNECTION_STRING = 'CONNECTION_STRING'
+    GOOGLE_DRIVE_OAUTH = 'GOOGLE_DRIVE_OAUTH'
 
     @classmethod
     def choices(cls):

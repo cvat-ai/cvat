@@ -30,6 +30,11 @@ from django.conf import settings
 from google.cloud import storage
 from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
+from google.oauth2.credentials import Credentials as GoogleOAuthCredentials
+from google.oauth2 import service_account
 from PIL import Image, ImageFile
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rq import get_current_job
@@ -573,6 +578,16 @@ def get_cloud_storage_instance(
             location=specific_attributes.get("location"),
             project=specific_attributes.get("project"),
         )
+    elif cloud_provider == CloudProviderChoice.GOOGLE_DRIVE:
+        instance = GoogleDriveCloudStorage(
+            folder_id=resource,
+            service_account_json=credentials.key_file_path,
+            oauth_token=credentials.oauth_token,
+            oauth_refresh_token=credentials.oauth_refresh_token,
+            client_id=credentials.client_id,
+            client_secret=credentials.client_secret,
+            prefix=specific_attributes.get("prefix"),
+        )
     else:
         raise NotImplementedError(f"The {cloud_provider} provider is not supported")
     return instance
@@ -1097,6 +1112,288 @@ class GcsCloudStorage(_CloudStorage):
         pass
 
 
+def _define_google_drive_status(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except HttpError as ex:
+            if ex.resp.status == 404:
+                return Status.NOT_FOUND
+            elif ex.resp.status == 403:
+                return Status.FORBIDDEN
+            raise
+        return Status.AVAILABLE
+    return wrapper
+
+
+class GoogleDriveCloudStorage(_CloudStorage):
+    """Google Drive cloud storage provider.
+
+    Unlike bucket-based storage (S3, GCS, Azure), Google Drive is file/folder based.
+    The 'resource' parameter can be:
+    - A folder ID (to mount a specific folder)
+    - 'root' or 'my-drive' (to mount the root of My Drive)
+    """
+
+    def __init__(
+        self,
+        folder_id: str = 'root',
+        *,
+        prefix: Optional[str] = None,
+        service_account_json: Optional[str] = None,
+        oauth_token: Optional[str] = None,
+        oauth_refresh_token: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
+    ):
+        super().__init__(prefix=prefix)
+
+        # Build credentials
+        credentials = None
+        if service_account_json:
+            credentials = service_account.Credentials.from_service_account_file(
+                service_account_json,
+                scopes=['https://www.googleapis.com/auth/drive']
+            )
+        elif oauth_token:
+            credentials = GoogleOAuthCredentials(
+                token=oauth_token,
+                refresh_token=oauth_refresh_token,
+                client_id=client_id,
+                client_secret=client_secret,
+                token_uri='https://oauth2.googleapis.com/token',
+                scopes=['https://www.googleapis.com/auth/drive']
+            )
+        else:
+            raise ValidationError("Either service account or OAuth credentials must be provided for Google Drive")
+
+        # Build the Drive API client
+        self._service = build('drive', 'v3', credentials=credentials)
+        self._folder_id = folder_id if folder_id and folder_id != 'my-drive' else 'root'
+        self._folder_name = None
+
+    @property
+    def name(self):
+        if self._folder_name is None:
+            try:
+                if self._folder_id == 'root':
+                    self._folder_name = 'My Drive'
+                else:
+                    file = self._service.files().get(fileId=self._folder_id, fields='name').execute()
+                    self._folder_name = file.get('name', self._folder_id)
+            except HttpError:
+                self._folder_name = self._folder_id
+        return self._folder_name
+
+    def _head(self):
+        """Check if the folder exists and is accessible"""
+        return self._service.files().get(
+            fileId=self._folder_id,
+            fields='id,name,mimeType'
+        ).execute()
+
+    def _head_file(self, key: str, /):
+        """Check if a file exists by path"""
+        file_id = self._get_file_id_by_path(key)
+        if not file_id:
+            raise HttpError(
+                resp=type('obj', (object,), {'status': 404})(),
+                content=b'File not found'
+            )
+        return self._service.files().get(fileId=file_id, fields='id,name,mimeType,modifiedTime').execute()
+
+    @_define_google_drive_status
+    def get_status(self):
+        self._head()
+
+    @_define_google_drive_status
+    def get_file_status(self, key: str, /):
+        self._head_file(key)
+
+    def _get_file_id_by_path(self, path: str) -> Optional[str]:
+        """Navigate through folder structure to find file ID by path"""
+        parts = path.strip('/').split('/')
+        current_folder_id = self._folder_id
+
+        for i, part in enumerate(parts):
+            is_last = i == len(parts) - 1
+
+            # Search for the item in the current folder
+            query = f"name='{part}' and '{current_folder_id}' in parents and trashed=false"
+            if not is_last:
+                query += " and mimeType='application/vnd.google-apps.folder'"
+
+            results = self._service.files().list(
+                q=query,
+                fields='files(id, name, mimeType)',
+                pageSize=1
+            ).execute()
+
+            files = results.get('files', [])
+            if not files:
+                return None
+
+            if is_last:
+                return files[0]['id']
+            else:
+                current_folder_id = files[0]['id']
+
+        return current_folder_id
+
+    def _list_raw_content_on_one_page(
+        self,
+        prefix: str = "",
+        *,
+        next_token: Optional[str] = None,
+        page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
+    ) -> dict:
+        """List files and folders in the drive folder"""
+        # Determine which folder to list
+        if prefix:
+            folder_id = self._get_file_id_by_path(prefix.rstrip('/'))
+            if not folder_id:
+                return {"files": [], "directories": [], "next": None}
+        else:
+            folder_id = self._folder_id
+
+        # Query for items in the folder
+        query = f"'{folder_id}' in parents and trashed=false"
+
+        results = self._service.files().list(
+            q=query,
+            fields='nextPageToken, files(id, name, mimeType, modifiedTime)',
+            pageSize=page_size,
+            pageToken=next_token
+        ).execute()
+
+        items = results.get('files', [])
+        files = []
+        directories = []
+
+        for item in items:
+            item_path = f"{prefix}{item['name']}" if prefix else item['name']
+            if item['mimeType'] == 'application/vnd.google-apps.folder':
+                directories.append(item_path + '/')
+            else:
+                files.append(item_path)
+
+        return {
+            "files": files,
+            "directories": directories,
+            "next": results.get('nextPageToken'),
+        }
+
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
+        """Download a file to a stream"""
+        file_id = self._get_file_id_by_path(key)
+        if not file_id:
+            raise HttpError(
+                resp=type('obj', (object,), {'status': 404})(),
+                content=b'File not found'
+            )
+
+        request = self._service.files().get_media(fileId=file_id)
+        downloader = MediaIoBaseDownload(stream, request)
+
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
+        """Download a specific byte range from a file"""
+        file_id = self._get_file_id_by_path(key)
+        if not file_id:
+            raise HttpError(
+                resp=type('obj', (object,), {'status': 404})(),
+                content=b'File not found'
+            )
+
+        # Google Drive API supports Range header
+        from googleapiclient.http import HttpRequest
+        request = self._service.files().get_media(fileId=file_id)
+        request.headers['Range'] = f'bytes={start_byte}-{stop_byte}'
+
+        return request.execute()
+
+    @validate_bucket_status
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
+        """Upload a file object to Google Drive"""
+        # Navigate to the target folder
+        parts = key.strip('/').split('/')
+        filename = parts[-1]
+        folder_path = '/'.join(parts[:-1]) if len(parts) > 1 else ''
+
+        target_folder_id = self._folder_id
+        if folder_path:
+            target_folder_id = self._get_file_id_by_path(folder_path)
+            if not target_folder_id:
+                # Create the folder structure
+                target_folder_id = self._create_folder_structure(folder_path)
+
+        file_metadata = {
+            'name': filename,
+            'parents': [target_folder_id]
+        }
+
+        media = MediaIoBaseUpload(file_obj, mimetype='application/octet-stream', resumable=True)
+        file = self._service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
+
+        return file.get('id')
+
+    def _create_folder_structure(self, path: str) -> str:
+        """Create nested folder structure and return the final folder ID"""
+        parts = path.strip('/').split('/')
+        current_folder_id = self._folder_id
+
+        for part in parts:
+            # Check if folder exists
+            existing_id = self._get_file_id_by_path(part)
+            if existing_id:
+                current_folder_id = existing_id
+            else:
+                # Create folder
+                file_metadata = {
+                    'name': part,
+                    'mimeType': 'application/vnd.google-apps.folder',
+                    'parents': [current_folder_id]
+                }
+                folder = self._service.files().create(
+                    body=file_metadata,
+                    fields='id'
+                ).execute()
+                current_folder_id = folder.get('id')
+
+        return current_folder_id
+
+    @validate_bucket_status
+    def upload_file(self, file_path: str, key: str | None = None, /):
+        """Upload a file from local filesystem to Google Drive"""
+        with open(file_path, 'rb') as f:
+            return self.upload_fileobj(f, key or os.path.basename(file_path))
+
+    def create(self):
+        """Create is not applicable for Google Drive - folders are created on demand"""
+        slogger.glob.info(f"Google Drive folder {self.name} is ready")
+
+    @validate_file_status
+    @validate_bucket_status
+    def get_file_last_modified(self, key: str, /):
+        """Get the last modified time of a file"""
+        file_metadata = self._head_file(key)
+        from datetime import datetime
+        return datetime.fromisoformat(file_metadata['modifiedTime'].replace('Z', '+00:00'))
+
+    @property
+    def supported_actions(self):
+        # Google Drive supports both read and write
+        return {Permissions.READ, Permissions.WRITE}
+
+
 class Credentials:
     __slots__ = (
         "key",
@@ -1106,6 +1403,10 @@ class Credentials:
         "key_file_path",
         "credentials_type",
         "connection_string",
+        "oauth_token",
+        "oauth_refresh_token",
+        "client_id",
+        "client_secret",
     )
 
     def __init__(self, **credentials):
@@ -1116,6 +1417,10 @@ class Credentials:
         self.key_file_path = credentials.get("key_file_path", None)
         self.credentials_type = credentials.get("credentials_type", None)
         self.connection_string = credentials.get("connection_string", None)
+        self.oauth_token = credentials.get("oauth_token", "")
+        self.oauth_refresh_token = credentials.get("oauth_refresh_token", "")
+        self.client_id = credentials.get("client_id", "")
+        self.client_secret = credentials.get("client_secret", "")
 
     def convert_to_db(self):
         converted_credentials = {
@@ -1128,6 +1433,12 @@ class Credentials:
                 "" if not self.account_name else self.account_name
             ),
             CredentialsTypeChoice.CONNECTION_STRING: self.connection_string,
+            CredentialsTypeChoice.GOOGLE_DRIVE_OAUTH: json.dumps({
+                "oauth_token": self.oauth_token,
+                "oauth_refresh_token": self.oauth_refresh_token,
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+            }),
         }
         return converted_credentials[self.credentials_type]
 
@@ -1144,6 +1455,12 @@ class Credentials:
             self.key_file_path = credentials.get("value")
         elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             self.connection_string = credentials.get("value")
+        elif self.credentials_type == CredentialsTypeChoice.GOOGLE_DRIVE_OAUTH:
+            oauth_data = json.loads(credentials.get("value"))
+            self.oauth_token = oauth_data.get("oauth_token", "")
+            self.oauth_refresh_token = oauth_data.get("oauth_refresh_token", "")
+            self.client_id = oauth_data.get("client_id", "")
+            self.client_secret = oauth_data.get("client_secret", "")
         else:
             raise NotImplementedError(
                 "Found {} not supported credentials type".format(self.credentials_type)
@@ -1172,6 +1489,12 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             self.reset(exclusion={"connection_string"})
             self.connection_string = credentials.get("connection_string", self.connection_string)
+        elif self.credentials_type == CredentialsTypeChoice.GOOGLE_DRIVE_OAUTH:
+            self.reset(exclusion={"oauth_token", "oauth_refresh_token", "client_id", "client_secret"})
+            self.oauth_token = credentials.get("oauth_token", self.oauth_token)
+            self.oauth_refresh_token = credentials.get("oauth_refresh_token", self.oauth_refresh_token)
+            self.client_id = credentials.get("client_id", self.client_id)
+            self.client_secret = credentials.get("client_secret", self.client_secret)
         else:
             raise NotImplementedError("Mapping credentials: unsupported credentials type")
 

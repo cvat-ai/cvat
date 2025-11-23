@@ -6,6 +6,7 @@ export enum ProviderType {
     AWS_S3_BUCKET = 'AWS_S3_BUCKET',
     AZURE_CONTAINER = 'AZURE_CONTAINER',
     GOOGLE_CLOUD_STORAGE = 'GOOGLE_CLOUD_STORAGE',
+    GOOGLE_DRIVE = 'GOOGLE_DRIVE',
 }
 
 export enum CredentialsType {
@@ -14,6 +15,7 @@ export enum CredentialsType {
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS',
     CONNECTION_STRING = 'CONNECTION_STRING',
     KEY_FILE_PATH = 'KEY_FILE_PATH',
+    GOOGLE_DRIVE_OAUTH = 'GOOGLE_DRIVE_OAUTH',
 }
 
 export enum StorageStatuses {
