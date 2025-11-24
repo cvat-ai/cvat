@@ -14,9 +14,9 @@ def init_settings_in_existing_tasks(apps, schema_editor):
     Task = apps.get_model("engine", "Task")
     QualitySettings = apps.get_model("quality_control", "QualitySettings")
 
-    tasks_without_settings = Task.objects.filter(
-        quality_settings__isnull=True
-    ).values_list("id", flat=True)
+    tasks_without_settings = Task.objects.filter(quality_settings__isnull=True).values_list(
+        "id", flat=True
+    )
 
     QualitySettings.objects.bulk_create(
         [
