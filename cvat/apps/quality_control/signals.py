@@ -21,9 +21,3 @@ def __save_project__initialize_quality_settings(
 def __save_task__initialize_quality_settings(instance: Task, created: bool, **kwargs):
     if created and not kwargs.get("raw"):
         QualitySettings.objects.get_or_create(task_id=instance.id)
-
-
-@receiver(post_save, sender=Job)
-def __save_gt_job__initialize_quality_settings(instance: Job, created: bool, **kwargs):
-    if created and not kwargs.get("raw") and instance.type == JobType.GROUND_TRUTH:
-        QualitySettings.objects.get_or_create(task_id=instance.segment.task_id)
