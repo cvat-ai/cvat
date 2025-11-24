@@ -1450,11 +1450,6 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 frame_iter, quality=quality, db_task=db_task, dump_unchanged=True,
             )
 
-            get_chunk_path = {
-                models.FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
-                models.FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
-            }[quality]
-
             db_segment.refresh_from_db(fields=["chunks_updated_date"])
             if db_segment.chunks_updated_date > initial_chunks_updated_date:
                 raise CvatChunkTimestampMismatchError(
@@ -1462,7 +1457,9 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     f"segment.chunks_updated_date: {db_segment.chunks_updated_date}, "
                     f"expected_ts: {initial_chunks_updated_date}"
             )
-            with open(get_chunk_path(chunk_id, db_segment_id), 'wb') as f:
+
+            chunk_path = db_data.get_static_segment_chunk_path(chunk_id, db_segment_id, quality)
+            with open(chunk_path, "wb") as f:
                 f.write(chunk.getvalue())
 
 class JobValidationLayoutReadSerializer(serializers.Serializer):

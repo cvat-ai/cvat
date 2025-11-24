@@ -485,7 +485,6 @@ class SegmentFrameProvider(IFrameProvider):
             ),
         }
 
-        self._loaders: dict[models.FrameQuality, _ChunkLoader] = {}
         if (
             db_data.storage_method
             == models.StorageMethodChoice.CACHE
@@ -493,37 +492,29 @@ class SegmentFrameProvider(IFrameProvider):
         ):
             cache = MediaCache()
 
-            self._loaders[models.FrameQuality.COMPRESSED] = _BufferChunkLoader(
-                reader_class=reader_class[db_data.compressed_chunk_type][0],
-                reader_params=reader_class[db_data.compressed_chunk_type][1],
-                get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
-                    db_segment, chunk_idx, quality=models.FrameQuality.COMPRESSED
-                ),
-            )
+            def make_loader(quality: models.FrameQuality) -> _ChunkLoader:
+                chunk_type = db_data.get_chunk_type(quality)
+                return _BufferChunkLoader(
+                    reader_class=reader_class[chunk_type][0],
+                    reader_params=reader_class[chunk_type][1],
+                    get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
+                        db_segment, chunk_idx, quality=quality
+                    ),
+                )
 
-            self._loaders[models.FrameQuality.ORIGINAL] = _BufferChunkLoader(
-                reader_class=reader_class[db_data.original_chunk_type][0],
-                reader_params=reader_class[db_data.original_chunk_type][1],
-                get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
-                    db_segment, chunk_idx, quality=models.FrameQuality.ORIGINAL
-                ),
-            )
         else:
-            self._loaders[models.FrameQuality.COMPRESSED] = _FileChunkLoader(
-                reader_class=reader_class[db_data.compressed_chunk_type][0],
-                reader_params=reader_class[db_data.compressed_chunk_type][1],
-                get_chunk_path_callback=lambda chunk_idx: db_data.get_compressed_segment_chunk_path(
-                    chunk_idx, segment_id=db_segment.id
-                ),
-            )
 
-            self._loaders[models.FrameQuality.ORIGINAL] = _FileChunkLoader(
-                reader_class=reader_class[db_data.original_chunk_type][0],
-                reader_params=reader_class[db_data.original_chunk_type][1],
-                get_chunk_path_callback=lambda chunk_idx: db_data.get_original_segment_chunk_path(
-                    chunk_idx, segment_id=db_segment.id
-                ),
-            )
+            def make_loader(quality: models.FrameQuality) -> _ChunkLoader:
+                chunk_type = db_data.get_chunk_type(quality)
+                return _FileChunkLoader(
+                    reader_class=reader_class[chunk_type][0],
+                    reader_params=reader_class[chunk_type][1],
+                    get_chunk_path_callback=lambda chunk_idx: db_data.get_static_segment_chunk_path(
+                        chunk_idx, segment_id=db_segment.id, quality=quality
+                    ),
+                )
+
+        self._loaders = {quality: make_loader(quality) for quality in models.FrameQuality}
 
     def unload(self):
         for loader in self._loaders.values():
