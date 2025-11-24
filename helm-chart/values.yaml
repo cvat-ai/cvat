@@ -326,7 +326,7 @@ cvat:
       size: 100Gi
       annotations: {}
       volumeAttributesClass:
-#        create: false
+        create: false
 #        name: "gp3-high-throughput"
 #        provider: ebs.csi.aws.com
 #        parameters:
