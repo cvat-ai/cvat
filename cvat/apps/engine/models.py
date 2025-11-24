@@ -12,7 +12,7 @@ import shutil
 import uuid
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
-from enum import Enum
+from enum import Enum, IntEnum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
@@ -289,6 +289,12 @@ class ValidationLayout(models.Model):
     def active_frames(self) -> Sequence[int]:
         "An ordered sequence of active (non-disabled) validation frames"
         return set(self.frames).difference(self.disabled_frames)
+
+
+class FrameQuality(IntEnum):
+    COMPRESSED = 0
+    ORIGINAL = 100
+
 
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'

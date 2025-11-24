@@ -42,7 +42,7 @@ from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance,
     get_cloud_storage_instance,
 )
-from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
+from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
@@ -1342,7 +1342,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     (chunk_id + 1) * db_data.chunk_size
                 ]
 
-                for quality in FrameQuality.__members__.values():
+                for quality in models.FrameQuality:
                     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM:
                         rq_id = f"segment_{db_segment.id}_write_chunk_{chunk_id}_{quality}"
                         rq_job = enqueue_create_chunk_job(
@@ -1421,7 +1421,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         db_segment_id: int,
         chunk_id: int,
         chunk_frames: list[int],
-        quality: FrameQuality,
+        quality: models.FrameQuality,
         frame_path_map: dict[int, str],
         segment_frame_map: dict[int,int],
     ):
@@ -1451,8 +1451,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             )
 
             get_chunk_path = {
-                FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
-                FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
+                models.FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
+                models.FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
             }[quality]
 
             db_segment.refresh_from_db(fields=["chunks_updated_date"])
@@ -3061,8 +3061,8 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
         if validated_data.get("cloud_storage_id"):
             db_task = models.Task.objects.filter(data=instance).first()
             task_frame_provider = TaskFrameProvider(db_task)
-            task_frame_provider.invalidate_chunks(quality=FrameQuality.COMPRESSED)
-            task_frame_provider.invalidate_chunks(quality=FrameQuality.ORIGINAL)
+            for quality in models.FrameQuality:
+                task_frame_provider.invalidate_chunks(quality=quality)
         return instance
 
 

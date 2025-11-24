@@ -27,7 +27,6 @@ from rest_framework.exceptions import ValidationError
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache, prepare_chunk
 from cvat.apps.engine.media_extractors import (
-    FrameQuality,
     IMediaReader,
     RandomAccessIterator,
     VideoReader,
@@ -178,7 +177,7 @@ class IFrameProvider(metaclass=ABCMeta):
 
     @abstractmethod
     def get_chunk(
-        self, chunk_number: int, *, quality: FrameQuality = FrameQuality.ORIGINAL
+        self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
     ) -> DataWithMeta[BytesIO]: ...
 
     @abstractmethod
@@ -186,7 +185,7 @@ class IFrameProvider(metaclass=ABCMeta):
         self,
         frame_number: int,
         *,
-        quality: FrameQuality = FrameQuality.ORIGINAL,
+        quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> DataWithMeta[AnyFrame]: ...
 
@@ -202,7 +201,7 @@ class IFrameProvider(metaclass=ABCMeta):
         *,
         start_frame: Optional[int] = None,
         stop_frame: Optional[int] = None,
-        quality: FrameQuality = FrameQuality.ORIGINAL,
+        quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]: ...
 
@@ -255,7 +254,7 @@ class TaskFrameProvider(IFrameProvider):
         return self._get_segment_frame_provider(0).get_preview()
 
     def get_chunk(
-        self, chunk_number: int, *, quality: FrameQuality = FrameQuality.ORIGINAL
+        self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
     ) -> DataWithMeta[BytesIO]:
         return_type = DataWithMeta[BytesIO]
         chunk_number = self.validate_chunk_number(chunk_number)
@@ -323,7 +322,7 @@ class TaskFrameProvider(IFrameProvider):
         db_task: Union[models.Task, int],
         matching_segments: list[models.Segment],
         task_chunk_frames_with_rel_numbers: dict[int, int],
-        quality: FrameQuality,
+        quality: models.FrameQuality,
     ) -> DataWithMime:
         # Create and return a joined / cleaned chunk
         task_chunk_frames = OrderedDict()
@@ -359,7 +358,7 @@ class TaskFrameProvider(IFrameProvider):
         self,
         frame_number: int,
         *,
-        quality: FrameQuality = FrameQuality.ORIGINAL,
+        quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> DataWithMeta[AnyFrame]:
         return self._get_segment_frame_provider(frame_number).get_frame(
@@ -379,7 +378,7 @@ class TaskFrameProvider(IFrameProvider):
         *,
         start_frame: Optional[int] = None,
         stop_frame: Optional[int] = None,
-        quality: FrameQuality = FrameQuality.ORIGINAL,
+        quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]:
         frame_range = itertools.count(start_frame)
@@ -454,7 +453,7 @@ class TaskFrameProvider(IFrameProvider):
 
         return provider
 
-    def invalidate_chunks(self, *, quality: FrameQuality = FrameQuality.ORIGINAL):
+    def invalidate_chunks(self, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL):
         cache = MediaCache()
 
         number_of_chanks = math.ceil(self._db_task.data.size / self._db_task.data.chunk_size)
@@ -486,7 +485,7 @@ class SegmentFrameProvider(IFrameProvider):
             ),
         }
 
-        self._loaders: dict[FrameQuality, _ChunkLoader] = {}
+        self._loaders: dict[models.FrameQuality, _ChunkLoader] = {}
         if (
             db_data.storage_method
             == models.StorageMethodChoice.CACHE
@@ -494,23 +493,23 @@ class SegmentFrameProvider(IFrameProvider):
         ):
             cache = MediaCache()
 
-            self._loaders[FrameQuality.COMPRESSED] = _BufferChunkLoader(
+            self._loaders[models.FrameQuality.COMPRESSED] = _BufferChunkLoader(
                 reader_class=reader_class[db_data.compressed_chunk_type][0],
                 reader_params=reader_class[db_data.compressed_chunk_type][1],
                 get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
-                    db_segment, chunk_idx, quality=FrameQuality.COMPRESSED
+                    db_segment, chunk_idx, quality=models.FrameQuality.COMPRESSED
                 ),
             )
 
-            self._loaders[FrameQuality.ORIGINAL] = _BufferChunkLoader(
+            self._loaders[models.FrameQuality.ORIGINAL] = _BufferChunkLoader(
                 reader_class=reader_class[db_data.original_chunk_type][0],
                 reader_params=reader_class[db_data.original_chunk_type][1],
                 get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
-                    db_segment, chunk_idx, quality=FrameQuality.ORIGINAL
+                    db_segment, chunk_idx, quality=models.FrameQuality.ORIGINAL
                 ),
             )
         else:
-            self._loaders[FrameQuality.COMPRESSED] = _FileChunkLoader(
+            self._loaders[models.FrameQuality.COMPRESSED] = _FileChunkLoader(
                 reader_class=reader_class[db_data.compressed_chunk_type][0],
                 reader_params=reader_class[db_data.compressed_chunk_type][1],
                 get_chunk_path_callback=lambda chunk_idx: db_data.get_compressed_segment_chunk_path(
@@ -518,7 +517,7 @@ class SegmentFrameProvider(IFrameProvider):
                 ),
             )
 
-            self._loaders[FrameQuality.ORIGINAL] = _FileChunkLoader(
+            self._loaders[models.FrameQuality.ORIGINAL] = _FileChunkLoader(
                 reader_class=reader_class[db_data.original_chunk_type][0],
                 reader_params=reader_class[db_data.original_chunk_type][1],
                 get_chunk_path_callback=lambda chunk_idx: db_data.get_original_segment_chunk_path(
@@ -587,13 +586,13 @@ class SegmentFrameProvider(IFrameProvider):
         return DataWithMeta[BytesIO](preview, mime=mime)
 
     def get_chunk(
-        self, chunk_number: int, *, quality: FrameQuality = FrameQuality.ORIGINAL
+        self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
     ) -> DataWithMeta[BytesIO]:
         chunk_number = self.validate_chunk_number(chunk_number)
         chunk_data, mime = self._loaders[quality].read_chunk(chunk_number)
         return DataWithMeta[BytesIO](chunk_data, mime=mime)
 
-    def invalidate_chunks(self, *, quality: FrameQuality = FrameQuality.ORIGINAL):
+    def invalidate_chunks(self, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL):
         cache = MediaCache()
         cache.remove_segment_preview(self._db_segment)
         number_of_chunks = math.ceil(
@@ -610,7 +609,7 @@ class SegmentFrameProvider(IFrameProvider):
         self,
         frame_number: int,
         *,
-        quality: FrameQuality = FrameQuality.ORIGINAL,
+        quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
     ) -> tuple[Any, str, type[IMediaReader]]:
         _, chunk_number, frame_offset = self.validate_frame_number(frame_number)
         loader = self._loaders[quality]
@@ -622,7 +621,7 @@ class SegmentFrameProvider(IFrameProvider):
         self,
         frame_number: int,
         *,
-        quality: FrameQuality = FrameQuality.ORIGINAL,
+        quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> DataWithMeta[AnyFrame]:
         return_type = DataWithMeta[AnyFrame]
@@ -659,7 +658,7 @@ class SegmentFrameProvider(IFrameProvider):
         *,
         start_frame: Optional[int] = None,
         stop_frame: Optional[int] = None,
-        quality: FrameQuality = FrameQuality.ORIGINAL,
+        quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]:
         frame_range = itertools.count(start_frame)
@@ -680,7 +679,7 @@ class JobFrameProvider(SegmentFrameProvider):
         self,
         chunk_number: int,
         *,
-        quality: FrameQuality = FrameQuality.ORIGINAL,
+        quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
         is_task_chunk: bool = False,
     ) -> DataWithMeta[BytesIO]:
         if not is_task_chunk:
@@ -748,7 +747,7 @@ class JobFrameProvider(SegmentFrameProvider):
         db_segment: Union[models.Segment, int],
         segment_chunk_frame_ids: list[int],
         chunk_number: int,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
     ) -> DataWithMime:
         # Create and return a joined / cleaned chunk
         if isinstance(db_segment, int):
