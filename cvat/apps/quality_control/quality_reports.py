@@ -2661,10 +2661,7 @@ class QualitySettingsManager:
         return project.quality_settings
 
     def get_task_settings(self, task: Task, *, inherit: bool = True) -> models.QualitySettings:
-        try:
-            quality_settings = task.quality_settings
-        except models.QualitySettings.DoesNotExist:
-            quality_settings, _ = models.QualitySettings.objects.get_or_create(task_id=task.id)
+        quality_settings = task.quality_settings
 
         if inherit and quality_settings.inherit and task.project:
             quality_settings = self.get_project_settings(task.project)
