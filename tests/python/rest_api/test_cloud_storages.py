@@ -10,7 +10,7 @@ from http import HTTPStatus
 from typing import Any, Optional
 
 import pytest
-from cvat_sdk.api_client import ApiClient, models, exceptions
+from cvat_sdk.api_client import ApiClient, exceptions, models
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.api_client.model.file_info import FileInfo
 from deepdiff import DeepDiff
@@ -753,12 +753,15 @@ class TestListCloudStorages:
 
 
 class TestCloudStorageConnectionStatus:
-    @pytest.mark.parametrize("cloud_storage_id, expected_response", [
-        (1, "AVAILABLE"),
-        (2, "AVAILABLE"),
-        (3, "AVAILABLE"),
-        (4, "NOT_FOUND"),
-        ])
+    @pytest.mark.parametrize(
+        "cloud_storage_id, expected_response",
+        [
+            (1, "AVAILABLE"),
+            (2, "AVAILABLE"),
+            (3, "AVAILABLE"),
+            (4, "NOT_FOUND"),
+        ],
+    )
     def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
         with make_api_client(admin_user) as api_client:
             (data, response) = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
