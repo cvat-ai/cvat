@@ -1,5 +1,5 @@
 {
-  "count": 3,
+  "count": 4,
   "next": null,
   "previous": null,
   "results": [
@@ -9,8 +9,7 @@
       "description": "Bucket with wrong endpoint for testing purposes",
       "display_name": "Import/Export bucket",
       "id": 4,
-      "manifests": [
-      ],
+      "manifests": [],
       "organization": 2,
       "owner": {
         "first_name": "Admin",
