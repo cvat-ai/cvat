@@ -152,10 +152,6 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def create(self):
-        pass
-
-    @abstractmethod
     def _head_file(self, key: str, /):
         pass
 
@@ -756,23 +752,6 @@ class S3CloudStorage(_CloudStorage):
                     slogger.glob.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
             raise
 
-    def create(self):
-        try:
-            response = self._bucket.create(
-                ACL="private",
-                CreateBucketConfiguration={
-                    "LocationConstraint": self.region,
-                },
-                ObjectLockEnabledForBucket=False,
-            )
-            slogger.glob.info(
-                "Bucket {} has been created on {} region".format(self.name, response["Location"])
-            )
-        except Exception as ex:
-            msg = str(ex)
-            slogger.glob.info(msg)
-            raise Exception(msg)
-
     def delete_file(self, file_name: str, /):
         try:
             self._client.delete_object(Bucket=self.name, Key=file_name)
@@ -854,19 +833,6 @@ class AzureBlobCloudStorage(_CloudStorage):
         if self._account_name:
             return "{}.blob.core.windows.net".format(self._account_name)
         return None
-
-    def create(self):
-        try:
-            self._client.create_container(
-                metadata={
-                    "type": "created by CVAT",
-                },
-                public_access=PublicAccess.OFF,
-            )
-        except ResourceExistsError:
-            msg = f"{self._client.container_name} already exists"
-            slogger.glob.info(msg)
-            raise Exception(msg)
 
     def _head(self):
         return self._client.get_container_properties()
@@ -1069,21 +1035,6 @@ class GcsCloudStorage(_CloudStorage):
     @validate_bucket_status
     def upload_file(self, file_path: str, key: str | None = None, /):
         self.bucket.blob(key or os.path.basename(file_path)).upload_from_filename(file_path)
-
-    def create(self):
-        try:
-            self._bucket = self._client.create_bucket(self.bucket, location=self._bucket_location)
-            slogger.glob.info(
-                "Bucket {} has been created at {} region for {}".format(
-                    self.name,
-                    self.bucket.location,
-                    self.bucket.user_project,
-                )
-            )
-        except Exception as ex:
-            msg = str(ex)
-            slogger.glob.info(msg)
-            raise Exception(msg)
 
     @validate_file_status
     @validate_bucket_status
