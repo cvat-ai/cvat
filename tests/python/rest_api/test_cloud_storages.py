@@ -10,7 +10,7 @@ from http import HTTPStatus
 from typing import Any, Optional
 
 import pytest
-from cvat_sdk.api_client import ApiClient, exceptions, models
+from cvat_sdk.api_client import ApiClient, models
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.api_client.model.file_info import FileInfo
 from deepdiff import DeepDiff
