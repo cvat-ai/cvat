@@ -325,7 +325,11 @@ cvat:
 #       - ReadWriteOnce
       size: 100Gi
       annotations: {}
-      volumeAttributesClassName: ""
+#      volumeAttributesClassName: ""
+#      volumeAttributesProvider: ebs.csi.aws.com
+#      volumeAttributesParameters:
+#        type: gp3
+#        provisioned-throughput: "250"
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
