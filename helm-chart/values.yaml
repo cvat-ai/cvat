@@ -325,7 +325,7 @@ cvat:
 #       - ReadWriteOnce
       size: 100Gi
       annotations: {}
-#      volumeAttributesClassName: ""
+      volumeAttributesClassName: ""
 #      volumeAttributesProvider: ebs.csi.aws.com
 #      volumeAttributesParameters:
 #        type: gp3
