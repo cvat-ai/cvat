@@ -11,7 +11,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Icon, {
     LinkOutlined, DeleteOutlined, CopyOutlined, SearchOutlined,
 } from '@ant-design/icons';
-import Slider, {SliderMarks} from 'antd/lib/slider';
+import Slider, { SliderMarks } from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';

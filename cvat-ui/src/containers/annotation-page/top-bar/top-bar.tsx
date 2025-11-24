@@ -32,7 +32,9 @@ import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-ba
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { FramesMetaData, Job } from 'cvat-core-wrapper';
-import { ActiveControl, CombinedState, FrameSpeed, NavigationType, ToolsBlockerState, Workspace } from 'reducers';
+import {
+    ActiveControl, CombinedState, FrameSpeed, NavigationType, ToolsBlockerState, Workspace,
+} from 'reducers';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
 import { switchToolsBlockerState } from 'actions/settings-actions';

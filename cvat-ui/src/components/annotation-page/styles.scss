@@ -160,6 +160,7 @@
     > .ant-slider-mark {
         z-index: 2;
         top: -16px;
+
         > .ant-slider-mark-text {
             > .ant-slider-mark-chapter {
                 display: inline-block;
@@ -171,6 +172,7 @@
                 transform-origin: center center;
                 transform: scaleX(1);
             }
+
             > .ant-slider-mark-chapter.active {
                 transform: scaleX(1.5);
                 background-color: #ff4136;
@@ -487,12 +489,14 @@
     max-width: 22 * $grid-unit-size;
     overflow: auto;
 }
+
 .cvat-player-chapter-menu-list {
     .cvat-player-chapter-menu-list-item {
         margin-right: 2px;
+
         &:hover {
             transform: translateX(2px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,10%);
             background-color: #f5f5f5;
         }
     }

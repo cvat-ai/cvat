@@ -29,8 +29,6 @@ import {
 } from 'reducers';
 import { switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
-import { Simulate } from 'react-dom/test-utils';
-import error = Simulate.error;
 
 interface AnnotationsParameters {
     filters: object[];

@@ -995,7 +995,10 @@ export async function patchMeta(id: number, meta?: FramesMetaData, session: 'job
 }
 
 export async function findFrame(
-    jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean, chapterMark?: boolean },
+    jobID: number,
+    frameFrom: number,
+    frameTo: number,
+    filters: { offset?: number, notDeleted: boolean, chapterMark?: boolean },
 ): Promise<number | null> {
     const offset = filters.offset || 1;
     const chapterMark = filters.chapterMark || false;
