@@ -1,6 +1,6 @@
 ---
-title: 'Annotation Modes'
-linkTitle: 'Annotation Modes'
+title: 'Annotation modes'
+linkTitle: 'Annotation modes'
 weight: 1
 description: 'Overview of editor-level modes in CVAT and how they affect the annotation workflow.'
 ---

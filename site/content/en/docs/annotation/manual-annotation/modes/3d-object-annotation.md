@@ -6,6 +6,7 @@ description: 'Overview of basic operations available when annotating 3D objects.
 aliases:
 - /docs/annotation/tools/3d-object-annotation/
 - /docs/annotation/manual-annotation/modes/3d-object-annotation-advanced/
+- /docs/annotation/manual-annotation/modes/standard-3d-mode-basics/
 ---
 
 Use the 3D Annotation tool for labeling 3D objects and scenes, such as vehicles, buildings, landscapes, and others.

@@ -165,4 +165,3 @@ See the information here in the
 
 You can call control SSL certificate check with the `--insecure` CLI argument.
 For SDK, you can specify `ssl_verify = True/False` in the `cvat_sdk.core.client.Config` object.
-

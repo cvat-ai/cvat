@@ -1,6 +1,6 @@
 ---
-title: 'Annotation with Shapes'
-linkTitle: 'Annotation with Shapes'
+title: 'Annotation with shapes'
+linkTitle: 'Annotation with shapes'
 weight: 2
 description: 'Overview of object types supported in CVAT for annotation.'
 ---

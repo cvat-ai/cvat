@@ -1,5 +1,5 @@
 ---
-title: 'Attribute annotation mode (basics)'
+title: 'Attribute annotation mode'
 linkTitle: 'Attribute annotation mode'
 weight: 5
 description: 'Usage examples and basic operations available in attribute annotation mode.'

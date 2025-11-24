@@ -1,5 +1,5 @@
 ---
-title: 'Shape mode (basics)'
+title: 'Shape mode'
 linkTitle: 'Shape mode'
 weight: 1
 description: 'Usage examples and basic operations available during annotation in shape mode.'

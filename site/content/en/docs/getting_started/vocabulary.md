@@ -6,6 +6,7 @@ description: 'List of terms pertaining to annotation in CVAT.'
 aliases:
   - /docs/manual/basics/vocabulary/
 
+
 ---
 ## Label
 Label is a type of an annotated object (e.g. person, car, vehicle, etc.)
@@ -99,7 +100,6 @@ The data format of 3d tasks is a cloud of points.
 
 Related sections:
 - {{< ilink "/docs/annotation/annotation-editor/3d-task-workspace" "3D task workspace" >}}
-- {{< ilink "/docs/annotation/manual-annotation/modes/standard-3d-mode-basics" "Standard 3D mode" >}}
 - {{< ilink "/docs/annotation/manual-annotation/modes/3d-object-annotation" "3D Object annotation" >}}
 
 ---
