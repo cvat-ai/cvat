@@ -5,7 +5,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from cvat.apps.engine.models import Job, JobType, Project, Task
+from cvat.apps.engine.models import Project, Task
 from cvat.apps.quality_control.models import QualitySettings
 
 
