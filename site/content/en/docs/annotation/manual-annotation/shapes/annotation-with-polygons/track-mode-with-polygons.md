@@ -6,9 +6,7 @@ aliases:
   - /docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/
 ---
 
-Polygons in the track mode allow you to mark moving objects more accurately other than using a rectangle
-({{< ilink "/docs/annotation/manual-annotation/modes/track-mode-basics" "Tracking mode (basic)" >}};
-{{< ilink "/docs/annotation/manual-annotation/modes/track-mode-advanced" "Tracking mode (advanced)" >}}).
+Polygons in the track mode allow you to mark moving objects more accurately other than using a rectangle.
 
 1. To create a polygon in the track mode, click the `Track` button.
 

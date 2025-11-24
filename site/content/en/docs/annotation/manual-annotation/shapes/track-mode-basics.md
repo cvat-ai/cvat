@@ -5,6 +5,8 @@ weight: 3
 description: 'Usage examples and basic operations available during annotation in track mode.'
 aliases:
 - /docs/annotation/tools/track-mode-basics/
+- /docs/annotation/manual-annotation/modes/track-mode-advanced/
+- /docs/annotation/manual-annotation/modes/track-mode-basics/
 ---
 
 Usage examples:
@@ -70,4 +72,16 @@ Usage examples:
 
      ![Example of a track with interpolated frames](/images/gif003_detrac.gif)
 
-     Read more in the section {{< ilink "/docs/annotation/manual-annotation/modes/track-mode-advanced" "track mode (advanced)" >}}.
+Shapes that were created in the track mode, have extra navigation buttons.
+
+- These buttons help to jump to the previous/next keyframe.
+
+  ![Highlighted "Previous" and "Next" buttons in user interface](/images/image056.jpg)
+
+- The button helps to jump to the initial frame and to the last keyframe.
+
+  ![Highlighted "Initial frame" and "Last frame" buttons in user interface](/images/image057.jpg)
+
+You can use the `Split` function to split one track into two tracks:
+
+![Example of an annotation with split tracks](/images/gif010_detrac.gif)

@@ -137,8 +137,8 @@ for annotation distribution by labels and types. Hover over a chart or diagram t
 ![Annotation tab in Analytics](/images/analytics/annotation-tab-detection.jpg)
 
 The **Annotations** tab shows annotation statistics for:
-- {{< ilink "/docs/annotation/manual-annotation/modes/shape-mode-basics" "Shape mode">}} (the **Detections** tab).
-- {{< ilink "/docs/annotation/manual-annotation/modes/track-mode-basics" "Track mode">}} (the **Tracking** tab).
+- {{< ilink "/docs/annotation/manual-annotation/shapes/shape-mode-basics" "Shape mode">}} (the **Detections** tab).
+- {{< ilink "/docs/annotation/manual-annotation/shapes/track-mode-basics" "Track mode">}} (the **Tracking** tab).
 
 Both tabs always reflect the current state of the resource.
 Each tab includes a filterable, customizable table

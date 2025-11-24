@@ -41,6 +41,4 @@ Simply drag the faces to move them independently from the rest of the cuboid.
 ![Example of editing cuboid faces](/images/gif020_mapillary_vistas.gif)
 
 You can also use cuboids in track mode, similar to rectangles in track mode
-({{< ilink "/docs/annotation/manual-annotation/modes/track-mode-basics" "basics" >}} and
-{{< ilink "/docs/annotation/manual-annotation/modes/track-mode-advanced" "advanced" >}}) or
-{{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons/track-mode-with-polygons" "Track mode with polygons" >}}.
+({{< ilink "/docs/annotation/manual-annotation/shapes/track-mode-basics" "basics" >}}) or

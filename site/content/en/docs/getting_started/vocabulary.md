@@ -71,13 +71,13 @@ Mode for video annotation, which uses [`track`](#track) objects.
 Only objects on keyframes are manually annotation, and intermediate frames are linearly interpolated.
 
 Related sections:
-- {{< ilink "/docs/annotation/manual-annotation/modes/track-mode-basics" "Track mode" >}}
+- {{< ilink "/docs/annotation/manual-annotation/shapes/track-mode-basics" "Track mode" >}}
 
 ### Annotation
 Mode for images annotation, which uses `shape` objects.
 
 Related sections:
-- {{< ilink "/docs/annotation/manual-annotation/modes/shape-mode-basics" "Shape mode" >}}
+- {{< ilink "/docs/annotation/manual-annotation/shapes/shape-mode-basics" "Shape mode" >}}
 
 ---
 

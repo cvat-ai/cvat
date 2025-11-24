@@ -2,10 +2,11 @@
 title: 'Annotation Modes'
 linkTitle: 'Annotation Modes'
 weight: 1
-description: 'Overview of annotation modes in CVAT and their use cases.'
+description: 'Overview of editor-level modes in CVAT and how they affect the annotation workflow.'
 ---
 
-This section explains how annotation behaves in different modes. Each mode defines how shapes are created, tracked,
-or modified, and which tools are available.
+CVAT provides several editor-level modes that change how the annotation workspace behaves.
+These modes control what actions are available to the user, which tools can be used, and how objects can be
+created or modified.
 
-Use these pages to learn how to work in Shape, Track, Attribute, and 3D modes and choose the right workflow for your task.
+Use this section to understand when to switch modes and how each mode supports a specific step of the annotation workflow.
