@@ -55,11 +55,11 @@ def generate_video_file(num_frames: int, size=(100, 50)) -> BytesIO:
 
     chapters = [
         {
-            'id': 0,
-            'start': 0,
-            'end': 100,
-            'time_base': Fraction(1, 1000),
-            'metadata': {'title': 'Intro'}
+            "id": 0,
+            "start": 0,
+            "end": 100,
+            "time_base": Fraction(1, 1000),
+            "metadata": {"title": "Intro"},
         }
     ]
 

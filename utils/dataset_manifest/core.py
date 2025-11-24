@@ -7,7 +7,7 @@ import io
 import json
 import os
 from abc import ABC, abstractmethod
-from bisect import insort, bisect_left
+from bisect import bisect_left, insort
 from collections.abc import Iterable, Iterator
 from contextlib import closing
 from enum import Enum
@@ -23,6 +23,7 @@ from PIL import Image
 from .errors import InvalidImageError, InvalidManifestError, InvalidPcdError, InvalidVideoError
 from .types import NamedBytesIO
 from .utils import PcdReader, SortingMethod, md5_hash, rotate_image, sort
+
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -72,7 +73,7 @@ class VideoStreamReader:
                 "start": rescale_q(chapter["start"], chapter["time_base"], stream_tb),
                 "end": rescale_q(chapter["end"], chapter["time_base"], stream_tb),
                 "metadata": chapter["metadata"],
-                "id": chapter["id"]
+                "id": chapter["id"],
             }
             output_chapters.append(output_chapter)
         return output_chapters
@@ -115,7 +116,6 @@ class VideoStreamReader:
         after = pts_list[pos]
 
         return pos if abs(after - target_pts) < abs(before - target_pts) else pos - 1
-
 
     def __iter__(self) -> Iterator[Union[int, tuple[int, int, str]]]:
         """
@@ -197,12 +197,15 @@ class VideoStreamReader:
                     stop = index_pts[j][0] - 1
                     if chapter["end"] > index_pts[-1][1]:
                         stop = index_pts[j][0]
-                    self._chapters.append({
-                        "start": start,
-                        "stop": stop,
-                        "metadata": chapter["metadata"],
-                        "id": chapter["id"],
-                    })
+                    self._chapters.append(
+                        {
+                            "start": start,
+                            "stop": stop,
+                            "metadata": chapter["metadata"],
+                            "id": chapter["id"],
+                        }
+                    )
+
 
 class DatasetImagesReader:
     def __init__(
@@ -607,7 +610,7 @@ class VideoManifestManager(_ManifestManager):
                 "name": os.path.basename(self._reader.source_path),
                 "resolution": self._reader.resolution,
                 "length": len(self._reader),
-                "chapters": self._reader.chapters
+                "chapters": self._reader.chapters,
             },
         }
         for key, value in base_info.items():
