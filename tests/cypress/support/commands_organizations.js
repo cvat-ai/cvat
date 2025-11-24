@@ -45,13 +45,10 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
     return cy.wrap(idWrapper);
 });
 
-Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelete) => {
-    const authKey = authResponse.body.key;
+Cypress.Commands.add('deleteOrganizations', (authHeaders, otrganizationsToDelete) => {
     cy.request({
         url: '/api/organizations?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
+        headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
         for (const organization of responseResult) {
@@ -61,9 +58,7 @@ Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelet
                     cy.request({
                         method: 'DELETE',
                         url: `/api/organizations/${id}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
+                        headers: authHeaders,
                     });
                 }
             }

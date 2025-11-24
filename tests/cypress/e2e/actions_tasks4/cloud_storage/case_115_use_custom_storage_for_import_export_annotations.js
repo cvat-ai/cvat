@@ -82,8 +82,8 @@ context('Import and export annotations: specify source and target storage in mod
         cy.goToCloudStoragesPage();
         cy.deleteCloudStorage(cloudStorageData.displayName);
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteProjects(authKey, [project.name]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteProjects(authHeaders, [project.name]);
         });
     });
 

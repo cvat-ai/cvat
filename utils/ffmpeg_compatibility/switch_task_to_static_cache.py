@@ -16,7 +16,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.media_extractors import MEDIA_TYPES
 from cvat.apps.engine.task import _create_static_chunks
 
-EXPECTED_LAST_ENGINE_MIGRATION = "0093_issue_assignee_updated_date_alter_issue_assignee_and_more"
+EXPECTED_LAST_ENGINE_MIGRATION = "0095_fix_related_names"
 
 
 def _ensure_last_engine_applied_migration_name():

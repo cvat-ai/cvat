@@ -1,27 +1,12 @@
 ---
-title: 'Documentation'
-linkTitle: 'Documentation'
-description: 'Welcome to the documentation of CVAT.'
+title: 'CVAT Documentation'
+linkTitle: 'Docs'
+description: 'Everything you need to know about CVAT, from basic data annotation tips to advanced and AI-assisted labeling guides.'
 no_list: true
 menu:
   main:
     weight: 20
 ---
-
-CVAT is a leading visual annotation platform for building high-quality image, video, and 3D datasets for AL/ML models.
-It is being developed CVAT team to help AI/ML teams annotate millions of objects with different shapes and properties.
-Many UI and UX decisions are based on feedbacks from CVAT's in-house professional data annotation team.
-
-CVAT comes in three editions: CVAT Community, CVAT Online, and CVAT Enterprise.
-
-- [CVAT Community](https://github.com/cvat-ai/cvat) is the free, self-hosted version with core functionality.
-- [CVAT Online](https://app.cvat.ai) is the SaaS edition with three pricing tiers (Free, Solo, Team).
-- [CVAT Enterprise](https://www.cvat.ai/pricing/enterprise) is a self-hosted, premium version with enhanced security.
-
-This documentation provides information for data annotators, AI researchers, system administrators, and developers.
-
-It is divided into three sections, and each section is divided into
-subsections `basic` and `advanced`.
 
 <section id="docs">
 
@@ -41,12 +26,9 @@ Answers to frequently asked questions.
 
 {{% blocks/feature icon="fab fa-github" title="[GitHub Repository](https://github.com/cvat-ai/cvat)" %}}
 
-Computer Vision Annotation Tool GitHub repository.
+CVAT GitHub repository.
 
 {{% /blocks/feature %}}
-
-
-<!--lint disable maximum-line-length-->
 
 {{% blocks/feature icon="fa-book" title="[Manual](manual/)" %}}
 

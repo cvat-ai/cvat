@@ -5,8 +5,6 @@ weight: 60
 description: 'Instructions for upgrading CVAT deployed with docker compose'
 ---
 
-<!--lint disable heading-style-->
-
 ## Upgrade guide
 
 Note: updating CVAT from version 2.2.0 to version 2.3.0 requires additional manual actions with database data due to

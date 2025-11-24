@@ -89,6 +89,7 @@ function ApiTokensCard(): JSX.Element {
             okButtonProps: {
                 type: 'primary',
                 danger: true,
+                className: 'cvat-api-token-revoke-button',
             },
             cancelText: 'Cancel',
             onOk: () => {
@@ -96,6 +97,7 @@ function ApiTokensCard(): JSX.Element {
                     dispatch(getApiTokensAsync());
                 }));
             },
+            className: 'cvat-modal-confirm-revoke-token',
         });
     }, [dispatch]);
 
@@ -131,6 +133,7 @@ function ApiTokensCard(): JSX.Element {
             key: 'name',
             width: 250,
             sorter: (a: RowData, b: RowData) => a.name.localeCompare(b.name),
+            className: 'cvat-api-token-name',
         },
         {
             title: 'Permissions',
@@ -151,6 +154,7 @@ function ApiTokensCard(): JSX.Element {
                     {readOnly ? 'Read Only' : 'Read/Write'}
                 </Tag>
             ),
+            className: 'cvat-api-token-permissions',
         },
         {
             title: 'Created',
@@ -158,6 +162,7 @@ function ApiTokensCard(): JSX.Element {
             key: 'createdDate',
             sorter: (a: RowData, b: RowData) => new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime(),
             render: (date: string) => new Date(date).toLocaleDateString(),
+            className: 'cvat-api-token-created-date',
         },
         {
             title: 'Expires',
@@ -172,6 +177,7 @@ function ApiTokensCard(): JSX.Element {
             render: (date: string | null) => (
                 date ? new Date(date).toLocaleDateString() : <Text underline>Never</Text>
             ),
+            className: 'cvat-api-token-expire-date',
         },
         {
             title: 'Last Used',
@@ -184,6 +190,7 @@ function ApiTokensCard(): JSX.Element {
                 return new Date(a.lastUsedDate).getTime() - new Date(b.lastUsedDate).getTime();
             },
             render: (date: string | null) => (date ? new Date(date).toLocaleDateString() : 'Never'),
+            className: 'cvat-api-token-last-used',
         },
         {
             title: 'Actions',
@@ -207,6 +214,7 @@ function ApiTokensCard(): JSX.Element {
                             },
                         ],
                     }}
+                    className='cvat-api-token-actions-menu'
                     trigger={['click']}
                 >
                     <Button type='text' icon={<MoreOutlined />} />

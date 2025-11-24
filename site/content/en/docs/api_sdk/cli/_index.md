@@ -132,10 +132,10 @@ cvat-cli task ls
 ### Create
 
 Description of the options you can find in
-{{< ilink "/docs/manual/basics/create-annotation-task" "Creating an annotation task" >}} section.
+{{< ilink "/docs/workspace/tasks-page#create-annotation-task" "Creating an annotation task" >}} section.
 
 For create a task you need file contain labels in the `json` format, you can create a JSON label specification
-by using the {{< ilink "/docs/manual/basics/create-annotation-task#labels" "label constructor" >}}.
+by using the {{< ilink "/docs/workspace/tasks-page#create-annotation-task#labels" "label constructor" >}}.
 <details>
 <summary>Example JSON labels file</summary>
 
@@ -414,7 +414,7 @@ See that command's examples for information on how to implement these functions
 and specify them in the command line.
 
 For detailed SAM2 setup instructions, see the
-{{< ilink "/docs/enterprise/segment-anything-2-tracker" "SAM2 Tracker documentation" >}}.
+{{< ilink "/docs/annotation/auto-annotation/segment-anything-2-tracker" "SAM2 Tracker documentation" >}}.
 
 ### Delete
 

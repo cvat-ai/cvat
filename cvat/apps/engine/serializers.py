@@ -2247,7 +2247,7 @@ class DataSerializer(serializers.ModelSerializer):
             'client_files', 'server_files', 'remote_files',
             'use_zip_chunks', 'server_files_exclude',
             'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
-            'storage', 'sorting_method', 'filename_pattern',
+            'sorting_method', 'filename_pattern',
             'job_file_mapping', 'upload_file_order', 'validation_params'
         )
         extra_kwargs = {
