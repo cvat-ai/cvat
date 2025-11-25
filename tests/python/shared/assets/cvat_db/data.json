@@ -16633,8 +16633,8 @@
     "created_date": "2022-06-29T12:56:18.257Z",
     "updated_date": "2022-06-29T12:56:18.264Z",
     "provider_type": "AWS_S3_BUCKET",
-    "resource": "importexportbucket",
-    "display_name": "Import/Export bucket",
+    "resource": "importexportbucketwrongendpoint",
+    "display_name": "Import/Export bucket with wrong endpoint",
     "owner": [
       "admin1"
     ],

@@ -752,7 +752,7 @@ class TestListCloudStorages:
         )
 
 
-class TestCloudStorageConnectionStatus:
+class TestCloudStorageStatus:
     @pytest.mark.parametrize(
         "cloud_storage_id, expected_response",
         [
@@ -762,5 +762,5 @@ class TestCloudStorageConnectionStatus:
     )
     def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
         with make_api_client(admin_user) as api_client:
-            (data, response) = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
+            (data, _) = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
             assert data == expected_response
