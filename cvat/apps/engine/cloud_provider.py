@@ -19,8 +19,8 @@ from queue import Queue
 from typing import Any, BinaryIO, Callable, Optional, TypeVar
 
 import boto3
-from azure.core.exceptions import HttpResponseError, ResourceExistsError
-from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
+from azure.core.exceptions import HttpResponseError
+from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
