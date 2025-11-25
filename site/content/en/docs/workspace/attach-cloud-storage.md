@@ -7,8 +7,8 @@ aliases:
   - /docs/manual/basics/attach-cloud-storage/
 ---
 
-In CVAT, you can use **Amazon S3**, **Azure Blob Storage**, **Backblaze B2**, and **Google Cloud Storage** storages to import and export
-image datasets for your tasks.
+In CVAT, you can use **Amazon S3**, **Azure Blob Storage**, **Backblaze B2**,
+and **Google Cloud Storage** storages to import and export image datasets for your tasks.
 
 Check out:
 
@@ -191,7 +191,8 @@ To prepare the manifest file, do the following:
 ## Backblaze B2
 
 Backblaze B2 is an S3-compatible cloud storage service.
-It can be used in CVAT by selecting **Amazon S3** as the provider and specifying the Backblaze B2 endpoint (for example, https://s3.us-west-004.backblazeb2.com).
+It can be used in CVAT by selecting **Amazon S3** as the provider
+and specifying the Backblaze B2 endpoint (for example, <https://s3.us-west-004.backblazeb2.com>).
 
 ### <a name="create-a-bucket-b2">Create a bucket</a>
 
