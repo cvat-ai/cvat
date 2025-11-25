@@ -7,8 +7,6 @@ description: 'Information about the installation of components needed for semi-a
 
 ---
 
-<!--lint disable maximum-line-length-->
-
 {{% alert title="Warning" color="warning" %}}
 **Do not use `docker compose up`**.
 If you did, make sure all containers are stopped by `docker compose down`.
@@ -83,7 +81,8 @@ If you did, make sure all containers are stopped by `docker compose down`.
   **Note for Windows users:**
 
   If you want to use nuclio under Windows CVAT installation you should install Nvidia drivers for WSL according to
-  [this](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) instruction and follow the steps up to “2.3 Installing Nvidia drivers”.
+  [this](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) instruction
+  and follow the steps up to “2.3 Installing Nvidia drivers”.
   Important requirement: you should have the latest versions of Docker Desktop, Nvidia drivers for WSL,
   and the latest updates from the Windows Insider Preview Dev channel.
 

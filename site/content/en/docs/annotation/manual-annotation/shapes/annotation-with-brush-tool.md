@@ -32,10 +32,8 @@ The brush tool menu appears on the top of the screen after you click **Shape**:
 
 It has the following elements:
 
-<!--lint disable maximum-line-length-->
-
 | Element                                                         | Description                                                                                                                                                                                              |
-| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ![Tick icon](/images/tick_icon.png)                             | **Save mask** saves the created mask. The saved mask will appear on the object sidebar                                                                                                                   |
 | ![Save mask and continue](/images/brushing_tools_add_label.png) | **Save mask and continue** adds a new mask to the object sidebar and allows you to draw a new one immediately.                                                                                           |
 | ![Brush](/images/brushing_tools_icon.png)                       | **Brush** adds new mask/ new regions to the previously added mask).                                                                                                                                      |
@@ -46,10 +44,8 @@ It has the following elements:
 | ![Brush shape](/images/brushing_tools_brush_shape.png)          | **Brush shape** with two options: circle and square. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.                                                                               |
 | ![Pixel remove](/images/brushing_tools_pixels.png)              | **Remove underlying pixels**. When you are drawing or editing a mask with this tool, <br>pixels on other masks that are located at the same positions as the pixels of the <br>current mask are deleted. |
 | ![Hide mask](/images/brushing_tools_hide.png)              | **Hide mask**. When drawing or editing a mask, you can enable this feature to temporarily hide the mask, allowing you to see the objects underneath more clearly. |
-| ![Label](/images/brushing_tools_label_drop.png)                 | **Label** that will be assigned to the newly created mask                                                                                                                                                |     |
+| ![Label](/images/brushing_tools_label_drop.png)                 | **Label** that will be assigned to the newly created mask                                                                                                                                                |
 | ![Move](/images/brushing_tools_brush_move.png)                  | **Move**. Click and hold to move the menu bar to the other place on the screen                                                                                                                           |
-
-<!--lint enable maximum-line-length-->
 
 ## Annotation with brush
 
