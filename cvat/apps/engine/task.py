@@ -1618,14 +1618,14 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         fs_original = executor.submit(
             original_chunk_writer.save_as_chunk,
             images=chunk_data,
-            chunk_path=db_data.get_original_segment_chunk_path(
-                chunk_idx, segment_id=db_segment.id
+            chunk_path=db_data.get_static_segment_chunk_path(
+                chunk_idx, segment_id=db_segment.id, quality=models.FrameQuality.ORIGINAL
             ),
         )
         compressed_chunk_writer.save_as_chunk(
             images=chunk_data,
-            chunk_path=db_data.get_compressed_segment_chunk_path(
-                chunk_idx, segment_id=db_segment.id
+            chunk_path=db_data.get_static_segment_chunk_path(
+                chunk_idx, segment_id=db_segment.id, quality=models.FrameQuality.COMPRESSED
             ),
         )
 
