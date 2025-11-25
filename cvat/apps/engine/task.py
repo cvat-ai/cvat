@@ -1598,18 +1598,9 @@ def _create_static_chunks(db_task: models.Task):
             num_chunks = (db_segment.frame_count + db_data.chunk_size - 1) // db_data.chunk_size
 
             for chunk_idx in range(num_chunks):
-                fs_original = executor.submit(
-                    _save_segment_chunk,
-                    db_segment=db_segment,
-                    chunk_idx=chunk_idx,
-                    quality=models.FrameQuality.ORIGINAL,
-                )
-                _save_segment_chunk(
-                    db_segment=db_segment,
-                    chunk_idx=chunk_idx,
-                    quality=models.FrameQuality.COMPRESSED,
-                )
-
-                fs_original.result()
+                for quality in models.FrameQuality:
+                    _save_segment_chunk(
+                        db_segment=db_segment, chunk_idx=chunk_idx, quality=quality
+                    )
 
             progress_updater.update_progress(segment_idx / len(db_segments))
