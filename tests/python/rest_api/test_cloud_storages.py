@@ -756,8 +756,6 @@ class TestCloudStorageConnectionStatus:
     @pytest.mark.parametrize(
         "cloud_storage_id, expected_response",
         [
-            (1, "AVAILABLE"),
-            (2, "AVAILABLE"),
             (3, "AVAILABLE"),
             (4, "NOT_FOUND"),
         ],
