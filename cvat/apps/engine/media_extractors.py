@@ -132,7 +132,7 @@ def load_image(image: tuple[str, str, str]) -> tuple[Image.Image, str, str]:
 def get_video_chapters(manifest_path: str, segment: tuple[int, int] = None) -> list[Chapter]:
     manifest = VideoManifestManager(manifest_path)
 
-    chapters = []
+    chapters = manifest.chapters
 
     if segment:
         chapters = [
