@@ -109,6 +109,7 @@ module.exports = (env) => {
                             plugins: [
                                 '@babel/plugin-proposal-class-properties',
                                 '@babel/plugin-proposal-optional-chaining',
+                                '@babel/plugin-transform-private-methods',
                                 [
                                     'import',
                                     {
