@@ -7,11 +7,12 @@ import React, { useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import dayjs from 'dayjs';
-import { QuestionCircleOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined, MoreOutlined } from '@ant-design/icons';
 import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
+import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 
 import { CloudStorage, CombinedState } from 'reducers';
@@ -19,6 +20,7 @@ import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Preview from 'components/common/preview';
+import { useContextMenuClick } from 'utils/hooks';
 import CloudStorageActionsMenu from './cloud-storage-actions-menu';
 import Status from './cloud-storage-status';
 
@@ -31,6 +33,7 @@ interface Props {
 export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
 
     const { cloudStorage, selected = false, onClick = () => {} } = props;
     const {
@@ -101,6 +104,7 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
             dropdownTrigger={['contextMenu']}
             triggerElement={(
                 <Card
+                    ref={itemRef}
                     cover={(
                         <>
                             <Preview
@@ -146,11 +150,14 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                                     <Text type='secondary'>{dayjs(updatedDate).fromNow()}</Text>
                                 </Paragraph>
                                 <Status cloudStorage={cloudStorage} />
-                                <CloudStorageActionsMenu
-                                    onUpdate={onUpdate}
-                                    onDelete={onDelete}
-                                    selectedIds={selectedIds}
-                                />
+                                <Button
+                                    type='link'
+                                    size='large'
+                                    onClick={handleContextMenuClick}
+                                    className='cvat-cloud-storage-item-menu-button cvat-actions-menu-button'
+                                >
+                                    <MoreOutlined className='cvat-menu-icon' />
+                                </Button>
                             </>
                         )}
                     />
