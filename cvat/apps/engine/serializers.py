@@ -2973,7 +2973,7 @@ class PluginsSerializer(serializers.Serializer):
 
 class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
-    chapters = ChapterSerializer(many=True, allow_null=True)
+    chapters = ChapterSerializer(many=True, allow_null=True, required=False)
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
     included_frames = serializers.ListField(
