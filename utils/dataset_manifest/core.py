@@ -86,20 +86,19 @@ class VideoStreamReader:
         """
         container.seek(offset=key_frame["pts"], stream=video_stream)
 
-        frames = (frame for packet in container.demux(video_stream) for frame in packet.decode())
-        frames = islice(frames, SEEK_MISMATCH_UPPER_BOUND)
         seek_pts = None
-        for frame in frames:
-            if seek_pts is None:
-                seek_pts = frame.pts
-                # if seek landed on the same frame as previous seek, it is redundant
-                if prev_seek_pts == seek_pts:
+        for packet in container.demux(video_stream):
+            for frame in packet.decode():
+                if seek_pts is None:
+                    seek_pts = frame.pts
+                    # if seek landed on the same frame as previous seek, it is redundant
+                    if prev_seek_pts == seek_pts:
+                        return None
+                if frame.pts < key_frame["pts"]:
+                    continue
+                if md5_hash(frame) != key_frame["md5"] or frame.pts != key_frame["pts"]:
                     return None
-            if frame.pts < key_frame["pts"]:
-                continue
-            if md5_hash(frame) != key_frame["md5"] or frame.pts != key_frame["pts"]:
-                return None
-            return seek_pts
+                return seek_pts
         return None
 
     def __iter__(self) -> Iterator[Union[int, tuple[int, int, str]]]:
