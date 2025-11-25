@@ -977,10 +977,8 @@ def _define_gcs_status(func):
                 func(self, key)
             return Status.AVAILABLE
         except GoogleCloudNotFound as e:
-            slogger.glob.warning(f"GoogleCloudNotFound: {e}", exc_info=True)
             return Status.NOT_FOUND
         except GoogleCloudForbidden as e:
-            slogger.glob.warning(f"GoogleCloudForbidden: {e}", exc_info=True)
             return Status.FORBIDDEN
 
     return wrapper
