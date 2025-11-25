@@ -976,9 +976,9 @@ def _define_gcs_status(func):
             else:
                 func(self, key)
             return Status.AVAILABLE
-        except GoogleCloudNotFound as e:
+        except GoogleCloudNotFound:
             return Status.NOT_FOUND
-        except GoogleCloudForbidden as e:
+        except GoogleCloudForbidden:
             return Status.FORBIDDEN
 
     return wrapper
