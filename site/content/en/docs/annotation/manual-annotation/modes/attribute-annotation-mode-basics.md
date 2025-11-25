@@ -8,7 +8,6 @@ aliases:
 - /docs/manual/advanced/attribute-annotation-mode-advanced/
 - /docs/annotation/tools/attribute-annotation-mode-basics/
 - /docs/annotation/tools/attribute-annotation-mode-advanced/
-- /docs/annotation/manual-annotation/modes/attribute-annotation-mode-advanced/
 ---
 - In this mode, you can edit attributes with fast navigation between objects and frames using a keyboard.
   Open the drop-down list in the top panel and select **Attribute annotation**.

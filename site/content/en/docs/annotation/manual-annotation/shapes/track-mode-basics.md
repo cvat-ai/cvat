@@ -8,8 +8,6 @@ aliases:
 - /docs/manual/advanced/track-mode-advanced/
 - /docs/annotation/tools/track-mode-basics/
 - /docs/annotation/tools/track-mode-advanced/
-- /docs/annotation/manual-annotation/modes/track-mode-advanced/
-- /docs/annotation/manual-annotation/modes/track-mode-basics/
 ---
 
 Usage examples:

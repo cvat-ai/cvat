@@ -5,11 +5,9 @@ weight: 1
 description: 'Usage examples and basic operations available during annotation in shape mode.'
 aliases:
 - /docs/manual/basics/shape-mode-basics/
-- /docs/manual/advanced/shape-mode-badvanced/
+- /docs/manual/advanced/shape-mode-advanced/
 - /docs/annotation/tools/shape-mode-basics/
 - /docs/annotation/tools/shape-mode-advanced/
-- /docs/annotation/manual-annotation/modes/shape-mode-advanced/
-- /docs/annotation/manual-annotation/modes/shape-mode-basics/
 ---
 
 Usage examples:
