@@ -28,7 +28,8 @@ services:
       CVAT_DEBUG_WAIT: '${CVAT_DEBUG_WAIT_CLIENT:-no}'
       COVERAGE_PROCESS_START:
     ports:
-      - '127.0.0.1:9090:9090'
+      - "127.0.0.1:7000:8080"
+      - "127.0.0.1:9090:9090"
 
   cvat_worker_export:
     environment:
