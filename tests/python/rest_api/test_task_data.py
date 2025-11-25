@@ -1799,10 +1799,10 @@ class TestTaskData(TestTasksBase):
 
             if task_spec.source_data_type == SourceDataType.video:
                 assert len(task_meta.frames) == 1
-                assert task_meta.chapters == getattr(task_spec, "chapters", [])
+                assert len(task_meta.chapters) == 1
             else:
                 assert len(task_meta.frames) == task_meta.size
-                assert task_meta.chapters is None
+                assert not hasattr(task_meta, "chapters")
 
     @pytest.mark.timeout(
         # This test has to check all the task frames availability, it can make many requests

@@ -4,7 +4,6 @@
 
 import subprocess
 from collections.abc import Generator
-from contextlib import closing
 from fractions import Fraction
 from io import BytesIO
 from typing import Optional
@@ -51,8 +50,7 @@ def generate_image_files(
 
 def generate_video_file(num_frames: int, size=(100, 50)) -> BytesIO:
     f = BytesIO()
-    f.name = "video.avi"
-
+    f.name = "video.mkv"
     chapters = [
         {
             "id": 0,
