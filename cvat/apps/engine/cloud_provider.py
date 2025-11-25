@@ -19,14 +19,15 @@ from queue import Queue
 from typing import Any, BinaryIO, Callable, Optional, TypeVar
 
 import boto3
-from azure.core.exceptions import HttpResponseError
+from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from botocore.handlers import disable_signing
 from django.conf import settings
+from google.api_core.exceptions import RetryError
 from google.cloud import storage
 from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
@@ -77,6 +78,10 @@ class Status(str, Enum):
     @classmethod
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def values(cls):
+        return list(i.value for i in cls)
 
     def __str__(self):
         return self.value
@@ -661,6 +666,12 @@ class S3CloudStorage(_CloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        except EndpointConnectionError:
+            slogger.glob.warning(
+                f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available",
+                exc_info=True,
+            )
+            return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
         try:
@@ -855,6 +866,11 @@ class AzureBlobCloudStorage(_CloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        except ServiceRequestError:
+            slogger.glob.warning(
+                f"CloudStorage Azure {self.account_url} not available", exc_info=True
+            )
+            return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
         try:
@@ -927,7 +943,7 @@ def _define_gcs_status(func):
             else:
                 func(self, key)
             return Status.AVAILABLE
-        except GoogleCloudNotFound:
+        except (GoogleCloudNotFound, RetryError):
             return Status.NOT_FOUND
         except GoogleCloudForbidden:
             return Status.FORBIDDEN
