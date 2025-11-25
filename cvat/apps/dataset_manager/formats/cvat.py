@@ -40,7 +40,8 @@ from cvat.apps.dataset_manager.bindings import (
     match_dm_item,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
-from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, make_frame_provider
+from cvat.apps.engine.frame_provider import FrameOutputType, make_frame_provider
+from cvat.apps.engine.models import FrameQuality
 
 from .registry import dm_env, exporter, importer
 
