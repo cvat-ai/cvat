@@ -7,26 +7,7 @@ description: 'Instructions for deploying CVAT on a Kubernetes cluster.'
 
 ---
 
-- [Prerequisites](#prerequisites)
-  - [Installing dependencies](#installing-dependencies)
-  - [Optional steps](#optional-steps)
-- [Configuration](#configuration)
-  - [Postgresql password?](#postgresql-password)
-  - [(Optional) Enable Auto annotation feature](#optional-enable-auto-annotation-feature)
-  - [Analytics](#analytics)
-- [Deployment](#deployment)
-  - [With overrides:](#with-overrides)
-  - [Without overrides:](#without-overrides)
-- [Post-deployment configuration](#post-deployment-configuration)
-  - [How to create superuser?](#how-to-create-superuser)
-- [FAQ](#faq)
-  - [What is kubernetes and how it is working?](#what-is-kubernetes-and-how-it-is-working)
-  - [What is helm and how it is working?](#what-is-helm-and-how-it-is-working)
-  - [How to setup Minikube](#how-to-setup-minikube)
-  - [How to understand what diff will be inflicted by 'helm upgrade'?](#how-to-understand-what-diff-will-be-inflicted-by-helm-upgrade)
-  - [I want to use my own postgresql/redis with your chart.](#i-want-to-use-my-own-postgresqlredis-with-your-chart)
-  - [I want to override some settings in values.yaml.](#i-want-to-override-some-settings-in-valuesyaml)
-  - [Why you used external charts to provide redis and postgres?](#why-you-used-external-charts-to-provide-redis-and-postgres)
+---
 
 ## Prerequisites
 1. Installed and configured [kubernetes](https://kubernetes.io/) cluster. If you do not already have a cluster,
@@ -63,9 +44,11 @@ helm dependency update
      ```
 
 ## Configuration
-1. Create `values.override.yaml` file inside `helm-chart` directory.
-1. Fill `values.override.yaml` with new parameters for chart.
-1. Override [postgresql password](#postgresql-password)
+1. Create a `values.override.yaml` file in the directory with the CVAT Helm chart
+(for example `helm-chart/values.override.yaml` if you use the chart from the CVAT repository,
+or `<chart-directory>/values.override.yaml` if you pulled the chart from Docker Hub).
+1. Fill `values.override.yaml` with parameters you want to override.
+1. Override [postgresql password](#postgresql-password).
 
 ### Postgresql password?
 Put below into your `values.override.yaml`
@@ -172,6 +155,7 @@ Before starting, ensure that the following prerequisites are met:
 Analytics is enabled by default, to disable set `analytics.enabled: false` in your `values.override.yaml`
 
 ## Deployment
+
 Make sure you are using correct kubernetes context. You can check it with `kubectl config current-context`.
 
 {{% alert title="Warning" color="warning" %}}
@@ -182,12 +166,68 @@ As soon as this is possible you can set cvat.opa.composeCompatibleServiceName
 to false in your value.override.yaml and configure the opa url as additional env.
 {{% /alert %}}
 
-Execute following command from repo root directory
-### With overrides:
-```helm upgrade -n <desired_namespace> <release_name> -i --create-namespace ./helm-chart -f ./helm-chart/values.yaml  -f ./helm-chart/values.override.yaml```
+There are two ways to get and install the CVAT Helm chart:
 
-### Without overrides:
-```helm upgrade -n <desired_namespace> <release_name> -i --create-namespace ./helm-chart -f ./helm-chart/values.yaml```
+### Option 1: Install from the CVAT repository
+
+Execute the following command from the repository root directory.
+
+#### 1a. With overrides
+```sh
+helm upgrade -n <desired_namespace> <release_name> -i --create-namespace ./helm-chart -f ./helm-chart/values.yaml  -f ./helm-chart/values.override.yaml
+```
+
+#### 1b. Without overrides
+```sh
+helm upgrade -n <desired_namespace> <release_name> -i --create-namespace ./helm-chart -f ./helm-chart/values.yaml
+```
+
+### Option 2: Install from Docker Hub (OCI Helm chart)
+CVAT Helm charts are also published as OCI artifacts to Docker Hub.
+You can find available versions on the image tags page:
+
+<https://hub.docker.com/r/cvat/cvat/tags>
+
+Replace `<chart_version>` with the version you want to install.
+
+#### 2a. Install directly from the registry
+
+If you already have your override file (for example, `values.override.yaml` in the current directory):
+
+```sh
+helm install <release_name> oci://registry-1.docker.io/cvat/cvat --version <chart_version> -n <desired_namespace> --create-namespace -f values.override.yaml
+```
+If you don’t use an override file, you can omit `-f values.override.yaml`.
+
+#### 2b. Pull the chart and install from local directory
+
+If you want to inspect or customize the chart first:
+
+```sh
+helm pull oci://registry-1.docker.io/cvat/cvat --version <chart_version>
+tar -xzf cvat-<chart_version>.tgz
+cd cvat
+```
+Now you can review `values.yaml`, create a `values.override.yaml` file in this directory, and install:
+
+```sh
+helm install <release_name> \
+  . \
+  -n <desired_namespace> \
+  --create-namespace \
+  -f values.yaml \
+  -f values.override.yaml
+ ```
+
+ #### Upgrading an existing release from Docker Hub
+
+ ```sh
+ helm upgrade <release_name> \
+  oci://registry-1.docker.io/cvat/cvat \
+  --version <chart_version> \
+  -n <desired_namespace> \
+  -f values.override.yaml
+```
 
 ## Post-deployment configuration
 

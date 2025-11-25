@@ -8,12 +8,16 @@ aliases:
 ---
 
 The Datumaro format is a universal format, capable of handling arbitrary datasets and annotations.
-It is the native format of the Datumaro dataset framework. The framework can be used
-for various dataset operations, such as dataset and annotation transformations,
-format conversions, computation of statistics, and dataset merging.
+It is the native format of the Datumaro dataset framework.
+
+The framework can be used for various dataset operations, such as dataset and annotation transformations, format
+conversions, computation of statistics, and dataset merging.
+
 This framework is used in CVAT as the dataset support provider.
 It effectively means that anything you import in CVAT or export from CVAT,
 can be processed with Datumaro, allowing you to perform custom dataset operations easily.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/GgKIEFhd1CY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 For more information, see:
 
@@ -22,7 +26,7 @@ For more information, see:
 
 ## Datumaro export
 
-- Supported annotations: Tags, Bounding Boxes, Polygons,
+- Supported annotations: Tags, Bounding Boxes, Oriented Bounding Boxes, Polygons,
   Polylines, Points, Cuboids, Ellipses, Masks, Skeletons.
 - Attributes: Supported.
 - Tracks: Supported (via the `track_id` attribute).
