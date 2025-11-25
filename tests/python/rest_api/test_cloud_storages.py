@@ -763,5 +763,4 @@ class TestCloudStorageConnectionStatus:
     def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
         with make_api_client(admin_user) as api_client:
             (data, response) = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
-            print(f"data: {data}, response: {response}")
             assert data == expected_response
