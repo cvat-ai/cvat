@@ -27,6 +27,7 @@ from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from botocore.handlers import disable_signing
 from django.conf import settings
+from google.api_core.exceptions import RetryError
 from google.cloud import storage
 from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
@@ -942,7 +943,7 @@ def _define_gcs_status(func):
             else:
                 func(self, key)
             return Status.AVAILABLE
-        except GoogleCloudNotFound:
+        except (GoogleCloudNotFound, RetryError):
             return Status.NOT_FOUND
         except GoogleCloudForbidden:
             return Status.FORBIDDEN
