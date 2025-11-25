@@ -4,9 +4,12 @@ linkTitle: 'Shape mode'
 weight: 1
 description: 'Usage examples and basic operations available during annotation in shape mode.'
 aliases:
-  - /docs/annotation/tools/shape-mode-basics/
-  - /docs/annotation/manual-annotation/modes/shape-mode-advanced/
-  - /docs/annotation/manual-annotation/modes/shape-mode-basics/
+- /docs/manual/basics/shape-mode-basics/
+- /docs/manual/advanced/shape-mode-badvanced/
+- /docs/annotation/tools/shape-mode-basics/
+- /docs/annotation/tools/shape-mode-advanced/
+- /docs/annotation/manual-annotation/modes/shape-mode-advanced/
+- /docs/annotation/manual-annotation/modes/shape-mode-basics/
 ---
 
 Usage examples:

@@ -4,7 +4,10 @@ linkTitle: 'Track mode'
 weight: 3
 description: 'Usage examples and basic operations available during annotation in track mode.'
 aliases:
+- /docs/manual/basics/track-mode-basics/
+- /docs/manual/advanced/track-mode-advanced/
 - /docs/annotation/tools/track-mode-basics/
+- /docs/annotation/tools/track-mode-advanced/
 - /docs/annotation/manual-annotation/modes/track-mode-advanced/
 - /docs/annotation/manual-annotation/modes/track-mode-basics/
 ---

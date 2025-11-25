@@ -3,7 +3,8 @@ title: 'Editing the cuboid'
 linkTitle: 'Editing the cuboid'
 weight: 2
 aliases:
-  - /docs/manual/advanced/annotation-with-cuboids/editing-the-cuboid/
+- /docs/manual/advanced/annotation-with-cuboids/editing-the-cuboid/
+- /docs/annotation/tools/annotation-with-cuboids/editing-the-cuboid/
 ---
 
 ![Several cuboids with marked points and faces to edit shape](/images/image178_mapillary_vistas.jpg)

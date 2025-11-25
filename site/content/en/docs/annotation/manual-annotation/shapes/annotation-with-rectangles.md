@@ -3,7 +3,8 @@ title: 'Annotation with rectangles'
 linkTitle: 'Rectangles'
 weight: 1
 aliases:
-  - /docs/annotation/tools/annotation-with-rectangles/
+- /docs/manual/advanced/annotation-with-rectangles/
+- /docs/annotation/tools/annotation-with-rectangles/
 ---
 
 To learn more about annotation using a rectangle, see the sections:

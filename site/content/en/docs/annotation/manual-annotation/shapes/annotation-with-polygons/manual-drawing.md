@@ -3,7 +3,8 @@ title: 'Manual drawing'
 linkTitle: 'Manual drawing'
 weight: 1
 aliases:
-  - /docs/manual/advanced/annotation-with-polygons/manual-drawing/
+- /docs/manual/advanced/annotation-with-polygons/manual-drawing/
+- /docs/annotation/tools/annotation-with-polygons/manual-drawing/
 ---
 
 It is used for semantic / instance segmentation.

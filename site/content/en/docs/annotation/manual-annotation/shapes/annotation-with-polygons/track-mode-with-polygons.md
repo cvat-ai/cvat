@@ -3,7 +3,8 @@ title: 'Track mode with polygons'
 linkTitle: 'Track mode with polygons'
 weight: 5
 aliases:
-  - /docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/
+- /docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/
+- /docs/annotation/tools/annotation-with-polygons/track-mode-with-polygons/
 ---
 
 Polygons in the track mode allow you to mark moving objects more accurately other than using a rectangle.

@@ -4,7 +4,8 @@ linkTitle: 'Ellipses'
 weight: 5
 description: 'Guide to annotating tasks using ellipses.'
 aliases:
-  - /docs/annotation/tools/annotation-with-ellipses/
+- /docs/manual/advanced/annotation-with-ellipses/
+- /docs/annotation/tools/annotation-with-ellipses/
 ---
 
 It is used for road sign annotation etc.

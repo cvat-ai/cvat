@@ -4,7 +4,8 @@ linkTitle: 'Cuboids'
 weight: 6
 description: 'Guide to creating and editing cuboids.'
 aliases:
-  - /docs/annotation/tools/annotation-with-cuboids/
+- /docs/manual/advanced/annotation-with-cuboids/
+- /docs/annotation/tools/annotation-with-cuboids/
 ---
 
 It is used to annotate 3 dimensional objects such as cars, boxes, etc...

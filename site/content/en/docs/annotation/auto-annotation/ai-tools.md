@@ -4,7 +4,8 @@ linkTitle: 'AI tools'
 weight: 14
 description: 'Overview of semi-automatic and automatic annotation tools available in CVAT.'
 aliases:
-  - /docs/annotation/tools/ai-tools/
+- /docs/manual/advanced/ai-tools/
+- /docs/annotation/tools/ai-tools/
 ---
 
 Label and annotate your data in semi-automatic and automatic mode with the help of **AI** and **OpenCV** tools.

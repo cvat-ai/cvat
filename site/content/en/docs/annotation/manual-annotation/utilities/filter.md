@@ -4,7 +4,8 @@ linkTitle: 'Filter'
 weight: 4
 description: 'Guide to using the Filter feature in CVAT.'
 aliases:
-  - /docs/annotation/tools/filter/
+- /docs/manual/advanced/filter/
+- /docs/annotation/tools/filter/
 ---
 
 There are some reasons to use the feature:

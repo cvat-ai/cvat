@@ -3,7 +3,8 @@ title: 'Creating the cuboid'
 linkTitle: 'Creating the cuboid'
 weight: 1
 aliases:
-  - /docs/manual/advanced/annotation-with-cuboids/creating-the-cuboid/
+- /docs/manual/advanced/annotation-with-cuboids/creating-the-cuboid/
+- /docs/annotation/tools/annotation-with-cuboids/creating-the-cuboid/
 ---
 
 Before you start, you have to make sure that `Cuboid` is selected

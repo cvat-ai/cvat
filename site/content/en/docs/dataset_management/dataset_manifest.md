@@ -5,7 +5,8 @@ linkTitle: 'Dataset manifest'
 weight: 30
 description:
 aliases:
- - /docs/annotation/tools/dataset_manifest/
+- /docs/manual/advanced/dataset_manifest/
+- /docs/annotation/tools/dataset_manifest/
 
 ---
 

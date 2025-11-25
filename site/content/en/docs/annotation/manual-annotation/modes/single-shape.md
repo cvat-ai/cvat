@@ -4,7 +4,8 @@ linkTitle: 'Single shape mode'
 weight: 3
 description: 'Guide to annotating tasks using Single Shape mode'
 aliases:
-  - /docs/annotation/tools/single-shape/
+- /docs/manual/advanced/single-shape/
+- /docs/annotation/tools/single-shape/
 ---
 
 The CVAT Single Shape annotation mode accelerates the annotation process and enhances

@@ -4,7 +4,8 @@ linkTitle: 'Types of shapes'
 weight: 10
 description: 'List of shapes available for annotation.'
 aliases:
-  - /docs/annotation/tools/types-of-shapes/
+- /docs/manual/basics/types-of-shapes/
+- /docs/annotation/tools/types-of-shapes/
 ---
 There are several shapes with which you can annotate your images:
 

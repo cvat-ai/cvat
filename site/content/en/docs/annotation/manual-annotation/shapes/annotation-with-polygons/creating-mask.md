@@ -3,7 +3,8 @@ title: 'Creating masks'
 linkTitle: 'Creating masks'
 weight: 6
 aliases:
-  - /docs/manual/advanced/annotation-with-polygons/creating-mask/
+- /docs/manual/advanced/annotation-with-polygons/creating-mask/
+- /docs/annotation/tools/annotation-with-polygons/creating-mask/
 ---
 
 ### Cutting holes in polygons

@@ -3,7 +3,8 @@ title: "Drawing using automatic borders"
 linkTitle: "Automatic borders"
 weight: 2
 aliases:
-  - /docs/manual/advanced/annotation-with-polygons/automatic-borders/
+- /docs/manual/advanced/annotation-with-polygons/automatic-borders/
+- /docs/annotation/tools/annotation-with-polygons/automatic-borders/
 ---
 
 ![Example of annotation made with polygon and automatic borders option](/images/gif025_mapillary_vistas.gif)

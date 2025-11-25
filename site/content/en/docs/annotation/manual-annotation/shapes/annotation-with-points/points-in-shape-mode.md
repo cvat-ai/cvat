@@ -3,7 +3,8 @@ title: "Points in shape mode"
 linkTitle: "Points in shape mode"
 weight: 1
 aliases:
-  - /docs/manual/advanced/annotation-with-points/points-in-shape-mode/
+- /docs/manual/advanced/annotation-with-points/points-in-shape-mode/
+- /docs/annotation/tools/annotation-with-points/points-in-shape-mode/
 ---
 
 It is used for face, landmarks annotation etc.

@@ -4,7 +4,8 @@ linkTitle: 'Join and slice tools'
 weight: 1
 description: 'This section explains how to slice or join several labels'
 aliases:
-  - /docs/annotation/tools/slice-and-join/
+- /docs/manual/advanced/slice-and-join/
+- /docs/annotation/tools/slice-and-join/
 ---
 
 In CVAT you can modify shapes by either joining multiple shapes into

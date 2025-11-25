@@ -3,7 +3,8 @@ title: 'Data preparation on the fly'
 linkTitle: 'Data preparation on the fly'
 weight: 31
 aliases:
-  - /docs/annotation/tools/data-on-fly/
+- /docs/manual/advanced/data-on-fly/
+- /docs/annotation/tools/data-on-fly/
 ---
 
 ## Description

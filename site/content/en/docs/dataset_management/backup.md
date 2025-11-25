@@ -3,7 +3,8 @@ title: 'Backup Task and Project'
 linkTitle: 'Backup'
 weight: 17
 aliases:
-  - /docs/annotation/tools/backup/
+- /docs/manual/advanced/backup/
+- /docs/annotation/tools/backup/
 ---
 
 ## Overview

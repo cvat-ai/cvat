@@ -3,7 +3,8 @@ title: "Linear interpolation with one point"
 linkTitle: "Linear interpolation with one point"
 weight: 2
 aliases:
-  - /docs/manual/advanced/annotation-with-points/liner-interpolation-with-one-point/
+- /docs/manual/advanced/annotation-with-points/liner-interpolation-with-one-point/
+- /docs/annotation/tools/annotation-with-points/liner-interpolation-with-one-point/
 ---
 
 You can use linear interpolation for points to annotate a moving object:

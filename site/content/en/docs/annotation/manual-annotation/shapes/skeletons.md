@@ -4,7 +4,8 @@ linkTitle: 'Skeletons'
 weight: 7
 description: 'Guide to annotating tasks using Skeletons'
 aliases:
-  - /docs/annotation/tools/skeletons/
+- /docs/manual/advanced/skeletons/
+- /docs/annotation/tools/skeletons/
 ---
 
 In this guide, we delve into the efficient process of annotating complex
