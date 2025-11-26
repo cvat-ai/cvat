@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.50.0'></a>
+## \[2.50.0\] - 2025-11-26
+
+### Added
+
+- "Return to Previous Page" button on Task, Project, Job, and Cloud Storage Not Found pages
+  with smart fallback navigation: navigates back in history if available, otherwise redirects
+  to the appropriate resource list page
+  (<https://github.com/cvat-ai/cvat/pull/XXXX>)
+
 <a id='changelog-2.49.0'></a>
 ## \[2.49.0\] - 2025-11-06
 
