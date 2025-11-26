@@ -118,7 +118,7 @@ class VideoStreamReader:
             prev_pts: Optional[int] = None
             prev_dts: Optional[int] = None
             index, key_frame_count = 0, 0
-            seek_pts: Optional[int] = None
+            prev_seek_pts: Optional[int] = None
 
             for packet in reading_container.demux(reading_v_stream):
                 for frame in packet.decode():
@@ -140,10 +140,11 @@ class VideoStreamReader:
                             checking_container,
                             checking_v_stream,
                             key_frame_data,
-                            seek_pts,
+                            prev_seek_pts,
                         )
 
                         if seek_pts is not None:
+                            prev_seek_pts = seek_pts
                             key_frame_count += 1
                             yield (index, key_frame_data["pts"], key_frame_data["md5"])
                         else:
