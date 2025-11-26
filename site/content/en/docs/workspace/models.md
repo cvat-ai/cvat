@@ -20,12 +20,12 @@ The list of models is presented in the form of a table. The parameters indicated
 - model `Name`
 - model `Type`:
   - `detector` - used for automatic annotation
-    (available in {{< ilink "/docs/annotation/tools/ai-tools#detectors" "detectors" >}}
+    (available in {{< ilink "/docs/annotation/auto-annotation/ai-tools#detectors" "detectors" >}}
     and {{< ilink "/docs/annotation/auto-annotation/automatic-annotation" "automatic annotation" >}})
   - `interactor` - used for semi-automatic shape annotation
-    (available in {{< ilink "/docs/annotation/tools/ai-tools#interactors" "interactors" >}})
+    (available in {{< ilink "/docs/annotation/auto-annotation/ai-tools#interactors" "interactors" >}})
   - `tracker` - used for semi-automatic track annotation
-    (available in {{< ilink "/docs/annotation/tools/ai-tools#trackers" "trackers" >}})
+    (available in {{< ilink "/docs/annotation/auto-annotation/ai-tools#trackers" "trackers" >}})
   - `reid` - used to combine individual objects into a track
     (available in {{< ilink "/docs/annotation/auto-annotation/automatic-annotation" "automatic annotation" >}})
 - `Description` - brief description of the model

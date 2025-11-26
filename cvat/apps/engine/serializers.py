@@ -3610,7 +3610,6 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         provider_type = validated_data.get('provider_type')
-        should_be_created = validated_data.pop('should_be_created', None)
 
         key_file = validated_data.pop('key_file', None)
         # we need to save it to temporary file to check the granted permissions
@@ -3640,12 +3639,6 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             self._validate_prefix(prefix)
 
         storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
-        if should_be_created:
-            try:
-                storage.create()
-            except Exception as ex:
-                slogger.glob.warning("Failed with creating storage\n{}".format(str(ex)))
-                raise
 
         storage_status = storage.get_status()
         if storage_status == Status.AVAILABLE:
