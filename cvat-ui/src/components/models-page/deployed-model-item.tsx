@@ -17,7 +17,7 @@ import Card from 'antd/lib/card';
 import Button from 'antd/lib/button';
 
 import Preview from 'components/common/preview';
-import { useCardHeightHOC, usePlugins } from 'utils/hooks';
+import { useCardHeightHOC, useContextMenuClick, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 import ModelActionsComponent from './actions-menu';
@@ -40,6 +40,7 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
     const { model, selected, onClick } = props;
     const [isModalShown, setIsModalShown] = useState(false);
     const height = useCardHeight();
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
     const style: React.CSSProperties = { height };
 
     const systemModel = model.provider === ModelProviders.CVAT;
@@ -154,8 +155,9 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
             <ModelActionsComponent
                 model={model}
                 dropdownTrigger={['contextMenu']}
-                triggerElement={(
+                triggerElement={(menuItems) => (
                     <Card
+                        ref={itemRef}
                         cover={(
                             <Preview
                                 model={model}
@@ -189,18 +191,17 @@ export default function DeployedModelItem(props: Readonly<Props>): JSX.Element {
                                         )}
                                         {modelDescription}
                                     </Row>
-                                    <ModelActionsComponent
-                                        model={model}
-                                        renderTriggerIfEmpty={false}
-                                        triggerElement={(
+                                    {
+                                        (menuItems.length > 0) ? (
                                             <Button
                                                 className='cvat-deployed-model-details-button cvat-actions-menu-button'
                                                 type='link'
                                                 size='large'
                                                 icon={<MoreOutlined />}
+                                                onClick={handleContextMenuClick}
                                             />
-                                        )}
-                                    />
+                                        ) : null
+                                    }
                                 </div>
                             )}
                         />

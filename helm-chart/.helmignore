@@ -21,3 +21,10 @@
 .idea/
 *.tmproj
 .vscode/
+
+# Git pack files (cause "larger than maximum file size" errors)
+*.pack
+*.idx
+
+# CI/CD files
+.github/

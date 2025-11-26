@@ -7,7 +7,7 @@
 
 /* eslint-disable security/detect-non-literal-regexp */
 
-import { decomposeMatrix, convertClasses } from './utils';
+import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -59,25 +59,10 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     }
 });
 
-Cypress.Commands.add('getAuthKey', () => {
-    cy.request({
-        method: 'POST',
-        url: '/api/auth/login',
-        body: {
-            username: Cypress.env('user'),
-            email: Cypress.env('email'),
-            password: Cypress.env('password'),
-        },
-    });
-});
-
-Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
-    const authKey = authResponse.body.key;
+Cypress.Commands.add('deleteUsers', (authHeaders, accountsToDelete) => {
     cy.request({
         url: '/api/users?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
+        headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
         for (const user of responseResult) {
@@ -87,9 +72,7 @@ Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
                     cy.request({
                         method: 'DELETE',
                         url: `/api/users/${id}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
+                        headers: authHeaders,
                     });
                 }
             }
@@ -108,58 +91,34 @@ Cypress.Commands.add('headlessDeleteUser', (userId) => {
     cy.wait('@deleteUser');
 });
 
-Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
-    cy.request({
-        url: '/api/users?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
-    }).then((response) => {
-        const responseResult = response.body.results;
-        responseResult.forEach((user) => {
-            const userId = user.id;
-            const userName = user.username;
-            if (userName.includes(accountsToChangeActiveStatus)) {
-                cy.request({
-                    method: 'PATCH',
-                    url: `/api/users/${userId}`,
-                    headers: {
-                        Authorization: `Token ${authKey}`,
-                    },
-                    body: {
-                        is_active: isActive,
-                    },
-                });
-            }
-        });
+Cypress.Commands.add('headlessDeleteUserByUsername', (username) => {
+    cy.headlessGetUserId(username).then((id) => {
+        cy.headlessDeleteUser(id);
     });
 });
 
-Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, superuserStatus, activeStatus) => {
-    cy.request({
-        url: '/api/users?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
-    }).then((response) => {
-        const responseResult = response.body.results;
-        responseResult.forEach((user) => {
-            if (user.username.includes(userName)) {
-                expect(staffStatus).to.be.equal(user.is_staff);
-                expect(superuserStatus).to.be.equal(user.is_superuser);
-                expect(activeStatus).to.be.equal(user.is_active);
-            }
-        });
-    });
-});
+Cypress.Commands.add('headlessGetSelfId', () => cy.window()
+    .its('cvat').should('not.be.undefined')
+    .then(async (cvat) => {
+        const { data: { id } } = await cvat.server.request('/api/users/self', { method: 'GET' });
+        return id;
+    }),
+);
 
-Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
-    const authKey = authResponse.body.key;
+Cypress.Commands.add('headlessGetUserId', (username) => cy.window().its('cvat')
+    .should('not.be.undefined')
+    .then(async (cvat) => {
+        const { data: { results: [{ id }] } } = await cvat.server.request(
+            `/api/users?filter={"==":[{"var":"username"}, "${username}"]}`,
+            { method: 'GET' },
+        );
+        return id;
+    }));
+
+Cypress.Commands.add('deleteTasks', (authHeaders, tasksToDelete) => {
     cy.request({
         url: '/api/tasks?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
+        headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
         for (const task of responseResult) {
@@ -169,9 +128,7 @@ Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
                     cy.request({
                         method: 'DELETE',
                         url: `/api/tasks/${id}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
+                        headers: authHeaders,
                     });
                 }
             }
@@ -430,13 +387,16 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
 });
 
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
+    const userSpecSnake = toSnakeCase(userSpec);
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.intercept('POST', '/api/auth/register**', (req) => {
         req.continue((response) => {
             delete response.headers['set-cookie'];
-            expect(response.statusCode).to.eq(201, response.statusMessage);
-            expect(response.body.username).to.eq(userSpec.username);
-            expect(response.body.email).to.eq(userSpec.email);
+            expect(response.statusCode).to.eq(201, response.body.username);
+            expect(response.body.username).to.eq(userSpecSnake.username);
+            expect(response.body.email).to.eq(userSpecSnake.email);
+            expect(response.body.first_name).to.eq(userSpecSnake.first_name);
+            expect(response.body.last_name).to.eq(userSpecSnake.last_name);
         });
     }).as('registerRequest');
 

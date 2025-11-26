@@ -46,18 +46,40 @@ quality = 75
 anchor = "smart"
 
 [[menu.main]]
-    name = "About"
+    name = "⇲ Quickstart"
+    weight = 30
+    url = "/docs/getting_started/overview/"
+[[menu.main]]
+    name = "✍︎ Guides"
     weight = 40
-    url = "https://www.cvat.ai/about"
+    url = "/docs/guides/"
 [[menu.main]]
-    name = "Try it now"
+    name = "Sign in"
     weight = 50
-    url = "https://app.cvat.ai"
+    url = "https://app.cvat.ai/auth/login"
 [[menu.main]]
-    name = "GitHub"
+    name = "Get started"
     weight = 60
-    url = "https://github.com/cvat-ai/cvat"
-    pre = "<i class='fab fa-github'></i>"
+    url = "#"
+[[menu.main]]
+    name = "CVAT Сommunity"
+    url = "/docs/administration/basics/installation"
+    parent = "Get started"
+    weight = 1
+[[menu.main]]
+    name = "CVAT Online"
+    url = "https://app.cvat.ai/auth/register"
+    parent = "Get started"
+    weight = 2
+[[menu.main]]
+    name = "CVAT Enterprise"
+    url = "https://www.cvat.ai/sales#enterprise"
+    parent = "Get started"
+    weight = 3
+[[menu.main]]
+    name = "Contact us"
+    weight = 70
+    url = "/docs/getting_started/overview/#get-in-touch"
 
 [services]
 [services.googleAnalytics]
@@ -177,21 +199,6 @@ enable = false
 
 [params.links]
 # End user relevant links. These will show up on left side of footer and in the community page if you have one.
-[[params.links.user]]
-	name ="Gitter public chat"
-	url = "https://gitter.im/opencv-cvat/public"
-	icon = "fab fa-gitter"
-	desc = "Join our Gitter channel for community support."
-[[params.links.user]]
-	name = "Stack Overflow"
-	url = "https://stackoverflow.com/search?q=%23cvat"
-	icon = "fab fa-stack-overflow"
-	desc = "Practical questions and curated answers"
-[[params.links.user]]
-	name = "YouTube"
-	url = "https://www.youtube.com/@cvat-ai"
-	icon = "fab fa-youtube"
-	desc = "YouTube channel of CVAT.ai"
 
 # Developer relevant links. These will show up on right side of footer and in the community page if you have one.
 [[params.links.developer]]
@@ -200,12 +207,17 @@ enable = false
 	icon = "fab fa-github"
 	desc = "Development takes place here!"
 [[params.links.developer]]
-	name ="Gitter developers chat"
-	url = "https://gitter.im/opencv-cvat/dev"
-	icon = "fab fa-gitter"
-	desc = "Join our Gitter channel for community support."
+	name ="LinkedIn"
+	url = "https://www.linkedin.com/company/cvat-ai/"
+	icon = "fab fa-linkedin"
+	desc = "Join our LinkedIn channel for CVAT updates and company news."
 [[params.links.developer]]
-	name = "Discord chat"
+	name = "Discord"
 	url = "https://discord.gg/fNR3eXfk6C"
 	icon = "fab fa-discord"
 	desc = "Join our Discord server for community support."
+[[params.links.developer]]
+	name = "YouTube"
+	url = "https://www.youtube.com/@cvat-ai"
+	icon = "fab fa-youtube"
+	desc = "YouTube channel of CVAT.ai"

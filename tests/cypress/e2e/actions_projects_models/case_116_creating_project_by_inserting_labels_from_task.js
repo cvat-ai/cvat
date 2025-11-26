@@ -40,9 +40,9 @@ context('Creating a project by inserting labels from a task.', { browser: '!fire
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteTasks(authKey, [task.name]);
-            cy.deleteProjects(authKey, [projectName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteTasks(authHeaders, [task.name]);
+            cy.deleteProjects(authHeaders, [projectName]);
         });
     });
 

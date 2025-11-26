@@ -28,7 +28,7 @@
   "pk": 1,
   "fields": {
     "password": "md5$Ba6a4O5ImOYiZ04wBFMtMQ$d1b00970c835fcf12c17240f05f8257e",
-    "last_login": "2024-04-03T09:51:04.664Z",
+    "last_login": "2025-11-13T11:30:55.066Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -1563,6 +1563,26 @@
     "cloud_storage": null,
     "sorting_method": "lexicographical",
     "deleted_frames": "10"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 34,
+  "fields": {
+    "content_size": 0,
+    "chunk_size": 72,
+    "size": 2,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
   }
 },
 {
@@ -4157,19 +4177,45 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 550,
+  "fields": {
+    "data": 34,
+    "path": "smallArchive/01.jpg",
+    "frame": 0,
+    "width": 800,
+    "height": 800,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 551,
+  "fields": {
+    "data": 34,
+    "path": "smallArchive/02.jpg",
+    "frame": 1,
+    "width": 800,
+    "height": 800,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
     "created_date": "2021-12-14T19:46:37.969Z",
     "updated_date": "2022-11-03T13:57:25.895Z",
-    "name": "project1",
-    "owner": [
-      "user7"
-    ],
     "assignee": [
       "user6"
     ],
     "assignee_updated_date": null,
+    "name": "project1",
+    "owner": [
+      "user7"
+    ],
     "bug_tracker": "",
     "status": "annotation",
     "organization": null,
@@ -4183,14 +4229,14 @@
   "fields": {
     "created_date": "2021-12-14T19:52:37.278Z",
     "updated_date": "2022-06-30T08:56:45.601Z",
-    "name": "project2",
-    "owner": [
-      "user7"
-    ],
     "assignee": [
       "user2"
     ],
     "assignee_updated_date": null,
+    "name": "project2",
+    "owner": [
+      "user7"
+    ],
     "bug_tracker": "",
     "status": "annotation",
     "organization": 2,
@@ -4204,14 +4250,14 @@
   "fields": {
     "created_date": "2022-03-28T13:05:24.659Z",
     "updated_date": "2022-03-28T13:06:09.283Z",
-    "name": "project 3",
-    "owner": [
-      "user2"
-    ],
     "assignee": [
       "user5"
     ],
     "assignee_updated_date": null,
+    "name": "project 3",
+    "owner": [
+      "user2"
+    ],
     "bug_tracker": "",
     "status": "annotation",
     "organization": 2,
@@ -4225,12 +4271,12 @@
   "fields": {
     "created_date": "2022-06-08T08:32:45.521Z",
     "updated_date": "2023-02-10T11:50:18.436Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "name": "project4",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "status": "annotation",
     "organization": 2,
@@ -4244,12 +4290,12 @@
   "fields": {
     "created_date": "2022-09-22T14:21:53.791Z",
     "updated_date": "2022-09-28T12:26:49.493Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "name": "project5",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "status": "annotation",
     "organization": 2,
@@ -4263,14 +4309,14 @@
   "fields": {
     "created_date": "2022-09-28T12:15:50.768Z",
     "updated_date": "2022-09-28T12:25:54.563Z",
-    "name": "user1_project",
-    "owner": [
-      "user1"
-    ],
     "assignee": [
       "user10"
     ],
     "assignee_updated_date": null,
+    "name": "user1_project",
+    "owner": [
+      "user1"
+    ],
     "bug_tracker": "",
     "status": "annotation",
     "organization": null,
@@ -4284,14 +4330,14 @@
   "fields": {
     "created_date": "2022-09-28T12:26:25.296Z",
     "updated_date": "2022-09-28T12:26:29.285Z",
-    "name": "admin1_project",
-    "owner": [
-      "admin1"
-    ],
     "assignee": [
       "worker4"
     ],
     "assignee_updated_date": null,
+    "name": "admin1_project",
+    "owner": [
+      "admin1"
+    ],
     "bug_tracker": "",
     "status": "annotation",
     "organization": null,
@@ -4305,12 +4351,12 @@
   "fields": {
     "created_date": "2022-12-01T12:52:42.454Z",
     "updated_date": "2022-12-01T12:53:34.917Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "name": "project with video data",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "status": "annotation",
     "organization": null,
@@ -4324,14 +4370,14 @@
   "fields": {
     "created_date": "2023-02-10T11:42:43.192Z",
     "updated_date": "2024-09-23T21:42:22.688Z",
-    "name": "project 6",
-    "owner": [
-      "user3"
-    ],
     "assignee": [
       "worker3"
     ],
     "assignee_updated_date": null,
+    "name": "project 6",
+    "owner": [
+      "user3"
+    ],
     "bug_tracker": "",
     "status": "annotation",
     "organization": 2,
@@ -4345,12 +4391,12 @@
   "fields": {
     "created_date": "2023-03-01T15:36:11.840Z",
     "updated_date": "2023-03-01T15:36:37.812Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "name": "project7",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "status": "annotation",
     "organization": 2,
@@ -4364,12 +4410,12 @@
   "fields": {
     "created_date": "2023-03-10T11:57:14.944Z",
     "updated_date": "2023-03-10T11:57:48.747Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "name": "project with attributes",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "status": "annotation",
     "organization": null,
@@ -4383,12 +4429,12 @@
   "fields": {
     "created_date": "2023-03-10T11:58:04.216Z",
     "updated_date": "2023-03-10T11:58:04.216Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "name": "project with attributes 2",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "status": "annotation",
     "organization": null,
@@ -4402,12 +4448,12 @@
   "fields": {
     "created_date": "2024-07-15T15:29:04.426Z",
     "updated_date": "2024-07-15T15:34:53.175Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "name": "project with subsets",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "status": "annotation",
     "organization": null,
@@ -4421,14 +4467,14 @@
   "fields": {
     "created_date": "2024-09-22T20:40:15.423Z",
     "updated_date": "2024-09-22T20:40:23.462Z",
-    "name": "project assigned to user4",
-    "owner": [
-      "admin1"
-    ],
     "assignee": [
       "user4"
     ],
     "assignee_updated_date": "2024-09-22T20:40:23.452Z",
+    "name": "project assigned to user4",
+    "owner": [
+      "admin1"
+    ],
     "bug_tracker": "",
     "status": "annotation",
     "organization": 2,
@@ -4442,14 +4488,14 @@
   "fields": {
     "created_date": "2024-09-23T08:09:42.827Z",
     "updated_date": "2024-09-23T08:09:45.474Z",
-    "name": "project assigned to org owner",
-    "owner": [
-      "admin1"
-    ],
     "assignee": [
       "user7"
     ],
     "assignee_updated_date": "2024-09-23T08:09:45.461Z",
+    "name": "project assigned to org owner",
+    "owner": [
+      "admin1"
+    ],
     "bug_tracker": "",
     "status": "annotation",
     "organization": 2,
@@ -4463,12 +4509,12 @@
   "fields": {
     "created_date": "2025-05-05T15:35:00.036Z",
     "updated_date": "2025-05-05T15:35:00.542Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "name": "project 4",
     "owner": [
       "user2"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "status": "annotation",
     "organization": 2,
@@ -4477,21 +4523,40 @@
   }
 },
 {
+  "model": "engine.project",
+  "pk": 18,
+  "fields": {
+    "created_date": "2025-11-13T11:32:07.581Z",
+    "updated_date": "2025-11-13T11:32:48.144Z",
+    "assignee": null,
+    "assignee_updated_date": null,
+    "name": "project with tags",
+    "owner": [
+      "admin1"
+    ],
+    "bug_tracker": "",
+    "status": "annotation",
+    "organization": null,
+    "source_storage": 57,
+    "target_storage": 58
+  }
+},
+{
   "model": "engine.task",
   "pk": 2,
   "fields": {
     "created_date": "2021-12-14T18:50:29.458Z",
     "updated_date": "2021-12-22T07:14:15.234Z",
+    "assignee": [
+      "worker2"
+    ],
+    "assignee_updated_date": null,
     "project": null,
     "name": "task2",
     "mode": "annotation",
     "owner": [
       "user1"
     ],
-    "assignee": [
-      "worker2"
-    ],
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 23,
@@ -4511,16 +4576,16 @@
   "fields": {
     "created_date": "2022-02-16T06:25:48.168Z",
     "updated_date": "2022-02-21T10:40:21.257Z",
+    "assignee": [
+      "dummy2"
+    ],
+    "assignee_updated_date": null,
     "project": null,
     "name": "task2",
     "mode": "interpolation",
     "owner": [
       "user1"
     ],
-    "assignee": [
-      "dummy2"
-    ],
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 5,
     "segment_size": 25,
@@ -4540,14 +4605,14 @@
   "fields": {
     "created_date": "2022-02-16T06:26:54.631Z",
     "updated_date": "2022-02-16T06:26:54.836Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "task3",
     "mode": "annotation",
     "owner": [
       "user1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 1,
@@ -4567,16 +4632,16 @@
   "fields": {
     "created_date": "2022-02-21T10:31:52.429Z",
     "updated_date": "2022-02-21T10:41:38.540Z",
+    "assignee": [
+      "worker2"
+    ],
+    "assignee_updated_date": null,
     "project": null,
     "name": "task_2_org2",
     "mode": "annotation",
     "owner": [
       "user8"
     ],
-    "assignee": [
-      "worker2"
-    ],
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 11,
@@ -4596,16 +4661,16 @@
   "fields": {
     "created_date": "2022-03-05T08:30:48.612Z",
     "updated_date": "2023-05-02T09:28:57.638Z",
+    "assignee": [
+      "worker4"
+    ],
+    "assignee_updated_date": null,
     "project": null,
     "name": "task1",
     "mode": "annotation",
     "owner": [
       "user1"
     ],
-    "assignee": [
-      "worker4"
-    ],
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 14,
@@ -4625,16 +4690,16 @@
   "fields": {
     "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-11-03T13:57:26.007Z",
+    "assignee": [
+      "admin1"
+    ],
+    "assignee_updated_date": null,
     "project": 1,
     "name": "task1_in_project1",
     "mode": "annotation",
     "owner": [
       "user7"
     ],
-    "assignee": [
-      "admin1"
-    ],
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 5,
@@ -4654,16 +4719,16 @@
   "fields": {
     "created_date": "2022-03-05T10:32:19.149Z",
     "updated_date": "2022-06-30T08:56:45.594Z",
+    "assignee": [
+      "user5"
+    ],
+    "assignee_updated_date": null,
     "project": 2,
     "name": "task1_in_project2",
     "mode": "annotation",
     "owner": [
       "user7"
     ],
-    "assignee": [
-      "user5"
-    ],
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 11,
@@ -4683,14 +4748,14 @@
   "fields": {
     "created_date": "2022-03-14T13:24:05.852Z",
     "updated_date": "2022-03-14T13:24:05.861Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "task_without_data",
     "mode": "",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": null,
     "segment_size": 0,
@@ -4710,16 +4775,16 @@
   "fields": {
     "created_date": "2022-06-08T08:33:06.505Z",
     "updated_date": "2023-02-10T11:50:18.414Z",
+    "assignee": [
+      "user3"
+    ],
+    "assignee_updated_date": null,
     "project": 4,
     "name": "task1_in_project4",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": [
-      "user3"
-    ],
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 5,
@@ -4739,14 +4804,14 @@
   "fields": {
     "created_date": "2022-09-22T14:22:25.820Z",
     "updated_date": "2022-09-23T11:57:02.300Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": 5,
     "name": "task1 in project5",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "https://bugtracker.localhost/task/12345",
     "overlap": 0,
     "segment_size": 8,
@@ -4766,14 +4831,14 @@
   "fields": {
     "created_date": "2022-12-01T12:53:10.425Z",
     "updated_date": "2022-12-01T12:53:35.028Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": 8,
     "name": "task with video data",
     "mode": "interpolation",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 5,
     "segment_size": 25,
@@ -4793,16 +4858,16 @@
   "fields": {
     "created_date": "2023-02-10T14:05:25.947Z",
     "updated_date": "2023-02-10T14:08:05.873Z",
+    "assignee": [
+      "user2"
+    ],
+    "assignee_updated_date": null,
     "project": null,
     "name": "task_3_org2",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": [
-      "user2"
-    ],
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 5,
@@ -4822,14 +4887,14 @@
   "fields": {
     "created_date": "2023-03-01T15:36:26.668Z",
     "updated_date": "2023-03-01T15:36:37.897Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": 11,
     "name": "task in project7",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 2,
@@ -4849,14 +4914,14 @@
   "fields": {
     "created_date": "2023-03-10T11:56:33.757Z",
     "updated_date": "2023-03-10T11:56:54.904Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "task with attributes",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 2,
@@ -4876,14 +4941,14 @@
   "fields": {
     "created_date": "2023-03-10T11:57:31.614Z",
     "updated_date": "2023-03-10T11:57:48.835Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": 12,
     "name": "task in project with attributes",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 2,
@@ -4903,14 +4968,14 @@
   "fields": {
     "created_date": "2023-03-27T19:08:07.649Z",
     "updated_date": "2023-03-27T19:08:40.032Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "task with several jobs",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 6,
@@ -4930,14 +4995,14 @@
   "fields": {
     "created_date": "2023-05-26T16:11:23.540Z",
     "updated_date": "2023-11-24T15:23:30.045Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "task3_with_gt_job",
     "mode": "annotation",
     "owner": [
       "user2"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 11,
@@ -4957,14 +5022,14 @@
   "fields": {
     "created_date": "2024-03-21T20:50:05.694Z",
     "updated_date": "2024-03-21T20:50:05.947Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "task with several jobs and ground truth job",
     "mode": "annotation",
     "owner": [
       "admin2"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 5,
@@ -4984,14 +5049,14 @@
   "fields": {
     "created_date": "2024-07-15T15:33:10.135Z",
     "updated_date": "2024-07-15T15:33:10.641Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": 14,
     "name": "task_train",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 1,
@@ -5011,14 +5076,14 @@
   "fields": {
     "created_date": "2024-07-15T15:34:53.156Z",
     "updated_date": "2024-07-15T15:34:53.692Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": 14,
     "name": "task-validation",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 1,
@@ -5038,16 +5103,16 @@
   "fields": {
     "created_date": "2024-09-23T10:51:32.778Z",
     "updated_date": "2024-09-23T10:51:45.533Z",
+    "assignee": [
+      "user7"
+    ],
+    "assignee_updated_date": "2024-09-23T10:51:45.525Z",
     "project": null,
     "name": "task assigned to owner",
     "mode": "annotation",
     "owner": [
       "user3"
     ],
-    "assignee": [
-      "user7"
-    ],
-    "assignee_updated_date": "2024-09-23T10:51:45.525Z",
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 1,
@@ -5067,16 +5132,16 @@
   "fields": {
     "created_date": "2024-09-23T10:52:04.357Z",
     "updated_date": "2024-09-23T10:52:48.778Z",
+    "assignee": [
+      "user4"
+    ],
+    "assignee_updated_date": "2024-09-23T10:52:48.769Z",
     "project": null,
     "name": "task assigned to maintainer",
     "mode": "annotation",
     "owner": [
       "user3"
     ],
-    "assignee": [
-      "user4"
-    ],
-    "assignee_updated_date": "2024-09-23T10:52:48.769Z",
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 1,
@@ -5096,14 +5161,14 @@
   "fields": {
     "created_date": "2024-09-23T21:42:22.676Z",
     "updated_date": "2024-09-23T21:42:23.082Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": 10,
     "name": "task 1",
     "mode": "annotation",
     "owner": [
       "user4"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 1,
@@ -5123,14 +5188,14 @@
   "fields": {
     "created_date": "2024-10-01T12:36:21.364Z",
     "updated_date": "2024-10-01T12:38:26.883Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "task with honeypots",
     "mode": "annotation",
     "owner": [
       "admin1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 0,
@@ -5150,14 +5215,14 @@
   "fields": {
     "created_date": "2025-01-14T17:19:03.665Z",
     "updated_date": "2025-01-14T17:26:01.139Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "task with consensus and honeypots",
     "mode": "annotation",
     "owner": [
       "user2"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 0,
@@ -5177,14 +5242,14 @@
   "fields": {
     "created_date": "2025-01-27T16:42:31.302Z",
     "updated_date": "2025-01-27T16:43:36.188Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "sandbox task with consensus",
     "mode": "annotation",
     "owner": [
       "user1"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 3,
@@ -5204,14 +5269,14 @@
   "fields": {
     "created_date": "2025-05-05T15:35:00.112Z",
     "updated_date": "2025-05-05T15:38:46.662Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": 17,
     "name": "task with gt job",
     "mode": "annotation",
     "owner": [
       "user2"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 4,
@@ -5231,14 +5296,14 @@
   "fields": {
     "created_date": "2025-05-05T15:35:00.337Z",
     "updated_date": "2025-05-05T15:36:34.341Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": 17,
     "name": "task with honeypots",
     "mode": "annotation",
     "owner": [
       "user2"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
     "segment_size": 0,
@@ -5258,14 +5323,14 @@
   "fields": {
     "created_date": "2025-08-01T11:44:46.343Z",
     "updated_date": "2025-08-01T11:45:33.361Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "project": null,
     "name": "task with frame step and gt job",
     "mode": "interpolation",
     "owner": [
       "user2"
     ],
-    "assignee": null,
-    "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 5,
     "segment_size": 10,
@@ -5276,6 +5341,33 @@
     "organization": 2,
     "source_storage": 55,
     "target_storage": 56,
+    "consensus_replicas": 0
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 35,
+  "fields": {
+    "created_date": "2025-11-13T11:32:48.132Z",
+    "updated_date": "2025-11-13T11:32:48.543Z",
+    "assignee": null,
+    "assignee_updated_date": null,
+    "project": 18,
+    "name": "task with tags",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "annotation",
+    "data": 34,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 59,
+    "target_storage": 60,
     "consensus_replicas": 0
   }
 },
@@ -6288,6 +6380,14 @@
   }
 },
 {
+  "model": "engine.serverfile",
+  "pk": 1,
+  "fields": {
+    "data": 34,
+    "file": "smallArchive.zip"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -6863,16 +6963,28 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 55,
+  "fields": {
+    "task": 35,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "chunks_updated_date": "2025-11-13T11:32:48.457Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
     "created_date": "2021-12-14T18:50:29.458Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
-    "segment": 2,
     "assignee": [
       "worker1"
     ],
     "assignee_updated_date": null,
+    "segment": 2,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -6886,11 +6998,11 @@
   "fields": {
     "created_date": "2022-02-16T06:25:48.168Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
-    "segment": 7,
     "assignee": [
       "worker4"
     ],
     "assignee_updated_date": null,
+    "segment": 7,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -6904,9 +7016,9 @@
   "fields": {
     "created_date": "2022-02-16T06:26:54.631Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
-    "segment": 8,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 8,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -6920,9 +7032,9 @@
   "fields": {
     "created_date": "2022-02-21T10:31:52.429Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
-    "segment": 9,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 9,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -6936,11 +7048,11 @@
   "fields": {
     "created_date": "2022-03-05T08:30:48.612Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
-    "segment": 10,
     "assignee": [
       "admin1"
     ],
     "assignee_updated_date": null,
+    "segment": 10,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -6954,11 +7066,11 @@
   "fields": {
     "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
-    "segment": 11,
     "assignee": [
       "worker4"
     ],
     "assignee_updated_date": null,
+    "segment": 11,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -6972,9 +7084,9 @@
   "fields": {
     "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
-    "segment": 12,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 12,
     "status": "validation",
     "stage": "validation",
     "state": "new",
@@ -6988,9 +7100,9 @@
   "fields": {
     "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
-    "segment": 13,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 13,
     "status": "validation",
     "stage": "acceptance",
     "state": "new",
@@ -7004,9 +7116,9 @@
   "fields": {
     "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-11-03T13:57:26.346Z",
-    "segment": 14,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 14,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7020,11 +7132,11 @@
   "fields": {
     "created_date": "2022-03-05T10:32:19.149Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
-    "segment": 16,
     "assignee": [
       "worker2"
     ],
     "assignee_updated_date": null,
+    "segment": 16,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7038,9 +7150,9 @@
   "fields": {
     "created_date": "2022-06-08T08:33:06.505Z",
     "updated_date": "2022-12-05T07:47:01.633Z",
-    "segment": 17,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 17,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7054,9 +7166,9 @@
   "fields": {
     "created_date": "2022-09-22T14:22:25.820Z",
     "updated_date": "2022-09-23T11:57:02.302Z",
-    "segment": 18,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 18,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7070,9 +7182,9 @@
   "fields": {
     "created_date": "2022-12-01T12:53:10.425Z",
     "updated_date": "2022-12-01T12:53:35.354Z",
-    "segment": 19,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 19,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7086,9 +7198,9 @@
   "fields": {
     "created_date": "2023-02-10T14:05:25.947Z",
     "updated_date": "2023-02-10T14:05:26.022Z",
-    "segment": 21,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 21,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7102,9 +7214,9 @@
   "fields": {
     "created_date": "2023-03-01T15:36:26.668Z",
     "updated_date": "2023-03-01T15:36:38.114Z",
-    "segment": 22,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 22,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7118,9 +7230,9 @@
   "fields": {
     "created_date": "2023-03-10T11:56:33.757Z",
     "updated_date": "2023-03-10T11:56:55.066Z",
-    "segment": 23,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 23,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7134,9 +7246,9 @@
   "fields": {
     "created_date": "2023-03-10T11:57:31.614Z",
     "updated_date": "2023-03-10T11:57:49.019Z",
-    "segment": 24,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 24,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7150,9 +7262,9 @@
   "fields": {
     "created_date": "2023-03-27T19:08:07.649Z",
     "updated_date": "2023-03-27T19:08:27.216Z",
-    "segment": 25,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 25,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7166,9 +7278,9 @@
   "fields": {
     "created_date": "2023-03-27T19:08:07.649Z",
     "updated_date": "2023-03-27T19:08:40.166Z",
-    "segment": 26,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 26,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7182,9 +7294,9 @@
   "fields": {
     "created_date": "2023-05-26T16:11:23.880Z",
     "updated_date": "2023-11-24T15:23:30.269Z",
-    "segment": 27,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 27,
     "status": "validation",
     "stage": "annotation",
     "state": "new",
@@ -7198,9 +7310,9 @@
   "fields": {
     "created_date": "2023-05-26T16:11:23.946Z",
     "updated_date": "2023-11-24T15:18:55.216Z",
-    "segment": 28,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 28,
     "status": "validation",
     "stage": "acceptance",
     "state": "completed",
@@ -7214,9 +7326,9 @@
   "fields": {
     "created_date": "2024-03-21T20:50:05.805Z",
     "updated_date": "2024-03-21T20:50:39.585Z",
-    "segment": 29,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 29,
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
@@ -7230,9 +7342,9 @@
   "fields": {
     "created_date": "2024-03-21T20:50:05.811Z",
     "updated_date": "2024-03-21T20:50:33.610Z",
-    "segment": 30,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 30,
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
@@ -7246,9 +7358,9 @@
   "fields": {
     "created_date": "2024-03-21T20:50:05.815Z",
     "updated_date": "2024-03-21T20:50:27.594Z",
-    "segment": 31,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 31,
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
@@ -7262,9 +7374,9 @@
   "fields": {
     "created_date": "2024-03-21T20:50:05.838Z",
     "updated_date": "2024-03-21T20:50:20.020Z",
-    "segment": 32,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 32,
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
@@ -7278,9 +7390,9 @@
   "fields": {
     "created_date": "2024-07-15T15:33:10.549Z",
     "updated_date": "2024-07-15T15:33:10.549Z",
-    "segment": 33,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 33,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7294,9 +7406,9 @@
   "fields": {
     "created_date": "2024-07-15T15:34:53.594Z",
     "updated_date": "2024-07-15T15:34:53.594Z",
-    "segment": 34,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 34,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7310,9 +7422,9 @@
   "fields": {
     "created_date": "2024-09-23T10:51:32.932Z",
     "updated_date": "2024-09-23T10:51:32.932Z",
-    "segment": 35,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 35,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7326,9 +7438,9 @@
   "fields": {
     "created_date": "2024-09-23T10:52:04.507Z",
     "updated_date": "2024-09-23T10:52:04.507Z",
-    "segment": 36,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 36,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7342,9 +7454,9 @@
   "fields": {
     "created_date": "2024-09-23T21:42:23.045Z",
     "updated_date": "2024-09-23T21:42:23.045Z",
-    "segment": 37,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 37,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7358,9 +7470,9 @@
   "fields": {
     "created_date": "2024-10-01T12:36:21.476Z",
     "updated_date": "2024-10-01T12:36:21.606Z",
-    "segment": 38,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 38,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7374,9 +7486,9 @@
   "fields": {
     "created_date": "2024-10-01T12:36:21.484Z",
     "updated_date": "2024-10-01T12:36:21.628Z",
-    "segment": 39,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 39,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7390,9 +7502,9 @@
   "fields": {
     "created_date": "2024-10-01T12:36:21.491Z",
     "updated_date": "2024-10-01T12:36:21.651Z",
-    "segment": 40,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 40,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7406,9 +7518,9 @@
   "fields": {
     "created_date": "2024-10-01T12:36:21.511Z",
     "updated_date": "2024-10-01T12:38:26.967Z",
-    "segment": 41,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 41,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7422,9 +7534,9 @@
   "fields": {
     "created_date": "2025-01-14T17:19:04.062Z",
     "updated_date": "2025-02-03T15:25:42.655Z",
-    "segment": 42,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 42,
     "status": "annotation",
     "stage": "annotation",
     "state": "completed",
@@ -7438,9 +7550,9 @@
   "fields": {
     "created_date": "2025-01-14T17:19:04.077Z",
     "updated_date": "2025-02-03T15:25:32.413Z",
-    "segment": 42,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 42,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7454,9 +7566,9 @@
   "fields": {
     "created_date": "2025-01-14T17:19:04.082Z",
     "updated_date": "2025-01-14T17:19:51.388Z",
-    "segment": 42,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 42,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7470,9 +7582,9 @@
   "fields": {
     "created_date": "2025-01-14T17:19:04.086Z",
     "updated_date": "2025-02-03T15:22:52.241Z",
-    "segment": 42,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 42,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7486,9 +7598,9 @@
   "fields": {
     "created_date": "2025-01-14T17:19:04.091Z",
     "updated_date": "2025-01-14T17:24:20.174Z",
-    "segment": 43,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 43,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7502,9 +7614,9 @@
   "fields": {
     "created_date": "2025-01-14T17:19:04.095Z",
     "updated_date": "2025-01-14T17:23:55.551Z",
-    "segment": 43,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 43,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7518,9 +7630,9 @@
   "fields": {
     "created_date": "2025-01-14T17:19:04.099Z",
     "updated_date": "2025-01-14T17:19:51.388Z",
-    "segment": 43,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 43,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7534,9 +7646,9 @@
   "fields": {
     "created_date": "2025-01-14T17:19:04.103Z",
     "updated_date": "2025-01-14T17:24:51.333Z",
-    "segment": 43,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 43,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7550,9 +7662,9 @@
   "fields": {
     "created_date": "2025-01-14T17:19:04.163Z",
     "updated_date": "2025-01-14T17:21:56.768Z",
-    "segment": 44,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 44,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7566,9 +7678,9 @@
   "fields": {
     "created_date": "2025-01-27T16:42:31.660Z",
     "updated_date": "2025-01-27T16:42:31.660Z",
-    "segment": 45,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 45,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7582,9 +7694,9 @@
   "fields": {
     "created_date": "2025-01-27T16:42:31.672Z",
     "updated_date": "2025-01-27T16:43:07.696Z",
-    "segment": 45,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 45,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7598,9 +7710,9 @@
   "fields": {
     "created_date": "2025-01-27T16:42:31.676Z",
     "updated_date": "2025-01-27T16:43:47.462Z",
-    "segment": 45,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 45,
     "status": "annotation",
     "stage": "annotation",
     "state": "completed",
@@ -7614,9 +7726,9 @@
   "fields": {
     "created_date": "2025-05-05T15:35:00.158Z",
     "updated_date": "2025-05-05T15:35:00.294Z",
-    "segment": 46,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 46,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7630,9 +7742,9 @@
   "fields": {
     "created_date": "2025-05-05T15:35:00.221Z",
     "updated_date": "2025-05-05T15:38:29.597Z",
-    "segment": 47,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 47,
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
@@ -7646,9 +7758,9 @@
   "fields": {
     "created_date": "2025-05-05T15:35:00.380Z",
     "updated_date": "2025-05-05T15:35:00.493Z",
-    "segment": 48,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 48,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7662,9 +7774,9 @@
   "fields": {
     "created_date": "2025-05-05T15:35:00.387Z",
     "updated_date": "2025-05-05T15:35:00.515Z",
-    "segment": 49,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 49,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7678,9 +7790,9 @@
   "fields": {
     "created_date": "2025-05-05T15:35:00.403Z",
     "updated_date": "2025-05-05T15:38:37.188Z",
-    "segment": 50,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 50,
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
@@ -7694,9 +7806,9 @@
   "fields": {
     "created_date": "2025-08-01T11:44:47.537Z",
     "updated_date": "2025-08-01T11:44:47.537Z",
-    "segment": 51,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 51,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7710,9 +7822,9 @@
   "fields": {
     "created_date": "2025-08-01T11:44:47.547Z",
     "updated_date": "2025-08-01T11:44:47.547Z",
-    "segment": 52,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 52,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
@@ -7726,9 +7838,9 @@
   "fields": {
     "created_date": "2025-08-01T11:44:47.551Z",
     "updated_date": "2025-08-01T11:45:33.617Z",
-    "segment": 53,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 53,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
@@ -7742,13 +7854,29 @@
   "fields": {
     "created_date": "2025-08-01T11:44:47.600Z",
     "updated_date": "2025-08-01T11:44:47.600Z",
-    "segment": 54,
     "assignee": null,
     "assignee_updated_date": null,
+    "segment": 54,
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
     "type": "ground_truth",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 63,
+  "fields": {
+    "created_date": "2025-11-13T11:32:48.469Z",
+    "updated_date": "2025-11-13T11:32:48.469Z",
+    "assignee": null,
+    "assignee_updated_date": null,
+    "segment": 55,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
     "parent_job": null
   }
 },
@@ -8745,6 +8873,30 @@
     "name": "dog",
     "color": "#406040",
     "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 91,
+  "fields": {
+    "task": null,
+    "project": 18,
+    "name": "tag1",
+    "color": "#3310e1",
+    "type": "tag",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 92,
+  "fields": {
+    "task": null,
+    "project": 18,
+    "name": "tag2",
+    "color": "#ce1a72",
+    "type": "tag",
     "parent": null
   }
 },
@@ -15984,7 +16136,7 @@
       "admin1"
     ],
     "rating": 0.0,
-    "last_activity_date": null,
+    "last_activity_date": "2025-11-13T11:30:55.078Z",
     "has_analytics_access": true
   }
 },
@@ -16234,13 +16386,14 @@
   "fields": {
     "created_date": "2022-03-16T11:04:39.444Z",
     "updated_date": "2022-03-16T11:04:39.444Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "frame": 0,
     "position": "244.58581235698148, 319.63386727689067, 326.9656750572103, 192.76887871853796, 543.6247139588122, 175.4691075514893, 835.2494279176244, 360.0000000000018, 609.5286041189956, 586.544622425632, 364.0361328125, 528.87890625, 244.58581235698148, 319.63386727689067",
     "job": 7,
     "owner": [
       "user1"
     ],
-    "assignee": null,
     "resolved": true
   }
 },
@@ -16250,13 +16403,14 @@
   "fields": {
     "created_date": "2022-03-16T11:07:22.170Z",
     "updated_date": "2022-03-16T11:07:22.170Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "frame": 0,
     "position": "98.48046875, 696.72265625, 326.1220703125, 841.5859375",
     "job": 9,
     "owner": [
       "user8"
     ],
-    "assignee": null,
     "resolved": false
   }
 },
@@ -16266,13 +16420,14 @@
   "fields": {
     "created_date": "2022-03-16T11:08:18.367Z",
     "updated_date": "2022-03-16T11:08:18.367Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "frame": 5,
     "position": "108.1845703125, 235.0, 720.0087890625, 703.3505859375",
     "job": 16,
     "owner": [
       "user8"
     ],
-    "assignee": null,
     "resolved": false
   }
 },
@@ -16282,13 +16437,14 @@
   "fields": {
     "created_date": "2022-03-16T12:40:00.764Z",
     "updated_date": "2022-03-16T12:40:00.764Z",
+    "assignee": [
+      "user1"
+    ],
+    "assignee_updated_date": null,
     "frame": 5,
     "position": "295.36328125, 243.6044921875, 932.23046875, 561.4921875",
     "job": 10,
     "owner": [
-      "user1"
-    ],
-    "assignee": [
       "user1"
     ],
     "resolved": false
@@ -16300,13 +16456,14 @@
   "fields": {
     "created_date": "2022-03-16T12:49:29.369Z",
     "updated_date": "2022-03-16T12:49:29.369Z",
+    "assignee": null,
+    "assignee_updated_date": null,
     "frame": 0,
     "position": "65.6189987163034, 100.96585365853753, 142.12734274711147, 362.6243902439037",
     "job": 11,
     "owner": [
       "user6"
     ],
-    "assignee": null,
     "resolved": false
   }
 },
@@ -16466,6 +16623,25 @@
     "credentials_type": "KEY_SECRET_KEY_PAIR",
     "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
     "description": "Bucket for importing and exporting annotations and backups",
+    "organization": 2
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 4,
+  "fields": {
+    "created_date": "2022-06-29T12:56:18.257Z",
+    "updated_date": "2022-06-29T12:56:18.264Z",
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "importexportbucketwrongendpoint",
+    "display_name": "Import/Export bucket with wrong endpoint",
+    "owner": [
+      "admin1"
+    ],
+    "credentials": "minio_access_key minio_secret_key",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9777",
+    "description": "Bucket with wrong endpoint for testing purposes",
     "organization": 2
   }
 },
@@ -16912,6 +17088,38 @@
 {
   "model": "engine.storage",
   "pk": 56,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 57,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 58,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 59,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 60,
   "fields": {
     "location": "local",
     "cloud_storage": null
@@ -23200,6 +23408,64 @@
     "created_date": "2025-08-01T11:44:46.355Z",
     "updated_date": "2025-08-01T11:44:46.355Z",
     "task": 34,
+    "project": null,
+    "inherit": true,
+    "job_filter": "",
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "empty_is_annotated": false,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 46,
+  "fields": {
+    "created_date": "2025-11-13T11:32:07.595Z",
+    "updated_date": "2025-11-13T11:32:07.595Z",
+    "task": null,
+    "project": 18,
+    "inherit": true,
+    "job_filter": "",
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "empty_is_annotated": false,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 47,
+  "fields": {
+    "created_date": "2025-11-13T11:32:48.140Z",
+    "updated_date": "2025-11-13T11:32:48.140Z",
+    "task": 35,
     "project": null,
     "inherit": true,
     "job_filter": "",
