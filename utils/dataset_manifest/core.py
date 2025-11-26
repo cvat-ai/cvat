@@ -118,6 +118,7 @@ class VideoStreamReader:
             prev_pts: Optional[int] = None
             prev_dts: Optional[int] = None
             index, key_frame_count = 0, 0
+            seek_pts: Optional[int] = None
 
             for packet in reading_container.demux(reading_v_stream):
                 for frame in packet.decode():
