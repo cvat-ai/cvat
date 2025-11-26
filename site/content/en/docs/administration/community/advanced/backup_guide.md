@@ -59,7 +59,7 @@ changed. You always can upgrade CVAT later. It will take care to migrate
 your data properly internally.**
 
 Note: CVAT containers must exist (if no, please follow the
-{{< ilink "/docs/administration/basics/installation#quick-installation-guide" "installation guide" >}}).
+{{< ilink "/docs/administration/community/basics/installation#quick-installation-guide" "installation guide" >}}).
 Stop all CVAT containers:
 
 ```shell

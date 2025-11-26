@@ -123,7 +123,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please refer to the
-  {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "Annotation" >}} section for more details.
+  {{< ilink "/docs/workspace/tasks-page#overview" "Tasks" >}} section for more details.
 
 ## Windows 10
 
@@ -206,7 +206,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please refer to the
-  {{< ilink "/docs/annotation" "Annotation" >}} section for more details.
+  {{< ilink "/docs/annotation/" "Annotation" >}} section for more details.
 
 ## Mac OS Mojave
 
@@ -282,7 +282,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please refer to the
-  {{< ilink "/docs/annotation" "Annotation" >}} section for more details.
+  {{< ilink "/docs/annotation/" "Annotation" >}} section for more details.
 
 ## Advanced Topics
 
@@ -441,7 +441,7 @@ if you want to keep the dashboard in production you should read Traefik's
 
 #### Semi-automatic and automatic annotation
 
-Please follow this {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "guide" >}}.
+Please follow this {{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "guide" >}}.
 
 ### Stop all containers
 
@@ -494,7 +494,7 @@ volumes:
 
 You can change the share device path to your actual share.
 
-You can {{< ilink "/docs/administration/advanced/mounting_cloud_storages" "mount" >}}
+You can {{< ilink "/docs/administration/community/advanced/mounting_cloud_storages" "mount" >}}
 your cloud storage as a FUSE and use it later as a share.
 
 ### Email verification

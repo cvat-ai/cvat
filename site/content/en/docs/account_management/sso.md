@@ -5,11 +5,10 @@ weight: 5
 description: 'SSO for a Self-Hosted solution'
 aliases:
   - /docs/enterprise/sso/
+products:
+  - online
+  - enterprise
 ---
-
-{{% alert title="Note" color="primary" %}}
-This is a paid feature available only to [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
-{{% /alert %}}
 
 CVAT supports Single Sign-On (SSO) using both OpenID Connect (OIDC) and Security Assertion Markup Language (SAML)
 protocols.
@@ -275,7 +274,7 @@ in CVAT or proceed directly to the [CVAT configuration step](#step-3-configure-c
 ##### **Step 2: Simplify login process**
 
 If CVAT is configured to require
-{{< ilink "/docs/administration/basics/installation#email-verification" "email verification" >}},
+{{< ilink "/docs/administration/community/basics/installation#email-verification" "email verification" >}},
 it expects the Identity Provider to include the `email_verified` claim. However, Okta does not send this claim
 by default. As a result, users will receive a confirmation email with a verification link.
 

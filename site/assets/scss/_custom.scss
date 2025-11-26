@@ -187,3 +187,10 @@ a#m-docs {
   .td-sidebar-nav {
     padding-top: 1.25rem;
   }
+
+  @import "product-tags";
+
+.td-content h2,
+.td-content h3 {
+  margin-top: 1.75rem !important;
+}
