@@ -28,7 +28,6 @@ export const JobNotFoundComponent = React.memo((): JSX.Element => {
 
 export const TaskNotFoundComponent = React.memo((): JSX.Element => {
     const history = useHistory();
-    console.log(history.length)
     const handleReturn = () => {
         if (history.length > 2) {
             history.goBack();
