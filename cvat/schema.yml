@@ -7528,7 +7528,6 @@ components:
           nullable: true
           readOnly: true
       required:
-      - chapters
       - chunks_updated_date
       - deleted_frames
       - frames
