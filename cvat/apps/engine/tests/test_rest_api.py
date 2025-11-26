@@ -1896,7 +1896,11 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
 
         if cls.MAKE_LIGHTWEIGHT_BACKUP or settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
             # should not load anything from CS anymore
-            cls.mock_aws._download_fileobj_to_stream = None
+
+            def disabled(*args):
+                raise RuntimeError("Disabled!")
+
+            cls.mock_aws._download_fileobj_to_stream = disabled
 
     @classmethod
     def tearDownClass(cls):
