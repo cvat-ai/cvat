@@ -139,7 +139,7 @@ def validate_file_status(func):
                             key, self.name
                         )
                     )
-                raise ValidationError(str(ex))
+                raise ValidationError(str(ex)) from ex
             else:
                 raise
         return res
