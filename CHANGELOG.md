@@ -543,7 +543,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9521>)
 
 - Incorrect width of project field on webhook setup page
-  (<https://github.com/cvat-ai/cvat/pull/XXXX>)
+  (<https://github.com/cvat-ai/cvat/pull/9534>)
 
 - Relevant task quality reports now can be reused in project quality reports
   (<https://github.com/cvat-ai/cvat/pull/9538>)
