@@ -60,10 +60,10 @@ In the **Workspace** tab, you can:
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
   For more information To find out more, go to the section
-  {{< ilink "/docs/annotation/tools/annotation-with-polygons" "annotation with polygons" >}}.
+  {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons" "annotation with polygons" >}}.
 
 - `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section
-  {{< ilink "/docs/annotation/tools/annotation-with-polygons/edit-polygon" "edit polygon" >}}
+  {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons/edit-polygon" "edit polygon" >}}
 
 - `Show tags on frame` - shows/hides frame tags on the current frame
 

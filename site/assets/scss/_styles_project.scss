@@ -166,3 +166,51 @@ footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
 .breadcrumb-item.active {
   display: none !important;
 }
+
+/* Modern CVAT Docs card */
+
+.cvat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06%);
+  transition: transform .15s ease, box-shadow .15s ease;
+  height: auto !important;
+}
+
+.cvat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.1%);
+}
+
+.cvat-card-link {
+  text-decoration: none !important;
+  color: inherit !important;
+  display: block;
+  height: 100%;
+}
+
+.cvat-card-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+  color: #f97526;
+}
+
+.cvat-card-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.cvat-card-desc {
+  font-size: 15px;
+  color: #555;
+}
+
+/* Grid layout for docs cards */
+.docs-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-gap: 20px;       /* расстояние между карточками */
+  margin-top: 24px;
+}
