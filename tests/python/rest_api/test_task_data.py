@@ -1802,7 +1802,7 @@ class TestTaskData(TestTasksBase):
                 assert len(task_meta.chapters) == 1
             else:
                 assert len(task_meta.frames) == task_meta.size
-                assert not hasattr(task_meta, "chapters")
+                assert task_meta.chapters is None
 
     @pytest.mark.timeout(
         # This test has to check all the task frames availability, it can make many requests
