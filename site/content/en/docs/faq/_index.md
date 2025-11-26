@@ -7,12 +7,12 @@ description: 'Answers to frequently asked questions'
 
 ## How to migrate data from CVAT.org to CVAT Online
 
-Please follow the {{< ilink "/docs/annotation/tools/backup#backup" "export tasks and projects guide" >}} to
+Please follow the {{< ilink "/docs/dataset_management/backup#backup" "export tasks and projects guide" >}} to
 download an archive with data which corresponds to your task or project. The backup for a
 project will have all tasks which are inside the project. Thus you don't need to export
 them separately.
 
-Please follow the {{< ilink "/docs/annotation/tools/backup#create-from-backup" "import tasks and projects guide" >}}
+Please follow the {{< ilink "/docs/dataset_management/backup#create-from-backup" "import tasks and projects guide" >}}
 to upload your backup with a task or project to a CVAT instance.
 
 See a quick demo below. It is really a simple process. If your data is huge, it may take some time.
@@ -165,4 +165,3 @@ See the information here in the
 
 You can call control SSL certificate check with the `--insecure` CLI argument.
 For SDK, you can specify `ssl_verify = True/False` in the `cvat_sdk.core.client.Config` object.
-

@@ -107,8 +107,6 @@ Supported events change the scope of information displayed in Grafana.
 
 ![Supported Events](/images/supported_events.jpg)
 
-<!--lint disable maximum-line-length-->
-
 Server events:
 
 - `create:project`, `update:project`, `delete:project`
@@ -149,8 +147,8 @@ Client events:
 
 - `send:exception`
 
-- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`,
-`join:objects`
+- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`,
+  `delete:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`, `join:objects`
 
 - `change:frame`
 
@@ -163,8 +161,6 @@ Client events:
 - `click:element`
 
 - `debug:info`
-
-<!--lint enable maximum-line-length-->
 
 ### Working time calculation
 
