@@ -1,6 +1,6 @@
 ---
 title: "Developer Documentation"
-linkTitle: "DEVELOPERS"
+linkTitle: "Developers"
 weight: 7
 description: 'How to interact with CVAT'
 ---

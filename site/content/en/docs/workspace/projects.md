@@ -12,22 +12,26 @@ aliases:
 On this page, you can create a new project, create a project from a backup, and also see the created projects.
 
 In the upper left corner there is a search bar, using which you can find the project by project name, assignee etc.
-In the upper right corner there are {{< ilink "/docs/annotation/tools/filter#sort-by" "sorting" >}},
-{{< ilink "/docs/annotation/tools/filter#quick-filters" "quick filters" >}} and filter.
+In the upper right corner there are {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter#sort-by" "sorting" >}},
+{{< ilink "/docs/annotation/manual-annotation/utilities/filter#quick-filters" "quick filters" >}} and filter.
 
 ## Filter
 
 {{% alert title="Note" color="primary" %}}
-Applying a filter disables the {{< ilink "/docs/annotation/tools/filter#quick-filters" "quick filters" >}}.
+Applying a filter disables the {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter#quick-filters" "quick filters" >}}.
 {{% /alert %}}
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-projects-list),
-{{< ilink "/docs/annotation/tools/filter#supported-operators-for-properties" "operators" >}}
+{{< ilink "/docs/annotation/manual-annotation/utilities/filter#supported-operators-for-properties" "operators" >}}
 and values and group rules into
-{{< ilink "/docs/annotation/tools/filter#groups" "groups" >}}.
-For more details, see the {{< ilink "/docs/annotation/tools/filter#create-a-filter" "filter section" >}}.
-Learn more about {{< ilink "/docs/annotation/tools/filter#date-and-time-selection" "date and time selection" >}}.
+{{< ilink "/docs/annotation/manual-annotation/utilities/filter#groups" "groups" >}}.
+For more details, see the {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter#create-a-filter" "filter section" >}}.
+Learn more about {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter#date-and-time-selection" "date and time selection" >}}.
 
 To clear all filters, press `Clear filters`.
 
@@ -61,7 +65,7 @@ You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a skeleton if it's necessary.
 In advanced configuration also you can specify: a link to the issue, source and target storages.
 Learn more about {{< ilink "/docs/workspace/tasks-page#labels" "creating a label list" >}},
-{{< ilink "/docs/annotation/tools/skeletons" "creating the skeleton" >}} and
+{{< ilink "/docs/annotation/manual-annotation/shapes/skeletons" "creating the skeleton" >}} and
 {{< ilink "/docs/workspace/attach-cloud-storage" "attach cloud storage" >}}.
 
 To save and open a project, click on `Submit & Open` button. Also, you
@@ -80,7 +84,7 @@ Here you can do the following:
    - `Export dataset`/`Import dataset` - download/upload annotations or annotations and images in a specific format.
      See more information at {{< ilink "/docs/dataset_management/import-datasets" "export/import datasets" >}}.
    - `Backup project` - make a backup of the project read more in the
-     {{< ilink "/docs/annotation/tools/backup" "backup" >}} section.
+     {{< ilink "/docs/dataset_management/backup" "backup" >}} section.
    - `Organization` - move the project between your personal workspace or organizations.
      Please, refer to the
      {{< ilink
@@ -99,7 +103,7 @@ Here you can do the following:
 1. `Tasks` — is a list of all tasks for a particular project, with the ability to search,
    sort and filter for tasks in the project.
    {{< ilink "/docs/workspace/search.md" "Read more about search" >}}.
-   {{< ilink "/docs/annotation/tools/filter#sort-and-filter-projects-tasks-and-jobs"
+   {{< ilink "/docs/annotation/manual-annotation/utilities/filter#sort-and-filter-projects-tasks-and-jobs"
      "Read more about sorting and filter" >}}
 It is possible to choose a subset for tasks in the project. You can use the available options
 (`Train`, `Test`, `Validation`) or set your own.
