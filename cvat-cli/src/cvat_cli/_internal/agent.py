@@ -656,6 +656,7 @@ class _Agent:
                             # most users should not be affected. For the ones that are, shutdown
                             # will be broken, but everything else should still work fine.
                             # This should be revisited once we drop Python 3.9 support.
+                            # TODO: check in newer versions
                             self._queue_watch_response.shutdown()
 
                 watcher.join()

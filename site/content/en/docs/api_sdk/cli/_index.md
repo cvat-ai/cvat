@@ -42,7 +42,7 @@ To install an [official release of CVAT CLI](https://pypi.org/project/cvat-cli/)
 pip install cvat-cli
 ```
 
-We support Python versions 3.9 and higher.
+We support Python versions 3.10 and higher.
 
 ## Usage
 
