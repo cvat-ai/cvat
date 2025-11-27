@@ -1,5 +1,5 @@
 .product-tags-box {
-    margin: 0.5rem 0 1rem 0;
+    margin: 1rem 0 1rem 0;
     font-size: 0.85rem;
     color: #555;
   }
@@ -18,7 +18,7 @@
     border-radius: 4px;
     font-size: 0.85rem;
     margin-left: 6px;
-    text-decoration: none;
+    text-decoration: none !important;
   }
 
   .product-tag:hover {
@@ -30,12 +30,3 @@
     border: none;
     border-top: 1px solid #e3e3e3;
   }
-
-  .product-tag {
-    text-decoration: none !important;
-  }
-
-  .product-tags-box {
-    margin-top: 1rem;
-  }
-

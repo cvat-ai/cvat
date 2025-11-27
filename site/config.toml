@@ -50,11 +50,11 @@ anchor = "smart"
     weight = 10
     url = "/docs/"
 [[menu.main]]
-    name = "⇲ Quickstart"
+    name = "Quickstart"
     weight = 30
     url = "/docs/getting_started/overview/"
 [[menu.main]]
-    name = "✍︎ Guides"
+    name = "Guides"
     weight = 40
     url = "/docs/guides/"
 [[menu.main]]

@@ -214,3 +214,10 @@ footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
   grid-gap: 20px;       /* расстояние между карточками */
   margin-top: 24px;
 }
+
+.navbar-nav .nav-link[href="/docs/getting_started/overview/"] span,
+.navbar-nav .nav-link[href="/docs/guides/"] span,
+.navbar-nav .nav-link[href="/docs/"] span,
+.navbar-nav .nav-link[href*="auth/login"] span {
+  font-weight: 400 !important;
+}
