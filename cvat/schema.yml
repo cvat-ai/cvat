@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.49.1
+  version: 2.50.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2705,6 +2705,7 @@ paths:
           - context_image
           - frame
         description: Specifies the type of the requested data
+        required: true
       tags:
       - jobs
       security:
@@ -5747,6 +5748,7 @@ paths:
           - context_image
           - frame
         description: Specifies the type of the requested data
+        required: true
       tags:
       - tasks
       security:
