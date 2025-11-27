@@ -1036,7 +1036,6 @@ class TrackManager(ObjectManager):
             return to_array(reducedPoints).tolist()
 
         def polyshape_interpolation(shape0, shape1):
-            shapes = []
             is_polygon = shape0["type"] == ShapeType.POLYGON
             if is_polygon:
                 # Make the polygon closed for computations
@@ -1046,21 +1045,28 @@ class TrackManager(ObjectManager):
                 shape1["points"] = shape1["points"] + shape1["points"][:2]
 
             distance = shape1["frame"] - shape0["frame"]
-            for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                offset = (frame - shape0["frame"]) / distance
-                points = interpolate_position(shape0, shape1, offset)
 
-                if included_frames is None or frame in included_frames:
-                    shapes.append(copy_shape(shape0, frame, points))
+            def generate_shapes():
+                for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                    offset = (frame - shape0["frame"]) / distance
+                    points = interpolate_position(shape0, shape1, offset)
+
+                    if included_frames is None or frame in included_frames:
+                        yield copy_shape(shape0, frame, points)
+
+            shapes = generate_shapes()
 
             if is_polygon:
-                # Remove the extra point added
-                shape0["points"] = shape0["points"][:-2]
-                shape1["points"] = shape1["points"][:-2]
-                for shape in shapes:
-                    shape["points"] = shape["points"][:-2]
 
-            return shapes
+                def remove_extra_point_added(shape):
+                    shape["points"] = shape["points"][:-2]
+                    return shape
+
+                remove_extra_point_added(shape0)
+                remove_extra_point_added(shape1)
+                shapes = map(remove_extra_point_added, shapes)
+
+            yield from shapes
 
         def interpolate(shape0, shape1):
             is_same_type = shape0["type"] == shape1["type"]
@@ -1087,7 +1093,7 @@ class TrackManager(ObjectManager):
                 raise NotImplementedError()
 
         def propagate(shape: dict, end_frame, *, included_frames=None):
-            return (
+            yield from (
                 copy_shape(shape, i)
                 for i in range(shape["frame"] + 1, end_frame)
                 if included_frames is None or i in included_frames
