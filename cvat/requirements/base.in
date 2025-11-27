@@ -18,6 +18,7 @@ django-allauth[saml]==0.57.2
 django-auth-ldap==2.2.0
 django-cors-headers==3.5.0
 django-crum==0.7.9
+django-cte==2.0.0
 django-filter==2.4.0
 django-health-check>=3.18.1,<4
 django-rq==2.8.1

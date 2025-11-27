@@ -741,18 +741,33 @@ class JobReadListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
         if (request := self.context.get("request")) and isinstance(data, list) and data:
             # Optimized prefetch only for the current page
-            page: list[models.Job] = data
-
             # Annotate page objects
             # We do it explicitly here and not in the LIST queryset to avoid
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
+            page_ids = data
+            page_data = {
+                j.pk: j
+                for j in models.Job.objects.filter(id__in=page_ids).select_related(
+                    'assignee',
+                    "segment__task",
+                    'segment__task__data',
+                    'segment__task__project',
+                    'segment__task__annotation_guide',
+                    'segment__task__project__annotation_guide',
+                    "parent_job",
+                ).all()
+            }
+
+            # Maintain input ordering
+            page: list[models.Job] = [page_data[pk] for pk in page_ids if pk in page_data]
+
             page_task_ids = set(j.get_task_id() for j in page)
+
             visible_tasks_perm = TaskPermission.create_scope_list(request)
             visible_tasks_queryset = models.Task.objects.filter(id__in=page_task_ids)
-            visible_tasks = set(
-                visible_tasks_perm.filter(visible_tasks_queryset).values_list("id", flat=True)
-            )
+            visible_tasks_queryset = visible_tasks_perm.filter(visible_tasks_queryset)
+            visible_tasks = set(visible_tasks_queryset.values_list("id", flat=True))
 
             # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
             # limiting in only for the page
@@ -762,9 +777,16 @@ class JobReadListSerializer(serializers.ListSerializer):
                 ).values_list("id", "issue__count")
             )
 
+            prefetch_related_objects(page,
+                "segment__task__source_storage",
+                "segment__task__target_storage"
+            )
+
             for job in page:
                 job.user_can_view_task = job.get_task_id() in visible_tasks
                 job.issue__count = issue_counts.get(job.id, 0)
+
+            data = page
 
         return super().to_representation(data)
 
@@ -2383,18 +2405,32 @@ class TaskReadListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
         if isinstance(data, list) and data:
             # Optimized prefetch only for the current page
-            page: list[models.Task] = data
-
             # Annotate page objects
             # We do it explicitly here and not in the LIST queryset to avoid
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
-            page_task_ids = set(t.id for t in page)
+            page_ids = data
+            page_data = {
+                task.pk: task
+                for task in models.Task.objects.select_related(
+                    'data',
+                    'data__validation_layout',
+                    'assignee',
+                    'owner',
+                    'target_storage',
+                    'source_storage',
+                    'annotation_guide',
+                ).filter(id__in=page_ids).all()
+            }
+
+            # Maintain input ordering
+            page: list[models.Task] = [page_data[pk] for pk in page_ids if pk in page_data]
+
             job_summary_fields = [m.value for m in models.TaskQuerySet.JobSummaryFields]
             job_counts = {
                 task["id"]: task
                 for task in models.Task.objects
-                .filter(id__in=page_task_ids)
+                .filter(id__in=page_ids)
                 .with_job_summary()
                 .values("id", *job_summary_fields)
             }
@@ -2403,6 +2439,8 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 task_job_summary = job_counts.get(task.id)
                 for k in job_summary_fields:
                     setattr(task, k, task_job_summary[k])
+
+            data = page
 
         return super().to_representation(data)
 
@@ -2414,12 +2452,12 @@ class TaskReadSerializer(serializers.ModelSerializer):
     data_cloud_storage_id = serializers.ReadOnlyField(source='data.cloud_storage_id', required=False)
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
-    data = serializers.ReadOnlyField(source='data.id', required=False)
+    data = serializers.ReadOnlyField(source='data_id', required=False)
     owner = BasicUserSerializer(required=False, allow_null=True)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
-    organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
+    organization_id = serializers.IntegerField(required=False, read_only=True, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)

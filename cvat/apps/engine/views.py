@@ -67,8 +67,14 @@ from cvat.apps.engine.frame_provider import (
     TaskFrameProvider,
 )
 from cvat.apps.engine.media_extractors import get_mime
-from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
-from cvat.apps.engine.model_utils import bulk_create
+from cvat.apps.engine.mixins import (
+    BackupMixin,
+    DatasetMixin,
+    OptimizedModelListMixin,
+    PartialUpdateModelMixin,
+    UploadMixin,
+)
+from cvat.apps.engine.model_utils import RecordingQuerySet, bulk_create
 from cvat.apps.engine.models import (
     AnnotationGuide,
     Asset,
@@ -839,7 +845,7 @@ class _JobDataGetter(_DataGetter):
 
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, OptimizedModelListMixin
 ):
     queryset = Task.objects.select_related(
         'data',
@@ -850,7 +856,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'annotation_guide',
     ).prefetch_related(
         # avoid loading heavy data in select related
-        # this reduces performance of the COUNT request in the list endpoint
         'data__validation_layout',
     )
 
@@ -888,15 +893,25 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         queryset = super().get_queryset()
 
         if self.action == 'list':
+            # queryset = queryset.values_list("id", flat=True)
+            queryset = RecordingQuerySet(queryset)
+
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
-            # with_job_summary() is optimized in the serializer
         elif self.action == 'preview':
             queryset = Task.objects.select_related('data')
         elif self.action == 'validation_layout':
             queryset = Task.objects.select_related('data', 'data__validation_layout')
         else:
             queryset = queryset.with_job_summary()
+
+        return queryset
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+
+        if self.action == "list":
+            queryset = self.filter_queryset_for_list_request(queryset)
 
         return queryset
 
@@ -1653,7 +1668,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
-    UploadMixin, DatasetMixin
+    UploadMixin, DatasetMixin, OptimizedModelListMixin
 ):
     queryset = Job.objects.select_related(
         'assignee',
@@ -1685,14 +1700,21 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         queryset = super().get_queryset()
 
         if self.action == 'list':
+            # queryset = queryset.values_list("id", flat=True)
+            queryset = RecordingQuerySet(queryset)
+
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
-
-            queryset = queryset.prefetch_related(
-                "segment__task__source_storage", "segment__task__target_storage"
-            )
         else:
             queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
+
+        return queryset
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+
+        if self.action == "list":
+            queryset = self.filter_queryset_for_list_request(queryset)
 
         return queryset
 

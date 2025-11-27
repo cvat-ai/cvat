@@ -97,6 +97,9 @@ class OrganizationFilterBackend(BaseFilterBackend):
             org_id = visibility.pop("organization")
             query = self._construct_filter_query(view.iam_organization_field, org_id)
 
+            # from cvat.apps.engine.model_utils import filter_with_union
+            # queryset = filter_with_union(queryset, query)
+
             return queryset.filter(query).distinct()
 
         return queryset
