@@ -5,11 +5,10 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping, Sequence
-from typing import Callable, Optional, Union, cast
+from collections.abc import Callable, Mapping, Sequence
+from typing import Optional, TypeAlias, Union, cast
 
 import attrs
-from typing_extensions import TypeAlias
 
 import cvat_sdk.models as models
 from cvat_sdk.core import Client
