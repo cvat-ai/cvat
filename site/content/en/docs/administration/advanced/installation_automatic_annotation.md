@@ -7,8 +7,6 @@ description: 'Information about the installation of components needed for semi-a
 
 ---
 
-<!--lint disable maximum-line-length-->
-
 {{% alert title="Warning" color="warning" %}}
 **Do not use `docker compose up`**.
 If you did, make sure all containers are stopped by `docker compose down`.
@@ -77,13 +75,14 @@ If you did, make sure all containers are stopped by `docker compose down`.
   - The number of GPU deployed functions will be limited to your GPU memory.
   - See [deploy_gpu.sh](https://github.com/cvat-ai/cvat/blob/develop/serverless/deploy_gpu.sh)
     script for more examples.
-  - For some models (namely {{< ilink "/docs/annotation/tools/ai-tools#trackers" "SiamMask" >}}) you need an [Nvidia driver](https://www.nvidia.com/en-us/drivers/unix/)
+  - For some models (namely {{< ilink "/docs/annotation/auto-annotation/ai-tools#trackers" "SiamMask" >}}) you need an [Nvidia driver](https://www.nvidia.com/en-us/drivers/unix/)
     version greater than or equal to 450.80.02.
 
   **Note for Windows users:**
 
   If you want to use nuclio under Windows CVAT installation you should install Nvidia drivers for WSL according to
-  [this](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) instruction and follow the steps up to “2.3 Installing Nvidia drivers”.
+  [this](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) instruction
+  and follow the steps up to “2.3 Installing Nvidia drivers”.
   Important requirement: you should have the latest versions of Docker Desktop, Nvidia drivers for WSL,
   and the latest updates from the Windows Insider Preview Dev channel.
 

@@ -750,3 +750,17 @@ class TestListCloudStorages:
         self._test_can_see_cloud_storages(
             "admin2", list(cloud_storages), page_size="all", org_id=query_value
         )
+
+
+class TestCloudStorageStatus:
+    @pytest.mark.parametrize(
+        "cloud_storage_id, expected_response",
+        [
+            (3, "AVAILABLE"),
+            (4, "NOT_FOUND"),
+        ],
+    )
+    def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
+        with make_api_client(admin_user) as api_client:
+            (data, _) = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
+            assert data == expected_response

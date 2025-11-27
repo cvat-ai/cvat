@@ -933,7 +933,7 @@ export function getJobAsync({
             getCore().config.globalObjectsCounter = 0;
             const [job] = await cvat.jobs.get({ jobID });
             let gtJob: Job | null = null;
-            if (job.type === JobType.ANNOTATION) {
+            if (job.type === JobType.ANNOTATION || job.type === JobType.CONSENSUS_REPLICA) {
                 try {
                     [gtJob] = await cvat.jobs.get({ taskID, type: JobType.GROUND_TRUTH });
                 } catch (e) {
