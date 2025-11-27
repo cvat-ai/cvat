@@ -1056,7 +1056,7 @@ class TestPostTaskData:
             cloud_storage=cloud_storage,
             use_manifest=False,
             use_cache=False,
-            server_files=["test/video/video.avi"],
+            server_files=["test/video/video.mkv"],
             org=org,
             data_spec_kwargs=data_spec,
             data_type="video",
