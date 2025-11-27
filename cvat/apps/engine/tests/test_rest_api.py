@@ -8092,8 +8092,6 @@ class TaskAPIUpdateDateTestCase(ApiTestBase):
         with ForceLogin(self.admin, self.client):
             res = self.client.get(f"/api/tasks/{self.tasks[0].id}")
             data = {"deleted_frames": [1, 2, 3]}
-            self.client.patch(
-                f"/api/tasks/{self.tasks[0].id}/data/meta", data=data, format="json"
-            )
+            self.client.patch(f"/api/tasks/{self.tasks[0].id}/data/meta", data=data, format="json")
             res2 = self.client.get(f"/api/tasks/{self.tasks[0].id}")
             self.assertNotEqual(res.data["updated_date"], res2.data["updated_date"])
