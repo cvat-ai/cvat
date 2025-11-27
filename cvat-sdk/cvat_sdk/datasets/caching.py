@@ -6,10 +6,10 @@ import base64
 import json
 import shutil
 from abc import ABCMeta, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, TypeVar, Union, cast
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define
 

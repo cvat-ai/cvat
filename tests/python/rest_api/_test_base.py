@@ -1,10 +1,10 @@
 import io
 import math
 import os
-from collections.abc import Mapping
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import closing
 from functools import partial
-from typing import Generator, Optional, Sequence
+from typing import Optional
 
 import numpy as np
 import pytest

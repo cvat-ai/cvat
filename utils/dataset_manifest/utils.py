@@ -8,11 +8,11 @@ import mimetypes
 import os
 import re
 import struct
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Collection, Iterable, Sequence
 from enum import Enum
 from pathlib import Path
 from random import shuffle
-from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Optional, Union
 
 import cv2 as cv
 import numpy as np
@@ -89,7 +89,7 @@ def _find_related_images_2D(
     dataset_paths: Sequence[str],
     *,
     scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
-) -> Tuple[Set[str], Dict[str, List[str]]]:
+) -> tuple[set[str], dict[str, list[str]]]:
     """
     Expected 2D format is:
 
@@ -132,7 +132,7 @@ def _find_related_images_3D(
     dataset_paths: Sequence[str],
     *,
     scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
-) -> Tuple[Set[str], Dict[str, List[str]]]:
+) -> tuple[set[str], dict[str, list[str]]]:
     """
     Supported 3D formats:
 
@@ -177,14 +177,14 @@ def _find_related_images_3D(
     # There's no point in disallowing multiple layouts simultaneously, but mixing is
     # unlikely to be encountered
 
-    scenes: Dict[str, str] = {
+    scenes: dict[str, str] = {
         os.path.splitext(p)[0]: p
         for p in dataset_paths
         if p.lower().endswith((".pcd", ".bin"))
         if scene_paths is None or callable(scene_paths) and scene_paths(p) or p in scene_paths
     }  # { scene name -> scene path }
 
-    related_images: Dict[str, List[str]] = {}  # { scene_name -> [related images] }
+    related_images: dict[str, list[str]] = {}  # { scene_name -> [related images] }
     for image_path in dataset_paths:
         image_name, image_ext = os.path.splitext(image_path)
         if image_ext.lower() in (".pcd", ".bin"):
@@ -247,7 +247,7 @@ def find_related_images(
     *,
     root_path: Optional[str] = None,
     scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
-) -> Tuple[Set[str], Dict[str, List[str]]]:
+) -> tuple[set[str], dict[str, list[str]]]:
     """
     Finds related images for scenes in the dataset.
 
@@ -407,7 +407,7 @@ class PcdReader:
     @classmethod
     def parse_pcd_header(
         cls, fp: Union[os.PathLike[str], io.RawIOBase], *, verify_version: bool = False
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         if not hasattr(fp, "read"):
             with open(fp, "rb") as file:
                 return cls.parse_pcd_header(file, verify_version=verify_version)

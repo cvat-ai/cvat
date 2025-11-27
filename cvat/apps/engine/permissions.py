@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
@@ -93,7 +93,7 @@ class ExportableResourceExtension:
 
     @classmethod
     def update_scope_params(
-        cls: Type[OpenPolicyAgentPermission],
+        cls: type[OpenPolicyAgentPermission],
         scope_params: dict[str, Any],
         *,
         request: ExtendedRequest,
