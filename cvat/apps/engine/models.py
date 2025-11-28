@@ -12,7 +12,7 @@ import shutil
 import uuid
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
-from enum import Enum
+from enum import Enum, IntEnum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
@@ -290,6 +290,12 @@ class ValidationLayout(models.Model):
         "An ordered sequence of active (non-disabled) validation frames"
         return set(self.frames).difference(self.disabled_frames)
 
+
+class FrameQuality(IntEnum):
+    COMPRESSED = 0
+    ORIGINAL = 100
+
+
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
@@ -347,11 +353,17 @@ class Data(models.Model):
             StorageChoice.CLOUD_STORAGE: self.get_upload_dirname(),
         }[self.storage]
 
-    def get_compressed_cache_dirname(self):
-        return os.path.join(self.get_data_dirname(), "compressed")
+    def get_static_cache_dirname(self, quality: FrameQuality) -> str:
+        return os.path.join(self.get_data_dirname(), quality.name.lower())
 
-    def get_original_cache_dirname(self):
-        return os.path.join(self.get_data_dirname(), "original")
+    def get_chunk_type(self, quality: FrameQuality) -> DataChoice:
+        if quality == FrameQuality.ORIGINAL:
+            chunk_type = self.original_chunk_type
+        elif quality == FrameQuality.COMPRESSED:
+            chunk_type = self.compressed_chunk_type
+        else:
+            assert False, f"unexpected chunk quality: {quality}"
+        return DataChoice(chunk_type)
 
     @staticmethod
     def _get_chunk_name(segment_id: int, chunk_number: int, chunk_type: DataChoice | str) -> str:
@@ -364,19 +376,13 @@ class Data(models.Model):
 
         return 'segment_{}-{}.{}'.format(segment_id, chunk_number, ext)
 
-    def _get_compressed_chunk_name(self, segment_id: int, chunk_number: int) -> str:
-        return self._get_chunk_name(segment_id, chunk_number, self.compressed_chunk_type)
-
-    def _get_original_chunk_name(self, segment_id: int, chunk_number: int) -> str:
-        return self._get_chunk_name(segment_id, chunk_number, self.original_chunk_type)
-
-    def get_original_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
-        return os.path.join(self.get_original_cache_dirname(),
-            self._get_original_chunk_name(segment_id, chunk_number))
-
-    def get_compressed_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
-        return os.path.join(self.get_compressed_cache_dirname(),
-            self._get_compressed_chunk_name(segment_id, chunk_number))
+    def get_static_segment_chunk_path(
+        self, chunk_number: int, segment_id: int, quality: FrameQuality
+    ) -> str:
+        return os.path.join(
+            self.get_static_cache_dirname(quality),
+            self._get_chunk_name(segment_id, chunk_number, self.get_chunk_type(quality)),
+        )
 
     def get_manifest_path(self) -> str:
         return os.path.join(self.get_upload_dirname(), self.MANIFEST_FILENAME)
@@ -385,8 +391,9 @@ class Data(models.Model):
         data_path = self.get_data_dirname()
         if os.path.isdir(data_path):
             shutil.rmtree(data_path)
-        os.makedirs(self.get_compressed_cache_dirname())
-        os.makedirs(self.get_original_cache_dirname())
+
+        for quality in FrameQuality:
+            os.makedirs(self.get_static_cache_dirname(quality))
         os.makedirs(self.get_upload_dirname())
 
     @transaction.atomic

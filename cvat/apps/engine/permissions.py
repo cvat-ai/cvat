@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
@@ -93,7 +93,7 @@ class ExportableResourceExtension:
 
     @classmethod
     def update_scope_params(
-        cls: Type[OpenPolicyAgentPermission],
+        cls: type[OpenPolicyAgentPermission],
         scope_params: dict[str, Any],
         *,
         request: ExtendedRequest,
@@ -291,6 +291,7 @@ class ProjectPermission(
     def create(cls, request: ExtendedRequest, view: ViewSet, obj: Project | None, iam_context: dict[str, Any]) -> list[OpenPolicyAgentPermission]:
         permissions = []
         assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
+        owner_id = request.data.get('owner_id') or request.data.get('owner')
 
         scopes = cls.get_scopes(request, view, obj)
 
@@ -315,17 +316,20 @@ class ProjectPermission(
             scopes.remove(cls.Scopes.UPDATE_ORGANIZATION)
 
         for scope in scopes:
-            scope_params = cls.get_scope_specific_params(
-                scope=scope, request=request, view=view, obj=obj, iam_context=iam_context
-            )
+            params = { 'assignee_id': assignee_id }
+            if scope == cls.Scopes.UPDATE_OWNER:
+                params['owner_id'] = owner_id
 
-            self = cls.create_base_perm(request, view, scope, iam_context, obj,
-                assignee_id=assignee_id, **scope_params)
+            params.update(cls.get_scope_specific_params(
+                scope=scope, request=request, view=view, obj=obj, iam_context=iam_context
+            ))
+
+            self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
             permissions.append(self)
 
-        owner = request.data.get('owner_id') or request.data.get('owner')
-        if owner:
-            perm = UserPermission.create_scope_view(iam_context, owner)
+
+        if owner_id:
+            perm = UserPermission.create_scope_view(iam_context, owner_id)
             permissions.append(perm)
 
         if assignee_id:
@@ -530,7 +534,7 @@ class TaskPermission(
         permissions = []
         project_id = request.data.get('project_id') or request.data.get('project')
         assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
-        owner = request.data.get('owner_id') or request.data.get('owner')
+        owner_id = request.data.get('owner_id') or request.data.get('owner')
 
         scopes = cls.get_scopes(request, view, obj)
 
@@ -558,7 +562,7 @@ class TaskPermission(
             params = { 'project_id': project_id, 'assignee_id': assignee_id }
 
             if scope == cls.Scopes.UPDATE_OWNER:
-                params['owner_id'] = owner
+                params['owner_id'] = owner_id
 
             params.update(cls.get_scope_specific_params(
                 scope=scope, request=request, view=view, obj=obj, iam_context=iam_context
@@ -567,8 +571,8 @@ class TaskPermission(
             self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
             permissions.append(self)
 
-        if owner:
-            perm = UserPermission.create_scope_view(iam_context, owner)
+        if owner_id:
+            perm = UserPermission.create_scope_view(iam_context, owner_id)
             permissions.append(perm)
 
         if assignee_id:

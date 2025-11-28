@@ -325,6 +325,13 @@ cvat:
 #       - ReadWriteOnce
       size: 100Gi
       annotations: {}
+      volumeAttributesClass:
+        create: false
+#        name: "gp3-high-throughput"
+#        provider: ebs.csi.aws.com
+#        parameters:
+#          type: gp3
+#          provisioned-throughput: "250"
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info

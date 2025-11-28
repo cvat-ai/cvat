@@ -6,6 +6,7 @@ description: 'List of terms pertaining to annotation in CVAT.'
 aliases:
   - /docs/manual/basics/vocabulary/
 
+
 ---
 ## Label
 Label is a type of an annotated object (e.g. person, car, vehicle, etc.)
@@ -58,7 +59,7 @@ Can be used to reduce the annotation file and to facilitate editing polygons.
 ## Trackable
 Trackable object will be tracked automatically if the previous frame was
 a latest keyframe for the object. More details in the section
-{{< ilink "/docs/annotation/tools/ai-tools#trackers" "trackers" >}}.
+{{< ilink "/docs/annotation/auto-annotation/ai-tools#trackers" "trackers" >}}.
 
 ![Example of a trackable object in interface](/images/tracker_indication_detrac.png)
 
@@ -71,13 +72,13 @@ Mode for video annotation, which uses [`track`](#track) objects.
 Only objects on keyframes are manually annotation, and intermediate frames are linearly interpolated.
 
 Related sections:
-- {{< ilink "/docs/annotation/tools/track-mode-basics" "Track mode" >}}
+- {{< ilink "/docs/annotation/manual-annotation/shapes/track-mode-basics" "Track mode" >}}
 
 ### Annotation
 Mode for images annotation, which uses `shape` objects.
 
 Related sections:
-- {{< ilink "/docs/annotation/tools/shape-mode-basics" "Shape mode" >}}
+- {{< ilink "/docs/annotation/manual-annotation/shapes/shape-mode-basics" "Shape mode" >}}
 
 ---
 
@@ -99,8 +100,7 @@ The data format of 3d tasks is a cloud of points.
 
 Related sections:
 - {{< ilink "/docs/annotation/annotation-editor/3d-task-workspace" "3D task workspace" >}}
-- {{< ilink "/docs/annotation/tools/standard-3d-mode-basics" "Standard 3D mode" >}}
-- {{< ilink "/docs/annotation/tools/3d-object-annotation" "3D Object annotation" >}}
+- {{< ilink "/docs/annotation/manual-annotation/modes/3d-object-annotation" "3D Object annotation" >}}
 
 ---
 

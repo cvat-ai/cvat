@@ -10,23 +10,24 @@ import io
 import json
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from queue import Queue
-from typing import Any, BinaryIO, Callable, Optional, TypeVar
+from typing import Any, BinaryIO, Optional, TypeVar
 
 import boto3
-from azure.core.exceptions import HttpResponseError, ResourceExistsError
-from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
+from azure.core.exceptions import HttpResponseError, ServiceRequestError
+from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from botocore.handlers import disable_signing
 from django.conf import settings
+from google.api_core.exceptions import RetryError
 from google.cloud import storage
 from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
@@ -82,6 +83,10 @@ class Status(str, Enum):
     @classmethod
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def values(cls):
+        return list(i.value for i in cls)
 
     def __str__(self):
         return self.value
@@ -139,7 +144,7 @@ def validate_file_status(func):
                             key, self.name
                         )
                     )
-                raise ValidationError(str(ex))
+                raise ValidationError(str(ex)) from ex
             else:
                 raise
         return res
@@ -154,10 +159,6 @@ class _CloudStorage(ABC):
     @property
     @abstractmethod
     def name(self):
-        pass
-
-    @abstractmethod
-    def create(self):
         pass
 
     @abstractmethod
@@ -680,6 +681,12 @@ class S3CloudStorage(_CloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        except EndpointConnectionError:
+            slogger.glob.warning(
+                f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available",
+                exc_info=True,
+            )
+            return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
         try:
@@ -771,23 +778,6 @@ class S3CloudStorage(_CloudStorage):
                     slogger.glob.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
             raise
 
-    def create(self):
-        try:
-            response = self._bucket.create(
-                ACL="private",
-                CreateBucketConfiguration={
-                    "LocationConstraint": self.region,
-                },
-                ObjectLockEnabledForBucket=False,
-            )
-            slogger.glob.info(
-                "Bucket {} has been created on {} region".format(self.name, response["Location"])
-            )
-        except Exception as ex:
-            msg = str(ex)
-            slogger.glob.info(msg)
-            raise Exception(msg)
-
     def delete_file(self, file_name: str, /):
         try:
             self._client.delete_object(Bucket=self.name, Key=file_name)
@@ -870,19 +860,6 @@ class AzureBlobCloudStorage(_CloudStorage):
             return "{}.blob.core.windows.net".format(self._account_name)
         return None
 
-    def create(self):
-        try:
-            self._client.create_container(
-                metadata={
-                    "type": "created by CVAT",
-                },
-                public_access=PublicAccess.OFF,
-            )
-        except ResourceExistsError:
-            msg = f"{self._client.container_name} already exists"
-            slogger.glob.info(msg)
-            raise Exception(msg)
-
     def _head(self):
         return self._client.get_container_properties()
 
@@ -904,6 +881,11 @@ class AzureBlobCloudStorage(_CloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        except ServiceRequestError:
+            slogger.glob.warning(
+                f"CloudStorage Azure {self.account_url} not available", exc_info=True
+            )
+            return Status.NOT_FOUND
 
     def get_file_status(self, key: str, /):
         try:
@@ -976,7 +958,7 @@ def _define_gcs_status(func):
             else:
                 func(self, key)
             return Status.AVAILABLE
-        except GoogleCloudNotFound:
+        except (GoogleCloudNotFound, RetryError):
             return Status.NOT_FOUND
         except GoogleCloudForbidden:
             return Status.FORBIDDEN
@@ -1084,21 +1066,6 @@ class GcsCloudStorage(_CloudStorage):
     @validate_bucket_status
     def upload_file(self, file_path: str, key: str | None = None, /):
         self.bucket.blob(key or os.path.basename(file_path)).upload_from_filename(file_path)
-
-    def create(self):
-        try:
-            self._bucket = self._client.create_bucket(self.bucket, location=self._bucket_location)
-            slogger.glob.info(
-                "Bucket {} has been created at {} region for {}".format(
-                    self.name,
-                    self.bucket.location,
-                    self.bucket.user_project,
-                )
-            )
-        except Exception as ex:
-            msg = str(ex)
-            slogger.glob.info(msg)
-            raise Exception(msg)
 
     @validate_file_status
     @validate_bucket_status

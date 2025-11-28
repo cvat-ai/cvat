@@ -6,10 +6,11 @@
 import io
 import itertools
 from collections import OrderedDict, defaultdict
+from collections.abc import Callable
 from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings

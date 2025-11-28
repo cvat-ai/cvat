@@ -9,12 +9,12 @@ import itertools
 import os
 import re
 import shutil
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -1618,14 +1618,14 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         fs_original = executor.submit(
             original_chunk_writer.save_as_chunk,
             images=chunk_data,
-            chunk_path=db_data.get_original_segment_chunk_path(
-                chunk_idx, segment_id=db_segment.id
+            chunk_path=db_data.get_static_segment_chunk_path(
+                chunk_idx, segment_id=db_segment.id, quality=models.FrameQuality.ORIGINAL
             ),
         )
         compressed_chunk_writer.save_as_chunk(
             images=chunk_data,
-            chunk_path=db_data.get_compressed_segment_chunk_path(
-                chunk_idx, segment_id=db_segment.id
+            chunk_path=db_data.get_static_segment_chunk_path(
+                chunk_idx, segment_id=db_segment.id, quality=models.FrameQuality.COMPRESSED
             ),
         )
 

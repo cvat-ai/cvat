@@ -14,13 +14,13 @@ import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
 from random import shuffle
-from typing import Any, Callable, Optional, Protocol, TypeVar, Union
+from typing import Any, Optional, Protocol, TypeVar, Union
 
 import av
 import av.codec
@@ -57,11 +57,6 @@ class ORIENTATION(IntEnum):
     NORMAL_90_ROTATED = 6
     MIRROR_HORIZONTAL_90_ROTATED = 7
     NORMAL_270_ROTATED = 8
-
-
-class FrameQuality(IntEnum):
-    COMPRESSED = 0
-    ORIGINAL = 100
 
 
 def get_mime(name):
