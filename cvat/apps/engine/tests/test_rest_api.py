@@ -530,7 +530,6 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
             self.assertLess(res.data["updated_date"], res2.data["updated_date"])
 
 
-
 class ServerAboutAPITestCase(ApiTestBase):
     ACCEPT_HEADER_TEMPLATE = "application/vnd.cvat+json; version={}"
 
