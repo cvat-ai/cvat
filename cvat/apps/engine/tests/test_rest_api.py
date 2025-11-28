@@ -523,10 +523,10 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
 
     def test_api_v1_jobs_data_meta_updated_date(self):
         with ForceLogin(self.admin, self.client):
-            res = self.client.get(f"/api/jobs/{self.job.id}")
+            res = self.client.get(f"/api/tasks/{self.task.id}")
             data = {"deleted_frames": [1]}
             self.client.patch(f"/api/jobs/{self.job.id}/data/meta", data=data, format="json")
-            res2 = self.client.get(f"/api/jobs/{self.job.id}")
+            res2 = self.client.get(f"/api/tasks/{self.task.id}")
             self.assertLess(res.data["updated_date"], res2.data["updated_date"])
 
 

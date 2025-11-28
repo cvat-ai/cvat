@@ -3139,7 +3139,6 @@ class JobDataMetaWriteSerializer(serializers.ModelSerializer):
             db_data.deleted_frames = updated_deleted_task_frames
             db_data.save(update_fields=['deleted_frames'])
 
-        instance.touch()
         db_task.touch()
         if db_task.project:
             db_task.project.touch()
