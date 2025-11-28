@@ -90,7 +90,7 @@ metadata:
 
 spec:
   description: YOLO v7 via onnx-runtime
-  runtime: 'python:3.8'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30s
   build:
