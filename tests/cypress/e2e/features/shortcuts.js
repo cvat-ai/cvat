@@ -206,7 +206,7 @@ context('Customizable Shortcuts', () => {
         });
     });
 
-    describe('Tag Annotation, Attribute Annotation and Labels', () => {
+    describe.only('Tag Annotation, Attribute Annotation and Labels', () => {
         it('Tag Annotation Mode, Dynamic Titles and Description', () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
