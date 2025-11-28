@@ -6,15 +6,21 @@ import React from 'react';
 import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
 import { useHistory } from 'react-router-dom';
-export const JobNotFoundComponent = React.memo((): JSX.Element => {
+
+const useReturnButton = (fallbackPath: string) => {
     const history = useHistory();
     const handleReturn = () => {
         if (history.length > 2) {
             history.goBack();
         } else {
-            history.push('/jobs');
+            history.push(fallbackPath);
         }
     };
+    return handleReturn;
+};
+
+export const JobNotFoundComponent = React.memo((): JSX.Element => {
+    const handleReturn = useReturnButton('/jobs');
     return (
         <Result
             className='cvat-not-found'
@@ -27,14 +33,7 @@ export const JobNotFoundComponent = React.memo((): JSX.Element => {
 });
 
 export const TaskNotFoundComponent = React.memo((): JSX.Element => {
-    const history = useHistory();
-    const handleReturn = () => {
-        if (history.length > 2) {
-            history.goBack();
-        } else {
-            history.push('/tasks');
-        }
-    };
+    const handleReturn = useReturnButton('/tasks');
     return (
         <Result
             className='cvat-not-found'
@@ -47,14 +46,7 @@ export const TaskNotFoundComponent = React.memo((): JSX.Element => {
 });
 
 export const ProjectNotFoundComponent = React.memo((): JSX.Element => {
-    const history = useHistory();
-    const handleReturn = () => {
-        if (history.length > 2) {
-            history.goBack();
-        } else {
-            history.push('/projects');
-        }
-    };
+    const handleReturn = useReturnButton('/projects');
     return (
         <Result
             className='cvat-not-found'
@@ -67,14 +59,7 @@ export const ProjectNotFoundComponent = React.memo((): JSX.Element => {
 });
 
 export const CloudStorageNotFoundComponent = React.memo((): JSX.Element => {
-    const history = useHistory();
-    const handleReturn = () => {
-        if (history.length > 2) {
-            history.goBack();
-        } else {
-            history.push('/cloudstorages');
-        }
-    };
+    const handleReturn = useReturnButton('/cloudstorages');
     return (
         <Result
             className='cvat-not-found'
