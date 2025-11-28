@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import Sequence, TypeVar, Union
+from collections.abc import Iterable, Sequence
+from typing import TypeVar, Union
 
 from django.conf import settings
 from django.db import models

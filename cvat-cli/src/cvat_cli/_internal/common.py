@@ -11,9 +11,10 @@ import logging
 import os
 import sys
 import textwrap
+from collections.abc import Callable
 from http.client import HTTPConnection
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa

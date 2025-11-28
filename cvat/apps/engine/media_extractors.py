@@ -14,13 +14,13 @@ import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
 from random import shuffle
-from typing import Any, Callable, Optional, Protocol, TypedDict, TypeVar, Union
+from typing import Any, Optional, Protocol, TypedDict, TypeVar, Union
 
 import av
 import av.codec

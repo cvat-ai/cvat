@@ -8,14 +8,14 @@ import json
 import os
 from abc import ABC, abstractmethod
 from bisect import bisect_left, insort
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import closing
 from enum import Enum
 from inspect import isgenerator
 from io import StringIO
 from itertools import islice
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 
 import av
 from PIL import Image
@@ -144,7 +144,6 @@ class VideoStreamReader:
                         raise InvalidVideoError("Detected non-increasing PTS sequence in the video")
                     if None not in {frame.dts, prev_dts} and frame.dts <= prev_dts:
                         raise InvalidVideoError("Detected non-increasing DTS sequence in the video")
-
                     prev_pts, prev_dts = frame.pts, frame.dts
 
                     insort(index_pts, (index, frame.pts), key=lambda item: item[1])
