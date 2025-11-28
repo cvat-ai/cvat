@@ -21,7 +21,7 @@ import json
 from datetime import timezone
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any
 
 from config import ASSETS_DIR, get_method
 from dateutil.parser import ParserError, parse
@@ -50,7 +50,7 @@ def clean_list_response(data: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
-def _parse_asset_url_path(s: str) -> Tuple[str, str]:
+def _parse_asset_url_path(s: str) -> tuple[str, str]:
     asset_filename, url_path = s.lower().rsplit(":", maxsplit=1)
     return asset_filename, url_path
 

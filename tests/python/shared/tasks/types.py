@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import io
+from collections.abc import Callable
 from contextlib import closing
-from typing import Callable, ClassVar, Optional
+from typing import ClassVar, Optional
 
 import attrs
 from PIL import Image

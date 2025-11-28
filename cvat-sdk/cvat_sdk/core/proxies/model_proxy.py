@@ -6,13 +6,12 @@ from __future__ import annotations
 
 import json
 from abc import ABC
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from copy import deepcopy
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
     Literal,
     Optional,

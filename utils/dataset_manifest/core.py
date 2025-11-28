@@ -7,14 +7,14 @@ import io
 import json
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import closing
 from enum import Enum
 from inspect import isgenerator
 from io import StringIO
 from itertools import islice
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 
 import av
 from PIL import Image

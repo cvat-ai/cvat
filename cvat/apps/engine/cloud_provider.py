@@ -10,13 +10,13 @@ import io
 import json
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from queue import Queue
-from typing import Any, BinaryIO, Callable, Optional, TypeVar
+from typing import Any, BinaryIO, Optional, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
@@ -139,7 +139,7 @@ def validate_file_status(func):
                             key, self.name
                         )
                     )
-                raise ValidationError(str(ex))
+                raise ValidationError(str(ex)) from ex
             else:
                 raise
         return res

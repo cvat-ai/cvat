@@ -4,12 +4,12 @@
 
 import json
 from abc import ABCMeta, abstractmethod
-from collections.abc import Hashable, Iterator, Sequence
+from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from time import sleep
-from typing import Any, Callable, Iterable, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import requests
 from cvat_sdk.api_client import apis, models
