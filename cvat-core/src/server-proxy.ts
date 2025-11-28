@@ -123,8 +123,8 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
 
                     // do not retry if (code >= 400 && code < 500) is default tus behaviour
                     // retry if code === 409 or 423 is default tus behaviour
-                    // additionally handle codes 429 and 0
-                    return !(code >= 400 && code < 500) || [409, 423, 429, 0].includes(code);
+                    // additionally handle code 0, code 429 is handled by axios-retry
+                    return !(code >= 400 && code < 500) || [409, 423, 0].includes(code);
                 }
 
                 return false;
