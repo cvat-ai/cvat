@@ -7,7 +7,7 @@ from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import product
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import pytest
 import urllib3
@@ -437,7 +437,7 @@ class TestSimpleConsensusSettingsFilters(CollectionSimpleFilterTestBase):
 
 class TestListSettings(_PermissionTestBase):
     def _test_list_settings_200(
-        self, user: str, task_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user: str, task_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
             actual = get_paginated_collection(
@@ -494,7 +494,7 @@ class TestListSettings(_PermissionTestBase):
 
 class TestGetSettings(_PermissionTestBase):
     def _test_get_settings_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user: str, obj_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
             (_, response) = api_client.consensus_api.retrieve_settings(obj_id, **kwargs)
@@ -554,9 +554,9 @@ class TestPatchSettings(_PermissionTestBase):
         self,
         user: str,
         obj_id: int,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         *,
-        expected_data: Optional[Dict[str, Any]] = None,
+        expected_data: Optional[dict[str, Any]] = None,
         **kwargs,
     ):
         with make_api_client(user) as api_client:
@@ -570,7 +570,7 @@ class TestPatchSettings(_PermissionTestBase):
 
         return response
 
-    def _test_patch_settings_403(self, user: str, obj_id: int, data: Dict[str, Any], **kwargs):
+    def _test_patch_settings_403(self, user: str, obj_id: int, data: dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.consensus_api.partial_update_settings(
                 obj_id,
@@ -583,7 +583,7 @@ class TestPatchSettings(_PermissionTestBase):
 
         return response
 
-    def _get_request_data(self, data: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def _get_request_data(self, data: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
         patched_data = deepcopy(data)
 
         for field, value in data.items():

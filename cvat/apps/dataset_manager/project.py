@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: MIT
 
 import io
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import nullcontext
-from typing import Any, Callable
+from typing import Any
 
 import rq
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError

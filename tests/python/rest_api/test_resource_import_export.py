@@ -3,9 +3,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Callable
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Optional
 from uuid import uuid4
 
 import pytest
@@ -408,7 +409,7 @@ class TestUploads:
         *,
         get_owner_func: Callable = lambda r: r["owner"],
         user_to_skip: Optional[int] = None,
-    ) -> Tuple[dict, int]:
+    ) -> tuple[dict, int]:
         for resource in resources:
             malefactor = get_owner_func(resource)
             if not users[malefactor["id"]]["is_superuser"] and malefactor["id"] != user_to_skip:

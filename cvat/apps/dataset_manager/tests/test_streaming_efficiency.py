@@ -1,7 +1,8 @@
 import os
 import tempfile
 from collections import namedtuple
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 from unittest import TestCase, mock
 from unittest.mock import Mock
 

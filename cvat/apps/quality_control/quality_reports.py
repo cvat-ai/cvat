@@ -8,12 +8,12 @@ import itertools
 import math
 from abc import ABCMeta
 from collections import Counter
-from collections.abc import Hashable, Sequence
+from collections.abc import Callable, Hashable, Sequence
 from contextlib import suppress
 from copy import deepcopy
 from functools import cached_property, lru_cache, partial
 from io import StringIO
-from typing import Any, Callable, ClassVar, TypeVar, Union, cast
+from typing import Any, ClassVar, TypeVar, Union, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher

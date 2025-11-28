@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import math
-from typing import Type
 
 import datumaro as dm
 from django.conf import settings
@@ -196,7 +195,7 @@ class MergingManager(AbstractRequestManager):
 
     @classmethod
     @silk_profile()
-    def _merge(cls, *, target_type: Type[Task | Job], target_id: int) -> int:
+    def _merge(cls, *, target_type: type[Task | Job], target_id: int) -> int:
         if issubclass(target_type, Task):
             return _TaskMerger(task=target_id).merge_all_consensus_jobs()
         elif issubclass(target_type, Job):
