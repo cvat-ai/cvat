@@ -16,6 +16,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.50.0'></a>
+## \[2.50.0\] - 2025-11-26
+
+### Added
+
+- \[Helm\] Kvrocks PVC configuration via annotations
+  (<https://github.com/cvat-ai/cvat/pull/10021>)
+
+- Added kvrocks PVC VolumeAttributeClass support
+  (<https://github.com/cvat-ai/cvat/pull/10026>)
+
+- Added VolumeAttributesClass creation to public chart
+  (<https://github.com/cvat-ai/cvat/pull/10030>)
+
+### Changed
+
+- Change expiration date format view in 'Security' -> 'Create API Token'
+  from default ISO to DD/MM/YYYY so that it matches the dates in the token table
+  (<https://github.com/cvat-ai/cvat/pull/9975>)
+
+- Files located in the `data/tasks/<id>` directory are no longer included
+  in task backups, nor extracted from such backups when restoring. Recent
+  versions of CVAT (since v2.6.2) no longer create or use such files
+  (<https://github.com/cvat-ai/cvat/pull/10001>)
+
+- Updated Traefik to v3.6.x
+  (<https://github.com/cvat-ai/cvat/pull/10018>)
+
+### Fixed
+
+- Excessive `GET /api/users` requests on task page for each assigned job
+  (<https://github.com/cvat-ai/cvat/pull/9989>)
+
+- Actions menu can be opened twice on different resource cards: Projects, Jobs, Cloud storages, etc.
+  (<https://github.com/cvat-ai/cvat/pull/9986>)
+
+- Quality conflicts can now be displayed in the review mode of consensus replicas
+  (<https://github.com/cvat-ai/cvat/pull/10022>)
+
+- Fixed cloud storage status. Unavailable storages now return NOT_FOUND status instead of 400 Bad Request
+  (<https://github.com/cvat-ai/cvat/pull/10011>)
+
 <a id='changelog-2.49.0'></a>
 ## \[2.49.0\] - 2025-11-06
 
@@ -533,7 +575,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9521>)
 
 - Incorrect width of project field on webhook setup page
-  (<https://github.com/cvat-ai/cvat/pull/XXXX>)
+  (<https://github.com/cvat-ai/cvat/pull/9534>)
 
 - Relevant task quality reports now can be reused in project quality reports
   (<https://github.com/cvat-ai/cvat/pull/9538>)

@@ -4,11 +4,10 @@
 
 import abc
 from collections.abc import Sequence, Set
-from typing import Optional, Protocol, TypeVar, Union
+from typing import Optional, Protocol, TypeAlias, TypeVar, Union
 
 import attrs
 import PIL.Image
-from typing_extensions import TypeAlias
 
 import cvat_sdk.models as models
 

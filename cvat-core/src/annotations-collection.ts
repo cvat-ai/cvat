@@ -937,6 +937,10 @@ export default class Collection {
                 .map((el) => +el)
                 .filter((frame) => !this.injection.framesInfo.isFrameDeleted(frame));
 
+            if (!keyframes.length) {
+                return;
+            }
+
             let prevKeyframe = keyframes[0];
             let visible = false;
             for (const keyframe of keyframes) {

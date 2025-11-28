@@ -16,12 +16,12 @@ import sys
 import traceback
 import urllib.parse
 from collections import defaultdict, namedtuple
-from collections.abc import Generator, Iterable, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from contextlib import contextmanager, nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import cv2 as cv
 from attr.converters import to_bool

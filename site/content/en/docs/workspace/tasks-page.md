@@ -6,6 +6,7 @@ description: 'Overview of the Tasks page.'
 aliases:
   - /docs/manual/basics/tasks-page/
   - /docs/manual/basics/create-annotation-task/
+  - /docs/annotation/tools/delete-frame/
 ---
 
 ## Overview
@@ -25,7 +26,7 @@ Each button is responsible for a menu `Actions` specific function:
 - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
   Presence depends on how you build the CVAT instance.
 - `Backup task` — make a backup of this task into a zip archive.
-  Read more in the {{< ilink "/docs/annotation/tools/backup" "backup" >}} section.
+  Read more in the {{< ilink "/docs/dataset_management/backup" "backup" >}} section.
 - `Move to project` — Moving a task to a project (you can move only a task that does not belong to any project).
   In case of a label mismatch, you can create or delete necessary labels in the project/task.
   Some task labels can be matched with the target project labels.
@@ -38,21 +39,25 @@ Each button is responsible for a menu `Actions` specific function:
 - `Delete` — delete task.
 
 In the upper left corner, there is a search bar, using which you can find the task by assignee, task name etc.
-In the upper right corner, there are {{< ilink "/docs/annotation/tools/filter#sort-by" "sorting" >}},
-{{< ilink "/docs/annotation/tools/filter#quick-filters" "quick filters" >}}, and filter.
+In the upper right corner, there are {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter#sort-by" "sorting" >}},
+{{< ilink "/docs/annotation/manual-annotation/utilities/filter#quick-filters" "quick filters" >}}, and filter.
 
 ### Filter
 
 {{% alert title="Note" color="primary" %}}
-Applying a filter disables the {{< ilink "/docs/annotation/tools/filter#quick-filters" "quick filter" >}}.
+Applying a filter disables the {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter#quick-filters" "quick filter" >}}.
 {{% /alert %}}
 
 The filter works similarly to the filters for annotation,
 you can create rules from [properties](#supported-properties-for-tasks-list),
-{{< ilink "/docs/annotation/tools/filter#supported-operators-for-properties" "operators" >}},
-and values and group rules into {{< ilink "/docs/annotation/tools/filter#groups" "groups" >}}.
-For more details, consult the {{< ilink "/docs/annotation/tools/filter#create-a-filter" "filter section" >}}.
-Learn more about {{< ilink "/docs/annotation/tools/filter#date-and-time-selection" "date and time selection" >}}.
+{{< ilink "/docs/annotation/manual-annotation/utilities/filter#supported-operators-for-properties" "operators" >}},
+and values and group rules into {{< ilink "/docs/annotation/manual-annotation/utilities/filter#groups" "groups" >}}.
+For more details, consult the {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter#create-a-filter" "filter section" >}}.
+Learn more about {{< ilink
+ "/docs/annotation/manual-annotation/utilities/filter#date-and-time-selection" "date and time selection" >}}.
 
 For clear all filters press `Clear filters`.
 
@@ -369,7 +374,7 @@ The following parameters are available:
 | ----------------- | ----------- |
 | Sorting method    | **Note:** Does not work for the video data. <br><br>Several methods to sort the data. <br> For example, the sequence `2.jpeg`, `10.jpeg`, `1.jpeg` after sorting will be: <br><br><li> **Lexicographical**: `1.jpeg`, `10.jpeg`, `2.jpeg` <li> **Natural**: `1.jpeg`, `2.jpeg`, `10.jpeg` <li> **Predefined**: `2.jpeg`, `10.jpeg`, `1.jpeg` <li> **Random** uploads data in random order. |
 | Prefer zip chunks | Use this parameter to divide your video or image dataset for annotation into short video clips a zip file of frames. <br>Zip files are larger but do not require decoding on the client side, and video clips are smaller but require decoding. <br>It is recommended to turn off this parameter for video tasks to reduce traffic between the client side and the server. |
-| Use cache         | Select the checkbox to enable _on-the-fly_ data processing to reduce task creation time and store data in a cache with a policy of <br>evicting less popular items. <br><br>For more information, see {{< ilink "/docs/annotation/tools/data-on-fly" "Data preparation on the fly" >}}. |
+| Use cache         | Select the checkbox to enable _on-the-fly_ data processing to reduce task creation time and store data in a cache with a policy of <br>evicting less popular items. <br><br>For more information, see {{< ilink "/docs/dataset_management/data-on-fly" "Data preparation on the fly" >}}. |
 | Image quality     | CVAT has two types of data: original quality and compressed. Original quality images are used for dataset export<br> and automatic annotation. Compressed images are used only for annotations to reduce traffic between the server <br>and client side. <br> It is recommended to adjust the compression level only if the images contain small objects that are not <br>visible in the original quality. <br> Values range from `5` (highly compressed images) to `100` (not compressed). |
 | Overlap size      | Use this parameter to create overlapped segments, making tracking continuous from one segment to another. <br><br>**Note** that this functionality only works for bounding boxes. <br><br>This parameter has the following options: <br><br>**Interpolation task** (video sequence). If you annotate with a bounding box on two adjacent segments, they will be<br> merged into a single bounding box. In case the overlap is zero or the bounding box is inaccurate (not enclosing the object <br>properly, misaligned or distorted) on the adjacent segments, it may be difficult to accurately interpolate the object's <br>movement between the segments. As a result, multiple tracks will be created for the same object. <br><br>**Annotation task** (independent images). If an object exists on overlapped segments with overlap greater than zero, <br>and the annotation of these segments is done properly, then the segments will be automatically merged into a single<br> object. If the overlap is zero or the annotation is inaccurate (not enclosing the object properly, misaligned, distorted) on the<br> adjacent segments, it may be difficult to accurately track the object. As a result, multiple bounding boxes will be <br>created for the same object. <br><br>If the annotations on different segments (on overlapped frames) are very different, you will have two shapes <br>for the same object. <br><br>To avoid this, accurately annotate the object on the first segment and the same object on the second segment to create a track <br>between two annotations. |
 | Segment size      | Use this parameter to divide a dataset into smaller parts. For example, if you want to share a dataset among multiple<br> annotators, you can split it into smaller sections and assign each section to a separate job. <br>This allows annotators to work on the same dataset concurrently. |
@@ -487,3 +492,63 @@ and customize it to meet specific needs or requirements.
 For more information, consult
 {{< ilink "/docs/workspace/tasks-page#advanced-configuration" "Advanced configuration" >}}
 
+## How to delete a frame from a task
+
+You can delete the current frame from a task.
+This frame will not be presented either in the UI or in the exported annotation.
+Thus, it is possible to mark corrupted frames that are not subject to annotation.
+
+1. Go to the Job annotation view and click on the **Delete frame** button (**Alt**+**Del**).
+
+   {{% alert title="Note" color="primary" %}}
+   When you delete with the shortcut,
+   the frame will be deleted immediately without additional confirmation.
+   {{% /alert %}}
+
+   ![Part of annotation interface with highlighted "Delete frame" button](/images/image245.jpg)
+
+1. After that you will be asked to confirm frame deleting.
+
+   {{% alert title="Note" color="primary" %}}
+   all annotations from that frame will be deleted, unsaved annotations
+   will be saved and the frame will be invisible in the annotation view (Until you make it visible in the settings).
+   If there is some overlap in the task and the deleted frame falls within this interval,
+   then this will cause this frame to become unavailable in another job as well.
+   {{% /alert %}}
+
+1. When you delete a frame in a job with tracks, you may need to adjust some tracks manually. Common adjustments are:
+   - Add keyframes at the edges of the deleted interval for the interpolation to look correct;
+   - Move the keyframe start or end keyframe to the correct side of the deleted interval.
+
+## Configure deleted frames visibility and navigation
+
+If you need to enable showing the deleted frames, you can do it in the settings.
+
+1. Go to the settings and chose **Player** settings.
+
+   !["Player" tab opened in "Settings" with highlighted "Show deleted frames" option](/images/image246.jpg)
+
+1. Click on the **Show deleted frames** checkbox. And close the settings dialog.
+
+   ![Example of a deleted frame appearance with "Show deleted frames" option enabled](/images/image247.jpg)
+
+1. Then you will be able to navigate through deleted frames.
+   But annotation tools will be unavailable. Deleted frames differ in the corresponding overlay.
+
+1. There are ways to navigate through deleted frames without enabling this option:
+
+   - Go to the frame via direct navigation methods: navigation slider or frame input field,
+   - Go to the frame via the direct link, for example: `/api/tasks/{id}/jobs/{id}?frame={frame_id}`.
+
+1. Navigation with step will not count deleted frames.
+
+## Restore deleted frame
+
+You can also restore deleted frames in the task.
+
+1. Turn on deleted frames visibility, as it was told in the previous part,
+   and go to the deleted frame you want to restore.
+
+   ![Part of annotation interface with highlighted "Restore frame" button](/images/image248.jpg)
+
+1. Click on the **Restore** icon. The frame will be restored immediately.

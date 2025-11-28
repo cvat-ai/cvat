@@ -9,7 +9,7 @@ aliases:
 
 Ultralytics YOLO is a format family which consists of four formats:
 - [Detection](https://docs.ultralytics.com/datasets/detect/)
-- [Oriented bounding Box](https://docs.ultralytics.com/datasets/obb/)
+- [Oriented Bounding Box](https://docs.ultralytics.com/datasets/obb/)
 - [Segmentation](https://docs.ultralytics.com/datasets/segment/)
 - [Pose](https://docs.ultralytics.com/datasets/pose/)
 

@@ -4,8 +4,8 @@
 
 import os
 import types
-from collections.abc import Mapping
-from typing import Callable, Optional
+from collections.abc import Callable, Mapping
+from typing import Optional
 
 import torchvision.datasets
 

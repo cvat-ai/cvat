@@ -13,11 +13,11 @@ import tempfile
 import time
 import zipfile
 import zlib
-from collections.abc import Collection, Generator, Iterator, Sequence
+from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
-from typing import Any, Callable, Optional, Union, overload
+from typing import Any, Optional, Union, overload
 
 import attrs
 import av
@@ -38,7 +38,6 @@ from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
-    FrameQuality,
     IChunkWriter,
     ImageReaderWithManifest,
     Mpeg4ChunkWriter,
@@ -345,7 +344,7 @@ class MediaCache:
         db_obj: Union[models.Task, models.Segment, models.Job],
         chunk_number: int,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
     ) -> str:
         return f"{cls._make_cache_key_prefix(db_obj)}_chunk_{chunk_number}_{quality}"
 
@@ -357,7 +356,7 @@ class MediaCache:
         db_obj: models.Segment,
         chunk_number: int,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
     ) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_task_chunk_{chunk_number}_{quality}"
 
@@ -384,7 +383,7 @@ class MediaCache:
         return cache_item[:2]
 
     def get_or_set_segment_chunk(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+        self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
 
         item = self._get_or_set_cache_item(
@@ -402,7 +401,7 @@ class MediaCache:
         )
 
     def get_task_chunk(
-        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
+        self, db_task: models.Task, chunk_number: int, *, quality: models.FrameQuality
     ) -> Optional[DataWithMime]:
         return self._to_data_with_mime(
             self._get_cache_item(
@@ -417,7 +416,7 @@ class MediaCache:
         chunk_number: int,
         set_callback: Callback,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
     ) -> DataWithMime:
 
         item = self._get_or_set_cache_item(
@@ -435,7 +434,7 @@ class MediaCache:
         )
 
     def get_segment_task_chunk(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+        self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> Optional[DataWithMime]:
         return self._to_data_with_mime(
             self._get_cache_item(
@@ -449,7 +448,7 @@ class MediaCache:
         db_segment: models.Segment,
         chunk_number: int,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
         set_callback: Callback,
     ) -> DataWithMime:
 
@@ -464,7 +463,7 @@ class MediaCache:
         )
 
     def get_or_set_selective_job_chunk(
-        self, db_job: models.Job, chunk_number: int, *, quality: FrameQuality
+        self, db_job: models.Job, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         return self._to_data_with_mime(
             self._get_or_set_cache_item(
@@ -492,7 +491,7 @@ class MediaCache:
         )
 
     def remove_task_chunk(
-        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
+        self, db_task: models.Task, chunk_number: int, *, quality: models.FrameQuality
     ) -> None:
         self._delete_cache_item(
             self._make_chunk_key(db_task, chunk_number, quality=quality),
@@ -807,7 +806,11 @@ class MediaCache:
             yield from MediaCache.read_raw_images(db_task, frame_ids)
 
     def prepare_segment_chunk(
-        self, db_segment: Union[models.Segment, int], chunk_number: int, *, quality: FrameQuality
+        self,
+        db_segment: Union[models.Segment, int],
+        chunk_number: int,
+        *,
+        quality: models.FrameQuality,
     ) -> DataWithMime:
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)
@@ -822,7 +825,7 @@ class MediaCache:
             assert False, f"Unknown segment type {db_segment.type}"
 
     def prepare_range_segment_chunk(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+        self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         db_task = db_segment.task
         db_data = db_task.data
@@ -836,13 +839,13 @@ class MediaCache:
 
     @classmethod
     def prepare_custom_range_segment_chunk(
-        cls, db_task: models.Task, frame_ids: Sequence[int], *, quality: FrameQuality
+        cls, db_task: models.Task, frame_ids: Sequence[int], *, quality: models.FrameQuality
     ) -> DataWithMime:
         with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
             return prepare_chunk(frame_iter, quality=quality, db_task=db_task)
 
     def prepare_masked_range_segment_chunk(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+        self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         db_task = db_segment.task
         db_data = db_task.data
@@ -863,7 +866,7 @@ class MediaCache:
         frame_ids: Collection[int],
         chunk_number: int,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
         insert_placeholders: bool = False,
     ) -> DataWithMime:
         if isinstance(db_task, int):
@@ -873,7 +876,7 @@ class MediaCache:
 
         frame_step = db_data.get_frame_step()
 
-        image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
+        image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
         writer = ZipCompressedChunkWriter(image_quality, dimension=db_task.dimension)
 
         dummy_frame = io.BytesIO()
@@ -1000,7 +1003,7 @@ class MediaCache:
             segment_frame_provider = make_frame_provider(db_segment)
             preview = segment_frame_provider.get_frame(
                 task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
-                quality=FrameQuality.COMPRESSED,
+                quality=models.FrameQuality.COMPRESSED,
                 out_type=FrameOutputType.PIL,
             ).data
 
@@ -1099,7 +1102,7 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
 def prepare_chunk(
     task_chunk_frames: Iterator[tuple[Any, str, int]],
     *,
-    quality: FrameQuality,
+    quality: models.FrameQuality,
     db_task: models.Task,
     dump_unchanged: bool = False,
 ) -> DataWithMime:
@@ -1107,13 +1110,13 @@ def prepare_chunk(
 
     db_data = db_task.data
 
-    writer_classes: dict[FrameQuality, type[IChunkWriter]] = {
-        FrameQuality.COMPRESSED: (
+    writer_classes: dict[models.FrameQuality, type[IChunkWriter]] = {
+        models.FrameQuality.COMPRESSED: (
             Mpeg4CompressedChunkWriter
             if db_data.compressed_chunk_type == models.DataChoice.VIDEO
             else ZipCompressedChunkWriter
         ),
-        FrameQuality.ORIGINAL: (
+        models.FrameQuality.ORIGINAL: (
             Mpeg4ChunkWriter
             if db_data.original_chunk_type == models.DataChoice.VIDEO
             else ZipChunkWriter
@@ -1122,7 +1125,7 @@ def prepare_chunk(
 
     writer_class = writer_classes[quality]
 
-    image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
+    image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
 
     writer_kwargs = {}
     if db_task.dimension == models.DimensionType.DIM_3D:

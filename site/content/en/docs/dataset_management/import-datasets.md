@@ -1,83 +1,81 @@
 ---
-title: 'Import datasets and upload annotation'
-linkTitle: 'Import datasets and upload annotation'
-weight: 19
-description: 'This section explains how to download and upload datasets
-  (including annotation, images, and metadata) of projects, tasks, and jobs.'
+title: 'Import annotations and data to CVAT'
+linkTitle: 'Import data to CVAT'
+weight: 3
+description: 'This section explains how to import datasets into projects, add data when creating tasks, and upload annotations to existing tasks or jobs.'
 aliases:
  - /docs/manual/advanced/import-datasets/
 ---
 
-## Export dataset
+## Importing a dataset into a project
 
-You can export a dataset to a project, task or job.
+You can import a dataset into a **project**. When you do this, CVAT:
 
-1. To download the latest annotations, you have to save all changes first.
-   Click the `Save` button. There is a `Ctrl+S` shortcut to save annotations quickly.
+- If the project has no defined labels, creates required labels based on the information available in the dataset.
+Only label names can be imported this way, colors, attributes, and skeleton labels must be defined manually.
+- Creates **new tasks** inside the project. If there are several subsets in the imported dataset, each one is imported
+ as a separate task with the corresponding subset name.
+- Populates each imported task with the imported data and annotations (if the format contains annotations).
 
-   ![Opened annotation menu with highlighted "Export task dataset" option](/images/image028.jpg)
-
-1. After that, click the `Menu` button.
-   Exporting and importing of task and project datasets takes place through the `Action` menu.
-1. Press the `Export task dataset` button.
-
-   !["Export task" window with marked parameters](/images/image225.jpg)
-
-1. Choose the format for exporting the dataset. Exporting and importing is available in:
-   - Standard CVAT formats:
-     - {{< ilink "/docs/other/xml_format#interpolation" "CVAT for video" >}}
-       choose if the task is created in interpolation mode.
-     - {{< ilink "/docs/other/xml_format#annotation" "CVAT for images" >}}
-       choose if a task is created in annotation mode.
-
-       <br>
-   - And also in formats from the
-     {{< ilink "/docs/dataset_management/formats" "list of annotation formats supported by CVAT" >}}.
-
-   - For 3D tasks, the following formats are available:
-     - [Kitti Raw Format 1.0](http://www.cvlibs.net/datasets/kitti/raw_data.php)
-     - Sly Point Cloud Format 1.0  - Supervisely Point Cloud dataset
-
-   <br>
-1. To download images with the dataset, enable the `Save images` option.
-1. (Optional) To name the resulting archive, use the `Custom name` field.
-1. You can choose a storage for dataset export by selecting a target storage `Local` or `Cloud storage`.
-   The default settings are the settings that had been selected when the project was created
-   (for example, if you specified a local storage when you created the project,
-   then by default, you will be prompted to export the dataset to your PC).
-   You can find out the default value by hovering the mouse over the `?`.
-   Learn more about {{< ilink "/docs/workspace/attach-cloud-storage" "attach cloud storage" >}}.
-
-## Import dataset
-
-You can import dataset only to a project. In this case, the data will be split into subsets.
-To import a dataset, do the following on the `Project` page:
+> Note: Importing a dataset always creates a **new** task in the project.
 
 ![Project with opened "Actions" menu and highlighted "Import dataset" option](/images/image238.jpg)
 
-- Open the `Actions` menu.
-- Press the `Import dataset` button.
-- Select the dataset format (if you did not specify a custom name during export,
-  the format will be in the archive name).
-- Drag the file to the file upload area or click on the upload area to select the file through the explorer.
+To import a dataset into a project:
+
+1. Open the project on the `Projects page`.
+2. Open the `Actions` menu in the upper right corner.
+3. Click `Import dataset`.
+4. Select the dataset format.
+5. Drag the file to the file upload area or click on the upload area to select the file through the explorer.
+
+---
+
+You can also import a dataset from **attached cloud storage**.
 
 !["Import dataset" window with options and parameters](/images/image250.jpg)
 
-- You can also import a dataset from an attached cloud storage.
-  Here you should select the annotation format, then select a cloud storage from the list or use default settings
-  if you have already specified required cloud storage for task or project
-  and specify a zip archive to the text field `File name`.
+1. First, select the annotation format.
+2. Then, select a cloud storage connection from the list or use the default one configured for the project.
+3. Specify the ZIP archive name in the `File name` field.
 
-During the import process, you will be able to track the progress of the import.
+During the import process, you will be able to track the progress of the import on the `Requests page`.
 
-## Upload annotations
+## Importing a dataset into a task
+
+You can also add data when you **create a task**. A task can be:
+
+- Inside a **project** (linked to that project), or
+- Standalone.
+
+After a task is created, you cannot add more data. To add extra data, create another task.
+
+To learn more about creating a task in CVAT, see [How to create and configure an annotation task](/docs/workspace/tasks-page#how-to-create-and-configure-an-annotation-task).
+
+## Uploading annotations to tasks and jobs
+
+If you already have a file with annotations or an annotated dataset,
+you can upload it to an entire task or to a single job.
 
 ![Task with opened "Actions" menu and highlighted "Upload annotations" option](/images/image251.jpg)
 
-In the task or job you can upload an annotation. For this select the item `Upload annotation`
-in the menu `Action` of the task or in the job `Menu` on the `Top panel` select the format in which you plan
-to upload the annotation and select the annotation file or archive via explorer.
+{{% alert title="Warning" color="warning" %}}
+When you upload annotations, CVAT removes the existing ones.
+{{% /alert %}}
+
+### Uploading annotations to a task
+
+1. On the Tasks page, click the three dots next to the task.
+2. Or open the task and go to the `Actions` menu.
+3. Click `Upload annotations`.
+4. Select the annotation format.
+5. Upload the file from your computer or choose one from cloud storage.
 
 !["Import annotation task" window with options and parameters](/images/image252.jpg)
 
-Or you can also use the attached cloud storage to upload the annotation file.
+### Uploading annotations to a job
+
+1. Open the task, and click the three dots next to the job.
+2. Click `Import annotations`.
+3. Select the annotation format.
+4. Upload the file from your computer or choose one from cloud storage.
