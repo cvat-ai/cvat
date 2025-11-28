@@ -8,7 +8,7 @@ metadata:
 
 spec:
   description: Fast Online Object Tracking and Segmentation
-  runtime: 'python:3.8'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -17,8 +17,7 @@ spec:
 
   build:
     image: cvat.pth.dschoerk.transt:latest-gpu
-    baseImage: nvidia/cuda:11.7.1-devel-ubuntu20.04
-
+    baseImage: nvidia/cuda:11.7.1-cudnn8-devel-ubuntu22.04
     directives:
       preCopy:
         - kind: RUN
@@ -31,16 +30,19 @@ spec:
                 python3 \
                 python3-pip \
               && rm -rf /var/lib/apt/lists/*
-        - kind: WORKDIR
-          value: /opt/nuclio
-        - kind: RUN
-          value: git clone --depth 1 --branch v1.0 https://github.com/dschoerk/TransT trans-t
         - kind: RUN
           value: |-
             pip install \
               jsonpickle opencv-python-headless \
-              torch==1.7.1+cu110 torchvision==0.8.2+cu110 \
-              --extra-index-url https://download.pytorch.org/whl/cu110
+              torch==1.13.1+cu117 torchvision==0.14.1+cu117 numpy==1.26.4\
+              --extra-index-url https://download.pytorch.org/whl/cu117 \
+              --no-cache-dir
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: |-
+            git clone --depth 1 --branch v1.0 https://github.com/dschoerk/TransT trans-t && \
+            sed -i 's%if float(torchvision.__version__\[:3\]) < 0.7%if tuple(int(v) for v in torchvision.__version__.split("+")[0].split(".")) < (0, 7, 0)%g' trans-t/util/misc.py
         - kind: ADD
           value: https://drive.google.com/uc?id=1Pq0sK-9jmbLAVtgB9-dPDc2pipCxYdM5 /transt.pth
 
