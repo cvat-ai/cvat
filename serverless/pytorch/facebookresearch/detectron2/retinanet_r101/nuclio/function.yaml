@@ -90,30 +90,45 @@ metadata:
 
 spec:
   description: RetinaNet R101 from Detectron2
-  runtime: 'python:3.8'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30s
 
   build:
     image: cvat.pth.facebookresearch.detectron2.retinanet_r101
-    baseImage: ubuntu:20.04
+    baseImage: ubuntu:22.04
 
     directives:
       preCopy:
         - kind: ENV
           value: DEBIAN_FRONTEND=noninteractive
         - kind: RUN
-          value: apt-get update && apt-get -y install curl git python3 python3-pip
+          value: |-
+            apt update \
+              && apt install -y --no-install-recommends \
+                curl \
+                git \
+                g++ \
+                ca-certificates \
+                python-is-python3 \
+                python3 \
+                python3-dev \
+                python3-pip \
+              && rm -rf /var/lib/apt/lists/*
+        - kind: RUN
+          value: |-
+            pip3 install \
+              torch==1.13.1+cpu \
+              torchvision==0.14.1+cpu \
+              numpy==1.26.4 \
+              --extra-index-url https://download.pytorch.org/whl/cpu \
+              --no-cache-dir
+        - kind: RUN
+          value: pip3 install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985'
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
-        - kind: RUN
-          value: pip3 install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985'
-        - kind: RUN
           value: curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
-        - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
 
   triggers:
     myHttpTrigger:
