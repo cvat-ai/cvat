@@ -12,6 +12,7 @@ import Slider from 'antd/lib/slider';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
 import Button from 'antd/lib/button';
+import { Row, Col } from 'antd/lib/grid';
 
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
@@ -27,6 +28,7 @@ import {
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
     changeOrientationVisibility as changeOrientationVisibilityAction,
+    changeShapesPointSize as changeShapesPointSizeAction,
 } from 'actions/settings-actions';
 
 interface StateToProps {
@@ -41,6 +43,7 @@ interface StateToProps {
     orientationVisibility: OrientationVisibility;
     workspace: Workspace;
     jobInstance: Job;
+    pointSize: number;
 }
 
 interface DispatchToProps {
@@ -52,6 +55,7 @@ interface DispatchToProps {
     changeShowBitmap(event: CheckboxChangeEvent): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
     changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): void;
+    changeShapesPointSize(value: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -65,6 +69,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             shapes: {
                 colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
                 orientationVisibility,
+                pointSize,
             },
         },
     } = state;
@@ -81,6 +86,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         workspace,
         orientationVisibility,
         jobInstance: jobInstance as Job,
+        pointSize,
     };
 }
 
@@ -110,6 +116,9 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): void {
             dispatch(changeOrientationVisibilityAction(orientationVisibility));
         },
+        changeShapesPointSize(value: number): void {
+            dispatch(changeShapesPointSizeAction(value));
+        },
     };
 }
 
@@ -126,6 +135,9 @@ function AppearanceBlock(props: Props): JSX.Element {
         showBitmap,
         showProjections,
         orientationVisibility,
+        workspace,
+        jobInstance,
+        pointSize,
         collapseAppearance,
         changeShapesColorBy,
         changeShapesOpacity,
@@ -134,7 +146,7 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShowBitmap,
         changeShowProjections,
         changeOrientationVisibility,
-        jobInstance,
+        changeShapesPointSize,
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
@@ -232,6 +244,22 @@ function AppearanceBlock(props: Props): JSX.Element {
                             >
                                 Show projections
                             </Checkbox>
+                        )}
+                        {workspace === Workspace.STANDARD3D && (
+                            <Row align='middle'>
+                                <Col span={7}>
+                                    <Text className='cvat-text-color'>Point size:</Text>
+                                </Col>
+                                <Col span={17}>
+                                    <Slider
+                                        min={0.01}
+                                        max={0.5}
+                                        step={0.01}
+                                        value={pointSize}
+                                        onChange={changeShapesPointSize}
+                                    />
+                                </Col>
+                            </Row>
                         )}
                     </div>
                 ),
