@@ -90,7 +90,7 @@ metadata:
 
 spec:
   description: Faster RCNN from Tensorflow Object Detection API optimized for GPU
-  runtime: 'python:3.9'
+  runtime: 'python:3.11'
   handler: main:handler
   eventTimeout: 30s
 
