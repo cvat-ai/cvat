@@ -39,6 +39,7 @@ class AxiosHttpRequest implements tus.HttpRequest {
             signal: this.#abortController.signal,
             // TUS has its own error handing mechanism, except throttle cases
             // Accept all statuses except 429, which should trigger axios-retry
+            // and handle value from `Retry-After` header
             validateStatus: (status) => status !== 429,
         };
     }
