@@ -12,7 +12,7 @@ metadata:
 
 spec:
   description: Deep Extreme Cut
-  runtime: 'python:3.8'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30s
 
