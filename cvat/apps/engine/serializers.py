@@ -3055,11 +3055,13 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
 
     def update(self, instance: models.Data, validated_data):
         instance = super().update(instance, validated_data)
+        db_task = models.Task.objects.filter(data=instance).first()
         if validated_data.get("cloud_storage_id"):
-            db_task = models.Task.objects.filter(data=instance).first()
             task_frame_provider = TaskFrameProvider(db_task)
             for quality in models.FrameQuality:
                 task_frame_provider.invalidate_chunks(quality=quality)
+        if db_task:
+            db_task.touch()
         return instance
 
 
