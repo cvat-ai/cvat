@@ -1,4 +1,4 @@
-cvat-sdk==2.50.0
+cvat-sdk==2.51.0
 
 attrs>=24.2.0
 Pillow>=10.3.0

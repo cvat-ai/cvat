@@ -14,10 +14,10 @@ import shutil
 import tempfile
 import threading
 from collections import OrderedDict
-from collections.abc import Generator, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
@@ -32,7 +32,6 @@ from cvat_sdk.auto_annotation.driver import (
 )
 from cvat_sdk.datasets.caching import make_cache_manager
 from cvat_sdk.exceptions import ApiException
-from typing_extensions import TypeAlias
 
 from .common import CriticalError, FunctionLoader
 
@@ -656,6 +655,7 @@ class _Agent:
                             # most users should not be affected. For the ones that are, shutdown
                             # will be broken, but everything else should still work fine.
                             # This should be revisited once we drop Python 3.9 support.
+                            # TODO: check in newer versions
                             self._queue_watch_response.shutdown()
 
                 watcher.join()
