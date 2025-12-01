@@ -757,6 +757,12 @@ export async function getContextImage(
     frame: number,
     getImageContext: (frame: number) => Promise<ArrayBuffer>,
 ): Promise<Record<string, ImageBitmap>> {
+    if (!(jobID in frameDataCache)) {
+        throw new Error(
+            'Frame data was not initialized for this job. Try first requesting any frame.',
+        );
+    }
+
     const frameData = frameDataCache[jobID];
     const meta = await frameData.getMeta();
     const requestId = frame;
@@ -765,12 +771,6 @@ export async function getContextImage(
     const frameIndex = meta.getFrameIndex(dataFrameNumber);
     const { related_files: relatedFiles } = meta.frames[frameIndex];
     return new Promise<Record<string, ImageBitmap>>((resolve, reject) => {
-        if (!(jobID in frameDataCache)) {
-            reject(new Error(
-                'Frame data was not initialized for this job. Try first requesting any frame.',
-            ));
-        }
-
         if (relatedFiles === 0) {
             resolve({});
         } else if (frame in frameData.contextCache) {
