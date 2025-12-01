@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { connect, shallowEqual, useSelector } from 'react-redux';
 import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
@@ -23,6 +23,8 @@ import {
     updateActiveControl as updateActiveControlAction,
     updateAnnotationsAsync,
     updateCanvasContextMenu,
+    getDataFailed,
+    canvasErrorOccurred,
 } from 'actions/annotation-actions';
 import {
     ActiveControl,
@@ -141,6 +143,8 @@ interface DispatchToProps {
     onActivateObject: (activatedStateID: number | null) => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
+    onGetDataFailed(error: Error): void;
+    onCanvasErrorOccurred(error: Error): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -234,6 +238,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         updateActiveControl(activeControl: ActiveControl): void {
             dispatch(updateActiveControlAction(activeControl));
+        },
+        onGetDataFailed(error: Error): void {
+            dispatch(getDataFailed(error));
+        },
+        onCanvasErrorOccurred(error: Error): void {
+            dispatch(canvasErrorOccurred(error));
         },
     };
 }
@@ -515,6 +525,8 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         onMergeAnnotations,
         onSplitAnnotations,
         onGroupAnnotations,
+        onGetDataFailed,
+        onCanvasErrorOccurred,
     } = props;
 
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
@@ -530,6 +542,15 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     const onCanvasDragDone = (): void => {
         updateActiveControl(ActiveControl.CURSOR);
     };
+
+    const onCanvasErrorOccurrence = useCallback((event: any): void => {
+        const { exception, domain } = event.detail;
+        if (domain === 'data fetching') {
+            onGetDataFailed(exception);
+        } else {
+            onCanvasErrorOccurred(exception);
+        }
+    }, [onGetDataFailed, onCanvasErrorOccurred]);
 
     const animateCanvas = (): void => {
         canvasInstance.render();
@@ -633,6 +654,15 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             cancelAnimationFrame(animateId.current);
         };
     }, []);
+
+    useEffect(() => {
+        const canvasInstanceDOM = canvasInstance.html();
+        canvasInstanceDOM.perspective.addEventListener('canvas.error', onCanvasErrorOccurrence);
+
+        return () => {
+            canvasInstanceDOM.perspective.removeEventListener('canvas.error', onCanvasErrorOccurrence);
+        };
+    }, [onCanvasErrorOccurrence, canvasInstance]);
 
     useEffect(() => {
         canvasInstance.activate(activatedStateID);

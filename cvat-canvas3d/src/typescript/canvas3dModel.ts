@@ -94,6 +94,7 @@ export enum UpdateReasons {
     SPLIT = 'split',
     FITTED_CANVAS = 'fitted_canvas',
     SHAPES_CONFIG_UPDATED = 'shapes_config_updated',
+    DATA_FAILED = 'data_failed',
 }
 
 export enum Mode {
@@ -126,6 +127,7 @@ export interface Canvas3dDataModel {
         frameData: any;
         objectStates: ObjectState[];
     } | null;
+    exception: Error | null;
 }
 
 export interface Canvas3dModel {
@@ -135,6 +137,7 @@ export interface Canvas3dModel {
     readonly groupData: GroupData;
     readonly mergeData: MergeData;
     readonly objects: ObjectState[];
+    readonly exception: Error | null;
     setup(frameData: any, objectStates: ObjectState[]): void;
     isAbleToChangeFrame(): boolean;
     draw(drawData: DrawData): void;
@@ -202,6 +205,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             },
             isFrameUpdating: false,
             nextSetupRequest: null,
+            exception: null,
         };
     }
 
@@ -262,7 +266,12 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 this.data.isFrameUpdating = false;
                 // don't notify when the frame is no longer needed
                 if (typeof exception !== 'number' || exception === this.data.imageID) {
-                    throw exception;
+                    if (exception instanceof Error) {
+                        this.data.exception = exception;
+                    } else {
+                        this.data.exception = new Error('Unknown error occurred when fetching image data');
+                    }
+                    this.notify(UpdateReasons.DATA_FAILED);
                 }
             });
     }
@@ -434,6 +443,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public get imageIsDeleted(): boolean {
         return this.data.imageIsDeleted;
+    }
+
+    public get exception(): Error | null {
+        return this.data.exception;
     }
 
     public destroy(): void {}
