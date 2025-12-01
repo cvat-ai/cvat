@@ -1059,6 +1059,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.frames.contextImageData, 'implementation', {
+        value: function contextImageDataImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.contextImageData> {
+            throw new Error('Not implemented for Task');
+        },
+    });
+
     Object.defineProperty(Task.prototype.frames.contextImage, 'implementation', {
         value: function contextImageImplementation(
             this: TaskClass,
