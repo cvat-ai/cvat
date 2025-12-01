@@ -83,7 +83,7 @@ export default interface CVATCore {
         resetPassword: any;
         authenticated: any;
         healthCheck: any;
-        request: any;
+        request: typeof serverProxy.server.request;
         setAuthData: any;
         installedApps: any;
         apiSchema: typeof serverProxy.server.apiSchema;

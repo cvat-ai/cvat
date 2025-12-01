@@ -5,7 +5,7 @@
 
 import FormData from 'form-data';
 import store from 'store';
-import Axios, { AxiosError, AxiosResponse } from 'axios';
+import Axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
@@ -58,7 +58,9 @@ function configureStorage(storage: Storage, useDefaultLocation = false): Partial
     };
 }
 
-function fetchAll<T extends { id: number | string }>(url, filter = {}): Promise<{ count: number; results: T[] }> {
+function fetchAll<T extends { id: number | string }>(
+    url, filter = {}, axios: AxiosInstance = Axios,
+): Promise<{ count: number; results: T[] }> {
     const pageSize = 500;
     const result = {
         count: 0,
@@ -77,7 +79,7 @@ function fetchAll<T extends { id: number | string }>(url, filter = {}): Promise<
 
     return new Promise((resolve, reject) => {
         const fetchPage = (page: number) => {
-            Axios.get(url, {
+            axios.get(url, {
                 params: {
                     ...filter,
                     page_size: pageSize,
@@ -649,13 +651,15 @@ async function healthCheck(
 }
 
 export interface ServerRequestConfig {
-    fetchAll: boolean,
+    fetchAll: boolean;
+    withOrgParams: boolean;
 }
 
 export const sleep = (time: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, time); });
 
 const defaultRequestConfig = {
     fetchAll: false,
+    withOrgParams: true,
 };
 
 async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
@@ -709,16 +713,20 @@ async function cancelRequest(requestID): Promise<void> {
 }
 
 async function serverRequest(
-    url: string, data: object,
-    requestConfig: ServerRequestConfig = defaultRequestConfig,
+    url: string,
+    data: object,
+    config?: Partial<ServerRequestConfig>,
 ): Promise<any> {
+    const updatedConfig = { ...defaultRequestConfig, ...(config ?? {}) };
     try {
         let res = null;
-        const { fetchAll: useFetchAll } = requestConfig;
+        const { fetchAll: useFetchAll } = updatedConfig;
+        const instance = updatedConfig.withOrgParams ? Axios : Axios.create();
+
         if (useFetchAll) {
-            res = await fetchAll(url);
+            res = await fetchAll(url, {}, instance);
         } else {
-            res = await Axios(url, data);
+            res = await instance(url, data);
         }
         return res;
     } catch (errorData) {
