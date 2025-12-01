@@ -95,8 +95,37 @@ context('Customizable Shortcuts', () => {
 
     function checkShortcutsMounted(label) {
         cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+        const searchAcrossPages = (target) => {
+            cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+
+            cy.get('.cvat-shortcuts-modal-window-table').then(($table) => {
+                const found = $table.text().includes(target);
+
+                if (found) {
+                    cy.contains('.cvat-shortcuts-modal-window-table', target).should('be.visible');
+                    return;
+                }
+
+                cy.get('.cvat-shortcuts-modal-window-table .ant-pagination-next button')
+                    .then(($btn) => {
+                        const disabled =
+                            $btn.is(':disabled') ||
+                            $btn.hasClass('ant-pagination-disabled');
+
+                        if (disabled) {
+                            throw new Error(`"${target}" not mounted.`);
+                        }
+
+                        cy.wrap($btn).click();
+                        cy.wait(500);
+
+                        searchAcrossPages(target);
+                    });
+            });
+        };
+
         for (let i = 1; i < 3; i++) {
-            cy.get('.cvat-shortcuts-modal-window-table').contains(label(i));
+            searchAcrossPages(label(i));
         }
     }
 
@@ -215,7 +244,7 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-canvas-container').click();
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-2').click();
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-1').click();
             checkShortcutsMounted((i) => `Create a new tag "label ${i}"`);
             cy.realPress(['F1']);
         });
@@ -224,7 +253,7 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-canvas-container').click();
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-3').click();
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-2').click();
             cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
             cy.get('.cvat-shortcuts-modal-window-table').contains('Assign attribute value false');
             cy.get('.cvat-shortcuts-modal-window-table').contains('Assign attribute value true');
@@ -241,6 +270,7 @@ context('Customizable Shortcuts', () => {
                 .within(() => {
                     cy.contains('100 / page').click();
                 });
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-1').click();
             checkShortcutsMounted((i) => `Switch label to label ${i}`);
             cy.contains('.cvat-shortcuts-modal-window [type="button"]', 'OK').click();
         });
