@@ -57,19 +57,19 @@ products:
      ```
    - Verify that the Docker login command succeeds by running the following command:
      ```bash
-     aws ecr get-login-password --region eu-west-1 --profile CvatEnterpriseCustomer | docker login --username AWS --password-stdin 443536374637.dkr.ecr.eu-west-1.amazonaws.com
+     aws ecr get-login-password --region eu-west-1 --profile CvatEnterpriseCustomer | docker login --username AWS --password-stdin <MUST BE PROVIDED BY CVAT TEAM>
      ```
    - Pull server and ui images
      ```bash
-     docker pull 443536374637.dkr.ecr.eu-west-1.amazonaws.com/cvat/server_ent:vX.Y.Z
-     docker pull 443536374637.dkr.ecr.eu-west-1.amazonaws.com/cvat/ui_ent:vX.Y.Z
+     docker pull <MUST BE PROVIDED BY CVAT TEAM>/cvat/server_ent:vX.Y.Z
+     docker pull <MUST BE PROVIDED BY CVAT TEAM>/cvat/ui_ent:vX.Y.Z
      ```
 1. Upload the images to the registry:
    ```bash
    docker login registry.example
 
-   docker tag 443536374637.dkr.ecr.eu-west-1.amazonaws.com/cvat/server_ent:vX.Y.Z registry.example/cvat/server_ent:vX.Y.Z
-   docker tag 443536374637.dkr.ecr.eu-west-1.amazonaws.com/cvat/ui_ent:vX.Y.Z registry.example/cvat/ui_ent:vX.Y.Z
+   docker tag <MUST BE PROVIDED BY CVAT TEAM>/cvat/server_ent:vX.Y.Z registry.example/cvat/server_ent:vX.Y.Z
+   docker tag <MUST BE PROVIDED BY CVAT TEAM>/cvat/ui_ent:vX.Y.Z registry.example/cvat/ui_ent:vX.Y.Z
    docker push registry.example/cvat/server_ent:vX.Y.Z
    docker push registry.example/cvat/ui_ent:vX.Y.Z
    ```
