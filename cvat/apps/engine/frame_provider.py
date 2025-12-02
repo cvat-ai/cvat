@@ -11,11 +11,11 @@ import math
 from abc import ABCMeta, abstractmethod
 from bisect import bisect
 from collections import OrderedDict
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, Callable, Generic, Optional, TypeVar, Union, overload
+from typing import Any, Generic, Optional, TypeVar, Union, overload
 
 import av
 import cv2

@@ -11,8 +11,8 @@ import re
 import shutil
 import sys
 import textwrap
+from collections.abc import Callable
 from glob import iglob
-from typing import Callable
 
 from inflection import underscore
 

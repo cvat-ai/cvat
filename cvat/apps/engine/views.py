@@ -1231,7 +1231,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['GET'],
         summary='Get data of a task',
         parameters=[
-            OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
+            OpenApiParameter('type', location=OpenApiParameter.QUERY, required=True,
                 type=OpenApiTypes.STR, enum=['chunk', 'frame', 'context_image'],
                 description='Specifies the type of the requested data'),
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
@@ -1896,7 +1896,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(summary='Get data of a job',
         parameters=[
             OpenApiParameter('type', description='Specifies the type of the requested data',
-                location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.STR,
                 enum=['chunk', 'frame', 'context_image']),
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],

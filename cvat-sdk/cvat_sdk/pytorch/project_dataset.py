@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from collections.abc import Container, Mapping
-from typing import Callable, Optional
+from collections.abc import Callable, Container, Mapping
+from typing import Optional
 
 import torch
 import torch.utils.data

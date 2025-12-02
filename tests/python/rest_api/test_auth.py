@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from collections.abc import Generator
 from contextlib import contextmanager
 from http import HTTPStatus
-from typing import Generator, Optional
+from typing import Optional
 from unittest import mock
 
 import pytest

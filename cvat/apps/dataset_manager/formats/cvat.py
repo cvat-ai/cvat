@@ -7,9 +7,10 @@ import os
 import os.path as osp
 import zipfile
 from collections import OrderedDict
+from collections.abc import Callable
 from glob import glob
 from io import BufferedWriter
-from typing import Callable, Union
+from typing import Union
 
 from datumaro.components.annotation import (
     AnnotationType,

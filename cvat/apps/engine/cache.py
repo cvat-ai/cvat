@@ -13,11 +13,11 @@ import tempfile
 import time
 import zipfile
 import zlib
-from collections.abc import Collection, Generator, Iterator, Sequence
+from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
-from typing import Any, Callable, Optional, Union, overload
+from typing import Any, Optional, Union, overload
 
 import attrs
 import av

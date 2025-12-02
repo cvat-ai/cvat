@@ -4,12 +4,12 @@
 
 import json
 import math
-from collections.abc import Collection, Iterable
+from collections.abc import Callable, Collection, Iterable
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import groupby, product
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import pytest
 from cvat_sdk.api_client import exceptions, models
