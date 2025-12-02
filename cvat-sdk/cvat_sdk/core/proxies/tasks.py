@@ -12,7 +12,7 @@ import shutil
 from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from PIL import Image
 
@@ -72,10 +72,10 @@ class Task(
         resources: Sequence[StrPath],
         *,
         resource_type: ResourceType = ResourceType.LOCAL,
-        pbar: Optional[ProgressReporter] = None,
-        params: Optional[dict[str, Any]] = None,
+        pbar: ProgressReporter | None = None,
+        params: dict[str, Any] | None = None,
         wait_for_completion: bool = True,
-        status_check_period: Optional[int] = None,
+        status_check_period: int | None = None,
     ) -> None:
         """
         Add local, remote, or shared files to an existing task.
@@ -151,9 +151,9 @@ class Task(
         format_name: str,
         filename: StrPath,
         *,
-        conv_mask_to_poly: Optional[bool] = None,
-        status_check_period: Optional[int] = None,
-        pbar: Optional[ProgressReporter] = None,
+        conv_mask_to_poly: bool | None = None,
+        status_check_period: int | None = None,
+        pbar: ProgressReporter | None = None,
     ):
         """
         Upload annotations for a task in the specified format (e.g. 'YOLO 1.1').
@@ -177,7 +177,7 @@ class Task(
         self,
         frame_id: int,
         *,
-        quality: Optional[str] = None,
+        quality: str | None = None,
     ) -> io.RawIOBase:
         params = {}
         if quality:
@@ -196,7 +196,7 @@ class Task(
         chunk_id: int,
         output_file: SupportsWrite[bytes],
         *,
-        quality: Optional[str] = None,
+        quality: str | None = None,
     ) -> None:
         params = {}
         if quality:
@@ -212,11 +212,11 @@ class Task(
         self,
         frame_ids: Sequence[int],
         *,
-        image_extension: Optional[str] = None,
+        image_extension: str | None = None,
         outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
-    ) -> Optional[list[Image.Image]]:
+    ) -> list[Image.Image] | None:
         """
         Download the requested frame numbers for a task and save images as outdir/filename_pattern
         """
@@ -285,11 +285,11 @@ class TasksRepo(
         resources: Sequence[StrPath],
         *,
         resource_type: ResourceType = ResourceType.LOCAL,
-        data_params: Optional[dict[str, Any]] = None,
+        data_params: dict[str, Any] | None = None,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
         status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
     ) -> Task:
         """
         Create a new task with the given name and labels JSON and
@@ -338,7 +338,7 @@ class TasksRepo(
         filename: StrPath,
         *,
         status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
     ) -> Task:
         """
         Import a task from a backup file

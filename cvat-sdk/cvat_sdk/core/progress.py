@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import contextlib
 from collections.abc import Generator, Iterable
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -43,7 +43,7 @@ class ProgressReporter:
         finally:
             self.finish()
 
-    def start(self, total: int, *, desc: Optional[str] = None) -> None:
+    def start(self, total: int, *, desc: str | None = None) -> None:
         """
         This is a compatibility method. Override start2 instead.
         """
@@ -53,7 +53,7 @@ class ProgressReporter:
         self,
         total: int,
         *,
-        desc: Optional[str] = None,
+        desc: str | None = None,
         unit: str = "it",
         unit_scale: bool = False,
         unit_divisor: int = 1000,
@@ -108,7 +108,7 @@ class BaseProgressReporter(ProgressReporter):
         self,
         total: int,
         *,
-        desc: Optional[str] = None,
+        desc: str | None = None,
         unit: str = "it",
         unit_scale: bool = False,
         unit_divisor: int = 1000,
