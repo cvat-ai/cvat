@@ -121,16 +121,35 @@ context('Customizable Shortcuts', () => {
             });
     }
 
+    function waitForPageChange(oldPage) {
+        cy.get('.ant-pagination-item-active')
+            .invoke('text')
+            .should('eq', String(oldPage + 1));
+    }
+
+    function getCurrentPage() {
+        return cy
+            .get('.ant-pagination-item-active')
+            .invoke('text')
+            .then((pageNumber) => Number(pageNumber));
+    }
+
     function searchAcrossPages(target) {
         cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+
+        const waitAndContinueSearching = (t, oldPage) => {
+            goToNextPageOrFail(t).then(() => {
+                waitForPageChange(oldPage);
+                searchAcrossPages(t);
+            });
+        };
 
         tableContains(target).then((found) => {
             if (found) {
                 assertTargetVisible(target);
             } else {
-                goToNextPageOrFail(target).then(() => {
-                    cy.wait(500);
-                    searchAcrossPages(target);
+                getCurrentPage().then((oldPage) => {
+                    waitAndContinueSearching(target, oldPage);
                 });
             }
         });
