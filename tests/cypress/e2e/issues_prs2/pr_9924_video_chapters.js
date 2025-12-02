@@ -33,65 +33,58 @@ context('Video chapters', () => {
         cy.logout();
     });
 
+    function checkSliderPosition(pos) {
+        cy.get('.ant-slider-handle')
+            .should('have.attr', 'aria-valuenow')
+            .and('equal', pos);
+    }
+
+    function switchChapter(chapterNumber) {
+        cy.contains('.cvat-player-chapter-menu-wrapper', `Kapitel ${chapterNumber}`)
+            .should('exist')
+            .and('be.visible')
+            .click();
+    }
+
+    function checkChapterNavigationButtons(direction, expectedSliderPos) {
+        cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button`).rightclick();
+        cy.get(`.cvat-player-${direction}-chapter-inlined-button`)
+            .should('exist')
+            .and('be.visible')
+            .click();
+        cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button-chapter`)
+            .should('exist')
+            .and('be.visible')
+            .click();
+        checkSliderPosition(expectedSliderPos);
+        cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button-chapter`).rightclick();
+        cy.get(`.cvat-player-${direction}-inlined-button`)
+            .should('exist')
+            .and('be.visible')
+            .click();
+        cy.get(`.cvat-player-${direction}-button`)
+            .rightclick();
+    }
+
     describe('Test chapter navigation buttons', () => {
         it('Chapter forward', () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-player-buttons').should('exist').and('be.visible');
-            cy.get('.cvat-player-buttons > .cvat-player-next-button').rightclick();
-            cy.get('.cvat-player-next-chapter-inlined-button')
-                .should('exist')
-                .and('be.visible')
-                .click();
-            cy.get('.cvat-player-buttons > .cvat-player-next-button-chapter')
-                .should('exist')
-                .and('be.visible')
-                .click();
-            cy.get('.ant-slider-handle')
-                .should('have.attr', 'aria-valuenow')
-                .and('equal', '20');
-            cy.get('.cvat-player-buttons > .cvat-player-next-button-chapter').rightclick();
-            cy.get('.cvat-player-next-inlined-button')
-                .should('exist')
-                .and('be.visible')
-                .click();
-            cy.get('.cvat-player-next-button')
-                .rightclick();
+            checkChapterNavigationButtons('next', '20');
         });
         it('Chapter backwards', () => {
-            cy.get('.cvat-player-buttons > .cvat-player-previous-button').rightclick();
-            cy.get('.cvat-player-previous-chapter-inlined-button')
-                .should('exist')
-                .and('be.visible')
-                .click();
-            cy.get('.cvat-player-buttons > .cvat-player-previous-button-chapter')
-                .should('exist')
-                .and('be.visible')
-                .click();
-            cy.get('.ant-slider-handle')
-                .should('have.attr', 'aria-valuenow')
-                .and('equal', '0');
-            cy.get('.cvat-player-buttons > .cvat-player-previous-button-chapter').rightclick();
-            cy.get('.cvat-player-previous-inlined-button')
-                .should('exist')
-                .and('be.visible')
-                .click();
-            cy.get('.cvat-player-previous-button')
-                .rightclick();
+            checkChapterNavigationButtons('previous', '0');
         });
     });
 
     describe('Test chapter navigation via shortcuts', () => {
         it('Chapter forward (b)', () => {
             cy.realPress('b');
-            cy.get('.ant-slider-handle')
-                .should('have.attr', 'aria-valuenow')
-                .and('equal', '20');
+            checkSliderPosition('20');
         });
         it('Chapter backwards (x)', () => {
             cy.realPress('x');
-            cy.get('.ant-slider-handle')
-                .should('have.attr', 'aria-valuenow')
-                .and('equal', '0');
+            checkSliderPosition('0');
         });
     });
 
@@ -99,20 +92,10 @@ context('Video chapters', () => {
         it('Check menu overview', () => {
             cy.get('.cvat-player-chapters-menu-button').click();
             cy.get('.cvat-player-chapter-menu-wrapper').should('exist').and('be.visible');
-            cy.contains('.cvat-player-chapter-menu-wrapper', 'Kapitel 2')
-                .should('exist')
-                .and('be.visible')
-                .click();
-            cy.get('.ant-slider-handle')
-                .should('have.attr', 'aria-valuenow')
-                .and('equal', '20');
-            cy.contains('.cvat-player-chapter-menu-wrapper', 'Kapitel 1')
-                .should('exist')
-                .and('be.visible')
-                .click();
-            cy.get('.ant-slider-handle')
-                .should('have.attr', 'aria-valuenow')
-                .and('equal', '0');
+            switchChapter(2);
+            checkSliderPosition('20');
+            switchChapter(1);
+            checkSliderPosition('0');
         });
     });
 });
