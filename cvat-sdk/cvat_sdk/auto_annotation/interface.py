@@ -4,7 +4,7 @@
 
 import abc
 from collections.abc import Sequence, Set
-from typing import Optional, Protocol, TypeAlias, TypeVar, Union
+from typing import Protocol, TypeAlias, TypeVar
 
 import attrs
 import PIL.Image
@@ -147,7 +147,7 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def conf_threshold(self) -> Optional[float]:
+    def conf_threshold(self) -> float | None:
         """
         The confidence threshold that the function should use for filtering
         detections.
@@ -173,7 +173,7 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
         """
 
 
-DetectionAnnotation: TypeAlias = Union[models.LabeledImageRequest, models.LabeledShapeRequest]
+DetectionAnnotation: TypeAlias = models.LabeledImageRequest | models.LabeledShapeRequest
 
 
 class DetectionFunction(AutoAnnotationFunction, Protocol):
@@ -375,7 +375,7 @@ class TrackingFunction(AutoAnnotationFunction, Protocol[_PreprocessedImage, _Tra
         context: TrackingFunctionShapeContext,
         pp_image: _PreprocessedImage,
         state: _TrackingState,
-    ) -> Optional[TrackableShape]:
+    ) -> TrackableShape | None:
         """
         Predicts the position of a previously-analyzed shape on a new image.
 

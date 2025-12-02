@@ -12,7 +12,7 @@ from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 from urllib.parse import urlsplit
 
 import attrs
@@ -53,7 +53,7 @@ class Config:
     allow_unsupported_server: bool = True
     """Allow to use SDK with an unsupported server version. If disabled, raise an exception"""
 
-    verify_ssl: Optional[bool] = None
+    verify_ssl: bool | None = None
     """Whether to verify host SSL certificate or not"""
 
     cache_dir: Path = attrs.field(converter=Path, default=_DEFAULT_CACHE_DIR)
@@ -105,8 +105,8 @@ class Client:
         self,
         url: str,
         *,
-        logger: Optional[logging.Logger] = None,
-        config: Optional[Config] = None,
+        logger: logging.Logger | None = None,
+        config: Config | None = None,
         check_server_version: bool = True,
     ) -> None:
         self.logger = logger or logging.getLogger(__name__)
@@ -134,7 +134,7 @@ class Client:
     _ORG_SLUG_HEADER = "X-Organization"
 
     @property
-    def organization_slug(self) -> Optional[str]:
+    def organization_slug(self) -> str | None:
         """
         If this is set to a slug for an organization,
         all requests will be made in the context of that organization.
@@ -147,7 +147,7 @@ class Client:
         return self.api_client.default_headers.get(self._ORG_SLUG_HEADER)
 
     @organization_slug.setter
-    def organization_slug(self, org_slug: Optional[str]):
+    def organization_slug(self, org_slug: str | None):
         if org_slug is None:
             self.api_client.default_headers.pop(self._ORG_SLUG_HEADER, None)
         else:
@@ -276,8 +276,8 @@ class Client:
         self: Client,
         rq_id: str,
         *,
-        status_check_period: Optional[int] = None,
-        log_prefix: Optional[str] = None,
+        status_check_period: int | None = None,
+        log_prefix: str | None = None,
     ) -> tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
@@ -302,7 +302,7 @@ class Client:
 
         return request, response
 
-    def check_server_version(self, fail_if_unsupported: Optional[bool] = None) -> None:
+    def check_server_version(self, fail_if_unsupported: bool | None = None) -> None:
         if fail_if_unsupported is None:
             fail_if_unsupported = not self.config.allow_unsupported_server
 
@@ -391,9 +391,9 @@ class CVAT_API_V2:
         self,
         path: str,
         *,
-        psub: Optional[Sequence[Any]] = None,
-        kwsub: Optional[dict[str, Any]] = None,
-        query_params: Optional[dict[str, Any]] = None,
+        psub: Sequence[Any] | None = None,
+        kwsub: dict[str, Any] | None = None,
+        query_params: dict[str, Any] | None = None,
     ) -> str:
         url = self.host + path
         if psub or kwsub:
@@ -406,9 +406,9 @@ class CVAT_API_V2:
 def make_client(
     host: str,
     *,
-    port: Optional[int] = None,
-    credentials: Union[Credentials, tuple[str, str], None] = None,
-    access_token: Optional[str] = None,
+    port: int | None = None,
+    credentials: Credentials | tuple[str, str] | None = None,
+    access_token: str | None = None,
 ) -> Client:
     """
     Create a Client object with the specified parameters.
