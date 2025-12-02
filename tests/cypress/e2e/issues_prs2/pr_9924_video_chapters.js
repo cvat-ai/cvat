@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 function checkFrameNum(frameNum) {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').should('have.value', frameNum);
