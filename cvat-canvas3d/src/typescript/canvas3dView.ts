@@ -747,6 +747,20 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.enablePerspectiveDragging();
     };
 
+    private onError = (exception: unknown, domain?: string): void => {
+        this.dispatchEvent(
+            new CustomEvent('canvas.error', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    domain,
+                    exception: exception instanceof Error ?
+                        exception : new Error(`Unknown exception: "${exception}"`),
+                },
+            }),
+        );
+    };
+
     private startAction(view: any, event: MouseEvent): void {
         const { clientID } = this.model.data.activeElement;
         if (event.detail !== 1 || this.mode !== Mode.IDLE || clientID === null || !(clientID in this.drawnObjects)) {
@@ -1428,6 +1442,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 this.statesToBeMerged = [];
                 model.data.activeElement.clientID = null;
             }
+        } else if (reason === UpdateReasons.DATA_FAILED) {
+            this.onError(model.exception, 'data fetching');
         }
     }
 

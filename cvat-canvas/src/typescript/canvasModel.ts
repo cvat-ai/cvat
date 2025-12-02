@@ -1157,7 +1157,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public get mode(): Mode {
         return this.data.mode;
     }
-    public get exception(): Error {
+
+    public get exception(): Error | null {
         return this.data.exception;
     }
 }
