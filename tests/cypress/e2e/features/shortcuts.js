@@ -45,6 +45,27 @@ function getCurrentPage() {
         .then(Number);
 }
 
+function searchAcrossPages(target) {
+    cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+
+    const waitAndContinueSearching = (t, oldPage) => {
+        goToNextPageOrFail(t).then(() => {
+            waitForPageChange(oldPage);
+            searchAcrossPages(t);
+        });
+    };
+
+    tableContains(target).then((found) => {
+        if (found) {
+            assertTargetVisible(target);
+        } else {
+            getCurrentPage().then((oldPage) => {
+                waitAndContinueSearching(target, oldPage);
+            });
+        }
+    });
+}
+
 context('Customizable Shortcuts', () => {
     const taskName = 'A task with markdown';
     const serverFiles = ['images/image_1.jpg'];
@@ -132,27 +153,6 @@ context('Customizable Shortcuts', () => {
         cy.get(searchItemClass).should('not.exist');
         cy.get('.cvat-shortcuts-settings-search input').clear();
         cy.get('.cvat-shortcuts-settings-search input').blur();
-    }
-
-    function searchAcrossPages(target) {
-        cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
-
-        const waitAndContinueSearching = (t, oldPage) => {
-            goToNextPageOrFail(t).then(() => {
-                waitForPageChange(oldPage);
-                searchAcrossPages(t);
-            });
-        };
-
-        tableContains(target).then((found) => {
-            if (found) {
-                assertTargetVisible(target);
-            } else {
-                getCurrentPage().then((oldPage) => {
-                    waitAndContinueSearching(target, oldPage);
-                });
-            }
-        });
     }
 
     function checkShortcutsMounted(label) {
