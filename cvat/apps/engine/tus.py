@@ -35,10 +35,13 @@ class TusTooLargeFileError(Exception):
 
 
 class TusChunk:
+    # Buffer size for reading request body in chunks (64KB)
+    BUFFER_SIZE: int = 64 * 1024
+
     def __init__(self, request: ExtendedRequest):
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
         self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
-        self.content = request.body
+        self.request = request
 
 
 @attrs.define()
@@ -203,11 +206,25 @@ class TusFile:
             file.seek(self.file_size - 1)
             file.write(b"\0")
 
+    def __write_chunk_data(self, chunk: TusChunk, file: Any) -> int:
+        bytes_written = 0
+        # Read and write data in small chunks to avoid loading all data into memory
+        while bytes_written < chunk.size:
+            bytes_to_read = min(chunk.BUFFER_SIZE, chunk.size - bytes_written)
+            data = chunk.request.read(bytes_to_read)
+            if not data:
+                return bytes_written
+            file.write(data)
+            bytes_written += len(data)
+        return bytes_written
+
     def write_chunk(self, chunk: TusChunk):
+        bytes_written = 0
         with open(self.file_path, "r+b") as file:
             file.seek(chunk.offset)
-            file.write(chunk.content)
-        self.meta_file.meta.offset += chunk.size
+            bytes_written = self.__write_chunk_data(chunk, file)
+        # Update offset with actual bytes written (handles interrupted uploads)
+        self.meta_file.meta.offset += bytes_written
         self.meta_file.dump()
 
     def is_complete(self):
