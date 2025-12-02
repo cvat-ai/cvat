@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
 from random import shuffle
-from typing import Any, Optional, Protocol, TypeVar, Union
+from typing import Any, ClassVar, Optional, Protocol, TypeVar, Union
 
 import av
 import av.codec
@@ -793,7 +793,9 @@ class VideoReaderWithManifest:
 
 
 class IChunkWriter(ABC):
-    def __init__(self, quality, dimension=DimensionType.DIM_2D):
+    CHUNK_MIME_TYPE: ClassVar[str]
+
+    def __init__(self, *, quality, dimension):
         self._image_quality = quality
         self._dimension = dimension
 
@@ -855,6 +857,7 @@ class IChunkWriter(ABC):
 
 
 class ZipChunkWriter(IChunkWriter):
+    CHUNK_MIME_TYPE = "application/zip"
     IMAGE_EXT = "jpeg"
     POINT_CLOUD_EXT = "pcd"
 
@@ -965,13 +968,17 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
 
 
 class Mpeg4ChunkWriter(IChunkWriter):
+    CHUNK_MIME_TYPE = "video/mp4"
     FORMAT = "mp4"
     MAX_MBS_PER_FRAME = 36864
 
-    def __init__(self, quality=67):
+    def __init__(self, *, quality, dimension):
         # translate inversed range [1:100] to [0:51]
         quality = round(51 * (100 - quality) / 99)
-        super().__init__(quality)
+        super().__init__(quality=quality, dimension=dimension)
+
+        assert self._dimension == DimensionType.DIM_2D
+
         self._output_fps = 25
         try:
             codec = av.codec.Codec("libopenh264", "w")
@@ -1075,8 +1082,8 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
 
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, quality):
-        super().__init__(quality)
+    def __init__(self, *, quality, dimension):
+        super().__init__(quality=quality, dimension=dimension)
         if self._codec_name == "libx264":
             self._codec_opts = {
                 "profile": "baseline",
