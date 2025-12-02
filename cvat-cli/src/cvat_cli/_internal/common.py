@@ -14,7 +14,7 @@ import textwrap
 from collections.abc import Callable
 from http.client import HTTPConnection
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
@@ -189,8 +189,8 @@ def configure_function_implementation_arguments(parser: argparse.ArgumentParser)
     def execute_with_function_loader(
         client,
         *,
-        function_module: Optional[str],
-        function_file: Optional[Path],
+        function_module: str | None,
+        function_file: Path | None,
         function_parameters: dict[str, Any],
         **kwargs,
     ):
@@ -205,8 +205,8 @@ def configure_function_implementation_arguments(parser: argparse.ArgumentParser)
 
 @attrs.frozen
 class FunctionLoader:
-    function_module: Optional[str]
-    function_file: Optional[Path]
+    function_module: str | None
+    function_file: Path | None
     function_parameters: dict[str, Any]
 
     def __attrs_post_init__(self):
