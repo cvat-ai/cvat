@@ -9,7 +9,7 @@ products:
 
 ## AWS requirements to create, run and manage VMs
 
-IAM user should have the folloing permissions:
+IAM user should have the following permissions:
 
 ```json
 {
@@ -174,7 +174,7 @@ config file (Note: the current file will be overwritten):
    git clone https://github.com/cvat-ai/cvat.git && cd cvat
    ```
 
-1. Place the `docker-compose.enterprise.yml` configuration file that you should recieve from CVAT team.
+1. Place the `docker-compose.enterprise.yml` configuration file that you should receive from CVAT team.
 
    Modify `docker-compose.enterprise.yml` if needed (e.g. to change default directory to store all CVAT related data).
    Please consult with CVAT team if you have any questions.
