@@ -93,36 +93,51 @@ context('Customizable Shortcuts', () => {
         cy.get('.cvat-shortcuts-settings-search input').blur();
     }
 
-    function checkShortcutsMounted(label) {
-        cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
-        const searchAcrossPages = (target) => {
-            cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+    function tableContains(target) {
+        return cy
+            .get('.cvat-shortcuts-modal-window-table')
+            .then(($table) => $table.text().includes(target));
+    }
 
-            cy.get('.cvat-shortcuts-modal-window-table').then(($table) => {
-                const found = $table.text().includes(target);
+    function assertTargetVisible(target) {
+        cy
+            .contains('.cvat-shortcuts-modal-window-table', target)
+            .should('be.visible');
+    }
 
-                if (found) {
-                    cy.contains('.cvat-shortcuts-modal-window-table', target).should('be.visible');
-                    return;
+    function goToNextPageOrFail(target) {
+        return cy
+            .get('.cvat-shortcuts-modal-window-table .ant-pagination-next button')
+            .then(($btn) => {
+                const disabled =
+                $btn.is(':disabled') ||
+                $btn.hasClass('ant-pagination-disabled');
+
+                if (disabled) {
+                    throw new Error(`"${target}" not mounted.`);
                 }
 
-                cy.get('.cvat-shortcuts-modal-window-table .ant-pagination-next button')
-                    .then(($btn) => {
-                        const disabled =
-                            $btn.is(':disabled') ||
-                            $btn.hasClass('ant-pagination-disabled');
-
-                        if (disabled) {
-                            throw new Error(`"${target}" not mounted.`);
-                        }
-
-                        cy.wrap($btn).click();
-                        cy.wait(500);
-
-                        searchAcrossPages(target);
-                    });
+                return cy.wrap($btn).click();
             });
-        };
+    }
+
+    function searchAcrossPages(target) {
+        cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+
+        tableContains(target).then((found) => {
+            if (found) {
+                assertTargetVisible(target);
+            } else {
+                goToNextPageOrFail(target).then(() => {
+                    cy.wait(500);
+                    searchAcrossPages(target);
+                });
+            }
+        });
+    }
+
+    function checkShortcutsMounted(label) {
+        cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
 
         for (let i = 1; i < 3; i++) {
             searchAcrossPages(label(i));

@@ -1,3 +1,16 @@
+function checkFrameNum(frameNum) {
+    cy.get('.cvat-player-frame-selector').within(() => {
+        cy.get('input[role="spinbutton"]').should('have.value', frameNum);
+    });
+}
+
+function switchChapter(chapterNumber) {
+    cy.contains('.cvat-player-chapter-menu-wrapper', `Kapitel ${chapterNumber}`)
+        .should('exist')
+        .and('be.visible')
+        .click();
+}
+
 context('Video chapters', () => {
     const taskName = 'Video task with chapters';
     const serverFiles = ['videos/video_with_chapters.mp4'];
@@ -32,19 +45,6 @@ context('Video chapters', () => {
     after(() => {
         cy.logout();
     });
-
-    function checkFrameNum(frameNum) {
-        cy.get('.cvat-player-frame-selector').within(() => {
-            cy.get('input[role="spinbutton"]').should('have.value', frameNum);
-        });
-    }
-
-    function switchChapter(chapterNumber) {
-        cy.contains('.cvat-player-chapter-menu-wrapper', `Kapitel ${chapterNumber}`)
-            .should('exist')
-            .and('be.visible')
-            .click();
-    }
 
     function checkChapterNavigationButtons(direction, expectedSliderPos) {
         cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button`).rightclick();
