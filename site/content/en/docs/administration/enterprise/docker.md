@@ -132,7 +132,7 @@ config file (Note: the current file will be overwritten):
          "Sid": "AllowToAssumeCrossAccountRole",
          "Effect": "Allow",
          "Action": "sts:AssumeRole",
-         "Resource": "arn:aws:iam::443536374637:role/   CvatEnterpriseCustomerRole"
+         "Resource": "<MUST BE PROVIDED BY CVAT TEAM>"
        }
      ]
    }
