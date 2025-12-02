@@ -99,7 +99,7 @@ config file (Note: the current file will be overwritten):
 1. Verify that the Docker login command succeeds by running the following command:
 
    ```bash
-   aws ecr get-login-password --region eu-west-1 --profile CvatEnterpriseCustomer | docker login --username AWS --password-stdin 443536374637.dkr.ecr.eu-west-1.amazonaws.com
+   aws ecr get-login-password --region eu-west-1 --profile CvatEnterpriseCustomer | docker login --username AWS --password-stdin <MUST BE PROVIDED BY CVAT TEAM>
    ```
 ### How to configure the environment in case AWS EC2 instance
 
