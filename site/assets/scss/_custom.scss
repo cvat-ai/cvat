@@ -7,6 +7,8 @@
 
 /* Code blocks */
 
+@import "product-tags";
+
 div.code-toolbar .toolbar {
     padding-right: 0.6em;
     opacity: 1 !important;
@@ -187,8 +189,6 @@ a#m-docs {
   .td-sidebar-nav {
     padding-top: 1.25rem;
   }
-
-  @import "product-tags";
 
 .td-content h2,
 .td-content h3 {

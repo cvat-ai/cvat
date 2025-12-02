@@ -17,7 +17,7 @@ products:
 
 - These are currently published here: [443536374637.dkr.ecr.eu-west-1.amazonaws.com/cvat/server_ent:v2.43.0](http://443536374637.dkr.ecr.eu-west-1.amazonaws.com/cvat/server_ent:v2.43.0)
 
-- A private Docker registry, accessible by the Kubernetest cluster. It will be referred to as registry.example below.
+- A private Docker registry, accessible by the Kubernetes cluster. It will be referred to as registry.example below.
 
 - RWX StorageClass must be configured in the cluster.
 
