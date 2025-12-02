@@ -15,6 +15,26 @@ function switchChapter(chapterNumber) {
         .click();
 }
 
+function checkChapterNavigationButtons(direction, expectedSliderPos) {
+    cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button`).rightclick();
+    cy.get(`.cvat-player-${direction}-chapter-inlined-button`)
+        .should('exist')
+        .and('be.visible')
+        .click();
+    cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button-chapter`)
+        .should('exist')
+        .and('be.visible')
+        .click();
+    checkFrameNum(expectedSliderPos);
+    cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button-chapter`).rightclick();
+    cy.get(`.cvat-player-${direction}-inlined-button`)
+        .should('exist')
+        .and('be.visible')
+        .click();
+    cy.get(`.cvat-player-${direction}-button`)
+        .rightclick();
+}
+
 context('Video chapters', () => {
     const taskName = 'Video task with chapters';
     const serverFiles = ['videos/video_with_chapters.mp4'];
@@ -49,26 +69,6 @@ context('Video chapters', () => {
     after(() => {
         cy.logout();
     });
-
-    function checkChapterNavigationButtons(direction, expectedSliderPos) {
-        cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button`).rightclick();
-        cy.get(`.cvat-player-${direction}-chapter-inlined-button`)
-            .should('exist')
-            .and('be.visible')
-            .click();
-        cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button-chapter`)
-            .should('exist')
-            .and('be.visible')
-            .click();
-        checkFrameNum(expectedSliderPos);
-        cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button-chapter`).rightclick();
-        cy.get(`.cvat-player-${direction}-inlined-button`)
-            .should('exist')
-            .and('be.visible')
-            .click();
-        cy.get(`.cvat-player-${direction}-button`)
-            .rightclick();
-    }
 
     describe('Test chapter navigation buttons', () => {
         it('Chapter forward', () => {

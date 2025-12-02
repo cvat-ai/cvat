@@ -4,6 +4,47 @@
 
 /// <reference types="cypress" />
 
+function tableContains(target) {
+    return cy
+        .get('.cvat-shortcuts-modal-window-table')
+        .then(($table) => $table.text().includes(target));
+}
+
+function assertTargetVisible(target) {
+    cy
+        .contains('.cvat-shortcuts-modal-window-table', target)
+        .should('be.visible');
+}
+
+function goToNextPageOrFail(target) {
+    return cy
+        .get('.cvat-shortcuts-modal-window-table .ant-pagination-next button')
+        .then(($btn) => {
+            const disabled =
+                $btn.is(':disabled') ||
+                $btn.hasClass('ant-pagination-disabled');
+
+            if (disabled) {
+                throw new Error(`"${target}" not mounted.`);
+            }
+
+            return cy.wrap($btn).click();
+        });
+}
+
+function waitForPageChange(oldPage) {
+    cy.get('.ant-pagination-item-active')
+        .invoke('text')
+        .should('eq', String(oldPage + 1));
+}
+
+function getCurrentPage() {
+    return cy
+        .get('.ant-pagination-item-active')
+        .invoke('text')
+        .then(Number);
+}
+
 context('Customizable Shortcuts', () => {
     const taskName = 'A task with markdown';
     const serverFiles = ['images/image_1.jpg'];
@@ -91,47 +132,6 @@ context('Customizable Shortcuts', () => {
         cy.get(searchItemClass).should('not.exist');
         cy.get('.cvat-shortcuts-settings-search input').clear();
         cy.get('.cvat-shortcuts-settings-search input').blur();
-    }
-
-    function tableContains(target) {
-        return cy
-            .get('.cvat-shortcuts-modal-window-table')
-            .then(($table) => $table.text().includes(target));
-    }
-
-    function assertTargetVisible(target) {
-        cy
-            .contains('.cvat-shortcuts-modal-window-table', target)
-            .should('be.visible');
-    }
-
-    function goToNextPageOrFail(target) {
-        return cy
-            .get('.cvat-shortcuts-modal-window-table .ant-pagination-next button')
-            .then(($btn) => {
-                const disabled =
-                $btn.is(':disabled') ||
-                $btn.hasClass('ant-pagination-disabled');
-
-                if (disabled) {
-                    throw new Error(`"${target}" not mounted.`);
-                }
-
-                return cy.wrap($btn).click();
-            });
-    }
-
-    function waitForPageChange(oldPage) {
-        cy.get('.ant-pagination-item-active')
-            .invoke('text')
-            .should('eq', String(oldPage + 1));
-    }
-
-    function getCurrentPage() {
-        return cy
-            .get('.ant-pagination-item-active')
-            .invoke('text')
-            .then((pageNumber) => Number(pageNumber));
     }
 
     function searchAcrossPages(target) {
