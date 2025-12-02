@@ -225,7 +225,7 @@ change the `CVAT_HOST` variable in the file (it should be FQDN).
    #!/usr/bin/env bash
    set -e
 
-   aws ecr get-login-password --region eu-west-1 --profile CvatEnterpriseCustomer | docker login --username AWS --password-stdin 443536374637.dkr.ecr.eu-west-1.amazonaws.com
+   aws ecr get-login-password --region eu-west-1 --profile CvatEnterpriseCustomer | docker login --username AWS --password-stdin <MUST BE PROVIDED BY CVAT TEAM>
 
    export CVAT_HOST=\<CUSTOM_DOMAIN\>
    export ACME_EMAIL=support@cvat.ai
