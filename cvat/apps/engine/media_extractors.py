@@ -802,7 +802,7 @@ class IChunkWriter(ABC):
     @staticmethod
     def _compress_image(
         source_image: av.VideoFrame | io.IOBase | Image.Image, quality: int
-    ) -> tuple[int, int, io.BytesIO]:
+    ) -> io.BytesIO:
         image = None
         if isinstance(source_image, av.VideoFrame):
             image = source_image.to_image()
@@ -849,7 +849,7 @@ class IChunkWriter(ABC):
         image.save(buf, format="JPEG", quality=quality, optimize=True)
         buf.seek(0)
 
-        return image.width, image.height, buf
+        return buf
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):
@@ -861,23 +861,21 @@ class ZipChunkWriter(IChunkWriter):
     IMAGE_EXT = "jpeg"
     POINT_CLOUD_EXT = "pcd"
 
-    def _write_pcd_file(self, image: str | io.BytesIO) -> tuple[io.BytesIO, str, int, int]:
+    def _write_pcd_file(self, image: str | io.BytesIO) -> tuple[io.BytesIO, str]:
         with ExitStack() as es:
             if isinstance(image, str):
                 image_buf = es.enter_context(open(image, "rb"))
             else:
                 image_buf = image
 
-            properties = ValidateDimension.get_pcd_properties(image_buf)
-            w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
             image_buf.seek(0, 0)
-            return io.BytesIO(image_buf.read()), self.POINT_CLOUD_EXT, w, h
+            return io.BytesIO(image_buf.read()), self.POINT_CLOUD_EXT
 
     def save_as_chunk(
         self,
         images: Iterator[tuple[Image.Image | io.IOBase | str, str, str]],
         chunk_path: str | io.IOBase,
-    ):
+    ) -> None:
         with zipfile.ZipFile(chunk_path, "x") as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
                 ext = os.path.splitext(path)[1].replace(".", "")
@@ -914,19 +912,15 @@ class ZipChunkWriter(IChunkWriter):
                         output = path
                 else:
                     if isinstance(image, io.BytesIO):
-                        output, ext = self._write_pcd_file(image)[0:2]
+                        output, ext = self._write_pcd_file(image)
                     else:
-                        output, ext = self._write_pcd_file(path)[0:2]
+                        output, ext = self._write_pcd_file(path)
 
                 arcname = "{:06d}.{}".format(idx, ext)
                 if isinstance(output, io.BytesIO):
                     zip_chunk.writestr(arcname, output.getvalue())
                 else:
                     zip_chunk.write(filename=output, arcname=arcname)
-
-        # return empty list because ZipChunkWriter write files as is
-        # and does not decode it to know img size.
-        return []
 
 
 class ZipCompressedChunkWriter(ZipChunkWriter):
@@ -937,14 +931,13 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
         *,
         compress_frames: bool = True,
         zip_compress_level: int = 0,
-    ) -> list[tuple[int, int]]:
-        image_sizes = []
+    ) -> None:
         with zipfile.ZipFile(chunk_path, "x", compresslevel=zip_compress_level) as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
                         try:
-                            w, h, image_buf = self._compress_image(image, self._image_quality)
+                            image_buf = self._compress_image(image, self._image_quality)
                         except Exception as ex:
                             raise RuntimeError(
                                 f"Exception occurred during compression of image {os.path.basename(path)!r}"
@@ -952,19 +945,15 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
                     else:
                         assert isinstance(image, io.IOBase)
                         image_buf = io.BytesIO(image.read())
-                        with Image.open(image_buf) as img:
-                            w, h = img.size
                     extension = self.IMAGE_EXT
                 else:
                     if isinstance(image, io.BytesIO):
-                        image_buf, extension, w, h = self._write_pcd_file(image)
+                        image_buf, extension = self._write_pcd_file(image)
                     else:
-                        image_buf, extension, w, h = self._write_pcd_file(path)
+                        image_buf, extension = self._write_pcd_file(path)
 
-                image_sizes.append((w, h))
                 arcname = "{:06d}.{}".format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
-        return image_sizes
 
 
 class Mpeg4ChunkWriter(IChunkWriter):
@@ -1041,9 +1030,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
         first_frame = next(frame_iter, None)
         return first_frame, itertools.chain((first_frame,), frame_iter)
 
-    def save_as_chunk(
-        self, images: Iterator[FrameDescriptor], chunk_path: str
-    ) -> Sequence[tuple[int, int]]:
+    def save_as_chunk(self, images: Iterator[FrameDescriptor], chunk_path: str) -> None:
         first_frame, images = self._peek_first_frame(images)
         if not first_frame:
             raise Exception("no images to save")
@@ -1061,8 +1048,6 @@ class Mpeg4ChunkWriter(IChunkWriter):
             )
 
             self._encode_images(images, output_container, output_v_stream)
-
-        return [(input_w, input_h)]
 
     @staticmethod
     def _encode_images(
@@ -1118,8 +1103,6 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
             )
 
             self._encode_images(images, output_container, output_v_stream)
-
-        return [(input_w, input_h)]
 
 
 def _is_archive(path):
