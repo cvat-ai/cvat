@@ -5,7 +5,6 @@
 import os.path as osp
 from collections.abc import Callable
 from glob import glob
-from typing import Optional
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import StreamDataset
@@ -55,7 +54,7 @@ def _import_common(
     instance_data: ProjectData | CommonData,
     format_name: str,
     *,
-    load_data_callback: Optional[Callable] = None,
+    load_data_callback: Callable | None = None,
     import_kwargs: dict | None = None,
     **kwargs,
 ):
