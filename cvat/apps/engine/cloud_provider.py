@@ -616,20 +616,29 @@ class S3CloudStorage(_CloudStorage):
             if arg_v:
                 kwargs[key] = arg_v
 
+        alibaba_oss_config = Config(
+            signature_version='s3',
+            s3={'addressing_style': 'virtual'}
+        )
+
+        s3_config = Config(
+            proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+            max_pool_connections=(
+                # AWS can throttle the requests if there are too many of them,
+                # the SDK handles it with the retry policy:
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
+                # 10 is the default value
+                max(10, CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU)
+            ),
+        )
+
+        config = alibaba_oss_config if endpoint_url and "aliyun" in endpoint_url else s3_config
+
         session = boto3.Session(**kwargs)
         self._s3 = session.resource(
             "s3",
             endpoint_url=endpoint_url,
-            config=Config(
-                proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
-                max_pool_connections=(
-                    # AWS can throttle the requests if there are too many of them,
-                    # the SDK handles it with the retry policy:
-                    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html
-                    # 10 is the default value
-                    max(10, CPU_NUMBER * settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER_PER_CPU)
-                ),
-            ),
+            config=config,
         )
 
         # anonymous access
