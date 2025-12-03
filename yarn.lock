@@ -2972,13 +2972,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/long@npm:^4.0.1":
-  version: 4.0.2
-  resolution: "@types/long@npm:4.0.2"
-  checksum: 10c0/42ec66ade1f72ff9d143c5a519a65efc7c1c77be7b1ac5455c530ae9acd87baba065542f8847522af2e3ace2cc999f3ad464ef86e6b7352eece34daf88f8c924
-  languageName: node
-  linkType: hard
-
 "@types/lru-cache@npm:^7.10.10":
   version: 7.10.10
   resolution: "@types/lru-cache@npm:7.10.10"
@@ -5734,7 +5727,7 @@ __metadata:
     json-logic-js: "npm:^2.0.2"
     lru-cache: "npm:^9.1.1"
     mousetrap: "npm:^1.6.5"
-    onnxruntime-web: "npm:1.14.0"
+    onnxruntime-web: "npm:1.23.2"
     platform: "npm:^1.3.6"
     prop-types: "npm:^15.7.2"
     react: "npm:18.2.0"
@@ -7377,10 +7370,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"flatbuffers@npm:^1.12.0":
-  version: 1.12.0
-  resolution: "flatbuffers@npm:1.12.0"
-  checksum: 10c0/14f9fb55f3063b389fc4e3d67ee8ffc71e351b478369fdae919701e458fc7766f2fea4f51181d6e73b4930fbc018cb7013558930367811b960cff01f23aae618
+"flatbuffers@npm:^25.1.24":
+  version: 25.9.23
+  resolution: "flatbuffers@npm:25.9.23"
+  checksum: 10c0/957c4ae2a02be1703c98b36b4dc8ceb81613cf8e2333026afc95a7b68b088bed5458056dc29d0ab7ce8bc403b8c003732b0968d24aba46f5e7c8f71789a6bd9e
   languageName: node
   linkType: hard
 
@@ -9946,10 +9939,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"long@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "long@npm:4.0.0"
-  checksum: 10c0/50a6417d15b06104dbe4e3d4a667c39b137f130a9108ea8752b352a4cfae047531a3ac351c181792f3f8768fe17cca6b0f406674a541a86fb638aaac560d83ed
+"long@npm:^5.0.0, long@npm:^5.2.3":
+  version: 5.3.2
+  resolution: "long@npm:5.3.2"
+  checksum: 10c0/7130fe1cbce2dca06734b35b70d380ca3f70271c7f8852c922a7c62c86c4e35f0c39290565eca7133c625908d40e126ac57c02b1b1a4636b9457d77e1e60b981
   languageName: node
   linkType: hard
 
@@ -12121,33 +12114,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"onnx-proto@npm:^4.0.4":
-  version: 4.0.4
-  resolution: "onnx-proto@npm:4.0.4"
-  dependencies:
-    protobufjs: "npm:^6.8.8"
-  checksum: 10c0/f05200d7c4b322f538af2eacf19fd9942705090b69946d40152274fdcbcae4d423eb69a67cae875ba3630fa6f10949a62b37311659db7e77c7e1e68a089095af
+"onnxruntime-common@npm:1.23.2":
+  version: 1.23.2
+  resolution: "onnxruntime-common@npm:1.23.2"
+  checksum: 10c0/414a6595e3942663bfb005eb8c3bae6600b907a63e86e304c3dcac78c006692ade6f270f325cf3773b77995add7551c271c5b3321529b7487c42848a3eae567c
   languageName: node
   linkType: hard
 
-"onnxruntime-common@npm:~1.14.0":
-  version: 1.14.0
-  resolution: "onnxruntime-common@npm:1.14.0"
-  checksum: 10c0/f06f439ae1afabfdb10fb4d5b2f3af5085c8c13b04f77ed440592386a6c82d22bc845b153056522b39446fa65b16e9cb13670ca09501d5df9c23ec0f0ace6d3b
-  languageName: node
-  linkType: hard
-
-"onnxruntime-web@npm:1.14.0":
-  version: 1.14.0
-  resolution: "onnxruntime-web@npm:1.14.0"
+"onnxruntime-web@npm:1.23.2":
+  version: 1.23.2
+  resolution: "onnxruntime-web@npm:1.23.2"
   dependencies:
-    flatbuffers: "npm:^1.12.0"
+    flatbuffers: "npm:^25.1.24"
     guid-typescript: "npm:^1.0.9"
-    long: "npm:^4.0.0"
-    onnx-proto: "npm:^4.0.4"
-    onnxruntime-common: "npm:~1.14.0"
+    long: "npm:^5.2.3"
+    onnxruntime-common: "npm:1.23.2"
     platform: "npm:^1.3.6"
-  checksum: 10c0/f58a95d6d0dd0abc87a2beb2377926173ea189290009a15957e2bce14f42740382a59aaf596a8ab80f4d98e621dd336028389fb3a25a743c9c41d768761ca5b3
+    protobufjs: "npm:^7.2.4"
+  checksum: 10c0/c95ce99dbcc481345a2c3e177a709dcc8770ccb8657a8c7a5776929cc830355db7c1858988dbd68eea04d2d935a56dd4a6e7050e55b96def431367d3d56bfd2b
   languageName: node
   linkType: hard
 
@@ -13193,9 +13177,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"protobufjs@npm:^6.8.8":
-  version: 6.11.4
-  resolution: "protobufjs@npm:6.11.4"
+"protobufjs@npm:^7.2.4":
+  version: 7.5.4
+  resolution: "protobufjs@npm:7.5.4"
   dependencies:
     "@protobufjs/aspromise": "npm:^1.1.2"
     "@protobufjs/base64": "npm:^1.1.2"
@@ -13207,13 +13191,9 @@ __metadata:
     "@protobufjs/path": "npm:^1.1.2"
     "@protobufjs/pool": "npm:^1.1.0"
     "@protobufjs/utf8": "npm:^1.1.0"
-    "@types/long": "npm:^4.0.1"
     "@types/node": "npm:>=13.7.0"
-    long: "npm:^4.0.0"
-  bin:
-    pbjs: bin/pbjs
-    pbts: bin/pbts
-  checksum: 10c0/c244d7b9b6d3258193da5c0d1e558dfb47f208ae345e209f90ec45c9dca911b90fa17e937892a9a39a4136ab9886981aae9efdf6039f7baff4f7225f5eeb9812
+    long: "npm:^5.0.0"
+  checksum: 10c0/913b676109ffb3c05d3d31e03a684e569be91f3bba8613da4a683d69d9dba948daa2afd7d2e7944d1aa6c417890c35d9d9a8883c1160affafb0f9670d59ef722
   languageName: node
   linkType: hard
 
