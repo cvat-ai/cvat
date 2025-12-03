@@ -192,6 +192,10 @@ module.exports = (env) => {
                         to  : 'assets/[name][ext]',
                     },
                     {
+                        from: '../node_modules/onnxruntime-web/dist/*.mjs',
+                        to: 'assets/[name][ext]',
+                    },
+                    {
                         from: 'src/assets/opencv_4.8.0.js',
                         to  : 'assets/opencv_4.8.0.js',
                     },
