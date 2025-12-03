@@ -9,7 +9,7 @@ function checkFrameNum(frameNum) {
 }
 
 function switchChapter(chapterNumber) {
-    cy.contains('.cvat-player-chapter-menu-wrapper', `Kapitel ${chapterNumber}`)
+    cy.contains('.cvat-player-chapter-menu-list-item', `Kapitel ${chapterNumber}`)
         .should('exist')
         .and('be.visible')
         .click();
