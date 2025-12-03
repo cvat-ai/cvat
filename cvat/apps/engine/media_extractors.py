@@ -795,7 +795,7 @@ class VideoReaderWithManifest:
 class IChunkWriter(ABC):
     CHUNK_MIME_TYPE: ClassVar[str]
 
-    def __init__(self, *, quality, dimension):
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
         self._image_quality = quality
         self._dimension = dimension
 
@@ -961,7 +961,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
     FORMAT = "mp4"
     MAX_MBS_PER_FRAME = 36864
 
-    def __init__(self, *, quality, dimension):
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
         # translate inversed range [1:100] to [0:51]
         quality = round(51 * (100 - quality) / 99)
         super().__init__(quality=quality, dimension=dimension)
