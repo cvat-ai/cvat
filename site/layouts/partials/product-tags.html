@@ -1,27 +1,35 @@
-{{- /* product-tags.html - safe fallback checks for products list */ -}}
+{{- /* site/layouts/partials/product-tags.html */ -}}
+{{- $ctx := . -}}
 
-{{- /* Try .Params.products first (the usual case when dot is a Page) */ -}}
-{{- $products := .Params.products -}}
+{{- /* Find products list: prefer .Params.products, then .Page.Params.products, then .Params.product(s) */ -}}
+{{- $products := $ctx.Params.products -}}
 {{- if not $products -}}
-  {{- /* Fallback: if dot does not have Params, try .Page.Params */ -}}
-  {{- with .Page }}
+  {{- with $ctx.Page -}}
     {{- $products = .Params.products -}}
   {{- end -}}
+{{- end -}}
+
+{{- if not $products -}}
+  {{- $products = $ctx.Params.product -}}
+{{- end -}}
+
+{{- if not $products -}}
+  {{- $products = $ctx.Params.products_list -}}
 {{- end -}}
 
 {{- if $products }}
   <div class="product-tags-box">
     <span class="product-tags-label">Relevant for:</span>
     {{- range $products }}
-      {{- $p := . -}}
+      {{- $p := . | lower | trim -}}
       {{- if eq $p "online" -}}
-        <a href="/docs/products/online/" class="product-tag">CVAT Online</a>
-      {{- end -}}
-      {{- if eq $p "enterprise" -}}
-        <a href="/docs/products/enterprise/" class="product-tag">CVAT Enterprise</a>
-      {{- end -}}
-      {{- if eq $p "community" -}}
-        <a href="/docs/products/community/" class="product-tag">CVAT Community</a>
+        <a href="{{ "/docs/products/online/" | relURL }}" class="product-tag">CVAT Online</a>
+      {{- else if eq $p "enterprise" -}}
+        <a href="{{ "/docs/products/enterprise/" | relURL }}" class="product-tag">CVAT Enterprise</a>
+      {{- else if eq $p "community" -}}
+        <a href="{{ "/docs/products/community/" | relURL }}" class="product-tag">CVAT Community</a>
+      {{- else -}}
+        <span class="product-tag">{{ . }}</span>
       {{- end -}}
     {{- end }}
   </div>
