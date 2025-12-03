@@ -89,4 +89,3 @@ You can use the `Split` function to split one track into two tracks:
 
 ![Example of an annotation with split tracks](/images/gif010_detrac.gif)
 ========
-     Read more in the section {{< ilink "/docs/annotation/manual-annotation/modes/track-mode-advanced" "track mode (advanced)" >}}.
