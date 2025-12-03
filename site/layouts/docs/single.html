@@ -6,9 +6,7 @@
     <h1>{{ .Title }}</h1>
   </header>
 
-  {{ if partialExists "product-tags.html" }}
   {{ partial "product-tags.html" . }}
-  {{ end }}
 
   <hr class="product-tags-separator">
 
