@@ -21,7 +21,7 @@
   <div class="product-tags-box">
     <span class="product-tags-label">Relevant for:</span>
     {{- range $products }}
-      {{- $p := . | lower | trim -}}
+      {{- $p := . | lower | strings.TrimSpace -}}
       {{- if eq $p "online" -}}
         <a href="{{ "/docs/products/online/" | relURL }}" class="product-tag">CVAT Online</a>
       {{- else if eq $p "enterprise" -}}
