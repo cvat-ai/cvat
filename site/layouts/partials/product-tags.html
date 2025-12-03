@@ -1,20 +1,28 @@
-{{- with .Page -}}
-  {{- $products := .Params.products -}}
-  {{- if $products -}}
-  <div class="product-tags-box">
-    <span class="product-tags-label">Relevant for:</span>
-      {{ range $products }}
-        {{ $p := . }}
-        {{ if eq $p "online" }}
-          <a href="/docs/products/online/" class="product-tag">CVAT Online</a>
-        {{ end }}
-        {{ if eq $p "enterprise" }}
-          <a href="/docs/products/enterprise/" class="product-tag">CVAT Enterprise</a>
-        {{ end }}
-        {{ if eq $p "community" }}
-          <a href="/docs/products/community/" class="product-tag">CVAT Community</a>
-        {{ end }}
-      {{ end }}
-  </div>
+{{- /* product-tags.html - safe fallback checks for products list */ -}}
+
+{{- /* Try .Params.products first (the usual case when dot is a Page) */ -}}
+{{- $products := .Params.products -}}
+{{- if not $products -}}
+  {{- /* Fallback: if dot does not have Params, try .Page.Params */ -}}
+  {{- with .Page }}
+    {{- $products = .Params.products -}}
   {{- end -}}
 {{- end -}}
+
+{{- if $products }}
+  <div class="product-tags-box">
+    <span class="product-tags-label">Relevant for:</span>
+    {{- range $products }}
+      {{- $p := . -}}
+      {{- if eq $p "online" -}}
+        <a href="/docs/products/online/" class="product-tag">CVAT Online</a>
+      {{- end -}}
+      {{- if eq $p "enterprise" -}}
+        <a href="/docs/products/enterprise/" class="product-tag">CVAT Enterprise</a>
+      {{- end -}}
+      {{- if eq $p "community" -}}
+        <a href="/docs/products/community/" class="product-tag">CVAT Community</a>
+      {{- end -}}
+    {{- end }}
+  </div>
+{{- end }}
