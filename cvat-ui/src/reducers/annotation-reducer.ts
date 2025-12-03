@@ -506,12 +506,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CONFIRM_CANVAS_READY: {
-            const { ranges } = action.payload;
             return {
                 ...state,
                 player: {
                     ...state.player,
-                    ranges: ranges || state.player.ranges,
                     frame: {
                         ...state.player.frame,
                         changeFrameEvent: null,
@@ -520,6 +518,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     ready: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_CACHED_CHUNKS: {
+            const { ranges } = action.payload;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    ranges,
                 },
             };
         }
