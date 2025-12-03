@@ -17,7 +17,7 @@ from collections import OrderedDict
 from collections.abc import Callable, Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
@@ -206,7 +206,7 @@ def _worker_job_init_tracking(
 
 def _worker_job_track(
     task_id: int, image: PIL.Image.Image, states: list[str]
-) -> list[Optional[cvataa.TrackableShape]]:
+) -> list[cvataa.TrackableShape | None]:
     _tracking_states.prune()
 
     pp_image = _current_function.preprocess_image(_TrackingFunctionContextImpl(), image)
@@ -312,7 +312,7 @@ class _TaskCacheLimiter:
 
 def _parse_event_stream(
     stream: SupportsReadline[bytes],
-) -> Iterator[Union[_Event, _NewReconnectionDelay]]:
+) -> Iterator[_Event | _NewReconnectionDelay]:
     # https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation
 
     event_type = event_data = ""
@@ -461,7 +461,7 @@ class _Agent:
                 self._validate_sublabel_compatibility(remote_sl, sl, sl_desc)
 
     def _validate_sublabel_compatibility(
-        self, remote_sl: dict, sl: Optional[models.Sublabel], sl_desc: str
+        self, remote_sl: dict, sl: models.Sublabel | None, sl_desc: str
     ):
         if not sl:
             raise CriticalError(f"{sl_desc} is not supported.")
@@ -742,7 +742,7 @@ class _Agent:
             else:
                 self._client.logger.info("AR %r failed", ar_id)
 
-    def _poll_for_ar(self, category: str) -> Optional[dict]:
+    def _poll_for_ar(self, category: str) -> dict | None:
         while True:
             self._client.logger.info(
                 "Trying to acquire an annotation request of category %r...", category
