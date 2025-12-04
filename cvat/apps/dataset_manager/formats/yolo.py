@@ -3,8 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 import os.path as osp
+from collections.abc import Callable
 from glob import glob
-from typing import Callable, Optional
+from typing import Optional
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import StreamDataset

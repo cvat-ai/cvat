@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Callable
 from datetime import timedelta
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse

@@ -9,12 +9,12 @@ import os.path as osp
 import re
 import sys
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterable, Iterator, Mapping, Sequence
 from functools import partial, reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Callable, Generator, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union
 
 import attr
 import datumaro as dm

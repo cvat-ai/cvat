@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Protocol
 
 import attrs
 import django_rq

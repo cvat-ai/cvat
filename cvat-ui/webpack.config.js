@@ -65,6 +65,7 @@ module.exports = (env) => {
                 // https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/
                 'Cross-Origin-Opener-Policy': 'same-origin',
                 'Cross-Origin-Embedder-Policy': 'credentialless',
+                'Service-Worker-Allowed': '/',
             },
             proxy: [{
                 context: (param) =>
@@ -108,6 +109,7 @@ module.exports = (env) => {
                             plugins: [
                                 '@babel/plugin-proposal-class-properties',
                                 '@babel/plugin-proposal-optional-chaining',
+                                '@babel/plugin-transform-private-methods',
                                 [
                                     'import',
                                     {
@@ -188,6 +190,10 @@ module.exports = (env) => {
                     {
                         from: '../node_modules/onnxruntime-web/dist/*.wasm',
                         to  : 'assets/[name][ext]',
+                    },
+                    {
+                        from: '../node_modules/onnxruntime-web/dist/*.mjs',
+                        to: 'assets/[name][ext]',
                     },
                     {
                         from: 'src/assets/opencv_4.8.0.js',

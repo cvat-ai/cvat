@@ -5,9 +5,10 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from pathlib import Path
 from types import NoneType
-from typing import TYPE_CHECKING, Any, ClassVar, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from attrs import frozen
 from django.conf import settings

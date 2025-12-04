@@ -9,12 +9,12 @@ import itertools
 import os
 import re
 import shutil
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -1649,13 +1649,12 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         original_chunk_writer_class = ZipChunkWriter
         original_quality = 100
 
-    chunk_writer_kwargs = {}
-    if db_task.dimension == models.DimensionType.DIM_3D:
-        chunk_writer_kwargs["dimension"] = db_task.dimension
     compressed_chunk_writer = compressed_chunk_writer_class(
-        db_data.image_quality, **chunk_writer_kwargs
+        quality=db_data.image_quality, dimension=db_task.dimension
     )
-    original_chunk_writer = original_chunk_writer_class(original_quality, **chunk_writer_kwargs)
+    original_chunk_writer = original_chunk_writer_class(
+        quality=original_quality, dimension=db_task.dimension
+    )
 
     db_segments = db_task.segment_set.order_by('start_frame').all()
 

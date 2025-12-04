@@ -5,10 +5,10 @@
 
 import heapq
 import math
-from collections.abc import Container, Sequence
+from collections.abc import Callable, Container, Generator, Iterable, Iterator, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Callable, Generator, Iterable, Iterator, Optional
+from typing import Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment

@@ -17,7 +17,7 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from logging import Logger
-from typing import Any, ClassVar, Optional, Type, Union
+from typing import Any, ClassVar, Optional, Union
 from zipfile import ZipFile
 
 import rapidjson
@@ -1265,7 +1265,7 @@ def import_project(filename, user, org_id):
 
 def create_backup(
     instance_id: int,
-    Exporter: Type[ProjectExporter | TaskExporter],
+    Exporter: type[ProjectExporter | TaskExporter],
     logger: Logger,
     cache_ttl: timedelta,
     *,
