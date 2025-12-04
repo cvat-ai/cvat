@@ -14,7 +14,7 @@ from functools import partial, reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple
+from typing import Any, Callable, Generator, Literal, NamedTuple, Optional, Union
 
 import attr
 import datumaro as dm
