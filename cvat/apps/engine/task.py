@@ -1649,13 +1649,12 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         original_chunk_writer_class = ZipChunkWriter
         original_quality = 100
 
-    chunk_writer_kwargs = {}
-    if db_task.dimension == models.DimensionType.DIM_3D:
-        chunk_writer_kwargs["dimension"] = db_task.dimension
     compressed_chunk_writer = compressed_chunk_writer_class(
-        db_data.image_quality, **chunk_writer_kwargs
+        quality=db_data.image_quality, dimension=db_task.dimension
     )
-    original_chunk_writer = original_chunk_writer_class(original_quality, **chunk_writer_kwargs)
+    original_chunk_writer = original_chunk_writer_class(
+        quality=original_quality, dimension=db_task.dimension
+    )
 
     db_segments = db_task.segment_set.order_by('start_frame').all()
 

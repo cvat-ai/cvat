@@ -464,7 +464,7 @@ class _Agent:
         self, remote_sl: dict, sl: models.Sublabel | None, sl_desc: str
     ):
         if not sl:
-            raise CriticalError(f"{sl_desc} is not supported.")
+            raise _IncompatibleFunctionError(f"{sl_desc} is not supported.")
 
         if remote_sl["type"] not in {"any", "unknown"} and remote_sl["type"] != sl.type:
             raise _IncompatibleFunctionError(

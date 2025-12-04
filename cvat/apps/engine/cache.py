@@ -877,7 +877,7 @@ class MediaCache:
         frame_step = db_data.get_frame_step()
 
         image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
-        writer = ZipCompressedChunkWriter(image_quality, dimension=db_task.dimension)
+        writer = ZipCompressedChunkWriter(quality=image_quality, dimension=db_task.dimension)
 
         dummy_frame = io.BytesIO()
         PIL.Image.new("RGB", (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
@@ -982,7 +982,7 @@ class MediaCache:
             )
 
         buff.seek(0)
-        return buff, get_chunk_mime_type_for_writer(writer)
+        return buff, writer.CHUNK_MIME_TYPE
 
     def _prepare_segment_preview(self, db_segment: Union[models.Segment, int]) -> DataWithMime:
         if isinstance(db_segment, int):
@@ -1127,10 +1127,7 @@ def prepare_chunk(
 
     image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
 
-    writer_kwargs = {}
-    if db_task.dimension == models.DimensionType.DIM_3D:
-        writer_kwargs["dimension"] = models.DimensionType.DIM_3D
-    merged_chunk_writer = writer_class(image_quality, **writer_kwargs)
+    merged_chunk_writer = writer_class(quality=image_quality, dimension=db_task.dimension)
 
     writer_kwargs = {}
     if dump_unchanged and isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
@@ -1140,18 +1137,4 @@ def prepare_chunk(
     merged_chunk_writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
 
     buffer.seek(0)
-    return buffer, get_chunk_mime_type_for_writer(writer_class)
-
-
-def get_chunk_mime_type_for_writer(writer: Union[IChunkWriter, type[IChunkWriter]]) -> str:
-    if isinstance(writer, IChunkWriter):
-        writer_class = type(writer)
-    else:
-        writer_class = writer
-
-    if issubclass(writer_class, ZipChunkWriter):
-        return "application/zip"
-    elif issubclass(writer_class, Mpeg4ChunkWriter):
-        return "video/mp4"
-    else:
-        assert False, f"Unknown chunk writer class {writer_class}"
+    return buffer, merged_chunk_writer.CHUNK_MIME_TYPE
