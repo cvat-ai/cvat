@@ -27,11 +27,13 @@ class TestTusFileWriteChunk(unittest.TestCase):
         """Test that data is read in BUFFER_SIZE chunks, not all at once"""
         mock_request = Mock()
         chunk_data = b"x" * (TusChunk.BUFFER_SIZE * 2 + 1000)
-        mock_request.read = Mock(side_effect=[
-            chunk_data[:TusChunk.BUFFER_SIZE],
-            chunk_data[TusChunk.BUFFER_SIZE:TusChunk.BUFFER_SIZE * 2],
-            chunk_data[TusChunk.BUFFER_SIZE * 2:],  # Remaining 1000 bytes
-        ])
+        mock_request.read = Mock(
+            side_effect=[
+                chunk_data[: TusChunk.BUFFER_SIZE],
+                chunk_data[TusChunk.BUFFER_SIZE : TusChunk.BUFFER_SIZE * 2],
+                chunk_data[TusChunk.BUFFER_SIZE * 2 :],  # Remaining 1000 bytes
+            ]
+        )
 
         chunk = self._create_mock_chunk(len(chunk_data), offset=0, mock_request=mock_request)
 
@@ -54,11 +56,13 @@ class TestTusFileWriteChunk(unittest.TestCase):
         """Test that interrupted upload saves partial data and returns actual bytes written"""
         mock_request = Mock()
         expected_data = b"x" * TusChunk.BUFFER_SIZE * 3
-        mock_request.read = Mock(side_effect=[
-            expected_data[:TusChunk.BUFFER_SIZE],
-            expected_data[TusChunk.BUFFER_SIZE:TusChunk.BUFFER_SIZE * 2],
-            b"",  # Connection interrupted - returns empty bytes
-        ])
+        mock_request.read = Mock(
+            side_effect=[
+                expected_data[: TusChunk.BUFFER_SIZE],
+                expected_data[TusChunk.BUFFER_SIZE : TusChunk.BUFFER_SIZE * 2],
+                b"",  # Connection interrupted - returns empty bytes
+            ]
+        )
 
         chunk = self._create_mock_chunk(len(expected_data), offset=0, mock_request=mock_request)
 
@@ -73,7 +77,7 @@ class TestTusFileWriteChunk(unittest.TestCase):
         assert bytes_written == TusChunk.BUFFER_SIZE * 2
         assert len(written_data) == 2
         assert mock_file.write.call_count == 2
-        assert b"".join(written_data) == expected_data[:TusChunk.BUFFER_SIZE * 2]
+        assert b"".join(written_data) == expected_data[: TusChunk.BUFFER_SIZE * 2]
 
     def test_write_chunk_data_with_exact_buffer_size(self):
         """Test writing data that is exactly BUFFER_SIZE"""
@@ -133,8 +137,8 @@ class TestTusFileWriteChunk(unittest.TestCase):
 
     def test_write_chunk_integration_with_real_file(self):
         """Integration test with real file I/O operations"""
-        import tempfile
         import json
+        import tempfile
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
@@ -144,10 +148,9 @@ class TestTusFileWriteChunk(unittest.TestCase):
             mock_request.read = Mock(return_value=chunk_data)
 
             from cvat.apps.engine.tus import TusFile
+
             metadata = TusFile.TusMeta(
-                file_size=len(chunk_data) + 100,
-                offset=100,
-                filename="test_file.dat"
+                file_size=len(chunk_data) + 100, offset=100, filename="test_file.dat"
             )
 
             file_id = TusFile.FileID(user_id=123)
@@ -156,34 +159,30 @@ class TestTusFileWriteChunk(unittest.TestCase):
             meta_path = temp_path / (file_id.as_str + ".meta")
 
             with open(file_path, "wb") as f:
-                f.write(b'\0' * (len(chunk_data) + 100))
+                f.write(b"\0" * (len(chunk_data) + 100))
 
             with open(meta_path, "w") as f:
-                json.dump({
-                    "file_size": metadata.file_size,
-                    "offset": metadata.offset,
-                    "filename": metadata.filename
-                }, f)
+                json.dump(
+                    {
+                        "file_size": metadata.file_size,
+                        "offset": metadata.offset,
+                        "filename": metadata.filename,
+                    },
+                    f,
+                )
 
-            tus_file = TusFile(
-                file_id=file_id,
-                upload_dir=temp_path
-            )
+            tus_file = TusFile(file_id=file_id, upload_dir=temp_path)
             tus_file.meta_file.init_from_file()
 
-            chunk = self._create_mock_chunk(
-                len(chunk_data),
-                offset=100,
-                mock_request=mock_request
-            )
+            chunk = self._create_mock_chunk(len(chunk_data), offset=100, mock_request=mock_request)
 
             tus_file.write_chunk(chunk)
 
             with open(file_path, "rb") as f:
                 content = f.read()
 
-            self.assertEqual(content[:100], b'\0' * 100)
-            self.assertEqual(content[100:100+len(chunk_data)], chunk_data)
+            self.assertEqual(content[:100], b"\0" * 100)
+            self.assertEqual(content[100 : 100 + len(chunk_data)], chunk_data)
 
             with open(meta_path, "r") as f:
                 meta_data = json.load(f)
@@ -193,8 +192,8 @@ class TestTusFileWriteChunk(unittest.TestCase):
 
     def test_write_chunk_integration_interrupted_upload_with_real_file(self):
         """Integration test: interrupted upload saves partial data to real file"""
-        import tempfile
         import json
+        import tempfile
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
@@ -202,17 +201,18 @@ class TestTusFileWriteChunk(unittest.TestCase):
             full_data = b"X" * (TusChunk.BUFFER_SIZE * 3)
 
             mock_request = Mock()
-            mock_request.read = Mock(side_effect=[
-                full_data[:TusChunk.BUFFER_SIZE],
-                full_data[TusChunk.BUFFER_SIZE:TusChunk.BUFFER_SIZE * 2],
-                b"",  # Connection interrupted
-            ])
+            mock_request.read = Mock(
+                side_effect=[
+                    full_data[: TusChunk.BUFFER_SIZE],
+                    full_data[TusChunk.BUFFER_SIZE : TusChunk.BUFFER_SIZE * 2],
+                    b"",  # Connection interrupted
+                ]
+            )
 
             from cvat.apps.engine.tus import TusFile
+
             metadata = TusFile.TusMeta(
-                file_size=len(full_data),
-                offset=0,
-                filename="test_interrupted.dat"
+                file_size=len(full_data), offset=0, filename="test_interrupted.dat"
             )
 
             file_id = TusFile.FileID(user_id=456)
@@ -220,23 +220,17 @@ class TestTusFileWriteChunk(unittest.TestCase):
             meta_path = temp_path / (file_id.as_str + ".meta")
 
             with open(file_path, "wb") as f:
-                f.write(b'\0' * len(full_data))
+                f.write(b"\0" * len(full_data))
 
             with open(meta_path, "w") as f:
-                json.dump({
-                    "file_size": metadata.file_size,
-                    "offset": 0,
-                    "filename": metadata.filename
-                }, f)
+                json.dump(
+                    {"file_size": metadata.file_size, "offset": 0, "filename": metadata.filename}, f
+                )
 
             tus_file = TusFile(file_id=file_id, upload_dir=temp_path)
             tus_file.meta_file.init_from_file()
 
-            chunk = self._create_mock_chunk(
-                len(full_data),
-                offset=0,
-                mock_request=mock_request
-            )
+            chunk = self._create_mock_chunk(len(full_data), offset=0, mock_request=mock_request)
 
             # Act: write chunk (will be interrupted)
             tus_file.write_chunk(chunk)
@@ -246,7 +240,9 @@ class TestTusFileWriteChunk(unittest.TestCase):
 
             expected_written = TusChunk.BUFFER_SIZE * 2
             self.assertEqual(content[:expected_written], full_data[:expected_written])
-            self.assertEqual(content[expected_written:], b'\0' * (len(full_data) - expected_written))
+            self.assertEqual(
+                content[expected_written:], b"\0" * (len(full_data) - expected_written)
+            )
 
             with open(meta_path, "r") as f:
                 meta_data = json.load(f)
@@ -255,4 +251,3 @@ class TestTusFileWriteChunk(unittest.TestCase):
             self.assertFalse(tus_file.is_complete())
 
             self.assertEqual(tus_file.offset, expected_written)
-
