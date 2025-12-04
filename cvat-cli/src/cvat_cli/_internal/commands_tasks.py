@@ -8,7 +8,6 @@ import argparse
 import os
 import textwrap
 from collections.abc import Sequence
-from typing import Optional
 
 import cvat_sdk.auto_annotation as cvataa
 from attr.converters import to_bool
@@ -471,7 +470,7 @@ class TaskAutoAnnotate:
         function_loader: FunctionLoader,
         clear_existing: bool = False,
         allow_unmatched_labels: bool = False,
-        conf_threshold: Optional[float],
+        conf_threshold: float | None,
         conv_mask_to_poly: bool,
     ) -> None:
         function = function_loader.load()

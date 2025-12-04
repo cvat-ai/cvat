@@ -14,7 +14,7 @@ from inspect import isgenerator
 from io import StringIO
 from itertools import islice
 from json.decoder import JSONDecodeError
-from typing import Any, Optional, Union
+from typing import Any
 
 import av
 from PIL import Image
@@ -78,8 +78,8 @@ class VideoStreamReader:
         container: av.container.InputContainer,
         video_stream: av.video.stream.VideoStream,
         key_frame: dict,
-        prev_seek_pts: Optional[int],
-    ) -> Optional[int]:
+        prev_seek_pts: int | None,
+    ) -> int | None:
         """
         Returns a pts of the first decoded frame after seeking to the key_frame pts
         Returns None if the key frame is not suitable for seeking
@@ -103,7 +103,7 @@ class VideoStreamReader:
             return seek_pts
         return None
 
-    def __iter__(self) -> Iterator[Union[int, tuple[int, int, str]]]:
+    def __iter__(self) -> Iterator[int | tuple[int, int, str]]:
         """
         Iterate over video frames and yield key frames or indexes.
 
@@ -117,10 +117,10 @@ class VideoStreamReader:
         ):
             reading_v_stream = self._get_video_stream(reading_container)
             checking_v_stream = self._get_video_stream(checking_container)
-            prev_pts: Optional[int] = None
-            prev_dts: Optional[int] = None
+            prev_pts: int | None = None
+            prev_dts: int | None = None
             index, key_frame_count = 0, 0
-            prev_seek_pts: Optional[int] = None
+            prev_seek_pts: int | None = None
 
             for packet in reading_container.demux(reading_v_stream):
                 for frame in packet.decode():
@@ -171,12 +171,12 @@ class VideoStreamReader:
 class DatasetImagesReader:
     def __init__(
         self,
-        sources: Union[list[str | NamedBytesIO], Iterable[str | NamedBytesIO]],
+        sources: list[str | NamedBytesIO] | Iterable[str | NamedBytesIO],
         *,
         start: int = 0,
         step: int = 1,
-        stop: Optional[int] = None,
-        meta: Optional[dict[str, list[str]]] = None,
+        stop: int | None = None,
+        meta: dict[str, list[str]] | None = None,
         sorting_method: SortingMethod = SortingMethod.PREDEFINED,
         use_image_hash: bool = False,
         **kwargs,
@@ -185,7 +185,7 @@ class DatasetImagesReader:
 
         if not self._is_generator_used:
             raw_data_used = not isinstance(sources[0], str)
-            func: Optional[Callable[[NamedBytesIO], str]] = (
+            func: Callable[[NamedBytesIO], str] | None = (
                 (lambda x: x.filename) if raw_data_used else None
             )
             self._sources = sort(sources, sorting_method, func=func)
@@ -226,7 +226,7 @@ class DatasetImagesReader:
     def step(self, value):
         self._step = int(value)
 
-    def _get_img_properties(self, image: Union[str, NamedBytesIO]) -> dict[str, Any]:
+    def _get_img_properties(self, image: str | NamedBytesIO) -> dict[str, Any]:
         if self._data_dir:
             img_name = os.path.relpath(image, self._data_dir)
         else:
@@ -743,10 +743,10 @@ class ImageManifestManager(_ManifestManager):
     def emulate_hierarchical_structure(
         self,
         page_size: int,
-        manifest_prefix: Optional[str] = None,
+        manifest_prefix: str | None = None,
         prefix: str = "",
-        default_prefix: Optional[str] = None,
-        start_index: Optional[int] = None,
+        default_prefix: str | None = None,
+        start_index: int | None = None,
     ) -> dict:
 
         if (

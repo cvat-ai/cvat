@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Mapping, Sequence
-from typing import Optional, TypeAlias, Union, cast
+from typing import TypeAlias, cast
 
 import attrs
 
@@ -33,11 +33,9 @@ class _AttributeNameMapping:
 @attrs.frozen
 class _SublabelNameMapping:
     name: str
-    attributes: Optional[Mapping[str, _AttributeNameMapping]] = attrs.field(
-        kw_only=True, default=None
-    )
+    attributes: Mapping[str, _AttributeNameMapping] | None = attrs.field(kw_only=True, default=None)
 
-    def map_attribute(self, name: str) -> Optional[_AttributeNameMapping]:
+    def map_attribute(self, name: str) -> _AttributeNameMapping | None:
         if self.attributes is None:
             return _AttributeNameMapping(name)
 
@@ -57,11 +55,9 @@ class _SublabelNameMapping:
 
 @attrs.frozen
 class _LabelNameMapping(_SublabelNameMapping):
-    sublabels: Optional[Mapping[str, _SublabelNameMapping]] = attrs.field(
-        kw_only=True, default=None
-    )
+    sublabels: Mapping[str, _SublabelNameMapping] | None = attrs.field(kw_only=True, default=None)
 
-    def map_sublabel(self, name: str) -> Optional[_SublabelNameMapping]:
+    def map_sublabel(self, name: str) -> _SublabelNameMapping | None:
         if self.sublabels is None:
             return _SublabelNameMapping(name)
 
@@ -81,9 +77,9 @@ class _LabelNameMapping(_SublabelNameMapping):
 
 @attrs.frozen
 class _SpecNameMapping:
-    labels: Optional[Mapping[str, _LabelNameMapping]] = attrs.field(kw_only=True, default=None)
+    labels: Mapping[str, _LabelNameMapping] | None = attrs.field(kw_only=True, default=None)
 
-    def map_label(self, name: str) -> Optional[_LabelNameMapping]:
+    def map_label(self, name: str) -> _LabelNameMapping | None:
         if self.labels is None:
             return _LabelNameMapping(name)
 
@@ -103,15 +99,15 @@ class _AnnotationMapper:
     @attrs.frozen
     class _SublabelIdMapping:
         id: int
-        attributes: Mapping[int, Optional[_AnnotationMapper._AttributeIdMapping]]
+        attributes: Mapping[int, _AnnotationMapper._AttributeIdMapping | None]
 
     @attrs.frozen
     class _LabelIdMapping(_SublabelIdMapping):
-        sublabels: Mapping[int, Optional[_AnnotationMapper._SublabelIdMapping]]
+        sublabels: Mapping[int, _AnnotationMapper._SublabelIdMapping | None]
         expected_num_elements: int
         expected_type: str
 
-    _SpecIdMapping: TypeAlias = Mapping[int, Optional[_LabelIdMapping]]
+    _SpecIdMapping: TypeAlias = Mapping[int, _LabelIdMapping | None]
 
     _spec_id_mapping: _SpecIdMapping
 
@@ -173,7 +169,7 @@ class _AnnotationMapper:
 
         def attribute_mapping(
             fun_attr: models.IAttribute,
-        ) -> Optional[_AnnotationMapper._AttributeIdMapping]:
+        ) -> _AnnotationMapper._AttributeIdMapping | None:
             attr_desc = f"attribute {fun_attr.name!r} of {sl_desc}"
 
             attr_nm = sl_nm.map_attribute(fun_attr.name)
@@ -220,7 +216,7 @@ class _AnnotationMapper:
 
         def sublabel_mapping(
             fun_sl: models.ISublabel,
-        ) -> Optional[_AnnotationMapper._SublabelIdMapping]:
+        ) -> _AnnotationMapper._SublabelIdMapping | None:
             sl_desc = f"sublabel {fun_sl.name!r} of {label_desc}"
 
             sublabel_nm = label_nm.map_sublabel(fun_sl.name)
@@ -267,7 +263,7 @@ class _AnnotationMapper:
 
         def label_id_mapping(
             fun_label: models.ILabel,
-        ) -> Optional[_AnnotationMapper._LabelIdMapping]:
+        ) -> _AnnotationMapper._LabelIdMapping | None:
             label_desc = f"label {fun_label.name!r}"
 
             label_nm = spec_nm.map_label(fun_label.name)
@@ -344,7 +340,7 @@ class _AnnotationMapper:
 
     def _remap_attributes(
         self,
-        annotation: Union[DetectionAnnotation, models.SubLabeledShapeRequest],
+        annotation: DetectionAnnotation | models.SubLabeledShapeRequest,
         label_id_mapping: _SublabelIdMapping,
     ) -> None:
         seen_attr_ids = set()
@@ -519,7 +515,7 @@ class _AnnotationMapper:
 @attrs.frozen(kw_only=True)
 class _DetectionFunctionContextImpl(DetectionFunctionContext):
     frame_name: str
-    conf_threshold: Optional[float] = None
+    conf_threshold: float | None = None
     conv_mask_to_poly: bool = False
 
 
@@ -528,10 +524,10 @@ def annotate_task(
     task_id: int,
     function: DetectionFunction,
     *,
-    pbar: Optional[ProgressReporter] = None,
+    pbar: ProgressReporter | None = None,
     clear_existing: bool = False,
     allow_unmatched_labels: bool = False,
-    conf_threshold: Optional[float] = None,
+    conf_threshold: float | None = None,
     conv_mask_to_poly: bool = False,
 ) -> None:
     """

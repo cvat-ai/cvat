@@ -11,7 +11,7 @@ import os
 from contextlib import AbstractContextManager
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import urllib3
 
@@ -132,8 +132,8 @@ class Uploader:
         *,
         meta: dict[str, Any],
         query_params: dict[str, Any] = None,
-        fields: Optional[dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
+        fields: dict[str, Any] | None = None,
+        pbar: ProgressReporter | None = None,
         logger=None,
     ) -> urllib3.HTTPResponse:
         """
@@ -225,10 +225,10 @@ class AnnotationUploader(Uploader):
         filename: Path,
         format_name: str,
         *,
-        conv_mask_to_poly: Optional[bool] = None,
-        url_params: Optional[dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
+        conv_mask_to_poly: bool | None = None,
+        url_params: dict[str, Any] | None = None,
+        pbar: ProgressReporter | None = None,
+        status_check_period: int | None = None,
     ):
         url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
@@ -252,10 +252,10 @@ class DatasetUploader(Uploader):
         filename: Path,
         format_name: str,
         *,
-        url_params: Optional[dict[str, Any]] = None,
-        conv_mask_to_poly: Optional[bool] = None,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
+        url_params: dict[str, Any] | None = None,
+        conv_mask_to_poly: bool | None = None,
+        pbar: ProgressReporter | None = None,
+        status_check_period: int | None = None,
     ):
         url = self._client.api_map.make_endpoint_url(upload_endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
@@ -282,7 +282,7 @@ class DataUploader(Uploader):
         url: str,
         resources: list[Path],
         *,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
         **kwargs,
     ):
         bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)

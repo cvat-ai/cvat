@@ -103,6 +103,7 @@ export enum AnnotationActionTypes {
     SAVE_ANNOTATIONS_FAILED = 'SAVE_ANNOTATIONS_FAILED',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
+    UPDATE_CACHED_CHUNKS = 'UPDATE_CACHED_CHUNKS',
 
     UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
 
@@ -361,7 +362,7 @@ export function updateCanvasBrushTools(config: {
 }
 
 export function removeAnnotationsAsync(
-    startFrame: number, stopFrame: number, delTrackKeyframesOnly: boolean,
+    startFrame: number | undefined, stopFrame: number | undefined, delTrackKeyframesOnly: boolean,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
@@ -600,20 +601,23 @@ export function switchShowSearchFramesModal(visible: boolean): AnyAction {
     };
 }
 
-function confirmCanvasReady(ranges?: string): AnyAction {
+function updateCachedChunks(ranges: string): AnyAction {
     return {
-        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
+        type: AnnotationActionTypes.UPDATE_CACHED_CHUNKS,
         payload: { ranges },
     };
 }
 
-export function confirmCanvasReadyAsync(): ThunkAction {
+export function updateCachedChunksAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
             const state: CombinedState = getState();
             const job = state.annotation.job.instance as Job;
+            if (!job) {
+                return;
+            }
+
             const includedFrames = state.annotation.job.frameNumbers;
-            const { changeFrameEvent } = state.annotation.player.frame;
             const chunks = await job.frames.cachedChunks() as number[];
             const { frameCount, dataChunkSize } = job;
 
@@ -632,12 +636,27 @@ export function confirmCanvasReadyAsync(): ThunkAction {
                 return acc;
             }, []).map(([start, end]) => `${start}:${end}`).join(';');
 
-            dispatch(confirmCanvasReady(ranges));
-            await changeFrameEvent?.close();
+            dispatch(updateCachedChunks(ranges));
         } catch (error) {
             // even if error happens here, do not need to notify the users
-            dispatch(confirmCanvasReady());
         }
+    };
+}
+
+function confirmCanvasReady(): AnyAction {
+    return {
+        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
+        payload: {},
+    };
+}
+
+export function confirmCanvasReadyAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+        const state: CombinedState = getState();
+        const { changeFrameEvent } = state.annotation.player.frame;
+        await dispatch(updateCachedChunksAsync());
+        dispatch(confirmCanvasReady());
+        await changeFrameEvent?.close();
     };
 }
 
