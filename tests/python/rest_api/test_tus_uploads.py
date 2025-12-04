@@ -264,7 +264,7 @@ class TestTUSUpload:
                 listen="127.0.0.1:28474",
                 upstream=f"{upstream_host}:{upstream_port}",  # Forwards to CVAT
             )
-        except:
+        except Exception:  # pylint: disable=broad-except
             proxy = toxiproxy.get_proxy("cvat_upload_test")
             proxy.upstream = f"{upstream_host}:{upstream_port}"
 
@@ -302,7 +302,7 @@ class TestTUSUpload:
                     type="reset_peer",  # Closes TCP connection
                     attributes={},
                 )
-            except:
+            except Exception:  # pylint: disable=broad-except
                 pass
 
         # At 50KB/s, ~300KB chunk takes ~6 seconds
@@ -334,22 +334,20 @@ class TestTUSUpload:
             requests.exceptions.ChunkedEncodingError,
         ) as e:
             exception_caught = True
-            print(f"Expected exception caught: {type(e).__name__}")
 
         try:
             proxy.destroy_toxic("bandwidth_limit")
-        except:
+        except Exception:  # pylint: disable=broad-except
             pass
         try:
             proxy.destroy_toxic("close_connection")
-        except:
+        except Exception:  # pylint: disable=broad-except
             pass
 
         time.sleep(1.0)
 
         try:
             current_offset = self._get_upload_offset(task.id, file_id)
-            print(f"Server saved offset: {current_offset} bytes (chunk was {chunk_size} bytes)")
 
             # Server should have saved partial data if connection dropped
             if exception_caught:
@@ -362,8 +360,6 @@ class TestTUSUpload:
                     f"Got offset: {current_offset}, chunk_size: {chunk_size}"
                 )
 
-                print(f"✓ Server correctly saved partial data: {current_offset} bytes")
-
             # Resume upload
             remaining_data = image_data[current_offset:]
             response = self._upload_chunk(task.id, file_id, current_offset, remaining_data)
@@ -373,5 +369,5 @@ class TestTUSUpload:
         finally:
             try:
                 toxiproxy.destroy(proxy)
-            except:
+            except Exception:  # pylint: disable=broad-except
                 pass

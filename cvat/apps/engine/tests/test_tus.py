@@ -3,9 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import unittest
-from io import BytesIO
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, mock_open, patch
+from unittest.mock import Mock
 
 from cvat.apps.engine.tus import TusChunk, TusFile
 
@@ -68,7 +67,7 @@ class TestTusFileWriteChunk(unittest.TestCase):
 
         mock_file = Mock()
         written_data = []
-        mock_file.write = Mock(side_effect=lambda data: written_data.append(data))
+        mock_file.write = Mock(side_effect=written_data.append)
 
         tus_file = TusFile.__new__(TusFile)
 
@@ -147,8 +146,6 @@ class TestTusFileWriteChunk(unittest.TestCase):
             mock_request = Mock()
             mock_request.read = Mock(return_value=chunk_data)
 
-            from cvat.apps.engine.tus import TusFile
-
             metadata = TusFile.TusMeta(
                 file_size=len(chunk_data) + 100, offset=100, filename="test_file.dat"
             )
@@ -208,8 +205,6 @@ class TestTusFileWriteChunk(unittest.TestCase):
                     b"",  # Connection interrupted
                 ]
             )
-
-            from cvat.apps.engine.tus import TusFile
 
             metadata = TusFile.TusMeta(
                 file_size=len(full_data), offset=0, filename="test_interrupted.dat"
