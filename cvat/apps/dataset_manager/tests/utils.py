@@ -6,7 +6,6 @@ import os
 import tempfile
 import unittest
 from types import TracebackType
-from typing import Optional
 from unittest.mock import patch
 
 from datumaro.components.dataset import StreamDataset
@@ -27,9 +26,9 @@ class FileRemover:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if self.is_dir:
             try:
@@ -55,7 +54,7 @@ class TestDir(FileRemover):
             ...
     """
 
-    def __init__(self, path: Optional[str] = None, frame_id: int = 2):
+    def __init__(self, path: str | None = None, frame_id: int = 2):
         if not path:
             prefix = f"temp_{current_function_name(frame_id)}-"
         else:

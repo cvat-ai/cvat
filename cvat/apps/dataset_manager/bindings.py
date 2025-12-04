@@ -14,7 +14,7 @@ from functools import partial, reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Generator, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import attr
 import datumaro as dm
@@ -76,7 +76,7 @@ class InstanceLabelData:
             'sublabels',
         ])
 
-    def __init__(self, instance: Union[Task, Project]) -> None:
+    def __init__(self, instance: Task | Project) -> None:
         instance = instance.project if isinstance(instance, Task) and instance.project_id is not None else instance
 
         db_labels = self.add_prefetch_info(instance.label_set.all())
@@ -296,7 +296,7 @@ class CommonData(InstanceLabelData):
         host: str = '',
         create_callback=None,
         use_server_track_ids: bool = False,
-        included_frames: Optional[Sequence[int]] = None
+        included_frames: Sequence[int] | None = None
     ) -> None:
         self._dimension = annotation_ir.dimension
         self._annotation_ir = annotation_ir
@@ -309,7 +309,7 @@ class CommonData(InstanceLabelData):
         self._db_data: models.Data = db_task.data
         self._use_server_track_ids = use_server_track_ids
         self._required_frames = included_frames
-        self._initialized_included_frames: Optional[set[int]] = None
+        self._initialized_included_frames: set[int] | None = None
         self._db_subset = db_task.subset
 
         super().__init__(db_task)
@@ -786,8 +786,8 @@ class CommonData(InstanceLabelData):
         return osp.splitext(path)[0]
 
     def match_frame(self,
-        path: str, root_hint: Optional[str] = None, *, path_has_ext: bool = True
-    ) -> Optional[int]:
+        path: str, root_hint: str | None = None, *, path_has_ext: bool = True
+    ) -> int | None:
         if path_has_ext:
             path = self._get_filename(path)
 
@@ -799,7 +799,7 @@ class CommonData(InstanceLabelData):
 
         return match
 
-    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> Optional[int]:
+    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> int | None:
         # Preconditions:
         # - The input dataset is full, i.e. all items present. Partial dataset
         # matching can't be correct for all input cases.
@@ -1488,7 +1488,7 @@ class ProjectData(InstanceLabelData):
     def match_frame(self,
         path: str, subset: str = dm.DEFAULT_SUBSET_NAME,
         root_hint: str = None, path_has_ext: bool = True
-    ) -> Optional[int]:
+    ) -> int | None:
         if path_has_ext:
             path = self._get_filename(path)
 
@@ -1500,7 +1500,7 @@ class ProjectData(InstanceLabelData):
 
         return match_task, match_frame
 
-    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> Optional[int]:
+    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> int | None:
         if path_has_ext:
             path = self._get_filename(path)
 
@@ -1747,7 +1747,7 @@ class CVATDataExtractorMixin:
     ):
         self.convert_annotations = convert_annotations or convert_cvat_anno_to_dm
 
-        self._media_provider: Optional[MediaProvider] = None
+        self._media_provider: MediaProvider | None = None
 
     def __enter__(self):
         return self
@@ -1971,7 +1971,7 @@ class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
 
 
 def GetCVATDataExtractor(
-    instance_data: Union[ProjectData, CommonData],
+    instance_data: ProjectData | CommonData,
     include_images: bool = False,
     format_type: str = None,
     dimension: DimensionType = DimensionType.DIM_2D,
@@ -2250,8 +2250,8 @@ def convert_cvat_anno_to_dm(
 
 def match_dm_item(
     item: dm.DatasetItem,
-    instance_data: Union[ProjectData, CommonData],
-    root_hint: Optional[str] = None
+    instance_data: ProjectData | CommonData,
+    root_hint: str | None = None
 ) -> int:
     is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
 
@@ -2271,8 +2271,8 @@ def match_dm_item(
     return frame_number
 
 def find_dataset_root(
-    dm_dataset: dm.IDataset, instance_data: Union[ProjectData, CommonData]
-) -> Optional[str]:
+    dm_dataset: dm.IDataset, instance_data: ProjectData | CommonData
+) -> str | None:
     longest_path_item = max(dm_dataset, key=lambda item: len(Path(item.id).parts), default=None)
     if longest_path_item is None:
         return None
@@ -2289,7 +2289,7 @@ def find_dataset_root(
 
     return prefix
 
-def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectData, CommonData]):
+def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | CommonData):
     if len(dm_dataset) == 0:
         return
 
