@@ -20,7 +20,7 @@
     height: 48px;
     padding: 0;
 
-    > div:first-child {
+    >div:first-child {
         display: flex;
         flex: 1;
         flex-flow: unset;
@@ -46,20 +46,20 @@
             color: $text-color;
         }
 
-        > span:not([role='img']) {
+        >span:not([role='img']) {
             margin-left: 0;
             font-size: 10px;
         }
 
-        > span[role='img'] {
+        >span[role='img'] {
             font-size: 20px;
         }
 
-        &:hover > span[role='img'] {
+        &:hover>span[role='img'] {
             transform: scale(1.1);
         }
 
-        &:active > span[role='img'] {
+        &:active>span[role='img'] {
             transform: scale(1.05);
         }
 
@@ -75,7 +75,7 @@
     .cvat-annotation-header-left-group {
         display: flex;
 
-        > .cvat-annotation-header-button.cvat-annotation-header-menu-button {
+        >.cvat-annotation-header-button.cvat-annotation-header-menu-button {
             width: $grid-unit-size * 9;
             background: black;
             color: white;
@@ -100,7 +100,7 @@
     pointer-events: none;
 }
 
-.cvat-annotation-header-player-group > div {
+.cvat-annotation-header-player-group>div {
     height: 48px;
     line-height: 0;
     flex-wrap: nowrap;
@@ -113,7 +113,7 @@
     height: 100%;
     margin-right: 10px;
 
-    > span {
+    >span {
         font-size: 20px;
         margin: 0 4px;
         color: $player-buttons-color;
@@ -133,7 +133,7 @@
     line-height: 27px;
     padding-top: 16px;
 
-    > div {
+    >div {
         height: 25%;
     }
 }
@@ -143,16 +143,16 @@
     margin: 0;
     margin-top: $grid-unit-size * -0.5;
 
-    > .ant-slider-handle {
+    >.ant-slider-handle {
         z-index: 100;
         margin-top: 2px;
     }
 
-    > .ant-slider-track {
+    >.ant-slider-track {
         background: none;
     }
 
-    > .ant-slider-rail {
+    >.ant-slider-rail {
         height: $grid-unit-size;
         background-color: $player-slider-color;
     }
@@ -165,7 +165,7 @@
     top: 0;
     pointer-events: none;
 
-    > rect {
+    >rect {
         transition: width 0.5s;
         fill: #1890ff;
     }
@@ -176,7 +176,7 @@
     max-height: $grid-unit-size * 3;
     line-height: $grid-unit-size * 3;
 
-    > span {
+    >span {
         display: inline-block;
         width: 100%;
         white-space: nowrap;
@@ -235,7 +235,7 @@
     display: flex;
     justify-content: flex-end;
 
-    > div {
+    >div {
         display: flex;
         height: 48px;
         align-items: center;
@@ -249,33 +249,33 @@
 }
 
 .cvat-job-info-modal-window {
-    > div {
+    >div {
         margin-top: $grid-unit-size;
     }
 
-    > div:nth-child(1) {
-        > div {
-            > span {
+    >div:nth-child(1) {
+        >div {
+            >span {
                 font-size: 20px;
             }
         }
     }
 
-    > div:nth-child(2) {
-        > div {
+    >div:nth-child(2) {
+        >div {
             display: grid;
         }
     }
 
-    > .cvat-job-info-bug-tracker {
-        > div {
+    >.cvat-job-info-bug-tracker {
+        >div {
             display: grid;
         }
     }
 
-    > .cvat-job-info-statistics {
-        > div {
-            > span {
+    >.cvat-job-info-statistics {
+        >div {
+            >span {
                 font-size: 20px;
             }
 
@@ -284,7 +284,7 @@
                     margin-left: $grid-unit-size;
                 }
 
-                > tr > th {
+                >tr>th {
                     padding: $grid-unit-size 0 $grid-unit-size $grid-unit-size * 0.5;
                 }
             }
@@ -370,7 +370,7 @@
 .cvat-image-setups-grid {
     margin-bottom: 25px;
 
-    > div:first-child {
+    >div:first-child {
         margin-bottom: 10px;
     }
 }
@@ -393,13 +393,13 @@
 }
 
 .cvat-image-setups-grid-color {
-    > .ant-select {
+    >.ant-select {
         width: 150px;
     }
 }
 
 .cvat-image-setups-grid-opacity {
-    > .ant-slider {
+    >.ant-slider {
         width: 150px;
     }
 }
@@ -430,20 +430,20 @@
         opacity: 1;
     }
 
-    > .ant-slider {
+    >.ant-slider {
         height: 75%;
         margin: 5px 3px;
 
-        > .ant-slider-rail {
+        >.ant-slider-rail {
             background-color: #979797;
         }
 
-        > .ant-slider-handle {
+        >.ant-slider-handle {
             transform: none !important;
         }
     }
 
-    > span[role='img'] {
+    >span[role='img'] {
         opacity: 0.7;
         color: $objects-bar-icons-color;
 
@@ -458,12 +458,12 @@
 }
 
 .cvat-annotations-filters-input.ant-select {
-    > .ant-select-selector {
+    >.ant-select-selector {
         height: 32px;
         overflow: auto;
     }
 
-    > .ant-select-clear {
+    >.ant-select-clear {
         right: 20px;
     }
 }
@@ -480,18 +480,18 @@
         margin-left: 12px;
     }
 
-    > svg {
+    >svg {
         transform: scale(1.8);
     }
 }
 
 .cvat-submit-review-dialog {
     .ant-modal-body {
-        > div.ant-row:nth-child(2) {
-            > .ant-col {
+        >div.ant-row:nth-child(2) {
+            >.ant-col {
                 width: 100%;
 
-                > div:nth-child(2) {
+                >div:nth-child(2) {
                     margin-top: $grid-unit-size * 2;
                     margin-bottom: $grid-unit-size * 2;
                 }
@@ -510,7 +510,14 @@
 
         .ant-typography {
             display: block;
-            padding: $grid-unit-size * 2 $grid-unit-size * 3 $grid-unit-size  $grid-unit-size * 2;
+            padding: $grid-unit-size * 2 $grid-unit-size * 3 $grid-unit-size $grid-unit-size * 2;
+        }
+    }
+
+    .ant-modal-footer {
+        .cvat-filters-modal-frames-only-checkbox {
+            float: left;
+            margin-top: $grid-unit-size;
         }
     }
 }
@@ -528,7 +535,7 @@
 .cvat-notification-continue-job-button {
     padding: 0;
 
-    > span {
+    >span {
         &::before {
             content: '\00a0';
         }

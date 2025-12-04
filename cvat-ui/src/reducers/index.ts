@@ -892,6 +892,7 @@ export interface AnnotationState {
         collapsedAll: boolean;
         states: any[];
         filters: object[];
+        filterFramesOnly: boolean;
         resetGroupFlag: boolean;
         initialized: boolean;
         history: {

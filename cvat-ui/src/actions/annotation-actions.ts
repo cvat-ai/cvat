@@ -32,6 +32,7 @@ import { updateJobAsync } from './jobs-actions';
 
 interface AnnotationsParameters {
     filters: object[];
+    filterFramesOnly: boolean;
     frame: number;
     showAllInterpolationTracks: boolean;
     showGroundTruth: boolean;
@@ -54,7 +55,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
     const state: CombinedState = getStore().getState();
     const {
         annotation: {
-            annotations: { filters },
+            annotations: { filters, filterFramesOnly },
             player: {
                 frame: { number: frame },
             },
@@ -68,6 +69,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
 
     return {
         filters,
+        filterFramesOnly,
         frame,
         jobInstance: jobInstance as Job,
         groundTruthInstance,
@@ -172,6 +174,7 @@ export enum AnnotationActionTypes {
     RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
     UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
     HIGHLIGHT_CONFLICT = 'HIGHLIGHT_CONFCLICT',
+    SWITCH_FILTER_FRAMES_ONLY = 'SWITCH_FILTER_FRAMES_ONLY',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -266,12 +269,15 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     maxZ: number;
 }> {
     const {
-        filters, frame, showAllInterpolationTracks, jobInstance,
+        filters, filterFramesOnly, frame, showAllInterpolationTracks, jobInstance,
         showGroundTruth, groundTruthInstance, validationLayout,
     } = receiveAnnotationsParameters();
 
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
-    let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
+    // When filterFramesOnly is true, we show all annotations on the frame (pass empty filters)
+    // but still use filters for frame navigation
+    const displayFilters = filterFramesOnly ? [] : filters;
+    let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, displayFilters);
     const [minZ, maxZ] = computeZRange(states);
 
     if (jobInstance.type === JobType.GROUND_TRUTH) {
@@ -284,7 +290,7 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
         }
 
         if (gtFrame !== null) {
-            const gtStates = await groundTruthInstance.annotations.get(gtFrame, showAllInterpolationTracks, filters);
+            const gtStates = await groundTruthInstance.annotations.get(gtFrame, showAllInterpolationTracks, displayFilters);
             states.push(...gtStates);
         }
     }
@@ -330,6 +336,13 @@ export function changeAnnotationsFilters(filters: object[]): AnyAction {
     return {
         type: AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS,
         payload: { filters },
+    };
+}
+
+export function switchFilterFramesOnly(filterFramesOnly: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_FILTER_FRAMES_ONLY,
+        payload: { filterFramesOnly },
     };
 }
 

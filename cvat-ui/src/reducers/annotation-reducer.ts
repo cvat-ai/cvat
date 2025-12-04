@@ -127,6 +127,7 @@ const defaultState: AnnotationState = {
         collapsedAll: true,
         states: [],
         filters: [],
+        filterFramesOnly: false,
         resetGroupFlag: false,
         initialized: false,
         history: {
@@ -965,6 +966,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     filters,
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_FILTER_FRAMES_ONLY: {
+            const { filterFramesOnly } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    filterFramesOnly,
                 },
             };
         }

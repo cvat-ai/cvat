@@ -15,9 +15,10 @@ import Popover from 'antd/lib/popover';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
+import Checkbox from 'antd/lib/checkbox';
 import { CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
-import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
+import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters, switchFilterFramesOnly } from 'actions/annotation-actions';
 
 const { FieldDropdown } = AntdWidgets;
 
@@ -74,10 +75,11 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
 };
 
 function FiltersModalComponent(): JSX.Element {
-    const { labels, activeFilters, visible } = useSelector(
+    const { labels, activeFilters, filterFramesOnly, visible } = useSelector(
         (state: CombinedState) => ({
             labels: state.annotation.job.labels,
             activeFilters: state.annotation.annotations.filters,
+            filterFramesOnly: state.annotation.annotations.filterFramesOnly,
             visible: state.annotation.filtersPanelVisible,
         }),
         shallowEqual,
@@ -280,6 +282,18 @@ function FiltersModalComponent(): JSX.Element {
             centered
             onCancel={() => dispatch(showFilters(false))}
             footer={[
+                <Checkbox
+                    key='filterFramesOnly'
+                    checked={filterFramesOnly}
+                    disabled={!activeFilters.length}
+                    onChange={(e) => {
+                        dispatch(switchFilterFramesOnly(e.target.checked));
+                        dispatch(fetchAnnotationsAsync());
+                    }}
+                    className='cvat-filters-modal-frames-only-checkbox'
+                >
+                    Filter frames only
+                </Checkbox>,
                 <Button
                     key='clear'
                     disabled={!activeFilters.length}
