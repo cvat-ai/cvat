@@ -332,7 +332,7 @@ class TestTUSUpload:
             requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
             requests.exceptions.ChunkedEncodingError,
-        ) as e:
+        ):
             exception_caught = True
 
         try:
