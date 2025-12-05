@@ -153,7 +153,7 @@ config file (Note: the current file will be overwritten):
    mkdir ~/.aws
    cat <<EOF > ~/.aws/config
    [profile CvatEnterpriseCustomer]
-   role_arn = arn:aws:iam::443536374637:role/CvatEnterpriseCustomerRole
+   role_arn = <MUST BE PROVIDED BY CVAT TEAM>
    credential_source = Ec2InstanceMetadata
 
    EOF
