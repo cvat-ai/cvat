@@ -778,24 +778,11 @@ def create_thread(
         ):
             update_status("Downloading input media")
 
-            filtered_data = []
-            for files in (i for i in media.values() if i):
-                filtered_data.extend(files)
-            media_to_download = filtered_data
-
-            if media['image']:
-                start_frame = db_data.start_frame
-                stop_frame = len(filtered_data) - 1
-                if data['stop_frame'] is not None:
-                    stop_frame = min(stop_frame, data['stop_frame'])
-
-                step = db_data.get_frame_step()
-                if start_frame or step != 1 or stop_frame != len(filtered_data) - 1:
-                    media_to_download = filtered_data[start_frame : stop_frame + 1: step]
-
-            _download_data_from_cloud_storage(db_data.cloud_storage, media_to_download, upload_dir)
-            del media_to_download
-            del filtered_data
+            _download_data_from_cloud_storage(
+                db_storage=db_data.cloud_storage,
+                files=list(itertools.chain.from_iterable(media.values())),
+                upload_dir=upload_dir,
+            )
 
             is_data_in_cloud = False
             if is_packed_media:
