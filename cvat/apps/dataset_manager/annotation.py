@@ -8,7 +8,6 @@ import math
 from collections.abc import Callable, Container, Generator, Iterable, Iterator, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -750,8 +749,8 @@ class TrackManager(ObjectManager):
         end_frame: int,
         dimension: DimensionType | str,
         *,
-        included_frames: Optional[Sequence[int]] = None,
-        deleted_frames: Optional[Sequence[int]] = None,
+        included_frames: Sequence[int] | None = None,
+        deleted_frames: Sequence[int] | None = None,
         include_outside: bool = False,
     ):
         # If a task or job contains deleted frames that contain track keyframes,
