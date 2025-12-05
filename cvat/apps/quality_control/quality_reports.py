@@ -13,7 +13,7 @@ from contextlib import suppress
 from copy import deepcopy
 from functools import cached_property, lru_cache, partial
 from io import StringIO
-from typing import Any, ClassVar, TypeVar, Union, cast
+from typing import Any, ClassVar, TypeVar, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher
@@ -934,9 +934,7 @@ class _MemoizingAnnotationConverterFactory:
     def _make_key(self, dm_ann: dm.Annotation) -> Hashable:
         return id(dm_ann)
 
-    def get_source_ann(
-        self, dm_ann: dm.Annotation
-    ) -> Union[CommonData.Tag, CommonData.LabeledShape]:
+    def get_source_ann(self, dm_ann: dm.Annotation) -> CommonData.Tag | CommonData.LabeledShape:
         return self._annotation_mapping[self._make_key(dm_ann)]
 
     def clear(self):
