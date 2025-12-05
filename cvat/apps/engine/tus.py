@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import shutil
 from functools import cached_property
 from pathlib import Path
 from types import NoneType
@@ -206,25 +207,16 @@ class TusFile:
             file.seek(self.file_size - 1)
             file.write(b"\0")
 
-    def __write_chunk_data(self, chunk: TusChunk, file: Any) -> int:
-        bytes_written = 0
-        # Read and write data in small chunks to avoid loading all data into memory
-        while bytes_written < chunk.size:
-            bytes_to_read = min(chunk.BUFFER_SIZE, chunk.size - bytes_written)
-            data = chunk.request.read(bytes_to_read)
-            if not data:
-                return bytes_written
-            file.write(data)
-            bytes_written += len(data)
-        return bytes_written
-
     def write_chunk(self, chunk: TusChunk):
-        bytes_written = 0
         with open(self.file_path, "r+b") as file:
             file.seek(chunk.offset)
-            bytes_written = self.__write_chunk_data(chunk, file)
-        # Update offset with actual bytes written (handles interrupted uploads)
-        self.meta_file.meta.offset += bytes_written
+            try:
+                # Use shutil.copyfileobj for efficient streaming copy
+                # It handles partial reads automatically (e.g., when connection drops)
+                shutil.copyfileobj(chunk.request, file, length=TusChunk.BUFFER_SIZE)
+            finally:
+                # Always update offset, even if connection was interrupted
+                self.meta_file.meta.offset = file.tell()
         self.meta_file.dump()
 
     def is_complete(self):
