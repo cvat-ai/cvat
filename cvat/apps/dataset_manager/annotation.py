@@ -1062,8 +1062,6 @@ class TrackManager(ObjectManager):
                     shape["points"] = shape["points"][:-2]
                     return shape
 
-                remove_extra_point_added(shape0)
-                remove_extra_point_added(shape1)
                 shapes = map(remove_extra_point_added, shapes)
 
             yield from shapes
