@@ -15,7 +15,6 @@ products:
 
 - The CVAT Enterprise Docker images (server and UI).
 
-- These are currently published here: [443536374637.dkr.ecr.eu-west-1.amazonaws.com/cvat/server_ent:v2.43.0](http://443536374637.dkr.ecr.eu-west-1.amazonaws.com/cvat/server_ent:v2.43.0)
 
 - A private Docker registry, accessible by the Kubernetes cluster. It will be referred to as registry.example below.
 
