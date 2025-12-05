@@ -7,9 +7,9 @@ import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
 import { useHistory } from 'react-router-dom';
 
-const useReturnButton = (fallbackPath: string) => {
+function useReturnButton(fallbackPath: string): () => void {
     const history = useHistory();
-    const handleReturn = () => {
+    const handleReturn = (): void => {
         if (history.length > 2) {
             history.goBack();
         } else {
@@ -17,7 +17,7 @@ const useReturnButton = (fallbackPath: string) => {
         }
     };
     return handleReturn;
-};
+}
 
 export const JobNotFoundComponent = React.memo((): JSX.Element => {
     const handleReturn = useReturnButton('/jobs');
