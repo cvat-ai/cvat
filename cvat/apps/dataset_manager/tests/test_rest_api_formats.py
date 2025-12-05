@@ -20,7 +20,7 @@ from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import sleep
-from typing import Any, ClassVar, Optional, overload
+from typing import Any, ClassVar, overload
 from unittest.mock import DEFAULT as MOCK_DEFAULT
 from unittest.mock import MagicMock, patch
 
@@ -1526,7 +1526,7 @@ class ExportBehaviorTest(_DbTestBase):
             var.condition.notify()
 
     @classmethod
-    def wait_condition(cls, var: SharedBase, timeout: Optional[int] = 5):
+    def wait_condition(cls, var: SharedBase, timeout: int | None = 5):
         with var.condition:
             if not var.get() and not var.condition.wait(timeout):
                 raise cls._LockTimeoutError
@@ -1565,7 +1565,7 @@ class ExportBehaviorTest(_DbTestBase):
 
     @staticmethod
     @contextmanager
-    def process_closing(process: multiprocessing.Process, *, timeout: Optional[int] = 10):
+    def process_closing(process: multiprocessing.Process, *, timeout: int | None = 10):
         try:
             yield process
         finally:
