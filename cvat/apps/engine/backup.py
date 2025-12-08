@@ -501,12 +501,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
 
-            self._write_files(
-                source_dir=self._db_data.get_upload_dirname(),
-                zip_object=zip_object,
-                files=[self._db_data.get_manifest_path()],
-                target_dir=target_data_dir,
-            )
+            self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
+
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
             assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
 
