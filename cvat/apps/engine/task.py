@@ -1133,6 +1133,10 @@ def create_thread(
 
             manifest = ImageManifestManager(db_data.get_manifest_path())
             if not manifest.exists:
+                # TODO: Try to avoid adding manifest entries for images that are not in
+                # extractor.frame_range. In addition to less processing here, it would also allow
+                # us to avoid downloading such images from cloud storage (when using static chunks),
+                # or copying them from the attached share (when using copy_data).
                 manifest.link(
                     sources=extractor.absolute_source_paths,
                     meta={
