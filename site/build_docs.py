@@ -76,8 +76,12 @@ def git_checkout(ref: str, temp_repo: git.Repo, temp_dir: Path):
 
     for subdir in subdirs:
         dst_dir = temp_dir / subdir
-        shutil.rmtree(dst_dir)
-        shutil.copytree(tmp_repo_root / subdir, dst_dir, symlinks=True)
+
+        if dst_dir.exists():
+            shutil.rmtree(dst_dir)
+
+        if (tmp_repo_root / subdir).is_dir():
+            shutil.copytree(tmp_repo_root / subdir, dst_dir, symlinks=True)
 
 
 def change_version_menu_toml(filename, version):
