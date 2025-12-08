@@ -438,6 +438,11 @@ export interface PluginsState {
                 items: PluginComponent[];
             };
         };
+        aiTools: {
+            interactors: {
+                extras: PluginComponent[];
+            };
+        };
         router: PluginComponent[];
     }
 }
