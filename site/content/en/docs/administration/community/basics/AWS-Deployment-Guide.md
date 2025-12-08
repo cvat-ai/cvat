@@ -3,6 +3,8 @@ title: 'AWS-Deployment Guide'
 linkTitle: 'AWS-Deployment Guide'
 weight: 4
 description: 'Instructions for deploying CVAT on Nvidia GPU and other AWS machines.'
+aliases:
+- /docs/administration/basics/AWS-Deployment-Guide/
 ---
 
 There are two ways of deploying the CVAT.

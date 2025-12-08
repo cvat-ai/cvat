@@ -3,6 +3,8 @@ title: 'Backup guide'
 linkTitle: 'Backup guide'
 weight: 50
 description: 'Instructions on how to backup CVAT data with Docker.'
+aliases:
+- /docs/administration/advanced/backup_guide/
 ---
 
 ## About CVAT data volumes

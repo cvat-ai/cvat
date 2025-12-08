@@ -3,6 +3,8 @@ title: 'Upgrade guide'
 linkTitle: 'Upgrade guide'
 weight: 60
 description: 'Instructions for upgrading CVAT deployed with docker compose'
+aliases:
+- /docs/administration/advanced/upgrade_guide/
 ---
 
 ## Upgrade guide

@@ -4,7 +4,8 @@ title: 'Installation Guide'
 linkTitle: 'Installation Guide'
 weight: 1
 description: 'A CVAT installation guide for different operating systems.'
-
+aliases:
+- /docs/administration/basics/installation/
 ---
 
 # Quick installation guide

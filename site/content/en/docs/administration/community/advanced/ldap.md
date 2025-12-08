@@ -4,7 +4,8 @@ title: 'LDAP Backed Authentication'
 linkTitle: 'LDAP Login'
 weight: 40
 description: 'Allow users to login with credentials from a central source'
-
+aliases:
+- /docs/administration/advanced/ldap/
 ---
 
 ### The creation of `settings.py`
