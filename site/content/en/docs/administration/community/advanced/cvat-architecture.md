@@ -4,7 +4,7 @@ linkTitle: 'CVAT Architecture'
 weight: 1
 description: 'Description of CVAT architecture and components'
 aliases:
-- /docs/administration/advanced/cvat_architechture/
+- /docs/administration/advanced/cvat-architechture/
 ---
 
 This guide is designed to provide a comprehensive overview of the architecture and components
