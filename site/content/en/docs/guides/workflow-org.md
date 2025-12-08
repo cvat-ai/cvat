@@ -47,7 +47,7 @@ assign {{< ilink "/docs/account_management/user-roles" "User roles" >}} to invit
 8. (Optional) Create {{< ilink "/docs/qa-analytics/auto-qa" "**Ground truth job**" >}}.
    <br>This step can be skipped if you're employing a manual QA approach.
 9. (Optional) Add {{< ilink "/docs/annotation/specification" "**Instructions for annotators**" >}}.
-10. (Optional) Configure {{< ilink "/docs/administration/advanced/webhooks" "**Webhooks**" >}}.
+10. (Optional) Configure {{< ilink "/docs/administration/community/advanced/webhooks" "**Webhooks**" >}}.
 11. Assign jobs to annotators by adding the annotator name to **Assignee** and
     changing the {{< ilink "/docs/account_management/user-roles#job-stage" "**Job stage**" >}}
     to **Annotation**.
