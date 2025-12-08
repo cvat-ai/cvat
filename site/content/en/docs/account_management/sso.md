@@ -6,7 +6,6 @@ description: 'SSO for a Self-Hosted solution'
 aliases:
   - /docs/enterprise/sso/
 products:
-  - online
   - enterprise
 ---
 
