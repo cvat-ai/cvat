@@ -466,9 +466,6 @@ def _download_data_from_cloud_storage(
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
     cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
 
-def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
-    return lambda frame_id: start_frame + frame_id * frame_step
-
 def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageManifestManager:
     """
     Reads an upload manifest file
@@ -864,19 +861,12 @@ def create_thread(
 
     # Extract input data
     extractor: IMediaReader | None = None
-    manifest_index = _get_manifest_frame_indexer()
     for media_type, media_files in media.items():
         if not media_files:
             continue
 
         if extractor is not None:
             raise ValidationError('Combined data types are not supported')
-
-        if is_backup_restore and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
-            manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
-            db_data.start_frame = 0
-            data['stop_frame'] = None
-            db_data.frame_filter = ''
 
         source_paths = [os.path.join(upload_dir, f) for f in media_files]
 
@@ -1155,7 +1145,7 @@ def create_thread(
                 image_size = None
 
                 if manifest:
-                    image_info = manifest[manifest_index(frame_id)]
+                    image_info = manifest[frame_id]
 
                     # check mapping
                     if not image_path.endswith(f"{image_info['name']}{image_info['extension']}"):
