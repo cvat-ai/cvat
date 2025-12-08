@@ -17,9 +17,13 @@ spec:
 
   build:
     image: cvat.pth.dschoerk.transt:latest-gpu
-    baseImage: nvidia/cuda:11.7.1-cudnn8-devel-ubuntu22.04
+    baseImage: ubuntu:22.04
     directives:
       preCopy:
+        - kind: ENV
+          value: NVIDIA_VISIBLE_DEVICES=all
+        - kind: ENV
+          value: NVIDIA_DRIVER_CAPABILITIES=compute,utility
         - kind: RUN
           value: |-
             apt update \
