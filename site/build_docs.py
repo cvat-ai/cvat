@@ -64,7 +64,7 @@ def git_checkout(ref: str, temp_repo: git.Repo, temp_dir: Path):
     subdirs = [
         "site/content",
         "site/assets",
-        "site/layouts/docs"
+        "site/layouts/docs",
         "site/layouts/partials",
         "site/layouts/shortcodes",
         "site/themes",
