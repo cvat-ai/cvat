@@ -14,7 +14,7 @@ from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -63,7 +63,7 @@ class SegmentParams(NamedTuple):
     start_frame: int
     stop_frame: int
     type: models.SegmentType = models.SegmentType.RANGE
-    frames: Optional[Sequence[int]] = []
+    frames: Sequence[int] | None = []
 
 class SegmentsParams(NamedTuple):
     segments: Iterator[SegmentParams]
@@ -113,8 +113,8 @@ def _copy_data_from_share_point(
 def _generate_segment_params(
     db_task: models.Task,
     *,
-    data_size: Optional[int] = None,
-    job_file_mapping: Optional[JobFileMapping] = None,
+    data_size: int | None = None,
+    job_file_mapping: JobFileMapping | None = None,
 ) -> SegmentsParams:
     if job_file_mapping is not None:
         def _segments():
@@ -169,7 +169,7 @@ def _create_segments_and_jobs(
     db_task: models.Task,
     *,
     update_status_callback: Callable[[str], None],
-    job_file_mapping: Optional[JobFileMapping] = None,
+    job_file_mapping: JobFileMapping | None = None,
 ):
     update_status_callback('Task is being saved in database')
 
@@ -306,7 +306,7 @@ def _validate_data(counter, manifest_files=None):
 
 def _validate_job_file_mapping(
     db_task: models.Task, data: dict[str, Any]
-) -> Optional[JobFileMapping]:
+) -> JobFileMapping | None:
     job_file_mapping = data.get('job_file_mapping', None)
 
     if job_file_mapping is None:
@@ -345,7 +345,7 @@ def _validate_job_file_mapping(
 
 def _validate_validation_params(
     db_task: models.Task, data: dict[str, Any], *, is_backup_restore: bool = False
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     params = data.get('validation_params', {})
     if not params:
         return None
@@ -384,12 +384,12 @@ def _validate_validation_params(
 
 def _validate_manifest(
     manifests: list[str],
-    root_dir: Optional[str],
+    root_dir: str | None,
     *,
     is_in_cloud: bool,
-    db_cloud_storage: Optional[Any],
+    db_cloud_storage: Any | None,
     is_backup_restore: bool,
-) -> Optional[str]:
+) -> str | None:
     if not manifests:
         return None
 
@@ -599,7 +599,7 @@ def _find_and_filter_related_images(
 
 @transaction.atomic
 def create_thread(
-    db_task: Union[int, models.Task],
+    db_task: int | models.Task,
     data: dict[str, Any],
     *,
     is_backup_restore: bool = False,
@@ -863,7 +863,7 @@ def create_thread(
         )
 
     # Extract input data
-    extractor: Optional[IMediaReader] = None
+    extractor: IMediaReader | None = None
     manifest_index = _get_manifest_frame_indexer()
     for media_type, media_files in media.items():
         if not media_files:

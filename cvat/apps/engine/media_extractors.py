@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
 from random import shuffle
-from typing import Any, ClassVar, Optional, Protocol, TypeVar, Union
+from typing import Any, ClassVar, Protocol, TypeVar
 
 import av
 import av.codec
@@ -123,7 +123,7 @@ _T = TypeVar("_T")
 class RandomAccessIterator(Iterator[_T]):
     def __init__(self, iterable: Iterable[_T]):
         self.iterable: Iterable[_T] = iterable
-        self.iterator: Optional[Iterator[_T]] = None
+        self.iterator: Iterator[_T] | None = None
         self.pos: int = -1
 
     def __iter__(self):
@@ -132,7 +132,7 @@ class RandomAccessIterator(Iterator[_T]):
     def __next__(self):
         return self[self.pos + 1]
 
-    def __getitem__(self, idx: int) -> Optional[_T]:
+    def __getitem__(self, idx: int) -> _T | None:
         assert 0 <= idx
         if self.iterator is None or idx <= self.pos:
             self.reset()
@@ -174,7 +174,7 @@ class CachingMediaIterator(RandomAccessIterator[_MediaT]):
         *,
         max_cache_memory: int,
         max_cache_entries: int,
-        object_size_callback: Optional[Callable[[_MediaT], int]] = None,
+        object_size_callback: Callable[[_MediaT], int] | None = None,
     ):
         super().__init__(iterable)
         self.max_cache_entries = max_cache_entries
@@ -219,7 +219,7 @@ class IMediaReader(ABC):
         source_path,
         *,
         start: int = 0,
-        stop: Optional[int] = None,
+        stop: int | None = None,
         step: int = 1,
         dimension: DimensionType = DimensionType.DIM_2D,
     ):
@@ -252,7 +252,7 @@ class IMediaReader(ABC):
         return self._start
 
     @property
-    def stop(self) -> Optional[int]:
+    def stop(self) -> int | None:
         return self._stop
 
     @property
@@ -266,7 +266,7 @@ class ImageListReader(IMediaReader):
         source_path,
         step: int = 1,
         start: int = 0,
-        stop: Optional[int] = None,
+        stop: int | None = None,
         dimension: DimensionType = DimensionType.DIM_2D,
         sorting_method: SortingMethod = SortingMethod.LEXICOGRAPHICAL,
     ):
@@ -563,7 +563,7 @@ class ZipReader(ImageListReader):
 
 
 class _AvVideoReading:
-    def read_av_container(self, source: Union[str, io.BytesIO]) -> av.container.InputContainer:
+    def read_av_container(self, source: str | io.BytesIO) -> av.container.InputContainer:
         if isinstance(source, io.BytesIO):
             source.seek(0)  # required for re-reading
 
@@ -573,10 +573,10 @@ class _AvVideoReading:
 class VideoReader(IMediaReader):
     def __init__(
         self,
-        source_path: Union[str, io.BytesIO],
+        source_path: str | io.BytesIO,
         step: int = 1,
         start: int = 0,
-        stop: Optional[int] = None,
+        stop: int | None = None,
         dimension: DimensionType = DimensionType.DIM_2D,
         *,
         allow_threading: bool = False,
@@ -590,13 +590,13 @@ class VideoReader(IMediaReader):
         )
 
         self.allow_threading = allow_threading
-        self._frame_count: Optional[int] = None
-        self._frame_size: Optional[tuple[int, int]] = None  # (w, h)
+        self._frame_count: int | None = None
+        self._frame_size: tuple[int, int] | None = None  # (w, h)
 
     def iterate_frames(
         self,
         *,
-        frame_filter: Union[bool, Iterable[int]] = True,
+        frame_filter: bool | Iterable[int] = True,
     ) -> Iterator[tuple[av.VideoFrame, str, int]]:
         """
         If provided, frame_filter must be an ordered sequence in the ascending order.
@@ -1021,7 +1021,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
     def _peek_first_frame(
         self, frame_iter: Iterator[FrameDescriptor]
-    ) -> tuple[Optional[FrameDescriptor], Iterator[FrameDescriptor]]:
+    ) -> tuple[FrameDescriptor | None, Iterator[FrameDescriptor]]:
         "Gets the first frame and returns the same full iterator"
 
         if not hasattr(frame_iter, "__next__"):
