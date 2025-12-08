@@ -138,7 +138,7 @@ config file (Note: the current file will be overwritten):
    }
    ```
 
-1. Provide CVAT team role arn (arn:aws:iam::221082170770:role/CvatEnterpriseCustomer) to provide access to the CVAT ECR.
+1. Provide CVAT team role arn (arn:aws:iam::123456789000:role/AnyPreferableRoleName) to provide access to the CVAT ECR.
 1. Create an EC2 instance and attach the IAM role from the step above to the EC2 instance.
 1. Login to the instance with SSH.
 1. Install AWS CLI. See this <a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" target="_blank">guide</a> for additional details. Role name may be like CvatEnterpriseCustomer or any name which you prefer.
@@ -153,7 +153,7 @@ config file (Note: the current file will be overwritten):
    mkdir ~/.aws
    cat <<EOF > ~/.aws/config
    [profile CvatEnterpriseCustomer]
-   role_arn = arn:aws:iam::443536374637:role/CvatEnterpriseCustomerRole
+   role_arn = <MUST BE PROVIDED BY CVAT TEAM>
    credential_source = Ec2InstanceMetadata
 
    EOF

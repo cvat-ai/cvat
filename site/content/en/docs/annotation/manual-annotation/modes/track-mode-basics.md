@@ -74,7 +74,6 @@ Usage examples:
 
      ![Example of a track with interpolated frames](/images/gif003_detrac.gif)
 
-<<<<<<<< HEAD:site/content/en/docs/annotation/manual-annotation/shapes/track-mode-basics.md
 Shapes that were created in the track mode, have extra navigation buttons.
 
 - These buttons help to jump to the previous/next keyframe.
