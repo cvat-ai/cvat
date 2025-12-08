@@ -3,6 +3,8 @@ title: 'CVAT Analytics and monitoring'
 linkTitle: 'CVAT Analytics and monitoring'
 weight: 20
 description: 'Instructions for deployment and customization of analytics and monitoring.'
+aliases:
+- /docs/administration/advanced/analytics/
 ---
 
 CVAT Analytics suite of tools is designed to track and understand users' behavior, system performance,
@@ -58,7 +60,7 @@ self-hosted solution analytics are enabled by default.
 
 {{% alert title="Note" color="primary" %}}
 For detailed CVAT installation instructions, see
-{{< ilink "/docs/administration/basics/installation" "Installation Guide" >}}
+{{< ilink "/docs/administration/community/basics/installation" "Installation Guide" >}}
 or refer to the [CVAT Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN)
 for installation videos.
 {{% /alert %}}

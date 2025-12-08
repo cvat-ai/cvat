@@ -211,6 +211,13 @@ footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
 .docs-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  grid-gap: 20px;       /* расстояние между карточками */
+  grid-gap: 20px;       /* distance between cards */
   margin-top: 24px;
+}
+
+.navbar-nav .nav-link[href="/docs/getting_started/overview/"] span,
+.navbar-nav .nav-link[href="/docs/guides/"] span,
+.navbar-nav .nav-link[href="/docs/"] span,
+.navbar-nav .nav-link[href*="auth/login"] span {
+  font-weight: 400 !important;
 }

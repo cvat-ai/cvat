@@ -1,0 +1,32 @@
+.product-tags-box {
+    margin: 1rem 0;
+    font-size: 0.85rem;
+    color: #555;
+  }
+
+  .product-tags-label {
+    font-weight: 400;
+    color: #555;
+    margin-right: 6px;
+  }
+
+  .product-tag {
+    display: inline-block;
+    background: #f2f2f2;
+    color: #333;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    margin-left: 6px;
+    text-decoration: none !important;
+  }
+
+  .product-tag:hover {
+    background: #e6e6e6;
+  }
+
+  .product-tags-separator {
+    margin: 1.2rem 0 1.5rem;
+    border: none;
+    border-top: 1px solid #e3e3e3;
+  }

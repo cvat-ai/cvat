@@ -3,6 +3,8 @@ title: 'Webhooks'
 linkTitle: 'Webhooks'
 description: 'CVAT Webhooks: set up and use'
 weight: 80
+aliases:
+- /docs/administration/advanced/webhooks/
 ---
 
 Webhooks are user-defined HTTP callbacks that are triggered by specific events.
