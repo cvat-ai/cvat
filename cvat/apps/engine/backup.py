@@ -17,7 +17,7 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from logging import Logger
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar
 from zipfile import ZipFile
 
 import rapidjson
@@ -92,7 +92,7 @@ def _get_label_mapping(db_labels):
 
 def _write_annotation_guide(
     zip_object: ZipFile,
-    annotation_guide: Optional[models.AnnotationGuide],
+    annotation_guide: models.AnnotationGuide | None,
     guide_filename: str,
     assets_dirname: str,
     target_dir: str,
@@ -864,9 +864,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     def _copy_input_files(
         self,
-        input_archive: Union[ZipFile, str],
+        input_archive: ZipFile | str,
         *,
-        excluded_filenames: Optional[Collection[str]] = None,
+        excluded_filenames: Collection[str] | None = None,
     ) -> list[str]:
         if isinstance(input_archive, str):
             with ZipFile(input_archive, "r") as zf:
