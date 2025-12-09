@@ -8,7 +8,7 @@ import operator
 from collections.abc import Iterable, Iterator
 from functools import reduce
 from textwrap import dedent
-from typing import Any
+from typing import Any, TypeAlias
 
 from django.db import models
 from django.db.models import Q
@@ -118,7 +118,7 @@ class FilterParsingError(Exception):
 
 
 class JsonLogicFilter(filters.BaseFilterBackend):
-    Rules = dict[str, Any]
+    Rules: TypeAlias = dict[str, Any]
     filter_param = "filter"
     filter_title = _("Filter")
     filter_description = _(
