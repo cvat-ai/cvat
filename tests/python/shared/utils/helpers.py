@@ -6,7 +6,6 @@ import subprocess
 from collections.abc import Generator
 from fractions import Fraction
 from io import BytesIO
-from typing import Optional
 
 import av
 import av.video.reformatter
@@ -28,9 +27,9 @@ def generate_image_file(filename="image.png", size=(100, 50), color=(0, 0, 0)):
 def generate_image_files(
     count: int,
     *,
-    prefixes: Optional[list[str]] = None,
-    filenames: Optional[list[str]] = None,
-    sizes: Optional[list[tuple[int, int]]] = None,
+    prefixes: list[str] | None = None,
+    filenames: list[str] | None = None,
+    sizes: list[tuple[int, int]] | None = None,
 ) -> list[BytesIO]:
     assert not (prefixes and filenames), "prefixes cannot be used together with filenames"
     assert not prefixes or len(prefixes) == count

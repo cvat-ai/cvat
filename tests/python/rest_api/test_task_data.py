@@ -16,7 +16,7 @@ from http import HTTPStatus
 from itertools import chain, groupby, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -601,11 +601,11 @@ class TestPostTaskData:
         sorting_method: str = "lexicographical",
         data_type: str = "image",
         video_frame_count: int = 10,
-        server_files_exclude: Optional[list[str]] = None,
+        server_files_exclude: list[str] | None = None,
         org: str = "",
-        filenames: Optional[list[str]] = None,
-        task_spec_kwargs: Optional[dict[str, Any]] = None,
-        data_spec_kwargs: Optional[dict[str, Any]] = None,
+        filenames: list[str] | None = None,
+        task_spec_kwargs: dict[str, Any] | None = None,
+        data_spec_kwargs: dict[str, Any] | None = None,
     ) -> tuple[int, Any]:
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
         if data_type == "video":
@@ -713,7 +713,7 @@ class TestPostTaskData:
         use_cache: bool,
         use_manifest: bool,
         server_files: list[str],
-        server_files_exclude: Optional[list[str]],
+        server_files_exclude: list[str] | None,
         task_size: int,
         org: str,
         cloud_storages,
