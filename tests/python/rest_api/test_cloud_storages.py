@@ -7,7 +7,7 @@ import io
 import json
 from functools import partial
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
@@ -430,7 +430,7 @@ class TestGetCloudStorageContent:
     def _test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        manifest: Optional[str] = None,
+        manifest: str | None = None,
         **kwargs,
     ):
         with make_api_client(self.USER) as api_client:
@@ -641,11 +641,11 @@ class TestGetCloudStorageContent:
     def test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        manifest: Optional[str],
-        prefix: Optional[str],
-        default_bucket_prefix: Optional[str],
-        page_size: Optional[int],
-        expected_content: Optional[Any],
+        manifest: str | None,
+        prefix: str | None,
+        default_bucket_prefix: str | None,
+        page_size: int | None,
+        expected_content: Any | None,
         cloud_storages,
     ):
         if default_bucket_prefix:
