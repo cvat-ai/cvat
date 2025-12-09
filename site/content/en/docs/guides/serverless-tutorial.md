@@ -104,7 +104,7 @@ computer vision tasks.
 In this use case a user needs to annotate all individual objects on a video as
 tracks. Basically for every object we need to know its location on every frame.
 
-First step is to deploy [TransT][trans-serverless]. The deployment process
+First step is to deploy [TransT][transt-serverless]. The deployment process
 can depend on your operating system. On Linux you can use `serverless/deploy_cpu.sh`
 auxiliary script, but below we are using `nuctl` directly.
 
@@ -131,7 +131,7 @@ nuctl deploy --project-name cvat --path serverless/pytorch/dschoerk/transt/nucli
 ```
 
 ```bash
-nuctl get functions --plalform local
+nuctl get functions --platform local
 ```
 ```
  NAMESPACE | NAME                | PROJECT | STATE | REPLICAS | NODE PORT
