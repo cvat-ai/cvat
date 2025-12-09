@@ -49,7 +49,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import DataChoice, StorageChoice, StorageMethodChoice
+from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -501,12 +501,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
 
-            self._write_files(
-                source_dir=self._db_data.get_upload_dirname(),
-                zip_object=zip_object,
-                files=[self._db_data.get_manifest_path()],
-                target_dir=target_data_dir,
-            )
+            self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
+
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
             assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
 
@@ -695,7 +691,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 ]
                 data["validation_layout"] = validation_params
 
-            if self._db_data.storage == StorageChoice.CLOUD_STORAGE and not self._lightweight:
+            if (
+                self._db_data.storage == StorageChoice.SHARE
+                or self._db_data.storage == StorageChoice.CLOUD_STORAGE
+                and not self._lightweight
+            ):
                 data["storage"] = StorageChoice.LOCAL
             else:
                 data["storage"] = self._db_data.storage
@@ -753,12 +753,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         self._write_annotation_guide(zip_obj, target_dir)
 
     def export_to(self, file: str | ZipFile, target_dir: str = "") -> None:
-        if (
-            self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM
-            and self._db_task.data.storage == StorageChoice.SHARE
-        ):
-            raise Exception("The task cannot be exported because it does not contain any raw data")
-
         if isinstance(file, str):
             with ZipFile(file, "w") as zf:
                 self._export_task(zip_obj=zf, target_dir=target_dir)
