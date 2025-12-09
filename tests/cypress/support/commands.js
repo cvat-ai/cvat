@@ -1347,7 +1347,7 @@ Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
 });
 
 Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
-    if (Cypress.browser.family !== 'chromium' && !window.localStorage.getItem('platformNotiticationShown')) {
+    if (Cypress.browser.family !== 'chromium' && !window.localStorage.getItem('platformNotificationShown')) {
         cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
             cy.contains('button', 'OK').click();
         });
