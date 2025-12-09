@@ -17,7 +17,7 @@ from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
-from typing import Any, Optional, Union, overload
+from typing import Any, overload
 
 import attrs
 import av
@@ -63,7 +63,7 @@ slogger = ServerLogManager(__name__)
 
 
 DataWithMime = tuple[io.BytesIO, str]
-_CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
+_CacheItem = tuple[io.BytesIO, str, int, datetime | None]
 
 
 class CacheTooLargeDataError(Exception):
@@ -153,7 +153,7 @@ class Callback:
         validator=attrs.validators.instance_of(list),
         converter=_convert_args_for_callback,
     )
-    _kwargs: dict[str, Union[bool, int, float, str, None]] = attrs.field(
+    _kwargs: dict[str, bool | int | float | str | None] = attrs.field(
         factory=dict,
         validator=attrs.validators.deep_mapping(
             key_validator=attrs.validators.instance_of(str),
@@ -189,7 +189,7 @@ class MediaCache:
         key: str,
         create_callback: Callback,
         *,
-        cache_item_ttl: Optional[int] = None,
+        cache_item_ttl: int | None = None,
     ) -> _CacheItem:
         item = self._get_cache_item(key)
         if item:
@@ -218,7 +218,7 @@ class MediaCache:
         cls,
         key: str,
         create_callback: Callback,
-        cache_item_ttl: Optional[int] = None,
+        cache_item_ttl: int | None = None,
     ) -> DataWithMime:
         timestamp = django_tz.now()
         item_data = create_callback()
@@ -251,7 +251,7 @@ class MediaCache:
         key: str,
         create_callback: Callback,
         *,
-        cache_item_ttl: Optional[int] = None,
+        cache_item_ttl: int | None = None,
     ) -> _CacheItem:
         slogger.glob.info(f"Starting to prepare chunk: key {key}")
         if _is_run_inside_rq():
@@ -291,7 +291,7 @@ class MediaCache:
         self._cache().delete_many(keys)
         slogger.glob.info(f"Removed the cache keys {format_list(keys)}")
 
-    def _get_cache_item(self, key: str) -> Optional[_CacheItem]:
+    def _get_cache_item(self, key: str) -> _CacheItem | None:
         try:
             item = self._cache().get(key)
         except pickle.UnpicklingError:
@@ -325,7 +325,7 @@ class MediaCache:
 
     @staticmethod
     def _make_cache_key_prefix(
-        obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage],
+        obj: models.Task | models.Segment | models.Job | models.CloudStorage,
     ) -> str:
         if isinstance(obj, models.Task):
             return f"task_{obj.id}"
@@ -341,14 +341,14 @@ class MediaCache:
     @classmethod
     def _make_chunk_key(
         cls,
-        db_obj: Union[models.Task, models.Segment, models.Job],
+        db_obj: models.Task | models.Segment | models.Job,
         chunk_number: int,
         *,
         quality: models.FrameQuality,
     ) -> str:
         return f"{cls._make_cache_key_prefix(db_obj)}_chunk_{chunk_number}_{quality}"
 
-    def _make_preview_key(self, db_obj: Union[models.Segment, models.CloudStorage]) -> str:
+    def _make_preview_key(self, db_obj: models.Segment | models.CloudStorage) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_preview"
 
     def _make_segment_task_chunk_key(
@@ -368,12 +368,12 @@ class MediaCache:
 
     @overload
     def _to_data_with_mime(
-        self, cache_item: Optional[_CacheItem], *, allow_none: bool = False
-    ) -> Optional[DataWithMime]: ...
+        self, cache_item: _CacheItem | None, *, allow_none: bool = False
+    ) -> DataWithMime | None: ...
 
     def _to_data_with_mime(
-        self, cache_item: Optional[_CacheItem], *, allow_none: bool = False
-    ) -> Optional[DataWithMime]:
+        self, cache_item: _CacheItem | None, *, allow_none: bool = False
+    ) -> DataWithMime | None:
         if not cache_item:
             if allow_none:
                 return None
@@ -402,7 +402,7 @@ class MediaCache:
 
     def get_task_chunk(
         self, db_task: models.Task, chunk_number: int, *, quality: models.FrameQuality
-    ) -> Optional[DataWithMime]:
+    ) -> DataWithMime | None:
         return self._to_data_with_mime(
             self._get_cache_item(
                 key=self._make_chunk_key(db_task, chunk_number, quality=quality),
@@ -435,7 +435,7 @@ class MediaCache:
 
     def get_segment_task_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
-    ) -> Optional[DataWithMime]:
+    ) -> DataWithMime | None:
         return self._to_data_with_mime(
             self._get_cache_item(
                 key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
@@ -546,7 +546,7 @@ class MediaCache:
 
         self._bulk_delete_cache_items(keys_to_remove)
 
-    def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
+    def get_cloud_preview(self, db_storage: models.CloudStorage) -> DataWithMime | None:
         return self._to_data_with_mime(
             self._get_cache_item(self._make_preview_key(db_storage)), allow_none=True
         )
@@ -764,8 +764,8 @@ class MediaCache:
 
     @staticmethod
     def _read_raw_frames(
-        db_task: Union[models.Task, int], frame_ids: Sequence[int]
-    ) -> Generator[tuple[Union[av.VideoFrame, PIL.Image.Image, str], str, str], None, None]:
+        db_task: models.Task | int, frame_ids: Sequence[int]
+    ) -> Generator[tuple[av.VideoFrame | PIL.Image.Image | str, str, str], None, None]:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
@@ -807,7 +807,7 @@ class MediaCache:
 
     def prepare_segment_chunk(
         self,
-        db_segment: Union[models.Segment, int],
+        db_segment: models.Segment | int,
         chunk_number: int,
         *,
         quality: models.FrameQuality,
@@ -862,7 +862,7 @@ class MediaCache:
     @classmethod
     def prepare_custom_masked_range_segment_chunk(
         cls,
-        db_task: Union[models.Task, int],
+        db_task: models.Task | int,
         frame_ids: Collection[int],
         chunk_number: int,
         *,
@@ -984,7 +984,7 @@ class MediaCache:
         buff.seek(0)
         return buff, writer.CHUNK_MIME_TYPE
 
-    def _prepare_segment_preview(self, db_segment: Union[models.Segment, int]) -> DataWithMime:
+    def _prepare_segment_preview(self, db_segment: models.Segment | int) -> DataWithMime:
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)
 
@@ -1009,7 +1009,7 @@ class MediaCache:
 
         return prepare_preview_image(preview)
 
-    def _prepare_cloud_preview(self, db_storage: Union[models.CloudStorage, int]) -> DataWithMime:
+    def _prepare_cloud_preview(self, db_storage: models.CloudStorage | int) -> DataWithMime:
         if isinstance(db_storage, int):
             db_storage = models.CloudStorage.objects.get(pk=db_storage)
 
@@ -1053,7 +1053,7 @@ class MediaCache:
         return prepare_preview_image(image)
 
     def prepare_context_images_chunk(
-        self, db_data: Union[models.Data, int], frame_number: int
+        self, db_data: models.Data | int, frame_number: int
     ) -> DataWithMime:
         if isinstance(db_data, int):
             db_data = models.Data.objects.get(pk=db_data)

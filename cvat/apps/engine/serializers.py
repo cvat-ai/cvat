@@ -19,7 +19,7 @@ from copy import copy
 from datetime import datetime
 from inspect import isclass
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import django_rq
 from django.conf import settings
@@ -469,9 +469,9 @@ class LabelSerializer(SublabelSerializer):
         svg: str,
         sublabels: Iterable[dict[str, Any]],
         *,
-        parent_instance: Union[models.Project, models.Task],
-        parent_label: Optional[models.Label] = None
-    ) -> Optional[models.Label]:
+        parent_instance: models.Project | models.Task,
+        parent_label: models.Label | None = None
+    ) -> models.Label | None:
         parent_info, logger = cls._get_parent_info(parent_instance)
 
         attributes = validated_data.pop('attributespec_set', [])
@@ -583,8 +583,8 @@ class LabelSerializer(SublabelSerializer):
     def create_labels(cls,
         labels: Iterable[dict[str, Any]],
         *,
-        parent_instance: Union[models.Project, models.Task],
-        parent_label: Optional[models.Label] = None
+        parent_instance: models.Project | models.Task,
+        parent_label: models.Label | None = None
     ):
         parent_info, logger = cls._get_parent_info(parent_instance)
 
@@ -634,8 +634,8 @@ class LabelSerializer(SublabelSerializer):
     def update_labels(cls,
         labels: Iterable[dict[str, Any]],
         *,
-        parent_instance: Union[models.Project, models.Task],
-        parent_label: Optional[models.Label] = None
+        parent_instance: models.Project | models.Task,
+        parent_label: models.Label | None = None
     ):
         _, logger = cls._get_parent_info(parent_instance)
 
@@ -657,7 +657,7 @@ class LabelSerializer(SublabelSerializer):
                 )
 
     @classmethod
-    def _get_parent_info(cls, parent_instance: Union[models.Project, models.Task]):
+    def _get_parent_info(cls, parent_instance: models.Project | models.Task):
         parent_info = {}
         if isinstance(parent_instance, models.Project):
             parent_info['project'] = parent_instance
@@ -3846,7 +3846,7 @@ def _update_related_storages(
         setattr(instance, storage_type, storage_instance)
 
 
-def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, Optional[models.Storage]]:
+def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, models.Storage | None]:
     storages = {
         'source_storage': None,
         'target_storage': None,

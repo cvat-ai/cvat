@@ -17,7 +17,7 @@ from copy import copy
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import django_rq
 from attr.converters import to_bool
@@ -496,7 +496,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def preview(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
 
-        first_task: Optional[models.Task] = self._object.tasks.order_by('-id').first()
+        first_task: models.Task | None = self._object.tasks.order_by('-id').first()
         if not first_task:
             return HttpResponseNotFound('Project image preview not found')
 
@@ -529,7 +529,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
 class _DataGetter(metaclass=ABCMeta):
     def __init__(
-        self, data_type: str, data_num: Optional[Union[str, int]], data_quality: str
+        self, data_type: str, data_num: str | int | None, data_quality: str
     ) -> None:
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
         possible_quality_values = ('compressed', 'original')
@@ -622,7 +622,7 @@ class _TaskDataGetter(_DataGetter):
         *,
         data_type: str,
         data_quality: str,
-        data_num: Optional[Union[str, int]] = None,
+        data_num: str | int | None = None,
     ) -> None:
         super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
         self._db_task = db_task
@@ -643,8 +643,8 @@ class _JobDataGetter(_DataGetter):
         *,
         data_type: str,
         data_quality: str,
-        data_num: Optional[Union[str, int]] = None,
-        data_index: Optional[Union[str, int]] = None,
+        data_num: str | int | None = None,
+        data_index: str | int | None = None,
     ) -> None:
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
         possible_quality_values = ('compressed', 'original')
@@ -1717,7 +1717,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if instance.type != JobType.GROUND_TRUTH:
             raise ValidationError("Only ground truth jobs can be removed")
 
-        validation_layout: Optional[models.ValidationLayout] = getattr(
+        validation_layout: models.ValidationLayout | None = getattr(
             instance.segment.task.data, 'validation_layout', None
         )
         if (validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL):

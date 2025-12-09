@@ -693,7 +693,8 @@ class TestGetCloudStorageContent:
             if not next_token:
                 break
 
-        assert expected_content == current_content
+        # Each page is currently sorted individually, so we have to resort after combining.
+        assert expected_content == sorted(current_content, key=lambda el: el["type"].value)
 
     @pytest.mark.parametrize("cloud_storage_id", [2])
     def test_can_get_storage_content_with_manually_created_dirs(

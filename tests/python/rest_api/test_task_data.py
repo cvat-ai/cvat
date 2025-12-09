@@ -853,7 +853,7 @@ class TestPostTaskData:
             ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2, ""),
             ("abc_manifest.jsonl", "[d]*.jpeg", False, 1, ""),
             ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0, "No media data found"),
-            (None, "*", True, 0, "Combined media types are not supported"),
+            (None, "*", True, 0, "Only one video, archive, pdf, zip"),
             (None, "test/*", True, 3, ""),
             (None, "test/sub*1.jpeg", True, 1, ""),
             (None, "*image*.jpeg", True, 3, ""),
