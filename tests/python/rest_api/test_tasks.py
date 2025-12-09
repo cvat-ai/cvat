@@ -1299,6 +1299,35 @@ class TestTaskBackups:
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
     @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_task_with_mounted_share(self):
+        task_spec = {
+            "name": "Task with files from mounted share",
+            "labels": [{"name": "car"}],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
+            "start_frame": 1,
+            "stop_frame": 4,
+            "frame_filter": "step=2",
+        }
+        task_id, _ = create_task(self.user, task_spec, data_spec)
+
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"share_task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        with zipfile.ZipFile(filename, "r") as zf:
+            files_in_data = {
+                name.removeprefix("data/") for name in zf.namelist() if name.startswith("data/")
+            }
+
+        assert files_in_data == {"manifest.jsonl", "images/image_1.jpg", "images/image_3.jpg"}
+
+        self._test_can_restore_task_from_backup(task_id)
+
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
         task_spec = {
@@ -1403,17 +1432,21 @@ class TestTaskBackups:
             assert new_meta["cloud_storage_id"] is None
             exclude_regex_paths.append(r"root\['cloud_storage_id'\]")
 
-            if not lightweight_backup:
-                assert new_meta["storage"] == "local"
-                assert new_meta["start_frame"] == 0
-                assert new_meta["stop_frame"] == len(old_meta["frames"]) - 1
-                assert new_meta["frame_filter"] == ""
-                exclude_regex_paths += [
-                    r"root\['storage'\]",
-                    r"root\['start_frame'\]",
-                    r"root\['stop_frame'\]",
-                    r"root\['frame_filter'\]",
-                ]
+        if (
+            old_meta["storage"] == "share"
+            or old_meta["storage"] == "cloud_storage"
+            and not lightweight_backup
+        ):
+            assert new_meta["storage"] == "local"
+            assert new_meta["start_frame"] == 0
+            assert new_meta["stop_frame"] == len(old_meta["frames"]) - 1
+            assert new_meta["frame_filter"] == ""
+            exclude_regex_paths += [
+                r"root\['storage'\]",
+                r"root\['start_frame'\]",
+                r"root\['stop_frame'\]",
+                r"root\['frame_filter'\]",
+            ]
 
         assert (
             DeepDiff(
