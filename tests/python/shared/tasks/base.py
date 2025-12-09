@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Union
+from typing import Any
 
 import attrs
 from cvat_sdk.api_client import models
@@ -13,8 +13,8 @@ from shared.tasks.utils import parse_frame_step
 
 @attrs.define
 class TaskSpecBase(ITaskSpec):
-    _params: Union[dict, models.TaskWriteRequest]
-    _data_params: Union[dict, models.DataRequest]
+    _params: dict | models.TaskWriteRequest
+    _data_params: dict | models.DataRequest
     size: int = attrs.field(kw_only=True)
 
     @property

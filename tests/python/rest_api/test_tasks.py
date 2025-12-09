@@ -22,7 +22,7 @@ from operator import itemgetter
 from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -738,7 +738,7 @@ class TestGetTaskDataset:
         *,
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_task_dataset(username, save_images=True, id=task_id, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
@@ -2735,8 +2735,8 @@ class TestPatchTask:
         is_allow = is_task_owner or is_project_owner
         has_project = is_project_owner or is_project_assignee
 
-        username: Optional[str] = None
-        task_id: Optional[int] = None
+        username: str | None = None
+        task_id: int | None = None
 
         filtered_users = (
             (find_users(role="worker") + find_users(role="supervisor"))
@@ -3135,7 +3135,7 @@ class TestImportTaskAnnotations:
         ],
     )
     def test_check_import_error_on_wrong_file_structure(
-        self, tasks_with_shapes: Iterable, format_name: str, specific_info_included: Optional[bool]
+        self, tasks_with_shapes: Iterable, format_name: str, specific_info_included: bool | None
     ):
         task_id = tasks_with_shapes[0]["id"]
 
@@ -4200,7 +4200,7 @@ class TestPatchExportFrames(TestTasksBase):
         media_type: SourceDataType,
         step: int,
         frame_count: int,
-        start_frame: Optional[int],
+        start_frame: int | None,
     ) -> Generator[tuple[ITaskSpec, Task, str], None, None]:
         args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
 

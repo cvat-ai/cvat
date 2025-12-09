@@ -6,7 +6,6 @@ import json
 from collections.abc import Generator
 from contextlib import contextmanager
 from http import HTTPStatus
-from typing import Optional
 from unittest import mock
 
 import pytest
@@ -45,7 +44,7 @@ class TestTokenAuth:
 
     @classmethod
     @contextmanager
-    def make_client(cls, username: Optional[str] = None) -> Generator[ApiClient, None, None]:
+    def make_client(cls, username: str | None = None) -> Generator[ApiClient, None, None]:
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
             if username:
                 cls.login(api_client, username)
@@ -124,7 +123,7 @@ class TestSessionAuth:
 
     @classmethod
     @contextmanager
-    def make_client(cls, username: Optional[str] = None) -> Generator[ApiClient, None, None]:
+    def make_client(cls, username: str | None = None) -> Generator[ApiClient, None, None]:
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
             if username:
                 cls.login(api_client, username)
@@ -194,7 +193,7 @@ class TestSessionAuth:
 class TestAccessTokenAuth:
     @classmethod
     @contextmanager
-    def make_client(cls, *, token: Optional[str] = None) -> Generator[ApiClient, None, None]:
+    def make_client(cls, *, token: str | None = None) -> Generator[ApiClient, None, None]:
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
             if token:
                 api_client.configuration.access_token = token
