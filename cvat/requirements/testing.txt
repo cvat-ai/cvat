@@ -6,9 +6,9 @@
 -r development.txt
 coverage==7.2.3
     # via -r cvat/requirements/testing.in
-fakeredis[lua]==2.30.1
+fakeredis[lua]==2.32.1
     # via -r cvat/requirements/testing.in
-lupa==2.5
+lupa==2.6
     # via fakeredis
 sortedcontainers==2.4.0
     # via fakeredis

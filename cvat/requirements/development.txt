@@ -6,7 +6,7 @@
 -r base.txt
 django-extensions==3.0.8
     # via -r cvat/requirements/development.in
-django-silk==5.4.0
+django-silk==5.4.3
     # via -r cvat/requirements/development.in
 gprof2dot==2025.4.14
     # via django-silk
@@ -14,5 +14,5 @@ rope==0.17.0
     # via -r cvat/requirements/development.in
 snakeviz==2.1.0
     # via -r cvat/requirements/development.in
-tornado==6.5.1
+tornado==6.5.2
     # via snakeviz
