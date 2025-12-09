@@ -1990,7 +1990,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             chapters = get_video_chapters(
                 db_task.data.get_manifest_path(),
                 segment=(data_start_frame, data_stop_frame)
-                )
+            )
         else:
             media = [
                 # Insert placeholders if frames are skipped
