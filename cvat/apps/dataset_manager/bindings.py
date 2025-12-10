@@ -55,6 +55,7 @@ from cvat.apps.engine.rq import ImportRQMeta
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import MaskConverter
+from .util import make_getter_by_frame_for_annotation_stream
 
 slogger = ServerLogManager(__name__)
 
@@ -500,31 +501,7 @@ class CommonData(InstanceLabelData):
             self._annotation_ir, dimension=self._annotation_ir.dimension
         )
 
-        def get_anns_for_frame(gen):
-            if isinstance(gen, list):
-                gen = iter(gen)
-            ann = None
-
-            def get(frame_index):
-                nonlocal ann
-
-                while True:
-                    if ann is None:
-                        try:
-                            ann = next(gen)
-                        except StopIteration:
-                            break
-
-                    assert ann["frame"] >= frame_index
-                    if ann["frame"] == frame_index:
-                        yield ann
-                        ann = None
-                    else:
-                        break
-
-            return get
-
-        get_shapes_for_frame = get_anns_for_frame(
+        get_shapes_for_frame = make_getter_by_frame_for_annotation_stream(
             anno_manager.to_shapes(
                 self.stop + 1,
                 # Skip outside, deleted and excluded frames
@@ -535,7 +512,7 @@ class CommonData(InstanceLabelData):
             )
         )
 
-        get_tags_for_frame = get_anns_for_frame(
+        get_tags_for_frame = make_getter_by_frame_for_annotation_stream(
             sorted(
                 (
                     tag

@@ -25,7 +25,7 @@ CVAT comes in three editions: CVAT Community, CVAT Online, and CVAT Enterprise.
 - Free edition you can deploy on-premises or in your own cloud
 - Full annotation toolset, import/export formats, and core workflow
 - Ideal for technical teams comfortable managing infrastructure
-- {{< ilink "/docs/administration/basics/installation" "Installation & Setup Guide →" >}}
+- {{< ilink "/docs/administration/community/basics/installation" "Installation & Setup Guide →" >}}
 - [GitHub repository](https://github.com/cvat-ai/cvat)
 
 ### CVAT Online
@@ -143,13 +143,13 @@ Below is a detailed table of the supported models and the platforms they operate
 
 | Name                                                                                           | Description                                                                                                                                                                                                                |
 | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| {{< ilink "/docs/administration/basics/installation" "**Self-hosted Installation Guide**" >}}  | Start here to install self-hosted solution on your premises.                                                                                                                                                               |
+| {{< ilink "/docs/administration/community/basics/installation" "**Self-hosted Installation Guide**" >}}  | Start here to install self-hosted solution on your premises.                                                                                                                                                               |
 | [**Dataset Management Framework**](https://github.com/cvat-ai/datumaro/blob/develop/README.md) | Specifically for the Self-Hosted version, this framework and CLI tool are essential for building, transforming, and analyzing datasets.                                                                                    |
 | {{< ilink "/docs/api_sdk/api" "**Server API**" >}}                                             | The CVAT server offers a HTTP REST API for interactions. This section explains how client applications, whether they are command line tools, browsers, or scripts, interact with CVAT through HTTP requests and responses. |
 | {{< ilink "/docs/api_sdk/sdk" "**Python SDK**" >}}                                             | The CVAT SDK is a Python library providing access to server interactions and additional functionalities like data validation and serialization.                                                                            |
 | {{< ilink "/docs/api_sdk/cli" "**Command Line Tool**" >}}                                      | This tool offers a straightforward command line interface for managing CVAT tasks. Currently featuring basic functionalities, it has the potential to develop into a more advanced administration tool for CVAT.           |
 | {{< ilink "/docs/dataset_management/formats/format-cvat#format-specifications" "**XML Annotation Format**" >}} | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                        |
-| {{< ilink "/docs/administration/basics/aws-deployment-guide" "**AWS Deployment Guide**" >}}    | A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.                                                                                                                |
+| {{< ilink "/docs/administration/community/basics/aws-deployment-guide" "**AWS Deployment Guide**" >}}    | A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.                                                                                                                |
 | {{< ilink "/docs/faq" "**Frequently Asked Questions**" >}}                                     | This section addresses common queries and provides helpful answers and insights about using CVAT.                                                                                                                          |
 
 ## Integrations

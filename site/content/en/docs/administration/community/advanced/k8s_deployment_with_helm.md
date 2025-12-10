@@ -4,7 +4,8 @@ title: 'CVAT deployment on Kubernetes with Helm'
 linkTitle: 'CVAT deployment on Kubernetes with Helm'
 weight: 1
 description: 'Instructions for deploying CVAT on a Kubernetes cluster.'
-
+aliases:
+- /docs/administration/advanced/k8_deployment_with_helm/
 ---
 
 ---

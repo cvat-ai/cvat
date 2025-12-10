@@ -14,7 +14,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from enum import Enum, IntEnum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -200,7 +200,9 @@ class AbstractArrayField(models.TextField):
     separator = ","
     converter = staticmethod(lambda x: x)
 
-    def __init__(self, *args, store_sorted:Optional[bool]=False, unique_values:Optional[bool]=False, **kwargs):
+    def __init__(
+        self, *args, store_sorted: bool | None = False, unique_values: bool | None = False, **kwargs
+    ):
         self._store_sorted = store_sorted
         self._unique_values = unique_values
         super().__init__(*args,**{'default': '', **kwargs})
@@ -398,8 +400,8 @@ class Data(models.Model):
 
     @transaction.atomic
     def update_validation_layout(
-        self, validation_layout: Optional[ValidationLayout]
-    ) -> Optional[ValidationLayout]:
+        self, validation_layout: ValidationLayout | None
+    ) -> ValidationLayout | None:
         if validation_layout:
             validation_layout.task_data = self
             validation_layout.save()
@@ -409,7 +411,7 @@ class Data(models.Model):
         return validation_layout
 
     @property
-    def validation_mode(self) -> Optional[ValidationMode]:
+    def validation_mode(self) -> ValidationMode | None:
         return getattr(getattr(self, 'validation_layout', None), 'mode', None)
 
 
@@ -669,21 +671,21 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
 
     @cached_property
-    def completed_jobs_count(self) -> Optional[int]:
+    def completed_jobs_count(self) -> int | None:
         # Requires this field to be defined externally,
         # e.g. by calling Task.objects.with_job_summary,
         # to avoid unexpected DB queries on access.
         return None
 
     @cached_property
-    def validation_jobs_count(self) -> Optional[int]:
+    def validation_jobs_count(self) -> int | None:
         # Requires this field to be defined externally,
         # e.g. by calling Task.objects.with_job_summary,
         # to avoid unexpected DB queries on access.
         return None
 
     @cached_property
-    def gt_job(self) -> Optional[Job]:
+    def gt_job(self) -> Job | None:
         try:
             return Job.objects.get(segment__task=self, type=JobType.GROUND_TRUTH)
         except Job.DoesNotExist:
@@ -958,10 +960,10 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     issue__count: MaybeUndefined[int]
     "Can be defined by the fetching queryset"
 
-    def get_target_storage(self) -> Optional[Storage]:
+    def get_target_storage(self) -> Storage | None:
         return self.segment.task.target_storage
 
-    def get_source_storage(self) -> Optional[Storage]:
+    def get_source_storage(self) -> Storage | None:
         return self.segment.task.source_storage
 
     def get_dirname(self) -> str:

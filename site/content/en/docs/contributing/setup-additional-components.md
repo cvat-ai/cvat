@@ -7,7 +7,8 @@ description: 'Deploying a DL model as a serverless function and Cypress tests.'
 
 ## DL models as serverless functions
 
-Follow this {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "guide" >}} to install Nuclio:
+Follow this {{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "guide" >}}
+to install Nuclio:
 
 - You have to install `nuctl` command line tool to build and deploy serverless
   functions.

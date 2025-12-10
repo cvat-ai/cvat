@@ -5,7 +5,6 @@
 import io
 from logging import Logger
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from cvat_sdk import Client
@@ -133,7 +132,7 @@ class TestJobUsecases(TestDatasetExport):
         format_name: str,
         include_images: bool,
         task: Task,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):
