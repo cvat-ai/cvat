@@ -5,7 +5,6 @@
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
 import requests
 from cvat_sdk.api_client import ApiClient, Configuration
@@ -72,10 +71,10 @@ def server_get(username, endpoint, **kwargs):
 
 
 def make_api_client(
-    user: Optional[str] = None,
+    user: str | None = None,
     *,
-    password: Optional[str] = None,
-    access_token: Optional[str] = None,
+    password: str | None = None,
+    access_token: str | None = None,
 ) -> ApiClient:
     assert (
         sum([bool(access_token), bool(user)]) <= 1

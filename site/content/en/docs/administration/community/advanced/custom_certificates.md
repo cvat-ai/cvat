@@ -3,6 +3,8 @@ title: 'Custom Certificates'
 linkTitle: 'Custom Certificates'
 description: 'Use Custom Certificates in CVAT'
 weight: 100
+aliases:
+- /docs/administration/advanced/custom_certificates/
 ---
 
 CVAT use traefik as a reverse proxy to manage SSL certificates.

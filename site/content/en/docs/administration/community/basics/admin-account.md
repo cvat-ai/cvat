@@ -3,6 +3,8 @@ title: 'Superuser registration'
 linkTitle: 'Superuser registration'
 weight: 2
 description: 'A CVAT installation guide to create a superuser.'
+aliases:
+- /docs/administration/basics/admin-account/
 ---
 
 This section is for users who want to be a bit more flexible with CVAT use.
@@ -16,7 +18,7 @@ to assign groups (roles) to other users.
 ### Prerequisites
 
 Before you register an admin account (superuser), you need to install CVAT locally,
-see {{< ilink "/docs/administration/basics/installation" "Installation Guide" >}}.
+see {{< ilink "/docs/administration/community/basics/installation" "Installation Guide" >}}.
 
 Steps of installation are partly different, depending on the type of operation system (OS).
 
