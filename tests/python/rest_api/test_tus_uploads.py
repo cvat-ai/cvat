@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import base64
+import socket
 import threading
 import time
 from http import HTTPStatus
+from urllib.parse import urlparse
 
 import pytest
 import requests
@@ -371,3 +373,103 @@ class TestTUSUpload:
                 toxiproxy.destroy(proxy)
             except Exception:  # pylint: disable=broad-except
                 pass
+
+    @pytest.mark.timeout(600)
+    @pytest.mark.skip()
+    def test_connection_drop_with_raw_socket(self):
+        """
+        Test real connection interruption using raw socket.
+
+        This test simulates a network failure by:
+        1. Creating a task and starting TUS upload
+        2. Opening a raw socket connection to the server
+        3. Sending HTTP headers with Content-Length
+        4. Sending only a small portion of the body data
+        5. Abruptly closing the socket (simulating network failure)
+        6. Verifying that server saved the partial data received
+        7. Resuming upload from the saved offset
+
+        """
+        task = self._create_task_via_api(
+            {
+                "name": "test raw socket connection drop",
+                "labels": [{"name": "car"}],
+            }
+        )
+
+        image_file = generate_image_file("test_image.jpg", size=(65000, 65000))
+        image_data = image_file.getvalue()
+        file_size = len(image_data)
+
+        file_id = self._start_upload(task.id, file_size, "test_image.jpg")
+
+        parsed = urlparse(BASE_URL)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 8080
+
+        credentials = f"{self._USERNAME}:{USER_PASS}"
+        auth_header = base64.b64encode(credentials.encode()).decode()
+
+        chunk_size = file_size
+        chunk_data = image_data[:chunk_size]
+        partial_send_size = 60000000  # Send only 20000KB before dropping
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(50)
+
+        try:
+            sock.connect((host, port))
+
+            request_path = f"/api/tasks/{task.id}/data/{file_id}"
+            headers = (
+                f"PATCH {request_path} HTTP/1.1\r\n"
+                f"Host: {host}:{port}\r\n"
+                f"Authorization: Basic {auth_header}\r\n"
+                f"Upload-Offset: 0\r\n"
+                f"Content-Type: application/offset+octet-stream\r\n"
+                f"Tus-Resumable: 1.0.0\r\n"
+                f"Content-Length: {chunk_size}\r\n"
+                f"\r\n"
+            )
+
+            sock.sendall(headers.encode())
+
+            # Send only a small portion of the body (simulating partial upload)
+            sock.sendall(chunk_data[:partial_send_size])
+
+            time.sleep(5)
+            sock.close()
+
+        except Exception as e:  # pylint: disable=broad-except
+            sock.close()
+            pass
+
+        time.sleep(2)
+
+        current_offset = self._get_upload_offset(task.id, file_id)
+
+        # Server should have saved at least some of the partial data
+        assert current_offset > 0, (
+            f"Server must save partial data on connection drop. "
+            f"Got offset: {current_offset}, expected > 0"
+        )
+
+        # Offset should be less than what we planned to send
+        assert current_offset <= partial_send_size, (
+            f"Offset should reflect partial upload. "
+            f"Got offset: {current_offset}, sent: {partial_send_size}, "
+            f"planned chunk size: {chunk_size}"
+        )
+
+        remaining_data = image_data[current_offset:]
+        response = self._upload_chunk(task.id, file_id, current_offset, remaining_data)
+
+        assert response.status_code == HTTPStatus.NO_CONTENT, (
+            f"Resume upload failed with status {response.status_code}"
+        )
+
+        final_offset = int(response.headers.get("Upload-Offset"))
+        assert final_offset == file_size, (
+            f"Final offset should equal file size. "
+            f"Got: {final_offset}, expected: {file_size}"
+        )
