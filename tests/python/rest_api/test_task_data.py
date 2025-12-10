@@ -1056,7 +1056,7 @@ class TestPostTaskData:
             cloud_storage=cloud_storage,
             use_manifest=False,
             use_cache=False,
-            server_files=["test/video/video.avi"],
+            server_files=["test/video/video.mkv"],
             org=org,
             data_spec_kwargs=data_spec,
             data_type="video",
@@ -1780,6 +1780,7 @@ class TestPostTaskData:
 class TestTaskData(TestTasksBase):
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
+
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
 
@@ -1798,8 +1799,10 @@ class TestTaskData(TestTasksBase):
 
             if task_spec.source_data_type == SourceDataType.video:
                 assert len(task_meta.frames) == 1
+                assert len(task_meta.chapters) == 1
             else:
                 assert len(task_meta.frames) == task_meta.size
+                assert task_meta.chapters is None
 
     @pytest.mark.timeout(
         # This test has to check all the task frames availability, it can make many requests

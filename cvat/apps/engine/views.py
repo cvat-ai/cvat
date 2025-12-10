@@ -66,7 +66,7 @@ from cvat.apps.engine.frame_provider import (
     JobFrameProvider,
     TaskFrameProvider,
 )
-from cvat.apps.engine.media_extractors import get_mime
+from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
@@ -1479,8 +1479,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
+            chapters = get_video_chapters(db_task.data.get_manifest_path())
         else:
             media = list(db_task.data.images.all())
+            chapters = None
 
         frame_meta = [{
             'width': item.width,
@@ -1492,6 +1494,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_data = db_task.data
         db_data.frames = frame_meta
         db_data.chunks_updated_date = db_task.get_chunks_updated_date()
+        db_data.chapters = chapters
 
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
@@ -1984,6 +1987,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         if hasattr(db_data, 'video'):
             media = [db_data.video]
+            chapters = get_video_chapters(
+                db_task.data.get_manifest_path(),
+                segment=(data_start_frame, data_stop_frame)
+            )
         else:
             media = [
                 # Insert placeholders if frames are skipped
@@ -1995,6 +2002,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 for f in db_data.images.all()
                 if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
             ]
+            chapters = None
 
         deleted_frames = set(db_data.deleted_frames)
         if db_job.type == models.JobType.GROUND_TRUTH:
@@ -2021,6 +2029,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         } for item in media]
 
         db_data.frames = frame_meta
+        db_data.chapters = chapters
 
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)

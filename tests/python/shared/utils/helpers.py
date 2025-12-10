@@ -4,7 +4,7 @@
 
 import subprocess
 from collections.abc import Generator
-from contextlib import closing
+from fractions import Fraction
 from io import BytesIO
 
 import av
@@ -49,9 +49,19 @@ def generate_image_files(
 
 def generate_video_file(num_frames: int, size=(100, 50)) -> BytesIO:
     f = BytesIO()
-    f.name = "video.avi"
+    f.name = "video.mkv"
+    chapters = [
+        {
+            "id": 0,
+            "start": 0,
+            "end": 100,
+            "time_base": Fraction(1, 1000),
+            "metadata": {"title": "Intro"},
+        }
+    ]
 
     with av.open(f, "w") as container:
+        container.set_chapters(chapters)
         stream = container.add_stream("mjpeg", rate=60)
         stream.width = size[0]
         stream.height = size[1]
@@ -73,11 +83,9 @@ def read_video_file(file: BytesIO) -> Generator[Image.Image, None, None]:
     with av.open(file) as container:
         video_stream = container.streams.video[0]
 
-        with closing(video_stream.codec_context):  # pyav has a memory leak in stream.close()
-            with closing(container.demux(video_stream)) as demux_iter:
-                for packet in demux_iter:
-                    for frame in packet.decode():
-                        yield frame.to_image()
+        for packet in container.demux(video_stream):
+            for frame in packet.decode():
+                yield frame.to_image()
 
 
 def generate_manifest(path: str) -> None:
