@@ -464,12 +464,11 @@ class TestTUSUpload:
         remaining_data = image_data[current_offset:]
         response = self._upload_chunk(task.id, file_id, current_offset, remaining_data)
 
-        assert response.status_code == HTTPStatus.NO_CONTENT, (
-            f"Resume upload failed with status {response.status_code}"
-        )
+        assert (
+            response.status_code == HTTPStatus.NO_CONTENT
+        ), f"Resume upload failed with status {response.status_code}"
 
         final_offset = int(response.headers.get("Upload-Offset"))
         assert final_offset == file_size, (
-            f"Final offset should equal file size. "
-            f"Got: {final_offset}, expected: {file_size}"
+            f"Final offset should equal file size. " f"Got: {final_offset}, expected: {file_size}"
         )

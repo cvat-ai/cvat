@@ -219,9 +219,9 @@ class TusFile:
                 self.meta_file.meta.offset = file.tell()
         self.meta_file.dump()
         slogger.glob.info(
-                    f"Wrote chunk to file {self.file_id.as_str}: "
-                    f"from {start_position} to {self.meta_file.meta.offset}"
-                )
+            f"Wrote chunk to file {self.file_id.as_str}: "
+            f"from {start_position} to {self.meta_file.meta.offset}"
+        )
 
     def is_complete(self):
         return self.offset == self.file_size
