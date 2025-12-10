@@ -1083,8 +1083,11 @@ class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
-        if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
-            return 0
+
+    # Skip bbox IoU gating for sparse / degenerate point cases
+        if a_bbox is not None and b_bbox is not None:
+            if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
+                pass  # intentionally do nothing for keypoints
 
         bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
         return oks(
@@ -1095,6 +1098,9 @@ class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
             visibility_a=[v == dm.Points.Visibility.visible for v in a.visibility],
             visibility_b=[v == dm.Points.Visibility.visible for v in b.visibility],
         )
+
+
+
 
 
 def _arr_div(a_arr: np.ndarray, b_arr: np.ndarray) -> np.ndarray:
