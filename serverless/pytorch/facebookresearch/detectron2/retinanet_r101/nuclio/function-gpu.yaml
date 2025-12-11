@@ -103,9 +103,7 @@ spec:
         - kind: ENV
           value: DEBIAN_FRONTEND=noninteractive
         - kind: ENV
-          value: NVIDIA_VISIBLE_DEVICES=all
-        - kind: ENV
-          value: NVIDIA_DRIVER_CAPABILITIES=compute,utility
+          value: NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility
         - kind: RUN
           value: |-
             apt update \
