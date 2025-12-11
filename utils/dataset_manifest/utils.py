@@ -30,6 +30,19 @@ class Openable(Protocol):
     def __str__(self) -> str: ...  # Must return the path that should be used for sorting.
 
 
+class InMemoryOpenable:
+    def __init__(self, path: str, contents: bytes) -> None:
+        self._path = path
+        self._contents = contents
+
+    def open(self, mode: str) -> BinaryIO:
+        assert mode == "rb"
+        return io.BytesIO(self._contents)
+
+    def __str__(self) -> str:
+        return self._path
+
+
 def rotate_image(image, angle):
     height, width = image.shape[:2]
     image_center = (width / 2, height / 2)
@@ -44,7 +57,7 @@ def rotate_image(image, angle):
     return matrix
 
 
-def md5_hash(frame: str | Image.Image | VideoFrame | io.RawIOBase) -> str:
+def md5_hash(frame: str | Image.Image | VideoFrame | BinaryIO) -> str:
     buffer = frame
 
     if isinstance(buffer, str):
@@ -412,32 +425,27 @@ class PcdReader:
     )
 
     @classmethod
-    def parse_pcd_header(
-        cls, fp: os.PathLike[str] | io.RawIOBase, *, verify_version: bool = False
-    ) -> dict[str, str]:
-        if not hasattr(fp, "read"):
-            with open(fp, "rb") as file:
-                return cls.parse_pcd_header(file, verify_version=verify_version)
-
+    def parse_pcd_header(cls, pcd: Openable, *, verify_version: bool = False) -> dict[str, str]:
         properties = {}
 
-        for line_number, line in enumerate(fp):
-            try:
-                line = line.decode("utf-8")
-            except UnicodeDecodeError as e:
-                raise InvalidPcdError(f"line {line_number}: failed to parse pcd header") from e
+        with pcd.open("rb") as fp:
+            for line_number, line in enumerate(fp):
+                try:
+                    line = line.decode("utf-8")
+                except UnicodeDecodeError as e:
+                    raise InvalidPcdError(f"line {line_number}: failed to parse pcd header") from e
 
-            if line.startswith("#"):
-                continue
+                if line.startswith("#"):
+                    continue
 
-            line_parts = line.split(" ", maxsplit=1)
-            if len(line_parts) != 2:
-                raise InvalidPcdError(f"line {line_number}: invalid line format")
+                line_parts = line.split(" ", maxsplit=1)
+                if len(line_parts) != 2:
+                    raise InvalidPcdError(f"line {line_number}: invalid line format")
 
-            k, v = line_parts
-            properties[k.upper()] = v.strip()
-            if "DATA" in line:
-                break
+                k, v = line_parts
+                properties[k.upper()] = v.strip()
+                if "DATA" in line:
+                    break
 
         if verify_version:
             version = properties.get("VERSION", None)
@@ -447,15 +455,13 @@ class PcdReader:
         return properties
 
     @classmethod
-    def parse_bin_header(cls, fp: os.PathLike[str] | io.RawIOBase) -> dict[str, float]:
-        if not hasattr(fp, "read"):
-            with open(fp, "rb") as f:
-                return cls.parse_bin_header(f)
-
-        properties = {}
+    def parse_bin_header(cls, pcd: Openable) -> dict[str, float]:
         size_float = 4
         line_size = 4 * size_float
-        buffer = fp.read(line_size)
+
+        with pcd.open("rb") as fp:
+            buffer = fp.read(line_size)
+
         if not buffer or len(buffer) != line_size:
             raise InvalidPcdError("failed to parse bin pcd header")
 
@@ -464,6 +470,7 @@ class PcdReader:
         except struct.error as e:
             raise InvalidPcdError("failed to parse bin pcd header") from e
 
+        properties = {}
         properties["x"] = x
         properties["y"] = y
         properties["z"] = z
@@ -472,11 +479,9 @@ class PcdReader:
         return properties
 
     @classmethod
-    def convert_bin_to_pcd(
-        cls, path: os.PathLike[str] | io.RawIOBase, *, delete_source: bool = True
-    ) -> str:
+    def convert_bin_to_pcd(cls, path: str, *, delete_source: bool = True) -> str:
         pcd_file = io.BytesIO()
-        cls.convert_bin_to_pcd_file(path, output_file=pcd_file)
+        cls.convert_bin_to_pcd_file(Path(path), output_file=pcd_file)
 
         pcd_filename = os.path.splitext(path)[0] + ".pcd"
         with open(pcd_filename, "wb") as f:
@@ -488,13 +493,7 @@ class PcdReader:
         return pcd_filename
 
     @classmethod
-    def convert_bin_to_pcd_file(
-        cls, fp: os.PathLike[str] | io.RawIOBase, *, output_file: io.RawIOBase
-    ):
-        if not hasattr(fp, "read"):
-            with open(fp, "rb") as file:
-                return cls.convert_bin_to_pcd_file(file, output_file=output_file)
-
+    def convert_bin_to_pcd_file(cls, bin_: Openable, *, output_file: io.RawIOBase) -> None:
         def write_header(file_obj: io.TextIOBase, width: int, height: int):
             file_obj.writelines(
                 f"{line}\n"
@@ -515,12 +514,15 @@ class PcdReader:
         list_pcd = []
         size_float = 4
         line_size = 4 * size_float
-        while buffer := fp.read(line_size):
-            if len(buffer) != line_size:
-                raise InvalidPcdError(f"failed to parse bin pcd point at pos {fp.tell()}")
 
-            x, y, z, intensity = struct.unpack("ffff", buffer)
-            list_pcd.append([x, y, z, intensity])
+        with bin_.open("rb") as fp:
+            while buffer := fp.read(line_size):
+                if len(buffer) != line_size:
+                    raise InvalidPcdError(f"failed to parse bin pcd point at pos {fp.tell()}")
+
+                x, y, z, intensity = struct.unpack("ffff", buffer)
+                list_pcd.append([x, y, z, intensity])
+
         np_pcd = np.asarray(list_pcd)
 
         output_file_as_text = io.TextIOWrapper(output_file, newline="\n")
@@ -528,5 +530,3 @@ class PcdReader:
         output_file_as_text.detach()
 
         output_file.write(np_pcd.astype("float32").tobytes())
-
-        return output_file

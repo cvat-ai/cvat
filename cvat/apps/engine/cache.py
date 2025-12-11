@@ -1049,8 +1049,8 @@ class MediaCache:
             slogger.cloud_storage[db_storage.pk].info(msg)
             raise NotFound(msg)
 
-        buff = storage.download_fileobj(preview_path)
-        image = PIL.Image.open(buff)
+        preview_bytes = storage.download_fileobj(preview_path)
+        image = PIL.Image.open(io.BytesIO(preview_bytes))
         return prepare_preview_image(image)
 
     def prepare_context_images_chunk(

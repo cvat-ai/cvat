@@ -568,6 +568,7 @@ def _create_task_manifest_from_cloud_data(
         },
         DIM_3D=(dimension == models.DimensionType.DIM_3D),
         stop=len(sorted_media) - 1,
+        data_dir=".",
     )
     manifest.create()
 
@@ -1127,7 +1128,7 @@ def create_thread(
                 # us to avoid downloading such images from cloud storage (when using static chunks),
                 # or copying them from the attached share (when using copy_data).
                 manifest.link(
-                    sources=extractor.absolute_source_paths,
+                    sources=list(map(Path, extractor.absolute_source_paths)),
                     meta={
                         k: {'related_images': related_images[k] }
                         for k in related_images

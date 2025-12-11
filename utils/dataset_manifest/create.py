@@ -107,7 +107,7 @@ def main():
             assert len(sources), "A images was not found"
             manifest = ImageManifestManager(manifest_path=manifest_directory)
             manifest.link(
-                sources=sources,
+                sources=list(map(Path, sources)),
                 meta=meta,
                 sorting_method=args.sorting,
                 use_image_hash=True,

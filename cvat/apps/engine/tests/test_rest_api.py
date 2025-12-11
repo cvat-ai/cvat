@@ -3561,7 +3561,7 @@ def generate_manifest_file(
         manifest = ImageManifestManager(manifest_path, create_index=False)
         manifest.link(
             sources=[
-                p
+                Path(p)
                 for p in sources
                 if (root_dir is not None and os.path.relpath(p, root_dir) or p) in scenes
             ],
