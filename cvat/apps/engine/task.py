@@ -1078,8 +1078,7 @@ def create_thread(
                     # TODO: maybe generate manifest in a temp directory
                     manifest = VideoManifestManager(db_data.get_manifest_path())
                     manifest.link(
-                        media_file=media_files[0],
-                        upload_dir=upload_dir,
+                        media_file=Path(upload_dir, media_files[0]),
                         chunk_size=db_data.chunk_size, # TODO: why it's needed here?
                         force=True
                     )

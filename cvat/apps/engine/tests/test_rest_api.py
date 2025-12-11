@@ -3553,31 +3553,25 @@ def generate_manifest_file(
     root_dir=None,
 ):
     if data_type == "video":
-        kwargs = {
-            "media_file": sources[0],
-            "upload_dir": os.path.dirname(sources[0]),
-            "force": True,
-        }
         manifest = VideoManifestManager(manifest_path, create_index=False)
+        manifest.link(media_file=Path(sources[0]), force=True)
     else:
-        kwargs = {
-            "sources": sources,
-            "sorting_method": sorting_method,
-            "use_image_hash": True,
-            "data_dir": root_dir,
-            "DIM_3D": data_type == ManifestDataType.point_clouds,
-        }
-
         scenes, related_images = find_related_images(sources, root_path=root_dir)
-        kwargs["meta"] = {k: {"related_images": related_images[k]} for k in related_images}
-        kwargs["sources"] = [
-            p
-            for p in sources
-            if (root_dir is not None and os.path.relpath(p, root_dir) or p) in scenes
-        ]
 
         manifest = ImageManifestManager(manifest_path, create_index=False)
-    manifest.link(**kwargs)
+        manifest.link(
+            sources=[
+                p
+                for p in sources
+                if (root_dir is not None and os.path.relpath(p, root_dir) or p) in scenes
+            ],
+            sorting_method=sorting_method,
+            use_image_hash=True,
+            data_dir=root_dir,
+            DIM_3D=data_type == ManifestDataType.point_clouds,
+            meta={k: {"related_images": related_images[k]} for k in related_images},
+        )
+
     manifest.create()
 
 

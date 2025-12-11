@@ -12,6 +12,7 @@ from collections.abc import Callable, Collection, Iterable, Sequence
 from enum import Enum
 from pathlib import Path
 from random import shuffle
+from typing import BinaryIO, Literal, Protocol
 
 import cv2 as cv
 import numpy as np
@@ -20,6 +21,13 @@ from natsort import os_sorted
 from PIL import Image
 
 from .errors import InvalidPcdError
+
+
+class Openable(Protocol):
+    # The mode is required so that Path can be used as an Openable.
+    def open(self, mode: Literal["rb"]) -> BinaryIO: ...
+
+    def __str__(self) -> str: ...  # Must return the path that should be used for sorting.
 
 
 def rotate_image(image, angle):

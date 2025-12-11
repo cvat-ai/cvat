@@ -9,7 +9,6 @@ import os
 from abc import ABC, abstractmethod
 from bisect import bisect_left, insort
 from collections.abc import Callable, Iterable, Iterator
-from contextlib import closing
 from enum import Enum
 from inspect import isgenerator
 from io import StringIO
@@ -22,21 +21,21 @@ from PIL import Image
 
 from .errors import InvalidImageError, InvalidManifestError, InvalidPcdError, InvalidVideoError
 from .types import NamedBytesIO
-from .utils import PcdReader, SortingMethod, md5_hash, rotate_image, sort
+from .utils import Openable, PcdReader, SortingMethod, md5_hash, rotate_image, sort
 
 # how many frames to check after seeking to validate key frame
 SEEK_MISMATCH_UPPER_BOUND = 200
 
 
 class VideoStreamReader:
-    def __init__(self, source_path, chunk_size, force):
+    def __init__(self, source_path: Openable, *, chunk_size: int, force: bool) -> None:
         self._source_path = source_path
         self._frames_number = None
         self._chapters = None
         self._force = force
         self._upper_bound = 3 * chunk_size + 1
 
-        with closing(av.open(self.source_path, mode="r")) as container:
+        with source_path.open("rb") as source_file, av.open(source_file, mode="r") as container:
             video_stream = VideoStreamReader._get_video_stream(container)
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
@@ -152,8 +151,10 @@ class VideoStreamReader:
         """
         # Open containers for reading frames and checking movement on them
         with (
-            closing(av.open(self.source_path, mode="r")) as reading_container,
-            closing(av.open(self.source_path, mode="r")) as checking_container,
+            self.source_path.open("rb") as reading_source_file,
+            av.open(reading_source_file, mode="r") as reading_container,
+            self.source_path.open("rb") as checking_source_file,
+            av.open(checking_source_file, mode="r") as checking_container,
         ):
             reading_v_stream = self._get_video_stream(reading_container)
             checking_v_stream = self._get_video_stream(checking_container)
@@ -621,10 +622,8 @@ class VideoManifestManager(_ManifestManager):
         setattr(self._manifest, "TYPE", "video")
         self.BASE_INFORMATION["properties"] = 3
 
-    def link(self, media_file, upload_dir=None, chunk_size=36, force=False, **kwargs):
-        self._reader = VideoStreamReader(
-            os.path.join(upload_dir, media_file) if upload_dir else media_file, chunk_size, force
-        )
+    def link(self, media_file: Openable, *, chunk_size=36, force=False) -> None:
+        self._reader = VideoStreamReader(media_file, chunk_size=chunk_size, force=force)
 
     def _write_base_information(self, file):
         base_info = {
@@ -696,7 +695,7 @@ class VideoManifestManager(_ManifestManager):
 
 
 class VideoManifestValidator(VideoManifestManager):
-    def __init__(self, source_path, manifest_path):
+    def __init__(self, source_path: Openable, manifest_path: str) -> None:
         self._source_path = source_path
         super().__init__(manifest_path)
 
@@ -715,7 +714,10 @@ class VideoManifestValidator(VideoManifestManager):
         ), "The uploaded manifest does not match the video"
 
     def validate_seek_key_frames(self):
-        with closing(av.open(self._source_path, mode="r")) as container:
+        with (
+            self._source_path.open("rb") as source_file,
+            av.open(source_file, mode="r") as container,
+        ):
             video_stream = self._get_video_stream(container)
             last_key_frame = None
 
