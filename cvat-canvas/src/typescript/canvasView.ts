@@ -998,14 +998,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         const dblClickHandler = (e: MouseEvent): void => {
-            e.preventDefault();
-
             if (this.activeElement.clientID !== null) {
                 const [state] = this.controller.objects.filter(
                     (_state: any): boolean => _state.clientID === this.activeElement.clientID,
                 );
 
                 if (state.shapeType === 'cuboid') {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (e.shiftKey) {
                         const points = this.translateFromCanvas(
                             pointsToNumberArray((e.target as any).parentElement.parentElement.instance.attr('points')),
