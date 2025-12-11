@@ -1,0 +1,56 @@
+metadata:
+  name: pth-shiyinzhang-iog
+  namespace: cvat
+  annotations:
+    name: IOG
+    version: 2
+    type: interactor
+    spec:
+    min_pos_points: 1
+    min_neg_points: 0
+    startswith_box: true
+    animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/iog_example.gif
+    help_message: The interactor allows to get a mask of an object using its wrapping bounding box, positive, and negative points inside it
+
+spec:
+  description: Interactive Object Segmentation with Inside-Outside Guidance
+  runtime: 'python:3.10'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/iog
+
+  build:
+    image: cvat.pth.shiyinzhang.iog
+    baseImage: ubuntu:22.04
+
+    directives:
+      preCopy:
+        - kind: RUN
+          value: apt update && apt install -y libgl1-mesa-glx libglib2.0-0 python-is-python3 python3-pip git && rm -rf /var/lib/apt/lists/*
+        - kind: RUN
+          value: pip install torch==2.9.0 torchvision==0.24.0 opencv-python gdown pycocotools scipy --extra-index-url https://download.pytorch.org/whl/cpu --no-cache-dir
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
+        - kind: ENV
+          value: fileid=1Lm1hhMhhjjnNwO4Pf7SC6tXLayH2iH0l filename=IOG_PASCAL_SBD.pth
+        - kind: RUN
+          value: gdown https://drive.google.com/uc?id=${fileid} -O iog/${filename}
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
