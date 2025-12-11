@@ -1,0 +1,117 @@
+# To build the function you need to adjust docker settings. Be sure that you
+# have enough memory (more than 4GB). Look here how to do that
+# https://stackoverflow.com/questions/44417159/docker-process-killed-with-cryptic-killed-message
+metadata:
+  name: openvino-omz-public-mask-rcnn-inception-resnet-v2-atrous-coco
+  namespace: cvat
+  annotations:
+    name: Mask RCNN
+    type: detector
+    spec: |
+      [
+        { "id": 1, "name": "person", "type": "mask" },
+        { "id": 2, "name": "bicycle", "type": "mask" },
+        { "id": 3, "name": "car", "type": "mask" },
+        { "id": 4, "name": "motorcycle", "type": "mask" },
+        { "id": 5, "name": "airplane", "type": "mask" },
+        { "id": 6, "name": "bus", "type": "mask" },
+        { "id": 7, "name": "train", "type": "mask" },
+        { "id": 8, "name": "truck", "type": "mask" },
+        { "id": 9, "name": "boat", "type": "mask" },
+        { "id":10, "name": "traffic_light", "type": "mask" },
+        { "id":11, "name": "fire_hydrant", "type": "mask" },
+        { "id":13, "name": "stop_sign", "type": "mask" },
+        { "id":14, "name": "parking_meter", "type": "mask" },
+        { "id":15, "name": "bench", "type": "mask" },
+        { "id":16, "name": "bird", "type": "mask" },
+        { "id":17, "name": "cat", "type": "mask" },
+        { "id":18, "name": "dog", "type": "mask" },
+        { "id":19, "name": "horse", "type": "mask" },
+        { "id":20, "name": "sheep", "type": "mask" },
+        { "id":21, "name": "cow", "type": "mask" },
+        { "id":22, "name": "elephant", "type": "mask" },
+        { "id":23, "name": "bear", "type": "mask" },
+        { "id":24, "name": "zebra", "type": "mask" },
+        { "id":25, "name": "giraffe", "type": "mask" },
+        { "id":27, "name": "backpack", "type": "mask" },
+        { "id":28, "name": "umbrella", "type": "mask" },
+        { "id":31, "name": "handbag", "type": "mask" },
+        { "id":32, "name": "tie", "type": "mask" },
+        { "id":33, "name": "suitcase", "type": "mask" },
+        { "id":34, "name": "frisbee", "type": "mask" },
+        { "id":35, "name": "skis", "type": "mask" },
+        { "id":36, "name": "snowboard", "type": "mask" },
+        { "id":37, "name": "sports_ball", "type": "mask" },
+        { "id":38, "name": "kite", "type": "mask" },
+        { "id":39, "name": "baseball_bat", "type": "mask" },
+        { "id":40, "name": "baseball_glove", "type": "mask" },
+        { "id":41, "name": "skateboard", "type": "mask" },
+        { "id":42, "name": "surfboard", "type": "mask" },
+        { "id":43, "name": "tennis_racket", "type": "mask" },
+        { "id":44, "name": "bottle", "type": "mask" },
+        { "id":46, "name": "wine_glass", "type": "mask" },
+        { "id":47, "name": "cup", "type": "mask" },
+        { "id":48, "name": "fork", "type": "mask" },
+        { "id":49, "name": "knife", "type": "mask" },
+        { "id":50, "name": "spoon", "type": "mask" },
+        { "id":51, "name": "bowl", "type": "mask" },
+        { "id":52, "name": "banana", "type": "mask" },
+        { "id":53, "name": "apple", "type": "mask" },
+        { "id":54, "name": "sandwich", "type": "mask" },
+        { "id":55, "name": "orange", "type": "mask" },
+        { "id":56, "name": "broccoli", "type": "mask" },
+        { "id":57, "name": "carrot", "type": "mask" },
+        { "id":58, "name": "hot_dog", "type": "mask" },
+        { "id":59, "name": "pizza", "type": "mask" },
+        { "id":60, "name": "donut", "type": "mask" },
+        { "id":61, "name": "cake", "type": "mask" },
+        { "id":62, "name": "chair", "type": "mask" },
+        { "id":63, "name": "couch", "type": "mask" },
+        { "id":64, "name": "potted_plant", "type": "mask" },
+        { "id":65, "name": "bed", "type": "mask" },
+        { "id":67, "name": "dining_table", "type": "mask" },
+        { "id":70, "name": "toilet", "type": "mask" },
+        { "id":72, "name": "tv", "type": "mask" },
+        { "id":73, "name": "laptop", "type": "mask" },
+        { "id":74, "name": "mouse", "type": "mask" },
+        { "id":75, "name": "remote", "type": "mask" },
+        { "id":76, "name": "keyboard", "type": "mask" },
+        { "id":77, "name": "cell_phone", "type": "mask" },
+        { "id":78, "name": "microwave", "type": "mask" },
+        { "id":79, "name": "oven", "type": "mask" },
+        { "id":80, "name": "toaster", "type": "mask" },
+        { "id":81, "name": "sink", "type": "mask" },
+        { "id":83, "name": "refrigerator", "type": "mask" },
+        { "id":84, "name": "book", "type": "mask" },
+        { "id":85, "name": "clock", "type": "mask" },
+        { "id":86, "name": "vase", "type": "mask" },
+        { "id":87, "name": "scissors", "type": "mask" },
+        { "id":88, "name": "teddy_bear", "type": "mask" },
+        { "id":89, "name": "hair_drier", "type": "mask" },
+        { "id":90, "name": "toothbrush", "type": "mask" }
+      ]
+
+spec:
+  description: Mask RCNN inception resnet v2 COCO via Intel OpenVINO
+  runtime: 'python:3.10'
+  handler: main:handler
+  eventTimeout: 60s
+
+  build:
+    image: cvat.openvino.omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
+    baseImage: cvat.openvino.omz.public.mask_rcnn_inception_resnet_v2_atrous_coco.base
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

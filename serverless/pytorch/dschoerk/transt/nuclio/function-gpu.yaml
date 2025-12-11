@@ -44,7 +44,7 @@ spec:
         - kind: RUN
           value: |-
             git clone --depth 1 --branch v1.0 https://github.com/dschoerk/TransT trans-t && \
-            sed -i 's%if float(torchvision.__version__\[:3\]) < 0.7%if tuple(int(v) for v in torchvision.__version__.split("+")[0].split(".")) < (0, 7, 0)%g' trans-t/util/misc.py
+            sed -i 's%if float(torchvision.__version__\[:3\]) < 0.7%if False%g' trans-t/util/misc.py
         - kind: ADD
           value: https://drive.google.com/uc?id=1Pq0sK-9jmbLAVtgB9-dPDc2pipCxYdM5 /transt.pth
 
