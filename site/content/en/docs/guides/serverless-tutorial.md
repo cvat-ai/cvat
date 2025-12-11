@@ -28,7 +28,8 @@ In CVAT all such DL models are implemented as serverless functions using the [Nu
 serverless platform. There are multiple implemented functions that can be
 found in the [serverless][cvat-builtin-serverless] directory such as
 _Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
-Follow {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}}
+Follow {{< ilink
+ "/docs/administration/community/advanced/installation_automatic_annotation" "the installation guide" >}}
 to build and deploy
 these serverless functions. See {{< ilink "/docs/annotation/auto-annotation/ai-tools" "the user guide" >}} to
 understand how to use these functions in the UI to automatically annotate data.
@@ -48,7 +49,7 @@ inside cloud infrastructure which can be called over HTTP. The Nuclio
 serverless platform helps us to implement and manage such functions.
 
 CVAT supports Nuclio out of the box if it is built properly. See
-{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}}
+{{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "the installation guide" >}}
 for instructions.
 Thus if you deploy a serverless function, the CVAT server can see it and call it
 with appropriate arguments. Of course there are some tricks how to create
@@ -84,7 +85,7 @@ nuclio       /docker-entrypoint.sh sh - ...   Up (healthy)   80/tcp, 0.0.0.0:807
 
 Next step is to deploy builtin serverless functions using Nuclio command
 line tool (aka `nuctl`). It is assumed that you followed
-{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}} and `nuctl`
+{{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "the installation guide" >}} and `nuctl`
 is already installed on your operating system. Run the following
 command to check that it works. In the beginning you should not have
 any deployed serverless functions.
@@ -557,7 +558,7 @@ Full code can be found here: [detectron2/retinanet/nuclio/main.py][retinanet-mai
 
 To use the new serverless function you have to deploy it using `nuctl` command.
 The actual deployment process is described in
-{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
+{{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
 
 <details>
 <summary>
@@ -759,7 +760,7 @@ port forwarding again._
 
 First of all need to check that you are using the recommended version of
 Nuclio framework. In my case it is `1.5.16` but you need to check
-{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation manual" >}}.
+{{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "the installation manual" >}}.
 
 ```bash
 nuctl version
@@ -949,7 +950,7 @@ If you encounter a problem running serverless functions on Windows 10,
 you can use the Ubuntu subsystem, for this do the following:
 
 1. Install  `WSL 2` and `Docker Desktop` as described in
-{{< ilink "/docs/administration/basics/installation#windows-10" "installation manual" >}}
+{{< ilink "/docs/administration/community/basics/installation#windows-10" "installation manual" >}}
 
 1. Install [Ubuntu 18.04 from Microsoft store][ubuntu-1804-microsoft-store].
 
@@ -959,11 +960,12 @@ you can use the Ubuntu subsystem, for this do the following:
 
 1. Then you can download and install `nuctl` on Ubuntu,
    using the
-   {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
+   {{< ilink
+    "/docs/administration/community/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
 
 1. Install `git` and clone repository on Ubuntu,
    as described in the
-   {{< ilink "/docs/administration/basics/installation#ubuntu-1804-x86_64amd64" "installation manual" >}}.
+   {{< ilink "/docs/administration/community/basics/installation#ubuntu-1804-x86_64amd64" "installation manual" >}}.
 
 1. After that, run the commands from this tutorial through Ubuntu.
 

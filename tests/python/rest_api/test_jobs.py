@@ -15,7 +15,7 @@ from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -544,7 +544,7 @@ class TestDeleteJobs:
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
     def _test_get_job_200(
-        self, user, jid, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
+        self, user, jid, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as client:
             (_, response) = client.jobs_api.retrieve(jid, **kwargs)
@@ -1450,7 +1450,7 @@ class TestJobDataset:
         *,
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_job_dataset(username, save_images=True, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
@@ -1462,7 +1462,7 @@ class TestJobDataset:
     @staticmethod
     def _test_export_annotations(
         username: str, jid: int, *, local_download: bool = True, **kwargs
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_job_dataset(username, save_images=False, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))

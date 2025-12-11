@@ -105,6 +105,7 @@ const defaultState: AnnotationState = {
         playing: false,
         frameAngles: [],
         navigationBlocked: false,
+        hoveredChapter: null,
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
@@ -291,6 +292,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.job,
                     instance: undefined,
                     fetching: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.HOVERED_CHAPTER: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    hoveredChapter: action.payload.id,
                 },
             };
         }

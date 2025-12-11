@@ -16,7 +16,7 @@ from http import HTTPStatus
 from itertools import chain, groupby, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -601,11 +601,11 @@ class TestPostTaskData:
         sorting_method: str = "lexicographical",
         data_type: str = "image",
         video_frame_count: int = 10,
-        server_files_exclude: Optional[list[str]] = None,
+        server_files_exclude: list[str] | None = None,
         org: str = "",
-        filenames: Optional[list[str]] = None,
-        task_spec_kwargs: Optional[dict[str, Any]] = None,
-        data_spec_kwargs: Optional[dict[str, Any]] = None,
+        filenames: list[str] | None = None,
+        task_spec_kwargs: dict[str, Any] | None = None,
+        data_spec_kwargs: dict[str, Any] | None = None,
     ) -> tuple[int, Any]:
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
         if data_type == "video":
@@ -713,7 +713,7 @@ class TestPostTaskData:
         use_cache: bool,
         use_manifest: bool,
         server_files: list[str],
-        server_files_exclude: Optional[list[str]],
+        server_files_exclude: list[str] | None,
         task_size: int,
         org: str,
         cloud_storages,
@@ -853,7 +853,7 @@ class TestPostTaskData:
             ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2, ""),
             ("abc_manifest.jsonl", "[d]*.jpeg", False, 1, ""),
             ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0, "No media data found"),
-            (None, "*", True, 0, "Combined media types are not supported"),
+            (None, "*", True, 0, "Only one video, archive, pdf, zip"),
             (None, "test/*", True, 3, ""),
             (None, "test/sub*1.jpeg", True, 1, ""),
             (None, "*image*.jpeg", True, 3, ""),
@@ -1056,7 +1056,7 @@ class TestPostTaskData:
             cloud_storage=cloud_storage,
             use_manifest=False,
             use_cache=False,
-            server_files=["test/video/video.avi"],
+            server_files=["test/video/video.mkv"],
             org=org,
             data_spec_kwargs=data_spec,
             data_type="video",
@@ -1780,6 +1780,7 @@ class TestPostTaskData:
 class TestTaskData(TestTasksBase):
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
+
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
 
@@ -1798,8 +1799,10 @@ class TestTaskData(TestTasksBase):
 
             if task_spec.source_data_type == SourceDataType.video:
                 assert len(task_meta.frames) == 1
+                assert len(task_meta.chapters) == 1
             else:
                 assert len(task_meta.frames) == task_meta.size
+                assert task_meta.chapters is None
 
     @pytest.mark.timeout(
         # This test has to check all the task frames availability, it can make many requests

@@ -438,6 +438,11 @@ export interface PluginsState {
                 items: PluginComponent[];
             };
         };
+        aiTools: {
+            interactors: {
+                extras: PluginComponent[];
+            };
+        };
         router: PluginComponent[];
     }
 }
@@ -800,6 +805,7 @@ export enum NavigationType {
     REGULAR = 'regular',
     FILTERED = 'filtered',
     EMPTY = 'empty',
+    CHAPTER = 'chapter',
 }
 
 export interface EditingState {
@@ -870,6 +876,7 @@ export interface AnnotationState {
         navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
+        hoveredChapter: number | null;
     };
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
