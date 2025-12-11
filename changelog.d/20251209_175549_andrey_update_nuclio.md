@@ -5,5 +5,5 @@
 
 ### Removed
 
-- SiamMask, IOG and some OpenVINO based functions
+- SiamMask and some OpenVINO-based functions
   (<https://github.com/cvat-ai/cvat/pull/10091>)
