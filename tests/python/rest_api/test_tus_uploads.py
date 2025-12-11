@@ -260,9 +260,9 @@ class TestTUSUpload:
         oversized_chunk = b"x" * (file_size - 500)  # This will go beyond file_size
         response = self._upload_chunk(task.id, file_id, 1000, oversized_chunk)
 
-        assert response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE, (
-            f"Expected 413 when chunk end exceeds file size, got {response.status_code}"
-        )
+        assert (
+            response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+        ), f"Expected 413 when chunk end exceeds file size, got {response.status_code}"
 
     @pytest.mark.skipif(not TOXIPROXY_AVAILABLE, reason="toxiproxy not installed")
     def test_connection_drop_with_toxiproxy(self):
