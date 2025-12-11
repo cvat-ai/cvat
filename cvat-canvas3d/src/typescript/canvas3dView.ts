@@ -129,8 +129,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         frameCoordinates: any;
         detected: any;
         initialMouseVector: any;
-        detachCam: any;
-        detachCamRef: any;
     };
     private cameraSettings: {
         [key in ViewType]: {
@@ -203,8 +201,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             },
             detected: false,
             initialMouseVector: new THREE.Vector2(),
-            detachCam: false,
-            detachCamRef: 'null',
             translation: {
                 status: false,
                 helper: null,
@@ -590,11 +586,17 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 (event: WheelEvent): void => {
                     event.preventDefault();
                     const { camera } = this.views[view];
-                    if (event.deltaY < CONST.FOV_MIN && camera.zoom < CONST.FOV_MAX) {
-                        camera.zoom += CONST.FOV_INC;
-                    } else if (event.deltaY > CONST.FOV_MIN && camera.zoom > CONST.FOV_MIN + 0.1) {
-                        camera.zoom -= CONST.FOV_INC;
-                    }
+
+                    // Adaptive zoom algorithm from 2D canvas
+                    const basicZoomCoef = 6 / 5;
+                    const adjustCoef = 1 / 100;
+                    const scaleFactor = basicZoomCoef ** (-event.deltaY * adjustCoef);
+                    camera.zoom = Math.min(
+                        Math.max(
+                            camera.zoom * scaleFactor,
+                            CONST.SIDE_VIEWS_MIN_ZOOM,
+                        ), CONST.SIDE_VIEWS_MAX_ZOOM,
+                    );
                     this.updateHelperPointsSize(view);
                 },
                 { passive: false },
@@ -1778,14 +1780,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             }
         });
-
-        if (this.action.detachCam && this.action.detachCamRef === this.model.data.activeElement.clientID) {
-            try {
-                this.detachCamera();
-            } finally {
-                this.action.detachCam = false;
-            }
-        }
     }
 
     private adjustPerspectiveCameras(): void {
