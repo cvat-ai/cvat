@@ -1700,7 +1700,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Setup event handlers
         this.canvas.addEventListener('dblclick', (e: MouseEvent): void => {
-            this.controller.fit();
+            if (this.activeElement.clientID !== null) {
+                // -1 means auto padding based on the shape size
+                this.controller.focus(this.activeElement.clientID, -1);
+            } else {
+                this.controller.fit();
+            }
             e.preventDefault();
         });
 
@@ -2003,7 +2008,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     } = bbox);
                 }
 
-                this.onFocusRegion(x - padding, y - padding, width + padding * 2, height + padding * 2);
+                if (padding === -1) {
+                    const autoPadding = Math.max(width, height) * 0.5;
+                    this.onFocusRegion(
+                        x - autoPadding,
+                        y - autoPadding,
+                        width + autoPadding * 2,
+                        height + autoPadding * 2,
+                    );
+                } else {
+                    this.onFocusRegion(x - padding, y - padding, width + padding * 2, height + padding * 2);
+                }
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.activate(this.controller.activeElement);
