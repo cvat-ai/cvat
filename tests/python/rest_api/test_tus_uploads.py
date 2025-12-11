@@ -3,24 +3,13 @@
 # SPDX-License-Identifier: MIT
 
 import base64
-import socket
-import threading
-import time
 from http import HTTPStatus
-from urllib.parse import urlparse
 
 import pytest
 import requests
 
 from shared.utils.config import BASE_URL, USER_PASS, make_api_client
 from shared.utils.helpers import generate_image_file
-
-try:
-    from toxiproxy import Toxiproxy
-
-    TOXIPROXY_AVAILABLE = True
-except ImportError:
-    TOXIPROXY_AVAILABLE = False
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
