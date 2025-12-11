@@ -49,6 +49,7 @@ function JoinControl(props: Props): JSX.Element {
                 className: 'cvat-join-control cvat-active-canvas-control',
                 onClick: (): void => {
                     canvasInstance.join({ enabled: false });
+                    updateActiveControl(ActiveControl.CURSOR);
                 },
             } :
             {

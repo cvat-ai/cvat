@@ -723,7 +723,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             jobInstance, onJoinAnnotations, updateActiveControl,
         } = this.props;
+        const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
+        canvasInstance.join({ enabled: false });
         updateActiveControl(ActiveControl.CURSOR);
         const { states, points, duration } = event.detail;
         jobInstance.logger.log(EventScope.joinObjects, {
@@ -876,7 +878,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasSliceDone = (event: any): void => {
         const { jobInstance, updateActiveControl, onSliceAnnotations } = this.props;
+        const { canvasInstance } = this.props as { canvasInstance: Canvas };
         const { state, results, duration } = event.detail;
+        canvasInstance.slice({ enabled: false });
         updateActiveControl(ActiveControl.CURSOR);
         jobInstance.logger.log(EventScope.sliceObject, {
             count: 1,
