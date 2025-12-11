@@ -177,6 +177,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.statesToBeMerged = [];
         this.isPerspectiveBeingDragged = false;
         this.activatedElementID = null;
+        this.sideViewsZoomMemory = {};
         this.drawnObjects = {};
         this.model = model;
         this.sceneBBox = new THREE.Box3();
