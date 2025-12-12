@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 import base64
+import io
 from http import HTTPStatus
 
 import pytest
-import requests
 
-from shared.utils.config import BASE_URL, USER_PASS, make_api_client
+from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_file
 
 
@@ -28,48 +28,70 @@ class TestTUSUpload:
             assert response.status == HTTPStatus.CREATED
             return task
 
+    def _call_tus_endpoint(self, method, path, headers=None, body=None, check_status=True):
+        """Call a low-level TUS endpoint via ApiClient"""
+        headers = headers or {}
+
+        # Wrap bytes in BytesIO so call_api can handle it
+        if isinstance(body, bytes):
+            body = io.BytesIO(body)
+
+        with make_api_client(self._USERNAME) as api_client:
+            _, response = api_client.call_api(
+                path,
+                method=method,
+                header_params=headers,
+                body=body,
+                auth_settings=api_client.configuration.auth_settings(),
+                _parse_response=False,
+                _check_status=check_status,
+            )
+
+        return response
+
     def _start_upload(self, task_id, file_size, filename):
         """Start TUS upload and return file_id"""
         metadata = f"filename {base64.b64encode(filename.encode()).decode()}"
 
-        response = requests.post(
-            f"{BASE_URL}/api/tasks/{task_id}/data",
+        response = self._call_tus_endpoint(
+            "POST",
+            f"/api/tasks/{task_id}/data",
             headers={
                 "Upload-Length": str(file_size),
                 "Upload-Metadata": metadata,
                 "Tus-Resumable": "1.0.0",
             },
-            auth=(self._USERNAME, USER_PASS),
         )
 
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status == HTTPStatus.CREATED
         location = response.headers.get("Location")
         assert location is not None
         file_id = location.split("/")[-1]
         return file_id
 
-    def _upload_chunk(self, task_id, file_id, offset, data):
+    def _upload_chunk(self, task_id, file_id, offset, data, check_status=True):
         """Upload a chunk via TUS PATCH request"""
-        response = requests.patch(
-            f"{BASE_URL}/api/tasks/{task_id}/data/{file_id}",
+        response = self._call_tus_endpoint(
+            "PATCH",
+            f"/api/tasks/{task_id}/data/{file_id}",
             headers={
                 "Upload-Offset": str(offset),
                 "Content-Type": "application/offset+octet-stream",
                 "Tus-Resumable": "1.0.0",
             },
-            data=data,
-            auth=(self._USERNAME, USER_PASS),
+            body=data,
+            check_status=check_status,
         )
         return response
 
     def _get_upload_offset(self, task_id, file_id):
         """Get current upload offset via TUS HEAD request"""
-        response = requests.head(
-            f"{BASE_URL}/api/tasks/{task_id}/data/{file_id}",
+        response = self._call_tus_endpoint(
+            "HEAD",
+            f"/api/tasks/{task_id}/data/{file_id}",
             headers={"Tus-Resumable": "1.0.0"},
-            auth=(self._USERNAME, USER_PASS),
         )
-        assert response.status_code == HTTPStatus.OK
+        assert response.status == HTTPStatus.OK
         offset = response.headers.get("Upload-Offset")
         assert offset is not None
         return int(offset)
@@ -90,7 +112,7 @@ class TestTUSUpload:
         file_id = self._start_upload(task.id, file_size, "test_image.jpg")
         response = self._upload_chunk(task.id, file_id, 0, image_data)
 
-        assert response.status_code == HTTPStatus.NO_CONTENT
+        assert response.status == HTTPStatus.NO_CONTENT
         assert int(response.headers.get("Upload-Offset")) == file_size
 
     def test_upload_offset_is_updated_incrementally(self):
@@ -116,7 +138,7 @@ class TestTUSUpload:
             chunk = image_data[offset:chunk_end]
 
             response = self._upload_chunk(task.id, file_id, offset, chunk)
-            assert response.status_code == HTTPStatus.NO_CONTENT
+            assert response.status == HTTPStatus.NO_CONTENT
 
             new_offset = int(response.headers.get("Upload-Offset"))
             assert new_offset == chunk_end
@@ -147,7 +169,7 @@ class TestTUSUpload:
         # Upload first chunk
         chunk1 = image_data[:1000]
         response = self._upload_chunk(task.id, file_id, 0, chunk1)
-        assert response.status_code == HTTPStatus.NO_CONTENT
+        assert response.status == HTTPStatus.NO_CONTENT
 
         # Get offset from response (file is not complete yet)
         current_offset = int(response.headers.get("Upload-Offset"))
@@ -155,8 +177,8 @@ class TestTUSUpload:
 
         # Try wrong offset (should be 1000, we send 500)
         chunk2 = image_data[1000:2000]
-        response = self._upload_chunk(task.id, file_id, 500, chunk2)
-        assert response.status_code in (HTTPStatus.CONFLICT, HTTPStatus.INTERNAL_SERVER_ERROR)
+        response = self._upload_chunk(task.id, file_id, 500, chunk2, check_status=False)
+        assert response.status in (HTTPStatus.CONFLICT, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_cannot_upload_chunk_exceeding_file_size(self):
         """Test that server rejects chunks whose end exceeds file size"""
@@ -175,14 +197,14 @@ class TestTUSUpload:
 
         chunk1 = image_data[:1000]
         response = self._upload_chunk(task.id, file_id, 0, chunk1)
-        assert response.status_code == HTTPStatus.NO_CONTENT
+        assert response.status == HTTPStatus.NO_CONTENT
         assert int(response.headers.get("Upload-Offset")) == 1000
 
         # Try to upload chunk that would exceed file size
         # offset=1000, chunk size would make end_offset > file_size
         oversized_chunk = b"x" * (file_size - 500)  # This will go beyond file_size
-        response = self._upload_chunk(task.id, file_id, 1000, oversized_chunk)
+        response = self._upload_chunk(task.id, file_id, 1000, oversized_chunk, check_status=False)
 
         assert (
-            response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
-        ), f"Expected 413 when chunk end exceeds file size, got {response.status_code}"
+            response.status == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+        ), f"Expected 413 when chunk end exceeds file size, got {response.status}"
