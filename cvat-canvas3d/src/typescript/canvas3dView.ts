@@ -1678,7 +1678,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const worldPerPixelY = visibleWorldHeight / canvasHeightPx;
 
         // 3) Convert desired pixel size to world units
-        const helperWorldSize = controlPointSizePx * worldPerPixelY * 2;
+        // 1.5 is a scaling factor for better visibility
+        const helperWorldSize = controlPointSizePx * worldPerPixelY * 1.5;
 
         return helperWorldSize;
     }

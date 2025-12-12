@@ -251,12 +251,8 @@ export function createResizeHelper(instance: THREE.Mesh): void {
     });
 
     for (let i = 0; i < cornerPoints.length; i++) {
-        const point = new THREE.Vector3().fromArray(cornerPoints[i]);
-        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(1));
-        instance.add(tmpSphere);
-        tmpSphere.position.copy(point);
-        const globalPosition = tmpSphere.getWorldPosition(new THREE.Vector3());
-        instance.remove(tmpSphere);
+        const localPoint = new THREE.Vector3().fromArray(cornerPoints[i]);
+        const globalPosition = instance.localToWorld(localPoint.clone());
 
         const helper = new THREE.Sprite(material);
         helper.renderOrder = Number.MAX_SAFE_INTEGER;
@@ -275,16 +271,10 @@ export function removeResizeHelper(instance: THREE.Mesh): void {
 
 export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): void {
     if ([ViewType.TOP, ViewType.SIDE, ViewType.FRONT].includes(viewType)) {
-        // Create a temporary element to get correct position
-        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(1));
-        instance.add(tmpSphere);
-        if (viewType === ViewType.TOP) {
-            tmpSphere.translateY(constants.ROTATION_HELPER_OFFSET);
-        } else {
-            tmpSphere.translateZ(constants.ROTATION_HELPER_OFFSET);
-        }
-        const globalPosition = tmpSphere.getWorldPosition(new THREE.Vector3());
-        instance.remove(tmpSphere);
+        const offsetLocal = viewType === ViewType.TOP ?
+            new THREE.Vector3(0, constants.ROTATION_HELPER_OFFSET, 0) :
+            new THREE.Vector3(0, 0, constants.ROTATION_HELPER_OFFSET);
+        const globalPosition = instance.localToWorld(offsetLocal.clone());
 
         const rotationHelper = new THREE.Sprite(new THREE.SpriteMaterial({
             color: '#33b864',
