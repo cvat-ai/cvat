@@ -539,7 +539,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const aspectRatio = window.innerWidth / window.innerHeight;
 
         // setting up the camera and adding it in the scene
-        this.views.perspective.camera = new THREE.PerspectiveCamera(50, aspectRatio, 1, 500);
+        this.views.perspective.camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 500);
         this.views.top.camera = new THREE.OrthographicCamera(
             (-aspectRatio * viewSize) / 2 - 2,
             (aspectRatio * viewSize) / 2 + 2,
