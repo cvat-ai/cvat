@@ -8,7 +8,7 @@ from http import HTTPStatus
 
 import pytest
 
-from shared.utils.config import make_api_client
+from shared.utils.config import BASE_URL, make_api_client
 from shared.utils.helpers import generate_image_file
 
 
@@ -32,30 +32,29 @@ class TestTUSUpload:
         """Call a low-level TUS endpoint via ApiClient"""
         headers = headers or {}
 
-        # Wrap bytes in BytesIO so call_api can handle it
-        if isinstance(body, bytes):
-            body = io.BytesIO(body)
-
         with make_api_client(self._USERNAME) as api_client:
-            _, response = api_client.call_api(
-                path,
-                method=method,
-                header_params=headers,
-                body=body,
-                auth_settings=api_client.configuration.auth_settings(),
-                _parse_response=False,
-                _check_status=check_status,
-            )
+            if path.startswith("http"):
+                if isinstance(body, io.BytesIO):
+                    body = body.getvalue()
+                api_client.update_params_for_auth(headers=headers, queries=[], method=method)
+                response = api_client.request(
+                    method,
+                    path,
+                    headers=headers,
+                    body=body,
+                    _parse_response=False,
+                    _check_status=check_status,
+                )
 
         return response
 
     def _start_upload(self, task_id, file_size, filename):
-        """Start TUS upload and return file_id"""
+        """Start TUS upload and return location URL"""
         metadata = f"filename {base64.b64encode(filename.encode()).decode()}"
 
         response = self._call_tus_endpoint(
             "POST",
-            f"/api/tasks/{task_id}/data",
+            BASE_URL + f"/api/tasks/{task_id}/data/",
             headers={
                 "Upload-Length": str(file_size),
                 "Upload-Metadata": metadata,
@@ -66,14 +65,13 @@ class TestTUSUpload:
         assert response.status == HTTPStatus.CREATED
         location = response.headers.get("Location")
         assert location is not None
-        file_id = location.split("/")[-1]
-        return file_id
+        return location
 
-    def _upload_chunk(self, task_id, file_id, offset, data, check_status=True):
+    def _upload_chunk(self, location, offset, data, check_status=True):
         """Upload a chunk via TUS PATCH request"""
         response = self._call_tus_endpoint(
             "PATCH",
-            f"/api/tasks/{task_id}/data/{file_id}",
+            location,
             headers={
                 "Upload-Offset": str(offset),
                 "Content-Type": "application/offset+octet-stream",
@@ -84,11 +82,11 @@ class TestTUSUpload:
         )
         return response
 
-    def _get_upload_offset(self, task_id, file_id):
+    def _get_upload_offset(self, location):
         """Get current upload offset via TUS HEAD request"""
         response = self._call_tus_endpoint(
             "HEAD",
-            f"/api/tasks/{task_id}/data/{file_id}",
+            location,
             headers={"Tus-Resumable": "1.0.0"},
         )
         assert response.status == HTTPStatus.OK
@@ -109,8 +107,8 @@ class TestTUSUpload:
         image_data = image_file.getvalue()
         file_size = len(image_data)
 
-        file_id = self._start_upload(task.id, file_size, "test_image.jpg")
-        response = self._upload_chunk(task.id, file_id, 0, image_data)
+        location = self._start_upload(task.id, file_size, "test_image.jpg")
+        response = self._upload_chunk(location, 0, image_data)
 
         assert response.status == HTTPStatus.NO_CONTENT
         assert int(response.headers.get("Upload-Offset")) == file_size
@@ -128,7 +126,7 @@ class TestTUSUpload:
         image_data = image_file.getvalue()
         file_size = len(image_data)
 
-        file_id = self._start_upload(task.id, file_size, "test_image.jpg")
+        location = self._start_upload(task.id, file_size, "test_image.jpg")
 
         chunk_size = 1024
         offset = 0
@@ -137,7 +135,7 @@ class TestTUSUpload:
             chunk_end = min(offset + chunk_size, file_size)
             chunk = image_data[offset:chunk_end]
 
-            response = self._upload_chunk(task.id, file_id, offset, chunk)
+            response = self._upload_chunk(location, offset, chunk)
             assert response.status == HTTPStatus.NO_CONTENT
 
             new_offset = int(response.headers.get("Upload-Offset"))
@@ -145,7 +143,7 @@ class TestTUSUpload:
 
             # Verify via HEAD only if not complete (file gets cleaned after completion)
             if new_offset < file_size:
-                head_offset = self._get_upload_offset(task.id, file_id)
+                head_offset = self._get_upload_offset(location)
                 assert head_offset == new_offset
 
             offset = new_offset
@@ -164,11 +162,11 @@ class TestTUSUpload:
         image_data = image_file.getvalue()
         file_size = len(image_data)
 
-        file_id = self._start_upload(task.id, file_size, "test_image.jpg")
+        location = self._start_upload(task.id, file_size, "test_image.jpg")
 
         # Upload first chunk
         chunk1 = image_data[:1000]
-        response = self._upload_chunk(task.id, file_id, 0, chunk1)
+        response = self._upload_chunk(location, 0, chunk1)
         assert response.status == HTTPStatus.NO_CONTENT
 
         # Get offset from response (file is not complete yet)
@@ -177,7 +175,7 @@ class TestTUSUpload:
 
         # Try wrong offset (should be 1000, we send 500)
         chunk2 = image_data[1000:2000]
-        response = self._upload_chunk(task.id, file_id, 500, chunk2, check_status=False)
+        response = self._upload_chunk(location, 500, chunk2, check_status=False)
         assert response.status in (HTTPStatus.CONFLICT, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_cannot_upload_chunk_exceeding_file_size(self):
@@ -193,17 +191,17 @@ class TestTUSUpload:
         image_data = image_file.getvalue()
         file_size = len(image_data)
 
-        file_id = self._start_upload(task.id, file_size, "test_image.jpg")
+        location = self._start_upload(task.id, file_size, "test_image.jpg")
 
         chunk1 = image_data[:1000]
-        response = self._upload_chunk(task.id, file_id, 0, chunk1)
+        response = self._upload_chunk(location, 0, chunk1)
         assert response.status == HTTPStatus.NO_CONTENT
         assert int(response.headers.get("Upload-Offset")) == 1000
 
         # Try to upload chunk that would exceed file size
         # offset=1000, chunk size would make end_offset > file_size
         oversized_chunk = b"x" * (file_size - 500)  # This will go beyond file_size
-        response = self._upload_chunk(task.id, file_id, 1000, oversized_chunk, check_status=False)
+        response = self._upload_chunk(location, 1000, oversized_chunk, check_status=False)
 
         assert (
             response.status == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
