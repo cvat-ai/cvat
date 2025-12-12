@@ -12,7 +12,7 @@ from collections.abc import Callable, Collection, Iterable, Sequence
 from enum import Enum
 from pathlib import Path
 from random import shuffle
-from typing import BinaryIO, Literal, Protocol
+from typing import IO, Literal, Protocol
 
 import cv2 as cv
 import numpy as np
@@ -25,7 +25,7 @@ from .errors import InvalidPcdError
 
 class Openable(Protocol):
     # The mode is required so that Path can be used as an Openable.
-    def open(self, mode: Literal["rb"]) -> BinaryIO: ...
+    def open(self, mode: Literal["rb"]) -> IO[bytes]: ...
 
 
 class NamedOpenable(Openable, Protocol):
@@ -36,7 +36,7 @@ class MemOpenable:
     def __init__(self, contents: bytes) -> None:
         self._contents = contents
 
-    def open(self, mode: str) -> BinaryIO:
+    def open(self, mode: str) -> IO[bytes]:
         assert mode == "rb"
         return io.BytesIO(self._contents)
 
@@ -64,7 +64,7 @@ def rotate_image(image, angle):
     return matrix
 
 
-def md5_hash(frame: str | Image.Image | VideoFrame | BinaryIO) -> str:
+def md5_hash(frame: str | Image.Image | VideoFrame | IO[bytes]) -> str:
     buffer = frame
 
     if isinstance(buffer, str):
