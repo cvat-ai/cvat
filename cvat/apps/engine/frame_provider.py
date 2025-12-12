@@ -15,7 +15,7 @@ from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, Generic, TypeVar, Union, overload
+from typing import Any, Generic, TypeAlias, TypeVar, overload
 
 import av
 import cv2
@@ -114,9 +114,9 @@ class FrameOutputType(Enum):
     NUMPY_ARRAY = auto()
 
 
-Frame2d = Union[BytesIO, np.ndarray, Image.Image]
-Frame3d = BytesIO
-AnyFrame = Union[Frame2d, Frame3d]
+Frame2d: TypeAlias = BytesIO | np.ndarray | Image.Image
+Frame3d: TypeAlias = BytesIO
+AnyFrame: TypeAlias = Frame2d | Frame3d
 
 
 @dataclass
