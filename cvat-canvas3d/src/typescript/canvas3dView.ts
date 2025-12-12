@@ -814,7 +814,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             const bboxtop = new THREE.Box3().setFromObject(selectedCuboid.top);
             const x1 = Math.min(
-                canvasTop.offsetWidth / (bboxtop.max.x * -bboxtop.min.x),
+                canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
                 canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
             ) * 0.4;
             cameraTop.zoom = defaultZoom?.top ?? x1 / 50;
