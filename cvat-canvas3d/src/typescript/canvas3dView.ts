@@ -122,11 +122,12 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private statesToBeMerged: ObjectState[];
     private sceneBBox: THREE.Box3;
     private sideViewsZoomMemory: Record<number, SideViewsZoomMemory>;
+    private model: Canvas3dModel & Master;
     private drawnObjects: Record<number, {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
-    private model: Canvas3dModel & Master;
+
     private action: {
         translation: any;
         resize: {
@@ -139,9 +140,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         frameCoordinates: any;
         detected: any;
         initialMouseVector: any;
-        detachCam: any;
-        detachCamRef: any;
     };
+
     private cameraSettings: {
         [key in ViewType]: {
             position: [number, number, number],
@@ -214,8 +214,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             },
             detected: false,
             initialMouseVector: new THREE.Vector2(),
-            detachCam: false,
-            detachCamRef: 'null',
             translation: {
                 status: false,
                 helper: null,
@@ -470,6 +468,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const intersects = viewType.rayCaster.renderer.intersectObjects(this.getAllVisibleCuboids(), false);
                 if (!intersects.length) {
                     this.fitCanvas(true);
+                } else {
+                    const clientID = intersects[0].object.name;
+                    this.fitObject(this.drawnObjects[clientID].cuboid, true);
                 }
                 return;
             }
@@ -601,11 +602,17 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 (event: WheelEvent): void => {
                     event.preventDefault();
                     const { camera } = this.views[view];
-                    if (event.deltaY < CONST.FOV_MIN && camera.zoom < CONST.FOV_MAX) {
-                        camera.zoom += CONST.FOV_INC;
-                    } else if (event.deltaY > CONST.FOV_MIN && camera.zoom > CONST.FOV_MIN + 0.1) {
-                        camera.zoom -= CONST.FOV_INC;
-                    }
+
+                    // Adaptive zoom algorithm from 2D canvas
+                    const basicZoomCoef = 6 / 5;
+                    const adjustCoef = 1 / 100;
+                    const scaleFactor = basicZoomCoef ** (-event.deltaY * adjustCoef);
+                    camera.zoom = Math.min(
+                        Math.max(
+                            camera.zoom * scaleFactor,
+                            CONST.SIDE_VIEWS_MIN_ZOOM,
+                        ), CONST.SIDE_VIEWS_MAX_ZOOM,
+                    );
 
                     if (this.activatedElementID) {
                         // try to remember applied zoom level per each object
@@ -632,6 +639,78 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         });
 
         model.subscribe(this);
+    }
+
+    private fitObject(object: CuboidModel, animate: boolean = false): void {
+        const camera = this.views.perspective.camera as THREE.PerspectiveCamera;
+        const mesh = object.perspective as THREE.Mesh;
+        const geom = mesh.geometry as THREE.BufferGeometry;
+        if (!geom.boundingBox) {
+            geom.computeBoundingBox();
+        }
+
+        // 1) Collect 8 corners of the local bounding box (base geometry 0.5 cube)
+        const bb = geom.boundingBox!;
+        const cornersLocal: THREE.Vector3[] = [
+            new THREE.Vector3(bb.min.x, bb.min.y, bb.min.z),
+            new THREE.Vector3(bb.min.x, bb.min.y, bb.max.z),
+            new THREE.Vector3(bb.min.x, bb.max.y, bb.min.z),
+            new THREE.Vector3(bb.min.x, bb.max.y, bb.max.z),
+            new THREE.Vector3(bb.max.x, bb.min.y, bb.min.z),
+            new THREE.Vector3(bb.max.x, bb.min.y, bb.max.z),
+            new THREE.Vector3(bb.max.x, bb.max.y, bb.min.z),
+            new THREE.Vector3(bb.max.x, bb.max.y, bb.max.z),
+        ];
+
+        // 2) Transform corners to world space (includes scale/rotation/translation)
+        const worldCorners: THREE.Vector3[] = cornersLocal.map((v) => mesh.localToWorld(v.clone()));
+
+        // 3) Build camera basis in world
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward).normalize();
+        const up = camera.up.clone().normalize();
+        const right = new THREE.Vector3().crossVectors(forward, up).normalize();
+        up.copy(new THREE.Vector3().crossVectors(right, forward).normalize());
+
+        // 4) Project corners onto right/up to get world extents independent of current distance
+        let minU = +Infinity; let
+            maxU = -Infinity;
+        let minV = +Infinity; let
+            maxV = -Infinity;
+        for (const c of worldCorners) {
+            const u = c.dot(right);
+            const v = c.dot(up);
+            if (u < minU) minU = u;
+            if (u > maxU) maxU = u;
+            if (v < minV) minV = v;
+            if (v > maxV) maxV = v;
+        }
+        const widthWorld = maxU - minU;
+        const heightWorld = maxV - minV;
+
+        // 5) Compute required distance to fit both width and height within FOV and aspect
+        const vFov = THREE.MathUtils.degToRad(camera.fov);
+        const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+        const distByHeight = (heightWorld / 2) / Math.tan(vFov / 2);
+        const distByWidth = (widthWorld / 2) / Math.tan(hFov / 2);
+        const distance = Math.max(distByHeight, distByWidth);
+
+        // 6) Center of geometry box in world
+        const centerLocal = bb.getCenter(new THREE.Vector3());
+        const center = mesh.localToWorld(centerLocal);
+
+        // 7) Move along forward and look at center
+        const margin = 1.5;
+        const targetPosition = center.clone().sub(forward.multiplyScalar(distance * margin));
+        this.views.perspective.controls.setLookAt(
+            targetPosition.x,
+            targetPosition.y,
+            targetPosition.z,
+            center.x,
+            center.y,
+            center.z,
+            animate,
+        );
     }
 
     private fitCanvas(animation: boolean): void {
@@ -1822,14 +1901,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             }
         });
-
-        if (this.action.detachCam && this.action.detachCamRef === this.model.data.activeElement.clientID) {
-            try {
-                this.detachCamera();
-            } finally {
-                this.action.detachCam = false;
-            }
-        }
     }
 
     private adjustPerspectiveCameras(): void {

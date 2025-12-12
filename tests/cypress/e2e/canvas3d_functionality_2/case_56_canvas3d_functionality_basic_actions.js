@@ -53,7 +53,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
     function testTopSideFrontChangeOnWheel(element, screenshotNameBefore, screenshotNameAfter) {
         cy.customScreenshot(element, screenshotNameBefore);
         for (let i = 0; i < 10; i++) {
-            cy.get(`${element} canvas`).trigger('wheel', { deltaY: -1 });
+            cy.get(`${element} canvas`).trigger('wheel', { deltaY: -10 });
         }
         cy.customScreenshot(element, screenshotNameAfter);
         cy.compareImagesAndCheckResult(
