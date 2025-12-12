@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { OrientationVisibility, ViewType } from './canvas3dModel';
 import constants from './consts';
+import controlPointTexture from './controlPointTexture';
 
 export interface Indexable {
     [key: string]: any;
@@ -242,21 +243,25 @@ export function removeCuboidEdges(instance: THREE.Mesh): void {
 }
 
 export function createResizeHelper(instance: THREE.Mesh): void {
-    const sphereGeometry = new THREE.SphereGeometry(0.2);
-    const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ff0000', opacity: 1 });
     const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
+    const material = new THREE.SpriteMaterial({
+        color: '#ff0000',
+        opacity: 1,
+        map: controlPointTexture,
+    });
 
     for (let i = 0; i < cornerPoints.length; i++) {
         const point = new THREE.Vector3().fromArray(cornerPoints[i]);
-        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(0.1));
+        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(1));
         instance.add(tmpSphere);
         tmpSphere.position.copy(point);
         const globalPosition = tmpSphere.getWorldPosition(new THREE.Vector3());
         instance.remove(tmpSphere);
 
-        const helper = new THREE.Mesh(sphereGeometry.clone(), sphereMaterial.clone());
-        helper.position.copy(globalPosition);
+        const helper = new THREE.Sprite(material);
+        helper.renderOrder = Number.MAX_SAFE_INTEGER;
         helper.name = `${constants.RESIZE_HELPER_NAME}_${i}`;
+        helper.position.copy(globalPosition);
         instance.parent.add(helper);
     }
 }
@@ -271,7 +276,7 @@ export function removeResizeHelper(instance: THREE.Mesh): void {
 export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): void {
     if ([ViewType.TOP, ViewType.SIDE, ViewType.FRONT].includes(viewType)) {
         // Create a temporary element to get correct position
-        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(0.2));
+        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(1));
         instance.add(tmpSphere);
         if (viewType === ViewType.TOP) {
             tmpSphere.translateY(constants.ROTATION_HELPER_OFFSET);
@@ -281,13 +286,15 @@ export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): 
         const globalPosition = tmpSphere.getWorldPosition(new THREE.Vector3());
         instance.remove(tmpSphere);
 
-        // Create rotation helper itself first
-        const sphereGeometry = new THREE.SphereGeometry(0.2);
-        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#33b864', opacity: 1 });
-        const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        const rotationHelper = new THREE.Sprite(new THREE.SpriteMaterial({
+            color: '#33b864',
+            opacity: 1,
+            map: controlPointTexture,
+        }));
+        rotationHelper.renderOrder = Number.MAX_SAFE_INTEGER;
         rotationHelper.name = constants.ROTATION_HELPER_NAME;
-        instance.parent.add(rotationHelper);
         rotationHelper.position.copy(globalPosition);
+        instance.parent.add(rotationHelper);
     }
 }
 

@@ -11,7 +11,7 @@ import {
     DrawData,
     ViewType,
     MouseInteraction,
-    ShapeProperties,
+    Configuration,
     GroupData,
     SplitData,
     MergeData,
@@ -32,7 +32,7 @@ interface Canvas3d {
     cancel(): void;
     dragCanvas(enable: boolean): void;
     activate(clientID: number | null, attributeID?: number): void;
-    configureShapes(shapeProperties: ShapeProperties): void;
+    configure(configuration: Configuration): void;
     fitCanvas(): void;
     fit(): void;
     group(groupData: GroupData): void;
@@ -100,8 +100,8 @@ class Canvas3dImpl implements Canvas3d {
         this.model.dragCanvas(enable);
     }
 
-    public configureShapes(shapeProperties: ShapeProperties): void {
-        this.model.configureShapes(shapeProperties);
+    public configure(configuration: Partial<Configuration>): void {
+        this.model.configure(configuration);
     }
 
     public activate(clientID: number | null, attributeID: number | null = null): void {
