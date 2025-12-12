@@ -255,7 +255,7 @@ class DatasetImagesReader:
         self._is_generator_used = isgenerator(sources)
 
         if not self._is_generator_used:
-            self._sources = sort(sources, sorting_method, func=str)
+            self._sources = sort(sources, sorting_method, func=os.fspath)
         else:
             if sorting_method != SortingMethod.PREDEFINED:
                 raise ValueError("Only SortingMethod.PREDEFINED can be used with generator")
@@ -294,7 +294,7 @@ class DatasetImagesReader:
         self._step = int(value)
 
     def _get_img_properties(self, image: Openable) -> dict[str, Any]:
-        img_name = os.path.relpath(str(image), self._data_dir)
+        img_name = os.path.relpath(image, self._data_dir)
         name, extension = os.path.splitext(img_name)
         image_properties = {
             "name": name.replace("\\", "/"),
@@ -344,7 +344,7 @@ class DatasetImagesReader:
 
 class Dataset3DImagesReader(DatasetImagesReader):
     def _get_img_properties(self, image: Openable) -> dict[str, Any]:
-        img_name = os.path.relpath(str(image), self._data_dir)
+        img_name = os.path.relpath(image, self._data_dir)
         name, extension = os.path.splitext(img_name)
         image_properties = {
             "name": name.replace("\\", "/"),
