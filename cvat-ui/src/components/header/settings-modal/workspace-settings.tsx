@@ -20,7 +20,7 @@ import { clamp } from 'utils/math';
 interface Props {
     autoSave: boolean;
     autoSaveInterval: number;
-    aamZoomMargin: number;
+    focusedObjectPadding: number;
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
     automaticBordering: boolean;
@@ -34,7 +34,7 @@ interface Props {
     showTagsOnFrame: boolean;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
-    onChangeAAMZoomMargin(margin: number): void;
+    onChangeFocusedObjectPadding(padding: number): void;
     onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
@@ -52,7 +52,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
     const {
         autoSave,
         autoSaveInterval,
-        aamZoomMargin,
+        focusedObjectPadding,
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
@@ -66,7 +66,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         showTagsOnFrame,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
-        onChangeAAMZoomMargin,
+        onChangeFocusedObjectPadding,
         onSwitchShowingInterpolatedTracks,
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
@@ -82,8 +82,8 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
 
     const minAutoSaveInterval = 1;
     const maxAutoSaveInterval = 60;
-    const minAAMMargin = 0;
-    const maxAAMMargin = 1000;
+    const minFocusedObjectPadding = 0;
+    const maxFocusedObjectPadding = 1000;
     const minControlPointsSize = 2;
     const maxControlPointsSize = 10;
 
@@ -271,16 +271,18 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'>Show frame tags in the corner of the workspace</Text>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-aam-zoom-margin cvat-player-setting'>
+            <Row className='cvat-workspace-settings-focused-object-padding cvat-player-setting'>
                 <Col>
-                    <Text className='cvat-text-color'> Attribute annotation mode (AAM) zoom margin </Text>
+                    <Text className='cvat-text-color'> Extra padding around an object when it gets fitted </Text>
                     <InputNumber
-                        min={minAAMMargin}
-                        max={maxAAMMargin}
-                        value={aamZoomMargin}
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
-                                onChangeAAMZoomMargin(Math.floor(clamp(+value, minAAMMargin, maxAAMMargin)));
+                        min={minFocusedObjectPadding}
+                        max={maxFocusedObjectPadding}
+                        value={focusedObjectPadding}
+                        onChange={(value: number | null): void => {
+                            if (typeof value === 'number') {
+                                onChangeFocusedObjectPadding(
+                                    Math.floor(clamp(+value, minFocusedObjectPadding, maxFocusedObjectPadding)),
+                                );
                             }
                         }}
                     />

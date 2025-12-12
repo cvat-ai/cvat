@@ -42,7 +42,6 @@ export interface Geometry {
 
 export interface FocusData {
     clientID: number;
-    padding: number;
 }
 
 export interface ActiveElement {
@@ -98,6 +97,7 @@ export interface Configuration {
     outlinedBorders?: string | false;
     resetZoom?: boolean;
     hideEditedObject?: boolean;
+    focusedObjectPadding?: number;
 }
 
 export interface BrushTool {
@@ -420,6 +420,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 textContent: consts.DEFAULT_SHAPE_TEXT_CONTENT,
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
                 hideEditedObject: false,
+                focusedObjectPadding: 50,
             },
             imageBitmap: false,
             image: null,
@@ -432,7 +433,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             imageIsDeleted: false,
             focusData: {
                 clientID: 0,
-                padding: 0,
             },
             gridSize: {
                 height: 100,
@@ -687,12 +687,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
     }
 
-    public focus(clientID: number, padding: number): void {
-        this.data.focusData = {
-            clientID,
-            padding,
-        };
-
+    public focus(clientID: number): void {
+        this.data.focusData = { clientID };
         this.notify(UpdateReasons.SHAPE_FOCUSED);
     }
 
@@ -1014,6 +1010,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.hideEditedObject === 'boolean') {
             this.data.configuration.hideEditedObject = configuration.hideEditedObject;
+        }
+
+        if (typeof configuration.focusedObjectPadding === 'number') {
+            this.data.configuration.focusedObjectPadding = Math.max(
+                configuration.focusedObjectPadding, 0,
+            );
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);
