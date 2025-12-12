@@ -27,17 +27,24 @@ class Openable(Protocol):
     # The mode is required so that Path can be used as an Openable.
     def open(self, mode: Literal["rb"]) -> BinaryIO: ...
 
+
+class NamedOpenable(Openable, Protocol):
     def __fspath__(self) -> str: ...  # Must return the path that should be used for sorting.
 
 
-class InMemoryOpenable:
-    def __init__(self, path: str, contents: bytes) -> None:
-        self._path = path
+class MemOpenable:
+    def __init__(self, contents: bytes) -> None:
         self._contents = contents
 
     def open(self, mode: str) -> BinaryIO:
         assert mode == "rb"
         return io.BytesIO(self._contents)
+
+
+class MemNamedOpenable(MemOpenable):
+    def __init__(self, contents: bytes, path: str) -> None:
+        super().__init__(contents)
+        self._path = path
 
     def __fspath__(self) -> str:
         return self._path

@@ -19,6 +19,7 @@ from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
+from pathlib import Path
 from random import shuffle
 from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
 
@@ -43,7 +44,7 @@ from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.errors import InvalidPcdError
 from utils.dataset_manifest.utils import MediaDimension as _MediaDimension
-from utils.dataset_manifest.utils import PcdReader, detect_media_dimension
+from utils.dataset_manifest.utils import Openable, PcdReader, detect_media_dimension
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -340,9 +341,8 @@ class ImageListReader(IMediaReader):
 
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
-            with open(self.get_path(i), "rb") as f:
-                properties = ValidateDimension.get_pcd_properties(f)
-                return int(properties["WIDTH"]), int(properties["HEIGHT"])
+            properties = ValidateDimension.get_pcd_properties(Path(self.get_path(i)))
+            return int(properties["WIDTH"]), int(properties["HEIGHT"])
         with Image.open(self._source_path[i]) as img:
             return image_size_within_orientation(img)
 
@@ -1225,10 +1225,8 @@ class ValidateDimension:
         self.converted_files = []
 
     @staticmethod
-    def get_pcd_properties(
-        fp: str | io.RawIOBase, *, verify_version: bool = False
-    ) -> dict[str, str] | None:
-        return PcdReader.parse_pcd_header(fp, verify_version=verify_version)
+    def get_pcd_properties(pcd: Openable, *, verify_version: bool = False) -> dict[str, str]:
+        return PcdReader.parse_pcd_header(pcd, verify_version=verify_version)
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
@@ -1244,7 +1242,7 @@ class ValidateDimension:
 
     def pcd_operation(self, file_path: str, dataset_root: str) -> str | None:
         try:
-            self.get_pcd_properties(file_path, verify_version=True)
+            self.get_pcd_properties(Path(file_path), verify_version=True)
             return os.path.relpath(file_path, dataset_root)
         except InvalidPcdError as e:
             raise ValidationError(f"Could not read pcd file '{os.path.basename(file_path)}': {e}")

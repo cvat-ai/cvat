@@ -40,7 +40,7 @@ from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice, 
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
-from utils.dataset_manifest.utils import InMemoryOpenable, InvalidPcdError, Openable, PcdReader
+from utils.dataset_manifest.utils import InvalidPcdError, MemNamedOpenable, NamedOpenable, PcdReader
 
 
 class NamedBytesIO(BytesIO):
@@ -224,8 +224,8 @@ class _CloudStorage(ABC):
         pass
 
     def bulk_download_to_memory(
-        self, files: list[str], *, object_downloader: Callable[[str], Openable]
-    ) -> Iterator[Openable]:
+        self, files: list[str], *, object_downloader: Callable[[str], NamedOpenable]
+    ) -> Iterator[NamedOpenable]:
         threads_number = get_max_threads_number(len(files))
 
         # We're using a custom queue to limit the maximum number of downloaded unprocessed
@@ -233,7 +233,7 @@ class _CloudStorage(ABC):
         # For example, the builtin executor.map() could also be used here, but it
         # would enqueue all the file list in one go, and the downloaded files
         # would all be stored in memory until processed.
-        queue: Queue[Future[Openable]] = Queue(maxsize=threads_number)
+        queue: Queue[Future[NamedOpenable]] = Queue(maxsize=threads_number)
         input_iter = iter(files)
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
             while not queue.empty() or input_iter is not None:
@@ -427,7 +427,7 @@ class HeaderFirstDownloader(ABC):
             65536,
         )
 
-    def download(self, key: str) -> Openable:
+    def download(self, key: str) -> NamedOpenable:
         """
         Method downloads the file using the following approach:
         First we try to download the file header (first N bytes).
@@ -454,14 +454,14 @@ class HeaderFirstDownloader(ABC):
             buff.seek(0)
 
             if self.try_parse_header(buff):
-                return InMemoryOpenable(path=key, contents=buff.getvalue())
+                return MemNamedOpenable(buff.getvalue(), key)
 
             if i + 1 < len(headers_to_try):
                 self.log_header_miss(key=key, header_size=header_size)
 
         full_contents = self.client.download_fileobj(key)
         self.log_header_miss(key=key, header_size=header_size, full_contents=full_contents)
-        return InMemoryOpenable(path=key, contents=full_contents)
+        return MemNamedOpenable(full_contents, key)
 
 
 class _HeaderFirstImageDownloader(HeaderFirstDownloader):

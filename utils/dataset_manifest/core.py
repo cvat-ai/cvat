@@ -21,7 +21,8 @@ from PIL import Image
 
 from .errors import InvalidImageError, InvalidManifestError, InvalidPcdError, InvalidVideoError
 from .utils import (
-    InMemoryOpenable,
+    MemOpenable,
+    NamedOpenable,
     Openable,
     PcdReader,
     SortingMethod,
@@ -35,7 +36,7 @@ SEEK_MISMATCH_UPPER_BOUND = 200
 
 
 class VideoStreamReader:
-    def __init__(self, source_path: Openable, *, chunk_size: int, force: bool) -> None:
+    def __init__(self, source_path: NamedOpenable, *, chunk_size: int, force: bool) -> None:
         self._source_path = source_path
         self._frames_number = None
         self._chapters = None
@@ -242,7 +243,7 @@ class VideoStreamReader:
 class DatasetImagesReader:
     def __init__(
         self,
-        sources: Iterable[Openable],
+        sources: Iterable[NamedOpenable],
         *,
         start: int = 0,
         step: int = 1,
@@ -293,7 +294,7 @@ class DatasetImagesReader:
     def step(self, value):
         self._step = int(value)
 
-    def _get_img_properties(self, image: Openable) -> dict[str, Any]:
+    def _get_img_properties(self, image: NamedOpenable) -> dict[str, Any]:
         img_name = os.path.relpath(image, self._data_dir)
         name, extension = os.path.splitext(img_name)
         image_properties = {
@@ -343,7 +344,7 @@ class DatasetImagesReader:
 
 
 class Dataset3DImagesReader(DatasetImagesReader):
-    def _get_img_properties(self, image: Openable) -> dict[str, Any]:
+    def _get_img_properties(self, image: NamedOpenable) -> dict[str, Any]:
         img_name = os.path.relpath(image, self._data_dir)
         name, extension = os.path.splitext(img_name)
         image_properties = {
@@ -357,7 +358,7 @@ class Dataset3DImagesReader(DatasetImagesReader):
             if extension.lower() == ".bin":
                 pcd_buffer = io.BytesIO()
                 PcdReader.convert_bin_to_pcd_file(image, output_file=pcd_buffer)
-                pcd_image = InMemoryOpenable(name + ".bin", pcd_buffer.getvalue())
+                pcd_image = MemOpenable(pcd_buffer.getvalue())
 
                 meta["original_name"] = img_name
                 image_properties["extension"] = ".pcd"
@@ -618,7 +619,7 @@ class VideoManifestManager(_ManifestManager):
         setattr(self._manifest, "TYPE", "video")
         self.BASE_INFORMATION["properties"] = 3
 
-    def link(self, media_file: Openable, *, chunk_size=36, force=False) -> None:
+    def link(self, media_file: NamedOpenable, *, chunk_size=36, force=False) -> None:
         self._reader = VideoStreamReader(media_file, chunk_size=chunk_size, force=force)
 
     def _write_base_information(self, file):
