@@ -113,7 +113,8 @@ class Canvas3dImpl implements Canvas3d {
     }
 
     public fitCanvas(): void {
-        this.model.fit();
+        // in spite of 2D canvas, 3D version fits automatically when external container resized
+        // so, nothing to do here, but keep the method to keep the same interface as 2D canvas
     }
 
     public destroy(): void {

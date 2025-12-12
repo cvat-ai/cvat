@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 
 import config from 'config';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { DimensionType } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import CanvasWrapperComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-wrapper';
@@ -176,7 +177,8 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     const [fullscreenKey, setFullscreenKey] = useState<string>('');
 
     const fitCanvas = useCallback(() => {
-        if (canvasInstance) {
+        if (canvasInstance instanceof Canvas) {
+            // only applicable for 2D canvas because of SVG-based nature
             canvasInstance.fitCanvas();
             canvasInstance.fit();
         }
