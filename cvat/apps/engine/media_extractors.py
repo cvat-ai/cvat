@@ -507,9 +507,8 @@ class ZipReader(ImageListReader):
 
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
-            with open(self.get_path(i), "rb") as f:
-                properties = PcdReader.parse_pcd_header(f)
-                return int(properties["WIDTH"]), int(properties["HEIGHT"])
+            properties = PcdReader.parse_pcd_header(Path(self.get_path(i)))
+            return int(properties["WIDTH"]), int(properties["HEIGHT"])
         with Image.open(io.BytesIO(self._zip_source.read(self._source_path[i]))) as img:
             return image_size_within_orientation(img)
 

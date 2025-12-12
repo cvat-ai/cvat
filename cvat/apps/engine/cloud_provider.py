@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import functools
-import io
 import json
 import os
 from abc import ABC, abstractmethod
@@ -40,7 +39,13 @@ from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice, 
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
-from utils.dataset_manifest.utils import InvalidPcdError, MemNamedOpenable, NamedOpenable, PcdReader
+from utils.dataset_manifest.utils import (
+    InvalidPcdError,
+    MemNamedOpenable,
+    MemOpenable,
+    NamedOpenable,
+    PcdReader,
+)
 
 
 class NamedBytesIO(BytesIO):
@@ -395,7 +400,7 @@ class HeaderFirstDownloader(ABC):
         self.client = client
 
     @abstractmethod
-    def try_parse_header(self, header: NamedBytesIO) -> Any | None: ...
+    def try_parse_header(self, key: str, header: bytes) -> Any | None: ...
 
     def log_header_miss(
         self, key: str, header_size: int, *, full_contents: bytes | None = None
@@ -440,21 +445,19 @@ class HeaderFirstDownloader(ABC):
             buffer with the image
         """
 
-        buff = NamedBytesIO()
-        buff.filename = key
+        buff = BytesIO()
 
         headers_to_try = self.get_header_sizes_to_try()
         for i, header_size in enumerate(headers_to_try):
-            buff.seek(0, io.SEEK_END)
             cur_pos = buff.tell()
             chunk = self.client.download_range_of_bytes(
                 key, start_byte=cur_pos, stop_byte=header_size - 1
             )
             buff.write(chunk)
-            buff.seek(0)
 
-            if self.try_parse_header(buff):
-                return MemNamedOpenable(buff.getvalue(), key)
+            partial_contents = buff.getvalue()
+            if self.try_parse_header(key, partial_contents):
+                return MemNamedOpenable(partial_contents, key)
 
             if i + 1 < len(headers_to_try):
                 self.log_header_miss(key=key, header_size=header_size)
@@ -465,9 +468,9 @@ class HeaderFirstDownloader(ABC):
 
 
 class _HeaderFirstImageDownloader(HeaderFirstDownloader):
-    def try_parse_header(self, header):
+    def try_parse_header(self, key: str, header: bytes):
         image_parser = ImageFile.Parser()
-        image_parser.feed(header.getvalue())
+        image_parser.feed(header)
         return image_parser.image
 
     def log_header_miss(self, key, header_size, *, full_contents: bytes | None = None) -> None:
@@ -497,10 +500,10 @@ class _HeaderFirstImageDownloader(HeaderFirstDownloader):
 
 
 class _HeaderFirstPcdDownloader(HeaderFirstDownloader):
-    def try_parse_header(self, header):
+    def try_parse_header(self, key: str, header: bytes):
         pcd_parser = PcdReader()
-        file = header
-        file_ext = os.path.splitext(file.filename)[1].lower()
+        file = MemOpenable(header)
+        file_ext = os.path.splitext(key)[1].lower()
 
         if file_ext == ".bin":
             # We need to ensure the file is a valid .bin file

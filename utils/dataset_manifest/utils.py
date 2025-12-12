@@ -487,12 +487,9 @@ class PcdReader:
 
     @classmethod
     def convert_bin_to_pcd(cls, path: str, *, delete_source: bool = True) -> str:
-        pcd_file = io.BytesIO()
-        cls.convert_bin_to_pcd_file(Path(path), output_file=pcd_file)
-
         pcd_filename = os.path.splitext(path)[0] + ".pcd"
         with open(pcd_filename, "wb") as f:
-            f.write(pcd_file.getbuffer())
+            cls.convert_bin_to_pcd_file(Path(path), output_file=f)
 
         if delete_source:
             os.remove(path)
@@ -500,7 +497,13 @@ class PcdReader:
         return pcd_filename
 
     @classmethod
-    def convert_bin_to_pcd_file(cls, bin_: Openable, *, output_file: io.RawIOBase) -> None:
+    def convert_bin_to_pcd_buffer(cls, bin_: Openable) -> bytes:
+        output_file = io.BytesIO()
+        cls.convert_bin_to_pcd_file(bin_, output_file=output_file)
+        return output_file.getvalue()
+
+    @classmethod
+    def convert_bin_to_pcd_file(cls, bin_: Openable, *, output_file: IO[bytes]) -> None:
         def write_header(file_obj: io.TextIOBase, width: int, height: int):
             file_obj.writelines(
                 f"{line}\n"

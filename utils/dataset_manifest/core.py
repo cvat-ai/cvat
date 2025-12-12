@@ -356,9 +356,7 @@ class Dataset3DImagesReader(DatasetImagesReader):
 
         try:
             if extension.lower() == ".bin":
-                pcd_buffer = io.BytesIO()
-                PcdReader.convert_bin_to_pcd_file(image, output_file=pcd_buffer)
-                pcd_image = MemOpenable(pcd_buffer.getvalue())
+                pcd_image = MemOpenable(PcdReader.convert_bin_to_pcd_buffer(image))
 
                 meta["original_name"] = img_name
                 image_properties["extension"] = ".pcd"
