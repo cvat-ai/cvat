@@ -58,6 +58,7 @@ export interface RenderView {
 }
 
 interface DrawnObjectData {
+    serverID: number | null;
     clientID: number;
     labelID: number;
     labelColor: string;
@@ -73,6 +74,13 @@ interface DrawnObjectData {
     updated: number;
 }
 
+interface SideViewsZoomMemory {
+    serverID: number | null;
+    [ViewType.TOP]: number | null;
+    [ViewType.SIDE]: number | null;
+    [ViewType.FRONT]: number | null;
+}
+
 const BOTTOM_VIEWS = [
     ViewType.TOP,
     ViewType.SIDE,
@@ -83,6 +91,7 @@ const ALL_VIEWS = [...BOTTOM_VIEWS, ViewType.PERSPECTIVE];
 
 function drawnDataFromState(state: ObjectState): DrawnObjectData {
     return {
+        serverID: state.serverID,
         clientID: state.clientID,
         labelID: state.label.id,
         labelColor: state.label.color,
@@ -112,6 +121,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private statesToBeGrouped: ObjectState[];
     private statesToBeMerged: ObjectState[];
     private sceneBBox: THREE.Box3;
+    private sideViewsZoomMemory: Record<number, SideViewsZoomMemory>;
     private model: Canvas3dModel & Master;
     private drawnObjects: Record<number, {
         data: DrawnObjectData;
@@ -167,6 +177,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.statesToBeMerged = [];
         this.isPerspectiveBeingDragged = false;
         this.activatedElementID = null;
+        this.sideViewsZoomMemory = {};
         this.drawnObjects = {};
         this.model = model;
         this.sceneBBox = new THREE.Box3();
@@ -528,7 +539,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const aspectRatio = window.innerWidth / window.innerHeight;
 
         // setting up the camera and adding it in the scene
-        this.views.perspective.camera = new THREE.PerspectiveCamera(50, aspectRatio, 1, 500);
+        this.views.perspective.camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 500);
         this.views.top.camera = new THREE.OrthographicCamera(
             (-aspectRatio * viewSize) / 2 - 2,
             (aspectRatio * viewSize) / 2 + 2,
@@ -602,6 +613,25 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             CONST.SIDE_VIEWS_MIN_ZOOM,
                         ), CONST.SIDE_VIEWS_MAX_ZOOM,
                     );
+
+                    if (this.activatedElementID) {
+                        // try to remember applied zoom level per each object
+                        // also save serverID to be able to track case when objects are reloaded
+                        // (e.g. annotations uploaded), in this rare case zoom memory should be reset
+                        if (!this.sideViewsZoomMemory[this.activatedElementID]) {
+                            this.sideViewsZoomMemory[this.activatedElementID] = {
+                                serverID: null,
+                                top: null,
+                                side: null,
+                                front: null,
+                            };
+                        }
+
+                        this.sideViewsZoomMemory[this.activatedElementID].serverID =
+                            this.drawnObjects[this.activatedElementID].data.serverID;
+                        this.sideViewsZoomMemory[this.activatedElementID][view] = camera.zoom;
+                    }
+
                     this.updateHelperPointsSize(view);
                 },
                 { passive: false },
@@ -754,7 +784,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private setDefaultZoom(): void {
+    private zoomAllViews(): void {
         if (this.model.data.activeElement.clientID === null) {
             this.updateCameraFrustumPlane();
             Object.keys(this.views).forEach((view: ViewType): void => {
@@ -766,36 +796,50 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             });
         } else {
+            const { selectedCuboid } = this;
             const { top, front, side } = this.views;
             const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
-            const bboxtop = new THREE.Box3().setFromObject(this.selectedCuboid.top);
+
+            let memoizedZoom = this.sideViewsZoomMemory[this.activatedElementID];
+            const drawnState = this.drawnObjects[this.activatedElementID];
+            if (memoizedZoom &&
+                drawnState &&
+                memoizedZoom.serverID !== null &&
+                memoizedZoom.serverID !== drawnState.data.serverID
+            ) {
+                // oops, it seems that objects were reloaded, reset zoom memory
+                this.sideViewsZoomMemory = {};
+                memoizedZoom = undefined;
+            }
+
+            const bboxtop = new THREE.Box3().setFromObject(selectedCuboid.top);
             const x1 = Math.min(
                 canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
                 canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
             ) * 0.4;
-            cameraTop.zoom = x1 / 50;
+            cameraTop.zoom = memoizedZoom?.top ?? x1 / 50;
             cameraTop.updateProjectionMatrix();
             cameraTop.updateMatrix();
             this.updateHelperPointsSize(ViewType.TOP);
 
             const { renderer: { domElement: canvasFront }, camera: cameraFront } = front;
-            const bboxfront = new THREE.Box3().setFromObject(this.selectedCuboid.front);
+            const bboxfront = new THREE.Box3().setFromObject(selectedCuboid.front);
             const x2 = Math.min(
                 canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
                 canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
             ) * 0.4;
-            cameraFront.zoom = x2 / 50;
+            cameraFront.zoom = memoizedZoom?.front ?? x2 / 50;
             cameraFront.updateProjectionMatrix();
             cameraFront.updateMatrix();
             this.updateHelperPointsSize(ViewType.FRONT);
 
             const { renderer: { domElement: canvasSide }, camera: cameraSide } = side;
-            const bboxside = new THREE.Box3().setFromObject(this.selectedCuboid.side);
+            const bboxside = new THREE.Box3().setFromObject(selectedCuboid.side);
             const x3 = Math.min(
                 canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
                 canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
             ) * 0.4;
-            cameraSide.zoom = x3 / 50;
+            cameraSide.zoom = memoizedZoom?.side ?? x3 / 50;
             cameraSide.updateProjectionMatrix();
             cameraSide.updateMatrix();
             this.updateHelperPointsSize(ViewType.SIDE);
@@ -1404,7 +1448,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.deactivateObject();
             this.activateObject();
             if (this.activatedElementID) {
-                this.setDefaultZoom();
+                this.zoomAllViews();
             }
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
