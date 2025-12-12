@@ -47,17 +47,6 @@ from utils.dataset_manifest.utils import (
     PcdReader,
 )
 
-
-class NamedBytesIO(BytesIO):
-    @property
-    def filename(self) -> str | None:
-        return getattr(self, "_filename", None)
-
-    @filename.setter
-    def filename(self, value: str) -> None:
-        self._filename = value
-
-
 slogger = ServerLogManager(__name__)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
