@@ -227,7 +227,7 @@
     width: 100%;
     background-color: rgba(var(--state-item-background), 1);
     transition: box-shadow $box-shadow-transition;
-    border: 1px solid $border-color-1;
+    border: 1px solid rgba($color: white, $alpha: 0%);
     padding: $grid-unit-size * 0.5;
     margin-left: $grid-unit-size * 0.25;
     margin-right: $grid-unit-size * 0.25;
