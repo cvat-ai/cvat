@@ -273,7 +273,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-workspace-settings-focused-object-padding cvat-player-setting'>
                 <Col>
-                    <Text className='cvat-text-color'> Extra padding around an object when it gets fitted </Text>
+                    <Text className='cvat-text-color'> Focused object padding </Text>
                     <InputNumber
                         min={minFocusedObjectPadding}
                         max={maxFocusedObjectPadding}
@@ -286,6 +286,9 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                             }
                         }}
                     />
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>Adds extra space in pixels around an object when it gets fitted</Text>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-control-points-size cvat-player-setting'>
