@@ -784,18 +784,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private zoomAllViews(): void {
-        if (this.model.data.activeElement.clientID === null) {
-            this.updateCameraFrustumPlane();
-            Object.keys(this.views).forEach((view: ViewType): void => {
-                const viewType = this.views[view as keyof Views];
-                if (view !== ViewType.PERSPECTIVE) {
-                    const { camera } = viewType;
-                    camera.zoom = CONST.FOV_DEFAULT;
-                    viewType.camera.updateProjectionMatrix();
-                }
-            });
-        } else {
+    private updateSideViewsZoom(): void {
+        if (this.activatedElementID !== null) {
             const { selectedCuboid } = this;
             const { top, front, side } = this.views;
             const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
@@ -1447,9 +1437,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
             this.activateObject();
-            if (this.activatedElementID) {
-                this.zoomAllViews();
-            }
+            this.updateSideViewsZoom();
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (Number.isInteger(data.redraw)) {
