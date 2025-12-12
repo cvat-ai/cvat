@@ -21,7 +21,7 @@ class TestTUSUpload:
 
     _USERNAME = "admin1"
 
-    def _create_task_via_api(self, task_spec):
+    def _create_task(self, task_spec):
         """Helper to create a task"""
         with make_api_client(self._USERNAME) as api_client:
             (task, response) = api_client.tasks_api.create(task_spec)
@@ -76,7 +76,7 @@ class TestTUSUpload:
 
     def test_can_upload_file_via_tus_in_single_chunk(self):
         """Test uploading a complete file in one chunk"""
-        task = self._create_task_via_api(
+        task = self._create_task(
             {
                 "name": "test TUS single chunk upload",
                 "labels": [{"name": "car"}],
@@ -95,7 +95,7 @@ class TestTUSUpload:
 
     def test_can_upload_file_via_tus_in_multiple_chunks(self):
         """Test uploading a file in multiple chunks"""
-        task = self._create_task_via_api(
+        task = self._create_task(
             {
                 "name": "test TUS multiple chunks upload",
                 "labels": [{"name": "car"}],
@@ -129,7 +129,7 @@ class TestTUSUpload:
 
     def test_can_resume_fake_interrupted_upload(self):
         """Test that interrupted uploads can be resumed (KEY TEST for issue #5261)"""
-        task = self._create_task_via_api(
+        task = self._create_task(
             {
                 "name": "test TUS resume interrupted upload",
                 "labels": [{"name": "car"}],
@@ -161,7 +161,7 @@ class TestTUSUpload:
 
     def test_upload_offset_is_updated_incrementally(self):
         """Test offset updates correctly after each small chunk"""
-        task = self._create_task_via_api(
+        task = self._create_task(
             {
                 "name": "test TUS incremental offset",
                 "labels": [{"name": "car"}],
@@ -196,7 +196,7 @@ class TestTUSUpload:
 
     def test_cannot_upload_with_wrong_offset(self):
         """Test that upload fails if offset doesn't match"""
-        task = self._create_task_via_api(
+        task = self._create_task(
             {
                 "name": "test TUS wrong offset",
                 "labels": [{"name": "car"}],
@@ -226,7 +226,7 @@ class TestTUSUpload:
 
     def test_cannot_upload_chunk_exceeding_file_size(self):
         """Test that server rejects chunks whose end exceeds file size"""
-        task = self._create_task_via_api(
+        task = self._create_task(
             {
                 "name": "test TUS chunk exceeds file size",
                 "labels": [{"name": "car"}],
