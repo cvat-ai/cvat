@@ -784,7 +784,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private setDefaultZoom(): void {
+    private zoomAllViews(): void {
         if (this.model.data.activeElement.clientID === null) {
             this.updateCameraFrustumPlane();
             Object.keys(this.views).forEach((view: ViewType): void => {
@@ -1448,7 +1448,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.deactivateObject();
             this.activateObject();
             if (this.activatedElementID) {
-                this.setDefaultZoom();
+                this.zoomAllViews();
             }
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
