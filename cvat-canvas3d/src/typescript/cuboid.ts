@@ -145,6 +145,21 @@ export class CuboidModel {
         };
     }
 
+    public getRotationHelperPosition(viewType: ViewType): THREE.Vector3 {
+        const position = viewType === ViewType.TOP ?
+            new THREE.Vector3(0, constants.ROTATION_HELPER_OFFSET, 0) :
+            new THREE.Vector3(0, 0, constants.ROTATION_HELPER_OFFSET);
+        return this[viewType].localToWorld(position);
+    }
+
+    public getResizeHelperPositions(): THREE.Vector3[] {
+        const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
+        return cornerPoints.map((point) => {
+            const localPoint = new THREE.Vector3().fromArray(point);
+            return this.perspective.localToWorld(localPoint.clone());
+        });
+    }
+
     public setOrientationVisibility(orientationVisibility: OrientationVisibility): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
@@ -242,23 +257,21 @@ export function removeCuboidEdges(instance: THREE.Mesh): void {
     instance.remove(edges);
 }
 
-export function createResizeHelper(instance: THREE.Mesh): void {
-    const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
+export function createResizeHelper(cuboid: CuboidModel, viewType: ViewType): void {
     const material = new THREE.SpriteMaterial({
         color: '#ff0000',
         opacity: 1,
         map: controlPointTexture,
     });
 
-    for (let i = 0; i < cornerPoints.length; i++) {
-        const localPoint = new THREE.Vector3().fromArray(cornerPoints[i]);
-        const globalPosition = instance.localToWorld(localPoint.clone());
-
+    const positions = cuboid.getResizeHelperPositions();
+    for (let i = 0; i < positions.length; i++) {
+        const position = positions[i];
         const helper = new THREE.Sprite(material);
         helper.renderOrder = Number.MAX_SAFE_INTEGER;
         helper.name = `${constants.RESIZE_HELPER_NAME}_${i}`;
-        helper.position.copy(globalPosition);
-        instance.parent.add(helper);
+        helper.position.copy(position);
+        cuboid[viewType].parent.add(helper);
     }
 }
 
@@ -269,13 +282,9 @@ export function removeResizeHelper(instance: THREE.Mesh): void {
         });
 }
 
-export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): void {
+export function createRotationHelper(cuboid: CuboidModel, viewType: ViewType): void {
     if ([ViewType.TOP, ViewType.SIDE, ViewType.FRONT].includes(viewType)) {
-        const offsetLocal = viewType === ViewType.TOP ?
-            new THREE.Vector3(0, constants.ROTATION_HELPER_OFFSET, 0) :
-            new THREE.Vector3(0, 0, constants.ROTATION_HELPER_OFFSET);
-        const globalPosition = instance.localToWorld(offsetLocal.clone());
-
+        const helperPosition = cuboid.getRotationHelperPosition(viewType);
         const rotationHelper = new THREE.Sprite(new THREE.SpriteMaterial({
             color: '#33b864',
             opacity: 1,
@@ -283,8 +292,8 @@ export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): 
         }));
         rotationHelper.renderOrder = Number.MAX_SAFE_INTEGER;
         rotationHelper.name = constants.ROTATION_HELPER_NAME;
-        rotationHelper.position.copy(globalPosition);
-        instance.parent.add(rotationHelper);
+        rotationHelper.position.copy(helperPosition);
+        cuboid[viewType].parent.add(rotationHelper);
     }
 }
 

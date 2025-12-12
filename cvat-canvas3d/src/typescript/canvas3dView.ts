@@ -1156,8 +1156,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 createCuboidEdges(cuboid[view]);
 
                 if (!data.lock) {
-                    createResizeHelper(cuboid[view]);
-                    createRotationHelper(cuboid[view], view);
+                    createResizeHelper(cuboid, view);
+                    createRotationHelper(cuboid, view);
                     BOTTOM_VIEWS
                         .forEach((type) => this.updateHelperPointsSize(type));
                 }
@@ -1582,18 +1582,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         BOTTOM_VIEWS.forEach((view: ViewType): void => {
             const rotationHelper = cuboid[view].parent.getObjectByName(consts.ROTATION_HELPER_NAME);
             if (rotationHelper) {
-                const sphere = new THREE.Mesh(new THREE.SphereGeometry(1));
-                cuboid[view].add(sphere);
-                sphere.position.set(0, 0, 0);
-                if (view === ViewType.TOP) {
-                    sphere.translateY(consts.ROTATION_HELPER_OFFSET);
-                } else {
-                    sphere.translateZ(consts.ROTATION_HELPER_OFFSET);
-                }
-
-                const worldPosition = sphere.getWorldPosition(new THREE.Vector3());
-                rotationHelper.position.copy(worldPosition);
-                cuboid[view].remove(sphere);
+                const position = cuboid.getRotationHelperPosition(view);
+                rotationHelper.position.copy(position);
             }
         });
     }
@@ -1605,6 +1595,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
 
         BOTTOM_VIEWS.forEach((view: ViewType): void => {
+            const positions = cuboid.getResizeHelperPositions();
             const pointsToBeUpdated = cuboid[view].parent.children
                 .filter((child: THREE.Object3D) => child.name.startsWith(consts.RESIZE_HELPER_NAME))
                 .sort((child1: THREE.Object3D, child2: THREE.Object3D) => {
@@ -1613,16 +1604,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     return order1 - order2;
                 });
 
-            const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
-            for (let i = 0; i < cornerPoints.length; i++) {
-                const [x, y, z] = cornerPoints[i];
-                const vector = new THREE.Vector3(x, y, z);
-                const sphere = new THREE.Mesh(new THREE.SphereGeometry(1));
-                cuboid[view].add(sphere);
-                sphere.position.set(vector.x, vector.y, vector.z);
-                const worldPosition = sphere.getWorldPosition(new THREE.Vector3());
-                pointsToBeUpdated[i].position.copy(worldPosition);
-                cuboid[view].remove(sphere);
+            for (let i = 0; i < positions.length; i++) {
+                const position = positions[i];
+                pointsToBeUpdated[i].position.copy(position);
             }
         });
     }
