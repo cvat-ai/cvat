@@ -789,7 +789,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         if (this.activatedElementID !== null) {
             const { selectedCuboid } = this;
             const { top, front, side } = this.views;
-            const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
 
             let memoizedZoom = this.sideViewsZoomMemory[this.activatedElementID];
             const drawnState = this.drawnObjects[this.activatedElementID];
@@ -803,34 +802,78 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 memoizedZoom = undefined;
             }
 
-            const bboxtop = new THREE.Box3().setFromObject(selectedCuboid.top);
-            const x1 = Math.min(
-                canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
-                canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
-            ) * 0.00114;
-            cameraTop.zoom = memoizedZoom?.top ?? x1;
+            // Padding in pixels around the object comes from cvat-ui
+            const padding = this.model.data.configuration.focusedObjectPadding;
+            const baseline = consts.ORTHO_FRUSTUM_HEIGHT;
+
+            // Helper function to compute zoom that fits width/height with corresponding padding
+            const computeZoomWithMargin = (
+                objWidthWorld: number,
+                objHeightWorld: number,
+                canvasWidthPx: number,
+                canvasHeightPx: number,
+                aspect: number,
+            ): number => {
+                // fallback if padding is too high for the current canvas size
+                const marginPx = Math.max(0, Math.min(padding, Math.min(canvasWidthPx, canvasHeightPx) / 4));
+
+                const heightFactor = (canvasHeightPx - 2 * marginPx) / canvasHeightPx;
+                const widthFactor = (canvasWidthPx - 2 * marginPx) / canvasWidthPx;
+                const zoomFromHeight = (baseline * heightFactor) / Math.max(objHeightWorld, Number.EPSILON);
+                const zoomFromWidth = (aspect * baseline * widthFactor) / Math.max(objWidthWorld, Number.EPSILON);
+
+                return Math.min(zoomFromHeight, zoomFromWidth);
+            };
+
+            const defaultOrMemoized = (
+                computed: number,
+                memoized: number | null,
+            ): number => (memoized !== null ? memoized : Math.max(
+                consts.SIDE_VIEWS_MIN_ZOOM,
+                Math.min(computed, consts.SIDE_VIEWS_MAX_ZOOM),
+            ));
+
+            const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
+            const { renderer: { domElement: canvasFront }, camera: cameraFront } = front;
+            const { renderer: { domElement: canvasSide }, camera: cameraSide } = side;
+
+            // TOP view: X (width), Y (height)
+            // considering bbox geometry always equal 1, we only need its scale
+            const zoomTopDefault = computeZoomWithMargin(
+                selectedCuboid.top.scale.x,
+                selectedCuboid.top.scale.y,
+                canvasTop.offsetWidth,
+                canvasTop.offsetHeight,
+                top.renderer.domElement.width / Math.max(top.renderer.domElement.height, 1),
+            );
+
+            cameraTop.zoom = defaultOrMemoized(zoomTopDefault, memoizedZoom?.top ?? null);
             cameraTop.updateProjectionMatrix();
             cameraTop.updateMatrix();
             this.updateHelperPointsSize(ViewType.TOP);
 
-            const { renderer: { domElement: canvasFront }, camera: cameraFront } = front;
-            const bboxfront = new THREE.Box3().setFromObject(selectedCuboid.front);
-            const x2 = Math.min(
-                canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
-                canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
-            ) * 0.00114;
-            cameraFront.zoom = memoizedZoom?.front ?? x2;
+            // FRONT view: Y (width), Z (height)
+            const zoomFrontDefault = computeZoomWithMargin(
+                selectedCuboid.front.scale.y,
+                selectedCuboid.front.scale.z,
+                canvasFront.offsetWidth,
+                canvasFront.offsetHeight,
+                front.renderer.domElement.width / Math.max(front.renderer.domElement.height, 1),
+            );
+            cameraFront.zoom = defaultOrMemoized(zoomFrontDefault, memoizedZoom?.front ?? null);
             cameraFront.updateProjectionMatrix();
             cameraFront.updateMatrix();
             this.updateHelperPointsSize(ViewType.FRONT);
 
-            const { renderer: { domElement: canvasSide }, camera: cameraSide } = side;
-            const bboxside = new THREE.Box3().setFromObject(selectedCuboid.side);
-            const x3 = Math.min(
-                canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
-                canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
-            ) * 0.00114;
-            cameraSide.zoom = memoizedZoom?.side ?? x3;
+            // SIDE view: X (width), Z (height)
+            const zoomSideDefault = computeZoomWithMargin(
+                selectedCuboid.side.scale.x,
+                selectedCuboid.side.scale.z,
+                canvasSide.offsetWidth,
+                canvasSide.offsetHeight,
+                side.renderer.domElement.width / Math.max(side.renderer.domElement.height, 1),
+            );
+            cameraSide.zoom = defaultOrMemoized(zoomSideDefault, memoizedZoom?.side ?? null);
             cameraSide.updateProjectionMatrix();
             cameraSide.updateMatrix();
             this.updateHelperPointsSize(ViewType.SIDE);

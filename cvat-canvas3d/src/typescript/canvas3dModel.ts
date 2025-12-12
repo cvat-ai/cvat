@@ -79,6 +79,7 @@ export interface Configuration {
     outlinedBorders: string | false;
     selectedShapeOpacity: number;
     controlPointsSize: number;
+    focusedObjectPadding: number;
     orientationVisibility: OrientationVisibility;
 }
 
@@ -197,6 +198,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 shapeOpacity: 40,
                 outlinedBorders: false,
                 selectedShapeOpacity: 60,
+                focusedObjectPadding: 50,
                 controlPointsSize: consts.BASE_POINT_SIZE,
                 orientationVisibility: {
                     x: false,
@@ -427,6 +429,12 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             current.x = !!(configuration.orientationVisibility?.x ?? current.x);
             current.y = !!(configuration.orientationVisibility?.y ?? current.y);
             current.z = !!(configuration.orientationVisibility?.z ?? current.z);
+        }
+
+        if (typeof configuration.focusedObjectPadding === 'number') {
+            this.data.configuration.focusedObjectPadding = Math.max(
+                configuration.focusedObjectPadding, 0,
+            );
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

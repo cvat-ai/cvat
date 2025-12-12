@@ -119,6 +119,7 @@ interface StateToProps {
     colorBy: ColorBy;
     orientationVisibility: OrientationVisibility;
     controlPointsSize: number;
+    focusedObjectPadding: number;
     frameFetching: boolean;
     canvasInstance: Canvas3d;
     jobInstance: Job;
@@ -172,6 +173,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             workspace: {
                 controlPointsSize,
+                focusedObjectPadding,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, orientationVisibility,
@@ -194,6 +196,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         outlineColor,
         orientationVisibility,
         controlPointsSize,
+        focusedObjectPadding,
         activeLabelID,
         activatedStateID,
         activeObjectType,
@@ -513,6 +516,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         outlineColor,
         orientationVisibility,
         controlPointsSize,
+        focusedObjectPadding,
         selectedOpacity,
         colorBy,
         contextMenuVisibility,
@@ -723,11 +727,13 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             orientationVisibility,
             outlinedBorders: outlined ? outlineColor : false,
             controlPointsSize,
+            focusedObjectPadding,
         });
     }, [
         opacity, outlined, outlineColor,
-        selectedOpacity, colorBy,
+        selectedOpacity, colorBy, focusedObjectPadding,
         orientationVisibility, controlPointsSize,
+
     ]);
 
     useEffect(() => {
