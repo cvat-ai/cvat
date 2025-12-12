@@ -989,7 +989,7 @@ export interface PlayerSettingsState {
 export interface WorkspaceSettingsState {
     autoSave: boolean;
     autoSaveInterval: number; // in ms
-    aamZoomMargin: number;
+    focusedObjectPadding: number;
     automaticBordering: boolean;
     adaptiveZoom: boolean;
     showObjectsTextAlways: boolean;
