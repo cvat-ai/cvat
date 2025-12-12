@@ -800,16 +800,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const { top, front, side } = this.views;
             const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
 
-            let defaultZoom = this.sideViewsZoomMemory[this.activatedElementID];
+            let memoizedZoom = this.sideViewsZoomMemory[this.activatedElementID];
             const drawnState = this.drawnObjects[this.activatedElementID];
-            if (defaultZoom &&
+            if (memoizedZoom &&
                 drawnState &&
-                defaultZoom.serverID !== null &&
-                defaultZoom.serverID !== drawnState.data.serverID
+                memoizedZoom.serverID !== null &&
+                memoizedZoom.serverID !== drawnState.data.serverID
             ) {
                 // oops, it seems that objects were reloaded, reset zoom memory
                 this.sideViewsZoomMemory = {};
-                defaultZoom = undefined;
+                memoizedZoom = undefined;
             }
 
             const bboxtop = new THREE.Box3().setFromObject(selectedCuboid.top);
@@ -817,7 +817,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
                 canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
             ) * 0.4;
-            cameraTop.zoom = defaultZoom?.top ?? x1 / 50;
+            cameraTop.zoom = memoizedZoom?.top ?? x1 / 50;
             cameraTop.updateProjectionMatrix();
             cameraTop.updateMatrix();
             this.updateHelperPointsSize(ViewType.TOP);
@@ -828,7 +828,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
                 canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
             ) * 0.4;
-            cameraFront.zoom = defaultZoom?.front ?? x2 / 50;
+            cameraFront.zoom = memoizedZoom?.front ?? x2 / 50;
             cameraFront.updateProjectionMatrix();
             cameraFront.updateMatrix();
             this.updateHelperPointsSize(ViewType.FRONT);
@@ -839,7 +839,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
                 canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
             ) * 0.4;
-            cameraSide.zoom = defaultZoom?.side ?? x3 / 50;
+            cameraSide.zoom = memoizedZoom?.side ?? x3 / 50;
             cameraSide.updateProjectionMatrix();
             cameraSide.updateMatrix();
             this.updateHelperPointsSize(ViewType.SIDE);
