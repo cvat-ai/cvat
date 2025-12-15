@@ -210,16 +210,19 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
             response = self.client.post("/api/tasks", data=data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
             response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
-            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json()["rq_id"]
 
             response = self.client.get(f"/api/requests/{rq_id}")
-            assert response.status_code == status.HTTP_200_OK, response.status_code
-            assert response.json()["status"] == "finished", response.json().get("status")
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            response_json = response.json()
+            self.assertEqual(
+                response_json["status"], "finished", msg=f"Message: {response_json['message']}"
+            )
 
             response = self.client.get("/api/tasks/%s" % tid)
 
@@ -238,7 +241,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _create_project(self, data):
         with ForceLogin(self.user, self.client):
             response = self.client.post("/api/projects", data=data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             project = response.data
 
         return project

@@ -28,7 +28,7 @@ interface Canvas3d {
   cancel(): void;
   dragCanvas(enable: boolean): void;
   activate(clientID: number | null, attributeID?: number): void;
-  configureShapes(shapeProperties: ShapeProperties): void;
+  configure(configuration: Configuration): void;
   fitCanvas(): void;
   fit(): void;
   group(groupData: GroupData): void;
