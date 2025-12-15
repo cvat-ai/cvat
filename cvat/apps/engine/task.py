@@ -14,7 +14,7 @@ from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, TypeAlias
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -57,7 +57,7 @@ from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_in
 
 slogger = ServerLogManager(__name__)
 
-JobFileMapping = list[list[str]]
+JobFileMapping: TypeAlias = list[list[str]]
 
 class SegmentParams(NamedTuple):
     start_frame: int
