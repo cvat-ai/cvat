@@ -7,7 +7,6 @@ import io
 from http import HTTPStatus
 
 import pytest
-from rest_framework import status
 
 from shared.utils.config import BASE_URL, make_api_client
 from shared.utils.helpers import generate_image_file
@@ -169,11 +168,11 @@ class TestTUSUpload:
         # Try wrong offset below expected (should be 1000, we send 500)
         chunk2 = image_data[1000:2000]
         response = self._upload_chunk(location, 500, chunk2, check_status=False)
-        assert response.status == status.HTTP_409_CONFLICT
+        assert response.status == HTTPStatus.CONFLICT
 
         # Try wrong offset above expected (should be 1000, we send 1500)
         response = self._upload_chunk(location, 1500, chunk2, check_status=False)
-        assert response.status == status.HTTP_409_CONFLICT
+        assert response.status == HTTPStatus.CONFLICT
 
     def test_cannot_upload_chunk_exceeding_file_size(self, fxt_task):
         """Test that server rejects chunks whose end exceeds file size"""
