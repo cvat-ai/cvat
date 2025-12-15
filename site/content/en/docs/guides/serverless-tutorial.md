@@ -455,7 +455,7 @@ spec:
   eventTimeout: 30s
 
   build:
-    image: cvat/pth.facebookresearch.detectron2.retinanet_r101
+    image: cvat.pth.facebookresearch.detectron2.retinanet_r101
     baseImage: ubuntu:22.04
 
     directives:
@@ -464,27 +464,25 @@ spec:
           value: DEBIAN_FRONTEND=noninteractive
         - kind: RUN
           value: |-
-            apt update \
-              && apt install -y --no-install-recommends \
-                curl \
-                git \
-                g++ \
-                ca-certificates \
-                python-is-python3 \
-                python3 \
-                python3-dev \
-                python3-pip \
-              && rm -rf /var/lib/apt/lists/*
+            apt-get update \
+            && apt-get install -y --no-install-recommends \
+              curl \
+              git \
+              g++ \
+              ca-certificates \
+              python-is-python3 \
+              python3 \
+              python3-dev \
+              python3-pip \
+            && rm -rf /var/lib/apt/lists/*
         - kind: RUN
           value: |-
-            pip3 install \
-              torch==1.13.1+cpu \
-              torchvision==0.14.1+cpu \
-              numpy==1.26.4 \
+            pip install \
+              torch==1.13.1+cpu torchvision==0.14.1+cpu numpy==1.26.4 \
               --extra-index-url https://download.pytorch.org/whl/cpu \
               --no-cache-dir
         - kind: RUN
-          value: pip3 install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985'
+          value: pip install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
@@ -492,7 +490,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
@@ -618,7 +616,7 @@ For `RetinaNet R101` which was added above modifications will look like:
 ```diff
 --- function.yaml	2021-06-25 21:06:51.603281723 +0300
 +++ function-gpu.yaml	2021-07-07 22:38:53.454202637 +0300
-@@ -89,19 +89,23 @@ metadata:
+@@ -89,19 +89,21 @@ metadata:
        ]
 
  spec:
@@ -638,24 +636,50 @@ For `RetinaNet R101` which was added above modifications will look like:
          - kind: ENV
            value: DEBIAN_FRONTEND=noninteractive
 +        - kind: ENV
-+          value: NVIDIA_VISIBLE_DEVICES=all
++          value: NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility
+         - kind: RUN
+           value: |-
+             apt-get update \
+@@ -109,20 +111,34 @@ spec:
+               curl \
+               git \
+               g++ \
+-              ca-certificates \
+               python-is-python3 \
+               python3 \
+               python3-dev \
+               python3-pip \
++            && curl -fsSL -o /tmp/cuda-keyring.deb \
++              https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb \
++            && dpkg -i /tmp/cuda-keyring.deb \
++            && rm -f /tmp/cuda-keyring.deb \
++            && apt-get update \
++            && apt-get install -y --no-install-recommends \
++              cuda-nvcc-11-7 \
++              libcublas-dev-11-7 \
++              libcusolver-dev-11-7 \
++              libcusparse-dev-11-7 \
+             && rm -rf /var/lib/apt/lists/*
 +        - kind: ENV
-+          value: NVIDIA_DRIVER_CAPABILITIES=compute,utility
++          value: PATH=/usr/local/cuda-11.7/bin:${PATH} CUDA_HOME=/usr/local/cuda-11.7
          - kind: RUN
            value: |-
-             apt update \
-@@ -118,8 +122,8 @@ spec:
-         - kind: RUN
-           value: |-
-             pip3 install \
+             pip install \
 -              torch==1.13.1+cpu torchvision==0.14.1+cpu numpy==1.26.4 \
 -              --extra-index-url https://download.pytorch.org/whl/cpu \
 +              torch==1.13.1+cu117 torchvision==0.14.1+cu117 numpy==1.26.4 \
 +              --extra-index-url https://download.pytorch.org/whl/cu117 \
                --no-cache-dir
          - kind: RUN
-           value: pip3 install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
-@@ -130,12 +134,16 @@ spec:
+-          value: pip install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
++          value: |-
++            FORCE_CUDA=1 \
++            TORCH_CUDA_ARCH_LIST="Kepler;Kepler+Tesla;Maxwell;Maxwell+Tegra;Pascal;Volta;Turing" \
++            pip install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
+         - kind: WORKDIR
+           value: /opt/nuclio
+         - kind: RUN
+@@ -130,12 +146,16 @@ spec:
 
    triggers:
      myHttpTrigger:

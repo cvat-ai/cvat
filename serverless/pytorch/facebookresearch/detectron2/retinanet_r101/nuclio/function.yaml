@@ -104,25 +104,25 @@ spec:
           value: DEBIAN_FRONTEND=noninteractive
         - kind: RUN
           value: |-
-            apt update \
-              && apt install -y --no-install-recommends \
-                curl \
-                git \
-                g++ \
-                ca-certificates \
-                python-is-python3 \
-                python3 \
-                python3-dev \
-                python3-pip \
-              && rm -rf /var/lib/apt/lists/*
+            apt-get update \
+            && apt-get install -y --no-install-recommends \
+              curl \
+              git \
+              g++ \
+              ca-certificates \
+              python-is-python3 \
+              python3 \
+              python3-dev \
+              python3-pip \
+            && rm -rf /var/lib/apt/lists/*
         - kind: RUN
           value: |-
-            pip3 install \
+            pip install \
               torch==1.13.1+cpu torchvision==0.14.1+cpu numpy==1.26.4 \
               --extra-index-url https://download.pytorch.org/whl/cpu \
               --no-cache-dir
         - kind: RUN
-          value: pip3 install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
+          value: pip install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
