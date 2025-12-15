@@ -26,7 +26,7 @@ class TestTUSUpload:
         """Fixture to create a task for TUS upload tests"""
         with make_api_client(self._USERNAME) as api_client:
             (task, response) = api_client.tasks_api.create(
-                {"name": "test TUS upload", "labels": [{"name": "car"}]}
+                {"name": "test TUS upload"}
             )
             assert response.status == HTTPStatus.CREATED
             return task
@@ -36,18 +36,15 @@ class TestTUSUpload:
         headers = headers or {}
 
         with make_api_client(self._USERNAME) as api_client:
-            if path.startswith("http"):
-                if isinstance(body, io.BytesIO):
-                    body = body.getvalue()
-                api_client.update_params_for_auth(headers=headers, queries=[], method=method)
-                response = api_client.request(
-                    method,
-                    path,
-                    headers=headers,
-                    body=body,
-                    _parse_response=False,
-                    _check_status=check_status,
-                )
+            api_client.update_params_for_auth(headers=headers, queries=[], method=method)
+            response = api_client.request(
+                method,
+                path,
+                headers=headers,
+                body=body,
+                _parse_response=False,
+                _check_status=check_status,
+            )
 
         return response
 
