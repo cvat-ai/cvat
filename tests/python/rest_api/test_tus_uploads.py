@@ -7,6 +7,7 @@ import io
 from http import HTTPStatus
 
 import pytest
+from rest_framework import status
 
 from shared.utils.config import BASE_URL, make_api_client
 from shared.utils.helpers import generate_image_file
@@ -21,10 +22,13 @@ class TestTUSUpload:
 
     _USERNAME = "admin1"
 
-    def _create_task(self, task_spec):
-        """Helper to create a task"""
+    @pytest.fixture
+    def fxt_task(self):
+        """Fixture to create a task for TUS upload tests"""
         with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.create(task_spec)
+            (task, response) = api_client.tasks_api.create(
+                {"name": "test TUS upload", "labels": [{"name": "car"}]}
+            )
             assert response.status == HTTPStatus.CREATED
             return task
 
@@ -94,14 +98,9 @@ class TestTUSUpload:
         assert offset is not None
         return int(offset)
 
-    def test_can_upload_file_via_tus_in_single_chunk(self):
+    def test_can_upload_file_via_tus_in_single_chunk(self, fxt_task):
         """Test uploading a complete file in one chunk"""
-        task = self._create_task(
-            {
-                "name": "test TUS single chunk upload",
-                "labels": [{"name": "car"}],
-            }
-        )
+        task = fxt_task
 
         image_file = generate_image_file("test_image.jpg", size=(100, 100))
         image_data = image_file.getvalue()
@@ -113,22 +112,22 @@ class TestTUSUpload:
         assert response.status == HTTPStatus.NO_CONTENT
         assert int(response.headers.get("Upload-Offset")) == file_size
 
-    def test_upload_offset_is_updated_incrementally(self):
+    def test_upload_offset_is_updated_incrementally(self, fxt_task):
         """Test offset updates correctly after each small chunk"""
-        task = self._create_task(
-            {
-                "name": "test TUS incremental offset",
-                "labels": [{"name": "car"}],
-            }
-        )
+        task = fxt_task
 
         image_file = generate_image_file("test_image.jpg", size=(150, 150))
         image_data = image_file.getvalue()
         file_size = len(image_data)
 
+        chunk_size = 1024
+        assert file_size > chunk_size, (
+            f"Image size {file_size} must be larger than chunk size {chunk_size} "
+            "to properly test incremental uploads"
+        )
+
         location = self._start_upload(task.id, file_size, "test_image.jpg")
 
-        chunk_size = 1024
         offset = 0
 
         while offset < file_size:
@@ -148,19 +147,13 @@ class TestTUSUpload:
 
             offset = new_offset
 
-    def test_cannot_upload_with_wrong_offset(self):
+    def test_cannot_upload_with_wrong_offset(self, fxt_task):
         """Test that upload fails if offset doesn't match"""
-        task = self._create_task(
-            {
-                "name": "test TUS wrong offset",
-                "labels": [{"name": "car"}],
-            }
-        )
+        task = fxt_task
 
-        # Generate larger image to ensure multiple chunks needed
-        image_file = generate_image_file("test_image.jpg", size=(200, 200))
-        image_data = image_file.getvalue()
-        file_size = len(image_data)
+        # Generate test data (no need for valid image since upload won't complete)
+        file_size = 10000
+        image_data = b"\x00" * file_size
 
         location = self._start_upload(task.id, file_size, "test_image.jpg")
 
@@ -173,23 +166,22 @@ class TestTUSUpload:
         current_offset = int(response.headers.get("Upload-Offset"))
         assert current_offset == 1000
 
-        # Try wrong offset (should be 1000, we send 500)
+        # Try wrong offset below expected (should be 1000, we send 500)
         chunk2 = image_data[1000:2000]
         response = self._upload_chunk(location, 500, chunk2, check_status=False)
-        assert response.status in (HTTPStatus.CONFLICT, HTTPStatus.INTERNAL_SERVER_ERROR)
+        assert response.status == status.HTTP_409_CONFLICT
 
-    def test_cannot_upload_chunk_exceeding_file_size(self):
+        # Try wrong offset above expected (should be 1000, we send 1500)
+        response = self._upload_chunk(location, 1500, chunk2, check_status=False)
+        assert response.status == status.HTTP_409_CONFLICT
+
+    def test_cannot_upload_chunk_exceeding_file_size(self, fxt_task):
         """Test that server rejects chunks whose end exceeds file size"""
-        task = self._create_task(
-            {
-                "name": "test TUS chunk exceeds file size",
-                "labels": [{"name": "car"}],
-            }
-        )
+        task = fxt_task
 
-        image_file = generate_image_file("test_image.jpg", size=(200, 200))
-        image_data = image_file.getvalue()
-        file_size = len(image_data)
+        # Generate test data (no need for valid image since upload won't complete)
+        file_size = 10000
+        image_data = b"\x00" * file_size
 
         location = self._start_upload(task.id, file_size, "test_image.jpg")
 
