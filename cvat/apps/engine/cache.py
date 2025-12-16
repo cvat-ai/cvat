@@ -679,18 +679,12 @@ class MediaCache:
         data_upload_dir = db_data.get_upload_dirname()
 
         def _validate_ri_path(path: str) -> str:
-            if os.path.isabs(path):
-                if not path.startswith(data_upload_dir + os.sep):
-                    raise Exception("Invalid related image path")
+            abs_path = (data_upload_dir / path).resolve()
 
-                path = os.path.relpath(path, data_upload_dir)
-            else:
-                if not os.path.normpath(os.path.join(data_upload_dir, path)).startswith(
-                    data_upload_dir + os.sep
-                ):
-                    raise Exception("Invalid related image path")
-
-            return path
+            try:
+                return os.fspath(abs_path.relative_to(data_upload_dir))
+            except ValueError as ex:
+                raise Exception("Invalid related image path") from ex
 
         manifest_path = db_data.get_manifest_path()
 

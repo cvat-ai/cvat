@@ -18,6 +18,7 @@ from contextlib import closing
 from copy import copy
 from datetime import datetime
 from inspect import isclass
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, cast
 
@@ -1919,7 +1920,7 @@ class ClientFileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         if instance:
             upload_dir = instance.data.get_upload_dirname()
-            return instance.file.path[len(upload_dir) + 1:]
+            return Path(instance.file.path).relative_to(upload_dir).as_posix()
         else:
             return instance
 

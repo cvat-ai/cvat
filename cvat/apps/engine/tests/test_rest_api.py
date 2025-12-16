@@ -3084,7 +3084,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = "test_velodyne_points.zip"
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = settings.SHARE_ROOT / filename
         shutil.copyfile(ASSETS_DIR / filename, path)
         cls.media_data.append(
             {
@@ -3105,7 +3105,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
             if sorting == SortingMethod.PREDEFINED:
                 # Manifest is required for predefined sorting with an archive
-                manifest_path = Path(path).with_suffix(".jsonl")
+                manifest_path = path.with_suffix(".jsonl")
                 with (
                     tempfile.TemporaryDirectory() as temp_dir,
                     zipfile.ZipFile(path, "r") as zip_file,
