@@ -13,7 +13,7 @@ from contextlib import suppress
 from copy import deepcopy
 from functools import cached_property, lru_cache, partial
 from io import StringIO
-from typing import Any, ClassVar, TypeVar, cast
+from typing import Any, ClassVar, TypeAlias, TypeVar, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher
@@ -969,11 +969,11 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
 
 _ShapeT1 = TypeVar("_ShapeT1")
 _ShapeT2 = TypeVar("_ShapeT2")
-ShapeSimilarityFunction = Callable[
+ShapeSimilarityFunction: TypeAlias = Callable[
     [_ShapeT1, _ShapeT2], float
 ]  # (shape1, shape2) -> [0; 1], returns 0 for mismatches, 1 for matches
-LabelEqualityFunction = Callable[[_ShapeT1, _ShapeT2], bool]
-SegmentMatchingResult = tuple[
+LabelEqualityFunction: TypeAlias = Callable[[_ShapeT1, _ShapeT2], bool]
+SegmentMatchingResult: TypeAlias = tuple[
     list[tuple[_ShapeT1, _ShapeT2]],  # matches
     list[tuple[_ShapeT1, _ShapeT2]],  # mismatches
     list[_ShapeT1],  # a unmatched

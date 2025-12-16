@@ -17,7 +17,7 @@ from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
-from typing import Any, overload
+from typing import Any, TypeAlias, overload
 
 import attrs
 import av
@@ -62,8 +62,8 @@ from utils.dataset_manifest import ImageManifestManager
 slogger = ServerLogManager(__name__)
 
 
-DataWithMime = tuple[io.BytesIO, str]
-_CacheItem = tuple[io.BytesIO, str, int, datetime | None]
+DataWithMime: TypeAlias = tuple[io.BytesIO, str]
+_CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
 
 
 class CacheTooLargeDataError(Exception):

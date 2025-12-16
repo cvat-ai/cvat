@@ -10,7 +10,6 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urljoin
 
 import git
@@ -104,7 +103,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
 
         def run_hugo(
             *,
-            executable: Optional[str] = "hugo",
+            executable: str = "hugo",
             rel_dest_dir: str = ".",
         ):
             # Construct the full destination path
