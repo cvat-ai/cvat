@@ -7,7 +7,7 @@ import json
 from copy import deepcopy
 from http import HTTPStatus
 from types import SimpleNamespace
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from cvat_sdk import exceptions, models
@@ -69,7 +69,7 @@ class _TestLabelsPermissionsBase:
 
         return labels_by_source
 
-    def _get_source_info(self, source: str, *, org_id: Optional[int] = None):
+    def _get_source_info(self, source: str, *, org_id: int | None = None):
         if source == "task":
             sources = self.tasks_by_org
             is_source_staff = self.is_task_staff

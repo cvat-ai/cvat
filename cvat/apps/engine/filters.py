@@ -8,7 +8,7 @@ import operator
 from collections.abc import Iterable, Iterator
 from functools import reduce
 from textwrap import dedent
-from typing import Any, Optional
+from typing import Any, TypeAlias
 
 from django.db import models
 from django.db.models import Q
@@ -28,7 +28,7 @@ DEFAULT_FILTER_FIELDS_ATTR = "filter_fields"
 DEFAULT_LOOKUP_MAP_ATTR = "lookup_fields"
 
 
-def get_lookup_fields(view, fields: Optional[Iterator[str]] = None) -> dict[str, str]:
+def get_lookup_fields(view, fields: Iterator[str] | None = None) -> dict[str, str]:
     if fields is None:
         fields = getattr(view, DEFAULT_FILTER_FIELDS_ATTR, None) or []
 
@@ -118,7 +118,7 @@ class FilterParsingError(Exception):
 
 
 class JsonLogicFilter(filters.BaseFilterBackend):
-    Rules = dict[str, Any]
+    Rules: TypeAlias = dict[str, Any]
     filter_param = "filter"
     filter_title = _("Filter")
     filter_description = _(

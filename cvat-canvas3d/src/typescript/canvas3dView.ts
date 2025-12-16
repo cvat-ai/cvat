@@ -8,7 +8,7 @@ import { PCDLoader } from 'three/examples/jsm/loaders/PCDLoader';
 import CameraControls from 'camera-controls';
 import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
-import CONST from './consts';
+import consts from './consts';
 import {
     Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
 } from './canvas3dModel';
@@ -58,6 +58,7 @@ export interface RenderView {
 }
 
 interface DrawnObjectData {
+    serverID: number | null;
     clientID: number;
     labelID: number;
     labelColor: string;
@@ -73,6 +74,13 @@ interface DrawnObjectData {
     updated: number;
 }
 
+interface SideViewsZoomMemory {
+    serverID: number | null;
+    [ViewType.TOP]: number | null;
+    [ViewType.SIDE]: number | null;
+    [ViewType.FRONT]: number | null;
+}
+
 const BOTTOM_VIEWS = [
     ViewType.TOP,
     ViewType.SIDE,
@@ -83,6 +91,7 @@ const ALL_VIEWS = [...BOTTOM_VIEWS, ViewType.PERSPECTIVE];
 
 function drawnDataFromState(state: ObjectState): DrawnObjectData {
     return {
+        serverID: state.serverID,
         clientID: state.clientID,
         labelID: state.label.id,
         labelColor: state.label.color,
@@ -112,11 +121,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private statesToBeGrouped: ObjectState[];
     private statesToBeMerged: ObjectState[];
     private sceneBBox: THREE.Box3;
+    private sideViewsZoomMemory: Record<number, SideViewsZoomMemory>;
+    private model: Canvas3dModel & Master;
     private drawnObjects: Record<number, {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
-    private model: Canvas3dModel & Master;
+
     private action: {
         translation: any;
         resize: {
@@ -129,9 +140,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         frameCoordinates: any;
         detected: any;
         initialMouseVector: any;
-        detachCam: any;
-        detachCamRef: any;
     };
+
     private cameraSettings: {
         [key in ViewType]: {
             position: [number, number, number],
@@ -160,13 +170,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     public constructor(model: Canvas3dModel & Master, controller: Canvas3dController) {
         this.controller = controller;
         this.clock = new THREE.Clock();
-        this.speed = CONST.MOVEMENT_FACTOR;
+        this.speed = consts.MOVEMENT_FACTOR;
         this.cube = new CuboidModel('line', '#ffffff');
         this.stateToBeSplitted = null;
         this.statesToBeGrouped = [];
         this.statesToBeMerged = [];
         this.isPerspectiveBeingDragged = false;
         this.activatedElementID = null;
+        this.sideViewsZoomMemory = {};
         this.drawnObjects = {};
         this.model = model;
         this.sceneBBox = new THREE.Box3();
@@ -203,8 +214,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             },
             detected: false,
             initialMouseVector: new THREE.Vector2(),
-            detachCam: false,
-            detachCamRef: 'null',
             translation: {
                 status: false,
                 helper: null,
@@ -459,6 +468,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 const intersects = viewType.rayCaster.renderer.intersectObjects(this.getAllVisibleCuboids(), false);
                 if (!intersects.length) {
                     this.fitCanvas(true);
+                } else {
+                    const clientID = intersects[0].object.name;
+                    this.fitObject(this.drawnObjects[clientID].cuboid, true);
                 }
                 return;
             }
@@ -521,13 +533,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views[view as keyof Views].scene.background = new THREE.Color(0x000000);
         });
 
-        const viewSize = CONST.ZOOM_FACTOR;
+        const viewSize = consts.ORTHO_FRUSTUM_HEIGHT;
         const height = window.innerHeight;
         const width = window.innerWidth;
         const aspectRatio = window.innerWidth / window.innerHeight;
 
         // setting up the camera and adding it in the scene
-        this.views.perspective.camera = new THREE.PerspectiveCamera(50, aspectRatio, 1, 500);
+        this.views.perspective.camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 500);
         this.views.top.camera = new THREE.OrthographicCamera(
             (-aspectRatio * viewSize) / 2 - 2,
             (aspectRatio * viewSize) / 2 + 2,
@@ -576,8 +588,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     viewType.controls.touches.two = CameraControls.ACTION.NONE;
                     viewType.controls.touches.three = CameraControls.ACTION.NONE;
                 }
-                viewType.controls.minDistance = CONST.MIN_DISTANCE;
-                viewType.controls.maxDistance = CONST.MAX_DISTANCE;
+                viewType.controls.minDistance = consts.MIN_DISTANCE;
+                viewType.controls.maxDistance = consts.MAX_DISTANCE;
             }
         });
         this.views.top.controls.enabled = false;
@@ -590,11 +602,37 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 (event: WheelEvent): void => {
                     event.preventDefault();
                     const { camera } = this.views[view];
-                    if (event.deltaY < CONST.FOV_MIN && camera.zoom < CONST.FOV_MAX) {
-                        camera.zoom += CONST.FOV_INC;
-                    } else if (event.deltaY > CONST.FOV_MIN && camera.zoom > CONST.FOV_MIN + 0.1) {
-                        camera.zoom -= CONST.FOV_INC;
+
+                    // Adaptive zoom algorithm from 2D canvas
+                    const basicZoomCoef = 6 / 5;
+                    const adjustCoef = 1 / 100;
+                    const scaleFactor = basicZoomCoef ** (-event.deltaY * adjustCoef);
+                    camera.zoom = Math.min(
+                        Math.max(
+                            camera.zoom * scaleFactor,
+                            consts.SIDE_VIEWS_MIN_ZOOM,
+                        ), consts.SIDE_VIEWS_MAX_ZOOM,
+                    );
+
+                    if (this.activatedElementID) {
+                        // try to remember applied zoom level per each object
+                        // also save serverID to be able to track case when objects are reloaded
+                        // (e.g. annotations uploaded), in this rare case zoom memory should be reset
+                        if (!this.sideViewsZoomMemory[this.activatedElementID]) {
+                            this.sideViewsZoomMemory[this.activatedElementID] = {
+                                serverID: null,
+                                top: null,
+                                side: null,
+                                front: null,
+                            };
+                        }
+
+                        this.sideViewsZoomMemory[this.activatedElementID].serverID =
+                            this.drawnObjects[this.activatedElementID].data.serverID;
+                        this.sideViewsZoomMemory[this.activatedElementID][view] = camera.zoom;
                     }
+
+                    // after changing zoom, need to recalculate control points size
                     this.updateHelperPointsSize(view);
                 },
                 { passive: false },
@@ -602,6 +640,78 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         });
 
         model.subscribe(this);
+    }
+
+    private fitObject(object: CuboidModel, animate: boolean = false): void {
+        const camera = this.views.perspective.camera as THREE.PerspectiveCamera;
+        const mesh = object.perspective as THREE.Mesh;
+        const geom = mesh.geometry as THREE.BufferGeometry;
+        if (!geom.boundingBox) {
+            geom.computeBoundingBox();
+        }
+
+        // 1) Collect 8 corners of the local bounding box (base geometry 0.5 cube)
+        const bb = geom.boundingBox!;
+        const cornersLocal: THREE.Vector3[] = [
+            new THREE.Vector3(bb.min.x, bb.min.y, bb.min.z),
+            new THREE.Vector3(bb.min.x, bb.min.y, bb.max.z),
+            new THREE.Vector3(bb.min.x, bb.max.y, bb.min.z),
+            new THREE.Vector3(bb.min.x, bb.max.y, bb.max.z),
+            new THREE.Vector3(bb.max.x, bb.min.y, bb.min.z),
+            new THREE.Vector3(bb.max.x, bb.min.y, bb.max.z),
+            new THREE.Vector3(bb.max.x, bb.max.y, bb.min.z),
+            new THREE.Vector3(bb.max.x, bb.max.y, bb.max.z),
+        ];
+
+        // 2) Transform corners to world space (includes scale/rotation/translation)
+        const worldCorners: THREE.Vector3[] = cornersLocal.map((v) => mesh.localToWorld(v.clone()));
+
+        // 3) Build camera basis in world
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward).normalize();
+        const up = camera.up.clone().normalize();
+        const right = new THREE.Vector3().crossVectors(forward, up).normalize();
+        up.copy(new THREE.Vector3().crossVectors(right, forward).normalize());
+
+        // 4) Project corners onto right/up to get world extents independent of current distance
+        let minU = +Infinity; let
+            maxU = -Infinity;
+        let minV = +Infinity; let
+            maxV = -Infinity;
+        for (const c of worldCorners) {
+            const u = c.dot(right);
+            const v = c.dot(up);
+            if (u < minU) minU = u;
+            if (u > maxU) maxU = u;
+            if (v < minV) minV = v;
+            if (v > maxV) maxV = v;
+        }
+        const widthWorld = maxU - minU;
+        const heightWorld = maxV - minV;
+
+        // 5) Compute required distance to fit both width and height within FOV and aspect
+        const vFov = THREE.MathUtils.degToRad(camera.fov);
+        const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+        const distByHeight = (heightWorld / 2) / Math.tan(vFov / 2);
+        const distByWidth = (widthWorld / 2) / Math.tan(hFov / 2);
+        const distance = Math.max(distByHeight, distByWidth);
+
+        // 6) Center of geometry box in world
+        const centerLocal = bb.getCenter(new THREE.Vector3());
+        const center = mesh.localToWorld(centerLocal);
+
+        // 7) Move along forward and look at center
+        const margin = 1.5;
+        const targetPosition = center.clone().sub(forward.multiplyScalar(distance * margin));
+        this.views.perspective.controls.setLookAt(
+            targetPosition.x,
+            targetPosition.y,
+            targetPosition.z,
+            center.x,
+            center.y,
+            center.z,
+            animate,
+        );
     }
 
     private fitCanvas(animation: boolean): void {
@@ -675,48 +785,95 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
     }
 
-    private setDefaultZoom(): void {
-        if (this.model.data.activeElement.clientID === null) {
-            this.updateCameraFrustumPlane();
-            Object.keys(this.views).forEach((view: ViewType): void => {
-                const viewType = this.views[view as keyof Views];
-                if (view !== ViewType.PERSPECTIVE) {
-                    const { camera } = viewType;
-                    camera.zoom = CONST.FOV_DEFAULT;
-                    viewType.camera.updateProjectionMatrix();
-                }
-            });
-        } else {
+    private updateSideViewsZoom(): void {
+        if (this.activatedElementID !== null) {
+            const { selectedCuboid } = this;
             const { top, front, side } = this.views;
+
+            let memoizedZoom = this.sideViewsZoomMemory[this.activatedElementID];
+            const drawnState = this.drawnObjects[this.activatedElementID];
+            if (memoizedZoom &&
+                drawnState &&
+                memoizedZoom.serverID !== null &&
+                memoizedZoom.serverID !== drawnState.data.serverID
+            ) {
+                // oops, it seems that objects were reloaded, reset zoom memory
+                this.sideViewsZoomMemory = {};
+                memoizedZoom = undefined;
+            }
+
+            // Padding in pixels around the object comes from cvat-ui
+            const padding = this.model.data.configuration.focusedObjectPadding;
+            const baseline = consts.ORTHO_FRUSTUM_HEIGHT;
+
+            // Helper function to compute zoom that fits width/height with corresponding padding
+            const computeZoomWithMargin = (
+                objWidthWorld: number,
+                objHeightWorld: number,
+                canvasWidthPx: number,
+                canvasHeightPx: number,
+                aspect: number,
+            ): number => {
+                // fallback if padding is too high for the current canvas size
+                const marginPx = Math.max(0, Math.min(padding, Math.min(canvasWidthPx, canvasHeightPx) / 4));
+
+                const heightFactor = (canvasHeightPx - 2 * marginPx) / canvasHeightPx;
+                const widthFactor = (canvasWidthPx - 2 * marginPx) / canvasWidthPx;
+                const zoomFromHeight = (baseline * heightFactor) / Math.max(objHeightWorld, Number.EPSILON);
+                const zoomFromWidth = (aspect * baseline * widthFactor) / Math.max(objWidthWorld, Number.EPSILON);
+
+                return Math.min(zoomFromHeight, zoomFromWidth);
+            };
+
+            const defaultOrMemoized = (
+                computed: number,
+                memoized: number | null,
+            ): number => (memoized !== null ? memoized : Math.max(
+                consts.SIDE_VIEWS_MIN_ZOOM,
+                Math.min(computed, consts.SIDE_VIEWS_MAX_ZOOM),
+            ));
+
             const { renderer: { domElement: canvasTop }, camera: cameraTop } = top;
-            const bboxtop = new THREE.Box3().setFromObject(this.selectedCuboid.top);
-            const x1 = Math.min(
-                canvasTop.offsetWidth / (bboxtop.max.x - bboxtop.min.x),
-                canvasTop.offsetHeight / (bboxtop.max.y - bboxtop.min.y),
-            ) * 0.4;
-            cameraTop.zoom = x1 / 50;
+            const { renderer: { domElement: canvasFront }, camera: cameraFront } = front;
+            const { renderer: { domElement: canvasSide }, camera: cameraSide } = side;
+
+            // TOP view: X (width), Y (height)
+            // considering bbox geometry always equal 1, we only need its scale
+            const zoomTopDefault = computeZoomWithMargin(
+                selectedCuboid.top.scale.x,
+                selectedCuboid.top.scale.y,
+                canvasTop.offsetWidth,
+                canvasTop.offsetHeight,
+                top.renderer.domElement.width / Math.max(top.renderer.domElement.height, 1),
+            );
+
+            cameraTop.zoom = defaultOrMemoized(zoomTopDefault, memoizedZoom?.top ?? null);
             cameraTop.updateProjectionMatrix();
             cameraTop.updateMatrix();
             this.updateHelperPointsSize(ViewType.TOP);
 
-            const { renderer: { domElement: canvasFront }, camera: cameraFront } = front;
-            const bboxfront = new THREE.Box3().setFromObject(this.selectedCuboid.front);
-            const x2 = Math.min(
-                canvasFront.offsetWidth / (bboxfront.max.y - bboxfront.min.y),
-                canvasFront.offsetHeight / (bboxfront.max.z - bboxfront.min.z),
-            ) * 0.4;
-            cameraFront.zoom = x2 / 50;
+            // FRONT view: Y (width), Z (height)
+            const zoomFrontDefault = computeZoomWithMargin(
+                selectedCuboid.front.scale.y,
+                selectedCuboid.front.scale.z,
+                canvasFront.offsetWidth,
+                canvasFront.offsetHeight,
+                front.renderer.domElement.width / Math.max(front.renderer.domElement.height, 1),
+            );
+            cameraFront.zoom = defaultOrMemoized(zoomFrontDefault, memoizedZoom?.front ?? null);
             cameraFront.updateProjectionMatrix();
             cameraFront.updateMatrix();
             this.updateHelperPointsSize(ViewType.FRONT);
 
-            const { renderer: { domElement: canvasSide }, camera: cameraSide } = side;
-            const bboxside = new THREE.Box3().setFromObject(this.selectedCuboid.side);
-            const x3 = Math.min(
-                canvasSide.offsetWidth / (bboxside.max.x - bboxside.min.x),
-                canvasSide.offsetHeight / (bboxside.max.z - bboxside.min.z),
-            ) * 0.4;
-            cameraSide.zoom = x3 / 50;
+            // SIDE view: X (width), Z (height)
+            const zoomSideDefault = computeZoomWithMargin(
+                selectedCuboid.side.scale.x,
+                selectedCuboid.side.scale.z,
+                canvasSide.offsetWidth,
+                canvasSide.offsetHeight,
+                side.renderer.domElement.width / Math.max(side.renderer.domElement.height, 1),
+            );
+            cameraSide.zoom = defaultOrMemoized(zoomSideDefault, memoizedZoom?.side ?? null);
             cameraSide.updateProjectionMatrix();
             cameraSide.updateMatrix();
             this.updateHelperPointsSize(ViewType.SIDE);
@@ -954,18 +1111,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private receiveShapeColor(state: ObjectState | DrawnObjectData): string {
         const includedInto = (states: ObjectState[]): boolean => states
             .some((_state: ObjectState): boolean => _state.clientID === state.clientID);
-        const { colorBy } = this.model.data.shapeProperties;
+        const { colorBy } = this.model.data.configuration;
 
         if (this.mode === Mode.GROUP && includedInto(this.statesToBeGrouped)) {
-            return CONST.GROUPING_COLOR;
+            return consts.GROUPING_COLOR;
         }
 
         if (this.mode === Mode.MERGE && includedInto(this.statesToBeMerged)) {
-            return CONST.MERGING_COLOR;
+            return consts.MERGING_COLOR;
         }
 
         if (this.mode === Mode.SPLIT && this.stateToBeSplitted?.clientID === state.clientID) {
-            return CONST.SPLITTING_COLOR;
+            return consts.SPLITTING_COLOR;
         }
 
         if (state instanceof ObjectState) {
@@ -974,7 +1131,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             }
 
             if (colorBy === 'Group') {
-                return state.group?.color || CONST.DEFAULT_GROUP_COLOR;
+                return state.group?.color || consts.DEFAULT_GROUP_COLOR;
             }
 
             return state.color;
@@ -993,15 +1150,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
     private addCuboid(state: ObjectState): CuboidModel {
         const {
-            opacity, outlined, outlineColor, orientationVisibility,
-        } = this.model.data.shapeProperties;
+            shapeOpacity, outlinedBorders, orientationVisibility,
+        } = this.model.data.configuration;
         const clientID = String(state.clientID);
-        const cuboid = new CuboidModel(state.occluded ? 'dashed' : 'line', outlined ? outlineColor : '#ffffff');
+        const cuboid = new CuboidModel(state.occluded ? 'dashed' : 'line', outlinedBorders || '#ffffff');
         const color = this.receiveShapeColor(state);
 
         cuboid.setName(clientID);
         cuboid.setColor(color);
-        cuboid.setOpacity(opacity);
+        cuboid.setOpacity(shapeOpacity);
         cuboid.setPosition(state.points[0], state.points[1], state.points[2]);
         cuboid.setScale(state.points[6], state.points[7], state.points[8]);
         cuboid.setRotation(state.points[3], state.points[4], state.points[5]);
@@ -1017,10 +1174,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private deactivateObject(): void {
-        const { opacity } = this.model.data.shapeProperties;
+        const { shapeOpacity } = this.model.data.configuration;
         if (this.activatedElementID !== null) {
             const { cuboid } = this.drawnObjects[this.activatedElementID];
-            cuboid.setOpacity(opacity);
+            cuboid.setOpacity(shapeOpacity);
             for (const view of BOTTOM_VIEWS) {
                 cuboid[view].visible = false;
                 removeCuboidEdges(cuboid[view]);
@@ -1032,18 +1189,20 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private activateObject(): void {
-        const { selectedOpacity } = this.model.data.shapeProperties;
+        const { selectedShapeOpacity } = this.model.data.configuration;
         const { clientID } = this.model.data.activeElement;
         if (clientID !== null && this.drawnObjects[+clientID]?.cuboid?.perspective?.visible) {
             const { cuboid, data } = this.drawnObjects[+clientID];
-            cuboid.setOpacity(selectedOpacity);
+            cuboid.setOpacity(selectedShapeOpacity);
             for (const view of BOTTOM_VIEWS) {
                 cuboid[view].visible = true;
                 createCuboidEdges(cuboid[view]);
 
                 if (!data.lock) {
-                    createResizeHelper(cuboid[view]);
-                    createRotationHelper(cuboid[view], view);
+                    createResizeHelper(cuboid, view);
+                    createRotationHelper(cuboid, view);
+                    BOTTOM_VIEWS
+                        .forEach((type) => this.updateHelperPointsSize(type));
                 }
             }
 
@@ -1051,8 +1210,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.rotatePlane(null, null);
             this.detachCamera();
             this.updateCameraFrustumPlane();
-            [ViewType.TOP, ViewType.SIDE, ViewType.FRONT]
-                .forEach((type) => this.updateHelperPointsSize(type));
         }
     }
 
@@ -1068,7 +1225,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private updateObjects(states: ObjectState[]): void {
-        const { outlined, outlineColor } = this.model.data.shapeProperties;
+        const { outlinedBorders } = this.model.data.configuration;
         states.forEach((state: ObjectState) => {
             const {
                 clientID, points, color, label, group, occluded, outside, hidden,
@@ -1090,8 +1247,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             ) {
                 const newColor = this.receiveShapeColor(state);
                 cuboid.setColor(newColor);
-                if (outlined) {
-                    cuboid.setOutlineColor(outlineColor);
+                if (outlinedBorders) {
+                    cuboid.setOutlineColor(outlinedBorders);
                 }
             }
 
@@ -1305,28 +1462,32 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 model.unlockFrameUpdating();
                 throw error;
             }
-        } else if (reason === UpdateReasons.SHAPES_CONFIG_UPDATED) {
-            const config = { ...model.data.shapeProperties };
+        } else if (reason === UpdateReasons.CONFIG_UPDATED) {
+            const config = { ...model.data.configuration };
             for (const key of Object.keys(this.drawnObjects)) {
                 const clientID = +key;
                 const { cuboid, data } = this.drawnObjects[clientID];
                 const newColor = this.receiveShapeColor(data);
                 cuboid.setColor(newColor);
                 cuboid.setOpacity(
-                    ((clientID === this.activatedElementID) ? config.selectedOpacity : config.opacity),
+                    ((clientID === this.activatedElementID) ? config.selectedShapeOpacity : config.shapeOpacity),
                 );
 
-                if (config.outlined) {
-                    cuboid.setOutlineColor(config.outlineColor || CONST.DEFAULT_OUTLINE_COLOR);
+                if (config.outlinedBorders) {
+                    cuboid.setOutlineColor(config.outlinedBorders || consts.DEFAULT_OUTLINE_COLOR);
                 }
+
                 cuboid.setOrientationVisibility(config.orientationVisibility);
             }
+
+            BOTTOM_VIEWS.forEach((view) => {
+                // in case of changing control points size, need to update all helper points size
+                this.updateHelperPointsSize(view);
+            });
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
             this.activateObject();
-            if (this.activatedElementID) {
-                this.setDefaultZoom();
-            }
+            this.updateSideViewsZoom();
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (Number.isInteger(data.redraw)) {
@@ -1349,7 +1510,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             } else {
                 this.cube = new CuboidModel('line', '#ffffff');
-                this.cube.setOrientationVisibility(this.model.data.shapeProperties.orientationVisibility);
+                this.cube.setOrientationVisibility(this.model.data.configuration.orientationVisibility);
             }
 
             this.cube.setName('drawTemplate');
@@ -1462,20 +1623,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
 
         BOTTOM_VIEWS.forEach((view: ViewType): void => {
-            const rotationHelper = cuboid[view].parent.getObjectByName(CONST.ROTATION_HELPER_NAME);
+            const rotationHelper = cuboid[view].parent.getObjectByName(consts.ROTATION_HELPER_NAME);
             if (rotationHelper) {
-                const sphere = new THREE.Mesh(new THREE.SphereGeometry(1));
-                cuboid[view].add(sphere);
-                sphere.position.set(0, 0, 0);
-                if (view === ViewType.TOP) {
-                    sphere.translateY(CONST.ROTATION_HELPER_OFFSET);
-                } else {
-                    sphere.translateZ(CONST.ROTATION_HELPER_OFFSET);
-                }
-
-                const worldPosition = sphere.getWorldPosition(new THREE.Vector3());
-                rotationHelper.position.copy(worldPosition);
-                cuboid[view].remove(sphere);
+                const position = cuboid.getRotationHelperPosition(view);
+                rotationHelper.position.copy(position);
             }
         });
     }
@@ -1487,44 +1638,77 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         }
 
         BOTTOM_VIEWS.forEach((view: ViewType): void => {
+            const positions = cuboid.getResizeHelperPositions();
             const pointsToBeUpdated = cuboid[view].parent.children
-                .filter((child: THREE.Object3D) => child.name.startsWith(CONST.RESIZE_HELPER_NAME))
+                .filter((child: THREE.Object3D) => child.name.startsWith(consts.RESIZE_HELPER_NAME))
                 .sort((child1: THREE.Object3D, child2: THREE.Object3D) => {
                     const order1 = +child1.name.split('_')[1];
                     const order2 = +child2.name.split('_')[1];
                     return order1 - order2;
                 });
 
-            const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
-            for (let i = 0; i < cornerPoints.length; i++) {
-                const [x, y, z] = cornerPoints[i];
-                const vector = new THREE.Vector3(x, y, z);
-                const sphere = new THREE.Mesh(new THREE.SphereGeometry(1));
-                cuboid[view].add(sphere);
-                sphere.position.set(vector.x, vector.y, vector.z);
-                const worldPosition = sphere.getWorldPosition(new THREE.Vector3());
-                pointsToBeUpdated[i].position.copy(worldPosition);
-                cuboid[view].remove(sphere);
+            for (let i = 0; i < positions.length; i++) {
+                const position = positions[i];
+                pointsToBeUpdated[i].position.copy(position);
             }
         });
     }
 
     private updateHelperPointsSize(viewType: ViewType): void {
+        const helperWorldPointsSize = this.computeHelperSphereWorldSize(viewType);
         if (BOTTOM_VIEWS.includes(viewType)) {
-            const camera = this.views[viewType].camera as THREE.OrthographicCamera;
-            if (!camera) { return; }
-
-            const rotationObject = this.views[viewType].scene.children[0].getObjectByName(CONST.ROTATION_HELPER_NAME);
-            if (rotationObject) {
-                rotationObject.scale.set(1 / camera.zoom, 1 / camera.zoom, 1 / camera.zoom);
+            const { scene } = this.views[viewType];
+            const isSceneRendered = scene.children.length > 0;
+            if (!isSceneRendered) {
+                return;
             }
 
-            this.views[viewType].scene.children[0].children
-                .filter((child: THREE.Object3D) => child.name.startsWith(CONST.RESIZE_HELPER_NAME))
+            // as physical size is 1, we just scale to target size
+            const rotationObject = scene.children[0]?.getObjectByName(consts.ROTATION_HELPER_NAME);
+            if (rotationObject) {
+                rotationObject.scale.set(helperWorldPointsSize, helperWorldPointsSize, helperWorldPointsSize);
+            }
+
+            scene.children[0].children
+                .filter((child: THREE.Object3D) => child.name.startsWith(consts.RESIZE_HELPER_NAME))
                 .forEach((child: THREE.Object3D) => {
-                    child.scale.set(1 / camera.zoom, 1 / camera.zoom, 1 / camera.zoom);
+                    child.scale.set(helperWorldPointsSize, helperWorldPointsSize, helperWorldPointsSize);
                 });
         }
+    }
+
+    /**
+     * Compute helper sphere size in world units for orthographic cameras.
+     *
+     * Goal: given desired helper size in pixels (controlsPointSize) and the current
+     * canvas size in pixels, convert that into world-space radius/diameter so that
+     * helpers (rotation/resize spheres) appear with consistent on-screen size.
+     *
+     * This method only targets orthographic views (BOTTOM_VIEWS). For perspective
+     *   views, apparent size depends on distance to the camera and FOV.
+     */
+    private computeHelperSphereWorldSize(viewType: ViewType): number {
+        const { controlPointsSize: controlPointSizePx } = this.model.data.configuration;
+        const view = this.views[viewType];
+        const camera = view.camera as THREE.OrthographicCamera;
+        const canvas = view.renderer.domElement;
+        if (!camera || !canvas) {
+            return controlPointSizePx;
+        }
+
+        // 1) Baseline vertical frustum height in world units divided by zoom
+        const baselineWorldHeight = consts.ORTHO_FRUSTUM_HEIGHT; // ORTHO_FRUSTUM_HEIGHT
+        const visibleWorldHeight = baselineWorldHeight / Math.max(camera.zoom, Number.EPSILON);
+
+        // 2) World units per one pixel along vertical axis
+        const canvasHeightPx = canvas.clientHeight || canvas.parentElement?.clientHeight || 1;
+        const worldPerPixelY = visibleWorldHeight / canvasHeightPx;
+
+        // 3) Convert desired pixel size to world units
+        // 1.5 is a scaling factor for better visibility
+        const helperWorldSize = controlPointSizePx * worldPerPixelY * 1.5;
+
+        return helperWorldSize;
     }
 
     private onSceneImageLoaded(points: any): void {
@@ -1661,35 +1845,33 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     z + this.cameraSettings[cameraType].position[2],
                 );
                 camera.lookAt(x, y, z);
-                camera.zoom = CONST.FOV_DEFAULT;
+                camera.zoom = consts.FOV_DEFAULT;
             }
         }
     }
 
-    private static resizeRendererToDisplaySize(
-        viewName: string,
-        view: RenderView,
-    ): void {
+    private resizeRendererToDisplaySize(viewType: ViewType, view: RenderView): void {
         const { camera, renderer } = view;
         const canvas = renderer.domElement;
-        if (!canvas.parentElement) return;
+        if (!canvas.parentElement) {
+            return;
+        }
         const width = canvas.parentElement.clientWidth;
         const height = canvas.parentElement.clientHeight;
-        const needResize = canvas.clientWidth !== width || canvas.clientHeight !== height;
-        if (needResize && camera && view.camera) {
+        const shouldResize = canvas.clientWidth !== width || canvas.clientHeight !== height;
+        if (shouldResize && camera && view.camera) {
             if (camera instanceof THREE.PerspectiveCamera) {
                 camera.aspect = width / height;
             } else {
-                const topViewFactor = 0;
-                const viewSize = CONST.ZOOM_FACTOR;
+                const viewSize = consts.ORTHO_FRUSTUM_HEIGHT;
                 const aspectRatio = width / height;
-                if (!(camera instanceof THREE.PerspectiveCamera)) {
-                    camera.left = (-aspectRatio * viewSize) / 2 - topViewFactor;
-                    camera.right = (aspectRatio * viewSize) / 2 + topViewFactor;
-                    camera.top = viewSize / 2 + topViewFactor;
-                    camera.bottom = -viewSize / 2 - topViewFactor;
-                }
+                camera.left = (-aspectRatio * viewSize) / 2;
+                camera.right = (aspectRatio * viewSize) / 2;
+                camera.top = viewSize / 2;
+                camera.bottom = -viewSize / 2;
+                this.updateHelperPointsSize(viewType);
             }
+
             view.renderer.setSize(width, height);
             view.camera.updateProjectionMatrix();
         }
@@ -1746,7 +1928,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             if (!(viewType.controls && viewType.camera && viewType.rayCaster)) return;
 
             const { clientID } = this.model.data.activeElement;
-            Canvas3dViewImpl.resizeRendererToDisplaySize(view, viewType);
+            this.resizeRendererToDisplaySize(view as ViewType, viewType);
             if (viewType.controls.enabled) {
                 viewType.controls.update(this.clock.getDelta());
             } else {
@@ -1778,14 +1960,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
             }
         });
-
-        if (this.action.detachCam && this.action.detachCamRef === this.model.data.activeElement.clientID) {
-            try {
-                this.detachCamera();
-            } finally {
-                this.action.detachCam = false;
-            }
-        }
     }
 
     private adjustPerspectiveCameras(): void {
@@ -2098,15 +2272,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             default: {
                 const { top: objectTopView, side: objectSideView, front: objectFrontView } = this.selectedCuboid;
 
-                const quaternionSide = objectSideView.getObjectByName(CONST.PLANE_ROTATION_HELPER)
+                const quaternionSide = objectSideView.getObjectByName(consts.PLANE_ROTATION_HELPER)
                     .getWorldQuaternion(new THREE.Quaternion());
                 const rotationSide = new THREE.Euler().setFromQuaternion(quaternionSide);
 
-                const quaternionFront = objectFrontView.getObjectByName(CONST.PLANE_ROTATION_HELPER)
+                const quaternionFront = objectFrontView.getObjectByName(consts.PLANE_ROTATION_HELPER)
                     .getWorldQuaternion(new THREE.Quaternion());
                 const rotationFront = new THREE.Euler().setFromQuaternion(quaternionFront);
 
-                const quaternionTop = objectTopView.getObjectByName(CONST.PLANE_ROTATION_HELPER)
+                const quaternionTop = objectTopView.getObjectByName(consts.PLANE_ROTATION_HELPER)
                     .getWorldQuaternion(new THREE.Quaternion());
                 const rotationTop = new THREE.Euler().setFromQuaternion(quaternionTop);
 
@@ -2185,7 +2359,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         const intersectsHelperResize = viewType.rayCaster.renderer.intersectObjects(
             cuboid[view].parent.children
-                .filter((child: THREE.Object3D) => child.name.startsWith(CONST.RESIZE_HELPER_NAME)),
+                .filter((child: THREE.Object3D) => child.name.startsWith(consts.RESIZE_HELPER_NAME)),
             false,
         );
 
@@ -2207,7 +2381,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         const intersectsHelperRotation = viewType.rayCaster.renderer.intersectObjects(
             cuboid[view].parent.children
-                .filter((child: THREE.Object3D) => child.name.startsWith(CONST.ROTATION_HELPER_NAME)),
+                .filter((child: THREE.Object3D) => child.name.startsWith(consts.ROTATION_HELPER_NAME)),
             false,
         );
         if (intersectsHelperRotation.length !== 0) {
@@ -2262,10 +2436,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         } else if (key.altKey === true) {
             switch (key.code) {
                 case CameraAction.ZOOM_IN:
-                    controls.dolly(CONST.DOLLY_FACTOR, true);
+                    controls.dolly(consts.DOLLY_FACTOR, true);
                     break;
                 case CameraAction.ZOOM_OUT:
-                    controls.dolly(-CONST.DOLLY_FACTOR, true);
+                    controls.dolly(-consts.DOLLY_FACTOR, true);
                     break;
                 case CameraAction.MOVE_LEFT:
                     controls.truck(-0.01 * this.speed, 0, true);

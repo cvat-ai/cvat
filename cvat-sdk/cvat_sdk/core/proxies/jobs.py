@@ -8,7 +8,7 @@ import io
 import mimetypes
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PIL import Image
 
@@ -48,9 +48,9 @@ class Job(
         format_name: str,
         filename: StrPath,
         *,
-        conv_mask_to_poly: Optional[bool] = None,
-        status_check_period: Optional[int] = None,
-        pbar: Optional[ProgressReporter] = None,
+        conv_mask_to_poly: bool | None = None,
+        status_check_period: int | None = None,
+        pbar: ProgressReporter | None = None,
     ):
         """
         Upload annotations for a job in the specified format (e.g. 'YOLO 1.1').
@@ -74,7 +74,7 @@ class Job(
         self,
         frame_id: int,
         *,
-        quality: Optional[str] = None,
+        quality: str | None = None,
     ) -> io.RawIOBase:
         (_, response) = self.api.retrieve_data(
             self.id, number=frame_id, quality=quality, type="frame"
@@ -91,11 +91,11 @@ class Job(
         self,
         frame_ids: Sequence[int],
         *,
-        image_extension: Optional[str] = None,
+        image_extension: str | None = None,
         outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
-    ) -> Optional[list[Image.Image]]:
+    ) -> list[Image.Image] | None:
         """
         Download the requested frame numbers for a job and save images as outdir/filename_pattern
         """

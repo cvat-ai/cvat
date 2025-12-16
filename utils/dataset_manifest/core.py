@@ -7,6 +7,7 @@ import io
 import json
 import os
 from abc import ABC, abstractmethod
+from bisect import bisect_left, insort
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import closing
 from enum import Enum
@@ -14,7 +15,7 @@ from inspect import isgenerator
 from io import StringIO
 from itertools import islice
 from json.decoder import JSONDecodeError
-from typing import Any, Optional, Union
+from typing import Any
 
 import av
 from PIL import Image
@@ -31,6 +32,7 @@ class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
         self._source_path = source_path
         self._frames_number = None
+        self._chapters = None
         self._force = force
         self._upper_bound = 3 * chunk_size + 1
 
@@ -62,6 +64,23 @@ class VideoStreamReader:
         video_stream.thread_type = "AUTO"
         return video_stream
 
+    @staticmethod
+    def _get_chapters(container):
+        chapters = container.chapters()
+        stream = VideoStreamReader._get_video_stream(container)
+        stream_tb = stream.time_base
+        rescale_q = lambda q, src, dest: int(q * src / dest + 0.5)
+        output_chapters = []
+        for chapter in chapters:
+            output_chapter = {
+                "start": rescale_q(chapter["start"], chapter["time_base"], stream_tb),
+                "end": rescale_q(chapter["end"], chapter["time_base"], stream_tb),
+                "metadata": chapter["metadata"],
+                "id": chapter["id"],
+            }
+            output_chapters.append(output_chapter)
+        return output_chapters
+
     def __len__(self):
         assert (
             self._frames_number is not None
@@ -73,13 +92,17 @@ class VideoStreamReader:
     def resolution(self):
         return (self.width, self.height)
 
+    @property
+    def chapters(self):
+        return self._chapters
+
     def validate_key_frame(
         self,
         container: av.container.InputContainer,
         video_stream: av.video.stream.VideoStream,
         key_frame: dict,
-        prev_seek_pts: Optional[int],
-    ) -> Optional[int]:
+        prev_seek_pts: int | None,
+    ) -> int | None:
         """
         Returns a pts of the first decoded frame after seeking to the key_frame pts
         Returns None if the key frame is not suitable for seeking
@@ -103,7 +126,24 @@ class VideoStreamReader:
             return seek_pts
         return None
 
-    def __iter__(self) -> Iterator[Union[int, tuple[int, int, str]]]:
+    @staticmethod
+    def _find_closest_pts(pts_list, target_pts):
+        if not pts_list:
+            return None
+
+        pos = bisect_left(pts_list, target_pts)
+
+        if pos == 0:
+            return 0
+        if pos == len(pts_list):
+            return len(pts_list) - 1
+
+        before = pts_list[pos - 1]
+        after = pts_list[pos]
+
+        return pos if abs(after - target_pts) < abs(before - target_pts) else pos - 1
+
+    def __iter__(self) -> Iterator[int | tuple[int, int, str]]:
         """
         Iterate over video frames and yield key frames or indexes.
 
@@ -117,10 +157,12 @@ class VideoStreamReader:
         ):
             reading_v_stream = self._get_video_stream(reading_container)
             checking_v_stream = self._get_video_stream(checking_container)
-            prev_pts: Optional[int] = None
-            prev_dts: Optional[int] = None
+            chapters = self._get_chapters(reading_container)
+            index_pts: list[tuple[int, int]] = []
+            prev_pts: int | None = None
+            prev_dts: int | None = None
             index, key_frame_count = 0, 0
-            prev_seek_pts: Optional[int] = None
+            prev_seek_pts: int | None = None
 
             for packet in reading_container.demux(reading_v_stream):
                 for frame in packet.decode():
@@ -130,6 +172,8 @@ class VideoStreamReader:
                     if None not in {frame.dts, prev_dts} and frame.dts <= prev_dts:
                         raise InvalidVideoError("Detected non-increasing DTS sequence in the video")
                     prev_pts, prev_dts = frame.pts, frame.dts
+
+                    insort(index_pts, (index, frame.pts), key=lambda item: item[1])
 
                     if frame.key_frame:
                         key_frame_data = {
@@ -167,16 +211,35 @@ class VideoStreamReader:
             if not self._frames_number:
                 self._frames_number = index
 
+            if not self._chapters:
+                self._chapters = []
+                pts_list = [item[1] for item in index_pts]
+                for chapter in chapters:
+                    i = self._find_closest_pts(pts_list, chapter["start"])
+                    j = self._find_closest_pts(pts_list, chapter["end"])
+                    start = index_pts[i][0]
+                    stop = index_pts[j][0] - 1
+                    if chapter["end"] > index_pts[-1][1]:
+                        stop = index_pts[j][0]
+                    self._chapters.append(
+                        {
+                            "start": start,
+                            "stop": stop,
+                            "metadata": chapter["metadata"],
+                            "id": chapter["id"],
+                        }
+                    )
+
 
 class DatasetImagesReader:
     def __init__(
         self,
-        sources: Union[list[str | NamedBytesIO], Iterable[str | NamedBytesIO]],
+        sources: list[str | NamedBytesIO] | Iterable[str | NamedBytesIO],
         *,
         start: int = 0,
         step: int = 1,
-        stop: Optional[int] = None,
-        meta: Optional[dict[str, list[str]]] = None,
+        stop: int | None = None,
+        meta: dict[str, list[str]] | None = None,
         sorting_method: SortingMethod = SortingMethod.PREDEFINED,
         use_image_hash: bool = False,
         **kwargs,
@@ -185,7 +248,7 @@ class DatasetImagesReader:
 
         if not self._is_generator_used:
             raw_data_used = not isinstance(sources[0], str)
-            func: Optional[Callable[[NamedBytesIO], str]] = (
+            func: Callable[[NamedBytesIO], str] | None = (
                 (lambda x: x.filename) if raw_data_used else None
             )
             self._sources = sort(sources, sorting_method, func=func)
@@ -226,7 +289,7 @@ class DatasetImagesReader:
     def step(self, value):
         self._step = int(value)
 
-    def _get_img_properties(self, image: Union[str, NamedBytesIO]) -> dict[str, Any]:
+    def _get_img_properties(self, image: str | NamedBytesIO) -> dict[str, Any]:
         if self._data_dir:
             img_name = os.path.relpath(image, self._data_dir)
         else:
@@ -571,6 +634,7 @@ class VideoManifestManager(_ManifestManager):
                 "name": os.path.basename(self._reader.source_path),
                 "resolution": self._reader.resolution,
                 "length": len(self._reader),
+                "chapters": self._reader.chapters,
             },
         }
         for key, value in base_info.items():
@@ -622,6 +686,10 @@ class VideoManifestManager(_ManifestManager):
     @property
     def data(self):
         return self.video_name
+
+    @property
+    def chapters(self):
+        return self["properties"].get("chapters", [])
 
     def get_subset(self, subset_names):
         raise NotImplementedError()
@@ -743,10 +811,10 @@ class ImageManifestManager(_ManifestManager):
     def emulate_hierarchical_structure(
         self,
         page_size: int,
-        manifest_prefix: Optional[str] = None,
+        manifest_prefix: str | None = None,
         prefix: str = "",
-        default_prefix: Optional[str] = None,
-        start_index: Optional[int] = None,
+        default_prefix: str | None = None,
+        start_index: int | None = None,
     ) -> dict:
 
         if (

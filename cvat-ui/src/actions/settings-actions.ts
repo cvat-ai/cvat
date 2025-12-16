@@ -42,7 +42,7 @@ export enum SettingsActionTypes {
     CHANGE_SATURATION_LEVEL = 'CHANGE_SATURATION_LEVEL',
     SWITCH_AUTO_SAVE = 'SWITCH_AUTO_SAVE',
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
-    CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
+    CHANGE_FOCUSED_OBJECT_PADDING = 'CHANGE_FOCUSED_OBJECT_PADDING',
     CHANGE_DEFAULT_APPROX_POLY_THRESHOLD = 'CHANGE_DEFAULT_APPROX_POLY_THRESHOLD',
     SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
     SWITCH_ADAPTIVE_ZOOM = 'SWITCH_ADAPTIVE_ZOOM',
@@ -296,11 +296,11 @@ export function changeAutoSaveInterval(autoSaveInterval: number): AnyAction {
     };
 }
 
-export function changeAAMZoomMargin(aamZoomMargin: number): AnyAction {
+export function changeFocusedObjectPadding(focusedObjectPadding: number): AnyAction {
     return {
-        type: SettingsActionTypes.CHANGE_AAM_ZOOM_MARGIN,
+        type: SettingsActionTypes.CHANGE_FOCUSED_OBJECT_PADDING,
         payload: {
-            aamZoomMargin,
+            focusedObjectPadding,
         },
     };
 }

@@ -10,7 +10,7 @@ import os
 import re
 from contextlib import closing
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import urllib3
 
@@ -80,7 +80,7 @@ class Downloader:
         output_path: Path,
         *,
         timeout: int = 60,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
     ) -> Path:
         """
         Downloads the file from url into a temporary file, then renames it to the requested name.
@@ -139,9 +139,9 @@ class Downloader:
         self,
         endpoint: Endpoint,
         *,
-        url_params: Optional[dict[str, Any]] = None,
-        query_params: Optional[dict[str, Any]] = None,
-        status_check_period: Optional[int] = None,
+        url_params: dict[str, Any] | None = None,
+        query_params: dict[str, Any] | None = None,
+        status_check_period: int | None = None,
     ):
         client = self._client
         if status_check_period is None:
@@ -177,10 +177,10 @@ class Downloader:
         endpoint: Endpoint,
         filename: Path,
         *,
-        url_params: Optional[dict[str, Any]] = None,
-        query_params: Optional[dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
+        url_params: dict[str, Any] | None = None,
+        query_params: dict[str, Any] | None = None,
+        pbar: ProgressReporter | None = None,
+        status_check_period: int | None = None,
     ) -> Path:
         client = self._client
 

@@ -46,11 +46,15 @@ quality = 75
 anchor = "smart"
 
 [[menu.main]]
-    name = "⇲ Quickstart"
+    name = "Docs"
+    weight = 10
+    url = "/docs/"
+[[menu.main]]
+    name = "Quickstart"
     weight = 30
     url = "/docs/getting_started/overview/"
 [[menu.main]]
-    name = "✍︎ Guides"
+    name = "Guides"
     weight = 40
     url = "/docs/guides/"
 [[menu.main]]
@@ -63,7 +67,7 @@ anchor = "smart"
     url = "#"
 [[menu.main]]
     name = "CVAT Сommunity"
-    url = "/docs/administration/basics/installation"
+    url = "/docs/administration/community/basics/installation"
     parent = "Get started"
     weight = 1
 [[menu.main]]
