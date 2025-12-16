@@ -40,6 +40,10 @@ class TusChunk:
         self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
         self.content = request.body
 
+    @property
+    def end_offset(self) -> int:
+        return self.offset + self.size
+
 
 @attrs.define()
 class TusFile:
