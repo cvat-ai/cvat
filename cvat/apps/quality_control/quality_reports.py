@@ -4,16 +4,18 @@
 
 from __future__ import annotations
 
+import csv
 import itertools
 import math
+import zipfile
 from abc import ABCMeta
 from collections import Counter
 from collections.abc import Callable, Hashable, Sequence
 from contextlib import suppress
 from copy import deepcopy
 from functools import cached_property, lru_cache, partial
-from io import StringIO
-from typing import Any, ClassVar, TypeAlias, TypeVar, cast
+from io import BytesIO, StringIO
+from typing import IO, Any, ClassVar, TypeAlias, TypeVar, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher
@@ -26,7 +28,7 @@ from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from django.db.models import OuterRef, Subquery, prefetch_related_objects
+from django.db.models import OuterRef, Subquery, TextChoices, prefetch_related_objects
 from rest_framework import serializers
 from scipy.optimize import linear_sum_assignment
 
@@ -3223,7 +3225,12 @@ class ProjectQualityCalculator:
         return ComparisonParameters.from_settings(quality_settings, inherited=False)
 
 
-def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str) -> str:
+class QualityReportExportFormat(TextChoices):
+    ZIP = ("zip", "zip")
+    JSON = ("json", "json")
+
+
+def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host: str) -> IO[bytes]:
     # Decorate the report for better usability and readability:
     # - add conflicting annotation links like:
     # <host>/tasks/62/jobs/82?frame=250&type=shape&serverID=33741
@@ -3315,4 +3322,74 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         serialized_data["comparison_summary"]["frame_share"] * 100
     )
 
-    return dump_json(serialized_data, indent=True, append_newline=True).decode()
+    return BytesIO(dump_json(serialized_data, indent=True, append_newline=True))
+
+
+def prepare_zip_report_for_downloading(db_report: models.QualityReport, *, host: str) -> IO[bytes]:
+    """
+    Create a .zip archive with .csv confusion matrices.
+    """
+
+    report_summary = db_report.summary
+    conf_matrix = report_summary.annotations.confusion_matrix
+
+    if not conf_matrix:
+        # Old reports can have no matrix included
+        return BytesIO()
+
+    labels = list(conf_matrix.labels)
+    confusion_rows = conf_matrix.rows
+    precisions = conf_matrix.precision
+    recalls = conf_matrix.recall
+
+    # Accuracy per class is Jaccard in Object detection
+    jaccards = conf_matrix.jaccard_index
+    jaccards[-1] = "nan"
+
+    from .statistics import Averaging, compute_accuracy, compute_dice_coeff
+
+    unmatched_label = "unmatched"
+    dataset_accuracy_micro, *_ = compute_accuracy(
+        confusion_rows, excluded_label_idx=labels.index(unmatched_label)
+    )
+    dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, *_ = compute_dice_coeff(
+        confusion_rows,
+        avg_mode=Averaging.macro,
+        excluded_label_idx=labels.index(unmatched_label),
+    )
+
+    csv_file = StringIO()
+    csv_writer = csv.writer(csv_file)
+    csv_writer.writerow([""] + labels + ["precision"])
+
+    for confusion_row, label, precision in zip(confusion_rows, labels, precisions):
+        csv_writer.writerow([label] + confusion_row.tolist() + [precision])
+
+    csv_writer.writerow(["recall"] + recalls.tolist())
+    csv_writer.writerow(["dice coeff"] + dataset_dice_coeff_by_class.tolist())
+    csv_writer.writerow(["jaccard index"] + jaccards.tolist())
+    csv_writer.writerow(["Avg. accuracy (micro)", dataset_accuracy_micro])
+    csv_writer.writerow(["Avg. dice coeff (macro)", dataset_dice_coeff_avg_macro])
+
+    output_file = BytesIO()
+    with zipfile.ZipFile(output_file, "w") as zip_file:
+        zip_file.writestr("confusion_matrix.csv", csv_file.getvalue())
+
+    output_file.seek(0)
+
+    return output_file
+
+
+def prepare_report_for_downloading(
+    db_report: models.QualityReport, *, host: str, format: QualityReportExportFormat
+) -> tuple[IO[bytes], str]:
+    if format == QualityReportExportFormat.JSON:
+        return (
+            prepare_json_report_for_downloading(db_report=db_report, host=host),
+            "application/json",
+        )
+    elif format == QualityReportExportFormat.ZIP:
+        return (
+            prepare_zip_report_for_downloading(db_report=db_report, host=host),
+            "application/zip",
+        )
