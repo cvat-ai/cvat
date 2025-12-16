@@ -188,6 +188,4 @@ class TestTUSUpload:
         oversized_chunk = b"x" * (file_size - 500)  # This will go beyond file_size
         response = self._upload_chunk(location, 1000, oversized_chunk, check_status=False)
 
-        assert (
-            response.status == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
-        ), f"Expected 413 when chunk end exceeds file size, got {response.status}"
+        assert response.status == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
