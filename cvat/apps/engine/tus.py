@@ -37,8 +37,6 @@ class TusTooLargeFileError(Exception):
 
 
 class TusChunk:
-    # Buffer size for reading request body in chunks (64KB)
-    BUFFER_SIZE: int = 64 * 1024
 
     def __init__(self, request: ExtendedRequest):
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
@@ -221,7 +219,7 @@ class TusFile:
             start_position = file.tell()
             try:
                 # It handles partial reads automatically (e.g., when connection drops)
-                shutil.copyfileobj(chunk.request, file, length=TusChunk.BUFFER_SIZE)
+                shutil.copyfileobj(chunk.request, file)
             finally:
                 # Always update offset, even if connection was interrupted
                 self.meta_file.meta.offset = file.tell()
