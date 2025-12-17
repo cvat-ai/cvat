@@ -7,7 +7,6 @@ import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from cvat_sdk import Client, models
@@ -303,7 +302,7 @@ class TestTaskUsecases(TestDatasetExport):
         format_name: str,
         include_images: bool,
         task: Task,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):
@@ -395,7 +394,7 @@ class TestTaskUsecases(TestDatasetExport):
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     @pytest.mark.parametrize("image_extension", (None, "bmp"))
     def test_can_download_frames(
-        self, fxt_new_task: Task, quality: str, image_extension: Optional[str]
+        self, fxt_new_task: Task, quality: str, image_extension: str | None
     ):
         fxt_new_task.download_frames(
             [0],

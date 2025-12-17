@@ -171,7 +171,7 @@ export default interface CVATCore {
         };
     };
     frames: {
-        getMeta: any;
+        getMeta: (type: 'task' | 'job', id: number) => Promise<FramesMetaData>;
     };
     requests: {
         list: () => Promise<PaginatedResource<Request>>;

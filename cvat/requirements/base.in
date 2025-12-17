@@ -2,7 +2,7 @@
 
 attrs==21.4.0
 
-av==15.1.0
+av==16.0.1
 
 azure-storage-blob==12.13.0
 boto3~=1.37

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime, timezone
-from typing import Optional
 
 from django.db import transaction
 from rest_framework.renderers import JSONRenderer
@@ -48,7 +47,7 @@ def record_server_event(
     *,
     scope: str,
     request_info: dict[str, str],
-    payload: Optional[dict] = None,
+    payload: dict | None = None,
     on_commit: bool = False,
     **kwargs,
 ) -> None:

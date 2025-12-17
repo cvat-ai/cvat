@@ -5,7 +5,6 @@
 
 import math
 from itertools import chain
-from typing import Optional
 
 import cv2
 import datumaro as dm
@@ -167,7 +166,7 @@ class EllipsesToMasks(dm.ItemTransform):
             for ann in item.annotations
         ]
 
-    def transform_item(self, item: dm.DatasetItem) -> Optional[dm.DatasetItem]:
+    def transform_item(self, item: dm.DatasetItem) -> dm.DatasetItem | None:
         return item.wrap(annotations=lambda: self._convert_annotations(item))
 
 

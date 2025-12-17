@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from typing import Union
 
 from . import models
 
@@ -108,7 +107,7 @@ def number_attribute_values(min_value: int, max_value: int, /, step: int = 1) ->
 
 
 def attribute_vals_from_dict(
-    id_to_value: Mapping[int, Union[str, int, bool]], /
+    id_to_value: Mapping[int, str | int | bool], /
 ) -> list[models.AttributeValRequest]:
     """
     Returns a list of AttributeValRequest objects with given IDs and values.
@@ -119,7 +118,7 @@ def attribute_vals_from_dict(
     for attributes with input type "number" and "checkbox", respectively.
     """
 
-    def val_as_string(v: Union[str, int, bool]) -> str:
+    def val_as_string(v: str | int | bool) -> str:
         if v is True:
             return "true"
         if v is False:

@@ -24,10 +24,10 @@ Please be patient.
 
 ## How to upgrade CVAT
 
-Before upgrading, please follow the {{< ilink "/docs/administration/advanced/backup_guide" "backup guide" >}}
+Before upgrading, please follow the {{< ilink "/docs/administration/community/advanced/backup_guide" "backup guide" >}}
 and backup all CVAT volumes.
 
-Follow the {{< ilink "/docs/administration/advanced/upgrade_guide" "upgrade guide" >}}.
+Follow the {{< ilink "/docs/administration/community/advanced/upgrade_guide" "upgrade guide" >}}.
 
 ## How to change default CVAT hostname or port
 
@@ -115,7 +115,7 @@ volumes:
 
 ## How to install CVAT on Windows 10 Home
 
-Follow this {{< ilink "/docs/administration/basics/installation#windows-10" "guide" >}}.
+Follow this {{< ilink "/docs/administration/community/basics/installation#windows-10" "guide" >}}.
 
 ## I do not have the Analytics tab on the header section. How can I add analytics
 
@@ -154,7 +154,7 @@ section.
 ## How to transfer CVAT to another machine
 
 Follow the
-{{< ilink "/docs/administration/advanced/backup_guide#how-to-backup-all-cvat-data" "backup/restore guide" >}}.
+{{< ilink "/docs/administration/community/advanced/backup_guide#how-to-backup-all-cvat-data" "backup/restore guide" >}}.
 
 ## How to load your own DL model into CVAT
 

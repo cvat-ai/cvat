@@ -28,7 +28,8 @@ In CVAT all such DL models are implemented as serverless functions using the [Nu
 serverless platform. There are multiple implemented functions that can be
 found in the [serverless][cvat-builtin-serverless] directory such as
 _Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
-Follow {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}}
+Follow {{< ilink
+ "/docs/administration/community/advanced/installation_automatic_annotation" "the installation guide" >}}
 to build and deploy
 these serverless functions. See {{< ilink "/docs/annotation/auto-annotation/ai-tools" "the user guide" >}} to
 understand how to use these functions in the UI to automatically annotate data.
@@ -48,7 +49,7 @@ inside cloud infrastructure which can be called over HTTP. The Nuclio
 serverless platform helps us to implement and manage such functions.
 
 CVAT supports Nuclio out of the box if it is built properly. See
-{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}}
+{{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "the installation guide" >}}
 for instructions.
 Thus if you deploy a serverless function, the CVAT server can see it and call it
 with appropriate arguments. Of course there are some tricks how to create
@@ -84,7 +85,7 @@ nuclio       /docker-entrypoint.sh sh - ...   Up (healthy)   80/tcp, 0.0.0.0:807
 
 Next step is to deploy builtin serverless functions using Nuclio command
 line tool (aka `nuctl`). It is assumed that you followed
-{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation guide" >}} and `nuctl`
+{{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "the installation guide" >}} and `nuctl`
 is already installed on your operating system. Run the following
 command to check that it works. In the beginning you should not have
 any deployed serverless functions.
@@ -99,52 +100,51 @@ No functions found
 Let's see on examples how to use DL models for annotation in different
 computer vision tasks.
 
-### Tracking using SiamMask
+### Tracking using TransT (Transformer Tracking)
 
 In this use case a user needs to annotate all individual objects on a video as
 tracks. Basically for every object we need to know its location on every frame.
 
-First step is to deploy [SiamMask][siammask-serverless]. The deployment process
+First step is to deploy [TransT][transt-serverless]. The deployment process
 can depend on your operating system. On Linux you can use `serverless/deploy_cpu.sh`
 auxiliary script, but below we are using `nuctl` directly.
 
 ```bash
-nuctl create project cvat
+nuctl create project cvat --platform local
 
-nuctl deploy --project-name cvat --path "./serverless/pytorch/foolwood/siammask/nuclio" --platform local
+nuctl deploy --project-name cvat --path serverless/pytorch/dschoerk/transt/nuclio --platform local
 ```
-```
-24.04.18 20:52:47.910 (I)                     nuctl Deploying function {"name": "pth-foolwood-siammask"}
-24.04.18 20:52:47.910 (I)                     nuctl Building {"builderKind": "docker", "versionInfo": "Label: 1.13.0, Git commit: c4422eb772781fb50fbf017698aae96199d81388, OS: linux, Arch: amd64, Go version: go1.21.7", "name": "pth-foolwood-siammask"}
-24.04.18 20:52:47.929 (W)            nuctl.platform MaxWorkers is deprecated and will be removed in v1.15.x, use NumWorkers instead
-24.04.18 20:52:48.044 (I)                     nuctl Staging files and preparing base images
-24.04.18 20:52:48.044 (W)                     nuctl Using user provided base image, runtime interpreter version is provided by the base image {"baseImage": "ubuntu:20.04"}
-24.04.18 20:52:48.044 (I)                     nuctl Building processor image {"registryURL": "", "taggedImageName": "cvat.pth.foolwood.siammask:latest"}
-24.04.18 20:52:48.044 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.13.0-amd64"}
-24.04.18 20:52:49.717 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
-24.04.18 20:52:51.363 (I)            nuctl.platform Building docker image {"image": "cvat.pth.foolwood.siammask:latest"}
-24.04.18 20:55:58.853 (I)            nuctl.platform Pushing docker image into registry {"image": "cvat.pth.foolwood.siammask:latest", "registry": ""}
-24.04.18 20:55:58.853 (I)            nuctl.platform Docker image was successfully built and pushed into docker registry {"image": "cvat.pth.foolwood.siammask:latest"}
-24.04.18 20:55:58.853 (I)                     nuctl Build complete {"image": "cvat.pth.foolwood.siammask:latest"}
-24.04.18 20:55:58.861 (I)                     nuctl Cleaning up before deployment {"functionName": "pth-foolwood-siammask"}
-24.04.18 20:55:59.593 (I)            nuctl.platform Waiting for function to be ready {"timeout": 120}
-24.04.18 20:56:01.315 (I)                     nuctl Function deploy complete {"functionName": "pth-foolwood-siammask", "httpPort": 33453, "internalInvocationURLs": ["172.17.0.5:8080"], "externalInvocationURLs": ["0.0.0.0:33453"]}
+```bash
+25.12.08 14:09:38.783 (I)                     nuctl Deploying function {"name": "pth-dschoerk-transt"}
+25.12.08 14:09:38.783 (I)                     nuctl Building {"builderKind": "docker", "versionInfo": "Label: 1.15.9, Git commit: ad1fde3b47fcd9035f3f0eea45b2ff654655e8be, OS: linux, Arch: amd64, Go version: go1.25.4", "name": "pth-dschoerk-transt"}
+25.12.08 14:09:38.992 (I)                     nuctl Staging files and preparing base images
+25.12.08 14:09:38.995 (W)                     nuctl Using user provided base image, runtime interpreter version is provided by the base image {"baseImage": "ubuntu:22.04"}
+25.12.08 14:09:38.995 (I)                     nuctl Building processor image {"registryURL": "", "taggedImageName": "cvat.pth.dschoerk.transt:latest"}
+25.12.08 14:09:38.995 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.15.9-amd64"}
+25.12.08 14:09:41.414 (I)     nuctl.platform.docker Pulling image {"imageName": "gcr.io/iguazio/uhttpc:0.0.3-amd64"}
+25.12.08 14:09:43.140 (I)            nuctl.platform Building docker image {"image": "cvat.pth.dschoerk.transt:latest"}
+25.12.08 14:09:52.744 (I)            nuctl.platform Pushing docker image into registry {"image": "cvat.pth.dschoerk.transt:latest", "registry": ""}
+25.12.08 14:09:52.744 (I)            nuctl.platform Docker image was successfully built and pushed into docker registry {"image": "cvat.pth.dschoerk.transt:latest"}
+25.12.08 14:09:52.745 (I)                     nuctl Build complete {"image": "cvat.pth.dschoerk.transt:latest"}
+25.12.08 14:09:52.751 (I)                     nuctl Cleaning up before deployment {"functionName": "pth-dschoerk-transt"}
+25.12.08 14:09:53.433 (I)            nuctl.platform Waiting for function to be ready {"timeout": 120}
+25.12.08 14:09:55.304 (I)                     nuctl Function deploy complete {"functionName": "pth-dschoerk-transt", "httpPort": 32771, "internalInvocationURLs": ["172.17.0.4:8080"], "externalInvocationURLs": ["0.0.0.0:32771"]}
 ```
 
 ```bash
-nuctl get functions
+nuctl get functions --platform local
 ```
 ```
-  NAMESPACE |         NAME          | PROJECT | STATE | NODE PORT | REPLICAS
-  nuclio    | pth-foolwood-siammask | cvat    | ready |     49155 | 1/1
+ NAMESPACE | NAME                | PROJECT | STATE | REPLICAS | NODE PORT
+ nuclio    | pth-dschoerk-transt | cvat    | ready | 1/1      | 32771
 ```
 
 Let's see how it works in the UI. Go to the [models tab](http://localhost:8080/models)
-and check that you can see SiamMask in the list. If you cannot, it
+and check that you can see TransT in the list. If you cannot, it
 means that there are some problems. Go to one of our public channels and ask
 for help.
 
-![Models list with SiamMask](/images/models_list_with_siammask.png)
+![Models page with TransT](/images/models_page_with_transt.png)
 
 After that, go to the [new task page](http://localhost:8080/tasks/create) and
 create a task with [this video file][vtest-avi]. You can choose any task name,
@@ -162,9 +162,9 @@ through the frame and correct the restrictive box if necessary.
 
 Finally you will get bounding boxes.
 
-![SiamMask results](/images/siammask_results.gif)
+![TransT results](/images/transt_results.gif)
 
-`SiamMask` model is more optimized to work on Nvidia GPUs.
+`TransT` model is more optimized to work on Nvidia GPUs.
 
 - For more information about deploying the model for the GPU, [read on](#object-segmentation-using-segment-anything).
 
@@ -451,34 +451,47 @@ metadata:
 
 spec:
   description: RetinaNet R101 from Detectron2
-  runtime: 'python:3.8'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30s
 
   build:
-    image: cvat/pth.facebookresearch.detectron2.retinanet_r101
-    baseImage: ubuntu:20.04
+    image: cvat.pth.facebookresearch.detectron2.retinanet_r101
+    baseImage: ubuntu:22.04
 
     directives:
       preCopy:
         - kind: ENV
           value: DEBIAN_FRONTEND=noninteractive
         - kind: RUN
-          value: apt-get update && apt-get -y install curl git python3 python3-pip
+          value: |-
+            apt-get update \
+            && apt-get install -y --no-install-recommends \
+              curl \
+              git \
+              g++ \
+              ca-certificates \
+              python-is-python3 \
+              python3 \
+              python3-dev \
+              python3-pip \
+            && rm -rf /var/lib/apt/lists/*
+        - kind: RUN
+          value: |-
+            pip install \
+              torch==1.13.1+cpu torchvision==0.14.1+cpu numpy==1.26.4 \
+              --extra-index-url https://download.pytorch.org/whl/cpu \
+              --no-cache-dir
+        - kind: RUN
+          value: pip install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
-        - kind: RUN
-          value: pip3 install 'git+https://github.com/facebookresearch/detectron2@v0.4'
-        - kind: RUN
           value: curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
-        - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/local/bin/pip
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
@@ -557,32 +570,36 @@ Full code can be found here: [detectron2/retinanet/nuclio/main.py][retinanet-mai
 
 To use the new serverless function you have to deploy it using `nuctl` command.
 The actual deployment process is described in
-{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
+{{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
 
 <details>
 <summary>
 
 ```bash
-./serverless/deploy_cpu.sh ./serverless/pytorch/facebookresearch/detectron2/retinanet/
+./serverless/deploy_cpu.sh ./serverless/pytorch/facebookresearch/detectron2/retinanet_r101
 ```
 
 </summary>
 
-```
-21.07.21 15:20:31.011                     nuctl (I) Deploying function {"name": ""}
-21.07.21 15:20:31.011                     nuctl (I) Building {"versionInfo": "Label: 1.5.16, Git commit: ae43a6a560c2bec42d7ccfdf6e8e11a1e3cc3774, OS: linux, Arch: amd64, Go version: go1.14.3", "name": ""}
-21.07.21 15:20:31.407                     nuctl (I) Cleaning up before deployment {"functionName": "pth-facebookresearch-detectron2-retinanet-r101"}
-21.07.21 15:20:31.497                     nuctl (I) Function already exists, deleting function containers {"functionName": "pth-facebookresearch-detectron2-retinanet-r101"}
-21.07.21 15:20:31.914                     nuctl (I) Staging files and preparing base images
-21.07.21 15:20:31.915                     nuctl (I) Building processor image {"imageName": "cvat/pth.facebookresearch.detectron2.retinanet_r101:latest"}
-21.07.21 15:20:31.916     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.5.16-amd64"}
-21.07.21 15:20:34.495     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
-21.07.21 15:20:37.524            nuctl.platform (I) Building docker image {"image": "cvat/pth.facebookresearch.detectron2.retinanet_r101:latest"}
-21.07.21 15:20:37.852            nuctl.platform (I) Pushing docker image into registry {"image": "cvat/pth.facebookresearch.detectron2.retinanet_r101:latest", "registry": ""}
-21.07.21 15:20:37.853            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {"image": "cvat/pth.facebookresearch.detectron2.retinanet_r101:latest"}
-21.07.21 15:20:37.853                     nuctl (I) Build complete {"result": {"Image":"cvat/pth.facebookresearch.detectron2.retinanet_r101:latest","UpdatedFunctionConfig":{"metadata":{"name":"pth-facebookresearch-detectron2-retinanet-r101","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"pytorch","name":"RetinaNet R101","spec":"[\n  { \"id\": 1, \"name\": \"person\" },\n  { \"id\": 2, \"name\": \"bicycle\" },\n  { \"id\": 3, \"name\": \"car\" },\n  { \"id\": 4, \"name\": \"motorcycle\" },\n  { \"id\": 5, \"name\": \"airplane\" },\n  { \"id\": 6, \"name\": \"bus\" },\n  { \"id\": 7, \"name\": \"train\" },\n  { \"id\": 8, \"name\": \"truck\" },\n  { \"id\": 9, \"name\": \"boat\" },\n  { \"id\":10, \"name\": \"traffic_light\" },\n  { \"id\":11, \"name\": \"fire_hydrant\" },\n  { \"id\":13, \"name\": \"stop_sign\" },\n  { \"id\":14, \"name\": \"parking_meter\" },\n  { \"id\":15, \"name\": \"bench\" },\n  { \"id\":16, \"name\": \"bird\" },\n  { \"id\":17, \"name\": \"cat\" },\n  { \"id\":18, \"name\": \"dog\" },\n  { \"id\":19, \"name\": \"horse\" },\n  { \"id\":20, \"name\": \"sheep\" },\n  { \"id\":21, \"name\": \"cow\" },\n  { \"id\":22, \"name\": \"elephant\" },\n  { \"id\":23, \"name\": \"bear\" },\n  { \"id\":24, \"name\": \"zebra\" },\n  { \"id\":25, \"name\": \"giraffe\" },\n  { \"id\":27, \"name\": \"backpack\" },\n  { \"id\":28, \"name\": \"umbrella\" },\n  { \"id\":31, \"name\": \"handbag\" },\n  { \"id\":32, \"name\": \"tie\" },\n  { \"id\":33, \"name\": \"suitcase\" },\n  { \"id\":34, \"name\": \"frisbee\" },\n  { \"id\":35, \"name\": \"skis\" },\n  { \"id\":36, \"name\": \"snowboard\" },\n  { \"id\":37, \"name\": \"sports_ball\" },\n  { \"id\":38, \"name\": \"kite\" },\n  { \"id\":39, \"name\": \"baseball_bat\" },\n  { \"id\":40, \"name\": \"baseball_glove\" },\n  { \"id\":41, \"name\": \"skateboard\" },\n  { \"id\":42, \"name\": \"surfboard\" },\n  { \"id\":43, \"name\": \"tennis_racket\" },\n  { \"id\":44, \"name\": \"bottle\" },\n  { \"id\":46, \"name\": \"wine_glass\" },\n  { \"id\":47, \"name\": \"cup\" },\n  { \"id\":48, \"name\": \"fork\" },\n  { \"id\":49, \"name\": \"knife\" },\n  { \"id\":50, \"name\": \"spoon\" },\n  { \"id\":51, \"name\": \"bowl\" },\n  { \"id\":52, \"name\": \"banana\" },\n  { \"id\":53, \"name\": \"apple\" },\n  { \"id\":54, \"name\": \"sandwich\" },\n  { \"id\":55, \"name\": \"orange\" },\n  { \"id\":56, \"name\": \"broccoli\" },\n  { \"id\":57, \"name\": \"carrot\" },\n  { \"id\":58, \"name\": \"hot_dog\" },\n  { \"id\":59, \"name\": \"pizza\" },\n  { \"id\":60, \"name\": \"donut\" },\n  { \"id\":61, \"name\": \"cake\" },\n  { \"id\":62, \"name\": \"chair\" },\n  { \"id\":63, \"name\": \"couch\" },\n  { \"id\":64, \"name\": \"potted_plant\" },\n  { \"id\":65, \"name\": \"bed\" },\n  { \"id\":67, \"name\": \"dining_table\" },\n  { \"id\":70, \"name\": \"toilet\" },\n  { \"id\":72, \"name\": \"tv\" },\n  { \"id\":73, \"name\": \"laptop\" },\n  { \"id\":74, \"name\": \"mouse\" },\n  { \"id\":75, \"name\": \"remote\" },\n  { \"id\":76, \"name\": \"keyboard\" },\n  { \"id\":77, \"name\": \"cell_phone\" },\n  { \"id\":78, \"name\": \"microwave\" },\n  { \"id\":79, \"name\": \"oven\" },\n  { \"id\":80, \"name\": \"toaster\" },\n  { \"id\":81, \"name\": \"sink\" },\n  { \"id\":83, \"name\": \"refrigerator\" },\n  { \"id\":84, \"name\": \"book\" },\n  { \"id\":85, \"name\": \"clock\" },\n  { \"id\":86, \"name\": \"vase\" },\n  { \"id\":87, \"name\": \"scissors\" },\n  { \"id\":88, \"name\": \"teddy_bear\" },\n  { \"id\":89, \"name\": \"hair_drier\" },\n  { \"id\":90, \"name\": \"toothbrush\" }\n]\n","type":"detector"}},"spec":{"description":"RetinaNet R101 from Detectron2","handler":"main:handler","runtime":"python:3.8","resources":{},"image":"cvat/pth.facebookresearch.detectron2.retinanet_r101:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"myHttpTrigger","maxWorkers":2,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"volumes":[{"volume":{"name":"volume-1","hostPath":{"path":"/home/nmanovic/Workspace/cvat/serverless/common"}},"volumeMount":{"name":"volume-1","mountPath":"/opt/nuclio/common"}}],"build":{"image":"cvat/pth.facebookresearch.detectron2.retinanet_r101","baseImage":"ubuntu:20.04","directives":{"preCopy":[{"kind":"ENV","value":"DEBIAN_FRONTEND=noninteractive"},{"kind":"RUN","value":"apt-get update \u0026\u0026 apt-get -y install curl git python3 python3-pip"},{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html"},{"kind":"RUN","value":"pip3 install 'git+https://github.com/facebookresearch/detectron2@v0.4'"},{"kind":"RUN","value":"curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl"},{"kind":"RUN","value":"ln -s /usr/bin/pip3 /usr/local/bin/pip"}]},"codeEntryType":"image"},"platform":{"attributes":{"mountMode":"volume","restartPolicy":{"maximumRetryCount":3,"name":"always"}}},"readinessTimeoutSeconds":60,"securityContext":{},"eventTimeout":"30s"}}}}
-21.07.21 15:20:39.042            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
-21.07.21 15:20:40.480                     nuctl (I) Function deploy complete {"functionName": "pth-facebookresearch-detectron2-retinanet-r101", "httpPort": 49153}
+```bash
+25.12.08 15:43:18.740 (I)                     nuctl Project created {"Name": "cvat", "Namespace": "nuclio"}
+Deploying pytorch/facebookresearch/detectron2/retinanet_r101 function...
+25.12.08 15:43:18.977 (I)                     nuctl Deploying function {"name": "pth-facebookresearch-detectron2-retinanet-r101"}
+25.12.08 15:43:18.977 (I)                     nuctl Building {"builderKind": "docker", "versionInfo": "Label: 1.15.9, Git commit: ad1fde3b47fcd9035f3f0eea45b2ff654655e8be, OS: linux, Arch: amd64, Go version: go1.25.4", "name": "pth-facebookresearch-detectron2-retinanet-r101"}
+25.12.08 15:43:19.129 (I)                     nuctl Staging files and preparing base images
+25.12.08 15:43:19.130 (W)                     nuctl Using user provided base image, runtime interpreter version is provided by the base image {"baseImage": "ubuntu:22.04"}
+25.12.08 15:43:19.130 (I)                     nuctl Building processor image {"registryURL": "", "taggedImageName": "cvat.pth.facebookresearch.detectron2.retinanet_r101:latest"}
+25.12.08 15:43:19.130 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.15.9-amd64"}
+25.12.08 15:43:21.390 (I)     nuctl.platform.docker Pulling image {"imageName": "gcr.io/iguazio/uhttpc:0.0.3-amd64"}
+25.12.08 15:43:23.018 (I)            nuctl.platform Building docker image {"image": "cvat.pth.facebookresearch.detectron2.retinanet_r101:latest"}
+25.12.08 15:43:23.206 (I)            nuctl.platform Pushing docker image into registry {"image": "cvat.pth.facebookresearch.detectron2.retinanet_r101:latest", "registry": ""}
+25.12.08 15:43:23.206 (I)            nuctl.platform Docker image was successfully built and pushed into docker registry {"image": "cvat.pth.facebookresearch.detectron2.retinanet_r101:latest"}
+25.12.08 15:43:23.206 (I)                     nuctl Build complete {"image": "cvat.pth.facebookresearch.detectron2.retinanet_r101:latest"}
+25.12.08 15:43:23.213 (I)                     nuctl Cleaning up before deployment {"functionName": "pth-facebookresearch-detectron2-retinanet-r101"}
+25.12.08 15:43:23.667 (I)            nuctl.platform Waiting for function to be ready {"timeout": 120}
+25.12.08 15:43:25.516 (I)                     nuctl Function deploy complete {"functionName": "pth-facebookresearch-detectron2-retinanet-r101", "httpPort": 32773, "internalInvocationURLs": ["172.18.0.21:8080"], "externalInvocationURLs": ["0.0.0.0:32773"]}
+ NAMESPACE | NAME                                           | PROJECT | STATE | REPLICAS | NODE PORT
+ nuclio    | pth-facebookresearch-detectron2-retinanet-r101 | cvat    | ready | 1/1      | 32773
 ```
 
 </details>
@@ -600,30 +617,75 @@ For `RetinaNet R101` which was added above modifications will look like:
 ```diff
 --- function.yaml	2021-06-25 21:06:51.603281723 +0300
 +++ function-gpu.yaml	2021-07-07 22:38:53.454202637 +0300
-@@ -90,7 +90,7 @@
+@@ -89,19 +89,21 @@ metadata:
        ]
 
  spec:
 -  description: RetinaNet R101 from Detectron2
 +  description: RetinaNet R101 from Detectron2 optimized for GPU
-   runtime: 'python:3.8'
+   runtime: 'python:3.10'
    handler: main:handler
    eventTimeout: 30s
-@@ -108,7 +108,7 @@
+
+   build:
+-    image: cvat.pth.facebookresearch.detectron2.retinanet_r101
++    image: cvat.pth.facebookresearch.detectron2.retinanet_r101:latest-gpu
+     baseImage: ubuntu:22.04
+
+     directives:
+       preCopy:
+         - kind: ENV
+           value: DEBIAN_FRONTEND=noninteractive
++        - kind: ENV
++          value: NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility
+         - kind: RUN
+           value: |-
+             apt-get update \
+@@ -109,20 +111,34 @@ spec:
+               curl \
+               git \
+               g++ \
+-              ca-certificates \
+               python-is-python3 \
+               python3 \
+               python3-dev \
+               python3-pip \
++            && curl -fsSL -o /tmp/cuda-keyring.deb \
++              https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb \
++            && dpkg -i /tmp/cuda-keyring.deb \
++            && rm -f /tmp/cuda-keyring.deb \
++            && apt-get update \
++            && apt-get install -y --no-install-recommends \
++              cuda-nvcc-11-7 \
++              libcublas-dev-11-7 \
++              libcusolver-dev-11-7 \
++              libcusparse-dev-11-7 \
+             && rm -rf /var/lib/apt/lists/*
++        - kind: ENV
++          value: PATH=/usr/local/cuda-11.7/bin:${PATH} CUDA_HOME=/usr/local/cuda-11.7
+         - kind: RUN
+           value: |-
+             pip install \
+-              torch==1.13.1+cpu torchvision==0.14.1+cpu numpy==1.26.4 \
+-              --extra-index-url https://download.pytorch.org/whl/cpu \
++              torch==1.13.1+cu117 torchvision==0.14.1+cu117 numpy==1.26.4 \
++              --extra-index-url https://download.pytorch.org/whl/cu117 \
+               --no-cache-dir
+         - kind: RUN
+-          value: pip install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
++          value: |-
++            FORCE_CUDA=1 \
++            TORCH_CUDA_ARCH_LIST="Kepler;Kepler+Tesla;Maxwell;Maxwell+Tegra;Pascal;Volta;Turing" \
++            pip install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
          - kind: WORKDIR
            value: /opt/nuclio
          - kind: RUN
--          value: pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
-+          value: pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
-         - kind: RUN
-           value: git clone https://github.com/facebookresearch/detectron2
-         - kind: RUN
-@@ -120,12 +120,16 @@
+@@ -130,12 +146,16 @@ spec:
 
    triggers:
      myHttpTrigger:
--      maxWorkers: 2
-+      maxWorkers: 1
+-      numWorkers: 2
++      numWorkers: 1
        kind: 'http'
        workerAvailabilityTimeoutMilliseconds: 10000
        attributes:
@@ -759,7 +821,7 @@ port forwarding again._
 
 First of all need to check that you are using the recommended version of
 Nuclio framework. In my case it is `1.5.16` but you need to check
-{{< ilink "/docs/administration/advanced/installation_automatic_annotation" "the installation manual" >}}.
+{{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "the installation manual" >}}.
 
 ```bash
 nuctl version
@@ -949,7 +1011,7 @@ If you encounter a problem running serverless functions on Windows 10,
 you can use the Ubuntu subsystem, for this do the following:
 
 1. Install  `WSL 2` and `Docker Desktop` as described in
-{{< ilink "/docs/administration/basics/installation#windows-10" "installation manual" >}}
+{{< ilink "/docs/administration/community/basics/installation#windows-10" "installation manual" >}}
 
 1. Install [Ubuntu 18.04 from Microsoft store][ubuntu-1804-microsoft-store].
 
@@ -959,11 +1021,12 @@ you can use the Ubuntu subsystem, for this do the following:
 
 1. Then you can download and install `nuctl` on Ubuntu,
    using the
-   {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
+   {{< ilink
+    "/docs/administration/community/advanced/installation_automatic_annotation" "automatic annotation guide" >}}.
 
 1. Install `git` and clone repository on Ubuntu,
    as described in the
-   {{< ilink "/docs/administration/basics/installation#ubuntu-1804-x86_64amd64" "installation manual" >}}.
+   {{< ilink "/docs/administration/community/basics/installation#ubuntu-1804-x86_64amd64" "installation manual" >}}.
 
 1. After that, run the commands from this tutorial through Ubuntu.
 
@@ -985,7 +1048,7 @@ you can use the Ubuntu subsystem, for this do the following:
 [pascal-voc-format]: http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/index.html
 [faas-wiki]: https://en.wikipedia.org/wiki/Function_as_a_service
 [cvat-github]: https://github.com/cvat-ai/cvat
-[siammask-serverless]: https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio
+[transt-serverless]: https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/dschoerk/transt/nuclio
 [vtest-avi]: https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
 [intel-openvino-url]: https://software.intel.com/content/www/us/en/develop/tools/openvino-toolkit.html
 [ubuntu-1804-microsoft-store]: https://www.microsoft.com/en-us/p/ubuntu-1804-lts/9n9tngvndl3q

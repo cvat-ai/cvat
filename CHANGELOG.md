@@ -16,6 +16,115 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.52.0'></a>
+## \[2.52.0\] - 2025-12-15
+
+### Added
+
+- Video chapters now can be displayed in the frame player
+  and can be used for frame navigation during annotation.
+  (<https://github.com/cvat-ai/cvat/pull/9924>)
+
+- "Return to Previous Page" button on Task, Project, Job, and Cloud Storage Not Found pages
+  (<https://github.com/cvat-ai/cvat/pull/10028>)
+
+- Double click on a shape in 2D or 3D workspace now fits the shape into scene
+  (<https://github.com/cvat-ai/cvat/pull/10108>)
+
+- Parameter "Control points size" now have effect for points on 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/10119>)
+
+### Changed
+
+- It is now possible to back up tasks created from a mounted file share that
+  use static chunk storage
+  (<https://github.com/cvat-ai/cvat/pull/9972>)
+
+- Updated Nuclio to 1.15.9
+  (<https://github.com/cvat-ai/cvat/pull/10091>)
+
+- Reduced RAM usage on track export
+  (<https://github.com/cvat-ai/cvat/pull/10041>)
+
+- Better zoom-in, zoom-out algorithm on side views of 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/10109>)
+
+- Last zoom value on side cameras of 3D canvas memoized per object and restored when object reselected
+  (<https://github.com/cvat-ai/cvat/pull/10110>)
+
+- Settings AAM Zoom Margin is now more general and responsible for paddings around focused objects
+  (<https://github.com/cvat-ai/cvat/pull/10108>)
+
+- Improved algorithm for default zoom on side views of 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/10120>)
+
+### Removed
+
+- SiamMask and some OpenVINO-based functions
+  (<https://github.com/cvat-ai/cvat/pull/10091>)
+
+### Fixed
+
+- Backups of tasks created from a mounted file share no longer fail to import.
+  Note that backups of such tasks created by previous versions of CVAT still cannot be imported
+  (<https://github.com/cvat-ai/cvat/pull/9972>)
+
+- Heavyweight backups created from tasks using cloud storage that have
+  images as frames and non-default start frame, stop frame or frame step
+  settings no longer fail to import. Note that the fix is for backup
+  creation; as such, CVAT will still not be able to import backups of
+  such tasks created by previous versions
+  (<https://github.com/cvat-ai/cvat/pull/10004>)
+
+- \[CLI\] Fixed a truncated error message that could be printed when running
+  an agent for a remote function missing a (sub)label from the loaded AA function
+  (<https://github.com/cvat-ai/cvat/pull/10070>)
+
+- Fixed creation of tasks from images in cloud storage without a manifest
+  that use static chunks and a custom frame range
+  (<https://github.com/cvat-ai/cvat/pull/10079>)
+
+- Low visibility of object details over canvas if background or image is dark
+  (<https://github.com/cvat-ai/cvat/pull/10105>)
+
+- Weird camera behaviour when layout of 3D canvas gets resized
+  (<https://github.com/cvat-ai/cvat/pull/10117>)
+
+<a id='changelog-2.51.0'></a>
+## \[2.51.0\] - 2025-12-01
+
+### Added
+
+- Documentation for using Backblaze B2 as an S3-compatible cloud storage option in CVAT
+  (<https://github.com/cvat-ai/cvat/pull/9952>)
+
+### Changed
+
+- Relaxed video manifest creation to make use of keyframes even if seek lands earlier
+  (<https://github.com/cvat-ai/cvat/pull/9994>)
+
+### Removed
+
+- Python 3.9 support (due to Python 3.9 EOL)
+  (<https://github.com/cvat-ai/cvat/pull/10051>)
+
+### Fixed
+
+- Fixed OpenAPI schema for `retrieve_data` endpoints: marked `type` parameter as required for both tasks and jobs API
+  (<https://github.com/cvat-ai/cvat/issues/9315>)
+
+- Calculation of statistics in the job is failed when there is a track without keyframes
+  (<https://github.com/cvat-ai/cvat/pull/10050>)
+
+- Update the `updated_date` field of the Task when PATCHing `/api/tasks/<id>/data/meta`
+  (<https://github.com/cvat-ai/cvat/pull/10052>)
+
+- Incorrect retry handling of `429 TooManyRequests` error in case of data uploading via TUS protocol
+  (<https://github.com/cvat-ai/cvat/pull/10055>)
+
+- Error message is not displayed if not possible to fetch data for 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/10059>)
+
 <a id='changelog-2.50.0'></a>
 ## \[2.50.0\] - 2025-11-26
 

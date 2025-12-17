@@ -144,7 +144,7 @@ class RequestViewSet(viewsets.GenericViewSet):
             user_id (int): The ID of the user for whom to retrieve jobs.
 
         Returns:
-            List[RQJob]: A list of RQJob objects representing all jobs for the specified user.
+            list[RQJob]: A list of RQJob objects representing all jobs for the specified user.
         """
         all_jobs = []
         for queue in self.queues:
@@ -161,7 +161,7 @@ class RequestViewSet(viewsets.GenericViewSet):
             rq_id (str): The ID of the RQJob to retrieve.
 
         Returns:
-            Optional[RQJob]: The retrieved RQJob, or None if not found.
+            RQJob | None: The retrieved RQJob, or None if not found.
         """
         try:
             parsed_request_id, queue_name = RequestId.parse(rq_id, try_legacy_format=True)

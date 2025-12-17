@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.50.1
+  version: 2.52.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -7210,6 +7210,27 @@ components:
           maxLength: 150
       required:
       - username
+    Chapter:
+      type: object
+      properties:
+        id:
+          type: integer
+        start:
+          type: integer
+        stop:
+          type: integer
+        metadata:
+          $ref: '#/components/schemas/ChapterMetadata'
+      required:
+      - id
+      - metadata
+      - start
+      - stop
+    ChapterMetadata:
+      type: object
+      properties:
+        title:
+          type: string
     ChunkType:
       enum:
       - video
@@ -7456,6 +7477,11 @@ components:
     DataMetaRead:
       type: object
       properties:
+        chapters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chapter'
+          nullable: true
         chunks_updated_date:
           type: string
           format: date-time
