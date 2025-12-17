@@ -19,7 +19,7 @@ from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
-from pathlib import Path
+from pathlib import Path, PurePath
 from random import shuffle
 from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
 
@@ -243,7 +243,7 @@ class CachingMediaIterator(RandomAccessIterator[_MediaT]):
 
 
 class IMediaReader(ABC):
-    ImageFrame: TypeAlias = tuple[str | io.BytesIO, str]
+    ImageFrame: TypeAlias = tuple[Path | io.BytesIO, Path]
     """
     The first element is the contents of the image or the file system path to it.
     The second element is always the path to the image.
@@ -293,7 +293,7 @@ class IMediaReader(ABC):
 class ImageListReader(IMediaReader):
     def __init__(
         self,
-        source_paths,
+        source_paths: list[Path],
         step: int = 1,
         start: int = 0,
         stop: int | None = None,
@@ -318,7 +318,7 @@ class ImageListReader(IMediaReader):
             dimension=dimension,
         )
 
-        self._source_paths = sort(source_paths, sorting_method)
+        self._source_paths = sort(source_paths, sorting_method, os.fspath)
         self._sorting_method = sorting_method
 
     def __iter__(self) -> Iterator[IMediaReader.ImageFrame]:
@@ -328,7 +328,7 @@ class ImageListReader(IMediaReader):
     def __contains__(self, media_file):
         return media_file in self._source_paths
 
-    def filter(self, callback):
+    def filter(self, callback: Callable[[Path], bool]) -> None:
         source_paths = list(filter(callback, self._source_paths))
         ImageListReader.__init__(
             self,
@@ -340,10 +340,10 @@ class ImageListReader(IMediaReader):
             sorting_method=self._sorting_method,
         )
 
-    def get_path(self, i):
+    def get_path(self, i: int) -> Path:
         return self._source_paths[i]
 
-    def get_image(self, i):
+    def get_image(self, i: int) -> Path | io.BytesIO:
         return self._source_paths[i]
 
     def get_image_size(self, i) -> tuple[int, int]:
@@ -382,19 +382,19 @@ class ImageListReader(IMediaReader):
 class DirectoryReader(ImageListReader):
     def __init__(
         self,
-        source_paths,
+        source_paths: list[Path],
         step=1,
         start=0,
         stop=None,
         dimension=DimensionType.DIM_2D,
         sorting_method=SortingMethod.LEXICOGRAPHICAL,
     ):
-        image_paths = []
-        for source in source_paths:
-            for root, _, files in os.walk(source):
-                paths = [os.path.join(root, f) for f in files]
-                paths = filter(lambda x: get_mime(x) == "image", paths)
-                image_paths.extend(paths)
+        image_paths = [
+            path
+            for source in source_paths
+            for path in source.rglob("*")
+            if get_mime(path) == "image"
+        ]
         super().__init__(
             source_paths=image_paths,
             step=step,
@@ -408,7 +408,7 @@ class DirectoryReader(ImageListReader):
 class ArchiveReader(DirectoryReader):
     def __init__(
         self,
-        source_paths,
+        source_paths: list[Path],
         step=1,
         start=0,
         stop=None,
@@ -417,7 +417,7 @@ class ArchiveReader(DirectoryReader):
         extract_dir=None,
     ):
         (self._archive_source,) = source_paths
-        tmp_dir = extract_dir if extract_dir else os.path.dirname(self._archive_source)
+        tmp_dir = extract_dir if extract_dir else self._archive_source.parent
         patool_path = os.path.join(sysconfig.get_path("scripts"), "patool")
         Archive(self._archive_source).extractall(tmp_dir, False, patool_path)
         if not extract_dir:
@@ -435,7 +435,7 @@ class ArchiveReader(DirectoryReader):
 class PdfReader(ImageListReader):
     def __init__(
         self,
-        source_paths,
+        source_paths: list[Path],
         step=1,
         start=0,
         stop=None,
@@ -471,7 +471,7 @@ class PdfReader(ImageListReader):
             os.remove(self._pdf_source)
 
         super().__init__(
-            source_paths=paths,
+            source_paths=list(map(Path, paths)),
             step=step,
             start=start,
             stop=stop,
@@ -483,7 +483,7 @@ class PdfReader(ImageListReader):
 class ZipReader(ImageListReader):
     def __init__(
         self,
-        source_paths,
+        source_paths: list[Path],
         step=1,
         start=0,
         stop=None,
@@ -516,7 +516,7 @@ class ZipReader(ImageListReader):
         with Image.open(io.BytesIO(self._zip_source.read(self._source_paths[i]))) as img:
             return image_size_within_orientation(img)
 
-    def get_image(self, i):
+    def get_image(self, i: int) -> Path | io.BytesIO:
         if self._dimension == DimensionType.DIM_3D:
             return self.get_path(i)
         return io.BytesIO(self._zip_source.read(self._source_paths[i]))
@@ -524,12 +524,12 @@ class ZipReader(ImageListReader):
     def get_zip_filename(self):
         return self._zip_source.filename
 
-    def get_path(self, i):
+    def get_path(self, i: int) -> Path:
         path = self._source_paths[i]
 
         prefix = self._get_extract_prefix()
         if prefix is not None:
-            path = os.path.join(prefix, path)
+            path = prefix / path
 
         return path
 
@@ -542,19 +542,19 @@ class ZipReader(ImageListReader):
 
         return super().__contains__(path)
 
-    def _get_extract_prefix(self) -> str | None:
+    def _get_extract_prefix(self) -> Path | None:
         if self.extract_dir is not None:
             return self.extract_dir
 
         if self._zip_source.filename is not None:
-            return os.path.dirname(self._zip_source.filename)
+            return Path(self._zip_source.filename).parent
 
         return None
 
     def filter(self, callback):
         prefix = self._get_extract_prefix()
         if prefix is not None:
-            updated_callback = lambda p: callback(os.path.join(prefix, p))
+            updated_callback = lambda p: callback(prefix / p)
         else:
             updated_callback = callback
 
@@ -584,18 +584,10 @@ class ZipReader(ImageListReader):
             os.remove(self._zip_source.filename)
 
 
-class _AvVideoReading:
-    def read_av_container(self, source: str | io.BytesIO) -> av.container.InputContainer:
-        if isinstance(source, io.BytesIO):
-            source.seek(0)  # required for re-reading
-
-        return av.open(source)
-
-
 class VideoReader(IMediaReader):
     def __init__(
         self,
-        source_paths: list[str] | list[io.BytesIO],
+        source_paths: Sequence[Openable],
         step: int = 1,
         start: int = 0,
         stop: int | None = None,
@@ -638,7 +630,7 @@ class VideoReader(IMediaReader):
         if next_frame_filter_frame is None:
             return
 
-        with self._read_av_container() as container:
+        with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
             video_stream = container.streams.video[0]
 
             if self.allow_threading:
@@ -669,11 +661,8 @@ class VideoReader(IMediaReader):
     def __iter__(self) -> Iterator[IMediaReader.VideoFrame]:
         return self.iterate_frames()
 
-    def _read_av_container(self) -> av.container.InputContainer:
-        return _AvVideoReading().read_av_container(self._source_path)
-
     def _get_duration(self):
-        with self._read_av_container() as container:
+        with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
             stream = container.streams.video[0]
 
             duration = None
@@ -737,16 +726,15 @@ class ImageReaderWithManifest:
 class VideoReaderWithManifest:
     # TODO: merge this class with VideoReader
 
-    def __init__(self, manifest_path: Path, source_path: str, *, allow_threading: bool = False):
+    def __init__(
+        self, manifest_path: Path, source_path: Openable, *, allow_threading: bool = False
+    ):
         self.source_path = source_path
         self.manifest = VideoManifestManager(manifest_path)
         if self.manifest.exists:
             self.manifest.init_index()
 
         self.allow_threading = allow_threading
-
-    def _read_av_container(self) -> av.container.InputContainer:
-        return _AvVideoReading().read_av_container(self.source_path)
 
     def _get_nearest_left_key_frame(self, frame_id: int) -> tuple[int, int]:
         nearest_left_keyframe_pos = bisect(
@@ -772,7 +760,7 @@ class VideoReaderWithManifest:
             next_frame_filter_frame
         )
 
-        with self._read_av_container() as container:
+        with self.source_path.open("rb") as source_file, av.open(source_file, "r") as container:
             video_stream = container.streams.video[0]
             if self.allow_threading:
                 video_stream.thread_type = "AUTO"
@@ -1276,7 +1264,7 @@ class ValidateDimension:
         if self.pcd_files:
             self.dimension = DimensionType.DIM_3D
 
-    def detect_dimension_for_paths(self, paths: Sequence[str]) -> DimensionType:
+    def detect_dimension_for_paths(self, paths: Sequence[PurePath]) -> DimensionType:
         detected_dimensions = detect_media_dimension(paths)
         if (
             _MediaDimension.dim_2d in detected_dimensions

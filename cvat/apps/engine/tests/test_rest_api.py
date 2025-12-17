@@ -1416,13 +1416,15 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         }
         image_count = 10
         imagename_pattern = "test_{}.jpg"
+
+        share_root: Path = settings.SHARE_ROOT
+
         for i in range(image_count):
             filename = imagename_pattern.format(i)
-            path = os.path.join(settings.SHARE_ROOT, filename)
+            path = share_root / filename
             cls.media["files"].append(path)
             _, data = generate_random_image_file(filename)
-            with open(path, "wb") as image:
-                image.write(data.read())
+            path.write_bytes(data.read())
 
         cls.media_data.append(
             {
@@ -1441,11 +1443,10 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = "test_video_1.mp4"
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = share_root / filename
         cls.media["files"].append(path)
         _, data = generate_video_file(filename, width=1280, height=720)
-        with open(path, "wb") as video:
-            video.write(data.read())
+        path.write_bytes(data.read())
         cls.media_data.append(
             {
                 "image_quality": 75,
@@ -1458,11 +1459,10 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = os.path.join("test_archive_1.zip")
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = share_root / filename
         cls.media["files"].append(path)
         _, data = generate_zip_archive_file(filename, count=5)
-        with open(path, "wb") as zip_archive:
-            zip_archive.write(data.read())
+        path.write_bytes(data.read())
         cls.media_data.append(
             {
                 "image_quality": 75,
@@ -1471,12 +1471,11 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = os.path.join("videos", "test_video_1.mp4")
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = share_root / filename
         cls.media["dirs"].append(os.path.dirname(path))
         os.makedirs(os.path.dirname(path))
         _, data = generate_video_file(filename, width=1280, height=720)
-        with open(path, "wb") as video:
-            video.write(data.read())
+        path.write_bytes(data.read())
 
         manifest_path = share_root / "videos" / "manifest.jsonl"
         generate_manifest_file(
@@ -3132,11 +3131,10 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 )
 
         filename = os.path.join("videos", "test_video_1.mp4")
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        os.makedirs(os.path.dirname(path))
+        path = share_root / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
         _, data = generate_video_file(filename, width=1280, height=720)
-        with open(path, "wb") as video:
-            video.write(data.read())
+        path.write_bytes(data.read())
 
         generate_manifest_file(
             data_type=ManifestDataType.video,
@@ -3554,14 +3552,14 @@ class ManifestDataType(str, Enum):
 def generate_manifest_file(
     data_type: ManifestDataType,
     manifest_path: Path,
-    sources,
+    sources: list[Path],
     *,
     sorting_method=SortingMethod.LEXICOGRAPHICAL,
-    root_dir=None,
+    root_dir: Path | None = None,
 ):
     if data_type == "video":
         manifest = VideoManifestManager(manifest_path, create_index=False)
-        manifest.link(media_file=Path(sources[0]), force=True)
+        manifest.link(media_file=sources[0], force=True)
     else:
         assert root_dir
 
@@ -3569,11 +3567,7 @@ def generate_manifest_file(
 
         manifest = ImageManifestManager(manifest_path, create_index=False)
         manifest.link(
-            sources=[
-                Path(p)
-                for p in sources
-                if (root_dir is not None and os.path.relpath(p, root_dir) or p) in scenes
-            ],
+            sources=[p for p in sources if p.relative_to(root_dir) in scenes],
             sorting_method=sorting_method,
             use_image_hash=True,
             data_dir=root_dir,
@@ -4888,9 +4882,9 @@ class TaskDataAPITestCase(ApiTestBase):
             image_sizes, image_files = generate_random_image_files(
                 "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
             )
-            image_paths = []
+            image_paths: list[Path] = []
             for image in image_files:
-                fp = os.path.join(test_dir, image.name)
+                fp = Path(test_dir, image.name)
                 with open(fp, "wb") as f:
                     f.write(image.getvalue())
                 image_paths.append(fp)
@@ -4905,7 +4899,7 @@ class TaskDataAPITestCase(ApiTestBase):
                     manifest_path,
                     image_paths,
                     sorting_method=SortingMethod.PREDEFINED,
-                    root_dir=test_dir,
+                    root_dir=Path(test_dir),
                 )
 
                 task_data_common["use_cache"] = caching_enabled
@@ -5028,9 +5022,9 @@ class TaskDataAPITestCase(ApiTestBase):
             image_sizes, image_files = generate_random_image_files(
                 "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
             )
-            image_paths = []
+            image_paths: list[Path] = []
             for image in image_files:
-                fp = os.path.join(test_dir, image.name)
+                fp = Path(test_dir, image.name)
                 with open(fp, "wb") as f:
                     f.write(image.getvalue())
                 image_paths.append(fp)

@@ -8,11 +8,11 @@ import mimetypes
 import os
 import re
 import struct
-from collections.abc import Callable, Collection, Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PurePath
 from random import shuffle
-from typing import IO, Literal, Protocol
+from typing import IO, Literal, Protocol, TypeVar
 
 import cv2 as cv
 import numpy as np
@@ -82,16 +82,16 @@ def md5_hash(frame: str | Image.Image | VideoFrame | IO[bytes]) -> str:
     return hashlib.md5(buffer).hexdigest()  # nosec
 
 
-def _define_data_type(path: str) -> str:
+def _define_data_type(path: PurePath) -> str | None:
     return mimetypes.guess_type(path)[0]
 
 
-def is_video(media_file: str) -> bool:
+def is_video(media_file: PurePath) -> bool:
     data_type = _define_data_type(media_file)
     return data_type is not None and data_type.startswith("video")
 
 
-def is_image(media_file: str) -> bool:
+def is_image(media_file: PurePath) -> bool:
     data_type = _define_data_type(media_file)
     return (
         data_type is not None
@@ -102,21 +102,24 @@ def is_image(media_file: str) -> bool:
     )
 
 
-def is_point_cloud(media_file: str) -> bool:
-    return os.path.splitext(media_file)[1].lower() in (".pcd", ".bin")
+def is_point_cloud(media_file: PurePath) -> bool:
+    return media_file.suffix.lower() in (".pcd", ".bin")
 
 
-def _prepare_context_list(files: Iterable[str], base_dir: str | None = None):
+_AnyPath = TypeVar("_AnyPath", bound=PurePath)
+
+
+def _prepare_context_list(files: Iterable[_AnyPath], base_dir: _AnyPath | None = None):
     return sorted(
-        os.path.relpath(x, base_dir) if base_dir is not None else x for x in filter(is_image, files)
+        x.relative_to(base_dir) if base_dir is not None else x for x in filter(is_image, files)
     )
 
 
 def _find_related_images_2D(
-    dataset_paths: Sequence[str],
+    dataset_paths: Sequence[_AnyPath],
     *,
-    is_scene_path: Callable[[str], bool] | None = None,
-) -> tuple[set[str], dict[str, list[str]]]:
+    is_scene_path: Callable[[_AnyPath], bool] | None = None,
+) -> tuple[set[_AnyPath], dict[_AnyPath, list[_AnyPath]]]:
     """
     Expected 2D format is:
 
@@ -128,13 +131,13 @@ def _find_related_images_2D(
           context_image_2.png
     """
 
-    regular_images = set()
-    related_images = {}
+    regular_images: set[_AnyPath] = set()
+    related_images: dict[_AnyPath, list[_AnyPath]] = {}
     for image_path in dataset_paths:
-        parents = Path(image_path).parents
+        parents = image_path.parents
         if len(parents) >= 3 and parents[1].name == "related_images":
             regular_image_path = parents[2] / ".".join(parents[0].name.rsplit("_", maxsplit=1))
-            related_images.setdefault(str(regular_image_path), []).append(image_path)
+            related_images.setdefault(regular_image_path, []).append(image_path)
         elif is_scene_path is None or is_scene_path(image_path):
             regular_images.add(image_path)
 
@@ -151,8 +154,8 @@ def _find_related_images_2D(
 
 
 def _find_related_images_3D(
-    dataset_paths: Sequence[str],
-) -> tuple[set[str], dict[str, list[str]]]:
+    dataset_paths: Sequence[_AnyPath],
+) -> tuple[set[_AnyPath], dict[_AnyPath, list[_AnyPath]]]:
     """
     Supported 3D formats:
 
@@ -197,14 +200,14 @@ def _find_related_images_3D(
     # There's no point in disallowing multiple layouts simultaneously, but mixing is
     # unlikely to be encountered
 
-    scenes: dict[str, str] = {
-        os.path.splitext(p)[0]: p for p in dataset_paths if p.lower().endswith((".pcd", ".bin"))
+    scenes: dict[_AnyPath, _AnyPath] = {
+        p.with_suffix(""): p for p in dataset_paths if p.suffix.lower() in (".pcd", ".bin")
     }  # { scene name -> scene path }
 
-    related_images: dict[str, list[str]] = {}  # { scene_name -> [related images] }
+    related_images: dict[_AnyPath, list[_AnyPath]] = {}  # { scene_name -> [related images] }
     for image_path in dataset_paths:
-        image_name, image_ext = os.path.splitext(image_path)
-        if image_ext.lower() in (".pcd", ".bin"):
+        image_name = image_path.with_suffix("")
+        if image_path.suffix.lower() in (".pcd", ".bin"):
             continue
 
         if image_name in scenes:
@@ -212,13 +215,12 @@ def _find_related_images_3D(
             related_images.setdefault(scenes[image_name], []).append(image_path)
             continue
 
-        parsed_path = Path(image_path)
-        parents = parsed_path.parents
+        parents = image_path.parents
         if not parents:
             # TODO: maybe add logging
             continue
 
-        scene_name = str(parents[0] / parents[0].name)
+        scene_name = parents[0] / parents[0].name
         if parents and scene_name in scenes:
             # Custom 2
             related_images.setdefault(scenes[scene_name], []).append(image_path)
@@ -228,7 +230,7 @@ def _find_related_images_3D(
         if (
             len(parents) >= 2
             and parents[1].name == "related_images"
-            and (scene_name := str(parents[1].parent / "pointcloud" / scene_stem))
+            and (scene_name := parents[1].parent / "pointcloud" / scene_stem)
             and scene_name in scenes
         ):
             # Supervisely Point Cloud
@@ -239,9 +241,7 @@ def _find_related_images_3D(
             len(parents) >= 2
             and parents[0].name == "data"
             and (re.match(r"image_\d+", parents[1].name, re.IGNORECASE))
-            and (
-                scene_name := str(parents[1].parent / "velodyne_points" / "data" / parsed_path.stem)
-            )
+            and (scene_name := parents[1].parent / "velodyne_points" / "data" / image_path.stem)
             and scene_name in scenes
         ):
             # KITTI RAW
@@ -260,11 +260,11 @@ def _find_related_images_3D(
 
 
 def find_related_images(
-    dataset_paths: Sequence[str],
+    dataset_paths: Sequence[_AnyPath],
     *,
-    root_path: str | None = None,
-    is_scene_path: Callable[[str], bool] | None = None,
-) -> tuple[set[str], dict[str, list[str]]]:
+    root_path: _AnyPath | None = None,
+    is_scene_path: Callable[[_AnyPath], bool] | None = None,
+) -> tuple[set[_AnyPath], dict[_AnyPath, list[_AnyPath]]]:
     """
     Finds related images for scenes in the dataset.
 
@@ -279,7 +279,7 @@ def find_related_images(
     """
 
     if root_path:
-        dataset_paths = [os.path.relpath(p, root_path) for p in dataset_paths]
+        dataset_paths = [p.relative_to(root_path) for p in dataset_paths]
 
     has_images = False
     has_pcd = False
@@ -321,8 +321,9 @@ def find_related_images(
                         + (["images"] if has_images else [])
                         + (["3d point clouds"] if has_pcd else [])
                     ),
-                    ", ".join(sorted(scenes)[:5]) + ("..." if len(scenes) > 5 else ""),
-                    ", ".join(sorted(unknown_files)[:5])
+                    ", ".join(sorted(map(os.fspath, scenes))[:5])
+                    + ("..." if len(scenes) > 5 else ""),
+                    ", ".join(sorted(map(os.fspath, unknown_files))[:5])
                     + ("..." if len(unknown_files) > 5 else ""),
                 )
             )
@@ -348,7 +349,7 @@ class MediaDimension(str, Enum):
         return self.value
 
 
-def detect_media_dimension(dataset_paths: Sequence[str]) -> Collection[MediaDimension]:
+def detect_media_dimension(dataset_paths: Sequence[PurePath]) -> set[MediaDimension]:
     detected_dimensions = set()
 
     for path in dataset_paths:
