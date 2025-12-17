@@ -189,3 +189,28 @@ class TestTUSUpload:
         response = self._upload_chunk(location, 1000, oversized_chunk, check_status=False)
 
         assert response.status == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+
+    def test_get_upload_offset_after_complete_upload(self, fxt_task):
+        """Test uploading a complete file in one chunk"""
+        task = fxt_task
+
+        image_file = generate_image_file("test_image.jpg", size=(100, 100))
+        image_data = image_file.getvalue()
+        file_size = len(image_data)
+
+        location = self._start_upload(task.id, file_size, "test_image.jpg")
+        current_offset = self._get_upload_offset(location)
+        assert current_offset == 0
+        response = self._upload_chunk(location, 0, image_data)
+
+        assert response.status == HTTPStatus.NO_CONTENT
+        assert int(response.headers.get("Upload-Offset")) == file_size
+
+        # After completing the download, the HEAD request should return 404.
+        head_response = self._call_tus_endpoint(
+            "HEAD",
+            location,
+            headers={"Tus-Resumable": "1.0.0"},
+            check_status=False,
+        )
+        assert head_response.status == HTTPStatus.NOT_FOUND # was 500

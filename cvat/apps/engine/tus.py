@@ -216,18 +216,9 @@ class TusFile:
     def write_chunk(self, chunk: TusChunk):
         with open(self.file_path, "r+b") as file:
             file.seek(chunk.offset)
-            start_position = file.tell()
-            try:
-                # It handles partial reads automatically (e.g., when connection drops)
-                shutil.copyfileobj(chunk.request, file)
-            finally:
-                # Always update offset, even if connection was interrupted
-                self.meta_file.meta.offset = file.tell()
+            shutil.copyfileobj(chunk.request, file)
+            self.meta_file.meta.offset = file.tell()
         self.meta_file.dump()
-        slogger.glob.info(
-            f"Wrote chunk to file {self.file_id.as_str}: "
-            f"from {start_position} to {self.meta_file.meta.offset}"
-        )
 
     def is_complete(self):
         return self.offset == self.file_size
