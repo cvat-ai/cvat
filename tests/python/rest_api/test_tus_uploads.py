@@ -213,4 +213,4 @@ class TestTUSUpload:
             headers={"Tus-Resumable": "1.0.0"},
             check_status=False,
         )
-        assert head_response.status == HTTPStatus.NOT_FOUND # was 500
+        assert head_response.status == HTTPStatus.NOT_FOUND  # was 500
