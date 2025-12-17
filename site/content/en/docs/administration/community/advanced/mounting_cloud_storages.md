@@ -42,11 +42,11 @@ Follow the first 3 mounting steps above.
 ##### <a name="amazon_s3_using_fstab">Using fstab</a>
 
 1. Create a bash script named `amazon_s3_fuse` (e.g in /usr/bin, as root) with this content
-   (replace `user_name` on whose behalf the disk will be mounted, `backet_name`, `mount_point`, `/path/to/.passwd-s3fs`):
+   (replace `user_name` on whose behalf the disk will be mounted, `bucket_name`, `mount_point`, `/path/to/.passwd-s3fs`):
 
    ```bash
    #!/bin/bash
-   sudo -u <user_name> s3fs <backet_name> <mount_point> -o passwd_file=/path/to/.passwd-s3fs -o allow_other
+   sudo -u <user_name> s3fs <bucket_name> <mount_point> -o passwd_file=/path/to/.passwd-s3fs -o allow_other
    exit 0
    ```
 
