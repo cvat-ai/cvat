@@ -992,7 +992,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
                                     const offscreen = new OffscreenCanvas(renderWidth, renderHeight);
                                     const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
-                                    ctx.drawImage(imageBitmap, 0, 0);
+                                    ctx.drawImage(imageBitmap, 0, 0, renderWidth, renderHeight);
                                     const imageData = ctx.getImageData(0, 0, renderWidth, renderHeight);
 
                                     const newImageData = imageFilters

@@ -208,7 +208,7 @@ class UploadMixin:
         if chunk.offset != tus_file.offset:
             return self._tus_response(status=status.HTTP_409_CONFLICT)
 
-        if chunk.offset > tus_file.file_size:
+        if chunk.end_offset > tus_file.file_size:
             return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
         tus_file.write_chunk(chunk)
