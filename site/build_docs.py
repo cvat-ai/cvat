@@ -10,7 +10,6 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urljoin
 
 import git
@@ -64,6 +63,7 @@ def git_checkout(ref: str, temp_repo: git.Repo, temp_dir: Path):
     subdirs = [
         "site/content",
         "site/assets",
+        "site/layouts/docs",
         "site/layouts/partials",
         "site/layouts/shortcodes",
         "site/themes",
@@ -75,8 +75,12 @@ def git_checkout(ref: str, temp_repo: git.Repo, temp_dir: Path):
 
     for subdir in subdirs:
         dst_dir = temp_dir / subdir
-        shutil.rmtree(dst_dir)
-        shutil.copytree(tmp_repo_root / subdir, dst_dir, symlinks=True)
+
+        if dst_dir.exists():
+            shutil.rmtree(dst_dir)
+
+        if (tmp_repo_root / subdir).is_dir():
+            shutil.copytree(tmp_repo_root / subdir, dst_dir, symlinks=True)
 
 
 def change_version_menu_toml(filename, version):
@@ -99,7 +103,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
 
         def run_hugo(
             *,
-            executable: Optional[str] = "hugo",
+            executable: str = "hugo",
             rel_dest_dir: str = ".",
         ):
             # Construct the full destination path

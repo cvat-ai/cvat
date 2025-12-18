@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any
 
 import attrs
 
@@ -37,7 +37,7 @@ def get_location_configuration(
     query_params: dict[str, Any],
     field_name: str,
     *,
-    db_instance: Optional[Union[Project, Task, Job]] = None,
+    db_instance: Project | Task | Job | None = None,
 ) -> LocationConfig:
     location = query_params.get("location")
 

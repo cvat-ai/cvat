@@ -16,7 +16,7 @@ from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from queue import Queue
-from typing import Any, BinaryIO, Optional, TypeVar
+from typing import Any, BinaryIO, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
@@ -45,7 +45,7 @@ from utils.dataset_manifest.utils import InvalidPcdError, PcdReader
 
 class NamedBytesIO(BytesIO):
     @property
-    def filename(self) -> Optional[str]:
+    def filename(self) -> str | None:
         return getattr(self, "_filename", None)
 
     @filename.setter
@@ -148,7 +148,7 @@ def validate_file_status(func):
 
 
 class _CloudStorage(ABC):
-    def __init__(self, prefix: Optional[str] = None):
+    def __init__(self, prefix: str | None = None):
         self.prefix = prefix
 
     @property
@@ -294,7 +294,7 @@ class _CloudStorage(ABC):
         self,
         prefix: str = "",
         *,
-        next_token: Optional[str] = None,
+        next_token: str | None = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> dict:
         pass
@@ -303,7 +303,7 @@ class _CloudStorage(ABC):
         self,
         prefix: str = "",
         *,
-        next_token: Optional[str] = None,
+        next_token: str | None = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
         _use_flat_listing: bool = False,
         _use_sort: bool = False,
@@ -544,7 +544,7 @@ def get_cloud_storage_instance(
     cloud_provider: CloudProviderChoice,
     resource: str,
     credentials: Credentials,
-    specific_attributes: Optional[dict[str, Any]] = None,
+    specific_attributes: dict[str, Any] | None = None,
 ):
     instance = None
     if cloud_provider == CloudProviderChoice.AMAZON_S3:
@@ -592,12 +592,12 @@ class S3CloudStorage(_CloudStorage):
         self,
         bucket: str,
         *,
-        region: Optional[str] = None,
-        access_key_id: Optional[str] = None,
-        secret_key: Optional[str] = None,
-        session_token: Optional[str] = None,
-        endpoint_url: Optional[str] = None,
-        prefix: Optional[str] = None,
+        region: str | None = None,
+        access_key_id: str | None = None,
+        secret_key: str | None = None,
+        session_token: str | None = None,
+        endpoint_url: str | None = None,
+        prefix: str | None = None,
     ):
         super().__init__(prefix=prefix)
         if sum(1 for credential in (access_key_id, secret_key, session_token) if credential) == 1:
@@ -714,7 +714,7 @@ class S3CloudStorage(_CloudStorage):
         self,
         prefix: str = "",
         *,
-        next_token: Optional[str] = None,
+        next_token: str | None = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> dict:
         # The structure of response looks like this:
@@ -808,10 +808,10 @@ class AzureBlobCloudStorage(_CloudStorage):
         self,
         container: str,
         *,
-        account_name: Optional[str] = None,
-        sas_token: Optional[str] = None,
-        connection_string: Optional[str] = None,
-        prefix: Optional[str] = None,
+        account_name: str | None = None,
+        sas_token: str | None = None,
+        connection_string: str | None = None,
+        prefix: str | None = None,
     ):
         super().__init__(prefix=prefix)
         self._account_name = account_name
@@ -840,7 +840,7 @@ class AzureBlobCloudStorage(_CloudStorage):
         return self._client.container_name
 
     @property
-    def account_url(self) -> Optional[str]:
+    def account_url(self) -> str | None:
         if self._account_name:
             return "{}.blob.core.windows.net".format(self._account_name)
         return None
@@ -894,7 +894,7 @@ class AzureBlobCloudStorage(_CloudStorage):
         self,
         prefix: str = "",
         *,
-        next_token: Optional[str] = None,
+        next_token: str | None = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> dict:
         page = self._client.walk_blobs(
@@ -960,11 +960,11 @@ class GcsCloudStorage(_CloudStorage):
         self,
         bucket_name: str,
         *,
-        prefix: Optional[str] = None,
-        service_account_json: Optional[Any] = None,
+        prefix: str | None = None,
+        service_account_json: Any | None = None,
         anonymous_access: bool = False,
-        project: Optional[str] = None,
-        location: Optional[str] = None,
+        project: str | None = None,
+        location: str | None = None,
     ):
         super().__init__(prefix=prefix)
         if service_account_json:
@@ -1006,7 +1006,7 @@ class GcsCloudStorage(_CloudStorage):
         self,
         prefix: str = "",
         *,
-        next_token: Optional[str] = None,
+        next_token: str | None = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> dict:
         iterator = self._client.list_blobs(

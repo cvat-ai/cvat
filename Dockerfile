@@ -82,7 +82,7 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.25.3 AS build-smokescreen
+FROM golang:1.25.5 AS build-smokescreen
 
 RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
 RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen

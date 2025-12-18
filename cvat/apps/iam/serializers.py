@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional, Union
-
 from allauth.account import app_settings as allauth_settings
 from allauth.account.adapter import get_adapter
 from allauth.account.utils import filter_users_by_email, setup_user_email
@@ -39,14 +37,14 @@ class RegisterSerializerEx(RegisterSerializer):
     key = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.BooleanField)
-    def get_email_verification_required(self, obj: Union[dict, User]) -> bool:
+    def get_email_verification_required(self, obj: dict | User) -> bool:
         return (
             allauth_settings.EMAIL_VERIFICATION
             == allauth_settings.EmailVerificationMethod.MANDATORY
         )
 
     @extend_schema_field(serializers.CharField(allow_null=True))
-    def get_key(self, obj: Union[dict, User]) -> Optional[str]:
+    def get_key(self, obj: dict | User) -> str | None:
         key = None
         if (
             isinstance(obj, User)

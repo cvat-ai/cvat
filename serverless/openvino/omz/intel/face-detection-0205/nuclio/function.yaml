@@ -27,7 +27,7 @@ metadata:
 
 spec:
   description: Detection network finding faces and defining age, gender and emotion attributes
-  runtime: 'python:3.8'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30000s
 

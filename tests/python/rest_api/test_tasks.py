@@ -22,7 +22,7 @@ from operator import itemgetter
 from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -738,7 +738,7 @@ class TestGetTaskDataset:
         *,
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_task_dataset(username, save_images=True, id=task_id, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
@@ -1299,12 +1299,37 @@ class TestTaskBackups:
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
     @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_task_with_mounted_share(self):
+        task_spec = {
+            "name": "Task with files from mounted share",
+            "labels": [{"name": "car"}],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
+            "start_frame": 1,
+            "stop_frame": 4,
+            "frame_filter": "step=2",
+        }
+        task_id, _ = create_task(self.user, task_spec, data_spec)
+
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"share_task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        with zipfile.ZipFile(filename, "r") as zf:
+            files_in_data = {
+                name.removeprefix("data/") for name in zf.namelist() if name.startswith("data/")
+            }
+
+        assert files_in_data == {"manifest.jsonl", "images/image_1.jpg", "images/image_3.jpg"}
+
+        self._test_can_restore_task_from_backup(task_id)
+
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
-        cloud_storage_content = [
-            "images_with_manifest/image_case_65_1.png",
-            "images_with_manifest/image_case_65_2.png",
-        ]
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1317,7 +1342,10 @@ class TestTaskBackups:
             "image_quality": 75,
             "use_cache": False,
             "cloud_storage_id": 1,
-            "server_files": cloud_storage_content,
+            "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
+            "start_frame": 1,
+            "stop_frame": 4,
+            "frame_filter": "step=2",
         }
         task_id, _ = create_task(self.user, task_spec, data_spec)
 
@@ -1335,7 +1363,7 @@ class TestTaskBackups:
 
         expected_media = {"manifest.jsonl"}
         if not lightweight_backup:
-            expected_media.update(cloud_storage_content)
+            expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
         assert files_in_data == expected_media
 
         self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
@@ -1401,9 +1429,24 @@ class TestTaskBackups:
         exclude_regex_paths = [r"root\['chunks_updated_date'\]"]  # must be different
 
         if old_meta["storage"] == "cloud_storage":
-            assert new_meta["storage"] == ("cloud_storage" if lightweight_backup else "local")
             assert new_meta["cloud_storage_id"] is None
-            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]", r"root\['storage'\]"])
+            exclude_regex_paths.append(r"root\['cloud_storage_id'\]")
+
+        if (
+            old_meta["storage"] == "share"
+            or old_meta["storage"] == "cloud_storage"
+            and not lightweight_backup
+        ):
+            assert new_meta["storage"] == "local"
+            assert new_meta["start_frame"] == 0
+            assert new_meta["stop_frame"] == len(old_meta["frames"]) - 1
+            assert new_meta["frame_filter"] == ""
+            exclude_regex_paths += [
+                r"root\['storage'\]",
+                r"root\['start_frame'\]",
+                r"root\['stop_frame'\]",
+                r"root\['frame_filter'\]",
+            ]
 
         assert (
             DeepDiff(
@@ -2692,8 +2735,8 @@ class TestPatchTask:
         is_allow = is_task_owner or is_project_owner
         has_project = is_project_owner or is_project_assignee
 
-        username: Optional[str] = None
-        task_id: Optional[int] = None
+        username: str | None = None
+        task_id: int | None = None
 
         filtered_users = (
             (find_users(role="worker") + find_users(role="supervisor"))
@@ -3092,7 +3135,7 @@ class TestImportTaskAnnotations:
         ],
     )
     def test_check_import_error_on_wrong_file_structure(
-        self, tasks_with_shapes: Iterable, format_name: str, specific_info_included: Optional[bool]
+        self, tasks_with_shapes: Iterable, format_name: str, specific_info_included: bool | None
     ):
         task_id = tasks_with_shapes[0]["id"]
 
@@ -4157,7 +4200,7 @@ class TestPatchExportFrames(TestTasksBase):
         media_type: SourceDataType,
         step: int,
         frame_count: int,
-        start_frame: Optional[int],
+        start_frame: int | None,
     ) -> Generator[tuple[ITaskSpec, Task, str], None, None]:
         args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
 

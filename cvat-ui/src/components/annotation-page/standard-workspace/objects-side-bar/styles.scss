@@ -207,6 +207,11 @@
     background-color: $background-color-2;
     height: calc(100% - $grid-unit-size * 9);
     overflow-y: auto;
+
+    .cvat-objects-sidebar-state-item {
+        // opacity 0.53 in sidebar to keep the same look as before on sidebar
+        background-color: rgba(var(--state-item-background), 0.53);
+    }
 }
 
 .cvat-objects-sidebar-z-layer-mark {
@@ -220,8 +225,9 @@
 
 .cvat-objects-sidebar-state-item {
     width: 100%;
+    background-color: rgba(var(--state-item-background), 1);
     transition: box-shadow $box-shadow-transition;
-    border: 1px solid $border-color-1;
+    border: 1px solid rgba($color: white, $alpha: 0%);
     padding: $grid-unit-size * 0.5;
     margin-left: $grid-unit-size * 0.25;
     margin-right: $grid-unit-size * 0.25;

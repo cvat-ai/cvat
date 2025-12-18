@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import math
 import os
 import cv2
 import numpy as np
@@ -49,14 +48,11 @@ class ModelHandler:
             obj_value = box[2]
             obj_label = self.labels.get(obj_class, "unknown")
             if obj_value >= threshold:
-                xtl = math.trunc(box[3] * image.width)
-                ytl = math.trunc(box[4] * image.height)
-                xbr = math.trunc(box[5] * image.width)
-                ybr = math.trunc(box[6] * image.height)
+                bbox = box[3:7] * [image.width, image.height, image.width, image.height]
+                bbox = np.trunc(bbox).astype(int).tolist()
                 mask = masks[index][obj_class - 1]
-
-                mask = segm_postprocess((xtl, ytl, xbr, ybr), mask, image.height, image.width)
-                cvat_mask = to_cvat_mask((xtl, ytl, xbr, ybr), mask)
+                mask = segm_postprocess(bbox, mask, image.height, image.width)
+                cvat_mask = to_cvat_mask(bbox, mask)
 
                 contours = find_contours(mask, MASK_THRESHOLD)
                 contour = contours[0]

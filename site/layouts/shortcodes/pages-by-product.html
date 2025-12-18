@@ -1,0 +1,8 @@
+{{ $product := .Get 0 }}
+<ul class="product-page-list">
+  {{ range where site.RegularPages ".Params.products" "intersect" (slice $product) }}
+  <li>
+    <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+  </li>
+  {{ end }}
+</ul>

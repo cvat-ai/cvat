@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
-
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
@@ -16,7 +14,7 @@ from .models import Webhook, WebhookTypeChoice
 
 
 class WebhookPermission(OpenPolicyAgentPermission):
-    obj: Optional[Webhook]
+    obj: Webhook | None
 
     class Scopes(StrEnum):
         CREATE = "create"

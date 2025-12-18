@@ -49,7 +49,7 @@ services:
       IMPORT_EXPORT_BUCKET: "importexportbucket"
     volumes:
       - ./tests/cypress/e2e/actions_tasks/assets/case_65_manifest/:/mnt/images_with_manifest:ro
-      - ./tests/mounted_file_share/pcd_with_related/:/mnt/pcd_with_related:ro
+      - ./tests/mounted_file_share/:/mnt/mounted_file_share:ro
     networks:
       - cvat
     entrypoint: >
@@ -64,7 +64,7 @@ services:
           else
             FULL_PATH=$${BUCKET};
           fi
-          $${MC_PATH} cp --recursive /mnt/ $${FULL_PATH};
+          $${MC_PATH} cp --recursive /mnt/mounted_file_share/ /mnt/images_with_manifest $${FULL_PATH}/
           for i in 1 2;
           do
               $${MC_PATH} cp /mnt/images_with_manifest/manifest.jsonl $${FULL_PATH}/images_with_manifest/manifest_$${i}.jsonl;

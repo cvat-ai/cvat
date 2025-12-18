@@ -23,7 +23,7 @@ import {
 } from 'reducers';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
+import { getObjectStateColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
@@ -410,7 +410,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 locked={objectState.lock}
                 labelID={objectState.label.id as number}
                 isGroundTruth={objectState.isGroundTruth}
-                color={getColor(objectState, colorBy)}
+                color={getObjectStateColor(objectState, colorBy).rgbComponents()}
                 attributes={attributes}
                 elements={elements}
                 normalizedKeyMap={normalizedKeyMap}

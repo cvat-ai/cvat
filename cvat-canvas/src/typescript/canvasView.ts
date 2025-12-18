@@ -998,14 +998,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         const dblClickHandler = (e: MouseEvent): void => {
-            e.preventDefault();
-
             if (this.activeElement.clientID !== null) {
                 const [state] = this.controller.objects.filter(
                     (_state: any): boolean => _state.clientID === this.activeElement.clientID,
                 );
 
                 if (state.shapeType === 'cuboid') {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (e.shiftKey) {
                         const points = this.translateFromCanvas(
                             pointsToNumberArray((e.target as any).parentElement.parentElement.instance.attr('points')),
@@ -1700,7 +1700,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Setup event handlers
         this.canvas.addEventListener('dblclick', (e: MouseEvent): void => {
-            this.controller.fit();
+            if (this.activeElement.clientID !== null) {
+                // -1 means auto padding based on the shape size
+                this.controller.focus(this.activeElement.clientID, -1);
+            } else {
+                this.controller.fit();
+            }
             e.preventDefault();
         });
 
@@ -1983,7 +1988,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.gridPattern.setAttribute('width', `${size.width}`);
             this.gridPattern.setAttribute('height', `${size.height}`);
         } else if (reason === UpdateReasons.SHAPE_FOCUSED) {
-            const { padding, clientID } = this.controller.focusData;
+            const padding = this.configuration.focusedObjectPadding ?? 0;
+            const { clientID } = this.controller.focusData;
             const drawnState = this.drawnStates[clientID];
             const object = this.svgShapes[clientID];
             if (drawnState && object) {

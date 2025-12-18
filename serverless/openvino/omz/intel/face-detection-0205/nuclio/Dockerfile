@@ -1,4 +1,4 @@
-FROM openvino/ubuntu20_dev:2022.3.0 AS build
+FROM openvino/ubuntu22_dev:2023.3.0 AS build
 
 USER root
 

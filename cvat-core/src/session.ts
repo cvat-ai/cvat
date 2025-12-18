@@ -435,6 +435,7 @@ export class Session {
             filters: {
                 offset?: number,
                 notDeleted: boolean,
+                chapterMark?: boolean,
             },
             frameFrom: number,
             frameTo: number,

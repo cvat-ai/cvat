@@ -17,7 +17,6 @@ from itertools import product
 from operator import itemgetter
 from os.path import basename
 from time import sleep
-from typing import Optional
 
 import allure
 import pytest
@@ -206,7 +205,7 @@ class TestGetPostProjectBackup:
         *,
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         backup = export_project_backup(username, id=pid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(backup))
@@ -470,7 +469,7 @@ class TestPostProjects:
         return json.loads(response.data)
 
     @classmethod
-    def _create_org(cls, api_client: ApiClient, members: Optional[dict[str, str]] = None) -> str:
+    def _create_org(cls, api_client: ApiClient, members: dict[str, str] | None = None) -> str:
         with api_client:
             (_, response) = api_client.organizations_api.create(
                 models.OrganizationWriteRequest(slug="test_org_roles"), _parse_response=False
@@ -597,7 +596,7 @@ class TestImportExportDatasetProject:
         *,
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_project_dataset(username, save_images=True, id=pid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
@@ -609,7 +608,7 @@ class TestImportExportDatasetProject:
     @staticmethod
     def _test_export_annotations(
         username: str, pid: int, *, local_download: bool = True, **kwargs
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_project_dataset(username, save_images=False, id=pid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
@@ -1564,8 +1563,8 @@ class TestPatchProject:
         projects,
         find_users,
     ):
-        project_id: Optional[int] = None
-        username: Optional[str] = None
+        project_id: int | None = None
+        username: str | None = None
 
         for project in projects:
             if project_id is not None:
@@ -1609,8 +1608,8 @@ class TestPatchProject:
         find_users,
         filter_projects,
     ):
-        username: Optional[str] = None
-        project_id: Optional[int] = None
+        username: str | None = None
+        project_id: int | None = None
 
         projects = filter_projects(organization=None)
         users = find_users(exclude_privilege="admin")

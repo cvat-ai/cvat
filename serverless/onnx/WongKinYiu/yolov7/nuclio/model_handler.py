@@ -24,8 +24,6 @@ class ModelHandler:
             self.model = ort.InferenceSession(model, providers=providers, sess_options=so)
             self.output_details = [i.name for i in self.model.get_outputs()]
             self.input_details = [i.name for i in self.model.get_inputs()]
-
-            self.is_inititated = True
         except Exception as e:
             raise Exception(f"Cannot load model {model}: {e}")
 

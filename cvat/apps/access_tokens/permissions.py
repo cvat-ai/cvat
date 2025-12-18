@@ -8,7 +8,7 @@ import re
 from collections.abc import Sequence
 from pathlib import Path
 from types import NoneType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
 from attrs import frozen
 from django.conf import settings
@@ -143,7 +143,7 @@ class PluginInfo:
     original_package: str
 
 
-PluginCollection = dict[str, list[PluginInfo]]
+PluginCollection: TypeAlias = dict[str, list[PluginInfo]]
 
 
 class AccessTokenPermissionPluginManager:

@@ -12,7 +12,7 @@ import textwrap
 from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
-from typing import Any, Optional
+from typing import Any
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
@@ -298,10 +298,10 @@ class LambdaFunction:
         db_task: Task,
         data: dict[str, Any],
         *,
-        db_job: Optional[Job] = None,
-        is_interactive: Optional[bool] = False,
-        request: Optional[ExtendedRequest] = None,
-        converter: Optional[DetectionResultConverter] = None,
+        db_job: Job | None = None,
+        is_interactive: bool | None = False,
+        request: ExtendedRequest | None = None,
+        converter: DetectionResultConverter | None = None,
     ):
         if db_job is not None and db_job.get_task_id() != db_task.id:
             raise ValidationError(
@@ -682,7 +682,7 @@ class LambdaQueue:
         max_distance,
         request,
         *,
-        job: Optional[int] = None,
+        job: int | None = None,
     ) -> LambdaJob:
         queue = self._get_queue()
         rq_id = RequestId(
@@ -783,7 +783,7 @@ class DetectionResultConverter:
 
     def _parse_anno(
         self, *, labels: dict, conv_mask_to_poly: bool, frame: int, anno: dict
-    ) -> Optional[dict]:
+    ) -> dict | None:
         label = labels.get(anno["label"])
         if label is None:
             # Invalid label provided
@@ -878,7 +878,7 @@ class DetectionResultConverter:
 
 
 class DetectionResultCollector:
-    def __init__(self, task: Task, job: Optional[Job]) -> None:
+    def __init__(self, task: Task, job: Job | None) -> None:
         self._task = task
         self._job = job
 
@@ -982,10 +982,10 @@ class LambdaJob:
         function: LambdaFunction,
         db_task: Task,
         threshold: float,
-        mapping: Optional[dict[str, str]],
+        mapping: dict[str, str] | None,
         conv_mask_to_poly: bool,
         *,
-        db_job: Optional[Job] = None,
+        db_job: Job | None = None,
     ):
         collector = DetectionResultCollector(db_task, db_job)
 
@@ -1036,7 +1036,7 @@ class LambdaJob:
         return job.get_status()
 
     @classmethod
-    def _get_frame_set(cls, db_task: Task, db_job: Optional[Job]):
+    def _get_frame_set(cls, db_task: Task, db_job: Job | None):
         if db_job:
             task_data = db_task.data
             data_start_frame = task_data.start_frame
@@ -1057,7 +1057,7 @@ class LambdaJob:
         threshold: float,
         max_distance: int,
         *,
-        db_job: Optional[Job] = None,
+        db_job: Job | None = None,
     ):
         if db_job:
             data = dm.task.get_job_data(db_job.id)

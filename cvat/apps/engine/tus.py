@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 
 import attrs
 from django.conf import settings
+from rest_framework import serializers
 
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.types import ExtendedRequest
@@ -37,8 +38,17 @@ class TusTooLargeFileError(Exception):
 class TusChunk:
     def __init__(self, request: ExtendedRequest):
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
-        self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
+
+        try:
+            self.size = int(request.META["CONTENT_LENGTH"])
+        except KeyError as ex:
+            raise serializers.ValidationError("Content-Length header is missing") from ex
+
         self.content = request.body
+
+    @property
+    def end_offset(self) -> int:
+        return self.offset + self.size
 
 
 @attrs.define()

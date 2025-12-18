@@ -164,14 +164,14 @@ context('Edit handler.', () => {
             });
             cy.get('.cvat-canvas-container').click(200, 300);
             cy.get('.cvat-canvas-container').find('circle')
-                .then(($circleEditHanlerProgress) => {
+                .then(($circleEditHandlerProgress) => {
                     // rightclick() on canvas to check canceling draw a additional point
                     cy.get('.cvat-canvas-container').rightclick();
                     cy.get('.cvat-canvas-container')
                         .find('circle')
-                        .then(($circleEditHanlerProgressCancelDrawPoint) => {
-                            expect($circleEditHanlerProgress.length).not.equal(
-                                $circleEditHanlerProgressCancelDrawPoint.length,
+                        .then(($circleEditHandlerProgressCancelDrawPoint) => {
+                            expect($circleEditHandlerProgress.length).not.equal(
+                                $circleEditHandlerProgressCancelDrawPoint.length,
                             ); // expected 4 to not equal 3
                         });
                 });
@@ -179,8 +179,8 @@ context('Edit handler.', () => {
             cy.get('.cvat-canvas-container').click(200, 400); // Click on the first points shape to finish the change
             cy.get('#cvat_canvas_shape_3')
                 .find('circle')
-                .then(($circleCountAfterHanlerEditing) => {
-                    expect($circleCountAfterHanlerEditing.length).to.be.equal(2);
+                .then(($circleCountAfterHandlerEditing) => {
+                    expect($circleCountAfterHandlerEditing.length).to.be.equal(2);
                 });
         });
 

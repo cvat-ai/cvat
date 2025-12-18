@@ -14,6 +14,7 @@ function defaultTaskSpec({
     segmentSize,
     validationParams,
     projectID,
+    chunkSize,
 }) {
     const convertedAttrs = [];
     if (attributes !== undefined) {
@@ -38,6 +39,9 @@ function defaultTaskSpec({
 
     if (segmentSize) {
         taskSpec.segment_size = segmentSize;
+    }
+    if (chunkSize) {
+        taskSpec.data_chunk_size = chunkSize;
     }
 
     const dataSpec = {

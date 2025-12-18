@@ -4,7 +4,7 @@
 
 import collections
 import dataclasses
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 import cv2
 import cvat_sdk.auto_annotation as cvataa
@@ -162,7 +162,7 @@ class _Sam2Tracker:
 
     def _mask_to_shape(
         self, context: cvataa.TrackingFunctionShapeContext, mask: torch.Tensor
-    ) -> Optional[cvataa.TrackableShape]:
+    ) -> cvataa.TrackableShape | None:
         if context.original_shape_type == "mask":
             return cvataa.TrackableShape(type="mask", points=encode_mask(mask))
 
@@ -187,7 +187,7 @@ class _Sam2Tracker:
         context: cvataa.TrackingFunctionShapeContext,
         pp_image: _PreprocessedImage,
         state: _TrackingState,
-    ) -> Optional[cvataa.TrackableShape]:
+    ) -> cvataa.TrackableShape | None:
         state.frame_idx += 1
 
         current_out = self._call_predictor(

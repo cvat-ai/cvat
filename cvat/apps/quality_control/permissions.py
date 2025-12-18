@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional, Union, cast
+from typing import cast
 
 from django.conf import settings
 
@@ -17,8 +17,8 @@ from .serializers import QualityReportCreateSerializer
 
 
 class QualityReportPermission(OpenPolicyAgentPermission):
-    obj: Optional[QualityReport]
-    rq_job_owner_id: Optional[int]
+    obj: QualityReport | None
+    rq_job_owner_id: int | None
     project: int | Project | None
     task: int | Task | None
 
@@ -36,7 +36,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         return cls(**iam_context, scope=cls.Scopes.VIEW_STATUS, rq_job_owner_id=rq_job_owner_id)
 
     @classmethod
-    def create_scope_view(cls, request, report: Union[int, QualityReport], iam_context=None):
+    def create_scope_view(cls, request, report: int | QualityReport, iam_context=None):
         if isinstance(report, int):
             report = get_or_404(QualityReport, report)
 
@@ -180,7 +180,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
 
 
 class AnnotationConflictPermission(OpenPolicyAgentPermission):
-    obj: Optional[AnnotationConflict]
+    obj: AnnotationConflict | None
 
     class Scopes(StrEnum):
         LIST = "list"
@@ -220,7 +220,7 @@ class AnnotationConflictPermission(OpenPolicyAgentPermission):
 
 
 class QualitySettingPermission(OpenPolicyAgentPermission):
-    obj: Optional[QualitySettings]
+    obj: QualitySettings | None
 
     class Scopes(StrEnum):
         LIST = "list"

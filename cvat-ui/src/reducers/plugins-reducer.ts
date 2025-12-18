@@ -101,6 +101,11 @@ const defaultState: PluginsState = {
                 items: [],
             },
         },
+        aiTools: {
+            interactors: {
+                extras: [],
+            },
+        },
     },
 };
 

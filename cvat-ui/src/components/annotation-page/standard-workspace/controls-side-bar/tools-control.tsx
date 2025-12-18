@@ -32,7 +32,7 @@ import {
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ToolsBlockerState,
+    CombinedState, ActiveControl, ToolsBlockerState, PluginComponent,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -68,6 +68,7 @@ interface StateToProps {
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
     frameIsDeleted: boolean;
+    interactorExtras: PluginComponent[];
 }
 
 interface DispatchToProps {
@@ -103,6 +104,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings: {
             workspace: { toolsBlockerState, defaultApproxPolyAccuracy },
         },
+        plugins: {
+            components: {
+                aiTools: {
+                    interactors: {
+                        extras: interactorExtras,
+                    },
+                },
+            },
+        },
     } = state;
 
     return {
@@ -120,6 +130,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         defaultApproxPolyAccuracy,
         toolsBlockerState,
         frameIsDeleted,
+        interactorExtras,
     };
 }
 
@@ -1058,7 +1069,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderInteractorBlock(): JSX.Element {
         const {
-            interactors, canvasInstance, labels, onInteractionStart,
+            interactors, canvasInstance, labels, onInteractionStart, interactorExtras,
         } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, startInteractingWithBox, convertMasksToPolygons,
@@ -1078,6 +1089,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const minNegVertices = activeInteractor?.params?.canvas?.minNegVertices ?? -1;
         const renderStartWithBox = activeInteractor?.params?.canvas?.startWithBoxOptional ?? false;
+
+        const renderedInteractorExtras = interactorExtras
+            .sort((a, b) => a.data.weight - b.data.weight)
+            .filter((plugin) => plugin.data.shouldBeRendered(this.props, this.state))
+            .map(({ component: Component }, index) => (
+                <Component targetProps={this.props} targetState={this.state} key={index} />
+            ));
 
         return (
             <>
@@ -1141,6 +1159,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             <Text>Start with a bounding box</Text>
                         </div>
                     )}
+                </div>
+                <div className='cvat-tools-interactor-extras'>
+                    {renderedInteractorExtras}
                 </div>
                 <Row align='middle' justify='end'>
                     <Col>

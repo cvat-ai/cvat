@@ -4,7 +4,7 @@
 import io
 import zipfile
 from pathlib import Path
-from typing import Optional, Union
+from typing import TypeAlias
 
 import pytest
 from cvat_sdk.core.proxies.jobs import Job
@@ -19,7 +19,7 @@ from shared.utils.s3 import make_client as make_s3_client
 
 from .util import make_pbar
 
-ProjectOrTaskOrJob = Union[Project, Task, Job]
+ProjectOrTaskOrJob: TypeAlias = Project | Task | Job
 
 
 class TestDatasetExport:
@@ -59,7 +59,7 @@ class TestDatasetExport:
         format_name: str,
         file_path: Path,
         include_images: bool,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):

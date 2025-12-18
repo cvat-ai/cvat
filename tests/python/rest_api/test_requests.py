@@ -5,7 +5,6 @@
 import io
 import json
 from http import HTTPStatus
-from typing import Optional
 from urllib.parse import parse_qsl, urlparse
 
 import pytest
@@ -370,7 +369,7 @@ class TestGetRequests:
         *,
         action: str,
         target_type: str,
-        subresource: Optional[str] = None,
+        subresource: str | None = None,
     ):
         with make_api_client(username) as api_client:
             bg_requests, _ = api_client.requests_api.list(

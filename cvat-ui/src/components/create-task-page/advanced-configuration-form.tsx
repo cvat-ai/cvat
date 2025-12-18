@@ -191,7 +191,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     /* eslint-disable class-methods-use-this */
-    private renderCopyDataChechbox(): JSX.Element {
+    private renderCopyDataCheckbox(): JSX.Element {
         return (
             <Form.Item
                 help='If you have a low data transfer rate over the network you can copy data into CVAT to speed up work'
@@ -462,7 +462,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Row>
                 {activeFileManagerTab === 'share' ? (
                     <Row>
-                        <Col>{this.renderCopyDataChechbox()}</Col>
+                        <Col>{this.renderCopyDataCheckbox()}</Col>
                     </Row>
                 ) : null}
                 <Row>

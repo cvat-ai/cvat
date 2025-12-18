@@ -11,10 +11,11 @@ import { Row, Col } from 'antd/lib/grid';
 import Icon, {
     LinkOutlined, DeleteOutlined, CopyOutlined, SearchOutlined,
 } from '@ant-design/icons';
-import Slider from 'antd/lib/slider';
+import Slider, { SliderMarks } from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
+import Tooltip from 'antd/lib/tooltip';
 
 import { Workspace, CombinedState } from 'reducers';
 import { RestoreIcon } from 'icons';
@@ -24,6 +25,7 @@ import { clamp } from 'utils/math';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { Chapter } from 'cvat-core/src/frames';
 import { usePlugins } from 'utils/hooks';
 
 interface Props {
@@ -32,6 +34,8 @@ interface Props {
     playing: boolean;
     ranges: string;
     frameNumber: number;
+    chapters: Chapter[] | null;
+    hoveredChapter: number | null;
     frameFilename: string;
     frameDeleted: boolean;
     deleteFrameShortcut: string;
@@ -79,6 +83,8 @@ function PlayerNavigation(props: Props): JSX.Element {
     const {
         startFrame,
         stopFrame,
+        chapters,
+        hoveredChapter,
         playing,
         frameNumber,
         frameFilename,
@@ -162,6 +168,18 @@ function PlayerNavigation(props: Props): JSX.Element {
         opacity: 0.5,
     } : {};
 
+    const marks: SliderMarks = (chapters ?? []).reduce<SliderMarks>((acc, chapter) => {
+        const active = hoveredChapter === chapter.id;
+        const innerAcc = acc ?? {};
+        innerAcc[chapter.start] = {
+            label:
+                    <Tooltip title={`${chapter.metadata.title}`}>
+                        <span className={`ant-slider-mark-chapter ${active ? 'active' : ''}`} />
+                    </Tooltip>,
+        };
+        return innerAcc;
+    }, {});
+
     const deleteFrameIcon = !frameDeleted ? (
         <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
             <DeleteOutlined
@@ -193,6 +211,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                             className='cvat-player-slider'
                             min={startFrame}
                             max={stopFrame}
+                            marks={marks}
                             value={frameNumber || 0}
                             onChange={workspace !== Workspace.SINGLE_SHAPE ? onSliderChange : undefined}
                         />

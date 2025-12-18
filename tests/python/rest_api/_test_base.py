@@ -4,7 +4,6 @@ import os
 from collections.abc import Generator, Mapping, Sequence
 from contextlib import closing
 from functools import partial
-from typing import Optional
 
 import numpy as np
 import pytest
@@ -29,16 +28,16 @@ class TestTasksBase:
         self,
         request: pytest.FixtureRequest,
         *,
-        frame_count: Optional[int] = 10,
-        image_files: Optional[Sequence[io.BytesIO]] = None,
-        related_files: Optional[Mapping[int, Sequence[io.BytesIO]]] = None,
-        start_frame: Optional[int] = None,
-        stop_frame: Optional[int] = None,
-        step: Optional[int] = None,
-        segment_size: Optional[int] = None,
-        server_files: Optional[Sequence[str]] = None,
-        cloud_storage_id: Optional[int] = None,
-        job_replication: Optional[int] = None,
+        frame_count: int | None = 10,
+        image_files: Sequence[io.BytesIO] | None = None,
+        related_files: Mapping[int, Sequence[io.BytesIO]] | None = None,
+        start_frame: int | None = None,
+        stop_frame: int | None = None,
+        step: int | None = None,
+        segment_size: int | None = None,
+        server_files: Sequence[str] | None = None,
+        cloud_storage_id: int | None = None,
+        job_replication: int | None = None,
         **data_kwargs,
     ) -> Generator[tuple[ImagesTaskSpec, int], None, None]:
         task_params = {
@@ -125,7 +124,7 @@ class TestTasksBase:
     @parametrize("stop_frame", [15, 26])
     @parametrize("start_frame", [3, 7])
     def fxt_uploaded_images_task_with_segments_start_stop_step(
-        self, request: pytest.FixtureRequest, start_frame: int, stop_frame: Optional[int], step: int
+        self, request: pytest.FixtureRequest, start_frame: int, stop_frame: int | None, step: int
     ) -> Generator[tuple[ITaskSpec, int], None, None]:
         yield from self._image_task_fxt_base(
             request=request,
@@ -146,12 +145,12 @@ class TestTasksBase:
         self,
         request: pytest.FixtureRequest,
         *,
-        start_frame: Optional[int] = None,
-        step: Optional[int] = None,
+        start_frame: int | None = None,
+        step: int | None = None,
         random_seed: int = 42,
-        image_files: Optional[Sequence[io.BytesIO]] = None,
-        server_files: Optional[Sequence[str]] = None,
-        cloud_storage_id: Optional[int] = None,
+        image_files: Sequence[io.BytesIO] | None = None,
+        server_files: Sequence[str] | None = None,
+        cloud_storage_id: int | None = None,
         **kwargs,
     ) -> Generator[tuple[ITaskSpec, int], None, None]:
         validation_params = models.DataRequestValidationParams._from_openapi_data(
@@ -230,7 +229,7 @@ class TestTasksBase:
     @fixture(scope="class")
     @parametrize("start_frame, step", [(2, 3)])
     def fxt_uploaded_images_task_with_honeypots_and_segments_start_step(
-        self, request: pytest.FixtureRequest, start_frame: Optional[int], step: Optional[int]
+        self, request: pytest.FixtureRequest, start_frame: int | None, step: int | None
     ) -> Generator[tuple[ITaskSpec, int], None, None]:
         yield from self._image_task_with_honeypots_and_segments_base(
             request, start_frame=start_frame, step=step
@@ -321,10 +320,10 @@ class TestTasksBase:
         self,
         request: pytest.FixtureRequest,
         *,
-        start_frame: Optional[int] = None,
-        step: Optional[int] = None,
+        start_frame: int | None = None,
+        step: int | None = None,
         frame_selection_method: str = "random_uniform",
-        job_replication: Optional[int] = None,
+        job_replication: int | None = None,
     ) -> Generator[tuple[ITaskSpec, int], None, None]:
         used_frames_count = 16
         total_frame_count = (start_frame or 0) + used_frames_count * (step or 1)
@@ -491,8 +490,8 @@ class TestTasksBase:
     def fxt_uploaded_images_task_with_gt_and_segments_start_step(
         self,
         request: pytest.FixtureRequest,
-        start_frame: Optional[int],
-        step: Optional[int],
+        start_frame: int | None,
+        step: int | None,
         frame_selection_method: str,
     ) -> Generator[tuple[ITaskSpec, int], None, None]:
         yield from self._uploaded_images_task_with_gt_and_segments_base(
@@ -507,10 +506,10 @@ class TestTasksBase:
         request: pytest.FixtureRequest,
         *,
         frame_count: int = 10,
-        segment_size: Optional[int] = None,
-        start_frame: Optional[int] = None,
-        stop_frame: Optional[int] = None,
-        step: Optional[int] = None,
+        segment_size: int | None = None,
+        start_frame: int | None = None,
+        stop_frame: int | None = None,
+        step: int | None = None,
     ) -> Generator[tuple[VideoTaskSpec, int], None, None]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
@@ -569,7 +568,7 @@ class TestTasksBase:
     @parametrize("stop_frame", [15, 26])
     @parametrize("start_frame", [3, 7])
     def fxt_uploaded_video_task_with_segments_start_stop_step(
-        self, request: pytest.FixtureRequest, start_frame: int, stop_frame: Optional[int], step: int
+        self, request: pytest.FixtureRequest, start_frame: int, stop_frame: int | None, step: int
     ) -> Generator[tuple[ITaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(
             request=request,

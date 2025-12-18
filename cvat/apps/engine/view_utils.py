@@ -6,7 +6,7 @@
 
 import textwrap
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from django.db.models import Manager, QuerySet
 from django.http import HttpResponseGone
@@ -28,9 +28,9 @@ def make_paginated_response(
     queryset: QuerySet,
     *,
     viewset: GenericViewSet,
-    response_type: Optional[type[HttpResponse]] = None,
-    serializer_type: Optional[type[Serializer]] = None,
-    request: Optional[type[ExtendedRequest]] = None,
+    response_type: type[HttpResponse] | None = None,
+    serializer_type: type[Serializer] | None = None,
+    request: type[ExtendedRequest] | None = None,
     **serializer_params,
 ):
     # Adapted from the mixins.ListModelMixin.list()

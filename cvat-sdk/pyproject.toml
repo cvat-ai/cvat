@@ -1,6 +1,51 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+[project]
+dynamic = ["version"]
+
+name = "cvat_sdk"
+description = "Software Development Kit for CVAT"
+readme = "README.md"
+authors = [{name = "CVAT.ai Corporation", email = "support@cvat.ai"}]
+keywords = ["OpenAPI", "OpenAPI-Generator", "CVAT"]
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "attrs >= 21.4.0",
+    "packaging >= 21.3",
+    "Pillow >= 10.3.0",
+    "platformdirs >= 2.1.0",
+    "tqdm >= 4.64.0",
+    "typing_extensions >= 4.2.0",
+
+    # these dependencies are used by auto-generated code
+    "python_dateutil >= 2.5.3",
+    "urllib3 >= 1.25.3",
+]
+
+[project.optional-dependencies]
+masks = ["numpy>=2"]
+pytorch = ["torch", "torchvision", "scikit-image>=0.24", "cvat_sdk[masks]"]
+
+[project.urls]
+homepage = "https://github.com/cvat-ai/cvat"
+
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+packages = {find = {include = ["cvat_sdk*"]}}
+
+[tool.setuptools.dynamic]
+version = {attr = "cvat_sdk.version.VERSION"}
 
 [tool.isort]
 profile = "black"

@@ -29,11 +29,11 @@ Formats, import/export, annotation spec.
 Editor, tools, automated labeling.
 {{< /card >}}
 
-{{< card icon="fa-solid fa-chart-line" title="QA & Analytics" url="qa_analytics/" >}}
+{{< card icon="fa-solid fa-chart-line" title="QA & Analytics" url="qa-analytics//" >}}
 Quality control, consensus, analytics.
 {{< /card >}}
 
-{{< card icon="fa-solid fa-plug-circle-bolt" title="Integrations" url="integrations/" >}}
+{{< card icon="fa-solid fa-plug-circle-bolt" title="Integrations" url="integration/" >}}
 FiftyOne, Human Protocol.
 {{< /card >}}
 
@@ -41,7 +41,7 @@ FiftyOne, Human Protocol.
 Installation, AWS, superuser, advanced config.
 {{< /card >}}
 
-{{< card icon="fa-solid fa-code" title="Developers" url="developers/" >}}
+{{< card icon="fa-solid fa-code" title="Developers" url="api_sdk/" >}}
 API, SDK, CLI, tokens.
 {{< /card >}}
 

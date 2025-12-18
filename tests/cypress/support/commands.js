@@ -1347,7 +1347,7 @@ Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
 });
 
 Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
-    if (Cypress.browser.family !== 'chromium' && !window.localStorage.getItem('platformNotiticationShown')) {
+    if (Cypress.browser.family !== 'chromium' && !window.localStorage.getItem('platformNotificationShown')) {
         cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
             cy.contains('button', 'OK').click();
         });
@@ -1880,10 +1880,9 @@ Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
         .filter(`:contains("Job #${jobID}")`)
         .find('.anticon-more').first().click();
 
-    cy.get('.ant-dropdown-menu')
-        .should('exist').and('be.visible')
-        .contains('li', 'Merge consensus job')
-        .click();
+    cy.get('.ant-dropdown-menu').should('exist').and('be.visible')
+        .contains('li', 'Merge consensus job').should('exist').and('be.visible')
+        .click({ scrollBehavior: 'center' });
     cy.get('.cvat-modal-confirm-consensus-merge-job')
         .contains('button', 'Merge')
         .click();

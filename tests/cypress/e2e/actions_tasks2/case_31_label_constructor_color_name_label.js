@@ -95,14 +95,16 @@ context('Label constructor. Color label. Label name editing', () => {
             cy.get('#cvat_canvas_shape_2').should('have.attr', 'stroke', `#${labelColor.greenHex}`);
             cy.get('#cvat_canvas_shape_3').should('have.attr', 'stroke', `#${labelColor.blueHex}`);
             cy.get('#cvat-objects-sidebar-state-item-1')
-                .should('have.attr', 'style')
-                .and('contain', `background-color: rgba(${labelColor.redRgb}`);
+                .invoke('css', 'background-color').should('contain', `rgba(${labelColor.redRgb}`);
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .invoke('css', 'background-color')
+                .should('contain', labelColor.redRgb);
             cy.get('#cvat-objects-sidebar-state-item-2')
-                .should('have.attr', 'style')
-                .and('contain', `background-color: rgba(${labelColor.greenRgb}`);
+                .invoke('css', 'background-color')
+                .should('contain', labelColor.greenRgb);
             cy.get('#cvat-objects-sidebar-state-item-3')
-                .should('have.attr', 'style')
-                .and('contain', `background-color: rgba(${labelColor.blueRgb}`);
+                .invoke('css', 'background-color')
+                .should('contain', labelColor.blueRgb);
         });
 
         it('Save job and change color and name for a label.', () => {
@@ -125,8 +127,8 @@ context('Label constructor. Color label. Label name editing', () => {
             cy.getObjectIdNumberByLabelName(colorYellow).then((objectId) => {
                 cy.get(`#cvat_canvas_shape_${objectId}`).should('have.attr', 'stroke', `#${labelColor.yellowHex}`);
                 cy.get(`#cvat-objects-sidebar-state-item-${objectId}`)
-                    .should('have.attr', 'style')
-                    .and('contain', `background-color: rgba(${labelColor.yellowRgb}`);
+                    .invoke('css', 'background-color')
+                    .should('contain', labelColor.yellowRgb);
                 cy.get(`#cvat-objects-sidebar-state-item-${objectId}`).within(() => {
                     cy.get('.cvat-objects-sidebar-state-item-label-selector').should('have.text', colorYellow);
                 });

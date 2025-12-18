@@ -11,7 +11,7 @@ import threading
 import unittest
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import pytest
 import requests
@@ -22,7 +22,7 @@ from shared.utils.helpers import generate_image_file
 
 
 def run_cli(
-    test: Union[unittest.TestCase, Any],
+    test: unittest.TestCase | Any,
     *args: str,
     expected_code: int = 0,
 ) -> None:
@@ -121,7 +121,7 @@ class TestCliBase:
         cmd: str,
         *args: str,
         expected_code: int = 0,
-        organization: Optional[str] = None,
+        organization: str | None = None,
         authenticate: bool = True,
     ) -> str:
         common_args = [

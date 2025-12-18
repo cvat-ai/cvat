@@ -13,7 +13,10 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
-from cvat.apps.dataset_manager.util import faster_deepcopy
+from cvat.apps.dataset_manager.util import (
+    faster_deepcopy,
+    make_getter_by_frame_for_annotation_stream,
+)
 from cvat.apps.engine.models import DimensionType, ShapeType
 from cvat.apps.engine.serializers import LabeledDataSerializer
 
@@ -258,8 +261,6 @@ class AnnotationManager:
 
         if not self.data.is_stream:
             shapes = sorted(shapes, key=lambda shape: shape["frame"])
-
-        track_shapes = sorted(track_shapes, key=lambda shape: shape["frame"])
 
         yield from heapq.merge(shapes, track_shapes, key=lambda shape: shape["frame"])
 
@@ -612,37 +613,41 @@ class TrackManager(ObjectManager):
         deleted_frames: Sequence[int] | None = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False,
-    ) -> list:
-        shapes = []
-        for idx, track in enumerate(self.objects):
+    ) -> Generator[dict, None, None]:
+        def generate_track_shapes(track, idx):
             track_id = track["id"] if use_server_track_ids else idx
-            track_shapes = {}
 
-            for shape in TrackManager.get_interpolated_shapes(
-                track,
-                0,
-                end_frame,
-                self.dimension,
-                include_outside=include_outside,
-                included_frames=included_frames,
-                deleted_frames=deleted_frames,
-            ):
-                shape["label_id"] = track["label_id"]
-                shape["group"] = track["group"]
-                shape["track_id"] = track_id
-                shape["source"] = track["source"]
-                shape["attributes"] += track["attributes"]
-                shape["elements"] = []
-
-                track_shapes[shape["frame"]] = shape
-
-            if not track_shapes:
-                # This track has no elements on the included frames
-                continue
+            track_shapes = (
+                dict(
+                    shape,
+                    label_id=track["label_id"],
+                    group=track["group"],
+                    track_id=track_id,
+                    source=track["source"],
+                    attributes=shape["attributes"] + track["attributes"],
+                    elements=[],
+                )
+                for shape in TrackManager.get_interpolated_shapes(
+                    track,
+                    0,
+                    end_frame,
+                    self.dimension,
+                    include_outside=include_outside,
+                    included_frames=included_frames,
+                    deleted_frames=deleted_frames,
+                    streaming=True,
+                )
+            )
 
             if track.get("elements"):
+                track_shapes = list(track_shapes)
+
+                if not track_shapes:
+                    # This track has no elements on the included frames
+                    return
+
                 track_elements = TrackManager(track["elements"], dimension=self.dimension)
-                element_included_frames = set(track_shapes.keys())
+                element_included_frames = {shape["frame"] for shape in track_shapes}
                 if included_frames is not None:
                     element_included_frames = element_included_frames.intersection(included_frames)
                 element_shapes = track_elements.to_shapes(
@@ -652,22 +657,29 @@ class TrackManager(ObjectManager):
                     include_outside=True,  # elements are controlled by the parent shape
                     use_server_track_ids=use_server_track_ids,
                 )
+                get_elements_on_frame = make_getter_by_frame_for_annotation_stream(element_shapes)
 
-                for shape in element_shapes:
-                    track_shapes[shape["frame"]]["elements"].append(shape)
+                track_shapes = (
+                    dict(shape, elements=list(get_elements_on_frame(shape["frame"])))
+                    for shape in track_shapes
+                )
 
                 # The whole shape can be filtered out, if all its elements are outside,
                 # and outside shapes are not requested.
                 if not include_outside:
-                    track_shapes = {
-                        frame_number: shape
-                        for frame_number, shape in track_shapes.items()
+                    track_shapes = (
+                        shape
+                        for shape in track_shapes
                         if not shape["elements"]
                         or not all(elem["outside"] for elem in shape["elements"])
-                    }
+                    )
 
-            shapes.extend(track_shapes.values())
-        return shapes
+            yield from track_shapes
+
+        yield from heapq.merge(
+            *[generate_track_shapes(track, idx) for idx, track in enumerate(self.objects)],
+            key=lambda shape: shape["frame"],
+        )
 
     @staticmethod
     def _get_objects_by_frame(objects, start_frame):
@@ -752,7 +764,8 @@ class TrackManager(ObjectManager):
         included_frames: Sequence[int] | None = None,
         deleted_frames: Sequence[int] | None = None,
         include_outside: bool = False,
-    ):
+        streaming: bool = False,
+    ) -> Generator[dict, None, None]:
         # If a task or job contains deleted frames that contain track keyframes,
         # these keyframes should be excluded from the interpolation.
         # In jobs having specific frames included (e.g. GT jobs),
@@ -794,7 +807,6 @@ class TrackManager(ObjectManager):
             return angle_diff
 
         def simple_interpolation(shape0, shape1):
-            shapes = []
             distance = shape1["frame"] - shape0["frame"]
             diff = np.subtract(shape1["points"], shape0["points"])
 
@@ -808,16 +820,13 @@ class TrackManager(ObjectManager):
                 points = shape0["points"] + diff * offset
 
                 if included_frames is None or frame in included_frames:
-                    shapes.append(copy_shape(shape0, frame, points, rotation))
-
-            return shapes
+                    yield copy_shape(shape0, frame, points, rotation)
 
         def simple_3d_interpolation(shape0, shape1):
-            result = simple_interpolation(shape0, shape1)
             angles = shape0["points"][3:6] + shape1["points"][3:6]
             distance = shape1["frame"] - shape0["frame"]
 
-            for shape in result:
+            for shape in simple_interpolation(shape0, shape1):
                 offset = (shape["frame"] - shape0["frame"]) / distance
                 for i, angle0 in enumerate(angles):
                     if i < 3:
@@ -827,18 +836,15 @@ class TrackManager(ObjectManager):
                         angle = angle0 + find_angle_diff(angle1, angle0) * offset * math.pi / 180
                         shape["points"][i + 3] = angle if angle <= math.pi else angle - math.pi * 2
 
-            return result
+                yield shape
 
         def points_interpolation(shape0, shape1):
             if len(shape0["points"]) == 2 and len(shape1["points"]) == 2:
-                return simple_interpolation(shape0, shape1)
+                yield from simple_interpolation(shape0, shape1)
             else:
-                shapes = []
                 for frame in range(shape0["frame"] + 1, shape1["frame"]):
                     if included_frames is None or frame in included_frames:
-                        shapes.append(copy_shape(shape0, frame))
-
-            return shapes
+                        yield copy_shape(shape0, frame)
 
         def interpolate_position(left_position, right_position, offset):
             def to_array(points):
@@ -1029,7 +1035,6 @@ class TrackManager(ObjectManager):
             return to_array(reducedPoints).tolist()
 
         def polyshape_interpolation(shape0, shape1):
-            shapes = []
             is_polygon = shape0["type"] == ShapeType.POLYGON
             if is_polygon:
                 # Make the polygon closed for computations
@@ -1039,21 +1044,26 @@ class TrackManager(ObjectManager):
                 shape1["points"] = shape1["points"] + shape1["points"][:2]
 
             distance = shape1["frame"] - shape0["frame"]
-            for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                offset = (frame - shape0["frame"]) / distance
-                points = interpolate_position(shape0, shape1, offset)
 
-                if included_frames is None or frame in included_frames:
-                    shapes.append(copy_shape(shape0, frame, points))
+            def generate_shapes():
+                for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                    offset = (frame - shape0["frame"]) / distance
+                    points = interpolate_position(shape0, shape1, offset)
+
+                    if included_frames is None or frame in included_frames:
+                        yield copy_shape(shape0, frame, points)
+
+            shapes = generate_shapes()
 
             if is_polygon:
-                # Remove the extra point added
-                shape0["points"] = shape0["points"][:-2]
-                shape1["points"] = shape1["points"][:-2]
-                for shape in shapes:
-                    shape["points"] = shape["points"][:-2]
 
-            return shapes
+                def remove_extra_point_added(shape):
+                    shape["points"] = shape["points"][:-2]
+                    return shape
+
+                shapes = map(remove_extra_point_added, shapes)
+
+            yield from shapes
 
         def interpolate(shape0, shape1):
             is_same_type = shape0["type"] == shape1["type"]
@@ -1068,84 +1078,81 @@ class TrackManager(ObjectManager):
             if not is_same_type:
                 raise NotImplementedError()
 
-            shapes = []
             if dimension == DimensionType.DIM_3D:
-                shapes = simple_3d_interpolation(shape0, shape1)
+                yield from simple_3d_interpolation(shape0, shape1)
             if is_rectangle or is_cuboid or is_ellipse or is_skeleton:
-                shapes = simple_interpolation(shape0, shape1)
+                yield from simple_interpolation(shape0, shape1)
             elif is_points:
-                shapes = points_interpolation(shape0, shape1)
+                yield from points_interpolation(shape0, shape1)
             elif is_polygon or is_polyline:
-                shapes = polyshape_interpolation(shape0, shape1)
+                yield from polyshape_interpolation(shape0, shape1)
             else:
                 raise NotImplementedError()
 
-            return shapes
-
         def propagate(shape: dict, end_frame, *, included_frames=None):
-            return [
+            yield from (
                 copy_shape(shape, i)
                 for i in range(shape["frame"] + 1, end_frame)
                 if included_frames is None or i in included_frames
-            ]
+            )
 
-        shapes = []
-        prev_shape: dict | None = None
-        for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
-            curr_frame = shape["frame"]
-            if curr_frame in deleted_frames:
-                continue
-            if prev_shape and end_frame <= curr_frame:
-                # If we exceed the end_frame and there was a previous shape,
-                # we still need to interpolate up to the next keyframe,
-                # but keep the results only up to the end_frame:
-                #        vvvvvvv
-                # ---- | ------- | ----- | ----->
-                #     prev      end   cur kf
-                interpolated = interpolate(prev_shape, shape)
-                interpolated.append(shape)
+        def generate_shapes():
+            prev_shape: dict | None = None
+            for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
+                curr_frame = shape["frame"]
+                if curr_frame in deleted_frames:
+                    continue
+                if prev_shape and end_frame <= curr_frame:
+                    # If we exceed the end_frame and there was a previous shape,
+                    # we still need to interpolate up to the next keyframe,
+                    # but keep the results only up to the end_frame:
+                    #        vvvvvvv
+                    # ---- | ------- | ----- | ----->
+                    #     prev      end   cur kf
+                    interpolated = interpolate(prev_shape, shape)
+                    interpolated = heapq.merge(interpolated, [shape], key=lambda sh: sh["frame"])
 
-                for shape in sorted(interpolated, key=lambda shape: shape["frame"]):
-                    if shape["frame"] < end_frame:
-                        shapes.append(shape)
-                    else:
-                        break
+                    for shape in interpolated:
+                        if shape["frame"] < end_frame:
+                            yield shape
+                        else:
+                            break
 
-                # Update the last added shape
+                    # Update the last added shape
+                    shape["keyframe"] = True
+                    prev_shape = shape
+
+                    break  # The track finishes here
+
+                if prev_shape:
+                    if curr_frame == prev_shape["frame"] and dict(
+                        shape, id=None, keyframe=None
+                    ) == dict(prev_shape, id=None, keyframe=None):
+                        continue
+                    assert (
+                        curr_frame > prev_shape["frame"]
+                    ), f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}"  # Catch invalid tracks
+
+                    # Propagate attributes
+                    for attr in prev_shape["attributes"]:
+                        if attr["spec_id"] not in (el["spec_id"] for el in shape["attributes"]):
+                            shape["attributes"].append(faster_deepcopy(attr))
+
+                    if not prev_shape["outside"] or include_outside:
+                        yield from interpolate(prev_shape, shape)
+
                 shape["keyframe"] = True
+                yield shape
                 prev_shape = shape
 
-                break  # The track finishes here
+            if prev_shape and (not prev_shape["outside"] or include_outside):
+                # When the latest keyframe of a track is less than the end_frame
+                # and it is not outside, need to propagate
+                yield from propagate(prev_shape, end_frame, included_frames=included_frames)
 
-            if prev_shape:
-                if curr_frame == prev_shape["frame"] and dict(
-                    shape, id=None, keyframe=None
-                ) == dict(prev_shape, id=None, keyframe=None):
-                    continue
-                assert (
-                    curr_frame > prev_shape["frame"]
-                ), f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}"  # Catch invalid tracks
-
-                # Propagate attributes
-                for attr in prev_shape["attributes"]:
-                    if attr["spec_id"] not in (el["spec_id"] for el in shape["attributes"]):
-                        shape["attributes"].append(faster_deepcopy(attr))
-
-                if not prev_shape["outside"] or include_outside:
-                    shapes.extend(interpolate(prev_shape, shape))
-
-            shape["keyframe"] = True
-            shapes.append(shape)
-            prev_shape = shape
-
-        if prev_shape and (not prev_shape["outside"] or include_outside):
-            # When the latest keyframe of a track is less than the end_frame
-            # and it is not outside, need to propagate
-            shapes.extend(propagate(prev_shape, end_frame, included_frames=included_frames))
-
-        shapes = [
+        shapes = (
             shape
-            for shape in shapes
+            for shape in generate_shapes()
             #
             if shape["frame"] not in deleted_frames
             #
@@ -1161,7 +1168,10 @@ class TrackManager(ObjectManager):
             if shape["keyframe"] or not shape["outside"] or include_outside
             #
             if included_frames is None or shape["frame"] in included_frames
-        ]
+        )
+
+        if not streaming:
+            shapes = list(shapes)
 
         return shapes
 
