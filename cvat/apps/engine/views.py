@@ -227,7 +227,7 @@ class ServerViewSet(viewsets.ViewSet):
         if directory_param.startswith("/"):
             directory_param = directory_param[1:]
 
-        directory = (Path(settings.SHARE_ROOT) / directory_param).absolute()
+        directory = (Path(settings.SHARE_ROOT) / directory_param).resolve()
 
         if str(directory).startswith(settings.SHARE_ROOT) and directory.is_dir():
             data = []

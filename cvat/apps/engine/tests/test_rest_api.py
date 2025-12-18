@@ -7575,6 +7575,11 @@ class ServerShareAPITestCase(ApiTestBase):
         response = self._run_api_v2_server_share(None, "/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_api_v2_server_share_directory_traversal(self):
+        response = self._run_api_v2_server_share(self.admin, "../")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("is an invalid directory", response.content.decode("utf-8"))
+
 
 class ServerShareDifferentTypesAPITestCase(ApiTestBase):
     @classmethod
