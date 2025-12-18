@@ -83,9 +83,8 @@ def read_video_file(file: BytesIO) -> Generator[Image.Image, None, None]:
     with av.open(file) as container:
         video_stream = container.streams.video[0]
 
-        for packet in container.demux(video_stream):
-            for frame in packet.decode():
-                yield frame.to_image()
+        for frame in container.decode(video_stream):
+            yield frame.to_image()
 
 
 def generate_manifest(path: str) -> None:
