@@ -2094,21 +2094,21 @@ class ProjectImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         def _create_task(task_data, media_data):
             response = self.client.post("/api/tasks", data=task_data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
             for media in media_data.values():
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
             response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
-            assert response.status_code == status.HTTP_202_ACCEPTED
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json()["rq_id"]
 
             response = self.client.get(f"/api/requests/{rq_id}")
-            assert response.status_code == status.HTTP_200_OK, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
             response_json = response.json()
             rqjob_status, msg = response_json["status"], response_json["message"]
-            assert rqjob_status == "finished", f"{rqjob_status=}\n{msg=}"
+            self.assertEqual(rqjob_status, "finished", f"Message: {msg}")
 
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
@@ -2145,7 +2145,7 @@ class ProjectImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         def _create_project(project_data):
             response = self.client.post("/api/projects", data=project_data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             self.projects.append(response.data)
 
         project_data = [
@@ -3275,21 +3275,21 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         def _create_task(task_data, media_data):
             response = self.client.post("/api/tasks", data=task_data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
             for media in media_data.values():
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
             response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
-            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json()["rq_id"]
 
             response = self.client.get(f"/api/requests/{rq_id}")
-            assert response.status_code == status.HTTP_200_OK, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
             response_json = response.json()
             rqjob_status, msg = response_json["status"], response_json["message"]
-            assert rqjob_status == "finished", f"{rqjob_status=}\n{msg=}"
+            self.assertEqual(rqjob_status, "finished", f"Message: {msg}")
 
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
@@ -5194,7 +5194,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 data={"image_quality": task_data["image_quality"]},
                 headers={"Upload-Start": True},
             )
-            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
             for group_idx, file_group in enumerate(file_groups):
                 request_data = {k: v for k, v in data.items() if "_files" not in k}
@@ -5213,12 +5213,12 @@ class TaskDataAPITestCase(ApiTestBase):
                 )
 
                 if group_idx != len(file_groups) - 1:
-                    assert response.status_code == status.HTTP_200_OK, response.status_code
+                    self.assertEqual(response.status_code, status.HTTP_200_OK)
             return response
 
         def _send_data_and_fail(*args, **kwargs):
             response = _send_data(*args, **kwargs)
-            assert response.status_code == status.HTTP_400_BAD_REQUEST, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
             raise Exception(response.data)
 
         filenames = [
@@ -5627,7 +5627,12 @@ class JobAnnotationAPITestCase(ApiTestBase):
                 }
 
             response = self.client.post("/api/tasks/{}/data".format(tid), data=images)
-            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+            rq_id = response.data["rq_id"]
+            response = self.client.get(f"/api/requests/{rq_id}")
+            rqjob_status, msg = response.data["status"], response.data["message"]
+            self.assertEqual(rqjob_status, "finished", f"Message: {msg}")
 
             response = self.client.get("/api/tasks/{}".format(tid))
             task = response.data
@@ -7677,11 +7682,11 @@ class TaskAnnotation2DContext(ApiTestBase):
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
             response = self.client.post("/api/tasks", data=data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
             response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
-            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
             response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
@@ -7806,11 +7811,11 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
     def _create_task(self, data, image_data):
         with ForceLogin(self.owner, self.client):
             response = self.client.post("/api/tasks", data=data, format="json")
-            assert response.status_code == status.HTTP_201_CREATED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
             response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
-            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
             response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
@@ -7827,9 +7832,9 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
 
         with ForceLogin(self.owner, self.client):
             response = self.client.get(f"/api/tasks/{task_id}/data/meta")
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json()["storage"] == "cloud_storage"
-            assert response.json()["cloud_storage_id"] == self.cloud_storage_id_1
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.json()["storage"], "cloud_storage")
+            self.assertEqual(response.json()["cloud_storage_id"], self.cloud_storage_id_1)
 
             self.client.get(f"/api/tasks/{task_id}/preview")
             for quality in ["compressed", "original"]:
@@ -7837,7 +7842,7 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
                     url = f"/api/tasks/{task_id}/data?type=frame&quality={quality}&number={frame}"
                     self.client.get(url)
 
-            assert len(get_cache_keys()) > 0
+            self.assertGreater(len(get_cache_keys()), 0)
 
             response = self.client.patch(
                 f"/api/tasks/{task_id}/data/meta",
