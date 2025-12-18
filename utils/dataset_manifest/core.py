@@ -18,6 +18,8 @@ from json.decoder import JSONDecodeError
 from typing import Any
 
 import av
+import av.container
+import av.video
 from PIL import Image
 
 from .errors import InvalidImageError, InvalidManifestError, InvalidPcdError, InvalidVideoError
@@ -38,28 +40,27 @@ class VideoStreamReader:
 
         with closing(av.open(self.source_path, mode="r")) as container:
             video_stream = VideoStreamReader._get_video_stream(container)
-            for packet in container.demux(video_stream):
-                for frame in packet.decode():
-                    # check type of first frame
-                    if frame.pict_type != av.video.frame.PictureType.I:
-                        raise InvalidVideoError("The first frame is not a key frame")
+            for frame in container.decode(video_stream):
+                # check type of first frame
+                if frame.pict_type != av.video.frame.PictureType.I:
+                    raise InvalidVideoError("The first frame is not a key frame")
 
-                    # get video resolution
-                    if frame.rotation:
-                        frame = av.VideoFrame().from_ndarray(
-                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
-                            format="bgr24",
-                        )
-                    self.height, self.width = (frame.height, frame.width)
+                # get video resolution
+                if frame.rotation:
+                    frame = av.VideoFrame().from_ndarray(
+                        rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
+                        format="bgr24",
+                    )
+                self.height, self.width = (frame.height, frame.width)
 
-                    return
+                return
 
     @property
     def source_path(self):
         return self._source_path
 
     @staticmethod
-    def _get_video_stream(container):
+    def _get_video_stream(container: av.container.InputContainer) -> av.video.stream.VideoStream:
         video_stream = next(stream for stream in container.streams if stream.type == "video")
         video_stream.thread_type = "AUTO"
         return video_stream
@@ -109,7 +110,7 @@ class VideoStreamReader:
         """
         container.seek(offset=key_frame["pts"], stream=video_stream)
 
-        frames = (frame for packet in container.demux(video_stream) for frame in packet.decode())
+        frames = container.decode(video_stream)
         frames = islice(frames, SEEK_MISMATCH_UPPER_BOUND)
 
         seek_pts = None
@@ -164,48 +165,47 @@ class VideoStreamReader:
             index, key_frame_count = 0, 0
             prev_seek_pts: int | None = None
 
-            for packet in reading_container.demux(reading_v_stream):
-                for frame in packet.decode():
-                    # Check PTS and DTS sequences for validity
-                    if None not in {frame.pts, prev_pts} and frame.pts <= prev_pts:
-                        raise InvalidVideoError("Detected non-increasing PTS sequence in the video")
-                    if None not in {frame.dts, prev_dts} and frame.dts <= prev_dts:
-                        raise InvalidVideoError("Detected non-increasing DTS sequence in the video")
-                    prev_pts, prev_dts = frame.pts, frame.dts
+            for frame in reading_container.decode(reading_v_stream):
+                # Check PTS and DTS sequences for validity
+                if None not in {frame.pts, prev_pts} and frame.pts <= prev_pts:
+                    raise InvalidVideoError("Detected non-increasing PTS sequence in the video")
+                if None not in {frame.dts, prev_dts} and frame.dts <= prev_dts:
+                    raise InvalidVideoError("Detected non-increasing DTS sequence in the video")
+                prev_pts, prev_dts = frame.pts, frame.dts
 
-                    insort(index_pts, (index, frame.pts), key=lambda item: item[1])
+                insort(index_pts, (index, frame.pts), key=lambda item: item[1])
 
-                    if frame.key_frame:
-                        key_frame_data = {
-                            "pts": frame.pts,
-                            "md5": md5_hash(frame),
-                        }
+                if frame.key_frame:
+                    key_frame_data = {
+                        "pts": frame.pts,
+                        "md5": md5_hash(frame),
+                    }
 
-                        # Check that it is possible to seek to this key frame using frame.pts
-                        seek_pts = self.validate_key_frame(
-                            checking_container,
-                            checking_v_stream,
-                            key_frame_data,
-                            prev_seek_pts,
-                        )
+                    # Check that it is possible to seek to this key frame using frame.pts
+                    seek_pts = self.validate_key_frame(
+                        checking_container,
+                        checking_v_stream,
+                        key_frame_data,
+                        prev_seek_pts,
+                    )
 
-                        if seek_pts is not None:
-                            prev_seek_pts = seek_pts
-                            key_frame_count += 1
-                            yield (index, key_frame_data["pts"], key_frame_data["md5"])
-                        else:
-                            yield index
+                    if seek_pts is not None:
+                        prev_seek_pts = seek_pts
+                        key_frame_count += 1
+                        yield (index, key_frame_data["pts"], key_frame_data["md5"])
                     else:
                         yield index
+                else:
+                    yield index
 
-                    index += 1
-                    key_frame_ratio = index // (key_frame_count or 1)
+                index += 1
+                key_frame_ratio = index // (key_frame_count or 1)
 
-                    # Check if the number of key frames meets the upper bound
-                    if key_frame_ratio >= self._upper_bound and not self._force:
-                        raise InvalidVideoError(
-                            "The number of keyframes is not enough for smooth iteration over the video"
-                        )
+                # Check if the number of key frames meets the upper bound
+                if key_frame_ratio >= self._upper_bound and not self._force:
+                    raise InvalidVideoError(
+                        "The number of keyframes is not enough for smooth iteration over the video"
+                    )
 
             # Update frames number if not already set
             if not self._frames_number:
@@ -701,13 +701,18 @@ class VideoManifestValidator(VideoManifestManager):
         super().__init__(manifest_path)
 
     @staticmethod
-    def _get_video_stream(container):
+    def _get_video_stream(container: av.container.InputContainer) -> av.video.stream.VideoStream:
         video_stream = next(stream for stream in container.streams if stream.type == "video")
         video_stream.thread_type = "AUTO"
         return video_stream
 
-    def validate_key_frame(self, container, video_stream, key_frame):
-        frames = (frame for packet in container.demux(video_stream) for frame in packet.decode())
+    def validate_key_frame(
+        self,
+        container: av.container.InputContainer,
+        video_stream: av.video.stream.VideoStream,
+        key_frame: dict,
+    ) -> None:
+        frames = container.decode(video_stream)
         frames = islice(frames, SEEK_MISMATCH_UPPER_BOUND)
 
         assert any(

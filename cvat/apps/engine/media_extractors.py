@@ -643,27 +643,25 @@ class VideoReader(IMediaReader):
             else:
                 video_stream.thread_type = "NONE"
 
-            frame_counter = itertools.count()
-            for packet in container.demux(video_stream):
-                for frame, frame_number in zip(packet.decode(), frame_counter):
-                    if frame_number == next_frame_filter_frame:
-                        if frame.rotation:
-                            pts = frame.pts
-                            frame = av.VideoFrame().from_ndarray(
-                                rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
-                                format="bgr24",
-                            )
-                            frame.pts = pts
+            for frame_number, frame in enumerate(container.decode(video_stream)):
+                if frame_number == next_frame_filter_frame:
+                    if frame.rotation:
+                        pts = frame.pts
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
+                            format="bgr24",
+                        )
+                        frame.pts = pts
 
-                        if self._frame_size is None:
-                            self._frame_size = (frame.width, frame.height)
+                    if self._frame_size is None:
+                        self._frame_size = (frame.width, frame.height)
 
-                        yield (frame, self._source_path[0], frame.pts)
+                    yield (frame, self._source_path[0], frame.pts)
 
-                        next_frame_filter_frame = next(frame_filter_iter, None)
+                    next_frame_filter_frame = next(frame_filter_iter, None)
 
-                    if next_frame_filter_frame is None:
-                        return
+                if next_frame_filter_frame is None:
+                    return
 
     def __iter__(self) -> Iterator[tuple[av.VideoFrame, str, int]]:
         return self.iterate_frames()
@@ -785,30 +783,29 @@ class VideoReaderWithManifest:
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
             frame_number = None
-            for packet in container.demux(video_stream):
-                for frame in packet.decode():
-                    if frame.pts < start_decode_timestamp:
-                        # for some reason seek stopped earlier than expected
-                        continue
+            for frame in container.decode(video_stream):
+                if frame.pts < start_decode_timestamp:
+                    # for some reason seek stopped earlier than expected
+                    continue
 
-                    if frame_number is None:
-                        frame_number = start_decode_frame_number
-                    else:
-                        frame_number += 1
+                if frame_number is None:
+                    frame_number = start_decode_frame_number
+                else:
+                    frame_number += 1
 
-                    if frame_number == next_frame_filter_frame:
-                        if frame.rotation:
-                            frame = av.VideoFrame().from_ndarray(
-                                rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
-                                format="bgr24",
-                            )
+                if frame_number == next_frame_filter_frame:
+                    if frame.rotation:
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
+                            format="bgr24",
+                        )
 
-                        yield frame
+                    yield frame
 
-                        next_frame_filter_frame = next(frame_filter_iter, None)
+                    next_frame_filter_frame = next(frame_filter_iter, None)
 
-                    if next_frame_filter_frame is None:
-                        return
+                if next_frame_filter_frame is None:
+                    return
 
 
 class IChunkWriter(ABC):
