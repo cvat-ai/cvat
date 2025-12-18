@@ -15,7 +15,7 @@ from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, Generic, TypeVar, Union, overload
+from typing import Any, Generic, TypeAlias, TypeVar, overload
 
 import av
 import cv2
@@ -114,9 +114,9 @@ class FrameOutputType(Enum):
     NUMPY_ARRAY = auto()
 
 
-Frame2d = Union[BytesIO, np.ndarray, Image.Image]
-Frame3d = BytesIO
-AnyFrame = Union[Frame2d, Frame3d]
+Frame2d: TypeAlias = BytesIO | np.ndarray | Image.Image
+Frame3d: TypeAlias = BytesIO
+AnyFrame: TypeAlias = Frame2d | Frame3d
 
 
 @dataclass
@@ -456,8 +456,8 @@ class TaskFrameProvider(IFrameProvider):
     def invalidate_chunks(self, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL):
         cache = MediaCache()
 
-        number_of_chanks = math.ceil(self._db_task.data.size / self._db_task.data.chunk_size)
-        for chunk_number in range(number_of_chanks):
+        number_of_chunks = math.ceil(self._db_task.data.size / self._db_task.data.chunk_size)
+        for chunk_number in range(number_of_chunks):
             cache.remove_task_chunk(self._db_task, chunk_number, quality=quality)
 
         for segment in self._db_task.segment_set.all():

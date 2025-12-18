@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
 from random import shuffle
-from typing import Any, ClassVar, Protocol, TypedDict, TypeVar
+from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
 
 import av
 import av.codec
@@ -1036,7 +1036,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
-    FrameDescriptor = tuple[av.VideoFrame, Any, Any]
+    FrameDescriptor: TypeAlias = tuple[av.VideoFrame, Any, Any]
 
     def _peek_first_frame(
         self, frame_iter: Iterator[FrameDescriptor]

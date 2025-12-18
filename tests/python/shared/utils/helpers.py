@@ -109,3 +109,4 @@ def generate_manifest(path: str) -> None:
         subprocess.check_output(command, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
         print(e.stderr.decode("utf-8"))
+        raise
