@@ -221,8 +221,7 @@ def _count_files(data):
         path = os.path.normpath(path).lstrip('/')
         if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
-        full_path = os.path.abspath(os.path.join(share_root, path))
-        if os.path.commonprefix([share_root, full_path]) != share_root:
+        if not (share_root / path).resolve().is_relative_to(share_root):
             raise ValueError("Bad file path: " + path)
         server_files.append(path)
 
@@ -980,7 +979,7 @@ def create_thread(
                     )
 
                 manifest = _read_dataset_manifest(os.path.join(manifest_root, manifest_file),
-                    create_index=manifest_root.startswith(db_data.get_upload_dirname())
+                    create_index=manifest_root.is_relative_to(db_data.get_upload_dirname())
                 )
 
             sorted_media_files = _restore_file_order_from_manifest(extractor, manifest, upload_dir)
@@ -1029,7 +1028,7 @@ def create_thread(
     if (manifest_file and not os.path.exists(db_data.get_manifest_path())):
         shutil.copyfile(os.path.join(manifest_root, manifest_file),
             db_data.get_manifest_path())
-        if manifest_root and manifest_root.startswith(db_data.get_upload_dirname()):
+        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
             os.remove(os.path.join(manifest_root, manifest_file))
         manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 

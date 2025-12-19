@@ -114,7 +114,7 @@ class UploadMixin:
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204_NO_CONTENT)
 
-        upload_dir = Path(self.get_upload_dir())
+        upload_dir = self.get_upload_dir()
 
         try:
             metadata = TusFile.TusMeta.from_request(request)
@@ -183,7 +183,7 @@ class UploadMixin:
         )
 
     def append_tus_chunk(self, request: ExtendedRequest, file_id: str):
-        tus_file = TusFile(file_id, upload_dir=Path(self.get_upload_dir()))
+        tus_file = TusFile(file_id, upload_dir=self.get_upload_dir())
         tus_file.meta_file.init_from_file()
 
         try:
@@ -232,7 +232,7 @@ class UploadMixin:
         if not file_path.resolve().is_relative_to(upload_dir):
             raise UploadedFileError
 
-    def get_upload_dir(self) -> str:
+    def get_upload_dir(self) -> Path:
         return self._object.data.get_upload_dirname()
 
     def _get_request_client_files(self, request: ExtendedRequest):
@@ -252,7 +252,7 @@ class UploadMixin:
             for client_file in client_files:
                 filename = client_file['file'].name
                 try:
-                    self.validate_uploaded_file_name(filename=filename, upload_dir=Path(upload_dir))
+                    self.validate_uploaded_file_name(filename=filename, upload_dir=upload_dir)
                 except UploadedFileError:
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST,
