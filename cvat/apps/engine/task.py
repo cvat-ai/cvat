@@ -1142,9 +1142,9 @@ def create_thread(
                         for frame_id in extractor.frame_range
                     ]
                     manifest.reorder(desired_order)
-            except Exception:
+            except Exception as e:
                 # If reordering fails for some reason, proceed without altering
-                raise ValidationError("Manifest reordering failed")
+                raise ValidationError("Manifest reordering failed") from e
 
             for frame_id in extractor.frame_range:
                 image_path = extractor.get_path(frame_id)
