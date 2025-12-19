@@ -568,6 +568,7 @@ def _create_task_manifest_from_cloud_data(
         },
         DIM_3D=(dimension == models.DimensionType.DIM_3D),
         stop=len(sorted_media) - 1,
+        data_dir=".",
     )
     manifest.create()
 
@@ -1078,8 +1079,7 @@ def create_thread(
                     # TODO: maybe generate manifest in a temp directory
                     manifest = VideoManifestManager(db_data.get_manifest_path())
                     manifest.link(
-                        media_file=media_files[0],
-                        upload_dir=upload_dir,
+                        media_file=Path(upload_dir, media_files[0]),
                         chunk_size=db_data.chunk_size, # TODO: why it's needed here?
                         force=True
                     )
@@ -1128,7 +1128,7 @@ def create_thread(
                 # us to avoid downloading such images from cloud storage (when using static chunks),
                 # or copying them from the attached share (when using copy_data).
                 manifest.link(
-                    sources=extractor.absolute_source_paths,
+                    sources=list(map(Path, extractor.absolute_source_paths)),
                     meta={
                         k: {'related_images': related_images[k] }
                         for k in related_images

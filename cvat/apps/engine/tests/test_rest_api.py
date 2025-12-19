@@ -78,7 +78,7 @@ from cvat.apps.engine.tests.utils import (
 )
 from cvat.apps.redis_handler.serializers import RequestStatus
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
-from utils.dataset_manifest.utils import PcdReader, find_related_images
+from utils.dataset_manifest.utils import MemOpenable, PcdReader, find_related_images
 
 from .utils import ASSETS_DIR, check_annotation_response, compare_objects
 
@@ -1492,6 +1492,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
             sources=[
                 os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)
             ],
+            root_dir=settings.SHARE_ROOT,
         )
         cls.media["files"].append(manifest_path)
         cls.media_data.append(
@@ -3152,6 +3153,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
             sources=[
                 os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)
             ],
+            root_dir=settings.SHARE_ROOT,
         )
         cls.media_data.append(
             {
@@ -3553,31 +3555,27 @@ def generate_manifest_file(
     root_dir=None,
 ):
     if data_type == "video":
-        kwargs = {
-            "media_file": sources[0],
-            "upload_dir": os.path.dirname(sources[0]),
-            "force": True,
-        }
         manifest = VideoManifestManager(manifest_path, create_index=False)
+        manifest.link(media_file=Path(sources[0]), force=True)
     else:
-        kwargs = {
-            "sources": sources,
-            "sorting_method": sorting_method,
-            "use_image_hash": True,
-            "data_dir": root_dir,
-            "DIM_3D": data_type == ManifestDataType.point_clouds,
-        }
+        assert root_dir
 
         scenes, related_images = find_related_images(sources, root_path=root_dir)
-        kwargs["meta"] = {k: {"related_images": related_images[k]} for k in related_images}
-        kwargs["sources"] = [
-            p
-            for p in sources
-            if (root_dir is not None and os.path.relpath(p, root_dir) or p) in scenes
-        ]
 
         manifest = ImageManifestManager(manifest_path, create_index=False)
-    manifest.link(**kwargs)
+        manifest.link(
+            sources=[
+                Path(p)
+                for p in sources
+                if (root_dir is not None and os.path.relpath(p, root_dir) or p) in scenes
+            ],
+            sorting_method=sorting_method,
+            use_image_hash=True,
+            data_dir=root_dir,
+            DIM_3D=data_type == ManifestDataType.point_clouds,
+            meta={k: {"related_images": related_images[k]} for k in related_images},
+        )
+
     manifest.create()
 
 
@@ -3668,8 +3666,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 if not info.endswith(".pcd"):
                     continue
 
-                with zip_file.open(info, "r") as file:
-                    pcd_properties = ValidateDimension.get_pcd_properties(file)
+                pcd_properties = ValidateDimension.get_pcd_properties(zipfile.Path(zip_file, info))
 
                 image_sizes.append((int(pcd_properties["WIDTH"]), int(pcd_properties["HEIGHT"])))
 
@@ -3694,12 +3691,9 @@ class TaskDataAPITestCase(ApiTestBase):
                 if not info.endswith(".bin"):
                     continue
 
-                with zip_file.open(info, "r") as bin_file:
-                    pcd_file = io.BytesIO()
-                    PcdReader.convert_bin_to_pcd_file(bin_file, output_file=pcd_file)
-                    pcd_file.seek(0)
+                pcd_bytes = PcdReader.convert_bin_to_pcd_buffer(zipfile.Path(zip_file, info))
 
-                pcd_properties = ValidateDimension.get_pcd_properties(pcd_file)
+                pcd_properties = ValidateDimension.get_pcd_properties(MemOpenable(pcd_bytes))
                 image_sizes.append((int(pcd_properties["WIDTH"]), int(pcd_properties["HEIGHT"])))
 
         cls._share_image_sizes[filename] = image_sizes
@@ -3857,7 +3851,7 @@ class TaskDataAPITestCase(ApiTestBase):
         chunk = zipfile.ZipFile(archive, mode="r")
         if dimension == DimensionType.DIM_3D:
             return [
-                (f, BytesIO(chunk.read(f)))
+                (f, chunk.read(f))
                 for f in sorted(chunk.namelist())
                 if f.rsplit(".", maxsplit=1)[-1] == "pcd"
             ]
@@ -3992,7 +3986,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
             for image_idx, received_image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
-                    properties = ValidateDimension.get_pcd_properties(received_image)
+                    properties = ValidateDimension.get_pcd_properties(MemOpenable(received_image))
                     self.assertEqual(
                         (int(properties["WIDTH"]), int(properties["HEIGHT"])),
                         expected_image_sizes[image_idx],
@@ -4015,7 +4009,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
             for image_idx, received_image in enumerate(images):
                 if dimension == DimensionType.DIM_3D:
-                    properties = ValidateDimension.get_pcd_properties(received_image)
+                    properties = ValidateDimension.get_pcd_properties(MemOpenable(received_image))
                     self.assertEqual(
                         (int(properties["WIDTH"]), int(properties["HEIGHT"])),
                         expected_image_sizes[image_idx],
@@ -4089,14 +4083,9 @@ class TaskDataAPITestCase(ApiTestBase):
                     ]
 
                 for received_image, source_image in zip(images, source_images):
-                    if dimension == DimensionType.DIM_3D:
-                        server_image = np.array(received_image.getbuffer())
-                        source_image = np.array(source_image.getbuffer())
-                        self.assertTrue(np.array_equal(source_image, server_image))
-                    else:
-                        server_image = np.array(received_image)
-                        source_image = np.array(source_image)
-                        self.assertTrue(np.array_equal(source_image, server_image))
+                    server_image = np.array(received_image)
+                    source_image = np.array(source_image)
+                    self.assertTrue(np.array_equal(source_image, server_image))
 
     def _test_api_v2_tasks_id_data_create_can_upload_local_images(self, user):
         task_spec = {
@@ -4910,6 +4899,7 @@ class TaskDataAPITestCase(ApiTestBase):
                     manifest_path,
                     image_paths,
                     sorting_method=SortingMethod.PREDEFINED,
+                    root_dir=test_dir,
                 )
 
                 task_data_common["use_cache"] = caching_enabled
@@ -5071,6 +5061,7 @@ class TaskDataAPITestCase(ApiTestBase):
                         manifest_path,
                         image_paths,
                         sorting_method=SortingMethod.PREDEFINED,
+                        root_dir=test_dir,
                     )
 
                     task_data["use_cache"] = caching_enabled

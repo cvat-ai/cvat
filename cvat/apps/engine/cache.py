@@ -17,6 +17,7 @@ from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
+from pathlib import Path
 from typing import Any, TypeAlias, overload
 
 import attrs
@@ -787,7 +788,7 @@ class MediaCache:
             )
             if not os.path.isfile(manifest_path):
                 try:
-                    reader.manifest.link(source_path, force=True)
+                    reader.manifest.link(Path(source_path), force=True)
                     reader.manifest.create()
                 except Exception as e:
                     slogger.task[db_task.id].warning(
@@ -1048,8 +1049,8 @@ class MediaCache:
             slogger.cloud_storage[db_storage.pk].info(msg)
             raise NotFound(msg)
 
-        buff = storage.download_fileobj(preview_path)
-        image = PIL.Image.open(buff)
+        preview_bytes = storage.download_fileobj(preview_path)
+        image = PIL.Image.open(io.BytesIO(preview_bytes))
         return prepare_preview_image(image)
 
     def prepare_context_images_chunk(

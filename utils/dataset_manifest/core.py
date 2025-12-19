@@ -8,8 +8,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from bisect import bisect_left, insort
-from collections.abc import Callable, Iterable, Iterator
-from contextlib import closing
+from collections.abc import Iterable, Iterator
 from enum import Enum
 from inspect import isgenerator
 from io import StringIO
@@ -23,22 +22,30 @@ import av.video
 from PIL import Image
 
 from .errors import InvalidImageError, InvalidManifestError, InvalidPcdError, InvalidVideoError
-from .types import NamedBytesIO
-from .utils import PcdReader, SortingMethod, md5_hash, rotate_image, sort
+from .utils import (
+    MemOpenable,
+    NamedOpenable,
+    Openable,
+    PcdReader,
+    SortingMethod,
+    md5_hash,
+    rotate_image,
+    sort,
+)
 
 # how many frames to check after seeking to validate key frame
 SEEK_MISMATCH_UPPER_BOUND = 200
 
 
 class VideoStreamReader:
-    def __init__(self, source_path, chunk_size, force):
+    def __init__(self, source_path: NamedOpenable, *, chunk_size: int, force: bool) -> None:
         self._source_path = source_path
         self._frames_number = None
         self._chapters = None
         self._force = force
         self._upper_bound = 3 * chunk_size + 1
 
-        with closing(av.open(self.source_path, mode="r")) as container:
+        with source_path.open("rb") as source_file, av.open(source_file, mode="r") as container:
             video_stream = VideoStreamReader._get_video_stream(container)
             for frame in container.decode(video_stream):
                 # check type of first frame
@@ -153,8 +160,10 @@ class VideoStreamReader:
         """
         # Open containers for reading frames and checking movement on them
         with (
-            closing(av.open(self.source_path, mode="r")) as reading_container,
-            closing(av.open(self.source_path, mode="r")) as checking_container,
+            self.source_path.open("rb") as reading_source_file,
+            av.open(reading_source_file, mode="r") as reading_container,
+            self.source_path.open("rb") as checking_source_file,
+            av.open(checking_source_file, mode="r") as checking_container,
         ):
             reading_v_stream = self._get_video_stream(reading_container)
             checking_v_stream = self._get_video_stream(checking_container)
@@ -234,7 +243,7 @@ class VideoStreamReader:
 class DatasetImagesReader:
     def __init__(
         self,
-        sources: list[str | NamedBytesIO] | Iterable[str | NamedBytesIO],
+        sources: Iterable[NamedOpenable],
         *,
         start: int = 0,
         step: int = 1,
@@ -242,22 +251,18 @@ class DatasetImagesReader:
         meta: dict[str, list[str]] | None = None,
         sorting_method: SortingMethod = SortingMethod.PREDEFINED,
         use_image_hash: bool = False,
-        **kwargs,
+        data_dir: str,
     ):
         self._is_generator_used = isgenerator(sources)
 
         if not self._is_generator_used:
-            raw_data_used = not isinstance(sources[0], str)
-            func: Callable[[NamedBytesIO], str] | None = (
-                (lambda x: x.filename) if raw_data_used else None
-            )
-            self._sources = sort(sources, sorting_method, func=func)
+            self._sources = sort(sources, sorting_method, func=os.fspath)
         else:
             if sorting_method != SortingMethod.PREDEFINED:
                 raise ValueError("Only SortingMethod.PREDEFINED can be used with generator")
             self._sources = sources
         self._meta = meta
-        self._data_dir = kwargs.get("data_dir", None)
+        self._data_dir = data_dir
         self._use_image_hash = use_image_hash
         self._start = start
         self._stop = stop if stop or self._is_generator_used else len(sources) - 1
@@ -289,12 +294,8 @@ class DatasetImagesReader:
     def step(self, value):
         self._step = int(value)
 
-    def _get_img_properties(self, image: str | NamedBytesIO) -> dict[str, Any]:
-        if self._data_dir:
-            img_name = os.path.relpath(image, self._data_dir)
-        else:
-            img_name = os.path.basename(image) if isinstance(image, str) else image.filename
-
+    def _get_img_properties(self, image: NamedOpenable) -> dict[str, Any]:
+        img_name = os.path.relpath(image, self._data_dir)
         name, extension = os.path.splitext(img_name)
         image_properties = {
             "name": name.replace("\\", "/"),
@@ -302,7 +303,7 @@ class DatasetImagesReader:
         }
 
         try:
-            with Image.open(image, mode="r") as img:
+            with image.open("rb") as f, Image.open(f, mode="r") as img:
                 width, height = img.width, img.height
                 orientation = img.getexif().get(274, 1)
                 if orientation > 4:
@@ -343,12 +344,8 @@ class DatasetImagesReader:
 
 
 class Dataset3DImagesReader(DatasetImagesReader):
-    def _get_img_properties(self, image):
-        if self._data_dir:
-            img_name = os.path.relpath(image, self._data_dir)
-        else:
-            img_name = os.path.basename(image) if isinstance(image, str) else image.filename
-
+    def _get_img_properties(self, image: NamedOpenable) -> dict[str, Any]:
+        img_name = os.path.relpath(image, self._data_dir)
         name, extension = os.path.splitext(img_name)
         image_properties = {
             "name": name.replace("\\", "/"),
@@ -359,9 +356,7 @@ class Dataset3DImagesReader(DatasetImagesReader):
 
         try:
             if extension.lower() == ".bin":
-                pcd_image = io.BytesIO()
-                PcdReader.convert_bin_to_pcd_file(image, output_file=pcd_image)
-                pcd_image.seek(0)
+                pcd_image = MemOpenable(PcdReader.convert_bin_to_pcd_buffer(image))
 
                 meta["original_name"] = img_name
                 image_properties["extension"] = ".pcd"
@@ -378,7 +373,8 @@ class Dataset3DImagesReader(DatasetImagesReader):
             image_properties["meta"] = meta
 
         if self._use_image_hash:
-            image_properties["checksum"] = md5_hash(image)
+            with image.open("rb") as f:
+                image_properties["checksum"] = md5_hash(f)
 
         return image_properties
 
@@ -621,10 +617,8 @@ class VideoManifestManager(_ManifestManager):
         setattr(self._manifest, "TYPE", "video")
         self.BASE_INFORMATION["properties"] = 3
 
-    def link(self, media_file, upload_dir=None, chunk_size=36, force=False, **kwargs):
-        self._reader = VideoStreamReader(
-            os.path.join(upload_dir, media_file) if upload_dir else media_file, chunk_size, force
-        )
+    def link(self, media_file: NamedOpenable, *, chunk_size=36, force=False) -> None:
+        self._reader = VideoStreamReader(media_file, chunk_size=chunk_size, force=force)
 
     def _write_base_information(self, file):
         base_info = {
@@ -696,7 +690,7 @@ class VideoManifestManager(_ManifestManager):
 
 
 class VideoManifestValidator(VideoManifestManager):
-    def __init__(self, source_path, manifest_path):
+    def __init__(self, source_path: Openable, manifest_path: str) -> None:
         self._source_path = source_path
         super().__init__(manifest_path)
 
@@ -720,7 +714,10 @@ class VideoManifestValidator(VideoManifestManager):
         ), "The uploaded manifest does not match the video"
 
     def validate_seek_key_frames(self):
-        with closing(av.open(self._source_path, mode="r")) as container:
+        with (
+            self._source_path.open("rb") as source_file,
+            av.open(source_file, mode="r") as container,
+        ):
             video_stream = self._get_video_stream(container)
             last_key_frame = None
 
@@ -746,10 +743,8 @@ class ImageManifestManager(_ManifestManager):
         super().__init__(manifest_path, create_index, upload_dir)
         setattr(self._manifest, "TYPE", "images")
 
-    def link(self, **kwargs):
-        ReaderClass = (
-            DatasetImagesReader if not kwargs.get("DIM_3D", None) else Dataset3DImagesReader
-        )
+    def link(self, *, DIM_3D: bool = False, **kwargs) -> None:
+        ReaderClass = Dataset3DImagesReader if DIM_3D else DatasetImagesReader
         self._reader = ReaderClass(**kwargs)
 
     def _write_base_information(self, file):
