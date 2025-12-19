@@ -1306,7 +1306,16 @@ class TestTaskBackups:
         }
         data_spec = {
             "image_quality": 75,
-            "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
+            "server_files": [
+                "images/with_related/image_0.png",
+                "images/with_related/image_1.png",
+                "images/with_related/image_2.png",
+                "images/with_related/image_3.png",
+                "images/with_related/related_images/image_1_png/30.png",
+                "images/with_related/related_images/image_2_png/32.png",
+                "images/with_related/related_images/image_2_png/33.png",
+                "images/with_related/related_images/image_2_png/34.png",
+            ],
             "start_frame": 1,
             "stop_frame": 4,
             "frame_filter": "step=2",
@@ -1323,7 +1332,12 @@ class TestTaskBackups:
                 name.removeprefix("data/") for name in zf.namelist() if name.startswith("data/")
             }
 
-        assert files_in_data == {"manifest.jsonl", "images/image_1.jpg", "images/image_3.jpg"}
+        assert files_in_data == {
+            "manifest.jsonl",
+            "images/with_related/image_1.jpg",
+            "images/with_related/image_3.jpg",
+            "images/with_related/related_images/image_1_png/30.png",
+        }
 
         self._test_can_restore_task_from_backup(task_id)
 
