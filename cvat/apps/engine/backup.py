@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import mimetypes
 import os
 import re
@@ -493,6 +494,10 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 media_files = (os.path.join(data_dir, self._db_data.video.path),)
             else:
                 media_files = (os.path.join(data_dir, im.path) for im in self._db_data.images.all())
+                related_files = (
+                    os.path.join(data_dir, str(rf.path)) for rf in self._db_data.related_files.all()
+                )
+                media_files = itertools.chain(media_files, related_files)
 
             self._write_files(
                 source_dir=data_dir,
