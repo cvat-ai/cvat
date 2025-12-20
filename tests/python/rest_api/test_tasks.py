@@ -480,7 +480,7 @@ class TestPostTasks:
         }
 
         client_files = images + [manifest_file]
-        #the same applies for random sorting as well
+        #the same applies for lexicographical and random sorting as well
         data_spec = {
             "image_quality": 75,
             "client_files": client_files,
