@@ -7,6 +7,7 @@ import io
 import itertools
 import json
 import operator
+from io import BytesIO
 import os
 import os.path as osp
 import re
@@ -448,6 +449,51 @@ class TestPostTasks:
             (labels, _) = api_client.labels_api.list(task_id=task.id)
 
             assert labels.count == 0
+
+    def test_can_create_task_with_manifest_order_mismatch(self, admin_user):
+
+        filenames = ["image_0.jpg", "image_1.jpg", "image_2.jpg"]
+        images = generate_image_files(len(filenames), filenames=filenames)
+
+        #manifest with shuffled orde
+        manifest_order = ["image_1.jpg", "image_2.jpg", "image_0.jpg"]
+
+        manifest_content = {"version": "1.1"}
+        manifest_lines = [json.dumps(manifest_content)]
+        manifest_lines.append(json.dumps({"type": "images"}))
+
+        for fname in manifest_order:
+            entry = {
+                "name": fname,
+                "extension": "",
+                "width": 100,
+                "height": 50,
+            }
+            manifest_lines.append(json.dumps(entry))
+
+        manifest_file = BytesIO("\n".join(manifest_lines).encode("utf-8"))
+        manifest_file.name = "manifest.jsonl"
+
+        task_spec = {
+            "name": "Test Manifest Sorting",
+            "labels": [{"name": "car"}],
+        }
+
+        client_files = images + [manifest_file]
+        #the same applies for random sorting as well
+        data_spec = {
+            "image_quality": 75,
+            "client_files": client_files,
+            "sorting_method": "natural",
+        }
+
+        task_id, _ = create_task(admin_user, task_spec, data_spec)
+
+        with make_api_client(admin_user) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            assert task.size == 3
+
+
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
