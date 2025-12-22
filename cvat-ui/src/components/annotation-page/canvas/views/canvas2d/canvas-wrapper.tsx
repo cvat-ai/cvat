@@ -728,6 +728,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             jobInstance, onJoinAnnotations, updateActiveControl,
         } = this.props;
+
         updateActiveControl(ActiveControl.CURSOR);
         const { states, points, duration } = event.detail;
         jobInstance.logger.log(EventScope.joinObjects, {
