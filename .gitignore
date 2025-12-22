@@ -65,4 +65,5 @@ cvat-ui/dist
 
 *.ckpt
 *.pth
-
+*.pt
+*.onnx
