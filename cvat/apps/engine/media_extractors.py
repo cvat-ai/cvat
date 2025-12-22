@@ -19,6 +19,7 @@ from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import IntEnum
 from fractions import Fraction
+from pathlib import Path
 from random import shuffle
 from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
 
@@ -43,7 +44,7 @@ from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.errors import InvalidPcdError
 from utils.dataset_manifest.utils import MediaDimension as _MediaDimension
-from utils.dataset_manifest.utils import PcdReader, detect_media_dimension
+from utils.dataset_manifest.utils import Openable, PcdReader, detect_media_dimension
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -340,9 +341,8 @@ class ImageListReader(IMediaReader):
 
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
-            with open(self.get_path(i), "rb") as f:
-                properties = ValidateDimension.get_pcd_properties(f)
-                return int(properties["WIDTH"]), int(properties["HEIGHT"])
+            properties = ValidateDimension.get_pcd_properties(Path(self.get_path(i)))
+            return int(properties["WIDTH"]), int(properties["HEIGHT"])
         with Image.open(self._source_path[i]) as img:
             return image_size_within_orientation(img)
 
@@ -507,9 +507,8 @@ class ZipReader(ImageListReader):
 
     def get_image_size(self, i):
         if self._dimension == DimensionType.DIM_3D:
-            with open(self.get_path(i), "rb") as f:
-                properties = PcdReader.parse_pcd_header(f)
-                return int(properties["WIDTH"]), int(properties["HEIGHT"])
+            properties = PcdReader.parse_pcd_header(Path(self.get_path(i)))
+            return int(properties["WIDTH"]), int(properties["HEIGHT"])
         with Image.open(io.BytesIO(self._zip_source.read(self._source_path[i]))) as img:
             return image_size_within_orientation(img)
 
@@ -643,27 +642,25 @@ class VideoReader(IMediaReader):
             else:
                 video_stream.thread_type = "NONE"
 
-            frame_counter = itertools.count()
-            for packet in container.demux(video_stream):
-                for frame, frame_number in zip(packet.decode(), frame_counter):
-                    if frame_number == next_frame_filter_frame:
-                        if frame.rotation:
-                            pts = frame.pts
-                            frame = av.VideoFrame().from_ndarray(
-                                rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
-                                format="bgr24",
-                            )
-                            frame.pts = pts
+            for frame_number, frame in enumerate(container.decode(video_stream)):
+                if frame_number == next_frame_filter_frame:
+                    if frame.rotation:
+                        pts = frame.pts
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
+                            format="bgr24",
+                        )
+                        frame.pts = pts
 
-                        if self._frame_size is None:
-                            self._frame_size = (frame.width, frame.height)
+                    if self._frame_size is None:
+                        self._frame_size = (frame.width, frame.height)
 
-                        yield (frame, self._source_path[0], frame.pts)
+                    yield (frame, self._source_path[0], frame.pts)
 
-                        next_frame_filter_frame = next(frame_filter_iter, None)
+                    next_frame_filter_frame = next(frame_filter_iter, None)
 
-                    if next_frame_filter_frame is None:
-                        return
+                if next_frame_filter_frame is None:
+                    return
 
     def __iter__(self) -> Iterator[tuple[av.VideoFrame, str, int]]:
         return self.iterate_frames()
@@ -785,30 +782,29 @@ class VideoReaderWithManifest:
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
             frame_number = None
-            for packet in container.demux(video_stream):
-                for frame in packet.decode():
-                    if frame.pts < start_decode_timestamp:
-                        # for some reason seek stopped earlier than expected
-                        continue
+            for frame in container.decode(video_stream):
+                if frame.pts < start_decode_timestamp:
+                    # for some reason seek stopped earlier than expected
+                    continue
 
-                    if frame_number is None:
-                        frame_number = start_decode_frame_number
-                    else:
-                        frame_number += 1
+                if frame_number is None:
+                    frame_number = start_decode_frame_number
+                else:
+                    frame_number += 1
 
-                    if frame_number == next_frame_filter_frame:
-                        if frame.rotation:
-                            frame = av.VideoFrame().from_ndarray(
-                                rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
-                                format="bgr24",
-                            )
+                if frame_number == next_frame_filter_frame:
+                    if frame.rotation:
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
+                            format="bgr24",
+                        )
 
-                        yield frame
+                    yield frame
 
-                        next_frame_filter_frame = next(frame_filter_iter, None)
+                    next_frame_filter_frame = next(frame_filter_iter, None)
 
-                    if next_frame_filter_frame is None:
-                        return
+                if next_frame_filter_frame is None:
+                    return
 
 
 class IChunkWriter(ABC):
@@ -1225,10 +1221,8 @@ class ValidateDimension:
         self.converted_files = []
 
     @staticmethod
-    def get_pcd_properties(
-        fp: str | io.RawIOBase, *, verify_version: bool = False
-    ) -> dict[str, str] | None:
-        return PcdReader.parse_pcd_header(fp, verify_version=verify_version)
+    def get_pcd_properties(pcd: Openable, *, verify_version: bool = False) -> dict[str, str]:
+        return PcdReader.parse_pcd_header(pcd, verify_version=verify_version)
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
@@ -1244,7 +1238,7 @@ class ValidateDimension:
 
     def pcd_operation(self, file_path: str, dataset_root: str) -> str | None:
         try:
-            self.get_pcd_properties(file_path, verify_version=True)
+            self.get_pcd_properties(Path(file_path), verify_version=True)
             return os.path.relpath(file_path, dataset_root)
         except InvalidPcdError as e:
             raise ValidationError(f"Could not read pcd file '{os.path.basename(file_path)}': {e}")
