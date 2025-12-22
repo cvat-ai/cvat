@@ -59,7 +59,7 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
-        port: 32764
+        port: 32762
 
   resources:
     limits:

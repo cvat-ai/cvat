@@ -51,7 +51,7 @@ spec:
 
         - kind: RUN
           value: pip install msgpack nuclio_sdk
-          
+
 
         # 3. Install Python packages
         - kind: WORKDIR
@@ -73,7 +73,7 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 300000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
-        port: 32761
+        port: 32764
 
   platform:
     attributes:

@@ -1,0 +1,76 @@
+metadata:
+  name: pth-dschoerk-transt
+  namespace: cvat
+  annotations:
+    name: TransT
+    type: tracker
+    spec:
+
+spec:
+  description: Fast Online Object Tracking and Segmentation (GPU-enabled with CUDA 12.8)
+  runtime: 'python:3.11'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/trans-t
+
+  build:
+    image: cvat.pth.transt.gpu:cuda12.8
+    baseImage: cuda12.8-base:ubuntu22.04
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+        # git and ca-certificates already in base image
+        - kind: RUN
+          value: echo "Using base image system dependencies"
+
+        # Clone TransT repository
+        - kind: RUN
+          value: git clone --depth 1 --branch v1.0 https://github.com/dschoerk/TransT trans-t
+
+        # Copy modified files with weights_only=False fix
+        - kind: COPY
+          value: . /opt/nuclio/build_files/
+
+        # Move the modified files to the correct locations
+        - kind: RUN
+          value: cp /opt/nuclio/build_files/handler/loading.py /opt/nuclio/trans-t/ltr/admin/loading.py && cp /opt/nuclio/build_files/handler/resnet18_vggm.py /opt/nuclio/trans-t/ltr/models/backbone/resnet18_vggm.py && cp /opt/nuclio/build_files/handler/misc.py /opt/nuclio/trans-t/util/misc.py
+
+        # All dependencies are in base image, no additional installations needed
+        - kind: RUN
+          value: echo "Using base image dependencies"
+
+        # Download model weights
+        - kind: ADD
+          value: https://drive.google.com/uc?id=1Pq0sK-9jmbLAVtgB9-dPDc2pipCxYdM5 /transt.pth
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        # Set value from the calculation of tracking of 100 objects at the same time on a 4k image
+        maxRequestBodySize: 268435456 # 256MB
+        port: 32763
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
