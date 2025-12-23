@@ -126,6 +126,12 @@ def load_image(image: tuple[str, str, str]) -> tuple[Image.Image, str, str]:
 
 
 def get_video_chapters(manifest_path: str, segment: tuple[int, int] = None) -> list[Chapter]:
+    if not os.path.isfile(manifest_path):
+        # Some videos can have no manifest. Typically, because there are issues with keyframes.
+        # In this case we don't have a quick and reliable source of information about chapters,
+        # so we don't return them.
+        return []
+
     manifest = VideoManifestManager(manifest_path)
 
     chapters = manifest.chapters
