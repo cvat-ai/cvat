@@ -526,8 +526,8 @@ class TestTasksBase:
             range(start_frame or 0, (stop_frame or frame_count - 1) + 1, step or 1)
         )
 
-        assert (
-            (not video_file) ^ (chapters is not None)
+        assert (not video_file) ^ (
+            chapters is not None
         ), "Chapters must be specified with a custom video file"
 
         if not video_file:
