@@ -47,7 +47,12 @@ def generate_image_files(
     return images
 
 
-def generate_video_file(num_frames: int, size=(100, 50)) -> BytesIO:
+def generate_video_file(
+    num_frames: int,
+    *,
+    size: tuple[int, int] = (100, 50),
+    invalid_keyframes: bool = False,
+) -> BytesIO:
     f = BytesIO()
     f.name = "video.mkv"
     chapters = [
@@ -70,6 +75,11 @@ def generate_video_file(num_frames: int, size=(100, 50)) -> BytesIO:
         for i in range(num_frames):
             frame = av.VideoFrame.from_image(Image.new("RGB", size=size, color=(i, i, i)))
             for packet in stream.encode(frame):
+                if invalid_keyframes:
+                    # Specify pts/dts values that result in 0 valid keyframes
+                    packet.pts = 10
+                    packet.dts = 10
+
                 container.mux(packet)
 
     f.seek(0)

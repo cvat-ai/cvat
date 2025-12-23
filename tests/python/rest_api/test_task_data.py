@@ -1799,7 +1799,7 @@ class TestTaskData(TestTasksBase):
 
             if task_spec.source_data_type == SourceDataType.video:
                 assert len(task_meta.frames) == 1
-                assert len(task_meta.chapters) == 1
+                assert task_meta.chapters == task_spec.chapters
             else:
                 assert len(task_meta.frames) == task_meta.size
                 assert task_meta.chapters is None

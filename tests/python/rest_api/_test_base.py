@@ -3,7 +3,9 @@ import math
 import os
 from collections.abc import Generator, Mapping, Sequence
 from contextlib import closing
+from fractions import Fraction
 from functools import partial
+from typing import IO
 
 import numpy as np
 import pytest
@@ -510,6 +512,8 @@ class TestTasksBase:
         start_frame: int | None = None,
         stop_frame: int | None = None,
         step: int | None = None,
+        video_file: IO[bytes] | None = None,
+        chapters: Sequence[dict] | None = None,
     ) -> Generator[tuple[VideoTaskSpec, int], None, None]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
@@ -522,8 +526,27 @@ class TestTasksBase:
             range(start_frame or 0, (stop_frame or frame_count - 1) + 1, step or 1)
         )
 
-        video_file = generate_video_file(frame_count)
-        video_data = video_file.getvalue()
+        assert (
+            (not video_file) ^ (chapters is not None)
+        ), "Chapters must be specified with a custom video file"
+
+        if not video_file:
+            video_file = generate_video_file(frame_count)
+            video_data = video_file.getvalue()
+
+            chapters = [
+                {
+                    "id": 0,
+                    "start": 0,
+                    "end": 100,
+                    "time_base": Fraction(1, 1000),
+                    "metadata": {"title": "Intro"},
+                }
+            ]
+        else:
+            video_data = video_file.read()
+            video_file.seek(0)
+
         data_params = {
             "image_quality": 70,
             "client_files": [video_file],
@@ -548,6 +571,7 @@ class TestTasksBase:
             models.DataRequest._from_openapi_data(**data_params),
             get_video_file=get_video_file,
             size=resulting_task_size,
+            chapters=chapters,
         ), task_id
 
     @pytest.fixture(scope="class")
@@ -556,6 +580,16 @@ class TestTasksBase:
         request: pytest.FixtureRequest,
     ) -> Generator[tuple[ITaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(request=request)
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_video_task_without_manifest(
+        self,
+        request: pytest.FixtureRequest,
+    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+        video_file = generate_video_file(num_frames=10, invalid_keyframes=True)
+        yield from self._uploaded_video_task_fxt_base(
+            request=request, video_file=video_file, chapters=[]
+        )
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_video_task_with_segments(
@@ -681,6 +715,7 @@ class TestTasksBase:
             fixture_ref("fxt_uploaded_images_task_with_segments"),
             fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
             fixture_ref("fxt_uploaded_video_task"),
+            fixture_ref("fxt_uploaded_video_task_without_manifest"),
             fixture_ref("fxt_uploaded_video_task_with_segments"),
             fixture_ref("fxt_uploaded_video_task_with_segments_start_stop_step"),
         ]
