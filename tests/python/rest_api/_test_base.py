@@ -3,7 +3,6 @@ import math
 import os
 from collections.abc import Generator, Mapping, Sequence
 from contextlib import closing
-from fractions import Fraction
 from functools import partial
 from typing import IO
 
@@ -536,10 +535,8 @@ class TestTasksBase:
 
             chapters = [
                 {
-                    "id": 0,
                     "start": 0,
-                    "end": 100,
-                    "time_base": Fraction(1, 1000),
+                    "stop": 5,
                     "metadata": {"title": "Intro"},
                 }
             ]

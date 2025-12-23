@@ -1782,7 +1782,8 @@ class TestTaskData(TestTasksBase):
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
 
         with make_api_client(self._USERNAME) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            (task_meta, response) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task_meta_raw = json.loads(response.data)
 
             assert task_meta.size == task_spec.size
             assert task_meta.start_frame == getattr(task_spec, "start_frame", 0)
@@ -1799,7 +1800,15 @@ class TestTaskData(TestTasksBase):
 
             if task_spec.source_data_type == SourceDataType.video:
                 assert len(task_meta.frames) == 1
-                assert task_meta.chapters == task_spec.chapters
+                assert (
+                    DeepDiff(
+                        task_meta_raw["chapters"],
+                        task_spec.chapters,
+                        ignore_order=True,
+                        exclude_regex_paths=[r"root\[.*\]\['id'\]"],
+                    )
+                    == {}
+                )
             else:
                 assert len(task_meta.frames) == task_meta.size
                 assert task_meta.chapters is None
