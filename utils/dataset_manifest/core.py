@@ -175,7 +175,11 @@ class VideoStreamReader:
             prev_seek_pts: int | None = None
 
             for frame in reading_container.decode(reading_v_stream):
-                # Check PTS and DTS sequences for validity
+                # Check PTS and DTS sequences for validity.
+                # The invalid PTS/DTS sequences can be related to custom speedup attempts, e.g.:
+                # https://trac.ffmpeg.org/wiki/How%20to%20speed%20up%20/%20slow%20down%20a%20video
+                # Frames with bad PTS/DTS can possibly be ignored in the forced mode, but
+                # it can result in mismatching chapters then.
                 if None not in {frame.pts, prev_pts} and frame.pts <= prev_pts:
                     raise InvalidVideoError("Detected non-increasing PTS sequence in the video")
                 if None not in {frame.dts, prev_dts} and frame.dts <= prev_dts:
@@ -215,6 +219,9 @@ class VideoStreamReader:
                     raise InvalidVideoError(
                         "The number of keyframes is not enough for smooth iteration over the video"
                     )
+
+            if not key_frame_count:
+                raise InvalidVideoError("Could not find any valid keyframes in the video")
 
             # Update frames number if not already set
             if not self._frames_number:
