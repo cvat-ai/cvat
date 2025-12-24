@@ -1,0 +1,237 @@
+model_info:
+  model_type: YOLOv8
+  model_path: serverless/onnx/yolov8/nuclio/yolov8_sienz_oranges_color.onnx
+  model_name: yolov8_sienz_oranges_color
+  model_size: 6750381
+  data_config: /datos/projects/sienz/datasets_clearml/Apples/250131/color_data.yaml
+  original_model_path: serverless/onnx/yolov8/nuclio/yolov8_sienz_oranges_color.onnx
+  variant: custom
+input_config:
+  imgsz: 256
+  channels: 3
+  batch_size: 1
+  single_cls: false
+  input_shape:
+  - 1
+  - 3
+  - 256
+  - 256
+  input_names:
+  - images
+  dynamic_axes:
+    images:
+      0: batch_size
+    output0:
+      0: batch_size
+class_info:
+  num_classes: 25
+  class_names:
+  - Calyx
+  - Stem
+  - Trips
+  - Scar
+  - Rot
+  - Evolutionary
+  - Skin Defect
+  - Caracol
+  - Label
+  - Scale
+  - Crease
+  - Oleo
+  - Mask
+  - End check
+  - Bad stem
+  - Antracnose
+  - Mosca
+  - Pliegue
+  - Melanosis
+  - Fumagima
+  - Mancha Negra
+  - Cancrosis
+  - Long Stem
+  - Bruises
+  - Sunburn
+  class_mapping:
+    0: Calyx
+    1: Stem
+    2: Trips
+    3: Scar
+    4: Rot
+    5: Evolutionary
+    6: Skin Defect
+    7: Caracol
+    8: Label
+    9: Scale
+    10: Crease
+    11: Oleo
+    12: Mask
+    13: End check
+    14: Bad stem
+    15: Antracnose
+    16: Mosca
+    17: Pliegue
+    18: Melanosis
+    19: Fumagima
+    20: Mancha Negra
+    21: Cancrosis
+    22: Long Stem
+    23: Bruises
+    24: Sunburn
+architecture:
+  task: segment
+  model_yaml:
+    nc: 25
+    depth_multiple: 0.33
+    width_multiple: 0.25
+    backbone:
+    - - -1
+      - 1
+      - Conv
+      - - 64
+        - 3
+        - 2
+    - - -1
+      - 1
+      - Conv
+      - - 128
+        - 3
+        - 2
+    - - -1
+      - 3
+      - C2f
+      - - 128
+        - true
+    - - -1
+      - 1
+      - Conv
+      - - 256
+        - 3
+        - 2
+    - - -1
+      - 6
+      - C2f
+      - - 256
+        - true
+    - - -1
+      - 1
+      - Conv
+      - - 512
+        - 3
+        - 2
+    - - -1
+      - 6
+      - C2f
+      - - 512
+        - true
+    - - -1
+      - 1
+      - Conv
+      - - 1024
+        - 3
+        - 2
+    - - -1
+      - 3
+      - C2f
+      - - 1024
+        - true
+    - - -1
+      - 1
+      - SPPF
+      - - 1024
+        - 5
+    head:
+    - - -1
+      - 1
+      - nn.Upsample
+      - - None
+        - 2
+        - nearest
+    - - - -1
+        - 6
+      - 1
+      - Concat
+      - - 1
+    - - -1
+      - 3
+      - C2f
+      - - 512
+    - - -1
+      - 1
+      - nn.Upsample
+      - - None
+        - 2
+        - nearest
+    - - - -1
+        - 4
+      - 1
+      - Concat
+      - - 1
+    - - -1
+      - 3
+      - C2f
+      - - 256
+    - - -1
+      - 1
+      - Conv
+      - - 256
+        - 3
+        - 2
+    - - - -1
+        - 12
+      - 1
+      - Concat
+      - - 1
+    - - -1
+      - 3
+      - C2f
+      - - 512
+    - - -1
+      - 1
+      - Conv
+      - - 512
+        - 3
+        - 2
+    - - - -1
+        - 9
+      - 1
+      - Concat
+      - - 1
+    - - -1
+      - 3
+      - C2f
+      - - 1024
+    - - - 15
+        - 18
+        - 21
+      - 1
+      - Segment
+      - - nc
+        - 32
+        - 256
+    yaml_file: /usr/src/app/ultralytics/yolo/v8/models/seg/yolov8n-seg.yaml
+    ch: 3
+  anchors: null
+  stride:
+  - 8.0
+  - 16.0
+  - 32.0
+  depth_multiple: 0.33
+  width_multiple: 0.25
+  yaml_file: /usr/src/app/ultralytics/yolo/v8/models/seg/yolov8n-seg.yaml
+  channels: 3
+export_config:
+  format: onnx
+  opset: 11
+  simplify: true
+  dynamic: false
+  half: false
+  int8: false
+  optimize: true
+  workspace: 4
+  nms: false
+  agnostic_nms: false
+  topk_per_class: 100
+  topk_all: 100
+  iou_thres: 0.45
+  conf_thres: 0.25
+  device: cpu
