@@ -163,9 +163,9 @@ REPLACEMENT_RULES = [
         lambda v, m: f'VERSION = "{v.major}.{v.minor}.{v.patch}"',
     ),
     ReplacementRule(
-        "cvat-cli/requirements/base.txt",
-        re.compile(r"^cvat-sdk==[\d.]+$", re.M),
-        lambda v, m: f"cvat-sdk=={v.major}.{v.minor}.{v.patch}",
+        "cvat-cli/pyproject.toml",
+        re.compile(r'"cvat-sdk==[\d.]+"'),
+        lambda v, m: f'"cvat-sdk=={v.major}.{v.minor}.{v.patch}"',
     ),
     ReplacementRule(
         "cvat-ui/package.json",
