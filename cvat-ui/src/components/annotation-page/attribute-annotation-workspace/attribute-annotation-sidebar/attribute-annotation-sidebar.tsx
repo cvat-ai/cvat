@@ -27,7 +27,7 @@ import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
-import ObjectBasicsEditor from './object-basics-edtior';
+import ObjectBasicsEditor from './object-basics-editor';
 import ObjectSwitcher from './object-switcher';
 
 interface StateToProps {

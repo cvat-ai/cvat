@@ -26,6 +26,7 @@ if __name__ == "__main__":
 import argparse
 import re
 from glob import glob
+from pathlib import Path
 
 from dataset_manifest.core import ImageManifestManager, VideoManifestManager
 from dataset_manifest.utils import SortingMethod, find_related_images, is_image, is_video
@@ -106,7 +107,7 @@ def main():
             assert len(sources), "A images was not found"
             manifest = ImageManifestManager(manifest_path=manifest_directory)
             manifest.link(
-                sources=sources,
+                sources=list(map(Path, sources)),
                 meta=meta,
                 sorting_method=args.sorting,
                 use_image_hash=True,
@@ -121,7 +122,7 @@ def main():
                 source
             ), "You can specify a video path or a directory/pattern with images"
             manifest = VideoManifestManager(manifest_path=manifest_directory)
-            manifest.link(media_file=source, force=args.force)
+            manifest.link(media_file=Path(source), force=args.force)
             try:
                 manifest.create(_tqdm=tqdm)
             except AssertionError as ex:
