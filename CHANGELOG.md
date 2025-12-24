@@ -16,6 +16,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.54.0'></a>
+## \[2.54.0\] - 2025-12-24
+
+### Added
+
+- \[CLI\] Added an `Author-email` field to the package metadata
+  (<https://github.com/cvat-ai/cvat/pull/10143>)
+
+### Changed
+
+- \[CLI\] Replaced the deprecated `Home-page` field and license classifier
+  with `Project-URL` and `License-Expression` fields, respectively
+  (<https://github.com/cvat-ai/cvat/pull/10143>)
+
+### Fixed
+
+- Сonsecutive slicing of shapes without press Escape key
+  (<https://github.com/cvat-ai/cvat/pull/10107>)
+
+- Inability to access some tasks with videos with bad keyframes
+  (<https://github.com/cvat-ai/cvat/pull/10152>)
+
+- Related image display in tasks from the attached file share
+  (<https://github.com/cvat-ai/cvat/pull/10153>)
+
 <a id='changelog-2.53.0'></a>
 ## \[2.53.0\] - 2025-12-18
 
