@@ -213,4 +213,6 @@ class TestTUSUpload:
             headers={"Tus-Resumable": "1.0.0"},
             check_status=False,
         )
-        assert head_response.status == HTTPStatus.NOT_FOUND  # was 500
+        assert head_response.status == HTTPStatus.NOT_FOUND
+        # We verify that tus_file.meta_file.init_from_file() runs correctly after data validation.
+        # was 500 (Internal Server Error) because tus_file.meta_file.init_from_file() was called before data validation.
