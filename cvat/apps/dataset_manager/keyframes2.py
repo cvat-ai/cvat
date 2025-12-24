@@ -6,6 +6,8 @@ import numpy.typing as npt
 import math
 from unittest import TestCase
 import matplotlib.pyplot as plt
+# Unit tests
+import unittest
 
 
 def distance_max(v1: npt.NDArray, v2: npt.NDArray) -> float | npt.NDArray:
@@ -35,7 +37,7 @@ def distance_l2(v1: npt.NDArray, v2: npt.NDArray) -> float | npt.NDArray:
 
 def choose_keyframes(
     shapes: npt.NDArray,
-    distance: Callable[[npt.NDArray, npt.NDArray], float],
+    distance: Callable[[npt.NDArray, npt.NDArray], float| npt.NDArray],
     threshold: float,
 ) -> list[int]:
     """Select minimal set of keyframes for track simplification.
@@ -101,91 +103,109 @@ def visualize_keyframes(shapes: npt.NDArray, keyframes: list[int], title: str = 
         keyframes: List of keyframe indices
         title: Plot title
     """
-    n_dims = shapes.shape[1]
+    import os
+    from pathlib import Path
+    figures_dir = Path(__file__).parent / "keyframes2_figures"
+    figures_dir.mkdir(exist_ok=True)
 
-    # For 2D data, plot as scatter
+    n_dims = shapes.shape[1]
+    filename_base = title.replace(" ", "_").replace("→", "to").replace("/", "_")
+
     if n_dims == 2:
         plt.figure(figsize=(10, 6))
-
-        # Plot all original shapes
         plt.plot(shapes[:, 0], shapes[:, 1], 'o-', alpha=0.3, label='Original', markersize=4)
-
-        # Plot keyframes
         keyframe_shapes = shapes[keyframes]
-        plt.plot(keyframe_shapes[:, 0], keyframe_shapes[:, 1], 'ro-',
-                label='Keyframes', markersize=8, linewidth=2)
-
-        # Plot interpolation
-        interpolated = []
-        for i in range(len(keyframes) - 1):
-            start_idx = keyframes[i]
-            stop_idx = keyframes[i + 1]
-            n_points = stop_idx - start_idx + 1
-
-            for j in range(n_points):
-                alpha = j / (n_points - 1)
-                interp = shapes[start_idx] * (1 - alpha) + shapes[stop_idx] * alpha
-                interpolated.append(interp)
-
-        interpolated = np.array(interpolated)
-        plt.plot(interpolated[:, 0], interpolated[:, 1], 'g--',
-                alpha=0.7, label='Interpolated', linewidth=2)
-
+        plt.plot(keyframe_shapes[:, 0], keyframe_shapes[:, 1], 'ro-', label='Keyframes', markersize=8, linewidth=2)
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.title(f"{title}\n{len(shapes)} frames → {len(keyframes)} keyframes")
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
-        plt.show()
-
-    # For 1D or multi-dimensional data, plot each dimension over frame index
+        fig_path = figures_dir / f"{filename_base}_2d.png"
+        plt.savefig(fig_path)
+        plt.close()
     else:
         fig, axes = plt.subplots(n_dims, 1, figsize=(12, 3 * n_dims))
         if n_dims == 1:
             axes = [axes]
-
         for dim in range(n_dims):
             ax = axes[dim]
             frame_indices = np.arange(len(shapes))
-
-            # Plot original
-            ax.plot(frame_indices, shapes[:, dim], 'o-', alpha=0.3,
-                   label='Original', markersize=4)
-
-            # Plot keyframes
-            ax.plot(keyframes, shapes[keyframes, dim], 'ro',
-                   label='Keyframes', markersize=8)
-
-            # Plot interpolation
-            interpolated = []
-            interp_indices = []
-            for i in range(len(keyframes) - 1):
-                start_idx = keyframes[i]
-                stop_idx = keyframes[i + 1]
-                n_points = stop_idx - start_idx + 1
-
-                for j in range(n_points):
-                    alpha = j / (n_points - 1)
-                    interp = shapes[start_idx, dim] * (1 - alpha) + shapes[stop_idx, dim] * alpha
-                    interpolated.append(interp)
-                    interp_indices.append(start_idx + j)
-
-            ax.plot(interp_indices, interpolated, 'g--',
-                   alpha=0.7, label='Interpolated', linewidth=2)
-
+            ax.plot(frame_indices, shapes[:, dim], 'o-', alpha=0.3, label='Original', markersize=4)
+            ax.plot(keyframes, shapes[keyframes, dim], 'ro-', label='Keyframes', markersize=8)
             ax.set_xlabel('Frame')
             ax.set_ylabel(f'Dimension {dim}')
             ax.legend()
             ax.grid(True, alpha=0.3)
-
         plt.suptitle(f"{title}\n{len(shapes)} frames → {len(keyframes)} keyframes")
         plt.tight_layout()
-        plt.show()
+        fig_path = figures_dir / f"{filename_base}_{n_dims}d.png"
+        plt.savefig(fig_path)
+        plt.close()
 
 
 class TestChooseKeyframes(TestCase):
     """Tests for keyframe selection algorithm"""
+    def test_convex_irregular_polygon_2d(self):
+        """Test with a convex irregular polygon in 2D and visualize keyframes"""
+        polygon = np.array([
+            [0.0, 0.0],
+            [2.0, 1.0],
+            [4.0, 0.5],
+            [5.0, 3.0],
+            [3.5, 5.0],
+            [1.5, 4.5],
+            [0.5, 3.0],
+        ])
+        shapes = np.vstack([polygon, polygon[0]])
+        keyframes = choose_keyframes(shapes, distance_l2, threshold=1)
+        self.assertIn(0, keyframes)
+        self.assertIn(len(shapes) - 1, keyframes)
+        visualize_keyframes(shapes, keyframes, "Convex Irregular Polygon 2D")
+
+    def test_circle_many_points_2d_threshold_012(self):
+        self._circle_many_points_2d(threshold=0.05)
+
+    def test_circle_many_points_2d_threshold_053(self):
+        self._circle_many_points_2d(threshold=0.1)
+
+    def test_circle_many_points_2d_threshold_103(self):
+        self._circle_many_points_2d(threshold=0.2)
+
+    def test_circle_many_points_2d_threshold_0541(self):
+        self._circle_many_points_2d(threshold=0.5)
+
+    def test_circle_many_points_2d_threshold_2033346(self):
+        self._circle_many_points_2d(threshold=0.7)
+
+    def test_circle_many_points_2d_threshold_22204(self):
+        self._circle_many_points_2d(threshold=1.0)
+
+    def test_circle_many_points_2d_threshold_20336(self):
+        self._circle_many_points_2d(threshold=1.5)
+
+    def test_circle_many_points_2d_threshold_2033(self):
+        self._circle_many_points_2d(threshold=1.7)
+
+    def test_circle_many_points_2d_threshold_203(self):
+        self._circle_many_points_2d(threshold=2.0)
+
+    def _circle_many_points_2d(self, threshold):
+        """Test with a circle in 2D (many points) and visualize keyframes"""
+        num_points = 100
+        radius = 5.0
+        center = np.array([10.0, 10.0])
+        angles = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
+        circle = np.stack([
+            center[0] + radius * np.cos(angles),
+            center[1] + radius * np.sin(angles)
+        ], axis=1)
+        shapes = np.vstack([circle, circle[0]])
+        keyframes = choose_keyframes(shapes, distance_l2, threshold=threshold)
+        self.assertIn(0, keyframes)
+        self.assertIn(len(shapes) - 1, keyframes)
+        visualize_keyframes(shapes, keyframes, f"Circle Many Points 2D (threshold={threshold})")
 
     def test_straight_line_no_simplification(self):
         """Test that straight line motion keeps only endpoints"""
@@ -270,19 +290,24 @@ class TestChooseKeyframes(TestCase):
         self.assertIn(9, keyframes)
 
     def test_different_distance_functions(self):
-        """Test that different distance functions may give different results"""
+        """Test that different distance functions may give different results and visualize them"""
+        num_points = 50
         shapes = np.array([
             [float(i), float(i) + 0.3 * (i - 5) ** 2]
-            for i in range(11)
+            for i in range(num_points)
         ])
-        keyframes_max = choose_keyframes(shapes, distance_max, threshold=1.0)
-        keyframes_l1 = choose_keyframes(shapes, distance_l1, threshold=1.0)
-        keyframes_l2 = choose_keyframes(shapes, distance_l2, threshold=1.0)
+        keyframes_max = choose_keyframes(shapes, distance_max, threshold=3.0)
+        keyframes_l1 = choose_keyframes(shapes, distance_l1, threshold=3.0)
+        keyframes_l2 = choose_keyframes(shapes, distance_l2, threshold=3.0)
 
         # All should at least include endpoints
         for keyframes in [keyframes_max, keyframes_l1, keyframes_l2]:
             self.assertIn(0, keyframes)
-            self.assertIn(10, keyframes)
+            self.assertIn(num_points - 1, keyframes)
+
+        visualize_keyframes(shapes, keyframes_max, "RDP distance_max (Chebyshev)")
+        visualize_keyframes(shapes, keyframes_l1, "RDP distance_l1 (Manhattan)")
+        visualize_keyframes(shapes, keyframes_l2, "RDP distance_l2 (Euclidean)")
 
     def test_minimum_three_frames(self):
         """Test with minimum number of frames"""
@@ -297,3 +322,6 @@ class TestChooseKeyframes(TestCase):
         shapes = np.array([[float(i), float(i)] for i in range(2)])
         keyframes = choose_keyframes(shapes, distance_max, threshold=0.1)
         self.assertEqual(keyframes, [0, 1])
+
+if __name__ == "__main__":
+    unittest.main()
