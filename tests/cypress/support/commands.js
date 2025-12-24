@@ -1881,8 +1881,8 @@ Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
         .find('.anticon-more').first()
         .click({ scrollBehavior: 'center' });
 
-    cy.get('.ant-dropdown-menu').should('exist').and('be.visible')
-        .contains('li', 'Merge consensus job').should('exist').and('be.visible')
+    cy.get('.ant-dropdown-menu').should('exist').and('be.visible');
+    cy.contains('li', 'Merge consensus job').should('exist').and('be.visible')
         .click({ scrollBehavior: false });
     cy.get('.cvat-modal-confirm-consensus-merge-job')
         .contains('button', 'Merge')
