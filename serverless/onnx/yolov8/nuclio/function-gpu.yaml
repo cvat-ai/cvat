@@ -1,8 +1,8 @@
 metadata:
-  name: onnx-yolov8-sienz-oranges-color-gpu
+  name: onnx-yolov8-oranges-color
   namespace: cvat
   annotations:
-    name: YOLOv8 Sienz Oranges Color GPU
+    name: YOLOv8 Oranges Color GPU
     type: detector
     spec: |
       [
@@ -34,13 +34,13 @@ metadata:
       ]
 
 spec:
-  description: YOLOv8 Segmentation model for Sienz orange color defect detection via ONNX with GPU acceleration
+  description: YOLOv8 Segmentation model for orange color defect detection via ONNX with GPU acceleration
   runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 30s
 
   build:
-    image: cvat.onnx.yolov8.sienz.oranges.color.gpu
+    image: cvat.onnx.yolov8.oranges.color:gpu
     baseImage: ubuntu:22.04
 
     directives:

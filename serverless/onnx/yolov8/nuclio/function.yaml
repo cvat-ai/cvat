@@ -1,8 +1,8 @@
 metadata:
-  name: onnx-yolov8-sienz-oranges-color
+  name: onnx-yolov8-oranges-color
   namespace: cvat
   annotations:
-    name: YOLOv8 Sienz Oranges Color
+    name: YOLOv8 Oranges Color
     type: detector
     spec: |
       [
@@ -34,13 +34,13 @@ metadata:
       ]
 
 spec:
-  description: YOLOv8 Segmentation model for Sienz orange color defect detection via ONNX
+  description: YOLOv8 Segmentation model for orange color defect detection via ONNX
   runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 30s
 
   build:
-    image: cvat.onnx.yolov8.sienz.oranges.color
+    image: cvat.onnx.yolov8.oranges.color:cpu
     baseImage: ubuntu:22.04
 
     directives:
