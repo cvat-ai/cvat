@@ -235,7 +235,11 @@ def _count_files(data):
         if not os.path.dirname(v[0]).startswith(v[1])]
 
     # we need to keep the original sequence of files
-    data['server_files'] = [f for f in server_files if f in without_extra_dirs]
+    # Convert without_extra_dirs to a set for O(1) lookups
+    without_extra_dirs_set = set(without_extra_dirs) if without_extra_dirs else set()
+
+    # Filter server_files based on whether they exist in the set
+    data['server_files'] = [f for f in server_files if f in without_extra_dirs_set]
 
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
@@ -751,9 +755,12 @@ def create_thread(
 
         # We only need to process the files specified in job_file_mapping
         if job_file_mapping is not None:
+            # Convert data['server_files'] to a set for O(1) membership checks
+            server_files_set = set(data['server_files']) if data['server_files'] else set()
+
             filtered_files = []
             for f in itertools.chain.from_iterable(job_file_mapping):
-                if f not in data['server_files']:
+                if f not in server_files_set:
                     raise ValidationError(f"Job mapping file {f} is not specified in input files")
                 filtered_files.append(f)
             data['server_files'] = filtered_files

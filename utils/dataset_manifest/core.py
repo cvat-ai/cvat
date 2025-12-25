@@ -798,10 +798,14 @@ class ImageManifestManager(_ManifestManager):
     def get_subset(self, subset_names):
         index_list = []
         subset = []
+        # First, create a dictionary mapping image names to their indices
+        name_to_index = {name: index for index, name in enumerate(subset_names)} if subset_names else {}
+
+        # Now, loop through the images and check against the dictionary
         for _, image in self:
             image_name = f"{image.full_name}"
-            if image_name in subset_names:
-                index_list.append(subset_names.index(image_name))
+            if image_name in name_to_index:
+                index_list.append(name_to_index[image_name])
                 properties = {
                     "name": f"{image['name']}",
                     "extension": f"{image['extension']}",
