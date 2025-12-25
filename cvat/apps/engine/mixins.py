@@ -184,7 +184,6 @@ class UploadMixin:
 
     def append_tus_chunk(self, request: ExtendedRequest, file_id: str):
         tus_file = TusFile(file_id, upload_dir=self.get_upload_dir())
-        tus_file.meta_file.init_from_file()
 
         try:
             tus_file.validate(user_id=request.user.id)
@@ -193,6 +192,8 @@ class UploadMixin:
             return self._tus_response(status=status.HTTP_404_NOT_FOUND)
         except TusFileForbiddenError:
             return self._tus_response(status=status.HTTP_403_FORBIDDEN)
+
+        tus_file.meta_file.init_from_file()
 
         if request.method == 'HEAD':
             return self._tus_response(
