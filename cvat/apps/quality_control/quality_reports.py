@@ -7,14 +7,13 @@ from __future__ import annotations
 import csv
 import itertools
 import math
-import zipfile
 from abc import ABCMeta
 from collections import Counter
 from collections.abc import Callable, Hashable, Sequence
 from contextlib import suppress
 from copy import deepcopy
 from functools import cached_property, lru_cache, partial
-from io import BytesIO, StringIO
+from io import BytesIO, StringIO, TextIOWrapper
 from typing import IO, Any, ClassVar, TypeAlias, TypeVar, cast
 
 import datumaro as dm
@@ -3226,7 +3225,7 @@ class ProjectQualityCalculator:
 
 
 class QualityReportExportFormat(TextChoices):
-    ZIP = ("zip", "zip")
+    CSV = ("csv", "csv")
     JSON = ("json", "json")
 
 
@@ -3325,9 +3324,9 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
     return BytesIO(dump_json(serialized_data, indent=True, append_newline=True))
 
 
-def prepare_zip_report_for_downloading(db_report: models.QualityReport, *, host: str) -> IO[bytes]:
+def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[bytes]:
     """
-    Create a .zip archive with .csv confusion matrices.
+    Create a report with a .csv confusion matrix.
     """
 
     report_summary = db_report.summary
@@ -3358,8 +3357,10 @@ def prepare_zip_report_for_downloading(db_report: models.QualityReport, *, host:
         excluded_label_idx=labels.index(unmatched_label),
     )
 
-    csv_file = StringIO()
-    csv_writer = csv.writer(csv_file)
+    csv_file = BytesIO()
+
+    csv_text_wrapper = TextIOWrapper(csv_file, write_through=True)
+    csv_writer = csv.writer(csv_text_wrapper)
     csv_writer.writerow([""] + labels + ["precision"])
 
     for confusion_row, label, precision in zip(confusion_rows, labels, precisions):
@@ -3370,14 +3371,11 @@ def prepare_zip_report_for_downloading(db_report: models.QualityReport, *, host:
     csv_writer.writerow(["jaccard index"] + jaccards.tolist())
     csv_writer.writerow(["Avg. accuracy (micro)", dataset_accuracy_micro])
     csv_writer.writerow(["Avg. dice coeff (macro)", dataset_dice_coeff_avg_macro])
+    csv_text_wrapper.detach()
 
-    output_file = BytesIO()
-    with zipfile.ZipFile(output_file, "w") as zip_file:
-        zip_file.writestr("confusion_matrix.csv", csv_file.getvalue())
+    csv_file.seek(0)
 
-    output_file.seek(0)
-
-    return output_file
+    return csv_file
 
 
 def prepare_report_for_downloading(
@@ -3388,8 +3386,8 @@ def prepare_report_for_downloading(
             prepare_json_report_for_downloading(db_report=db_report, host=host),
             "application/json",
         )
-    elif format == QualityReportExportFormat.ZIP:
+    elif format == QualityReportExportFormat.CSV:
         return (
-            prepare_zip_report_for_downloading(db_report=db_report, host=host),
-            "application/zip",
+            prepare_csv_report_for_downloading(db_report=db_report),
+            "text/csv",
         )
