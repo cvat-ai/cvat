@@ -152,28 +152,27 @@ class RandomAccessIterator(Iterator[_T]):
         self.iterator: Iterator[_T] | None = None
         self.pos: int = -1
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
+    def __next__(self) -> _T:
         return self[self.pos + 1]
 
-    def __getitem__(self, idx: int) -> _T | None:
+    def __getitem__(self, idx: int) -> _T:
         assert 0 <= idx
         if self.iterator is None or idx <= self.pos:
             self.reset()
-        v = None
-        while self.pos < idx:
+
+        while True:
             # NOTE: don't keep the last item in self, it can be expensive
             v = next(self.iterator)
             self.pos += 1
-        return v
 
-    def reset(self):
+            if self.pos == idx:
+                return v
+
+    def reset(self) -> None:
         self.close()
         self.iterator = iter(self.iterable)
 
-    def close(self):
+    def close(self) -> None:
         if self.iterator is not None:
             if close := getattr(self.iterator, "close", None):
                 close()
