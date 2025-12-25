@@ -5,6 +5,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MenuProps } from 'antd/lib/menu';
+import { message } from 'antd';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { LabelWithCountHOF } from 'components/common/label-with-count';
@@ -40,7 +41,23 @@ export default function ProjectActionsItems(
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
     const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
 
+    const onCopyURL = (): void => {
+        const projectURL = `${window.location.origin}/projects/${projectId}`;
+        navigator.clipboard.writeText(projectURL).then(() => {
+            message.success('Project URL copied to clipboard');
+        }).catch(() => {
+            message.error('Failed to copy URL');
+        });
+    };
+
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
+
+    menuItems.push([{
+        key: 'copy_url',
+        onClick: onCopyURL,
+        label: withCount('Copy URL', 'copy_url'),
+        disabled: isDisabled('copy_url'),
+    }, -5]);
 
     menuItems.push([{
         key: 'export-dataset',

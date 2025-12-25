@@ -5,6 +5,7 @@
 import React from 'react';
 import { MenuProps } from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
+import { message } from 'antd';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { LabelWithCountHOF } from 'components/common/label-with-count';
@@ -48,6 +49,15 @@ export default function JobActionsItems(
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
     const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
 
+    const onCopyURL = (): void => {
+        const jobURL = `${window.location.origin}/tasks/${taskId}/jobs/${jobId}`;
+        navigator.clipboard.writeText(jobURL).then(() => {
+            message.success('Job URL copied to clipboard');
+        }).catch(() => {
+            message.error('Failed to copy URL');
+        });
+    };
+
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
     menuItems.push([{
@@ -55,6 +65,13 @@ export default function JobActionsItems(
         label: withCount('Go to the task', 'task', `/tasks/${taskId}`),
         disabled: isDisabled('task'),
     }, 0]);
+
+    menuItems.push([{
+        key: 'copy_url',
+        onClick: onCopyURL,
+        label: withCount('Copy URL', 'copy_url'),
+        disabled: isDisabled('copy_url'),
+    }, 5]);
 
     if (projectId) {
         menuItems.push([{

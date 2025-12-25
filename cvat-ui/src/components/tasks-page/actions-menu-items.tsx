@@ -5,6 +5,7 @@
 import React from 'react';
 import { LoadingOutlined } from '@ant-design/icons';
 import { MenuProps } from 'antd/lib/menu';
+import { message } from 'antd';
 import { usePlugins } from 'utils/hooks';
 import { LabelWithCountHOF } from 'components/common/label-with-count';
 import { CVATMenuEditLabel } from '../common/cvat-menu-edit-label';
@@ -53,7 +54,24 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     const isBulkMode = selectedIds.length > 1;
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
     const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
+
+    const onCopyURL = (): void => {
+        const taskURL = `${window.location.origin}/tasks/${taskId}`;
+        navigator.clipboard.writeText(taskURL).then(() => {
+            message.success('Task URL copied to clipboard');
+        }).catch(() => {
+            message.error('Failed to copy URL');
+        });
+    };
+
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
+
+    menuItems.push([{
+        key: 'copy_url',
+        onClick: onCopyURL,
+        label: withCount('Copy URL', 'copy_url'),
+        disabled: isDisabled('copy_url'),
+    }, -5]);
 
     menuItems.push([{
         key: 'load_task_anno',
