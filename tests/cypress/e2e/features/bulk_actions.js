@@ -206,6 +206,8 @@ context('Bulk actions in UI', () => {
         });
 
         it('Delete all tasks, ensure deletion', () => {
+            cy.intercept('DELETE', '/api/tasks/**').as('deleteTask');
+
             getBulkActionsMenu().within(() => {
                 cy.contains(`Delete (${numberOfObjects})`).click();
             });
@@ -213,11 +215,15 @@ context('Bulk actions in UI', () => {
             cy.get('.cvat-modal-confirm-delete-task')
                 .should('be.visible').within(() => {
                     cy.contains(`Delete ${numberOfObjects} selected tasks`);
-                    cy.contains('Delete selected')
-                        .should('be.visible')
-                        .click();
                 });
-            cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
+            cy.contains('Delete selected')
+                .should('be.visible')
+                .click();
+            cy.wait('@deleteTask').then(() => {
+                cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
+            });
+            cy.wait('@deleteTask');
+
             cy.get('.cvat-tasks-list-item').each(($el) => {
                 cy.wrap($el)
                     .invoke('attr', 'style')

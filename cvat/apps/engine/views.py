@@ -15,7 +15,6 @@ from abc import ABCMeta, abstractmethod
 from contextlib import suppress
 from copy import copy
 from datetime import datetime
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 
@@ -227,9 +226,9 @@ class ServerViewSet(viewsets.ViewSet):
         if directory_param.startswith("/"):
             directory_param = directory_param[1:]
 
-        directory = (Path(settings.SHARE_ROOT) / directory_param).absolute()
+        directory = (settings.SHARE_ROOT / directory_param).resolve()
 
-        if str(directory).startswith(settings.SHARE_ROOT) and directory.is_dir():
+        if directory.is_relative_to(settings.SHARE_ROOT) and directory.is_dir():
             data = []
             generator = directory.iterdir() if not search_param else (f for f in directory.iterdir() if f.name.startswith(search_param))
 

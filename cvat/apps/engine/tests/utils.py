@@ -128,7 +128,7 @@ class ApiTestBase(APITestCase):
         self._clear_rq_jobs()
 
         # clear cache files created after previous exports
-        export_cache_dir = Path(settings.EXPORT_CACHE_ROOT)
+        export_cache_dir = settings.EXPORT_CACHE_ROOT
         for child in export_cache_dir.iterdir():
             if child.is_dir():
                 shutil.rmtree(child)

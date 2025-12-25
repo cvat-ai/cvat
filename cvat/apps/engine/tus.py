@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import shutil
 from functools import cached_property
 from pathlib import Path
 from types import NoneType
@@ -36,15 +37,14 @@ class TusTooLargeFileError(Exception):
 
 
 class TusChunk:
+
     def __init__(self, request: ExtendedRequest):
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
-
         try:
             self.size = int(request.META["CONTENT_LENGTH"])
         except KeyError as ex:
             raise serializers.ValidationError("Content-Length header is missing") from ex
-
-        self.content = request.body
+        self.request = request
 
     @property
     def end_offset(self) -> int:
@@ -216,8 +216,8 @@ class TusFile:
     def write_chunk(self, chunk: TusChunk):
         with open(self.file_path, "r+b") as file:
             file.seek(chunk.offset)
-            file.write(chunk.content)
-        self.meta_file.meta.offset += chunk.size
+            shutil.copyfileobj(chunk.request, file)
+            self.meta_file.meta.offset = file.tell()
         self.meta_file.dump()
 
     def is_complete(self):

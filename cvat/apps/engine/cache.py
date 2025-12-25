@@ -17,6 +17,7 @@ from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
+from pathlib import Path
 from typing import Any, TypeAlias, overload
 
 import attrs
@@ -675,21 +676,15 @@ class MediaCache:
         truncate_common_filename_prefix: bool = True,  # should be done on the UI, probably
         decode: bool = True,
     ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str, str]], None, None]:
-        data_upload_dir = db_data.get_upload_dirname()
+        raw_data_dir = db_data.get_raw_data_dirname()
 
         def _validate_ri_path(path: str) -> str:
-            if os.path.isabs(path):
-                if not path.startswith(data_upload_dir + os.sep):
-                    raise Exception("Invalid related image path")
+            abs_path = (raw_data_dir / path).resolve()
 
-                path = os.path.relpath(path, data_upload_dir)
-            else:
-                if not os.path.normpath(os.path.join(data_upload_dir, path)).startswith(
-                    data_upload_dir + os.sep
-                ):
-                    raise Exception("Invalid related image path")
-
-            return path
+            try:
+                return os.fspath(abs_path.relative_to(raw_data_dir))
+            except ValueError as ex:
+                raise Exception("Invalid related image path") from ex
 
         manifest_path = db_data.get_manifest_path()
 
@@ -714,12 +709,12 @@ class MediaCache:
                 ):
                     frame_media = []
 
-                    for related_image in frame.get("meta", {}).get("related_images", []):
-                        path = _validate_ri_path(related_image)
-                        output_path = os.path.join(tmp_dir, path)
+                    for ri_filename in frame.get("meta", {}).get("related_images", []):
+                        ri_filename = _validate_ri_path(ri_filename)
+                        ri_realpath = os.path.join(tmp_dir, ri_filename)
 
-                        files_to_download.append(path)
-                        frame_media.append((output_path, path, None))
+                        files_to_download.append(ri_filename)
+                        frame_media.append((ri_realpath, ri_filename, None))
 
                     media.append((frame_id, frame_media))
 
@@ -736,14 +731,13 @@ class MediaCache:
                 )
 
                 media = []
-                raw_data_dir = db_data.get_raw_data_dirname()
                 for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0]):
                     frame_media = []
 
-                    for frame_ri_file in frame_ris:
-                        path = _validate_ri_path(frame_ri_file[1])
-                        source_path = os.path.join(raw_data_dir, path)
-                        frame_media.append((source_path, path, None))
+                    for _, ri_path in frame_ris:
+                        ri_filename = _validate_ri_path(ri_path)
+                        ri_realpath = os.path.join(raw_data_dir, ri_filename)
+                        frame_media.append((ri_realpath, ri_filename, None))
 
                     media.append((frame_id, frame_media))
 
@@ -787,7 +781,7 @@ class MediaCache:
             )
             if not os.path.isfile(manifest_path):
                 try:
-                    reader.manifest.link(source_path, force=True)
+                    reader.manifest.link(Path(source_path), force=True)
                     reader.manifest.create()
                 except Exception as e:
                     slogger.task[db_task.id].warning(
@@ -1048,8 +1042,8 @@ class MediaCache:
             slogger.cloud_storage[db_storage.pk].info(msg)
             raise NotFound(msg)
 
-        buff = storage.download_fileobj(preview_path)
-        image = PIL.Image.open(buff)
+        preview_bytes = storage.download_fileobj(preview_path)
+        image = PIL.Image.open(io.BytesIO(preview_bytes))
         return prepare_preview_image(image)
 
     def prepare_context_images_chunk(

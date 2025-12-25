@@ -30,8 +30,8 @@ from logstash_async.constants import constants as logstash_async_constants
 
 from cvat import __version__
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = str(Path(__file__).parents[2])
+# Build paths inside the project like this: BASE_DIR / ...
+BASE_DIR = Path(__file__).parents[2]
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 INTERNAL_IPS = ["127.0.0.1"]
@@ -47,9 +47,8 @@ def generate_secret_key():
 
     from django.utils.crypto import get_random_string
 
-    keys_dir = os.path.join(BASE_DIR, "keys")
-    if not os.path.isdir(keys_dir):
-        os.mkdir(keys_dir)
+    keys_dir = BASE_DIR / "keys"
+    keys_dir.mkdir(exist_ok=True)
 
     secret_key_fname = "secret_key.py"  # nosec
 
@@ -62,7 +61,7 @@ def generate_secret_key():
         f.flush()
 
         try:
-            os.link(f.name, os.path.join(keys_dir, secret_key_fname))
+            os.link(f.name, keys_dir / secret_key_fname)
         except FileExistsError:
             # Somebody else created the secret key first.
             # Discard ours and use theirs.
@@ -70,8 +69,9 @@ def generate_secret_key():
 
 
 if not SECRET_KEY:
+    sys.path.append(os.fspath(BASE_DIR))
+
     try:
-        sys.path.append(BASE_DIR)
         from keys.secret_key import SECRET_KEY  # pylint: disable=unused-import
     except ModuleNotFoundError:
         generate_secret_key()
@@ -426,56 +426,55 @@ CSRF_COOKIE_NAME = "csrftoken"
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
-os.makedirs(STATIC_ROOT, exist_ok=True)
+STATIC_ROOT = BASE_DIR / "static"
+STATIC_ROOT.mkdir(parents=True, exist_ok=True)
 
 # Make sure to update other config files when updating these directories
-DATA_ROOT = os.path.join(BASE_DIR, "data")
+DATA_ROOT = BASE_DIR / "data"
 
-MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, "data")
-os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
+MEDIA_DATA_ROOT = DATA_ROOT / "data"
+MEDIA_DATA_ROOT.mkdir(parents=True, exist_ok=True)
 
-CACHE_ROOT = os.path.join(DATA_ROOT, "cache")
-os.makedirs(CACHE_ROOT, exist_ok=True)
+CACHE_ROOT = DATA_ROOT / "cache"
+CACHE_ROOT.mkdir(parents=True, exist_ok=True)
 
-EXPORT_CACHE_ROOT = os.path.join(CACHE_ROOT, "export")
-os.makedirs(EXPORT_CACHE_ROOT, exist_ok=True)
+EXPORT_CACHE_ROOT = CACHE_ROOT / "export"
+EXPORT_CACHE_ROOT.mkdir(parents=True, exist_ok=True)
 
-EVENTS_LOCAL_DB_ROOT = os.path.join(BASE_DIR, "events")
-os.makedirs(EVENTS_LOCAL_DB_ROOT, exist_ok=True)
-EVENTS_LOCAL_DB_FILE = os.path.join(
+EVENTS_LOCAL_DB_ROOT = BASE_DIR / "events"
+EVENTS_LOCAL_DB_ROOT.mkdir(parents=True, exist_ok=True)
+EVENTS_LOCAL_DB_FILE = Path(
     EVENTS_LOCAL_DB_ROOT,
     os.getenv("CVAT_EVENTS_LOCAL_DB_FILENAME", "events.db"),
 )
-if not os.path.exists(EVENTS_LOCAL_DB_FILE):
-    open(EVENTS_LOCAL_DB_FILE, "w").close()
+EVENTS_LOCAL_DB_FILE.touch(exist_ok=True)
 
-JOBS_ROOT = os.path.join(DATA_ROOT, "jobs")
-os.makedirs(JOBS_ROOT, exist_ok=True)
+JOBS_ROOT = DATA_ROOT / "jobs"
+JOBS_ROOT.mkdir(parents=True, exist_ok=True)
 
-TASKS_ROOT = os.path.join(DATA_ROOT, "tasks")
-os.makedirs(TASKS_ROOT, exist_ok=True)
+TASKS_ROOT = DATA_ROOT / "tasks"
+TASKS_ROOT.mkdir(parents=True, exist_ok=True)
 
-PROJECTS_ROOT = os.path.join(DATA_ROOT, "projects")
-os.makedirs(PROJECTS_ROOT, exist_ok=True)
+PROJECTS_ROOT = DATA_ROOT / "projects"
+PROJECTS_ROOT.mkdir(parents=True, exist_ok=True)
 
-ASSETS_ROOT = os.path.join(DATA_ROOT, "assets")
-os.makedirs(ASSETS_ROOT, exist_ok=True)
+ASSETS_ROOT = DATA_ROOT / "assets"
+ASSETS_ROOT.mkdir(parents=True, exist_ok=True)
 
-SHARE_ROOT = os.path.join(BASE_DIR, "share")
-os.makedirs(SHARE_ROOT, exist_ok=True)
+SHARE_ROOT = BASE_DIR / "share"
+SHARE_ROOT.mkdir(parents=True, exist_ok=True)
 
-LOGS_ROOT = os.path.join(BASE_DIR, "logs")
-os.makedirs(LOGS_ROOT, exist_ok=True)
+LOGS_ROOT = BASE_DIR / "logs"
+LOGS_ROOT.mkdir(parents=True, exist_ok=True)
 
-MIGRATIONS_LOGS_ROOT = os.path.join(LOGS_ROOT, "migrations")
-os.makedirs(MIGRATIONS_LOGS_ROOT, exist_ok=True)
+MIGRATIONS_LOGS_ROOT = LOGS_ROOT / "migrations"
+MIGRATIONS_LOGS_ROOT.mkdir(parents=True, exist_ok=True)
 
-CLOUD_STORAGE_ROOT = os.path.join(DATA_ROOT, "storages")
-os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
+CLOUD_STORAGE_ROOT = DATA_ROOT / "storages"
+CLOUD_STORAGE_ROOT.mkdir(parents=True, exist_ok=True)
 
-TMP_FILES_ROOT = os.path.join(DATA_ROOT, "tmp")
-os.makedirs(TMP_FILES_ROOT, exist_ok=True)
+TMP_FILES_ROOT = DATA_ROOT / "tmp"
+TMP_FILES_ROOT.mkdir(parents=True, exist_ok=True)
 IGNORE_TMP_FOLDER_CLEANUP_ERRORS = True
 
 # logging is known to be unreliable with RQ when using async transports
@@ -498,7 +497,7 @@ LOGGING = {
         "server_file": {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "DEBUG",
-            "filename": os.path.join(BASE_DIR, "logs", "cvat_server.log"),
+            "filename": LOGS_ROOT / "cvat_server.log",
             "formatter": "standard",
             "maxBytes": 1024 * 1024 * 50,  # 50 MB
             "backupCount": 5,
@@ -506,7 +505,7 @@ LOGGING = {
         "dataset_handler": {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "DEBUG",
-            "filename": os.path.join(BASE_DIR, "logs", "cvat_server_dataset.log"),
+            "filename": LOGS_ROOT / "cvat_server_dataset.log",
             "formatter": "standard",
             "maxBytes": 1024 * 1024 * 50,  # 50 MB
             "backupCount": 3,

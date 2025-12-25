@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import datetime
-import os
 import re
 import shutil
 import uuid
@@ -14,6 +13,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from enum import Enum, IntEnum
 from functools import cached_property
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.conf import settings
@@ -342,21 +342,21 @@ class Data(models.Model):
     def get_valid_frame_indices(self):
         return range(self.start_frame, self.stop_frame + 1, self.get_frame_step())
 
-    def get_data_dirname(self):
-        return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
+    def get_data_dirname(self) -> Path:
+        return settings.MEDIA_DATA_ROOT / str(self.id)
 
-    def get_upload_dirname(self):
-        return os.path.join(self.get_data_dirname(), "raw")
+    def get_upload_dirname(self) -> Path:
+        return self.get_data_dirname() / "raw"
 
-    def get_raw_data_dirname(self) -> str:
+    def get_raw_data_dirname(self) -> Path:
         return {
             StorageChoice.LOCAL: self.get_upload_dirname(),
             StorageChoice.SHARE: settings.SHARE_ROOT,
             StorageChoice.CLOUD_STORAGE: self.get_upload_dirname(),
         }[self.storage]
 
-    def get_static_cache_dirname(self, quality: FrameQuality) -> str:
-        return os.path.join(self.get_data_dirname(), quality.name.lower())
+    def get_static_cache_dirname(self, quality: FrameQuality) -> Path:
+        return self.get_data_dirname() / quality.name.lower()
 
     def get_chunk_type(self, quality: FrameQuality) -> DataChoice:
         if quality == FrameQuality.ORIGINAL:
@@ -380,23 +380,23 @@ class Data(models.Model):
 
     def get_static_segment_chunk_path(
         self, chunk_number: int, segment_id: int, quality: FrameQuality
-    ) -> str:
-        return os.path.join(
+    ) -> Path:
+        return Path(
             self.get_static_cache_dirname(quality),
             self._get_chunk_name(segment_id, chunk_number, self.get_chunk_type(quality)),
         )
 
-    def get_manifest_path(self) -> str:
-        return os.path.join(self.get_upload_dirname(), self.MANIFEST_FILENAME)
+    def get_manifest_path(self) -> Path:
+        return self.get_upload_dirname() / self.MANIFEST_FILENAME
 
     def make_dirs(self):
         data_path = self.get_data_dirname()
-        if os.path.isdir(data_path):
+        if data_path.is_dir():
             shutil.rmtree(data_path)
 
         for quality in FrameQuality:
-            os.makedirs(self.get_static_cache_dirname(quality))
-        os.makedirs(self.get_upload_dirname())
+            self.get_static_cache_dirname(quality).mkdir(parents=True)
+        self.get_upload_dirname().mkdir(parents=True)
 
     @transaction.atomic
     def update_validation_layout(
@@ -480,16 +480,16 @@ class ABCModelMeta(ABCMeta, ModelBase):
 
 class FileSystemRelatedModel(metaclass=ABCModelMeta):
     @abstractmethod
-    def get_dirname(self) -> str:
+    def get_dirname(self) -> Path:
         ...
 
-    def get_tmp_dirname(self) -> str:
+    def get_tmp_dirname(self) -> Path:
         """
         The method returns a directory that is only used
         to store temporary files or folders related to the object
         """
-        dir_path = os.path.join(self.get_dirname(), "tmp")
-        os.makedirs(dir_path, exist_ok=True)
+        dir_path = self.get_dirname() / "tmp"
+        dir_path.mkdir(parents=True, exist_ok=True)
 
         return dir_path
 
@@ -554,8 +554,8 @@ class Project(TimestampedModel, AssignableModel, FileSystemRelatedModel):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self) -> str:
-        return os.path.join(settings.PROJECTS_ROOT, str(self.id))
+    def get_dirname(self) -> Path:
+        return settings.PROJECTS_ROOT / str(self.id)
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -660,8 +660,8 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self) -> str:
-        return os.path.join(settings.TASKS_ROOT, str(self.id))
+    def get_dirname(self) -> Path:
+        return settings.TASKS_ROOT / str(self.id)
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -726,9 +726,9 @@ class MyFileSystemStorage(FileSystemStorage):
             raise IOError('`{}` file already exists or its name is too long'.format(name))
         return name
 
-def upload_path_handler(instance, filename):
+def upload_path_handler(instance: ClientFile, filename: str) -> Path:
     # relative path is required since Django 3.1.11
-    return os.path.join(os.path.relpath(instance.data.get_upload_dirname(), settings.BASE_DIR), filename)
+    return instance.data.get_upload_dirname().relative_to(settings.BASE_DIR) / filename
 
 # For client files which the user is uploaded
 class ClientFile(models.Model):
@@ -966,8 +966,8 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     def get_source_storage(self) -> Storage | None:
         return self.segment.task.source_storage
 
-    def get_dirname(self) -> str:
-        return os.path.join(settings.JOBS_ROOT, str(self.id))
+    def get_dirname(self) -> Path:
+        return settings.JOBS_ROOT / str(self.id)
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
@@ -1021,9 +1021,9 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
 
     def make_dirs(self):
         job_path = self.get_dirname()
-        if os.path.isdir(job_path):
+        if job_path.is_dir():
             shutil.rmtree(job_path)
-        os.makedirs(job_path)
+        job_path.mkdir(parents=True)
 
 
 class InvalidLabel(ValueError):
@@ -1377,14 +1377,14 @@ class CloudStorage(TimestampedModel):
     def __str__(self):
         return "{} {} {}".format(self.provider_type, self.display_name, self.id)
 
-    def get_storage_dirname(self):
-        return os.path.join(settings.CLOUD_STORAGE_ROOT, str(self.id))
+    def get_storage_dirname(self) -> Path:
+        return settings.CLOUD_STORAGE_ROOT / str(self.id)
 
     def get_specific_attributes(self):
         return parse_specific_attributes(self.specific_attributes)
 
-    def get_key_file_path(self):
-        return os.path.join(self.get_storage_dirname(), 'key.json')
+    def get_key_file_path(self) -> Path:
+        return self.get_storage_dirname() / "key.json"
 
     @property
     def has_at_least_one_manifest(self) -> bool:
@@ -1435,8 +1435,8 @@ class Asset(models.Model):
     def organization_id(self):
         return self.guide.organization_id
 
-    def get_asset_dir(self):
-        return os.path.join(settings.ASSETS_ROOT, str(self.uuid))
+    def get_asset_dir(self) -> Path:
+        return settings.ASSETS_ROOT / str(self.uuid)
 
 class RequestAction(TextChoices):
     AUTOANNOTATE = "autoannotate"

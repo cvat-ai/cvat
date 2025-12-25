@@ -245,9 +245,8 @@ class Task3DTest(_DbTestBase):
         zip_file = zipfile.ZipFile(cls.pointcloud_pcd_path)
         for info in zip_file.namelist():
             if info.endswith(".pcd"):
-                with zip_file.open(info, "r") as file:
-                    data = ValidateDimension.get_pcd_properties(file)
-                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+                data = ValidateDimension.get_pcd_properties(zipfile.Path(zip_file, info))
+                image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
 
         cls.task = {
             "name": "main task",

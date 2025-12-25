@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import functools
-import io
 import json
 import os
 from abc import ABC, abstractmethod
@@ -40,18 +39,13 @@ from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice, 
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
-from utils.dataset_manifest.utils import InvalidPcdError, PcdReader
-
-
-class NamedBytesIO(BytesIO):
-    @property
-    def filename(self) -> str | None:
-        return getattr(self, "_filename", None)
-
-    @filename.setter
-    def filename(self, value: str) -> None:
-        self._filename = value
-
+from utils.dataset_manifest.utils import (
+    InvalidPcdError,
+    MemNamedOpenable,
+    MemOpenable,
+    NamedOpenable,
+    PcdReader,
+)
 
 slogger = ServerLogManager(__name__)
 
@@ -182,12 +176,10 @@ class _CloudStorage(ABC):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key: str, /) -> NamedBytesIO:
-        buf = NamedBytesIO()
+    def download_fileobj(self, key: str, /) -> bytes:
+        buf = BytesIO()
         self._download_fileobj_to_stream(key, buf)
-        buf.seek(0)
-        buf.filename = key
-        return buf
+        return buf.getvalue()
 
     @validate_file_status
     @validate_bucket_status
@@ -226,9 +218,8 @@ class _CloudStorage(ABC):
         pass
 
     def bulk_download_to_memory(
-        self, files: list[str], *, object_downloader: Callable[[str], NamedBytesIO] = None
-    ) -> Iterator[BytesIO]:
-        func = object_downloader or self.download_fileobj
+        self, files: list[str], *, object_downloader: Callable[[str], NamedOpenable]
+    ) -> Iterator[NamedOpenable]:
         threads_number = get_max_threads_number(len(files))
 
         # We're using a custom queue to limit the maximum number of downloaded unprocessed
@@ -236,7 +227,7 @@ class _CloudStorage(ABC):
         # For example, the builtin executor.map() could also be used here, but it
         # would enqueue all the file list in one go, and the downloaded files
         # would all be stored in memory until processed.
-        queue: Queue[Future] = Queue(maxsize=threads_number)
+        queue: Queue[Future[NamedOpenable]] = Queue(maxsize=threads_number)
         input_iter = iter(files)
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
             while not queue.empty() or input_iter is not None:
@@ -246,7 +237,7 @@ class _CloudStorage(ABC):
                         input_iter = None
                         break
 
-                    next_job = executor.submit(func, next_job_params)
+                    next_job = executor.submit(object_downloader, next_job_params)
                     queue.put(next_job)
 
                 top_job = queue.get()
@@ -398,15 +389,17 @@ class HeaderFirstDownloader(ABC):
         self.client = client
 
     @abstractmethod
-    def try_parse_header(self, header: NamedBytesIO) -> Any | None: ...
+    def try_parse_header(self, key: str, header: bytes) -> Any | None: ...
 
-    def log_header_miss(self, key: str, header_size: int, *, full_file: NamedBytesIO | None = None):
+    def log_header_miss(
+        self, key: str, header_size: int, *, full_contents: bytes | None = None
+    ) -> None:
         message = (
             f'The first {header_size} bytes were not enough to parse the "{key}" object header. '
         )
 
-        if full_file:
-            full_object_size = len(full_file.getvalue())
+        if full_contents is not None:
+            full_object_size = len(full_contents)
 
             message += (
                 f"Object size was {full_object_size} bytes. "
@@ -428,7 +421,7 @@ class HeaderFirstDownloader(ABC):
             65536,
         )
 
-    def download(self, key: str) -> NamedBytesIO:
+    def download(self, key: str) -> NamedOpenable:
         """
         Method downloads the file using the following approach:
         First we try to download the file header (first N bytes).
@@ -441,48 +434,45 @@ class HeaderFirstDownloader(ABC):
             buffer with the image
         """
 
-        buff = NamedBytesIO()
-        buff.filename = key
+        buff = BytesIO()
 
         headers_to_try = self.get_header_sizes_to_try()
         for i, header_size in enumerate(headers_to_try):
-            buff.seek(0, io.SEEK_END)
             cur_pos = buff.tell()
             chunk = self.client.download_range_of_bytes(
                 key, start_byte=cur_pos, stop_byte=header_size - 1
             )
             buff.write(chunk)
-            buff.seek(0)
 
-            if self.try_parse_header(buff):
-                buff.seek(0)
-                return buff
+            partial_contents = buff.getvalue()
+            if self.try_parse_header(key, partial_contents):
+                return MemNamedOpenable(partial_contents, key)
 
             if i + 1 < len(headers_to_try):
                 self.log_header_miss(key=key, header_size=header_size)
 
-        buff = self.client.download_fileobj(key)
-        self.log_header_miss(key=key, header_size=header_size, full_file=buff)
-        return buff
+        full_contents = self.client.download_fileobj(key)
+        self.log_header_miss(key=key, header_size=header_size, full_contents=full_contents)
+        return MemNamedOpenable(full_contents, key)
 
 
 class _HeaderFirstImageDownloader(HeaderFirstDownloader):
-    def try_parse_header(self, header):
+    def try_parse_header(self, key: str, header: bytes):
         image_parser = ImageFile.Parser()
-        image_parser.feed(header.getvalue())
+        image_parser.feed(header)
         return image_parser.image
 
-    def log_header_miss(self, key, header_size, *, full_file=None):
+    def log_header_miss(self, key, header_size, *, full_contents: bytes | None = None) -> None:
         message = (
             f'The first {header_size} bytes were not enough to parse the "{key}" object header. '
         )
 
-        if full_file:
-            full_object_size = len(full_file.getvalue())
+        if full_contents is not None:
+            full_object_size = len(full_contents)
 
             message += (
                 f"Object size was {full_object_size} bytes. "
-                f"Image resolution was {Image.open(full_file).size}. "
+                f"Image resolution was {Image.open(BytesIO(full_contents)).size}. "
                 f"Downloaded percentage was "
                 f"{min(header_size, full_object_size) / full_object_size:.0%}"
             )
@@ -499,10 +489,10 @@ class _HeaderFirstImageDownloader(HeaderFirstDownloader):
 
 
 class _HeaderFirstPcdDownloader(HeaderFirstDownloader):
-    def try_parse_header(self, header):
+    def try_parse_header(self, key: str, header: bytes):
         pcd_parser = PcdReader()
-        file = header
-        file_ext = os.path.splitext(file.filename)[1].lower()
+        file = MemOpenable(header)
+        file_ext = os.path.splitext(key)[1].lower()
 
         if file_ext == ".bin":
             # We need to ensure the file is a valid .bin file
