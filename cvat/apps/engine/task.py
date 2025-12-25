@@ -840,7 +840,7 @@ def create_thread(
         media['image'].extend(
             [os.path.relpath(image, upload_dir) for image in
                 MEDIA_TYPES['directory']['extractor'](
-                    source_path=[os.path.join(upload_dir, f) for f in media['directory']],
+                    source_paths=[os.path.join(upload_dir, f) for f in media['directory']],
                 ).absolute_source_paths
             ]
         )
@@ -871,7 +871,7 @@ def create_thread(
         source_paths = [os.path.join(upload_dir, f) for f in media_files]
 
         details = {
-            'source_path': source_paths,
+            'source_paths': source_paths,
             'step': db_data.get_frame_step(),
             'start': db_data.start_frame,
             'stop': data['stop_frame'],
@@ -929,7 +929,7 @@ def create_thread(
 
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
-            source_files=[
+            source_paths=[
                 # We always work with .pcd files instead of .bin
                 (os.path.splitext(p)[0] + ".pcd") if p.endswith(".bin") else p
                 for p in extractor.absolute_source_paths
@@ -998,7 +998,7 @@ def create_thread(
 
         data['sorting_method'] = models.SortingMethod.PREDEFINED
         extractor.reconcile(
-            source_files=media_files,
+            source_paths=media_files,
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data['stop_frame'],
