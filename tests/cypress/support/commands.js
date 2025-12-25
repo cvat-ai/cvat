@@ -1878,10 +1878,10 @@ Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
     cy.get('.cvat-job-item')
         .filter(':has(.cvat-tag-consensus)')
         .filter(`:contains("Job #${jobID}")`)
-        .find('.anticon-more').first().scrollIntoView();
-    cy.get('.anticon-more').first().click();
+        .find('.cvat-job-item-more-button').first().scrollIntoView();
+    cy.get('.cvat-job-item-more-button').first().click();
 
-    cy.get('.ant-dropdown-menu').should('exist').and('be.visible');
+    cy.get('.cvat-job-item-menu').should('exist').and('be.visible');
     cy.contains('li', 'Merge consensus job').should('exist').and('be.visible')
         .click({ scrollBehavior: false });
     cy.get('.cvat-modal-confirm-consensus-merge-job')
