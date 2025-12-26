@@ -1,0 +1,102 @@
+metadata:
+  name: onnx-yolov8-oranges-color-gpu
+  namespace: cvat
+  annotations:
+    name: YOLOv8-Oranges-Color
+    type: detector
+    spec: |
+      [
+        { "id": 0, "name": "Calyx", "type": "mask" },
+        { "id": 1, "name": "Stem", "type": "mask" },
+        { "id": 2, "name": "Trips", "type": "mask" },
+        { "id": 3, "name": "Scar", "type": "mask" },
+        { "id": 4, "name": "Rot", "type": "mask" },
+        { "id": 5, "name": "Evolutionary", "type": "mask" },
+        { "id": 6, "name": "Skin Defect", "type": "mask" },
+        { "id": 7, "name": "Caracol", "type": "mask" },
+        { "id": 8, "name": "Label", "type": "mask" },
+        { "id": 9, "name": "Scale", "type": "mask" },
+        { "id": 10, "name": "Crease", "type": "mask" },
+        { "id": 11, "name": "Oleo", "type": "mask" },
+        { "id": 12, "name": "Mask", "type": "mask" },
+        { "id": 13, "name": "End check", "type": "mask" },
+        { "id": 14, "name": "Bad stem", "type": "mask" },
+        { "id": 15, "name": "Antracnose", "type": "mask" },
+        { "id": 16, "name": "Mosca", "type": "mask" },
+        { "id": 17, "name": "Pliegue", "type": "mask" },
+        { "id": 18, "name": "Melanosis", "type": "mask" },
+        { "id": 19, "name": "Fumagima", "type": "mask" },
+        { "id": 20, "name": "Mancha Negra", "type": "mask" },
+        { "id": 21, "name": "Cancrosis", "type": "mask" },
+        { "id": 22, "name": "Long Stem", "type": "mask" },
+        { "id": 23, "name": "Bruises", "type": "mask" },
+        { "id": 24, "name": "Sunburn", "type": "mask" }
+      ]
+
+spec:
+  description: YOLOv8 Segmentation model for oranges defect detection (color image) via ONNX with GPU acceleration (CUDA 12.8)
+  runtime: 'python:3.11'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.onnx.yolov8.oranges.color:cuda12.8
+    baseImage: nvidia/cuda:12.8.0-devel-ubuntu22.04
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+        # Install system dependencies
+        - kind: RUN
+          value: apt-get update && apt-get install -y --no-install-recommends python3.11 python3.11-dev python3-pip libgl1 libglib2.0-0 wget && rm -rf /var/lib/apt/lists/*
+
+        # Install cuDNN 9 for CUDA 12
+        - kind: RUN
+          value: |
+            wget https://developer.download.nvidia.com/compute/cudnn/9.5.1/local_installers/cudnn-local-repo-ubuntu2204-9.5.1_1.0-1_amd64.deb && \
+            dpkg -i cudnn-local-repo-ubuntu2204-9.5.1_1.0-1_amd64.deb && \
+            cp /var/cudnn-local-repo-ubuntu2204-9.5.1/cudnn-*-keyring.gpg /usr/share/keyrings/ && \
+            apt-get update && \
+            apt-get install -y libcudnn9-cuda-12 libcudnn9-dev-cuda-12 && \
+            rm cudnn-local-repo-ubuntu2204-9.5.1_1.0-1_amd64.deb && \
+            rm -rf /var/lib/apt/lists/*
+
+        # Symlink python3 to python
+        - kind: RUN
+          value: ln -s /usr/bin/python3 /usr/bin/python
+
+        # Upgrade pip
+        - kind: RUN
+          value: python -m pip install --upgrade pip
+
+        # Install ONNX Runtime GPU with CUDA 12 support and nuclio dependencies
+        - kind: RUN
+          value: pip install onnxruntime-gpu opencv-python-headless pillow pyyaml numpy msgpack nuclio-sdk
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32765
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
