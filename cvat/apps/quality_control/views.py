@@ -28,6 +28,10 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.engine.view_utils import deprecate_response, get_or_404
 from cvat.apps.quality_control import quality_reports as qc
+from cvat.apps.quality_control.export import (
+    QualityReportExportFormat,
+    prepare_report_for_downloading,
+)
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
@@ -439,8 +443,8 @@ class QualityReportViewSet(
             OpenApiParameter(
                 "format",
                 type=OpenApiTypes.STR,
-                enum=qc.QualityReportExportFormat.labels,
-                default=qc.QualityReportExportFormat.JSON.label,
+                enum=QualityReportExportFormat.labels,
+                default=QualityReportExportFormat.JSON.label,
             ),
         ],
         responses={"200": OpenApiTypes.OBJECT},
@@ -448,10 +452,10 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
     def data(self, request: ExtendedRequest, pk):
         report = self.get_object()  # check permissions
-        format_name = qc.QualityReportExportFormat(
-            request.query_params.get("format", default=qc.QualityReportExportFormat.JSON.label)
+        format_name = QualityReportExportFormat(
+            request.query_params.get("format", default=QualityReportExportFormat.JSON.label)
         )
-        report_data, content_type = qc.prepare_report_for_downloading(
+        report_data, content_type = prepare_report_for_downloading(
             report, host=get_server_url(request), format=format_name
         )
         return HttpResponse(report_data, content_type=content_type)
