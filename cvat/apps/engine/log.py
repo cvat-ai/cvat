@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-import os.path as osp
 import sys
 from contextlib import contextmanager
+from pathlib import Path
 
 from django.conf import settings
 
@@ -68,12 +68,12 @@ def get_logger(logger_name, log_file):
 vlogger = logging.getLogger("vector")
 
 
-def get_migration_log_dir() -> str:
+def get_migration_log_dir() -> Path:
     return settings.MIGRATIONS_LOGS_ROOT
 
 
-def get_migration_log_file_path(migration_name: str) -> str:
-    return osp.join(get_migration_log_dir(), f"{migration_name}.log")
+def get_migration_log_file_path(migration_name: str) -> Path:
+    return get_migration_log_dir() / f"{migration_name}.log"
 
 
 @contextmanager

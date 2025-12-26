@@ -14,7 +14,7 @@ from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, TypeAlias
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -57,7 +57,7 @@ from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_in
 
 slogger = ServerLogManager(__name__)
 
-JobFileMapping = list[list[str]]
+JobFileMapping: TypeAlias = list[list[str]]
 
 class SegmentParams(NamedTuple):
     start_frame: int
@@ -221,8 +221,7 @@ def _count_files(data):
         path = os.path.normpath(path).lstrip('/')
         if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
-        full_path = os.path.abspath(os.path.join(share_root, path))
-        if os.path.commonprefix([share_root, full_path]) != share_root:
+        if not (share_root / path).resolve().is_relative_to(share_root):
             raise ValueError("Bad file path: " + path)
         server_files.append(path)
 
@@ -568,6 +567,7 @@ def _create_task_manifest_from_cloud_data(
         },
         DIM_3D=(dimension == models.DimensionType.DIM_3D),
         stop=len(sorted_media) - 1,
+        data_dir=".",
     )
     manifest.create()
 
@@ -840,7 +840,7 @@ def create_thread(
         media['image'].extend(
             [os.path.relpath(image, upload_dir) for image in
                 MEDIA_TYPES['directory']['extractor'](
-                    source_path=[os.path.join(upload_dir, f) for f in media['directory']],
+                    source_paths=[os.path.join(upload_dir, f) for f in media['directory']],
                 ).absolute_source_paths
             ]
         )
@@ -871,7 +871,7 @@ def create_thread(
         source_paths = [os.path.join(upload_dir, f) for f in media_files]
 
         details = {
-            'source_path': source_paths,
+            'source_paths': source_paths,
             'step': db_data.get_frame_step(),
             'start': db_data.start_frame,
             'stop': data['stop_frame'],
@@ -929,7 +929,7 @@ def create_thread(
 
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
-            source_files=[
+            source_paths=[
                 # We always work with .pcd files instead of .bin
                 (os.path.splitext(p)[0] + ".pcd") if p.endswith(".bin") else p
                 for p in extractor.absolute_source_paths
@@ -979,7 +979,7 @@ def create_thread(
                     )
 
                 manifest = _read_dataset_manifest(os.path.join(manifest_root, manifest_file),
-                    create_index=manifest_root.startswith(db_data.get_upload_dirname())
+                    create_index=manifest_root.is_relative_to(db_data.get_upload_dirname())
                 )
 
             sorted_media_files = _restore_file_order_from_manifest(extractor, manifest, upload_dir)
@@ -998,7 +998,7 @@ def create_thread(
 
         data['sorting_method'] = models.SortingMethod.PREDEFINED
         extractor.reconcile(
-            source_files=media_files,
+            source_paths=media_files,
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data['stop_frame'],
@@ -1028,7 +1028,7 @@ def create_thread(
     if (manifest_file and not os.path.exists(db_data.get_manifest_path())):
         shutil.copyfile(os.path.join(manifest_root, manifest_file),
             db_data.get_manifest_path())
-        if manifest_root and manifest_root.startswith(db_data.get_upload_dirname()):
+        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
             os.remove(os.path.join(manifest_root, manifest_file))
         manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
@@ -1048,7 +1048,7 @@ def create_thread(
                     update_status('Validating the input manifest file')
 
                     manifest = VideoManifestValidator(
-                        source_path=os.path.join(upload_dir, media_files[0]),
+                        source_path=upload_dir / media_files[0],
                         manifest_path=db_data.get_manifest_path()
                     )
                     manifest.init_index()
@@ -1078,8 +1078,7 @@ def create_thread(
                     # TODO: maybe generate manifest in a temp directory
                     manifest = VideoManifestManager(db_data.get_manifest_path())
                     manifest.link(
-                        media_file=media_files[0],
-                        upload_dir=upload_dir,
+                        media_file=Path(upload_dir, media_files[0]),
                         chunk_size=db_data.chunk_size, # TODO: why it's needed here?
                         force=True
                     )
@@ -1128,7 +1127,7 @@ def create_thread(
                 # us to avoid downloading such images from cloud storage (when using static chunks),
                 # or copying them from the attached share (when using copy_data).
                 manifest.link(
-                    sources=extractor.absolute_source_paths,
+                    sources=list(map(Path, extractor.absolute_source_paths)),
                     meta={
                         k: {'related_images': related_images[k] }
                         for k in related_images

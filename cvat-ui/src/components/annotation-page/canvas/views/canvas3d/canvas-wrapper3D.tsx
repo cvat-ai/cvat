@@ -118,6 +118,8 @@ interface StateToProps {
     outlineColor: string;
     colorBy: ColorBy;
     orientationVisibility: OrientationVisibility;
+    controlPointsSize: number;
+    focusedObjectPadding: number;
     frameFetching: boolean;
     canvasInstance: Canvas3d;
     jobInstance: Job;
@@ -169,6 +171,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 resetZoom,
             },
+            workspace: {
+                controlPointsSize,
+                focusedObjectPadding,
+            },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, orientationVisibility,
             },
@@ -189,6 +195,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         outlined,
         outlineColor,
         orientationVisibility,
+        controlPointsSize,
+        focusedObjectPadding,
         activeLabelID,
         activatedStateID,
         activeObjectType,
@@ -507,6 +515,8 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         outlined,
         outlineColor,
         orientationVisibility,
+        controlPointsSize,
+        focusedObjectPadding,
         selectedOpacity,
         colorBy,
         contextMenuVisibility,
@@ -682,17 +692,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         };
     }, [resetZoom]);
 
-    const updateShapesView = (): void => {
-        canvasInstance.configureShapes({
-            opacity,
-            outlined,
-            outlineColor,
-            selectedOpacity,
-            colorBy,
-            orientationVisibility,
-        });
-    };
-
     const onContextMenu = (event: any): void => {
         const { onUpdateContextMenu, onActivateObject } = props;
         onActivateObject(event.detail.clientID);
@@ -721,8 +720,21 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     };
 
     useEffect(() => {
-        updateShapesView();
-    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy, orientationVisibility]);
+        canvasInstance.configure({
+            colorBy,
+            shapeOpacity: opacity,
+            selectedShapeOpacity: selectedOpacity,
+            orientationVisibility,
+            outlinedBorders: outlined ? outlineColor : false,
+            controlPointsSize,
+            focusedObjectPadding,
+        });
+    }, [
+        opacity, outlined, outlineColor,
+        selectedOpacity, colorBy, focusedObjectPadding,
+        orientationVisibility, controlPointsSize,
+
+    ]);
 
     useEffect(() => {
         const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;

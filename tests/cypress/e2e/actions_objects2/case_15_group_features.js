@@ -236,9 +236,8 @@ context('Group features', () => {
                 cy.get(groupedShape).should('have.attr', 'stroke', `#${yellowHex}`);
             }
             for (const groupedSidebarItemShape of shapeSidebarItemArray) {
-                cy.get(groupedSidebarItemShape)
-                    .should('have.attr', 'style')
-                    .and('contain', `background-color: rgba(${yellowRgb}`);
+                cy.get(groupedSidebarItemShape).invoke('css', 'background-color')
+                    .should('contain', `rgba(${yellowRgb}`);
             }
         });
 

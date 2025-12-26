@@ -11,7 +11,7 @@ import { CombinedState } from 'reducers';
 import { activateObject } from 'actions/annotation-actions';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { getColor } from './shared';
+import { getObjectStateColor } from './shared';
 
 interface OwnProps {
     parentID: number;
@@ -42,7 +42,7 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
 
     const state = states.find((_state: ObjectState) => _state.clientID === parentID);
     const element = state.elements.find((_element: ObjectState) => _element.clientID === clientID);
-    const elementColor = getColor(element, colorBy);
+    const elementColor = getObjectStateColor(element, colorBy).rgbComponents();
     const elementClassName = element.clientID === activatedElementId ?
         'cvat-objects-sidebar-state-item-elements cvat-objects-sidebar-state-active-element' :
         'cvat-objects-sidebar-state-item-elements';
@@ -54,7 +54,7 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
             onMouseLeave={onMouseLeave}
             key={clientID}
             className={elementClassName}
-            style={{ background: `${elementColor}` }}
+            style={{ '--state-item-background': `${elementColor}` } as React.CSSProperties}
         >
             <Text
                 type='secondary'
