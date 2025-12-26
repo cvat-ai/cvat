@@ -2,7 +2,7 @@ metadata:
   name: onnx-yolov8-oranges-color
   namespace: cvat
   annotations:
-    name: YOLOv8 Oranges Color GPU
+    name: YOLOv8-Oranges-Color
     type: detector
     spec: |
       [
@@ -34,7 +34,7 @@ metadata:
       ]
 
 spec:
-  description: YOLOv8 Segmentation model for orange color defect detection via ONNX with GPU acceleration
+  description: YOLOv8 Segmentation model for oranges defect detection (color image) via ONNX with GPU acceleration
   runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 30s
