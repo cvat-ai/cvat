@@ -1048,7 +1048,7 @@ def create_thread(
                     update_status('Validating the input manifest file')
 
                     manifest = VideoManifestValidator(
-                        source_path=os.path.join(upload_dir, media_files[0]),
+                        source_path=upload_dir / media_files[0],
                         manifest_path=db_data.get_manifest_path()
                     )
                     manifest.init_index()
