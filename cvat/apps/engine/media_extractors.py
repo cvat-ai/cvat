@@ -125,8 +125,8 @@ def load_image(image: tuple[str, str, str]) -> tuple[Image.Image, str, str]:
         return pil_img, image[1], image[2]
 
 
-def get_video_chapters(manifest_path: str, segment: tuple[int, int] = None) -> list[Chapter]:
-    if not os.path.isfile(manifest_path):
+def get_video_chapters(manifest_path: Path, segment: tuple[int, int] = None) -> list[Chapter]:
+    if not manifest_path.is_file():
         # Some videos can have no manifest. Typically, because there are issues with keyframes.
         # In this case we don't have a quick and reliable source of information about chapters,
         # so we don't return them.
@@ -724,7 +724,7 @@ class VideoReader(IMediaReader):
 
 
 class ImageReaderWithManifest:
-    def __init__(self, manifest_path: str):
+    def __init__(self, manifest_path: Path):
         self._manifest = ImageManifestManager(manifest_path)
         self._manifest.init_index()
 
@@ -736,7 +736,7 @@ class ImageReaderWithManifest:
 class VideoReaderWithManifest:
     # TODO: merge this class with VideoReader
 
-    def __init__(self, manifest_path: str, source_path: str, *, allow_threading: bool = False):
+    def __init__(self, manifest_path: Path, source_path: str, *, allow_threading: bool = False):
         self.source_path = source_path
         self.manifest = VideoManifestManager(manifest_path)
         if self.manifest.exists:
