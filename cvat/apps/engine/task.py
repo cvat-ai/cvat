@@ -383,7 +383,7 @@ def _validate_validation_params(
 
 def _validate_manifest(
     manifests: list[str],
-    root_dir: str | None,
+    root_dir: Path,
     *,
     is_in_cloud: bool,
     db_cloud_storage: Any | None,
@@ -395,7 +395,7 @@ def _validate_manifest(
     if len(manifests) != 1:
         raise ValidationError('Only one manifest file can be attached to data')
     manifest_file = manifests[0]
-    full_manifest_path = os.path.join(root_dir, manifests[0])
+    full_manifest_path = root_dir / manifests[0]
 
     if is_in_cloud and not is_backup_restore:
         cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
@@ -465,7 +465,7 @@ def _download_data_from_cloud_storage(
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
     cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
 
-def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageManifestManager:
+def _read_dataset_manifest(path: Path, *, create_index: bool = False) -> ImageManifestManager:
     """
     Reads an upload manifest file
     """
@@ -473,7 +473,7 @@ def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageMan
     if not is_dataset_manifest(path):
         raise ValidationError(
             "Can't recognize a dataset manifest file in "
-            "the uploaded file '{}'".format(os.path.basename(path))
+            "the uploaded file '{}'".format(path.name)
         )
 
     return ImageManifestManager(path, create_index=create_index)
@@ -628,7 +628,7 @@ def create_thread(
 
     # find and validate manifest file
     manifest_files = _find_manifest_files(data)
-    manifest_root = None
+    manifest_root: Path
 
     # we should also handle this case because files from the share source have not been downloaded yet
     if data['copy_data']:
@@ -665,7 +665,7 @@ def create_thread(
 
         if manifest_file:
             cloud_storage_manifest = ImageManifestManager(
-                os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
+                db_data.cloud_storage.get_storage_dirname() / manifest_file,
                 db_data.cloud_storage.get_storage_dirname()
             )
             cloud_storage_manifest.set_index()
@@ -978,7 +978,7 @@ def create_thread(
                         .format(manifest_file or os.path.basename(db_data.get_manifest_path()))
                     )
 
-                manifest = _read_dataset_manifest(os.path.join(manifest_root, manifest_file),
+                manifest = _read_dataset_manifest(manifest_root / manifest_file,
                     create_index=manifest_root.is_relative_to(db_data.get_upload_dirname())
                 )
 
