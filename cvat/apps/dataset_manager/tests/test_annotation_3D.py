@@ -95,7 +95,9 @@ class TrackManager3DTest(TestCase):
 
         track = self._make_track(shapes)
 
-        interpolated = TrackManager.get_interpolated_shapes(track, 0, 5, models.DimensionType.DIM_3D)
+        interpolated = TrackManager.get_interpolated_shapes(
+            track, 0, 5, models.DimensionType.DIM_3D
+        )
 
         # ensure frames/keyframe/outside sequence is reasonable for 3D cuboids
         expected = [0, 1, 2, 4]
@@ -154,7 +156,9 @@ class TrackManager3DTest(TestCase):
             "shapes": shapes,
         }
 
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 2, models.DimensionType.DIM_3D)
+        interpolated_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, 2, models.DimensionType.DIM_3D
+        )
         # Expect only two shapes (no duplicated last one)
         self.assertEqual(2, len(interpolated_shapes))
 
