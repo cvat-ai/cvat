@@ -5,8 +5,8 @@ from unittest import mock
 
 from django.test import TestCase
 
-from cvat.apps.dataset_manager.annotation import AnnotationIR, TrackManager
 from cvat.apps.dataset_manager import task as task_module
+from cvat.apps.dataset_manager.annotation import AnnotationIR, TrackManager
 from cvat.apps.engine import models
 
 
@@ -132,7 +132,9 @@ class TrackManager3DTest(TestCase):
             ],
         }
 
-        interpolated = TrackManager.get_interpolated_shapes(track, 0, 5, models.DimensionType.DIM_3D)
+        interpolated = TrackManager.get_interpolated_shapes(
+            track, 0, 5, models.DimensionType.DIM_3D
+        )
 
         # ensure frames/keyframe/outside sequence is reasonable for 3D cuboids
         expected = [0, 1, 2, 4]
@@ -219,7 +221,9 @@ class TrackManager3DTest(TestCase):
             "shapes": [shape0, shape1, shape1],
         }
 
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 2, models.DimensionType.DIM_3D)
+        interpolated_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, 2, models.DimensionType.DIM_3D
+        )
         # Expect only two shapes (no duplicated last one)
         self.assertEqual(2, len(interpolated_shapes))
 
