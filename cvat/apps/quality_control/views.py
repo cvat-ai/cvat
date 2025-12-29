@@ -28,7 +28,7 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.engine.view_utils import deprecate_response, get_or_404
 from cvat.apps.quality_control import quality_reports as qc
-from cvat.apps.quality_control.manager import QualityReportRQJobManager
+from cvat.apps.quality_control.queue_manager import QualityReportQueueManager
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
@@ -355,7 +355,7 @@ class QualityReportViewSet(
             else:
                 assert False
 
-            manager = QualityReportRQJobManager(request=request, db_instance=target)
+            manager = QualityReportQueueManager(request=request, db_instance=target)
             return manager.enqueue_job()
 
         else:
@@ -363,7 +363,7 @@ class QualityReportViewSet(
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
-            rq_job = QualityReportRQJobManager(request=request).get_job_by_id(rq_id)
+            rq_job = QualityReportQueueManager(request=request).get_job_by_id(rq_id)
 
             # FUTURE-TODO: move into permissions
             # and allow not only rq job owner to check the status

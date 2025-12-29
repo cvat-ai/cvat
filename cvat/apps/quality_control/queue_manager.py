@@ -26,7 +26,7 @@ from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
-class QualityReportRQJobManager(AbstractRequestManager):
+class QualityReportQueueManager(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.QUALITY_REPORTS.value
     SUPPORTED_TARGETS: ClassVar[set[RequestTarget]] = {RequestTarget.TASK, RequestTarget.PROJECT}
 
@@ -73,7 +73,7 @@ class QualityReportRQJobManager(AbstractRequestManager):
 
     def init_callback_with_params(self):
         assert isinstance(self.db_instance, (Task, Project))
-        method_name = f"_check_{self.target}_quality"
+        method_name = f"check_{self.target}_quality"
         self.callback = getattr(QualityReportManager, method_name)
         self.callback_kwargs = {
             f"{self.target}_id": self.db_instance.pk,
@@ -83,7 +83,7 @@ class QualityReportRQJobManager(AbstractRequestManager):
 class QualityReportManager:
     @classmethod
     @silk_profile()
-    def _check_task_quality(cls, *, task_id: int) -> int:
+    def check_task_quality(cls, *, task_id: int) -> int:
         report = TaskQualityCalculator().compute_report(task=task_id)
         if not report:
             return None
@@ -92,5 +92,5 @@ class QualityReportManager:
 
     @classmethod
     @silk_profile()
-    def _check_project_quality(cls, *, project_id: int) -> int:
+    def check_project_quality(cls, *, project_id: int) -> int:
         return ProjectQualityCalculator().compute_report(project=project_id).id
