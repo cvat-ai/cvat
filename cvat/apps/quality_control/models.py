@@ -258,8 +258,13 @@ class PointSizeBase(str, Enum):
 
 
 class QualitySettings(TimestampedModel):
-    class InvalidParametersError(ValidationError):
-        pass
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="quality_settings_task_or_project",
+                condition=models.Q(task_id__isnull=False) ^ models.Q(project_id__isnull=False),
+            )
+        ]
 
     task = models.OneToOneField(
         Task, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
@@ -275,6 +280,75 @@ class QualitySettings(TimestampedModel):
         max_length=1024,
         blank=True,
     )
+
+    max_validations_per_job = models.PositiveIntegerField(default=0)
+
+    requirements: Sequence[QualityRequirement]
+
+    @property
+    def organization_id(self):
+        if self.task_id:
+            return self.task.organization_id
+        elif self.project_id:
+            return self.project.organization_id
+
+        assert False
+
+    @classmethod
+    def get_job_filter_terms(cls) -> list[str]:
+        from .quality_reports import TaskQualityCalculator
+
+        return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())
+
+
+class QualityRequirementAnnotationType(models.TextChoices):
+    TAG = "tag"
+    RECTANGLE = "rectangle"
+    SKELETON = "skeleton"
+    SKELETON_KEYPOINT = "skeleton_keypoint"
+    POINTS = "points"
+    POLYLINE = "polyline"
+    MASK = "mask"
+    POLYGON = "polygon"
+    ELLIPSE = "ellipse"
+    ATTRIBUTE = "attribute"
+
+
+class QualityRequirement(TimestampedModel):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["settings", "name"],
+                name="quality_requirements_unique_per_settings",
+            )
+        ]
+
+    settings = models.ForeignKey(
+        QualitySettings,
+        on_delete=models.CASCADE,
+        related_name="requirements",
+        related_query_name="requirement",
+        null=False,
+        blank=False,
+    )
+
+    name = models.CharField(max_length=100, blank=False)
+
+    annotation_type = models.CharField(
+        max_length=32,
+        choices=QualityRequirementAnnotationType.choices(),
+    )
+
+    target_metric = models.CharField(
+        max_length=32,
+        choices=QualityTargetMetricType.choices(),
+        default=QualityTargetMetricType.ACCURACY,
+    )
+
+    target_metric_threshold = models.FloatField(default=0.7)
+
+    # An attribute-based requirement must have a parent shape-based requirement to be computable
+    parent = models.ForeignKey("self", on_delete=models.DO_NOTHING, null=True, blank=True)
 
     iou_threshold = models.FloatField()
     oks_sigma = models.FloatField()
@@ -301,27 +375,6 @@ class QualitySettings(TimestampedModel):
 
     empty_is_annotated = models.BooleanField(default=False)
 
-    target_metric = models.CharField(
-        max_length=32,
-        choices=QualityTargetMetricType.choices(),
-        default=QualityTargetMetricType.ACCURACY,
-    )
-
-    target_metric_threshold = models.FloatField(default=0.7)
-
-    max_validations_per_job = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                name="quality_settings_task_or_project",
-                check=(
-                    models.Q(task_id__isnull=False, project_id__isnull=True)
-                    | models.Q(task_id__isnull=True, project_id__isnull=False)
-                ),
-            )
-        ]
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         defaults = deepcopy(self.get_defaults())
         for field in self._meta.fields:
@@ -332,27 +385,12 @@ class QualitySettings(TimestampedModel):
 
     @classmethod
     def get_defaults(cls) -> dict:
-        import cvat.apps.quality_control.quality_reports as qc
+        from cvat.apps.quality_control.comparison_report import ComparisonParameters
 
-        default_settings = qc.DatasetComparator.DEFAULT_SETTINGS.to_dict()
+        default_settings = ComparisonParameters().to_dict()
 
         existing_fields = {f.name for f in cls._meta.fields}
         return {k: v for k, v in default_settings.items() if k in existing_fields}
 
     def to_dict(self):
         return model_to_dict(self)
-
-    @property
-    def organization_id(self):
-        if self.task_id:
-            return self.task.organization_id
-        elif self.project_id:
-            return self.project.organization_id
-
-        assert False
-
-    @classmethod
-    def get_job_filter_terms(cls) -> list[str]:
-        from .quality_reports import TaskQualityCalculator
-
-        return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())

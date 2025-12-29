@@ -8,7 +8,7 @@ import itertools
 import math
 from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Any, TypeAlias, TypeVar, cast
+from typing import Any, NamedTuple, TypeAlias, TypedDict, TypeVar, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher
@@ -1093,7 +1093,7 @@ class Comparator:
         )
         return [anns[i] for i in covered_ids]
 
-    def match_annotations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
+    def match_annotations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchingResults:
         per_type_results = self._annotation_comparator.match_annotations(item_a, item_b)
 
         merged_results = [[], [], [], [], {}]
@@ -1119,3 +1119,26 @@ class Comparator:
         self, pairwise_distances, gt_ann: dm.Annotation, ds_ann: dm.Annotation
     ) -> float | None:
         return pairwise_distances.get((id(gt_ann), id(ds_ann)))
+
+
+class TagMatchingResult(NamedTuple):
+    matched: list
+    a_extra: list
+    b_extra: list
+    distances: dict
+
+
+class ShapeMatchingResult(NamedTuple):
+    matched: list
+    mispred: list
+    a_extra: list
+    b_extra: list
+    distances: dict
+
+
+MatchingResult: TypeAlias = TagMatchingResult | ShapeMatchingResult
+
+
+class MatchingResults(TypedDict):
+    all_ann_types: list[MatchingResult]
+    all_shape_ann_types: list[ShapeMatchingResult]

@@ -199,21 +199,17 @@ class QualitySettingsParentType(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
-class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    task_id = serializers.IntegerField(required=False, allow_null=True)
-    project_id = serializers.IntegerField(required=False, allow_null=True)
-
+# TODO: try to split into different types per annotation type?
+class QualityRequirementSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.QualitySettings
         fields = (
             "id",
-            "task_id",
-            "project_id",
-            "job_filter",
-            "inherit",
+            "name",
+            "annotation_type",
             "target_metric",
             "target_metric_threshold",
-            "max_validations_per_job",
+            "parent",
             "iou_threshold",
             "oks_sigma",
             "point_size_base",
@@ -232,24 +228,17 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "updated_date",
         )
         read_only_fields = ("id",)
-        write_once_fields = ("task_id", "project_id")
 
         extra_kwargs = {k: {"required": False} for k in fields}
         extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", False)
 
         for field_name, help_text in {
-            "inherit": """
-                Allow using project settings when computing task quality.
-                Only applicable to task quality settings inside projects
-            """,
             "target_metric": "The primary metric used for quality estimation",
             "target_metric_threshold": """
                 Defines the minimal quality requirements in terms of the selected target metric.
             """,
-            "max_validations_per_job": """
-                The maximum number of job validation attempts for the job assignee.
-                The job can be automatically accepted if the job quality is above the required
-                threshold, defined by the target threshold parameter.
+            "parent": """
+                The parent requirement. Must be specified if the annotation type is attribute
             """,
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
             "low_overlap_threshold": """
@@ -320,6 +309,44 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if field_name.endswith("_threshold") or field_name in ["oks_sigma", "line_thickness"]:
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
+
+
+class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    task_id = serializers.IntegerField(required=False, allow_null=True)
+    project_id = serializers.IntegerField(required=False, allow_null=True)
+
+    class Meta:
+        model = models.QualitySettings
+        fields = (
+            "id",
+            "task_id",
+            "project_id",
+            "job_filter",
+            "inherit",
+            "max_validations_per_job",
+            "created_date",
+            "updated_date",
+        )
+        read_only_fields = ("id",)
+        write_once_fields = ("task_id", "project_id")
+
+        extra_kwargs = {k: {"required": False} for k in fields}
+        extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", False)
+
+        for field_name, help_text in {
+            "inherit": """
+                Allow using project settings when computing task quality.
+                Only applicable to task quality settings inside projects
+            """,
+            "max_validations_per_job": """
+                The maximum number of job validation attempts for the job assignee.
+                The job can be automatically accepted if the job quality is above the required
+                threshold, defined by the target threshold parameter.
+            """,
+        }.items():
+            extra_kwargs.setdefault(field_name, {}).setdefault(
+                "help_text", textwrap.dedent(help_text.lstrip("\n"))
+            )
 
     job_filter = serializers.CharField(
         allow_blank=True,

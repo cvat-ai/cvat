@@ -4,13 +4,15 @@
 
 from __future__ import annotations
 
+from abc import ABCMeta
 import itertools
 from collections import Counter
-from collections.abc import Hashable
+from collections.abc import Hashable, Sequence
 from contextlib import suppress
 from copy import deepcopy
 from functools import cached_property
 
+import attrs
 import datumaro as dm
 import numpy as np
 from datumaro.util import dump_json
@@ -41,9 +43,9 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
-from cvat.apps.engine.utils import take_by
+from cvat.apps.engine.utils import take_by, transaction_with_repeatable_read
 from cvat.apps.quality_control import models
-from cvat.apps.quality_control.annotation_matching import Comparator, LineMatcher
+from cvat.apps.quality_control.annotation_matching import Comparator, LineMatcher, MatchingResults
 from cvat.apps.quality_control.comparison_report import (
     AnnotationConflict,
     AnnotationId,
@@ -162,339 +164,24 @@ class JobDataProvider:
         )
 
 
-class DatasetComparator:
-    DEFAULT_SETTINGS = ComparisonParameters()
+class MatchingContext:
+    frame_id: str
+    ...
 
-    def __init__(
-        self,
-        ds_data_provider: JobDataProvider,
-        gt_data_provider: JobDataProvider,
-        *,
-        settings: ComparisonParameters | None = None,
-    ) -> None:
-        if settings is None:
-            settings = self.DEFAULT_SETTINGS
-        self.settings = settings
 
-        self._ds_data_provider = ds_data_provider
-        self._gt_data_provider = gt_data_provider
-        self._ds_dataset = self._ds_data_provider.dm_dataset
-        self._gt_dataset = self._gt_data_provider.dm_dataset
 
-        self._frame_results: dict[int, ComparisonReportFrameSummary] = {}
+@attrs.define
+class RequirementHandler(metaclass=ABCMeta):
+    requirement: models.QualityRequirement
+    context: MatchingContext
 
-        self.comparator = Comparator(self._gt_dataset.categories(), settings=settings)
 
-    def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
-        if dataset is self._ds_dataset:
-            source_data_provider = self._ds_data_provider
-        elif dataset is self._gt_dataset:
-            source_data_provider = self._gt_data_provider
-        else:
-            assert False
+    @classmethod
+    def for_requirement(cls, requirement: models.QualityRequirement, *, context: MatchingContext) -> RequirementHandler:
+        ...
 
-        return source_data_provider.dm_item_id_to_frame_id(item)
-
-    def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset):
-        if dataset is self._ds_dataset:
-            source_data_provider = self._ds_data_provider
-        elif dataset is self._gt_dataset:
-            source_data_provider = self._gt_data_provider
-        else:
-            assert False
-
-        return source_data_provider.dm_ann_to_ann_id(ann)
-
-    def _get_total_frames(self) -> int:
-        return len(self._ds_data_provider.job_data)
-
-    def _find_gt_conflicts(self):
-        ds_job_dataset = self._ds_dataset
-        gt_job_dataset = self._gt_dataset
-
-        for gt_item in gt_job_dataset:
-            ds_item = ds_job_dataset.get(id=gt_item.id, subset=gt_item.subset)
-            if not ds_item:
-                continue  # we need to compare only intersecting frames
-
-            self._process_frame(ds_item, gt_item)
-
-    def _process_frame(
-        self, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem
-    ) -> list[AnnotationConflict]:
-        frame_id = self._dm_item_to_frame_id(ds_item, self._ds_dataset)
-
-        frame_results = self.comparator.match_annotations(gt_item, ds_item)
-        self._frame_results.setdefault(frame_id, {})
-
-        self._generate_frame_annotation_conflicts(
-            frame_id, frame_results, gt_item=gt_item, ds_item=ds_item
-        )
-
-    def _generate_frame_annotation_conflicts(
-        self, frame_id: str, frame_results, *, gt_item: dm.DatasetItem, ds_item: dm.DatasetItem
-    ) -> list[AnnotationConflict]:
-        conflicts = []
-
-        matches, mismatches, gt_unmatched, ds_unmatched, _ = frame_results["all_ann_types"]
-        (
-            shape_matches,
-            shape_mismatches,
-            shape_gt_unmatched,
-            shape_ds_unmatched,
-            shape_pairwise_distances,
-        ) = frame_results["all_shape_ann_types"]
-
-        def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> float | None:
-            return self.comparator.get_distance(shape_pairwise_distances, gt_ann, ds_ann)
-
-        _matched_shapes = set(
-            id(shape)
-            for shape_pair in itertools.chain(shape_matches, shape_mismatches)
-            for shape in shape_pair
-        )
-
-        def _find_closest_unmatched_shape(shape: dm.Annotation):
-            this_shape_id = id(shape)
-
-            this_shape_distances = []
-
-            for (gt_shape_id, ds_shape_id), dist in shape_pairwise_distances.items():
-                if gt_shape_id == this_shape_id:
-                    other_shape_id = ds_shape_id
-                elif ds_shape_id == this_shape_id:
-                    other_shape_id = gt_shape_id
-                else:
-                    continue
-
-                this_shape_distances.append((other_shape_id, dist))
-
-            matched_ann, distance = max(this_shape_distances, key=lambda v: v[1], default=(None, 0))
-            return matched_ann, distance
-
-        for gt_ann, ds_ann in itertools.chain(matches, mismatches):
-            similarity = _get_similarity(gt_ann, ds_ann)
-            if similarity and similarity < self.settings.low_overlap_threshold:
-                conflicts.append(
-                    AnnotationConflict(
-                        frame_id=frame_id,
-                        type=AnnotationConflictType.LOW_OVERLAP,
-                        annotation_ids=[
-                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                        ],
-                    )
-                )
-
-        for unmatched_ann in gt_unmatched:
-            conflicts.append(
-                AnnotationConflict(
-                    frame_id=frame_id,
-                    type=AnnotationConflictType.MISSING_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
-                )
-            )
-
-        for unmatched_ann in ds_unmatched:
-            conflicts.append(
-                AnnotationConflict(
-                    frame_id=frame_id,
-                    type=AnnotationConflictType.EXTRA_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
-                )
-            )
-
-        for gt_ann, ds_ann in mismatches:
-            conflicts.append(
-                AnnotationConflict(
-                    frame_id=frame_id,
-                    type=AnnotationConflictType.MISMATCHING_LABEL,
-                    annotation_ids=[
-                        self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                        self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                    ],
-                )
-            )
-
-        resulting_distances = [
-            _get_similarity(shape_gt_ann, shape_ds_ann)
-            for shape_gt_ann, shape_ds_ann in itertools.chain(shape_matches, shape_mismatches)
-        ]
-
-        for shape_unmatched_ann in itertools.chain(shape_gt_unmatched, shape_ds_unmatched):
-            shape_matched_ann_id, similarity = _find_closest_unmatched_shape(shape_unmatched_ann)
-            if shape_matched_ann_id is not None:
-                _matched_shapes.add(shape_matched_ann_id)
-            resulting_distances.append(similarity)
-
-        resulting_distances = [
-            sim if sim is not None and (sim >= 0) else 0 for sim in resulting_distances
-        ]
-
-        mean_iou = np.mean(resulting_distances) if resulting_distances else 0
-
-        if (
-            self.settings.compare_line_orientation
-            and dm.AnnotationType.polyline in self.comparator.included_ann_types
-        ):
-            # Check line directions
-            line_matcher = LineMatcher(
-                torso_r=self.settings.line_thickness,
-                oriented=True,
-                scale=np.prod(gt_item.media_as(dm.Image).size),
-            )
-
-            for gt_ann, ds_ann in itertools.chain(matches, mismatches):
-                if gt_ann.type != ds_ann.type or gt_ann.type != dm.AnnotationType.polyline:
-                    continue
-
-                non_oriented_distance = _get_similarity(gt_ann, ds_ann)
-                oriented_distance = line_matcher.distance(gt_ann, ds_ann)
-
-                # need to filter computation errors from line approximation
-                # and (almost) orientation-independent cases
-                if (
-                    non_oriented_distance - oriented_distance
-                    > self.settings.line_orientation_threshold
-                ):
-                    conflicts.append(
-                        AnnotationConflict(
-                            frame_id=frame_id,
-                            type=AnnotationConflictType.MISMATCHING_DIRECTION,
-                            annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                            ],
-                        )
-                    )
-
-        if self.settings.check_covered_annotations:
-            ds_covered_anns = self.comparator.find_covered(ds_item)
-
-            for ds_ann in ds_covered_anns:
-                conflicts.append(
-                    AnnotationConflict(
-                        frame_id=frame_id,
-                        type=AnnotationConflictType.COVERED_ANNOTATION,
-                        annotation_ids=[
-                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                        ],
-                    )
-                )
-
-        if self.settings.compare_attributes:
-            for gt_ann, ds_ann in matches:
-                attribute_results = self.comparator.match_attrs(gt_ann, ds_ann)
-                if any(attribute_results[1:]):
-                    conflicts.append(
-                        AnnotationConflict(
-                            frame_id=frame_id,
-                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
-                            annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                            ],
-                        )
-                    )
-
-        if self.settings.compare_groups:
-            gt_groups, gt_group_map = self.comparator.find_groups(gt_item)
-            ds_groups, ds_group_map = self.comparator.find_groups(ds_item)
-            shape_matched_objects = shape_matches + shape_mismatches
-            ds_to_gt_groups = self.comparator.match_groups(
-                gt_groups, ds_groups, shape_matched_objects
-            )
-
-            for gt_ann, ds_ann in shape_matched_objects:
-                gt_group = gt_groups.get(gt_group_map[id(gt_ann)], [gt_ann])
-                ds_group = ds_groups.get(ds_group_map[id(ds_ann)], [ds_ann])
-                ds_gt_group = ds_to_gt_groups.get(ds_group_map[id(ds_ann)], None)
-
-                if (
-                    # Check ungrouped objects
-                    (len(gt_group) == 1 and len(ds_group) != 1)
-                    or
-                    # Check grouped objects
-                    ds_gt_group != gt_group_map[id(gt_ann)]
-                ):
-                    conflicts.append(
-                        AnnotationConflict(
-                            frame_id=frame_id,
-                            type=AnnotationConflictType.MISMATCHING_GROUPS,
-                            annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                            ],
-                        )
-                    )
-
-        valid_shapes_count = len(shape_matches) + len(shape_mismatches)
-        missing_shapes_count = len(shape_gt_unmatched)
-        extra_shapes_count = len(shape_ds_unmatched)
-        total_shapes_count = (
-            len(shape_matches)
-            + len(shape_mismatches)
-            + len(shape_gt_unmatched)
-            + len(shape_ds_unmatched)
-        )
-        ds_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_ds_unmatched)
-        gt_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_gt_unmatched)
-
-        valid_labels_count = len(matches)
-        invalid_labels_count = len(mismatches)
-        total_labels_count = valid_labels_count + invalid_labels_count
-
-        confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
-        for gt_ann, ds_ann in itertools.chain(
-            # fully matched annotations - shape, label, attributes
-            matches,
-            mismatches,
-            zip(itertools.repeat(None), ds_unmatched),
-            zip(gt_unmatched, itertools.repeat(None)),
-        ):
-            ds_label_idx = label_id_map[ds_ann.label] if ds_ann else self._UNMATCHED_IDX
-            gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
-            confusion_matrix[ds_label_idx, gt_label_idx] += 1
-
-        if self.settings.empty_is_annotated:
-            # Add virtual annotations for empty frames
-            if not gt_item.annotations and not ds_item.annotations:
-                valid_labels_count = 1
-                total_labels_count = 1
-
-                valid_shapes_count = 1
-                total_shapes_count = 1
-
-            if not ds_item.annotations:
-                ds_shapes_count = 1
-
-            if not gt_item.annotations:
-                gt_shapes_count = 1
-
-        self._frame_results[frame_id] = ComparisonReportFrameSummary(
-            annotations=self._generate_frame_annotations_summary(
-                confusion_matrix, confusion_matrix_labels
-            ),
-            annotation_components=ComparisonReportAnnotationComponentsSummary(
-                shape=ComparisonReportAnnotationShapeSummary(
-                    valid_count=valid_shapes_count,
-                    missing_count=missing_shapes_count,
-                    extra_count=extra_shapes_count,
-                    total_count=total_shapes_count,
-                    ds_count=ds_shapes_count,
-                    gt_count=gt_shapes_count,
-                    mean_iou=mean_iou,
-                ),
-                label=ComparisonReportAnnotationLabelSummary(
-                    valid_count=valid_labels_count,
-                    invalid_count=invalid_labels_count,
-                    total_count=total_labels_count,
-                ),
-            ),
-            conflicts=conflicts,
-        )
-
-        return conflicts
+    def match_annotations(self, *, ds_item: dm.Annotation, gt_item: dm.Annotation) -> MatchingResults:
+        ...
 
     # row/column index in the confusion matrix corresponding to unmatched annotations
     _UNMATCHED_IDX = -1
@@ -642,18 +329,388 @@ class DatasetComparator:
 
         return annotation_summary, annotation_components
 
+
+@attrs.define
+class TagRequirementHandler(RequirementHandler):
+    ...
+
+
+@attrs.define
+class ShapeRequirementHandler(RequirementHandler):
+    def match_annotations(
+        self,
+        *,
+        gt_item: dm.DatasetItem,
+        ds_item: dm.DatasetItem,
+    ):
+        conflicts = []
+
+        matching_results: MatchingResults = ...
+
+        def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> float | None:
+            return self._comparator.get_distance(shape_pairwise_distances, gt_ann, ds_ann)
+
+        _matched_shapes = set(
+            id(shape)
+            for shape_pair in itertools.chain(shape_matches, shape_mismatches)
+            for shape in shape_pair
+        )
+
+        def _find_closest_unmatched_shape(shape: dm.Annotation):
+            this_shape_id = id(shape)
+
+            this_shape_distances = []
+
+            for (gt_shape_id, ds_shape_id), dist in shape_pairwise_distances.items():
+                if gt_shape_id == this_shape_id:
+                    other_shape_id = ds_shape_id
+                elif ds_shape_id == this_shape_id:
+                    other_shape_id = gt_shape_id
+                else:
+                    continue
+
+                this_shape_distances.append((other_shape_id, dist))
+
+            matched_ann, distance = max(this_shape_distances, key=lambda v: v[1], default=(None, 0))
+            return matched_ann, distance
+
+        for gt_ann, ds_ann in itertools.chain(matches, mismatches):
+            similarity = _get_similarity(gt_ann, ds_ann)
+            if similarity and similarity < self.settings.low_overlap_threshold:
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=frame_id,
+                        type=AnnotationConflictType.LOW_OVERLAP,
+                        annotation_ids=[
+                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                        ],
+                    )
+                )
+
+        for unmatched_ann in gt_unmatched:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=frame_id,
+                    type=AnnotationConflictType.MISSING_ANNOTATION,
+                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
+                )
+            )
+
+        for unmatched_ann in ds_unmatched:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=frame_id,
+                    type=AnnotationConflictType.EXTRA_ANNOTATION,
+                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
+                )
+            )
+
+        for gt_ann, ds_ann in mismatches:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=frame_id,
+                    type=AnnotationConflictType.MISMATCHING_LABEL,
+                    annotation_ids=[
+                        self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                        self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                    ],
+                )
+            )
+
+        resulting_distances = [
+            _get_similarity(shape_gt_ann, shape_ds_ann)
+            for shape_gt_ann, shape_ds_ann in itertools.chain(shape_matches, shape_mismatches)
+        ]
+
+        for shape_unmatched_ann in itertools.chain(shape_gt_unmatched, shape_ds_unmatched):
+            shape_matched_ann_id, similarity = _find_closest_unmatched_shape(shape_unmatched_ann)
+            if shape_matched_ann_id is not None:
+                _matched_shapes.add(shape_matched_ann_id)
+            resulting_distances.append(similarity)
+
+        resulting_distances = [
+            sim if sim is not None and (sim >= 0) else 0 for sim in resulting_distances
+        ]
+
+        mean_iou = np.mean(resulting_distances) if resulting_distances else 0
+
+        if (
+            self.settings.compare_line_orientation
+            and dm.AnnotationType.polyline in self._comparator.included_ann_types
+        ):
+            # Check line directions
+            line_matcher = LineMatcher(
+                torso_r=self.settings.line_thickness,
+                oriented=True,
+                scale=np.prod(gt_item.media_as(dm.Image).size),
+            )
+
+            for gt_ann, ds_ann in itertools.chain(matches, mismatches):
+                if gt_ann.type != ds_ann.type or gt_ann.type != dm.AnnotationType.polyline:
+                    continue
+
+                non_oriented_distance = _get_similarity(gt_ann, ds_ann)
+                oriented_distance = line_matcher.distance(gt_ann, ds_ann)
+
+                # need to filter computation errors from line approximation
+                # and (almost) orientation-independent cases
+                if (
+                    non_oriented_distance - oriented_distance
+                    > self.settings.line_orientation_threshold
+                ):
+                    conflicts.append(
+                        AnnotationConflict(
+                            frame_id=frame_id,
+                            type=AnnotationConflictType.MISMATCHING_DIRECTION,
+                            annotation_ids=[
+                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                            ],
+                        )
+                    )
+
+        if self.settings.check_covered_annotations:
+            ds_covered_anns = self._comparator.find_covered(ds_item)
+
+            for ds_ann in ds_covered_anns:
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=frame_id,
+                        type=AnnotationConflictType.COVERED_ANNOTATION,
+                        annotation_ids=[
+                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                        ],
+                    )
+                )
+
+        if self.settings.compare_attributes:
+            for gt_ann, ds_ann in matches:
+                attribute_results = self._comparator.match_attrs(gt_ann, ds_ann)
+                if any(attribute_results[1:]):
+                    conflicts.append(
+                        AnnotationConflict(
+                            frame_id=frame_id,
+                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                            annotation_ids=[
+                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                            ],
+                        )
+                    )
+
+        if self.settings.compare_groups:
+            gt_groups, gt_group_map = self._comparator.find_groups(gt_item)
+            ds_groups, ds_group_map = self._comparator.find_groups(ds_item)
+            shape_matched_objects = shape_matches + shape_mismatches
+            ds_to_gt_groups = self._comparator.match_groups(
+                gt_groups, ds_groups, shape_matched_objects
+            )
+
+            for gt_ann, ds_ann in shape_matched_objects:
+                gt_group = gt_groups.get(gt_group_map[id(gt_ann)], [gt_ann])
+                ds_group = ds_groups.get(ds_group_map[id(ds_ann)], [ds_ann])
+                ds_gt_group = ds_to_gt_groups.get(ds_group_map[id(ds_ann)], None)
+
+                if (
+                    # Check ungrouped objects
+                    (len(gt_group) == 1 and len(ds_group) != 1)
+                    or
+                    # Check grouped objects
+                    ds_gt_group != gt_group_map[id(gt_ann)]
+                ):
+                    conflicts.append(
+                        AnnotationConflict(
+                            frame_id=frame_id,
+                            type=AnnotationConflictType.MISMATCHING_GROUPS,
+                            annotation_ids=[
+                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                            ],
+                        )
+                    )
+
+        valid_shapes_count = len(shape_matches) + len(shape_mismatches)
+        missing_shapes_count = len(shape_gt_unmatched)
+        extra_shapes_count = len(shape_ds_unmatched)
+        total_shapes_count = (
+            len(shape_matches)
+            + len(shape_mismatches)
+            + len(shape_gt_unmatched)
+            + len(shape_ds_unmatched)
+        )
+        ds_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_ds_unmatched)
+        gt_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_gt_unmatched)
+
+        valid_labels_count = len(matches)
+        invalid_labels_count = len(mismatches)
+        total_labels_count = valid_labels_count + invalid_labels_count
+
+        confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
+        for gt_ann, ds_ann in itertools.chain(
+            # fully matched annotations - shape, label, attributes
+            matches,
+            mismatches,
+            zip(itertools.repeat(None), ds_unmatched),
+            zip(gt_unmatched, itertools.repeat(None)),
+        ):
+            ds_label_idx = label_id_map[ds_ann.label] if ds_ann else self._UNMATCHED_IDX
+            gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
+            confusion_matrix[ds_label_idx, gt_label_idx] += 1
+
+        if self.settings.empty_is_annotated:
+            # Add virtual annotations for empty frames
+            if not gt_item.annotations and not ds_item.annotations:
+                valid_labels_count = 1
+                total_labels_count = 1
+
+                valid_shapes_count = 1
+                total_shapes_count = 1
+
+            if not ds_item.annotations:
+                ds_shapes_count = 1
+
+            if not gt_item.annotations:
+                gt_shapes_count = 1
+
+        return ComparisonReportFrameSummary(
+            annotations=self._generate_frame_annotations_summary(
+                confusion_matrix, confusion_matrix_labels
+            ),
+            annotation_components=ComparisonReportAnnotationComponentsSummary(
+                shape=ComparisonReportAnnotationShapeSummary(
+                    valid_count=valid_shapes_count,
+                    missing_count=missing_shapes_count,
+                    extra_count=extra_shapes_count,
+                    total_count=total_shapes_count,
+                    ds_count=ds_shapes_count,
+                    gt_count=gt_shapes_count,
+                    mean_iou=mean_iou,
+                ),
+                label=ComparisonReportAnnotationLabelSummary(
+                    valid_count=valid_labels_count,
+                    invalid_count=invalid_labels_count,
+                    total_count=total_labels_count,
+                ),
+            ),
+            conflicts=conflicts,
+        )
+
+
+@attrs.define
+class AttributeRequirementHandler(RequirementHandler):
+    ...
+
+
+class DatasetQualityEstimator:
+    def __init__(
+        self,
+        ds_data_provider: JobDataProvider,
+        gt_data_provider: JobDataProvider,
+        *,
+        requirements: Sequence[models.QualityRequirement],
+    ) -> None:
+        self._requirements = requirements
+
+        self._ds_data_provider = ds_data_provider
+        self._gt_data_provider = gt_data_provider
+        self._ds_dataset = self._ds_data_provider.dm_dataset
+        self._gt_dataset = self._gt_data_provider.dm_dataset
+
+        self._results: dict[str, dict[int, ComparisonReportFrameSummary]] = (
+            {}
+        )  # { requirement -> { frame_id -> summary } }
+
+    def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
+        if dataset is self._ds_dataset:
+            source_data_provider = self._ds_data_provider
+        elif dataset is self._gt_dataset:
+            source_data_provider = self._gt_data_provider
+        else:
+            assert False
+
+        return source_data_provider.dm_item_id_to_frame_id(item)
+
+    def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset) -> AnnotationId:
+        if dataset is self._ds_dataset:
+            source_data_provider = self._ds_data_provider
+        elif dataset is self._gt_dataset:
+            source_data_provider = self._gt_data_provider
+        else:
+            assert False
+
+        return source_data_provider.dm_ann_to_ann_id(ann)
+
+    def _get_total_frames(self) -> int:
+        return len(self._ds_data_provider.job_data)
+
+    def _compare_datasets(self):
+        ds_job_dataset = self._ds_dataset
+        gt_job_dataset = self._gt_dataset
+
+        for gt_item in gt_job_dataset:
+            ds_item = ds_job_dataset.get(id=gt_item.id, subset=gt_item.subset)
+            if not ds_item:
+                continue  # we need to compare only intersecting frames
+
+            self._compare_samples(ds_item, gt_item)
+
+    def _compare_samples(self, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem):
+        frame_id = self._dm_item_to_frame_id(ds_item, self._ds_dataset)
+
+        # TODO: Process requirements in the dependency order, shape reqs > attribute reqs
+        shape_reqs = [
+            req
+            for req in self._requirements
+            if req.annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE
+        ]
+        # TODO: optimize - reuse distances for matching configurations
+
+        attribute_reqs = [
+            req
+            for req in self._requirements
+            if req.annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
+        ]
+
+        per_requirement_results = {} # name -> matching_result(matches, distances)
+        annotation_requirements: dict[int, set] = {}  # id -> set(req name)
+
+        for requirement in shape_reqs:
+            handler = RequirementHandler.for_requirement(
+                requirement,  # ComparisonParameters.from_settings(requirement)
+                context=MatchingContext(
+                    frame_id, self, self._gt_dataset.categories(), annotation_requirements
+                ),
+            )
+
+            per_requirement_results[requirement.name] = handler.match_annotations(ds_item, gt_item)
+
+        for requirement in attribute_reqs:
+            handler = RequirementHandler.for_requirement(
+                requirement,  # ComparisonParameters.from_settings(requirement)
+                context=MatchingContext(
+                    frame_id,
+                    self,
+                    per_requirement_results,
+                    self._gt_dataset.categories(),
+                    annotation_requirements,
+                ),
+            )
+
+            per_requirement_results[requirement.name] = handler.match_annotations(ds_item, gt_item)
+
+    def _generate_requirement_summaries(self):
+        ...
+
     def generate_report(self) -> ComparisonReport:
-        self._find_gt_conflicts()
+        self._compare_datasets()
 
         intersection_frames = []
         conflicts = []
-        for frame_id, frame_result in self._frame_results.items():
-            intersection_frames.append(frame_id)
-            conflicts += frame_result.conflicts
-
-        annotation_summary, annotations_component_summary = (
-            self._generate_dataset_annotations_summary(self._frame_results)
-        )
+        for requirement_metrics in self._results.values():
+            for frame_id, frame_result in requirement_metrics.items():
+                intersection_frames.append(frame_id)
+                conflicts += frame_result.conflicts
 
         conflicts_by_severity = Counter(c.severity for c in conflicts)
         return ComparisonReport(
@@ -665,12 +722,11 @@ class DatasetComparator:
                 warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
                 error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR, 0),
                 conflicts_by_type=Counter(c.type for c in conflicts),
-                annotations=annotation_summary,
-                annotation_components=annotations_component_summary,
+                requirements=self._generate_requirement_summaries(),
                 tasks=None,
                 jobs=None,
             ),
-            frame_results=self._frame_results,
+            frame_results=self._per_frame_results,
         )
 
 
@@ -703,11 +759,7 @@ class TaskQualityCalculator:
     }
 
     def compute_report(self, task: Task | int) -> models.QualityReport | None:
-        with transaction.atomic():
-            # Preload all the required data for computations.
-            # Ideally, we would lock the task to fetch all the data and produce
-            # consistent report. However, data fetching can also take long time.
-            # For this reason, we don't guarantee absolute consistency.
+        with transaction_with_repeatable_read():
             if isinstance(task, int):
                 task = Task.objects.select_related("data").get(id=task)
 
@@ -726,7 +778,7 @@ class TaskQualityCalculator:
             if not gt_job_id:
                 return None
 
-            quality_params = self.get_quality_params(task)
+            quality_settings = QualitySettingsManager().get_task_settings(task)
 
             all_job_ids: set[int] = set(
                 Job.objects.filter(segment__task=task)
@@ -736,7 +788,7 @@ class TaskQualityCalculator:
 
             job_filter = JsonLogicFilter()
             if job_filter_rules := job_filter.parse_query(
-                quality_params.job_filter or "[]", raise_on_empty=False
+                quality_settings.job_filter or "[]", raise_on_empty=False
             ):
                 job_queryset = job_filter.apply_filter(
                     Job.objects,
@@ -770,21 +822,7 @@ class TaskQualityCalculator:
                 job.segment.task = gt_job.segment.task  # put the prefetched object
 
             gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
-            active_validation_frames = gt_job_data_provider.job_data.get_included_frames()
-
-            validation_layout = task.data.validation_layout
-            if validation_layout.mode == ValidationMode.GT_POOL:
-                task_frame_provider = TaskFrameProvider(task)
-                active_validation_frames = set(
-                    task_frame_provider.get_rel_frame_number(abs_frame)
-                    for abs_frame, abs_real_frame in (
-                        Image.objects.filter(data=task.data, is_placeholder=True)
-                        .values_list("frame", "real_frame")
-                        .iterator(chunk_size=_DEFAULT_FETCH_CHUNK_SIZE)
-                    )
-                    if task_frame_provider.get_rel_frame_number(abs_real_frame)
-                    in active_validation_frames
-                )
+            active_validation_frames = self.get_active_validation_frames(task, gt_job_data_provider)
 
             job_data_providers = {
                 job.id: JobDataProvider(
@@ -795,25 +833,28 @@ class TaskQualityCalculator:
                 for job in jobs
             }
 
-        job_comparison_reports: dict[int, ComparisonReport] = {}
-        for job in jobs:
-            if job.id not in filtered_job_ids:
-                continue
+            quality_requirements = [
+                ComparisonParameters.from_settings(r) for r in quality_settings.requirements
+            ]
+            job_comparison_reports: dict[int, ComparisonReport] = {}
+            for job in jobs:
+                if job.id not in filtered_job_ids:
+                    continue
 
-            job_data_provider = job_data_providers[job.id]
-            comparator = DatasetComparator(
-                job_data_provider,
-                gt_job_data_provider,
-                settings=quality_params,
-            )
-            job_comparison_reports[job.id] = comparator.generate_report()
+                job_data_provider = job_data_providers[job.id]
+                comparator = DatasetQualityEstimator(
+                    job_data_provider,
+                    gt_job_data_provider,
+                    requirements=quality_requirements,
+                )
+                job_comparison_reports[job.id] = comparator.generate_report()
 
-            # Release resources
-            del job_data_provider.dm_dataset
+                # Release resources
+                del job_data_provider.dm_dataset
 
         task_comparison_report = self._compute_task_report(
             job_comparison_reports,
-            quality_params,
+            settings=quality_settings,
             all_job_ids=all_job_ids,
         )
 
@@ -848,10 +889,29 @@ class TaskQualityCalculator:
 
         return task_report
 
+    def get_active_validation_frames(self, task: Task, gt_job_data_provider: JobDataProvider):
+        active_validation_frames = gt_job_data_provider.job_data.get_included_frames()
+
+        validation_layout = task.data.validation_layout
+        if validation_layout.mode == ValidationMode.GT_POOL:
+            task_frame_provider = TaskFrameProvider(task)
+            active_validation_frames = set(
+                task_frame_provider.get_rel_frame_number(abs_frame)
+                for abs_frame, abs_real_frame in (
+                    Image.objects.filter(data=task.data, is_placeholder=True)
+                    .values_list("frame", "real_frame")
+                    .iterator(chunk_size=_DEFAULT_FETCH_CHUNK_SIZE)
+                )
+                if task_frame_provider.get_rel_frame_number(abs_real_frame)
+                in active_validation_frames
+            )
+
+        return active_validation_frames
+
     def _compute_task_report(
         self,
         job_reports: dict[int, ComparisonReport],
-        comparison_parameters: ComparisonParameters,
+        settings: models.QualitySettings,
         *,
         all_job_ids: set[int],
     ) -> ComparisonReport:
@@ -910,11 +970,14 @@ class TaskQualityCalculator:
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
 
-        task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious or [])
+        task_ann_components_summary.shape.mean_iou = np.mean(
+            task_mean_shape_ious or []
+        )  # TODO: maybe remove
 
         conflicts_by_severity = Counter(c.severity for c in task_conflicts)
         task_report_data = ComparisonReport(
-            parameters=comparison_parameters,
+            parameters=ComparisonParameters(),  # TODO: return settings
+            # TODO: add requirements
             comparison_summary=ComparisonReportSummary(
                 frame_count=task_validation_frames_count,
                 total_frames=task_total_frames,

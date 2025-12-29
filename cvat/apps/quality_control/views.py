@@ -28,7 +28,6 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.engine.view_utils import deprecate_response, get_or_404
 from cvat.apps.quality_control import quality_reports as qc
-from cvat.apps.quality_control.queue_manager import QualityReportQueueManager
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
@@ -41,6 +40,7 @@ from cvat.apps.quality_control.permissions import (
     QualitySettingPermission,
     get_iam_context,
 )
+from cvat.apps.quality_control.queue_manager import QualityReportQueueManager
 from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
     QualityReportCreateSerializer,
