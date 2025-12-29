@@ -54,87 +54,48 @@ class TrackManager3DTest(TestCase):
             0.0,
         ]
 
-    def test_cuboid_interpolation(self):
-        track = {
-            "frame": 0,
-            "label_id": 0,
-            "group": None,
-            "source": "manual",
-            "attributes": [],
-            "shapes": [
-                {
-                    "frame": 0,
-                    "points": self._cuboid_points(0.0),
-                    "rotation": 0,
-                    "type": "cuboid",
-                    "occluded": False,
-                    "outside": False,
-                    "attributes": [],
-                },
-                {
-                    "frame": 2,
-                    "attributes": [],
-                    "points": self._cuboid_points(2.0),
-                    "rotation": 0,
-                    "type": "cuboid",
-                    "occluded": False,
-                    "outside": True,
-                },
-                {
-                    "frame": 4,
-                    "attributes": [],
-                    "points": self._cuboid_points(4.0),
-                    "rotation": 0,
-                    "type": "cuboid",
-                    "occluded": False,
-                    "outside": False,
-                },
-            ],
+    def _make_cuboid_shape(self, frame, base=0.0, outside=False, rotation=0, attributes=None):
+        return {
+            "frame": frame,
+            "points": self._cuboid_points(base),
+            "rotation": rotation,
+            "type": "cuboid",
+            "occluded": False,
+            "outside": outside,
+            "attributes": attributes or [],
         }
+
+    def _make_track(self, shapes, frame=0, label_id=0, source="manual", attributes=None):
+        return {
+            "frame": frame,
+            "label_id": label_id,
+            "group": None,
+            "source": source,
+            "attributes": attributes or [],
+            "shapes": shapes,
+        }
+
+    def test_cuboid_interpolation(self):
+        shapes = [
+            self._make_cuboid_shape(0, base=0.0, outside=False),
+            self._make_cuboid_shape(2, base=2.0, outside=True),
+            self._make_cuboid_shape(4, base=4.0, outside=False),
+        ]
+
+        track = self._make_track(shapes)
 
         self._check_interpolation(track)
 
     def test_outside_cuboid_interpolation(self):
-        track = {
-            "frame": 0,
-            "label_id": 0,
-            "group": None,
-            "attributes": [],
-            "source": "manual",
-            "shapes": [
-                {
-                    "frame": 0,
-                    "points": self._cuboid_points(0.0),
-                    "rotation": 0,
-                    "type": "cuboid",
-                    "occluded": False,
-                    "outside": False,
-                    "attributes": [],
-                },
-                {
-                    "frame": 2,
-                    "points": self._cuboid_points(2.0),
-                    "rotation": 0,
-                    "type": "cuboid",
-                    "occluded": False,
-                    "outside": True,
-                    "attributes": [],
-                },
-                {
-                    "frame": 4,
-                    "points": self._cuboid_points(4.0),
-                    "rotation": 0,
-                    "type": "cuboid",
-                    "occluded": False,
-                    "outside": True,
-                    "attributes": [],
-                },
-            ],
-        }
+        shapes = [
+            self._make_cuboid_shape(0, base=0.0, outside=False),
+            self._make_cuboid_shape(2, base=2.0, outside=True),
+            self._make_cuboid_shape(4, base=4.0, outside=True),
+        ]
 
-        interpolated = TrackManager.get_interpolated_shapes(
-            track, 0, 5, models.DimensionType.DIM_3D
-        )
+        track = self._make_track(shapes)
+
+        interpolated = TrackManager.get_interpolated_shapes(track, 0, 5, models.DimensionType.DIM_3D)
 
         # ensure frames/keyframe/outside sequence is reasonable for 3D cuboids
         expected = [0, 1, 2, 4]
@@ -145,42 +106,13 @@ class TrackManager3DTest(TestCase):
         deleted_frames = [2]
         end_frame = 5
 
-        track = {
-            "frame": 0,
-            "label_id": 0,
-            "group": None,
-            "attributes": [],
-            "source": "manual",
-            "shapes": [
-                {
-                    "frame": 0,
-                    "points": self._cuboid_points(0.0),
-                    "rotation": 0,
-                    "type": "cuboid",
-                    "occluded": False,
-                    "outside": False,
-                    "attributes": [],
-                },
-                {
-                    "frame": 2,  # deleted in the task
-                    "points": self._cuboid_points(2.0),
-                    "rotation": 0,
-                    "type": "cuboid",
-                    "occluded": False,
-                    "outside": False,
-                    "attributes": [],
-                },
-                {
-                    "frame": 4,
-                    "points": self._cuboid_points(4.0),
-                    "rotation": 0,
-                    "type": "cuboid",
-                    "occluded": False,
-                    "outside": False,
-                    "attributes": [],
-                },
-            ],
-        }
+        shapes = [
+            self._make_cuboid_shape(0, base=0.0, outside=False),
+            self._make_cuboid_shape(2, base=2.0, outside=False),
+            self._make_cuboid_shape(4, base=4.0, outside=False),
+        ]
+
+        track = self._make_track(shapes)
 
         interpolated_shapes = TrackManager.get_interpolated_shapes(
             track, 0, end_frame, models.DimensionType.DIM_3D, deleted_frames=deleted_frames
@@ -209,6 +141,7 @@ class TrackManager3DTest(TestCase):
             "attributes": [],
             "rotation": 0,
         }
+        shapes = [shape0, shape1, shape1]
 
         track = {
             "id": 777,
@@ -218,12 +151,10 @@ class TrackManager3DTest(TestCase):
             "attributes": [],
             "elements": [],
             "label": "car",
-            "shapes": [shape0, shape1, shape1],
+            "shapes": shapes,
         }
 
-        interpolated_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, 2, models.DimensionType.DIM_3D
-        )
+        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 2, models.DimensionType.DIM_3D)
         # Expect only two shapes (no duplicated last one)
         self.assertEqual(2, len(interpolated_shapes))
 
