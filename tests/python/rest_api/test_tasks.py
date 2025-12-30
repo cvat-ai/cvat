@@ -1012,9 +1012,9 @@ class TestGetTaskDataset:
         with zipfile.ZipFile(io.BytesIO(dataset_bytes)) as zf:
             # basic sanity: annotations folder should be present in the archive
             names = zf.namelist()
-            assert any(name.startswith("annotations/") for name in names), (
-                f"No annotations folder in export archive: {names}"
-            )
+            assert any(
+                name.startswith("annotations/") for name in names
+            ), f"No annotations folder in export archive: {names}"
 
     @pytest.mark.usefixtures("restore_db_per_function")
     def test_can_export_3d_annotations_from_job_via_rest_api(self, admin_user, tasks, jobs):
@@ -1038,9 +1038,9 @@ class TestGetTaskDataset:
 
         with zipfile.ZipFile(io.BytesIO(dataset_bytes)) as zf:
             names = zf.namelist()
-            assert any(name.startswith("annotations/") for name in names), (
-                f"No annotations folder in job export archive: {names}"
-            )
+            assert any(
+                name.startswith("annotations/") for name in names
+            ), f"No annotations folder in job export archive: {names}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
