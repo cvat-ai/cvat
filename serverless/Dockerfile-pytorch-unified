@@ -1,0 +1,93 @@
+# Unified PyTorch GPU image containing ALL PyTorch models
+# Single image shared by: GLASS, U2Net, and other PyTorch models
+# Optimized with runtime base (not devel) to reduce size
+
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
+
+# Set noninteractive frontend for apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies
+RUN apt-get update --fix-missing && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3.11-distutils \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxrender1 \
+    libxext6 \
+    libgomp1 \
+    curl \
+    python3-pip \
+    git \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Create python symlink (python3 already exists)
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# Upgrade pip
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Copy and install PyTorch requirements
+COPY requirements-torch-cuda12.8.txt /tmp/requirements-torch-cuda12.8.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-torch-cuda12.8.txt && \
+    rm -f /tmp/requirements-torch-cuda12.8.txt
+
+# Install common dependencies for all PyTorch models
+RUN pip install --no-cache-dir \
+    msgpack \
+    nuclio_sdk \
+    timm \
+    opencv-python-headless \
+    pillow \
+    scikit-image \
+    scikit-learn \
+    tensorboard \
+    pandas \
+    numpy \
+    scipy \
+    jsonpickle \
+    matplotlib \
+    pyyaml \
+    tqdm
+
+# Clean up pip cache
+RUN pip cache purge && \
+    rm -rf /root/.cache/pip
+
+# Set working directory
+WORKDIR /opt/nuclio
+
+# Clone U2Net repository (for U2Net model)
+RUN git clone --depth 1 https://github.com/xuebinqin/U-2-Net.git u2net && \
+    rm -rf u2net/.git
+
+# Copy ALL PyTorch model code into the image
+# This allows all models to share the same image
+COPY pytorch/glass/nuclio/glass /opt/nuclio/glass
+COPY pytorch/glass/nuclio/main.py /opt/nuclio/glass_main.py
+COPY pytorch/glass/nuclio/model_handler.py /opt/nuclio/glass_model_handler.py
+
+COPY pytorch/u2net/nuclio/main.py /opt/nuclio/u2net_main.py
+COPY pytorch/u2net/nuclio/model_handler.py /opt/nuclio/u2net_model_handler.py
+
+# Create directory structure for models
+RUN mkdir -p /opt/nuclio/models
+
+# Optimize Python bytecode
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Labels for identification
+LABEL maintainer="DigitalSense AI" \
+      description="Unified PyTorch CUDA 12.8 image for all CVAT PyTorch serverless functions" \
+      version="2.0" \
+      models="GLASS,U2Net,TransT"
+
+# Note: Model-specific code will be copied by Nuclio during deployment
+# Each function will use this same image with different handlers

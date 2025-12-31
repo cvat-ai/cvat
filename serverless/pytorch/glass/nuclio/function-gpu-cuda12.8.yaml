@@ -16,8 +16,8 @@ spec:
   eventTimeout: 3000s
 
   build:
-    image: cvat.pth.glass.gpu:cuda12.8
-    baseImage: cuda12.8-base:ubuntu22.04
+    image: cvat.pth.unified:cuda12.8
+    baseImage: pytorch-unified:cuda12.8
 
     directives:
       preCopy:
@@ -27,9 +27,10 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
 
-        # All dependencies are in base image, no additional installations needed
+        # GLASS code already in base image at /opt/nuclio/glass/
+        # Handler files at /opt/nuclio/glass_main.py and glass_model_handler.py
         - kind: RUN
-          value: echo "Using base image dependencies"
+          value: ln -sf /opt/nuclio/glass_main.py /opt/nuclio/main.py && ln -sf /opt/nuclio/glass_model_handler.py /opt/nuclio/model_handler.py
 
   resources:
     limits:

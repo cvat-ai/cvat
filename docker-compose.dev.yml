@@ -11,15 +11,17 @@ services:
       - '127.0.0.1:5432:5432'
 
   cvat_server:
-    build:
-      context: .
-      args:
-        http_proxy:
-        https_proxy:
-        socks_proxy:
-        CLAM_AV:
-        CVAT_DEBUG_ENABLED:
-        COVERAGE_PROCESS_START:
+    # build:
+    #   context: .
+    #   args:
+    #     http_proxy:
+    #     https_proxy:
+    #     socks_proxy:
+    #     CLAM_AV:
+    #     CVAT_DEBUG_ENABLED:
+    #     COVERAGE_PROCESS_START:
+    image: cvat/server:v2.35.0
+    container_name: cvat_server
     environment:
       # Use this with CVAT_DEBUG_ENABLED to avoid server response timeouts
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'

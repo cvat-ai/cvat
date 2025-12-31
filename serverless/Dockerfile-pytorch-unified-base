@@ -1,10 +1,13 @@
-# Use Nvidia Cuda 12.8.0 as base
-FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
+# Unified PyTorch GPU Base Image for all PyTorch-based Nuclio functions
+# This image contains all common dependencies to minimize duplication
+# Individual models will add only their specific code on top
+
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
 
 # Set noninteractive frontend for apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install system dependencies (minimal set)
 RUN apt-get update --fix-missing && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     python3.11 \
@@ -28,33 +31,44 @@ RUN apt-get update --fix-missing && apt-get upgrade -y && \
 RUN ln -s /usr/bin/python3.11 /usr/bin/python3 && \
     ln -s /usr/bin/python3 /usr/bin/python
 
-# Upgrade pip
+# Upgrade pip and install build tools
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Copy and install PyTorch requirements
+# Install PyTorch with CUDA 12.8 support (use --no-cache-dir to reduce size)
 COPY requirements-torch-cuda12.8.txt /tmp/requirements-torch-cuda12.8.txt
 RUN pip install --no-cache-dir -r /tmp/requirements-torch-cuda12.8.txt && \
     rm -f /tmp/requirements-torch-cuda12.8.txt
 
-# Install serverless framework
-RUN pip install --no-cache-dir msgpack nuclio_sdk
-
-# Install all GPU function dependencies
+# Install common ML/CV libraries used by most models
 RUN pip install --no-cache-dir \
+    msgpack \
+    nuclio_sdk \
     timm \
     opencv-python-headless \
     pillow \
     scikit-image \
     scikit-learn \
-    tensorboard \
     pandas \
+    numpy \
+    scipy \
     jsonpickle \
-    matplotlib
+    pyyaml \
+    tqdm \
+    ftfy \
+    regex
 
-# Clean up pip cache to reduce image size
+# Clean up pip cache
 RUN pip cache purge && \
     rm -rf /root/.cache/pip
+
+# Set working directory
+WORKDIR /opt/nuclio
 
 # Optimize Python bytecode
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
+
+# Labels for identification
+LABEL maintainer="DigitalSense AI" \
+      description="Unified PyTorch CUDA 12.8 base for CVAT serverless functions" \
+      version="1.0"
