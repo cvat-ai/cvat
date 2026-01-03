@@ -111,3 +111,14 @@
         transform: translate(-50%, -50%);
     }
 }
+/* Defensive fix: prevent text overflow on Requests page */
+.cvat-requests-page {
+  .cvat-resource-list-wrapper {
+    min-width: 0; // allow flex children to shrink properly
+  }
+
+  .cvat-resource-list-wrapper * {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
