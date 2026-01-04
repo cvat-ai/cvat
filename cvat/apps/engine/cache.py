@@ -9,6 +9,7 @@ import io
 import os
 import os.path
 import pickle  # nosec
+import re
 import tempfile
 import time
 import zipfile
@@ -221,6 +222,8 @@ class MediaCache:
         create_callback: Callback,
         cache_item_ttl: int | None = None,
     ) -> DataWithMime:
+        from cvat.apps.events.handlers import handle_chunk_create
+
         timestamp = django_tz.now()
         item_data = create_callback()
         item_data_bytes = item_data[0].getvalue()
@@ -244,6 +247,13 @@ class MediaCache:
                         f"{settings.CVAT_CACHE_ITEM_MAX_SIZE}."
                     )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
+
+                if chunk_info := cls._parse_cache_key(key):
+                    handle_chunk_create(
+                        **chunk_info,
+                        chunk_size=len(item_data_bytes),
+                        run_in_job=_is_run_inside_rq(),
+                    )
 
         return item
 
@@ -348,6 +358,24 @@ class MediaCache:
         quality: models.FrameQuality,
     ) -> str:
         return f"{cls._make_cache_key_prefix(db_obj)}_chunk_{chunk_number}_{quality}"
+
+    @staticmethod
+    def _parse_cache_key(key: str) -> dict | None:
+        pattern = re.compile(
+            r'^(?P<object_type>task|segment|job|cloudstorage)_'
+            r'(?P<object_id>\d+)_chunk_(?P<chunk_number>\d+)_'
+            r'(?P<quality>\d+)$'
+        )
+        match = pattern.match(key)
+        if not match:
+            return None
+
+        return {
+            "chunk_target": match.group("object_type"),
+            "chunk_target_id": int(match.group("object_id")),
+            "chunk_number": int(match.group("chunk_number")),
+            "chunk_quality": match.group("quality"),
+        }
 
     def _make_preview_key(self, db_obj: models.Segment | models.CloudStorage) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_preview"
