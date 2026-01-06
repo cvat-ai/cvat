@@ -4,6 +4,7 @@ http:
       entryPoints:
       - web
       middlewares:
+      - strip-editview
       - analytics-auth
       service: grafana
       rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
@@ -11,12 +12,18 @@ http:
       entryPoints:
       - websecure
       middlewares:
+      - strip-editview
       - analytics-auth
       service: grafana
       tls: {}
       rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
 
   middlewares:
+    strip-editview:
+      redirectRegex:
+        regex: "^(https?://[^/]+/analytics/).*([\\?&]editview=[^&#]*).*"
+        replacement: "$1"
+        permanent: false
     analytics-auth:
       forwardauth:
         address: http://cvat_server:8080/analytics

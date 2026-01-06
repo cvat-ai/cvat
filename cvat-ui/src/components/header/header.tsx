@@ -489,10 +489,10 @@ function HeaderComponent(props: Props): JSX.Element {
                     <Button
                         className={getButtonClassName('analytics', false)}
                         type='link'
-                        href='/analytics'
+                        href='/analytics/?kiosk'
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
-                            window.open('/analytics', '_blank');
+                            window.open('/analytics/?kiosk', '_blank');
                         }}
                     >
                         分析
