@@ -1567,7 +1567,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         label: 'Interactors',
                         children: (
                             <>
-                                {this.renderInteractorLabelBlock()}
+                                {this.props.autoClassifiers.length?
+                                    this.renderInteractorLabelBlock(): this.renderLabelBlock()}
                                 {this.renderInteractorBlock()}
                             </>
                         ),
