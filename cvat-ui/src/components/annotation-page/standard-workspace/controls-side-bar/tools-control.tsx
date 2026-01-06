@@ -23,12 +23,14 @@ import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Switch from 'antd/lib/switch';
 import lodash, { omit } from 'lodash';
+import { Tooltip } from 'antd';
 
 import { AIToolsIcon } from 'icons';
+import { getCVATStore } from 'cvat-store'
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
     getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
-    MinimalShape, InteractorResults, TrackerResults,
+    MinimalShape, InteractorResults, TrackerResults, AutoClassifierResultItem
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -42,6 +44,7 @@ import {
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
 import DetectorRunner, { AnnotateTaskRequestBody } from 'components/model-runner-modal/detector-runner';
+import AutoClassifierRunner, { AutoClassifierRequestBody } from 'components/model-runner-modal/auto-classifier-runner';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
@@ -62,6 +65,7 @@ interface StateToProps {
     isActivated: boolean;
     frame: number;
     interactors: MLModel[];
+    autoClassifiers: MLModel[];
     detectors: MLModel[];
     trackers: MLModel[];
     curZOrder: number;
@@ -99,7 +103,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             drawing: { activeLabelID },
         },
         models: {
-            interactors, detectors, trackers,
+            interactors, autoClassifiers, detectors, trackers,
         },
         settings: {
             workspace: { toolsBlockerState, defaultApproxPolyAccuracy },
@@ -117,6 +121,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         interactors,
+        autoClassifiers,
         detectors,
         trackers,
         isActivated: activeControl === ActiveControl.AI_TOOLS,
@@ -153,18 +158,21 @@ interface TrackedShape {
 
 interface State {
     activeInteractor: MLModel | null;
+    activeAutoClassifier: MLModel | null;
     activeLabelID: number | null;
     activeTracker: MLModel | null;
     startInteractingWithBox: boolean;
     convertMasksToPolygons: boolean;
+    interactAutoClassActivated: boolean;
     trackedShapes: TrackedShape[];
     fetching: boolean;
     pointsReceived: boolean;
     approxPolyAccuracy: number;
-    mode: 'detection' | 'interaction' | 'tracking';
+    mode: 'detection' | 'interaction' | 'autoClassifier' | 'tracking';
     portals: React.ReactPortal[];
 }
 
+type AutoClassifierResults = AutoClassifierResultItem[];
 type DetectorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { version: number }>;
 
 function trackedRectangleMapper(shape: MinimalShape): MinimalShape {
@@ -253,6 +261,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.state = {
             convertMasksToPolygons: false,
             startInteractingWithBox: false,
+            interactAutoClassActivated: false,
+            activeAutoClassifier: props.autoClassifiers.length ? props.autoClassifiers[0] : null,
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: supportedTrackers.length ? supportedTrackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id as number : null,
@@ -592,6 +602,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     };
 
+    private setActiveInteractorAutoClassifier = (value: string): void => {
+        const [ autoClassifier ] = this.props.autoClassifiers.filter(
+            (_autoClassifier: MLModel) => _autoClassifier.id as string === value);
+        this.setState({ activeAutoClassifier: autoClassifier });
+    }
+
     private setActiveInteractor = (value: string): void => {
         const { interactors } = this.props;
         const [interactor] = interactors.filter((_interactor: MLModel) => _interactor.id === value);
@@ -884,32 +900,80 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private async constructFromPoints(): Promise<void> {
-        const { convertMasksToPolygons } = this.state;
-        const {
-            frame, labels, curZOrder, activeLabelID, createAnnotations,
-        } = this.props;
+        const { convertMasksToPolygons, activeAutoClassifier, interactAutoClassActivated } = this.state;
+        const { frame, labels, curZOrder, activeLabelID, jobInstance, createAnnotations, } = this.props;
 
+        async function autoClassifierPredict(objects: any): Promise<Label | undefined> {
+            try {
+                const result = await core.lambda.call(jobInstance.taskId, activeAutoClassifier,
+                    { frame, job: jobInstance.id, objects }) as AutoClassifierResults;
+
+                if (result && result.length > 0) {
+                    const predName = result[0].label;
+                    const labelRep = labels.find((label) => label.name === predName) as Label;
+                    if (labelRep) {
+                        return labelRep;
+                    } else {
+                        notification.warning({
+                            description: `Model predict label "${predName}" is not available in task.`,
+                            message: 'AutoClassifier',
+                            duration: 3,
+                        });
+                    }
+                } else {
+                    notification.warning({
+                        description: 'Model predict label failed, label fallback manual default.',
+                        message: 'AutoClassifier',
+                        duration: 3,
+                    });
+                }
+            } catch (error: any) {
+                notification.warning({
+                    description: 'Model Connection broken, label fallback manual default.',
+                    message: 'AutoClassifier',
+                    duration: 3,
+                });
+            }
+        }
+
+        let label = labels.find((label) => label.id === activeLabelID as number) as Label;
         if (convertMasksToPolygons) {
+            const points = this.interaction.latestApproximatedPoints.flat();
+
+            if (interactAutoClassActivated) {  // using auto mode
+                const labelRep = await autoClassifierPredict([{
+                    points: points, rotation: 0, label: label.name, shapeType: ShapeType.POLYGON, clientID: 1 }])
+                if (labelRep) label = labelRep;
+            }
+
             const object = new core.classes.ObjectState({
                 frame,
                 objectType: ObjectType.SHAPE,
                 source: core.enums.Source.SEMI_AUTO,
-                label: labels.find((label) => label.id === activeLabelID as number) as Label,
+                label: label,
                 shapeType: ShapeType.POLYGON,
-                points: this.interaction.latestApproximatedPoints.flat(),
+                points: points,
                 occluded: false,
                 zOrder: curZOrder,
             });
 
             createAnnotations([object]);
         } else {
+            const points = this.interaction.latestResponse.rle;
+
+            if (interactAutoClassActivated) {  // using auto mode
+                const labelRep = await autoClassifierPredict([{
+                    points: points, rotation: 0, label: label.name, shapeType: ShapeType.MASK, clientID: 1 }])
+                if (labelRep) label = labelRep;
+            }
+
             const object = new core.classes.ObjectState({
                 frame,
                 objectType: ObjectType.SHAPE,
                 source: core.enums.Source.SEMI_AUTO,
-                label: labels.find((label) => label.id === activeLabelID as number) as Label,
+                label: label,
                 shapeType: ShapeType.MASK,
-                points: this.interaction.latestResponse.rle,
+                points: points,
                 occluded: false,
                 zOrder: curZOrder,
             });
@@ -992,6 +1056,76 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         );
     }
 
+    private renderInteractorLabelBlock(): JSX.Element {
+        const { activeLabelID, interactAutoClassActivated, activeAutoClassifier } = this.state;
+        const { autoClassifiers, labels } = this.props;
+
+        if (autoClassifiers.length > 0) {
+            this.setActiveInteractorAutoClassifier(autoClassifiers[0].id as string);
+        }
+
+        return (
+            <>
+                <Row justify='start'>
+                    <Col>
+                        <Text className='cvat-text-color'>Label (Auto & Manual)</Text>
+                    </Col>
+                </Row>
+                <Row justify='center' style={{ marginBottom: 8 }}>
+                    <Col flex='auto' style={{ marginRight: 4 }}>
+                        <Tooltip title='Select model for annotating label'>
+                            <Select
+                                style={{ width: '100%' }}
+                                disabled={autoClassifiers.length === 0}
+                                value={activeAutoClassifier?.id as string}
+                                onChange={this.setActiveInteractorAutoClassifier}
+                            >
+                                {autoClassifiers.map(
+                                    (autoClassifier: MLModel): JSX.Element => (
+                                        <Select.Option
+                                            value={autoClassifier.id}
+                                            title={autoClassifier.description}
+                                            key={autoClassifier.id}
+                                        >
+                                            {autoClassifier.name}
+                                        </Select.Option>
+                                    ),
+                                )}
+                            </Select>
+                        </Tooltip>
+                    </Col>
+                    <Col style={{ display: 'flex', alignItems: 'flex-end', marginRight: 4 }}>
+                        <Tooltip title='Turn on/off auto label mode'>
+                            <Switch
+                                checked={interactAutoClassActivated}
+                                disabled={autoClassifiers.length === 0}
+                                onChange={(checked: boolean) => {
+                                    this.setState({ interactAutoClassActivated: checked });
+                                }}
+                            />
+                        </Tooltip>
+                    </Col>
+                    <Col style={{ display: 'flex', alignItems: 'flex-end' }}>
+                        <Text className='cvat-text-color'>Auto Label</Text>
+                    </Col>
+                </Row>
+                <Row justify='center'>
+                    <Col span={24}>
+                        <Tooltip title='Select label manually'>
+                            <LabelSelector
+                                style={{ width: '100%' }}
+                                labels={labels}
+                                value={activeLabelID}
+                                disabled={interactAutoClassActivated}
+                                onChange={(value: any) => this.setState({ activeLabelID: value.id })}
+                            />
+                        </Tooltip>
+                    </Col>
+                </Row>
+            </>
+        );
+    }
+
     private renderTrackerBlock(): JSX.Element {
         const {
             canvasInstance, jobInstance, frame, onInteractionStart,
@@ -1064,6 +1198,120 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     </Col>
                 </Row>
             </>
+        );
+    }
+
+    private renderAutoClassifyBlock(): JSX.Element {
+        const { jobInstance, autoClassifiers, frame, } = this.props;
+
+        if (!autoClassifiers.length) {
+            return (
+                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
+                    <Col>
+                        <Text type='warning' className='cvat-text-color'>
+                            No available classifier found
+                        </Text>
+                    </Col>
+                </Row>
+            );
+        }
+
+        return (
+            <AutoClassifierRunner
+                models={autoClassifiers}
+                dimension={jobInstance.dimension}
+                runInference={async (model: MLModel, body: AutoClassifierRequestBody) => {
+                    try {
+                        this.setState({ mode: 'autoClassifier', fetching: true });
+
+                        // Get All shape annotations such polygons, boxes
+                        const states = (await jobInstance.annotations.get(frame, false, [])).filter(
+                            (s: ObjectState) => s.objectType === ObjectType.SHAPE && !s.lock && !s.hidden);
+                        const objects = states.map((s: ObjectState) => ({
+                            points: s.points,        // annotation object points of bbox, polygon, mask, rectangle, etc.
+                            rotation: s.rotation,    // annotation object angle of rotation
+                            label: s.label.name,     // annotation object label
+                            shapeType: s.shapeType,  // annotation object types
+                            clientID: s.clientID,    // annotation object uniqueId
+                        }));
+
+                        let result;
+                        if (!objects || objects.length === 0) {
+                            // Initial the empty result
+                            result = [] as AutoClassifierResults;
+                            notification.warning({
+                                description: 'Please annotate something before using Auto Classifier!',
+                                message: 'AutoClassifier',
+                                duration: 3,
+                            });
+                        } else {
+                            // Request for model
+                            // Beside, body have { "cleanup": bool, "threshold": float }
+                            result = await core.lambda.call(jobInstance.taskId, model,
+                                { frame, job: jobInstance.id, objects }) as AutoClassifierResults;
+                        }
+
+                        // Parse result
+                        const labelMap = new Map<number, string>();
+                        result.forEach(({ clientID, label }) => labelMap.set(clientID, label));
+
+                        const updatedStates: ObjectState[] = [];
+                        states.forEach((state: ObjectState) => {
+                            if (!state.clientID) return;
+
+                            const labelName = labelMap.get(state.clientID);
+                            if (!labelName) {  // None or Not Found this objectId result
+                                notification.warning({
+                                    description:
+                                        `Model prediction missing label for clientID: ${state.clientID}
+                                         shape ${state.shapeType}`,
+                                    message: 'AutoClassifier',
+                                    duration: 3,
+                                });
+                                return;
+                            }
+
+                            const labelRepl = jobInstance.labels.find((l: Label) => l.name === labelName);
+                            if (!labelRepl) {  // Predict label not match task labels
+                                notification.warning({
+                                    description:
+                                        `Model prediction label "${labelName}" is not available in the current task.`,
+                                    message: 'AutoClassifier',
+                                    duration: 3,
+                                });
+                                return;
+                            }
+
+                            state.label = labelRepl;
+                            state.color = labelRepl.color as string;
+                            // TODO: can't change attribute:source due to readonly
+                            // state.source = core.enums.Source.LABEL_AUTO;
+                            updatedStates.push(state);
+                        });
+
+                        if (updatedStates.length) {
+                            const store = getCVATStore();
+                            await store.dispatch(updateAnnotationsAsync(updatedStates));
+                            notification.info({
+                                description: `Model completed processing ${updatedStates.length} labels`,
+                                message: 'AutoClassifier',
+                                duration: 3,
+                            });
+                        }
+
+                        const { onSwitchToolsBlockerState } = this.props;
+                        onSwitchToolsBlockerState({ buttonVisible: false });
+                    } catch (error: any) {
+                        notification.error({
+                            description: <CVATMarkdown>{error.message}</CVATMarkdown>,
+                            message: 'Auto Classifier error occurred',
+                            duration: null,
+                        });
+                    } finally {
+                        this.setState({ fetching: false });
+                    }
+                }}
+            />
         );
     }
 
@@ -1319,7 +1567,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         label: 'Interactors',
                         children: (
                             <>
-                                {this.renderLabelBlock()}
+                                {this.renderInteractorLabelBlock()}
                                 {this.renderInteractorBlock()}
                             </>
                         ),
@@ -1327,6 +1575,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         key: 'detectors',
                         label: 'Detectors',
                         children: this.renderDetectorBlock(),
+                    }, {
+                        key: 'autoClassifier',
+                        label: 'AutoClassifier',
+                        children: this.renderAutoClassifyBlock(),
                     }, {
                         key: 'trackers',
                         label: 'Trackers',

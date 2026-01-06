@@ -16,6 +16,7 @@ const defaultState: ModelsState = {
     fetching: false,
     creatingStatus: '',
     interactors: [],
+    autoClassifiers: [],
     detectors: [],
     trackers: [],
     reid: [],
@@ -56,6 +57,9 @@ export default function (
                 ...state,
                 interactors: action.payload.models.filter((model: MLModel) => (
                     model.kind === ModelKind.INTERACTOR
+                )),
+                autoClassifiers: action.payload.models.filter((model: MLModel) => (
+                    model.kind === ModelKind.AUTOCLASSIFIER
                 )),
                 detectors: action.payload.models.filter((model: MLModel) => (
                     model.kind === ModelKind.DETECTOR
