@@ -74,7 +74,7 @@ function ModelsPageComponent(): JSX.Element {
         dispatch(getModelsAsync(updatedQuery));
         if (pageOutOfBounds) {
             notification.error({
-                message: 'Could not fetch models',
+                message: '无法获取模型',
                 description: 'Invalid page',
             });
         }

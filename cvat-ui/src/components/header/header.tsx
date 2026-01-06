@@ -73,15 +73,15 @@ interface DispatchToProps {
 }
 
 const componentShortcuts = {
-    SWITCH_SHORTCUTS: {
-        name: 'Show shortcuts',
-        description: 'Open/hide the list of available shortcuts',
+            SWITCH_SHORTCUTS: {
+        name: '显示快捷键',
+        description: '打开/隐藏可用快捷键列表',
         sequences: ['f1'],
         scope: ShortcutScope.GENERAL,
     },
     SWITCH_SETTINGS: {
-        name: 'Show settings',
-        description: 'Open/hide settings dialog',
+        name: '显示设置',
+        description: '打开/隐藏设置对话框',
         sequences: ['f2'],
         scope: ShortcutScope.GENERAL,
     },
@@ -212,21 +212,21 @@ function HeaderComponent(props: Props): JSX.Element {
     aboutLinks.push([(
         <Col key='changelog'>
             <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
-                What&apos;s new?
+                更新日志
             </a>
         </Col>
     ), 0]);
     aboutLinks.push([(
         <Col key='license'>
             <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
-                MIT License
+                MIT 许可证
             </a>
         </Col>
     ), 10]);
     aboutLinks.push([(
         <Col key='discord'>
             <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
-                Find us on Discord
+                在 Discord 上找到我们
             </a>
         </Col>
     ), 20]);
@@ -236,17 +236,23 @@ function HeaderComponent(props: Props): JSX.Element {
     )));
 
     const showAboutModal = useCallback((): void => {
+        const localizedAboutName = about.server.name === 'Computer Vision Annotation Tool' ?
+            '计算机视觉标注工具' : about.server.name;
+        const localizedAboutDescription = about.server.description.startsWith('CVAT is completely re-designed') ?
+            'CVAT 是一个开源的在线交互式图像/视频标注工具，面向计算机视觉任务。我们团队使用它来标注海量对象及其属性；许多 UI 与 UX 设计决策来自专业数据标注团队的反馈。' :
+            about.server.description;
+
         Modal.info({
-            title: `${about.server.name}`,
+            title: `${localizedAboutName}`,
             content: (
                 <div>
-                    <p>{`${about.server.description}`}</p>
+                    <p>{`${localizedAboutDescription}`}</p>
                     <p>
-                        <Text strong>Server version:</Text>
+                        <Text strong>服务器版本：</Text>
                         <Text type='secondary'>{` ${about.server.version}`}</Text>
                     </p>
                     <p>
-                        <Text strong>UI version:</Text>
+                        <Text strong>UI 版本：</Text>
                         <Text type='secondary'>{` ${about.packageVersion.ui}`}</Text>
                     </p>
                     <Row justify='space-around'>
@@ -256,6 +262,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 </div>
             ),
             width: 800,
+            okText: '确定',
             okButtonProps: {
                 style: {
                     width: '100px',
@@ -301,7 +308,7 @@ function HeaderComponent(props: Props): JSX.Element {
             onClick: (): void => {
                 window.open('/admin', '_blank');
             },
-            label: 'Admin page',
+            label: '管理后台',
         }, 0]);
     }
 
@@ -311,7 +318,7 @@ function HeaderComponent(props: Props): JSX.Element {
         onClick: (): void => {
             history.push('/profile');
         },
-        label: 'Profile',
+        label: '个人资料',
     }, 10]);
 
     const viewType: 'menu' | 'list' = (organizationsList?.length || 0) > 5 ? 'list' : 'menu';
@@ -319,31 +326,31 @@ function HeaderComponent(props: Props): JSX.Element {
     menuItems.push([{
         key: 'organization',
         icon: organizationFetching || organizationsListFetching ? <LoadingOutlined /> : <TeamOutlined />,
-        label: 'Organization',
+        label: '组织',
         disabled: organizationFetching || organizationsListFetching,
         children: [
             ...(currentOrganization ? [{
                 key: 'open_organization',
                 icon: <SettingOutlined />,
-                label: 'Settings',
+                label: '设置',
                 className: 'cvat-header-menu-open-organization',
                 onClick: () => history.push('/organization'),
             }] : []), {
                 key: 'invitations',
                 icon: <MailOutlined />,
-                label: 'Invitations',
+                label: '邀请',
                 className: 'cvat-header-menu-organization-invitations-item',
                 onClick: () => history.push('/invitations'),
             }, {
                 key: 'create_organization',
                 icon: <PlusOutlined />,
-                label: 'Create',
+                label: '创建',
                 className: 'cvat-header-menu-create-organization',
                 onClick: () => history.push('/organizations/create'),
             },
             ...(!!organizationsList && viewType === 'list' ? [{
                 key: 'switch_organization',
-                label: 'Switch organization',
+                label: '切换组织',
                 onClick: () => {
                     openSelectOrganizationModal(setNewOrganization);
                 },
@@ -352,7 +359,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 type: 'divider' as const,
             }, {
                 key: '$personal',
-                label: 'Personal workspace',
+                label: '个人工作区',
                 className: !currentOrganization ? 'cvat-header-menu-active-organization-item' : 'cvat-header-menu-organization-item',
                 onClick: resetOrganization,
             }, ...organizationsList.map((organization: Organization) => ({
@@ -368,22 +375,22 @@ function HeaderComponent(props: Props): JSX.Element {
         key: 'settings',
         icon: <SettingOutlined />,
         onClick: () => switchSettingsModalVisible(true),
-        title: `Press ${switchSettingsShortcut} to switch`,
-        label: 'Settings',
+        title: `按 ${switchSettingsShortcut} 切换`,
+        label: '设置',
     }, 30]);
 
     menuItems.push([{
         key: 'about',
         icon: <InfoCircleOutlined />,
         onClick: () => showAboutModal(),
-        label: 'About',
+        label: '关于',
     }, 40]);
 
     menuItems.push([{
         key: 'logout',
         icon: logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />,
         onClick: () => history.push('/auth/logout'),
-        label: 'Logout',
+        label: '退出登录',
         disabled: logoutFetching,
     }, 50]);
 
@@ -414,7 +421,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         history.push('/projects');
                     }}
                 >
-                    Projects
+                    项目
                 </Button>
                 <Button
                     className={getButtonClassName('tasks')}
@@ -426,7 +433,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         history.push('/tasks');
                     }}
                 >
-                    Tasks
+                    任务
                 </Button>
                 <Button
                     className={getButtonClassName('jobs')}
@@ -438,7 +445,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         history.push('/jobs');
                     }}
                 >
-                    Jobs
+                    作业
                 </Button>
                 <Button
                     className={getButtonClassName('cloudstorages')}
@@ -450,7 +457,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         history.push('/cloudstorages');
                     }}
                 >
-                    Cloud Storages
+                    云存储
                 </Button>
                 <Button
                     className={getButtonClassName('requests')}
@@ -462,7 +469,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         history.push('/requests');
                     }}
                 >
-                    Requests
+                    请求
                 </Button>
                 {isModelsPluginActive ? (
                     <Button
@@ -475,7 +482,7 @@ function HeaderComponent(props: Props): JSX.Element {
                             history.push('/models');
                         }}
                     >
-                        Models
+                        模型
                     </Button>
                 ) : null}
                 {isAnalyticsPluginActive && user.hasAnalyticsAccess ? (
@@ -488,7 +495,7 @@ function HeaderComponent(props: Props): JSX.Element {
                             window.open('/analytics', '_blank');
                         }}
                     >
-                        Analytics
+                        分析
                     </Button>
                 ) : null}
             </div>
@@ -562,3 +569,4 @@ function HeaderComponent(props: Props): JSX.Element {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(React.memo(HeaderComponent));
+

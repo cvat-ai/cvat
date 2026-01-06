@@ -13,7 +13,7 @@ function CreateOrganizationComponent(): JSX.Element {
     return (
         <Row justify='center' align='top' className='cvat-create-organization-page'>
             <Col md={20} lg={16} xl={14} xxl={9}>
-                <Text className='cvat-title'>Create a new organization</Text>
+                <Text className='cvat-title'>创建新组织</Text>
                 <CreateOrganizationForm />
             </Col>
         </Row>

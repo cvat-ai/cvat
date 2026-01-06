@@ -16,14 +16,14 @@ def require_one_of_fields(data: dict[str, Any], keys: Sequence[str]) -> None:
     options = ", ".join(f'"{k}"' for k in keys)
 
     if not active_count:
-        raise serializers.ValidationError(f"One of the fields {options} required")
+        raise serializers.ValidationError(f"必须提供以下字段之一: {options}")
     else:
-        raise serializers.ValidationError(f"Only 1 of the fields {options} can be used")
+        raise serializers.ValidationError(f"只能使用以下字段之一: {options}")
 
 
 def require_field(data: dict[str, Any], key: str) -> None:
     if key not in data:
-        raise serializers.ValidationError(f'The "{key}" field is required')
+        raise serializers.ValidationError(f'字段 "{key}" 是必填的')
 
 
 def require_one_of_values(data: dict[str, Any], key: str, values: Sequence[Any]) -> None:
@@ -32,16 +32,16 @@ def require_one_of_values(data: dict[str, Any], key: str, values: Sequence[Any])
     if data.get(key) not in values:
         if len(values) == 1:
             raise serializers.ValidationError(
-                'The "{}" field must be {}'.format(key, ", ".join(f"{k}" for k in values))
+                '字段 "{}" 必须为 {}'.format(key, ", ".join(f"{k}" for k in values))
             )
         else:
             raise serializers.ValidationError(
-                'The "{}" field must be one of {}'.format(key, ", ".join(f"{k}" for k in values))
+                '字段 "{}" 必须为以下值之一: {}'.format(key, ", ".join(f"{k}" for k in values))
             )
 
 
 def validate_share(value: float) -> float:
     if not 0 <= value <= 1:
-        raise serializers.ValidationError("Value must be in the range [0; 1]")
+        raise serializers.ValidationError("值必须在 [0; 1] 范围内")
 
     return value

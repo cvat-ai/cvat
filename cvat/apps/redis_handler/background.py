@@ -365,11 +365,11 @@ class AbstractExporter(AbstractRequestManager):
         request_id = self.request.query_params.get(self.REQUEST_ID_KEY)
 
         if not request_id:
-            raise serializers.ValidationError("Missing request id in the query parameters")
+            raise serializers.ValidationError("查询参数中缺少请求ID")
 
         try:
             self.validate_request_id(request_id)
         except ValueError:
-            raise serializers.ValidationError("Invalid export request id")
+            raise serializers.ValidationError("无效的导出请求ID")
 
         return self.Downloader(request=self.request, queue=self.get_queue(), request_id=request_id)

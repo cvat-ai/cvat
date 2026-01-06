@@ -1,0 +1,6 @@
+-r base.in
+
+django-extensions==3.0.8
+django-silk==5.*
+rope==0.17.0
+snakeviz==2.1.0

@@ -28,7 +28,7 @@ function UploadFileStatusModal(): JSX.Element {
 
     return (
         <Modal
-            title='Uploading the file'
+            title='正在上传文件'
             open={!!importingId && importingProgress < 100}
             closable={false}
             footer={null}
@@ -42,3 +42,4 @@ function UploadFileStatusModal(): JSX.Element {
 }
 
 export default React.memo(UploadFileStatusModal);
+

@@ -2598,7 +2598,7 @@ class QualityReportRQJobManager(AbstractRequestManager):
                 id_, expected_queue=self.QUEUE_NAME, try_legacy_format=True
             ).render()
         except ValueError:
-            raise serializers.ValidationError("Provided request ID is invalid")
+            raise serializers.ValidationError("提供的请求ID无效")
 
         return super().get_job_by_id(id_)
 
@@ -2615,7 +2615,7 @@ class QualityReportRQJobManager(AbstractRequestManager):
             return  # nothing prevents project reports
         elif isinstance(self.db_instance, Task):
             if self.db_instance.dimension != DimensionType.DIM_2D:
-                raise serializers.ValidationError("Quality reports are only supported in 2d tasks")
+                raise serializers.ValidationError("质量报告仅支持2D任务")
 
             gt_job = self.db_instance.gt_job
             if gt_job is None or not (

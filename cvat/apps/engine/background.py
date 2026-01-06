@@ -95,7 +95,7 @@ class DatasetExporter(AbstractExporter):
             self.export_args.format
         )
         if format_desc is None:
-            raise serializers.ValidationError("Unknown format specified for the request")
+            raise serializers.ValidationError("请求中指定了未知的格式")
         elif not format_desc.ENABLED:
             raise MethodNotAllowed(self.request.method, detail="Format is disabled")
 
@@ -209,7 +209,7 @@ class BackupExporter(AbstractExporter):
 
         # do not add this check when a project is backed up, as empty tasks are skipped
         if isinstance(self.db_instance, Task) and not self.db_instance.data:
-            raise serializers.ValidationError("Backup of a task without data is not allowed")
+            raise serializers.ValidationError("不允许备份没有数据的任务")
 
     def validate_request_id(self, request_id, /) -> None:
         # FUTURE-TODO: optimize, request_id is parsed 2 times (first one when checking permissions)
@@ -329,7 +329,7 @@ class ResourceImporter(AbstractRequestManager):
             self.import_args.location_config.location == Location.CLOUD_STORAGE
             and not self.import_args.filename
         ):
-            raise serializers.ValidationError("The filename was not specified")
+            raise serializers.ValidationError("未指定文件名")
 
         # file was uploaded via TUS
         if (
@@ -341,7 +341,7 @@ class ResourceImporter(AbstractRequestManager):
                     user_id=self.user_id, with_meta=False
                 )
             except (TusFileNotFoundError, TusFileForbiddenError, ValueError):
-                raise serializers.ValidationError("No such file were uploaded")
+                raise serializers.ValidationError("没有上传此文件")
 
     def _handle_cloud_storage_file_upload(self):
         storage_id = self.import_args.location_config.cloud_storage_id
@@ -463,7 +463,7 @@ class DatasetImporter(ResourceImporter):
             self.import_args.format
         )
         if format_desc is None:
-            raise serializers.ValidationError(f"Unknown input format {self.import_args.format!r}")
+            raise serializers.ValidationError(f"未知的输入格式 {self.import_args.format!r}")
         elif not format_desc.ENABLED:
             raise MethodNotAllowed(self.request.method, detail="Format is disabled")
 

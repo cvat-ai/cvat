@@ -55,18 +55,18 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
 
     const columns = [
         {
-            title: 'Name',
+            title: '名称',
             dataIndex: 'name',
             key: 'name',
         },
         {
-            title: 'Shortcut',
+            title: '快捷键',
             dataIndex: 'shortcut',
             key: 'shortcut',
             render: splitToRows,
         },
         {
-            title: 'Description',
+            title: '说明',
             dataIndex: 'description',
             key: 'description',
         },
@@ -83,7 +83,7 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
 
     return (
         <Modal
-            title='Active list of shortcuts'
+            title='当前快捷键列表'
             open={visible}
             closable={false}
             width={800}
@@ -103,3 +103,5 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(ShortcutsDialog);
+
+

@@ -95,14 +95,14 @@ function EditMaskItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
     const { edit } = toolProps;
     return (
-        <CVATTooltip title='Shift + Double click'>
+        <CVATTooltip title='Shift + 双击'>
             <Button
                 type='link'
                 icon={<EditOutlined />}
                 onClick={edit}
                 className='cvat-object-item-menu-edit-object'
             >
-                Edit
+                编辑
             </Button>
         </CVATTooltip>
     );
@@ -119,7 +119,7 @@ function SliceItem(props: ItemProps): JSX.Element {
                 onClick={slice}
                 className='cvat-object-item-menu-slice-object'
             >
-                Slice
+                切割
             </Button>
         </CVATTooltip>
     );
@@ -152,7 +152,7 @@ function SwitchOrientationItem(props: ItemProps): JSX.Element {
             onClick={switchOrientation}
             className='cvat-object-item-menu-switch-orientation'
         >
-            Switch orientation
+            切换方向
         </Button>
     );
 }
@@ -167,7 +167,7 @@ function ResetPerspectiveItem(props: ItemProps): JSX.Element {
             className='cvat-object-item-menu-reset-perspective'
         >
             <Icon component={ResetPerspectiveIcon} />
-            Reset perspective
+            重置视角
         </Button>
     );
 }
@@ -231,7 +231,7 @@ function RemoveItem(props: ItemProps): JSX.Element {
                 onClick={remove}
                 className='cvat-object-item-menu-remove-object'
             >
-                Remove
+                移除
             </Button>
         </CVATTooltip>
     );
@@ -365,3 +365,5 @@ export default function ItemMenu(props: Props): MenuProps {
         className: 'cvat-object-item-menu',
     };
 }
+
+

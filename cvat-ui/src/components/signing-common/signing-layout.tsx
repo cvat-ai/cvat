@@ -53,6 +53,7 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
     const { children } = props;
     const { Content, Header } = Layout;
     const subtitle = useSelector((state: CombinedState) => state.about.server.subtitle);
+    const localizedSubtitle = subtitle === 'Open Data Annotation Platform' ? '开放数据标注平台' : subtitle;
 
     const titleSizes = {
         xs: { span: 0 },
@@ -84,7 +85,7 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
                 <Content>
                     <Row justify='center' align='middle' style={{ height: '100%' }}>
                         <Col {...titleSizes} className='cvat-signing-title'>
-                            <Title>{subtitle}</Title>
+                            <Title>{localizedSubtitle}</Title>
                         </Col>
                         {children}
                     </Row>

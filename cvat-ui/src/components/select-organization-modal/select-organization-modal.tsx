@@ -24,7 +24,7 @@ function SelectOrganizationModal(): JSX.Element {
 
     return (
         <Modal
-            title='Select an organization'
+            title='选择组织'
             open={visible}
             footer={null}
             onCancel={() => dispatch(organizationActions.closeSelectOrganizationModal())}
@@ -42,3 +42,4 @@ function SelectOrganizationModal(): JSX.Element {
 }
 
 export default React.memo(SelectOrganizationModal);
+

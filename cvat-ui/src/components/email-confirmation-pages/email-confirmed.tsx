@@ -27,9 +27,9 @@ function EmailConfirmationPage(): JSX.Element {
             <Content>
                 <Row justify='center' align='middle' id='email-confirmation-page-container'>
                     <Col>
-                        <h1>Your email is confirmed</h1>
-                        <Countdown format='ss' title='Redirecting to login page after...' value={Date.now() + 1000 * 6} onFinish={onFinish} />
-                        <Link to='/auth/login' ref={linkRef}>Or click this link</Link>
+                        <h1>您的邮箱已确认</h1>
+                        <Countdown format='ss' title='正在跳转到登录页面...' value={Date.now() + 1000 * 6} onFinish={onFinish} />
+                        <Link to='/auth/login' ref={linkRef}>或点击此链接</Link>
                     </Col>
                 </Row>
             </Content>
@@ -38,3 +38,4 @@ function EmailConfirmationPage(): JSX.Element {
 }
 
 export default EmailConfirmationPage;
+

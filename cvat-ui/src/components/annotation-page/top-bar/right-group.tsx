@@ -65,7 +65,7 @@ function RightGroup(props: Props): JSX.Element {
             }
         }).catch((error: unknown) => {
             notification.error({
-                message: 'Could not receive annotation guide',
+                message: '无法获取标注指南',
                 description: error instanceof Error ? error.message : console.error('error'),
             });
         });
@@ -119,7 +119,7 @@ function RightGroup(props: Props): JSX.Element {
                 }}
             >
                 <Icon component={FullscreenIcon} />
-                Fullscreen
+                全屏
             </Button>
             { jobInstance.guideId !== null && (
                 <Button
@@ -128,7 +128,7 @@ function RightGroup(props: Props): JSX.Element {
                     onClick={openGuide}
                 >
                     <Icon component={GuideIcon} />
-                    Guide
+                    指南
                 </Button>
             )}
             <Button
@@ -137,7 +137,7 @@ function RightGroup(props: Props): JSX.Element {
                 onClick={showStatistics}
             >
                 <InfoCircleOutlined />
-                Info
+                信息
             </Button>
             <Button
                 type='link'
@@ -147,7 +147,7 @@ function RightGroup(props: Props): JSX.Element {
                 onClick={showFilters}
             >
                 <Icon component={FilterIcon} />
-                Filters
+                过滤器
             </Button>
             <div>
                 <Select
@@ -183,3 +183,5 @@ function RightGroup(props: Props): JSX.Element {
 }
 
 export default React.memo(RightGroup);
+
+

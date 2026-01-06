@@ -9,10 +9,10 @@ export interface MemberRoleSelectorProps {
 }
 
 const roleOptions = [
-    { value: 'worker', label: 'Worker' },
-    { value: 'supervisor', label: 'Supervisor' },
-    { value: 'maintainer', label: 'Maintainer' },
-    { value: 'owner', label: 'Owner' },
+    { value: 'worker', label: '工作人员' },
+    { value: 'supervisor', label: '主管' },
+    { value: 'maintainer', label: '维护者' },
+    { value: 'owner', label: '所有者' },
 ];
 
 export default function MemberRoleSelector(props: Readonly<MemberRoleSelectorProps>): JSX.Element {
@@ -25,10 +25,10 @@ export default function MemberRoleSelector(props: Readonly<MemberRoleSelectorPro
             disabled={disabled || value === 'owner'}
             onKeyDown={handleDropdownKeyDown}
             className='cvat-organization-member-role-selector'
-            placeholder='Select role'
+            placeholder='选择角色'
         >
             {value === 'owner' ? (
-                <Select.Option value='owner'>Owner</Select.Option>
+                <Select.Option value='owner'>所有者</Select.Option>
             ) : (
                 roleOptions.filter((option) => option.value !== 'owner').map((option) => (
                     <Select.Option key={option.value} value={option.value}>{option.label}</Select.Option>
@@ -37,3 +37,4 @@ export default function MemberRoleSelector(props: Readonly<MemberRoleSelectorPro
         </Select>
     );
 }
+

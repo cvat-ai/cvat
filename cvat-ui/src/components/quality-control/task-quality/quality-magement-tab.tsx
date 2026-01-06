@@ -43,19 +43,19 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
         <div className='cvat-quality-control-management-tab' ref={tabRef}>
             <Row className='cvat-quality-control-management-tab-summary'>
                 <Card
-                    title='Total validation frames'
+                    title='总验证帧数'
                     className='cvat-allocation-summary-total'
                     value={totalCount}
                     size={{ cardSize: 8 }}
                 />
                 <Card
-                    title='Excluded validation frames'
+                    title='排除的验证帧数'
                     className='cvat-allocation-summary-excluded'
                     value={excludedCount}
                     size={{ cardSize: 8 }}
                 />
                 <Card
-                    title='Active validation frames'
+                    title='活动验证帧数'
                     className='cvat-allocation-summary-active'
                     value={activeCount}
                     size={{ cardSize: 8 }}
@@ -84,3 +84,4 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
 }
 
 export default React.memo(QualityManagementTab);
+

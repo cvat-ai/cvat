@@ -78,7 +78,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
             open
             footer={[
                 <Button key='cancel' onClick={() => closeModal()}>
-                    Cancel
+                    取消
                 </Button>,
                 <Button
                     key='move_and_detach'
@@ -134,10 +134,11 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
             }
 
             <p>
-                Please choose how you would like the transfer to be done.
+                请选择你希望执行传输的方式。
             </p>
         </Modal>
     );
 }
 
 export default React.memo(SelectCSUpdatingSchemeModal);
+

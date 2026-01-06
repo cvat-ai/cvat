@@ -150,10 +150,10 @@ function ConsensusManagementPage(): JSX.Element {
                     dispatch(reducerActions.setConsensusSettingsFetching(true));
                     const responseSettings = await settings.save();
                     dispatch(reducerActions.setConsensusSettings(responseSettings));
-                    notification.info({ message: 'Settings have been updated' });
+                    notification.info({ message: '设置已更新' });
                 } catch (error: unknown) {
                     notification.error({
-                        message: 'Could not save consensus settings',
+                        message: '无法保存共识设置',
                         description: typeof Error === 'object' ? (error as object).toString() : '',
                     });
                     throw error;
@@ -210,7 +210,7 @@ function ConsensusManagementPage(): JSX.Element {
                 <div className='cvat-consensus-management-page-error'>
                     <Result
                         status='error'
-                        title='Could not open the page'
+                        title='无法打开页面'
                         subTitle={error.message}
                         extra={backNavigation}
                     />
@@ -244,7 +244,7 @@ function ConsensusManagementPage(): JSX.Element {
         if (consensusSettings) {
             tabsItems.push({
                 key: TabName.settings,
-                label: 'Settings',
+                label: '设置',
                 children: (
                     <ConsensusSettingsTab
                         fetching={fetching}
@@ -285,3 +285,5 @@ function ConsensusManagementPage(): JSX.Element {
 }
 
 export default React.memo(ConsensusManagementPage);
+
+

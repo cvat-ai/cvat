@@ -236,7 +236,7 @@ function QualityControlPage(): JSX.Element {
             dispatch(reducerActions.setInstanceType(type));
         } catch (error: unknown) {
             notification.error({
-                message: `Could not receive requested ${type}`,
+                message: `无法获取请求的 ${type}`,
                 description: `${error instanceof Error ? error.message : ''}`,
             });
             throw error;
@@ -260,7 +260,7 @@ function QualityControlPage(): JSX.Element {
             dispatch(reducerActions.setQualitySettings(settings, childrenSettings));
         } catch (error: unknown) {
             notification.error({
-                message: 'Could not receive quality settings',
+                message: '无法获取质量设置',
                 description: `${error instanceof Error ? error.message : ''}`,
             });
             throw error;
@@ -307,10 +307,10 @@ function QualityControlPage(): JSX.Element {
             }) ?? null;
 
             dispatch(reducerActions.setQualitySettings(updatedInstanceSettings, updatedChildrenSettings));
-            notification.info({ message: 'Settings have been updated' });
+            notification.info({ message: '设置已更新' });
         } catch (error: unknown) {
             notification.error({
-                message: 'Could not save quality settings',
+                message: '无法保存质量设置',
                 description: typeof Error === 'object' ? (error as object).toString() : '',
             });
             throw error;
@@ -398,7 +398,7 @@ function QualityControlPage(): JSX.Element {
                 <div className='cvat-quality-control-page-error'>
                     <Result
                         status='error'
-                        title='Could not open the page'
+                        title='无法打开页面'
                         subTitle={error.message}
                         extra={backNavigation}
                     />
@@ -421,7 +421,7 @@ function QualityControlPage(): JSX.Element {
         title = (
             <Col className='cvat-quality-page-header'>
                 <Title level={4} className='cvat-text-color'>
-                    {'Quality control for '}
+                    {'质量控制：'}
                     <ResourceLink resource={instance} />
                 </Title>
             </Col>
@@ -432,7 +432,7 @@ function QualityControlPage(): JSX.Element {
         if (qualitySettings) {
             tabsItems.push({
                 key: 'overview',
-                label: 'Overview',
+                label: '概览',
                 children: (
                     <QualityOverviewTab
                         instance={instance}
@@ -448,7 +448,7 @@ function QualityControlPage(): JSX.Element {
         if (isTaskWithGT && validationLayout && qualitySettings) {
             tabsItems.push({
                 key: 'management',
-                label: 'Management',
+                label: '管理',
                 children: (
                     <QualityManagementTab
                         task={instance}
@@ -466,7 +466,7 @@ function QualityControlPage(): JSX.Element {
         if (isTaskWithGT || isProject) {
             tabsItems.push({
                 key: 'settings',
-                label: 'Settings',
+                label: '设置',
                 children: (
                     <QualitySettingsTab
                         instance={instance}
@@ -506,3 +506,5 @@ function QualityControlPage(): JSX.Element {
 }
 
 export default React.memo(QualityControlPage);
+
+

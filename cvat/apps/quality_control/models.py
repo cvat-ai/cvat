@@ -237,12 +237,12 @@ class AnnotationId(models.Model):
     def clean(self) -> None:
         if self.type in [AnnotationType.SHAPE, AnnotationType.TRACK]:
             if not self.shape_type:
-                raise ValidationError("Annotation kind must be specified")
+                raise ValidationError("必须指定标注类型")
         elif self.type == AnnotationType.TAG:
             if self.shape_type:
-                raise ValidationError("Annotation kind must be empty")
+                raise ValidationError("标注类型必须为空")
         else:
-            raise ValidationError(f"Unexpected type value '{self.type}'")
+            raise ValidationError(f"意外的类型值 '{self.type}'")
 
 
 class PointSizeBase(str, Enum):

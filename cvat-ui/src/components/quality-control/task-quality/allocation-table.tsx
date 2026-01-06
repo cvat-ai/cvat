@@ -95,7 +95,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
 
     const columns = [
         {
-            title: 'Frame',
+            title: '帧',
             dataIndex: 'frame',
             key: 'frame',
             align: 'center' as const,
@@ -116,7 +116,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
             ),
         },
         {
-            title: 'Name',
+            title: '名称',
             dataIndex: 'name',
             key: 'name',
             align: 'center' as const,
@@ -143,7 +143,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
             },
         },
         {
-            title: 'Actions',
+            title: '操作',
             dataIndex: 'active',
             key: 'actions',
             filters: [
@@ -215,3 +215,4 @@ function AllocationTableWrap(props: Readonly<Props>): JSX.Element {
 }
 
 export default React.memo(AllocationTableWrap);
+

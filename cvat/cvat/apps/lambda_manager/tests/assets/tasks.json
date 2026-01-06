@@ -1,0 +1,61 @@
+{
+  "main": {
+    "name": "main task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "attributes": [
+          {
+            "name": "model",
+            "mutable": false,
+            "input_type": "select",
+            "default_value": "mazda",
+            "values": ["bmw", "mazda", "renault"]
+          },
+          {
+            "name": "parked",
+            "mutable": true,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": []
+          }
+        ]
+      },
+      {
+        "name": "person"
+      }
+    ]
+  },
+  "assigneed_to_user": {
+    "name": "assignee to user task",
+    "overlap": 0,
+    "segment_size": 100,
+    "assignee_id": 2,
+    "labels": [
+      {
+        "name": "car",
+        "attributes": [
+          {
+            "name": "model",
+            "mutable": false,
+            "input_type": "select",
+            "default_value": "mazda",
+            "values": ["bmw", "mazda", "renault"]
+          },
+          {
+            "name": "parked",
+            "mutable": true,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": []
+          }
+        ]
+      },
+      {
+        "name": "person"
+      }
+    ]
+  }
+}

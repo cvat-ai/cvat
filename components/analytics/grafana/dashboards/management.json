@@ -185,7 +185,7 @@
           "refId": "A"
         }
       ],
-      "title": "User Activity",
+      "title": "用户活动",
       "transformations": [],
       "type": "timeseries"
     },
@@ -293,7 +293,7 @@
           "refId": "A"
         }
       ],
-      "title": "Overall Activity",
+      "title": "整体活动",
       "type": "timeseries"
     },
     {
@@ -340,8 +340,8 @@
         "footer": {
           "enablePagination": true,
           "fields": [
-            "Working time(h)",
-            "Activity"
+            "工作时长(小时)",
+            "活动次数"
           ],
           "reducer": [
             "sum"
@@ -367,11 +367,11 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  user_id as User,\r\n  user_name as Username,\r\n  project_id as Project,\r\n  task_id as Task,\r\n  job_id as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND(-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (' ' IN (${usernames}) OR user_name IN (${usernames}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND task_id IN (${tasks})\r\n  AND job_id IN (${jobs})\r\nGROUP BY user_id, user_name, project_id, task_id, job_id",
+          "rawSql": "SELECT\r\n  user_id as 用户,\r\n  user_name as 用户名,\r\n  project_id as 项目,\r\n  task_id as 任务,\r\n  job_id as 作业, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"工作时长(小时)\",\r\n  count() as 活动次数\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND(-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (' ' IN (${usernames}) OR user_name IN (${usernames}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND task_id IN (${tasks})\r\n  AND job_id IN (${jobs})\r\nGROUP BY user_id, user_name, project_id, task_id, job_id",
           "refId": "A"
         }
       ],
-      "title": "Working time",
+      "title": "工作时间",
       "type": "table"
     }
   ],
@@ -399,7 +399,7 @@
         "definition": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
         "hide": 0,
         "includeAll": true,
-        "label": "User",
+        "label": "用户",
         "multi": true,
         "name": "users",
         "options": [],
@@ -424,7 +424,7 @@
         "definition": "SELECT DISTINCT user_name\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
-        "label": "Username",
+        "label": "用户名",
         "multi": true,
         "name": "usernames",
         "options": [],
@@ -453,7 +453,7 @@
         "definition": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL\n  AND source = 'client'",
         "hide": 0,
         "includeAll": true,
-        "label": "Project",
+        "label": "项目",
         "multi": true,
         "name": "projects",
         "options": [],
@@ -478,7 +478,7 @@
         "description": "",
         "hide": 0,
         "includeAll": true,
-        "label": "Task",
+        "label": "任务",
         "multi": true,
         "name": "tasks",
         "options": [],
@@ -506,7 +506,7 @@
         "definition": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL\n  AND source = 'client'\n  AND task_id in (${tasks})",
         "hide": 0,
         "includeAll": true,
-        "label": "Job",
+        "label": "作业",
         "multi": true,
         "name": "jobs",
         "options": [],

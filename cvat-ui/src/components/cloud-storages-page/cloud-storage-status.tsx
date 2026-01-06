@@ -26,16 +26,16 @@ export default function Status({ cloudStorage }: Props): JSX.Element {
 
     let message: JSX.Element;
     if (!status || (status && status.fetching)) {
-        message = <Text type='warning'>Loading ...</Text>;
+        message = <Text type='warning'>加载中...</Text>;
     } else if (status.initialized && !status.status) {
-        message = <Text type='danger'>Error</Text>;
+        message = <Text type='danger'>错误</Text>;
     } else {
         message = <Text type={status.status === StorageStatuses.AVAILABLE ? 'success' : 'danger'}>{status.status}</Text>;
     }
 
     return (
         <Paragraph>
-            <Text type='secondary'>Status: </Text>
+            <Text type='secondary'>状态：</Text>
             {message}
         </Paragraph>
     );

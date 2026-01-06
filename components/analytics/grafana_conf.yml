@@ -5,7 +5,6 @@ http:
       - web
       middlewares:
       - analytics-auth
-      - strip-prefix
       service: grafana
       rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
     grafana_https:
@@ -13,7 +12,6 @@ http:
       - websecure
       middlewares:
       - analytics-auth
-      - strip-prefix
       service: grafana
       tls: {}
       rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
@@ -26,14 +24,9 @@ http:
           - "Cookie"
           - "Authorization"
 
-    strip-prefix:
-      stripprefix:
-        prefixes:
-        - /analytics
-
   services:
     grafana:
       loadBalancer:
         servers:
         - url: http://{{ env "DJANGO_LOG_VIEWER_HOST" }}:{{ env "DJANGO_LOG_VIEWER_PORT" }}
-        passHostHeader: false
+        passHostHeader: true

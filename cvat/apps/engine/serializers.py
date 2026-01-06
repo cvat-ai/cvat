@@ -265,7 +265,7 @@ class OrgTransferableMixin():
                     Organization.objects.filter(pk=organization_id).values_list('slug', flat=True)
                 )[0]
             except IndexError:
-                raise serializers.ValidationError("Invalid organization id")
+                raise serializers.ValidationError("无效的组织ID")
 
         cur_user_id = request.user.id
         if instance.owner_id != cur_user_id:
@@ -448,7 +448,7 @@ class LabelSerializer(SublabelSerializer):
             )
 
         if attrs.get('deleted') and attrs.get('id') is None:
-            raise serializers.ValidationError('Deleted label must have an ID')
+            raise serializers.ValidationError('删除的标签必须有ID')
 
         return attrs
 
@@ -458,7 +458,7 @@ class LabelSerializer(SublabelSerializer):
         for attribute in attrs:
             attr_name = attribute.get('name')
             if attr_name in encountered_names:
-                raise serializers.ValidationError(f"Duplicate attribute with name '{attr_name}' exists")
+                raise serializers.ValidationError(f"存在重复的属性名称 '{attr_name}'")
             else:
                 encountered_names.add(attr_name)
 
@@ -937,7 +937,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         if validated_data["type"] != models.JobType.GROUND_TRUTH:
-            raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
+            raise serializers.ValidationError(f"意外的作业类型 '{validated_data['type']}'")
 
         task_id = validated_data.pop('task_id')
         task = models.Task.objects.select_for_update().get(pk=task_id)
@@ -1030,7 +1030,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             unique_frames = set(frames)
             if len(unique_frames) != len(frames):
-                raise serializers.ValidationError(f"Frames must not repeat")
+                raise serializers.ValidationError(f"帧不能重复")
 
             invalid_ids = unique_frames.difference(range(task_size))
             if invalid_ids:
@@ -1588,7 +1588,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             getattr(instance.data, 'validation_layout', None)
         )
         if not db_validation_layout:
-            raise serializers.ValidationError("Validation is not configured in the task")
+            raise serializers.ValidationError("任务中未配置验证")
 
         if 'disabled_frames' in validated_data:
             requested_disabled_frames = validated_data['disabled_frames']
@@ -2114,7 +2114,7 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
         if frames := attrs.get('frames'):
             unique_frames = set(frames)
             if len(unique_frames) != len(frames):
-                raise serializers.ValidationError("Frames must not repeat")
+                raise serializers.ValidationError("帧不能重复")
 
         return super().validate(attrs)
 
@@ -2263,13 +2263,13 @@ class DataSerializer(serializers.ModelSerializer):
     def validate_frame_filter(self, value):
         match = re.search(r"step\s*=\s*([1-9]\d*)", value)
         if not match:
-            raise serializers.ValidationError("Invalid frame filter expression")
+            raise serializers.ValidationError("无效的帧过滤表达式")
         return value
 
     # pylint: disable=no-self-use
     def validate_chunk_size(self, value):
         if not value > 0:
-            raise serializers.ValidationError('Chunk size must be a positive integer')
+            raise serializers.ValidationError('块大小必须是正整数')
         return value
 
     def validate_job_file_mapping(self, value):
@@ -2291,17 +2291,17 @@ class DataSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if 'start_frame' in attrs and 'stop_frame' in attrs \
             and attrs['start_frame'] > attrs['stop_frame']:
-            raise serializers.ValidationError('Stop frame must be more or equal start frame')
+            raise serializers.ValidationError('结束帧必须大于或等于起始帧')
 
         filename_pattern = attrs.get('filename_pattern')
         server_files_exclude = attrs.get('server_files_exclude')
         server_files = attrs.get('server_files', [])
 
         if filename_pattern and len(list(filter(lambda x: not x['file'].endswith('.jsonl'), server_files))):
-            raise serializers.ValidationError('The filename_pattern can only be used with specified manifest or without server_files')
+            raise serializers.ValidationError('filename_pattern 只能与指定的清单一起使用或不使用 server_files')
 
         if filename_pattern and server_files_exclude:
-            raise serializers.ValidationError('The filename_pattern and server_files_exclude cannot be used together')
+            raise serializers.ValidationError('filename_pattern 和 server_files_exclude 不能同时使用')
 
         validation_params = attrs.pop('validation_params', None)
         if validation_params:
@@ -2514,17 +2514,17 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
     def create(self, validated_data):
         project_id = validated_data.get("project_id")
         if validated_data.get("label_set") and project_id:
-            raise serializers.ValidationError('Task must have only one of Label set or project_id')
+            raise serializers.ValidationError('任务只能有标签集或 project_id 其中之一')
 
         project = None
         if project_id:
             try:
                 project = models.Project.objects.get(id=project_id)
             except models.Project.DoesNotExist:
-                raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
+                raise serializers.ValidationError(f'指定的项目 #{project_id} 不存在。')
 
             if project.organization != validated_data.get('organization'):
-                raise serializers.ValidationError('The task and its project should be in the same organization.')
+                raise serializers.ValidationError('任务和其项目应在同一组织中。')
 
         labels = validated_data.pop('label_set', [])
 
@@ -2593,7 +2593,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
 
         project = models.Project.objects.get(id=validated_project_id)
         if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
-            raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
+            raise serializers.ValidationError(f'任务的维度 ({instance.dimension}) 必须与项目中其他任务的维度 ({project.tasks.first().dimension}) 相同')
 
         if instance.project_id is None:
             label_set = instance.label_set.all()
@@ -2610,15 +2610,15 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
                 else:
                     new_label = project.label_set.filter(name=old_label.name).first()
             except ValueError:
-                raise serializers.ValidationError(f'Target project does not have label with name "{old_label.name}"')
+                raise serializers.ValidationError(f'目标项目没有名为 "{old_label.name}" 的标签')
 
             for old_attr in old_label.attributespec_set.all():
                 new_attr = new_label.attributespec_set.filter(name=old_attr.name,
                                                                 values=old_attr.values,
                                                                 input_type=old_attr.input_type).first()
                 if new_attr is None:
-                    raise serializers.ValidationError('Target project does not have ' \
-                        f'"{old_label.name}" label with "{old_attr.name}" attribute')
+                    raise serializers.ValidationError('目标项目没有 ' \
+                        f'"{old_label.name}" 标签的 "{old_attr.name}" 属性')
 
                 for (model, model_name) in (
                     (models.LabeledTrackAttributeVal, 'track'),
@@ -2695,9 +2695,9 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
 
     def _validate_org_transferring(self, attrs: dict[str, Any]):
         if "project_id" in attrs.keys():
-            raise serializers.ValidationError("A task cannot be moved into a project and into an organization at the same time")
+            raise serializers.ValidationError("任务不能同时移动到项目和组织中")
         elif self.instance.project_id:
-            raise serializers.ValidationError("Only top-level resources can be moved between workspaces")
+            raise serializers.ValidationError("只有顶级资源可以在工作区之间移动")
         super()._validate_org_transferring(attrs)
 
     def validate(self, attrs):
@@ -2710,7 +2710,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
             if project_id is not None:
                 project = models.Project.objects.filter(id=project_id).first()
                 if project is None:
-                    raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
+                    raise serializers.ValidationError(f'找不到ID为 {project_id} 的项目')
 
             # Check that all labels can be mapped
             new_label_names = set()
@@ -2746,11 +2746,11 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
                 else:
                     target_project_label_names.add(label.name)
             if not new_label_names.issubset(target_project_label_names):
-                raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+                raise serializers.ValidationError('所有任务或项目标签名称必须映射到目标项目')
 
             for label, sublabels in new_sublabel_names.items():
                 if sublabels != target_project_sublabel_names.get(label):
-                    raise serializers.ValidationError('All task or project label names must be mapped to the target project')
+                    raise serializers.ValidationError('所有任务或项目标签名称必须映射到目标项目')
 
         return attrs
 
@@ -3040,7 +3040,7 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
     def validate_deleted_frames(self, requested_deleted_frames: list[int]):
         requested_deleted_frames_set = set(requested_deleted_frames)
         if len(requested_deleted_frames_set) != len(requested_deleted_frames):
-            raise serializers.ValidationError("Deleted frames cannot repeat")
+            raise serializers.ValidationError("删除的帧不能重复")
 
         unknown_requested_deleted_frames = (
             requested_deleted_frames_set.difference(range(self.instance.size))
@@ -3099,7 +3099,7 @@ class JobDataMetaWriteSerializer(serializers.ModelSerializer):
 
         unknown_deleted_frames = set(deleted_frames) - segment_rel_frame_set
         if unknown_deleted_frames:
-            raise serializers.ValidationError("Frames {} do not belong to the job".format(
+            raise serializers.ValidationError("帧 {} 不属于该作业".format(
                 format_list(list(map(str, unknown_deleted_frames)))
             ))
 
@@ -3174,12 +3174,12 @@ class AnnotationSerializer(serializers.Serializer):
 
     def _validate_id_absent(self, value):
         if value is not None:
-            raise serializers.ValidationError("must be absent")
+            raise serializers.ValidationError("必须为空")
         return value
 
     def _validate_id_present(self, value):
         if value is None:
-            raise serializers.ValidationError("must be present and not null")
+            raise serializers.ValidationError("必须存在且不能为空")
         return value
 
     @cached_property
@@ -3225,7 +3225,7 @@ class OptimizedFloatListField(serializers.ListField):
         errors = OrderedDict()
         for idx, item in enumerate(data):
             if type(item) not in [int, float]:
-                errors[idx] = exceptions.ValidationError('Value must be a float or an integer')
+                errors[idx] = exceptions.ValidationError('值必须是浮点数或整数')
 
         if not errors:
             return data
@@ -3250,7 +3250,7 @@ class ShapeSerializer(serializers.Serializer):
         def bad_num_points_unless(condition: bool) -> None:
             if not condition:
                 raise serializers.ValidationError(
-                    {"points": f"invalid length for shape type '{shape_type}'"}
+                    {"points": f"形状类型 '{shape_type}' 的点数无效"}
                 )
 
         if shape_type in {models.ShapeType.RECTANGLE, models.ShapeType.ELLIPSE}:
@@ -3286,12 +3286,12 @@ class LabeledShapeSerializer(SubLabeledShapeSerializer):
         if attrs["type"] == models.ShapeType.SKELETON:
             if num_elements == 0:
                 raise serializers.ValidationError(
-                    {"elements": "at least one required for skeleton shape"}
+                    {"elements": "骨架形状至少需要一个元素"}
                 )
         else:
             if num_elements != 0:
                 raise serializers.ValidationError(
-                    {"elements": "not allowed for non-skeleton shape"}
+                    {"elements": "非骨架形状不允许包含元素"}
                 )
 
         return attrs
@@ -3384,7 +3384,7 @@ class DatasetFileSerializer(serializers.Serializer):
     @staticmethod
     def validate_dataset_file(value):
         if os.path.splitext(value.name)[1] != '.zip':
-            raise serializers.ValidationError('Dataset file should be zip archive')
+            raise serializers.ValidationError('数据集文件必须是 zip 压缩包')
         return value
 
 class TaskFileSerializer(serializers.Serializer):
@@ -3569,14 +3569,14 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             attributes = value.split('&')
             for attribute in attributes:
                 if not len(attribute.split('=')) == 2:
-                    raise serializers.ValidationError('Invalid specific attributes')
+                    raise serializers.ValidationError('特定属性格式无效')
         return value
 
     def validate(self, attrs):
         provider_type = attrs.get('provider_type')
         if provider_type == models.CloudProviderChoice.AZURE_BLOB_STORAGE:
             if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
-                raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
+                raise serializers.ValidationError('未指定 Azure 容器的账户名或连接字符串')
 
         # Amazon S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
         # ABS: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
@@ -3595,16 +3595,16 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             diff := (set(resource) - set(ALLOWED_RESOURCE_NAME_SYMBOLS))
         ):
             raise serializers.ValidationError({
-                'resource': f"Invalid characters ({','.join(diff)}) were found.",
+                'resource': f"发现无效字符 ({','.join(diff)})。",
             })
 
         return attrs
 
     def _validate_prefix(self, value: str) -> None:
         if value.startswith('/'):
-            raise serializers.ValidationError('Prefix cannot start with forward slash ("/").')
+            raise serializers.ValidationError('前缀不能以正斜杠 ("/") 开头。')
         if '' in value.strip('/').split('/'):
-            raise serializers.ValidationError('Prefix cannot contain multiple slashes in a row.')
+            raise serializers.ValidationError('前缀不能包含连续的多个斜杠。')
 
     @staticmethod
     def _manifests_validation(storage, manifests):
@@ -3613,12 +3613,12 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             file_status = storage.get_file_status(manifest)
             if file_status == Status.NOT_FOUND:
                 raise serializers.ValidationError({
-                    'manifests': "The '{}' file does not exist on '{}' cloud storage" \
+                    'manifests': "文件 '{}' 在云存储 '{}' 上不存在" \
                         .format(manifest, storage.name)
                 })
             elif file_status == Status.FORBIDDEN:
                 raise serializers.ValidationError({
-                    'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
+                    'manifests': "文件 '{}' 在云存储 '{}' 上不可访问，访问被拒绝" \
                         .format(manifest, storage.name)
                 })
 
@@ -3685,10 +3685,10 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             return db_storage
         elif storage_status == Status.FORBIDDEN:
             field = 'credentials'
-            message = 'Cannot create resource {} with specified credentials. Access forbidden.'.format(storage.name)
+            message = '无法使用指定的凭证创建资源 {}，访问被拒绝。'.format(storage.name)
         else:
             field = 'resource'
-            message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+            message = '资源 {} 未找到，可能已被删除。'.format(storage.name)
         if temporary_file:
             os.remove(temporary_file)
         slogger.glob.error(message)
@@ -3757,10 +3757,10 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             return instance
         elif storage_status == Status.FORBIDDEN:
             field = 'credentials'
-            message = 'Cannot update resource {} with specified credentials. Access forbidden.'.format(storage.name)
+            message = '无法使用指定的凭证更新资源 {}，访问被拒绝。'.format(storage.name)
         else:
             field = 'resource'
-            message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+            message = '资源 {} 未找到，可能已被删除。'.format(storage.name)
         if temporary_file:
             os.remove(temporary_file)
         slogger.glob.error(message)
@@ -3812,7 +3812,7 @@ def _update_related_storages(
                 }
             else:
                 similar_ones: list[models.CloudStorage] = []
-                msg_no_similar_cs = "Could not find a similar cloud storage in the new workspace"
+                msg_no_similar_cs = "在新工作区中找不到相似的云存储"
 
                 qs_with_similar_ones = models.CloudStorage.objects.filter(
                     provider_type=original_cs.provider_type,
@@ -3859,7 +3859,7 @@ def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, mod
                 (cloud_storage_id := storage_conf.get('cloud_storage_id')) and
                 not models.CloudStorage.objects.filter(id=cloud_storage_id).exists()
             ):
-                raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+                raise serializers.ValidationError(f'指定的云存储 {cloud_storage_id} 不存在。')
             storage_instance = models.Storage(**storage_conf)
             storage_instance.save()
             storages[i] = storage_instance
@@ -3880,13 +3880,13 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     def validate_file(self, value):
         if not isinstance(value, UploadedFile):
-            raise serializers.ValidationError("Invalid asset_file type. Expected an UploadedFile instance.")
+            raise serializers.ValidationError("无效的资产文件类型，应为 UploadedFile 实例。")
 
         if value.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
-            raise serializers.ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
+            raise serializers.ValidationError(f"资产文件最大为 {settings.ASSET_MAX_SIZE_MB} MB")
 
         if value.content_type not in settings.ASSET_SUPPORTED_TYPES:
-            raise serializers.ValidationError(f"File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}")
+            raise serializers.ValidationError(f"不支持该文件类型作为资产，支持的类型为 {settings.ASSET_SUPPORTED_TYPES}")
 
         return value
 
@@ -3945,9 +3945,9 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
         project_id = validated_data.get("project_id", None)
         task_id = validated_data.get("task_id", None)
         if project_id is None and task_id is None:
-            raise serializers.ValidationError('One of project_id or task_id must be specified')
+            raise serializers.ValidationError('必须指定 project_id 或 task_id 其中之一')
         if project_id is not None and task_id is not None:
-            raise serializers.ValidationError('Both project_id and task_id must not be specified')
+            raise serializers.ValidationError('不能同时指定 project_id 和 task_id')
 
         project = None
         task = None
@@ -3955,13 +3955,13 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
             try:
                 project = models.Project.objects.get(id=project_id)
             except models.Project.DoesNotExist:
-                raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
+                raise serializers.ValidationError(f'指定的项目 #{project_id} 不存在。')
 
         if task_id is not None:
             try:
                 task = models.Task.objects.get(id=task_id)
             except models.Task.DoesNotExist:
-                raise serializers.ValidationError(f'The specified task #{task_id} does not exist.')
+                raise serializers.ValidationError(f'指定的任务 #{task_id} 不存在。')
         db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
         return db_data
 

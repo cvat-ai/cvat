@@ -99,12 +99,12 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                     onClick={onClick}
                 >
                     <Descriptions column={1} size='small'>
-                        <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>
-                        <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
+                        <Descriptions.Item label='阶段与状态'>{`${job.stage} ${job.state}`}</Descriptions.Item>
+                        <Descriptions.Item label='帧数'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
                         {job.assignee ? (
-                            <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
+                            <Descriptions.Item label='负责人'>{job.assignee.username}</Descriptions.Item>
                         ) : (
-                            <Descriptions.Item label='Assignee'> </Descriptions.Item>
+                            <Descriptions.Item label='负责人'> </Descriptions.Item>
                         )}
                     </Descriptions>
                     <div

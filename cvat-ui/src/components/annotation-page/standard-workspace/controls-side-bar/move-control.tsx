@@ -20,7 +20,7 @@ function MoveControl(props: Props): JSX.Element {
     const { canvasInstance, activeControl } = props;
 
     return (
-        <CVATTooltip title='Move the image' placement='right'>
+        <CVATTooltip title='移动图像' placement='right'>
             <Icon
                 component={MoveIcon}
                 className={
@@ -42,3 +42,4 @@ function MoveControl(props: Props): JSX.Element {
 }
 
 export default React.memo(MoveControl);
+

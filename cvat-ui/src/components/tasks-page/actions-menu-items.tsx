@@ -58,14 +58,14 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     menuItems.push([{
         key: 'load_task_anno',
         onClick: onUploadAnnotations,
-        label: withCount('Upload annotations', 'load_task_anno'),
+        label: withCount('上传标注', 'load_task_anno'),
         disabled: isDisabled('load_task_anno'),
     }, 0]);
 
     menuItems.push([{
         key: 'export_task_dataset',
         onClick: onExportDataset,
-        label: withCount('Export task dataset', 'export_task_dataset'),
+        label: withCount('导出任务数据集', 'export_task_dataset'),
         disabled: isDisabled('export_task_dataset'),
     }, 10]);
 
@@ -73,7 +73,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         menuItems.push([{
             key: 'open_bug_tracker',
             onClick: onOpenBugTracker,
-            label: withCount('Open bug tracker', 'open_bug_tracker'),
+            label: withCount('打开缺陷跟踪器', 'open_bug_tracker'),
             disabled: isDisabled('open_bug_tracker'),
         }, 20]);
     }
@@ -82,39 +82,39 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         disabled: isAutomaticAnnotationEnabled || isDisabled('run_auto_annotation'),
         key: 'run_auto_annotation',
         onClick: onRunAutoAnnotation ?? undefined,
-        label: withCount('Automatic annotation', 'run_auto_annotation'),
+        label: withCount('自动标注', 'run_auto_annotation'),
     }, 30]);
 
     menuItems.push([{
         key: 'backup_task',
         onClick: onBackupTask,
-        label: withCount('Backup Task', 'backup_task'),
+        label: withCount('备份任务', 'backup_task'),
         disabled: isDisabled('backup_task'),
     }, 40]);
 
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: <CVATMenuEditLabel>{withCount('Assignee', 'edit_assignee')}</CVATMenuEditLabel>,
+        label: <CVATMenuEditLabel>{withCount('负责人', 'edit_assignee')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_assignee'),
     }, 50]);
 
     menuItems.push([{
         key: 'view-analytics',
-        label: withCount('View analytics', 'view-analytics', `/tasks/${taskId}/analytics`),
+        label: withCount('查看分析', 'view-analytics', `/tasks/${taskId}/analytics`),
         disabled: isDisabled('view-analytics'),
     }, 60]);
 
     menuItems.push([{
         key: 'quality_control',
-        label: withCount('Quality control', 'quality_control', `/tasks/${taskId}/quality-control`),
+        label: withCount('质量控制', 'quality_control', `/tasks/${taskId}/quality-control`),
         disabled: isDisabled('quality_control'),
     }, 70]);
 
     if (isConsensusEnabled) {
         menuItems.push([{
             key: 'consensus_management',
-            label: withCount('Consensus management', 'consensus_management', `/tasks/${taskId}/consensus`),
+            label: withCount('共识管理', 'consensus_management', `/tasks/${taskId}/consensus`),
             disabled: isDisabled('consensus_management'),
         }, 75]);
     }
@@ -123,7 +123,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         menuItems.push([{
             key: 'merge_consensus_jobs',
             onClick: onMergeConsensusJobs,
-            label: withCount('Merge consensus jobs', 'merge_consensus_jobs'),
+            label: withCount('合并共识作业', 'merge_consensus_jobs'),
             disabled: isMergingConsensusEnabled || isDisabled('merge_consensus_jobs'),
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
         }, 80]);
@@ -135,7 +135,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         menuItems.push([{
             key: 'move_task_to_project',
             onClick: onMoveTaskToProject,
-            label: withCount('Move to project', 'move_task_to_project'),
+            label: withCount('移动到项目', 'move_task_to_project'),
             disabled: isDisabled('move_task_to_project'),
         }, 90]);
 
@@ -144,7 +144,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
             onClick: () => startEditField('organization'),
             label: (
                 <CVATMenuEditLabel>
-                    {withCount('Organization', 'edit_organization')}
+                    {withCount('组织', 'edit_organization')}
                 </CVATMenuEditLabel>
             ),
         }, 100]);
@@ -153,7 +153,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     menuItems.push([{
         key: 'delete_task',
         onClick: onDeleteTask,
-        label: withCount('Delete', 'delete_task'),
+        label: withCount('删除', 'delete_task'),
         disabled: isDisabled('delete_task'),
     }, 110]);
 
@@ -167,3 +167,4 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     const sortedMenuItems = menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
     return sortedMenuItems.map((menuItem) => menuItem[0]);
 }
+

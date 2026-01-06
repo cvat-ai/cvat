@@ -31,7 +31,7 @@ class EventTypeValidator:
                 webhook_type == WebhookTypeChoice.ORGANIZATION
                 and not events.issubset(set(OrganizationEvents.events))
             ):
-                raise serializers.ValidationError(f"Invalid events list for {webhook_type} webhook")
+                raise serializers.ValidationError(f"{webhook_type} webhook 的事件列表无效")
 
 
 class EventTypesSerializer(serializers.MultipleChoiceField):

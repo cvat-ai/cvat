@@ -49,7 +49,7 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
                             }}
                             defaultValue={query.search ?? ''}
                             className='cvat-jobs-page-search-bar'
-                            placeholder='Search ...'
+                            placeholder='搜索 ...'
                         />
                         <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
                     </div>
@@ -60,7 +60,7 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}
                             defaultFields={query.sort?.split(',') || ['-ID']}
-                            sortingFields={['ID', 'Assignee', 'Updated date', 'Stage', 'State', 'Task ID', 'Project ID', 'Task name', 'Project name']}
+                            sortingFields={['ID', 'Assignee', 'Updated date', '阶段', '状态', 'Task ID', 'Project ID', 'Task name', 'Project name']}
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent
@@ -87,3 +87,4 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
 }
 
 export default React.memo(TopBarComponent);
+

@@ -125,7 +125,7 @@ function ExportBackupModal(): JSX.Element {
     useEffect(() => {
         const loc = defaultStorageLocation ? defaultStorageLocation.split('_')[0] : 'local';
         const cloudId = defaultStorageCloudId !== undefined && defaultStorageCloudId !== null ? `№${defaultStorageCloudId}` : '';
-        setHelpMessage(`Export backup to ${loc} storage ${cloudId}`);
+        setHelpMessage(`导出备份到 ${loc} 存储 ${cloudId}`);
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const closeModal = (): void => {
@@ -170,7 +170,7 @@ function ExportBackupModal(): JSX.Element {
                 const description =
                     'Bulk backup export was started. You can check progress [here](/requests).';
                 Notification.info({
-                    message: 'Bulk backup export started',
+                    message: '批量备份导出已开始',
                     description: (
                         <CVATMarkdown history={history}>{description}</CVATMarkdown>
                     ),
@@ -202,7 +202,7 @@ function ExportBackupModal(): JSX.Element {
                     'Bulk backup export was started. You can check progress [here](/requests).' :
                     'Backup export was started. You can check progress [here](/requests).';
                 Notification.info({
-                    message: isBulkMode ? 'Bulk backup export started' : 'Backup export started',
+                    message: isBulkMode ? '批量备份导出已开始' : 'Backup export started',
                     description: (
                         <CVATMarkdown history={history}>{description}</CVATMarkdown>
                     ),
@@ -234,10 +234,10 @@ function ExportBackupModal(): JSX.Element {
             title={
                 isBulkMode ? (
                     <Text strong>
-                        {`Export ${selectedInstances.length} ${instanceType}s`}
+                        {`导出 ${selectedInstances.length} 个 ${instanceType}`}
                     </Text>
                 ) : (
-                    <Text strong>{`Export ${instanceType} #${instance?.id}`}</Text>
+                    <Text strong>{`导出 ${instanceType} #${instance?.id}`}</Text>
                 )
             }
             open={!!instance}
@@ -253,7 +253,7 @@ function ExportBackupModal(): JSX.Element {
                 onFinish={handleExport}
             >
                 {isBulkMode ? (
-                    <Form.Item label={<Text strong>Name template</Text>} required>
+                    <Form.Item label={<Text strong>名称模板</Text>} required>
                         <Input
                             value={nameTemplate}
                             onChange={(e) => setNameTemplate(e.target.value)}
@@ -269,16 +269,16 @@ function ExportBackupModal(): JSX.Element {
                                     />
                                 )}
                             >
-                                When forming the backup name, a template is used.
+                                生成备份名称时会使用模板。
                                 {' '}
                                 <QuestionCircleOutlined />
                             </Tooltip>
                         </Text>
                     </Form.Item>
                 ) : (
-                    <Form.Item label={<Text strong>Custom name</Text>} name='customName'>
+                    <Form.Item label={<Text strong>自定义名称</Text>} name='customName'>
                         <Input
-                            placeholder='Custom name for a backup file'
+                            placeholder='备份文件自定义名称'
                             suffix='.zip'
                             className='cvat-modal-export-filename-input'
                         />
@@ -286,10 +286,10 @@ function ExportBackupModal(): JSX.Element {
                 )}
                 <TargetStorageField
                     instanceId={instance ? instance.id : null}
-                    switchDescription='Use default settings'
+                    switchDescription='使用默认设置'
                     switchHelpMessage={helpMessage}
                     useDefaultStorage={isBulkMode ? false : useDefaultStorage}
-                    storageDescription={`Specify target storage for export ${instanceType}`}
+                    storageDescription={`指定导出 ${instanceType} 的目标存储`}
                     locationValue={storageLocation}
                     onChangeUseDefaultStorage={isBulkMode ? undefined : (value: boolean) => setUseDefaultStorage(value)}
                     onChangeLocationValue={(value: StorageLocation) => setStorageLocation(value)}
@@ -303,8 +303,8 @@ function ExportBackupModal(): JSX.Element {
                             checked={lightweight}
                             onChange={setLightweight}
                         />
-                        <Text strong>Use lightweight backup whenever possible</Text>
-                        <Tooltip title='If a task uses media from a cloud storage, its possible to make a backup without including media. The task restored from a lightweight backup has to be manually connected to the cloud storage.'>
+                        <Text strong>尽可能使用轻量备份</Text>
+                        <Tooltip title='如果任务使用了来自云存储的媒体，则可以创建不包含媒体的备份。从轻量备份恢复的任务需要手动重新连接到云存储。'>
                             <QuestionCircleOutlined />
                         </Tooltip>
                     </Space>
@@ -315,3 +315,5 @@ function ExportBackupModal(): JSX.Element {
 }
 
 export default React.memo(ExportBackupModal);
+
+

@@ -68,12 +68,12 @@ function ChapterMenu(props: Readonly<Props>): JSX.Element {
         <Popover
             trigger='click'
             content={content}
-            title='Chapters'
+            title='章节'
             placement='bottom'
             className='cvat-player-chapter-menu'
         >
 
-            <CvatTooltip title='Select chapter'>
+            <CvatTooltip title='选择章节'>
                 <Icon
                     className='cvat-player-chapters-menu-button'
                     component={ChapterMenuIcon}
@@ -85,3 +85,4 @@ function ChapterMenu(props: Readonly<Props>): JSX.Element {
 }
 
 export default React.memo(ChapterMenu);
+

@@ -8,7 +8,7 @@ import asyncFetchUsers from 'components/resource-sorting-filtering/request-users
 export const config: Partial<Config> = {
     fields: {
         user: {
-            label: 'User',
+            label: '用户',
             type: 'select',
             valueSources: ['value'],
             operators: ['select_equals'],
@@ -19,16 +19,16 @@ export const config: Partial<Config> = {
             },
         },
         role: {
-            label: 'Role',
+            label: '角色',
             type: 'select',
             operators: ['select_equals'],
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
-                    { value: 'worker', title: 'Worker' },
-                    { value: 'supervisor', title: 'Supervisor' },
-                    { value: 'maintainer', title: 'Maintainer' },
-                    { value: 'owner', title: 'Owner' },
+                    { value: 'worker', title: '成员' },
+                    { value: 'supervisor', title: '主管' },
+                    { value: 'maintainer', title: '维护者' },
+                    { value: 'owner', title: '所有者' },
                 ],
             },
         },
@@ -38,7 +38,7 @@ export const config: Partial<Config> = {
 export const localStorageRecentCapacity = 10;
 export const localStorageRecentKeyword = 'recentlyAppliedMembershipsFilters';
 export const predefinedFilterValues = {
-    Workers: '{"and":[{"==":[{"var":"role"},"worker"]}]}',
-    Supervisors: '{"and":[{"==":[{"var":"role"},"supervisor"]}]}',
-    Maintainers: '{"and":[{"==":[{"var":"role"},"maintainer"]}]}',
+    成员: '{"and":[{"==":[{"var":"role"},"worker"]}]}',
+    主管: '{"and":[{"==":[{"var":"role"},"supervisor"]}]}',
+    维护者: '{"and":[{"==":[{"var":"role"},"maintainer"]}]}',
 };

@@ -32,7 +32,7 @@ function PasswordChangeCard(): JSX.Element {
 
     return (
         <Card
-            title='Password'
+            title='密码'
             className='cvat-security-password-card'
             style={{ marginBottom: 16 }}
         >
@@ -47,7 +47,7 @@ function PasswordChangeCard(): JSX.Element {
                     </Col>
                     <Col>
                         <Button className='cvat-security-password-change-button' onClick={onShowPasswordForm} type='primary'>
-                            Change password
+                            更改密码
                         </Button>
                     </Col>
                 </Row>
@@ -57,3 +57,5 @@ function PasswordChangeCard(): JSX.Element {
 }
 
 export default React.memo(PasswordChangeCard);
+
+

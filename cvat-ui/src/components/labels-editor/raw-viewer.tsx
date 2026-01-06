@@ -157,13 +157,13 @@ export default class RawViewer extends React.PureComponent<Props> {
 
         if (deletedLabels.length || deletedAttributes.length) {
             Modal.confirm({
-                title: 'You are going to remove existing labels/attributes',
+                title: '即将移除现有的标签/属性',
                 className: 'cvat-modal-confirm-remove-existing-labels',
                 content: (
                     <>
                         {deletedLabels.length ? (
                             <Paragraph>
-                                Following labels are going to be removed:
+                                以下标签将被移除：
                                 <div className='cvat-modal-confirm-content-remove-existing-labels'>
                                     {deletedLabels
                                         .map((_label: LabelOptColor): JSX.Element => (
@@ -175,7 +175,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                         ) : null}
                         {deletedAttributes.length ? (
                             <Paragraph>
-                                Following attributes are going to be removed:
+                                以下属性将被移除：
                                 <div className='cvat-modal-confirm-content-remove-existing-attributes'>
                                     {deletedAttributes.map((_attr: SerializedAttribute) => (
                                         <Tag key={_attr.id as number}>{_attr.name}</Tag>
@@ -183,10 +183,10 @@ export default class RawViewer extends React.PureComponent<Props> {
                                 </div>
                             </Paragraph>
                         ) : null}
-                        <Paragraph type='danger'>All related annotations will be destroyed. Continue?</Paragraph>
+                        <Paragraph type='danger'>所有相关标注将被删除。是否继续？</Paragraph>
                     </>
                 ),
-                okText: 'Delete existing data',
+                okText: '删除现有数据',
                 okButtonProps: {
                     danger: true,
                 },
@@ -235,19 +235,19 @@ export default class RawViewer extends React.PureComponent<Props> {
                 </Form.Item>
                 <Row justify='start' align='middle'>
                     <Col>
-                        <CVATTooltip title='Save labels'>
+                        <CVATTooltip title='保存标签'>
                             <Button
                                 className='cvat-submit-raw-labels-conf-button'
                                 style={{ width: '150px' }}
                                 type='primary'
                                 htmlType='submit'
                             >
-                                Done
+                                完成
                             </Button>
                         </CVATTooltip>
                     </Col>
                     <Col offset={1}>
-                        <CVATTooltip title='Reset all changes'>
+                        <CVATTooltip title='重置所有更改'>
                             <Button
                                 className='cvat-reset-raw-labels-conf-button'
                                 type='primary'
@@ -259,7 +259,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                                     }
                                 }}
                             >
-                                Reset
+                                重置
                             </Button>
                         </CVATTooltip>
                     </Col>
@@ -268,3 +268,5 @@ export default class RawViewer extends React.PureComponent<Props> {
         );
     }
 }
+
+

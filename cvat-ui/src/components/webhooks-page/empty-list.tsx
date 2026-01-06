@@ -21,10 +21,10 @@ function EmptyWebhooksListComponent(props: Props): JSX.Element {
             <Empty description={!query.filter && !query.search ? (
                 <Row justify='center' align='middle'>
                     <Col>
-                        <Text strong>No webhooks created yet ...</Text>
+                        <Text strong>暂无 Webhook...</Text>
                     </Col>
                 </Row>
-            ) : (<Text>No results matched your search</Text>)}
+            ) : (<Text>没有找到匹配的结果</Text>)}
             />
         </div>
     );

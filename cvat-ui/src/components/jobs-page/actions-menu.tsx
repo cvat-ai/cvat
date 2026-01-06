@@ -79,8 +79,8 @@ function JobActionsComponent(
     const onMergeConsensusJob = useCallback(() => {
         if (consensusJobsPresent && jobInstance.parentJobId === null) {
             Modal.confirm({
-                title: 'The consensus job will be merged',
-                content: 'Existing annotations in the parent job will be updated. Continue?',
+                title: '将合并共识作业',
+                content: '父作业中的现有标注将被更新。是否继续？',
                 className: 'cvat-modal-confirm-consensus-merge-job',
                 onOk: () => {
                     dispatch(mergeConsensusJobsAsync(jobInstance));
@@ -89,7 +89,7 @@ function JobActionsComponent(
                     type: 'primary',
                     danger: true,
                 },
-                okText: 'Merge',
+                okText: '合并',
             });
         }
     }, [consensusJobsPresent, jobInstance]);
@@ -99,11 +99,11 @@ function JobActionsComponent(
         const isBulk = jobsToDelete.length > 1;
         Modal.confirm({
             title: isBulk ?
-                `Delete ${jobsToDelete.length} selected jobs` :
-                `The job ${jobInstance.id} will be deleted`,
+                `删除所选的 ${jobsToDelete.length} 个作业` :
+                `将删除作业 ${jobInstance.id}`,
             content: isBulk ?
-                'All related data (annotations) for all selected jobs will be lost. Continue?' :
-                'All related data (annotations) will be lost. Continue?',
+                '所有选中作业的相关数据（标注）都将丢失。是否继续？' :
+                '相关数据（标注）将丢失。是否继续？',
             className: 'cvat-modal-confirm-delete-job',
             onOk: () => {
                 setTimeout(() => {
@@ -114,7 +114,7 @@ function JobActionsComponent(
                                 await dispatch(deleteJobAsync(job));
                             }
                         },
-                        (job, idx, total) => `Deleting job #${job.id} (${idx + 1}/${total})`,
+                        (job, idx, total) => `正在删除作业 #${job.id}（${idx + 1}/${total}）`,
                     ));
                 }, 0);
             },
@@ -122,7 +122,7 @@ function JobActionsComponent(
                 type: 'primary',
                 danger: true,
             },
-            okText: isBulk ? 'Delete selected' : 'Delete',
+            okText: isBulk ? '删除所选' : '删除',
         });
     }, [jobInstance, allJobs, selectedIds, dispatch]);
 
@@ -155,7 +155,7 @@ function JobActionsComponent(
             async (job) => {
                 await dispatch(updateJobAsync(job, fields));
             },
-            (job, idx, total) => `Updating job #${job.id} (${idx + 1}/${total})`,
+            (job, idx, total) => `正在更新作业 #${job.id}（${idx + 1}/${total}）`,
         ));
     }, [jobInstance, allJobs, selectedIds, dispatch, stopEditField]);
 
@@ -224,3 +224,5 @@ function JobActionsComponent(
 }
 
 export default React.memo(JobActionsComponent);
+
+

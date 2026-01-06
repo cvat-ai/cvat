@@ -160,7 +160,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
             <div className='cvat-jobs-list-filters-wrapper'>
                 <Row>
                     <Col>
-                        <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
+                        <Text className='cvat-text-color cvat-jobs-header'> 作业 </Text>
                         <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
                     </Col>
                 </Row>
@@ -171,7 +171,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                             setVisibility({ ...defaultVisibility, sorting: visible })
                         )}
                         defaultFields={query.sort?.split(',') || ['-ID']}
-                        sortingFields={['ID', 'Assignee', 'State', 'Stage']}
+                        sortingFields={['ID', 'Assignee', '状态', '阶段']}
                         onApplySorting={(sort: string | null) => {
                             setQuery({
                                 ...query,
@@ -262,3 +262,4 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
 }
 
 export default React.memo(JobListComponent);
+

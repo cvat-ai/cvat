@@ -80,8 +80,8 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     const onMergeConsensusJobs = useCallback(() => {
         if (taskInstance.consensusEnabled) {
             Modal.confirm({
-                title: 'The consensus jobs will be merged',
-                content: 'Existing annotations in parent jobs will be updated. Continue?',
+                title: '将合并共识作业',
+                content: '父作业中的现有标注将被更新。是否继续？',
                 className: 'cvat-modal-confirm-consensus-merge-task',
                 onOk: () => {
                     dispatch(mergeConsensusJobsAsync(taskInstance));
@@ -90,7 +90,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                     type: 'primary',
                     danger: true,
                 },
-                okText: 'Merge',
+                okText: '合并',
             });
         }
     }, [taskInstance.consensusEnabled, taskInstance]);
@@ -143,7 +143,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                     await dispatch(updateTaskAsync(task, { assignee }));
                 }
             },
-            (task, idx, total) => `Updating assignee for task #${task.id} (${idx + 1}/${total})`,
+            (task, idx, total) => `正在更新任务 #${task.id} 的负责人（${idx + 1}/${total}）`,
         ));
     }, [taskInstance, stopEditField, dispatch, collectObjectsForBulkUpdate]);
 
@@ -151,11 +151,11 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         const tasksToDelete = currentTasks.filter((task) => selectedIds.includes(task.id));
         Modal.confirm({
             title: isBulkMode ?
-                `Delete ${tasksToDelete.length} selected tasks` :
-                `The task ${taskInstance.id} will be deleted`,
+                `删除所选的 ${tasksToDelete.length} 个任务` :
+                `将删除任务 ${taskInstance.id}`,
             content: isBulkMode ?
-                'All related data (images, annotations) for all selected tasks will be lost. Continue?' :
-                'All related data (images, annotations) will be lost. Continue?',
+                '所有选中任务的相关数据（图像、标注）都将丢失。是否继续？' :
+                '相关数据（图像、标注）将丢失。是否继续？',
             className: 'cvat-modal-confirm-delete-task',
             onOk: () => {
                 dispatch(makeBulkOperationAsync(
@@ -163,14 +163,14 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                     async (task) => {
                         await dispatch(deleteTaskAsync(task));
                     },
-                    (task, idx, total) => `Deleting task #${task.id} (${idx + 1}/${total})`,
+                    (task, idx, total) => `正在删除任务 #${task.id}（${idx + 1}/${total}）`,
                 ));
             },
             okButtonProps: {
                 type: 'primary',
                 danger: true,
             },
-            okText: isBulkMode ? 'Delete selected' : 'Delete',
+            okText: isBulkMode ? '删除所选' : '删除',
         });
     }, [taskInstance, currentTasks, selectedIds, isBulkMode]);
 
@@ -192,7 +192,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                     task.organizationId = newOrganization?.id ?? null;
                     await dispatch(updateTaskAsync(task, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
                 },
-                (task, idx, total) => `Updating organization for task #${task.id} (${idx + 1}/${total})`,
+                (task, idx, total) => `正在更新任务 #${task.id} 的组织（${idx + 1}/${total}）`,
             )).then((processedCount: number) => {
                 if (processedCount) {
                     // as for some tasks org has changed
@@ -287,3 +287,5 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
 }
 
 export default React.memo(TaskActionsComponent);
+
+

@@ -31,7 +31,7 @@ function ConsensusSettingsTab(props: Readonly<Props>): JSX.Element | null {
             setSettings(values);
         } catch (error) {
             notification.error({
-                message: 'Could not save consensus settings',
+                message: '无法保存共识设置',
                 description: formFieldsError(error).map((text: string): JSX.Element => <div>{text}</div>),
                 className: 'cvat-notification-save-consensus-settings-failed',
             });
@@ -56,9 +56,10 @@ function ConsensusSettingsTab(props: Readonly<Props>): JSX.Element | null {
                     settings={settings}
                     onSave={onSave}
                 />
-            ) : <Text>No consensus settings found</Text> }
+            ) : <Text>未找到共识设置</Text> }
         </div>
     );
 }
 
 export default React.memo(ConsensusSettingsTab);
+

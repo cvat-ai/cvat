@@ -43,14 +43,14 @@ function ResetPasswordConfirmFormComponent({ fetching, onSubmit }: Props): JSX.E
                 rules={[
                     {
                         required: true,
-                        message: 'Please input new password!',
+                        message: '请输入新密码！',
                     }, validatePassword,
                 ]}
             >
                 <Input.Password
                     autoComplete='new-password'
                     prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='New password'
+                    placeholder='新密码'
                 />
             </Form.Item>
 
@@ -61,14 +61,14 @@ function ResetPasswordConfirmFormComponent({ fetching, onSubmit }: Props): JSX.E
                 rules={[
                     {
                         required: true,
-                        message: 'Please confirm your new password!',
+                        message: '请确认您的新密码！',
                     }, validateConfirmation('newPassword1'),
                 ]}
             >
                 <Input.Password
                     autoComplete='new-password'
                     prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='Confirm new password'
+                    placeholder='确认新密码'
                 />
             </Form.Item>
 
@@ -80,7 +80,7 @@ function ResetPasswordConfirmFormComponent({ fetching, onSubmit }: Props): JSX.E
                     loading={fetching}
                     disabled={fetching}
                 >
-                    Change password
+                    更改密码
                 </Button>
             </Form.Item>
         </Form>
@@ -88,3 +88,6 @@ function ResetPasswordConfirmFormComponent({ fetching, onSubmit }: Props): JSX.E
 }
 
 export default React.memo(ResetPasswordConfirmFormComponent);
+
+
+

@@ -88,7 +88,7 @@ export default function ProjectSearchField(props: Props): JSX.Element {
     return (
         <Autocomplete
             value={searchPhrase}
-            placeholder='Select project'
+            placeholder='选择项目'
             onSearch={handleSearch}
             onSelect={handleSelect}
             className='cvat-project-search-field'
@@ -100,3 +100,4 @@ export default function ProjectSearchField(props: Props): JSX.Element {
         />
     );
 }
+

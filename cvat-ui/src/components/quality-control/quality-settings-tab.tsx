@@ -100,8 +100,8 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
         header = (
             <div className='cvat-quality-control-settings-header'>
                 <Switch checked={settings?.inherit} onChange={onInheritChange} />
-                <Text>Use</Text>
-                <Link to={`/projects/${instance.projectId}/quality-control#settings`}>&nbsp;project settings</Link>
+                <Text>使用</Text>
+                <Link to={`/projects/${instance.projectId}/quality-control#settings`}>&nbsp;项目设置</Link>
             </div>
         );
     } else if (instance instanceof Project && nonInheritedChildSettings.length !== 0) {
@@ -112,7 +112,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                     message={(
                         <div>
                             <ExclamationCircleFilled className='ant-alert-icon' />
-                            <Text>{`Own settings are used in ${nonInheritedChildSettings.length} tasks`}</Text>
+                            <Text>{`${nonInheritedChildSettings.length} 个任务正在使用自有设置`}</Text>
                         </div>
                     )}
                     action={(
@@ -121,16 +121,16 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                             danger
                             onClick={() => {
                                 Modal.confirm({
-                                    title: 'Are you sure you want to force project settings?',
+                                    title: '确定要强制使用项目设置吗？',
                                     icon: <ExclamationCircleFilled />,
-                                    content: 'This action will override own settings in all tasks.',
-                                    okText: 'Yes',
-                                    cancelText: 'No',
+                                    content: '此操作将覆盖所有任务中的自有设置。',
+                                    okText: '是',
+                                    cancelText: '否',
                                     onOk: onChildInheritChange,
                                 });
                             }}
                         >
-                            Force project settings
+                            强制使用项目设置
                         </Button>
                     )}
                 />
@@ -144,7 +144,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 <Row justify='end' className='cvat-quality-settings-save-btn'>
                     <Col>
                         <Button onClick={onSave} type='primary'>
-                            Save
+                            保存
                         </Button>
                     </Col>
                 </Row>
@@ -163,3 +163,5 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
 }
 
 export default React.memo(QualitySettingsTab);
+
+

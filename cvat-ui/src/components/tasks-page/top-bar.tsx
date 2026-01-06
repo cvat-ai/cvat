@@ -70,7 +70,7 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                             }}
                             defaultValue={query.search ?? ''}
                             className='cvat-tasks-page-search-bar'
-                            placeholder='Search ...'
+                            placeholder='搜索 ...'
                         />
                         <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
                     </div>
@@ -81,7 +81,7 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}
                             defaultFields={query.sort?.split(',') || ['-ID']}
-                            sortingFields={['ID', 'Owner', 'Status', 'Assignee', 'Updated date', 'Subset', 'Mode', 'Dimension', 'Project ID', 'Name', 'Project name']}
+                            sortingFields={['ID', '所有者', '状态', '负责人', '更新日期', '子集', '模式', '维度', '项目 ID', '名称', '项目名称']}
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent
@@ -115,7 +115,7 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                                     onClick={(): void => history.push('/tasks/create')}
                                     icon={<PlusOutlined />}
                                 >
-                                    Create a new task
+                                    创建新任务
                                 </Button>
                                 <Button
                                     className='cvat-create-multi-tasks-button'
@@ -123,7 +123,7 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                                     onClick={(): void => history.push('/tasks/create?many=true')}
                                     icon={<span className='anticon'><MultiPlusIcon /></span>}
                                 >
-                                    Create multi tasks
+                                    批量创建任务
                                 </Button>
                                 <Button
                                     className='cvat-import-task-button'
@@ -132,7 +132,7 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                                     icon={importing ? <LoadingOutlined /> : <UploadOutlined />}
                                     onClick={() => dispatch(importActions.openImportBackupModal('task'))}
                                 >
-                                    Create from backup
+                                    从备份创建
                                 </Button>
                             </CvatDropdownMenuPaper>
                         )}
@@ -144,3 +144,4 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
         </Row>
     );
 }
+

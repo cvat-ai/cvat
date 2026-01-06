@@ -25,8 +25,8 @@ export interface Props {
 
 const componentShortcuts = {
     CANCEL: {
-        name: 'Cancel',
-        description: 'Cancel any active canvas mode',
+        name: '取消',
+        description: '取消任何活动的画布模式',
         sequences: ['esc'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
@@ -76,3 +76,5 @@ function CursorControl(props: Props): JSX.Element {
 }
 
 export default React.memo(CursorControl);
+
+

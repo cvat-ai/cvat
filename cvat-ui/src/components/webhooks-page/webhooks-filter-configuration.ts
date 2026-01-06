@@ -8,19 +8,19 @@ import asyncFetchUsers from 'components/resource-sorting-filtering/request-users
 export const config: Partial<Config> = {
     fields: {
         description: {
-            label: 'Description',
+            label: '描述',
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
         },
         target_url: {
-            label: 'Target URL',
+            label: '目标 URL',
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
         },
         owner: {
-            label: 'Owner',
+            label: '创建者',
             type: 'select',
             valueSources: ['value'],
             operators: ['select_equals'],
@@ -31,18 +31,18 @@ export const config: Partial<Config> = {
             },
         },
         updated_date: {
-            label: 'Last updated',
+            label: '最后更新',
             type: 'datetime',
             operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
         },
         type: {
-            label: 'Type',
+            label: '类型',
             type: 'select',
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
-                    { value: 'organization', title: 'Organization' },
-                    { value: 'project', title: 'Project' },
+                    { value: 'organization', title: '组织' },
+                    { value: 'project', title: '项目' },
                 ],
             },
         },
@@ -59,3 +59,4 @@ export const config: Partial<Config> = {
 export const localStorageRecentCapacity = 10;
 export const localStorageRecentKeyword = 'recentlyAppliedWebhooksFilters';
 export const predefinedFilterValues = {};
+

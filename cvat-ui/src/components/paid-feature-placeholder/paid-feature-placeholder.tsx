@@ -33,7 +33,7 @@ function PaidFeaturePlaceholder(props: Readonly<Props>): JSX.Element | null {
                         <Row justify='center'>
                             <Col className='cvat-paid-feature-placeholder-title'>
                                 <Text>
-                                    You discovered a premium feature
+                                    你发现了一个高级功能
                                 </Text>
                             </Col>
                         </Row>
@@ -55,7 +55,7 @@ function PaidFeaturePlaceholder(props: Readonly<Props>): JSX.Element | null {
                                         window.open(url, '_blank');
                                     }}
                                 >
-                                    Check pricing
+                                    查看价格
                                 </Button>
                             </Col>
                         </Row>

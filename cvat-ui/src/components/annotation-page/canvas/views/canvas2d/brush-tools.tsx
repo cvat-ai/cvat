@@ -142,7 +142,7 @@ function BrushTools(): React.ReactPortal | null {
 
     getCore().config.removeUnderlyingMaskPixels.onEmptyMaskOccurrence = () => {
         notification.warning({
-            message: 'Some objects were deleted',
+            message: '部分对象已删除',
             description: 'As a result of removing the underlying pixels, some masks became empty and were subsequently deleted.',
             className: 'cvat-empty-masks-notification',
             duration: null,
@@ -351,7 +351,7 @@ function BrushTools(): React.ReactPortal | null {
                 />
             </CVATTooltip>
             { ['brush', 'eraser'].includes(currentTool) ? (
-                <CVATTooltip title='Brush size [Hold Alt + Right Mouse Click + Drag Left/Right]'>
+                <CVATTooltip title='画笔大小（按住 Alt + 鼠标右键拖动左右）'>
                     <InputNumber
                         className='cvat-brush-tools-brush-size'
                         value={brushSize}
@@ -366,8 +366,8 @@ function BrushTools(): React.ReactPortal | null {
             ) : null}
             { ['brush', 'eraser'].includes(currentTool) ? (
                 <Select value={brushForm} onChange={(value: 'circle' | 'square') => setBrushForm(value)}>
-                    <Select.Option value='circle'>Circle</Select.Option>
-                    <Select.Option value='square'>Square</Select.Option>
+                    <Select.Option value='circle'>圆形</Select.Option>
+                    <Select.Option value='square'>方形</Select.Option>
                 </Select>
             ) : null}
             <Button
@@ -404,3 +404,4 @@ function BrushTools(): React.ReactPortal | null {
 }
 
 export default React.memo(BrushTools);
+

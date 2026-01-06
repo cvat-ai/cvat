@@ -59,7 +59,7 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
             );
         }
 
-        return Promise.reject(new Error('Quality form ref is empty'));
+        return Promise.reject(new Error('质量表单引用为空'));
     }
 
     public resetFields(): void {
@@ -74,15 +74,15 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                 <Col>
                     <Form.Item
                         name='frameSelectionMethod'
-                        label='Frame selection method'
-                        rules={[{ required: true, message: 'Please, specify frame selection method' }]}
+                        label='帧选择方法'
+                        rules={[{ required: true, message: '请指定帧选择方法' }]}
                     >
                         <Select
                             className='cvat-select-frame-selection-method'
                             onChange={onChangeFrameSelectionMethod}
                         >
-                            <Select.Option value={FrameSelectionMethod.RANDOM}>Random</Select.Option>
-                            <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>Random per job</Select.Option>
+                            <Select.Option value={FrameSelectionMethod.RANDOM}>随机</Select.Option>
+                            <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>每个作业随机</Select.Option>
                         </Select>
                     </Form.Item>
                 </Col>
@@ -91,13 +91,13 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                     frameSelectionMethod === FrameSelectionMethod.RANDOM && (
                         <Col span={7}>
                             <Form.Item
-                                label='Quantity'
+                                label='数量'
                                 name='validationFramesPercent'
                                 normalize={(value) => +value}
                                 rules={[
-                                    { required: true, message: 'The field is required' },
+                                    { required: true, message: '此字段为必填项' },
                                     {
-                                        type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                                        type: 'number', min: 0, max: 100, message: '值无效',
                                     },
                                 ]}
                             >
@@ -116,13 +116,13 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                     frameSelectionMethod === FrameSelectionMethod.RANDOM_PER_JOB && (
                         <Col span={7}>
                             <Form.Item
-                                label='Quantity per job'
+                                label='每个作业数量'
                                 name='validationFramesPerJobPercent'
                                 normalize={(value) => +value}
                                 rules={[
-                                    { required: true, message: 'The field is required' },
+                                    { required: true, message: '此字段为必填项' },
                                     {
-                                        type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                                        type: 'number', min: 0, max: 100, message: '值无效',
                                     },
                                 ]}
                             >
@@ -146,13 +146,13 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
             <Row>
                 <Col span={7}>
                     <Form.Item
-                        label='Total honeypots'
+                        label='蜜罐总数'
                         name='validationFramesPercent'
                         normalize={(value) => +value}
                         rules={[
-                            { required: true, message: 'The field is required' },
+                            { required: true, message: '此字段为必填项' },
                             {
-                                type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                                type: 'number', min: 0, max: 100, message: '值无效',
                             },
                         ]}
                     >
@@ -161,13 +161,13 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                 </Col>
                 <Col span={7} offset={1}>
                     <Form.Item
-                        label='Overhead per job'
+                        label='每个作业开销'
                         name='validationFramesPerJobPercent'
                         normalize={(value) => +value}
                         rules={[
-                            { required: true, message: 'The field is required' },
+                            { required: true, message: '此字段为必填项' },
                             {
-                                type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                                type: 'number', min: 0, max: 100, message: '值无效',
                             },
                         ]}
                     >
@@ -195,7 +195,7 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                 ref={this.formRef}
             >
                 <Form.Item
-                    label='Validation mode'
+                    label='验证模式'
                     name='validationMode'
                     rules={[{ required: true }]}
                 >
@@ -206,13 +206,13 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                         }}
                     >
                         <Radio.Button value={ValidationMode.NONE} key={ValidationMode.NONE}>
-                            None
+                            无
                         </Radio.Button>
                         <Radio.Button value={ValidationMode.GT} key={ValidationMode.GT}>
-                            Ground Truth
+                            真值
                         </Radio.Button>
                         <Radio.Button value={ValidationMode.HONEYPOTS} key={ValidationMode.HONEYPOTS}>
-                            Honeypots
+                            蜜罐
                         </Radio.Button>
                     </Radio.Group>
                 </Form.Item>
@@ -221,3 +221,4 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
         );
     }
 }
+

@@ -14,12 +14,12 @@ export default function EmptyListComponent(): JSX.Element {
                 <>
                     <Row justify='center' align='middle'>
                         <Col>
-                            <Text strong>No requests made yet ...</Text>
+                            <Text strong>暂无请求...</Text>
                         </Col>
                     </Row>
                     <Row justify='center' align='middle'>
                         <Col>
-                            <Text type='secondary'>Start importing/exporting your resources to see progress here</Text>
+                            <Text type='secondary'>开始导入/导出资源以在此查看进度</Text>
                         </Col>
                     </Row>
                 </>

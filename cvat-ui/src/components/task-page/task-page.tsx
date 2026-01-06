@@ -71,7 +71,7 @@ function TaskPageComponent(): JSX.Element {
             }
         } catch (error: any) {
             notification.error({
-                message: 'Could not receive the requested task from the server',
+                message: '无法从服务器获取请求的任务',
                 description: error.toString(),
             });
         }

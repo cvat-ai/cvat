@@ -123,11 +123,11 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
                         </Paragraph>
                         {username && (
                             <>
-                                <Text type='secondary'>{`Created by ${username} on ${created}`}</Text>
+                                <Text type='secondary'>{`由 ${username} 创建于 ${created}`}</Text>
                                 <br />
                             </>
                         )}
-                        <Text type='secondary'>{`Last updated ${updated}`}</Text>
+                        <Text type='secondary'>{`最后更新 ${updated}`}</Text>
                     </Col>
                     <Col span={6} offset={1}>
                         <Paragraph ellipsis={{
@@ -135,7 +135,7 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
                             rows: 3,
                         }}
                         >
-                            <Text type='secondary' className='cvat-webhook-info-text'>URL:</Text>
+                            <Text type='secondary' className='cvat-webhook-info-text'>URL：</Text>
                             {targetURL}
                         </Paragraph>
                     </Col>
@@ -145,7 +145,7 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
                             rows: 3,
                         }}
                         >
-                            <Text type='secondary' className='cvat-webhook-info-text'>Events:</Text>
+                            <Text type='secondary' className='cvat-webhook-info-text'>事件：</Text>
                             {eventsList}
                         </Paragraph>
                     </Col>
@@ -171,7 +171,7 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
                                     className='cvat-webhooks-page-actions-button cvat-actions-menu-button'
                                     onClick={handleContextMenuClick}
                                 >
-                                    <Text className='cvat-text-color'>Actions</Text>
+                                    <Text className='cvat-text-color'>操作</Text>
                                     <MoreOutlined className='cvat-menu-icon' />
                                 </div>
                             </Col>
@@ -184,3 +184,4 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
 }
 
 export default React.memo(WebhookItem);
+

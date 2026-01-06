@@ -149,6 +149,6 @@ class LoginSerializerEx(LoginSerializer):
         if email:
             users = filter_users_by_email(email)
             if not users or len(users) > 1:
-                raise ValidationError("Unable to login with provided credentials")
+                raise ValidationError("无法使用提供的凭据登录")
 
         return self._validate_username_email(username, email, password)

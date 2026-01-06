@@ -25,9 +25,9 @@ export const JobNotFoundComponent = React.memo((): JSX.Element => {
         <Result
             className='cvat-not-found'
             status='404'
-            title='Sorry, but this job was not found'
-            subTitle='Please, be sure information you tried to get exist and you have access'
-            extra={<Button type='primary' onClick={handleReturn}>Return to Previous Page</Button>}
+            title='抱歉，未找到此作业'
+            subTitle='请确认您要访问的信息存在且您有访问权限'
+            extra={<Button type='primary' onClick={handleReturn}>返回上一页</Button>}
         />
     );
 });
@@ -38,9 +38,9 @@ export const TaskNotFoundComponent = React.memo((): JSX.Element => {
         <Result
             className='cvat-not-found'
             status='404'
-            title='There was something wrong during getting the task'
-            subTitle='Please, be sure information you tried to get exist and you have access'
-            extra={<Button type='primary' onClick={handleReturn}>Return to Previous Page</Button>}
+            title='获取任务时出错'
+            subTitle='请确认您要访问的信息存在且您有访问权限'
+            extra={<Button type='primary' onClick={handleReturn}>返回上一页</Button>}
         />
     );
 });
@@ -51,9 +51,9 @@ export const ProjectNotFoundComponent = React.memo((): JSX.Element => {
         <Result
             className='cvat-not-found'
             status='404'
-            title='There was something wrong during getting the project'
-            subTitle='Please, be sure, that information you tried to get exist and you are eligible to access it'
-            extra={<Button type='primary' onClick={handleReturn}>Return to Previous Page</Button>}
+            title='获取项目时出错'
+            subTitle='请确认您要访问的信息存在且您有相应的访问权限'
+            extra={<Button type='primary' onClick={handleReturn}>返回上一页</Button>}
         />
     );
 });
@@ -64,9 +64,10 @@ export const CloudStorageNotFoundComponent = React.memo((): JSX.Element => {
         <Result
             className='cvat-not-found'
             status='404'
-            title='Sorry, but the requested cloud storage was not found'
-            subTitle='Please, be sure id you requested exists and you have appropriate permissions'
-            extra={<Button type='primary' onClick={handleReturn}>Return to Previous Page</Button>}
+            title='抱歉，未找到请求的云存储'
+            subTitle='请确认请求的 ID 存在且您拥有相应的权限'
+            extra={<Button type='primary' onClick={handleReturn}>返回上一页</Button>}
         />
     );
 });
+

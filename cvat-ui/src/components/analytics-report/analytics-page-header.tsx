@@ -33,13 +33,13 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
         <Row justify='space-between' align='middle'>
             <Col className='cvat-analytics-header'>
                 <Title level={4} className='cvat-text-color'>
-                    {'Analytics for '}
+                    分析：
                     <ResourceLink resource={resource} />
                 </Title>
             </Col>
             <Col>
                 <DatePicker.RangePicker
-                    placeholder={['UTC start date', 'UTC end date']}
+                    placeholder={['UTC 开始日期', 'UTC 结束日期']}
                     className='cvat-analytics-date-picker'
                     onChange={(value) => {
                         if (value) {
@@ -60,7 +60,7 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
                     icon={<DownloadOutlined />}
                     onClick={onExportEvents}
                 >
-                        Export events
+                    导出事件
                 </Button>
             </Col>
         </Row>
@@ -68,3 +68,4 @@ function AnaylyticsPageHeader(props: Props): JSX.Element {
 }
 
 export default React.memo(AnaylyticsPageHeader);
+

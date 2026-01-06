@@ -76,7 +76,7 @@ function FrameTags(): JSX.Element {
                         >
                             {tag.label.name}
                             {' '}
-                            (GT)
+                            (真值)
                         </Tag>
                     ))}
             </div>

@@ -60,14 +60,14 @@ function PropagateConfirmComponent(): JSX.Element {
     return (
         <Modal
             okType='primary'
-            okText='Yes'
-            cancelText='Cancel'
+            okText='是'
+            cancelText='取消'
             onOk={() => {
                 dispatch(propagateObjectAsync(frameNumber, targetFrame))
                     .then(() => dispatch(switchPropagateVisibility(false)));
             }}
             onCancel={() => dispatch(switchPropagateVisibility(false))}
-            title='Confirm propagation'
+            title='确认传播'
             open={visible}
             destroyOnClose
             okButtonProps={{ disabled: !propagateFrames }}
@@ -75,7 +75,7 @@ function PropagateConfirmComponent(): JSX.Element {
             <div className='cvat-propagate-confirm'>
                 <Row>
                     <Col>
-                        <Text>Please, specify a direction</Text>
+                        <Text>请选择传播方向</Text>
                     </Col>
                     <Col offset={1}>
                         <Radio.Group
@@ -93,7 +93,7 @@ function PropagateConfirmComponent(): JSX.Element {
                     </Col>
                 </Row>
                 <Row>
-                    <Col>How many copies do you want to create?</Col>
+                    <Col>你想创建多少个副本？</Col>
                     <Col offset={1}>
                         <InputNumber
                             className='cvat-propagate-confirm-object-on-frames'
@@ -111,7 +111,7 @@ function PropagateConfirmComponent(): JSX.Element {
                 <hr />
                 <Row className='cvat-propagate-up-to-wrapper'>
                     <Col span={24}>
-                        <Text>Or specify a range where copies will be created </Text>
+                        <Text>或指定创建副本的范围 </Text>
                     </Col>
                     <Col className='cvat-propagate-slider-wrapper' span={12} offset={1}>
                         <Slider
@@ -119,8 +119,8 @@ function PropagateConfirmComponent(): JSX.Element {
                             min={startFrame}
                             max={stopFrame}
                             marks={frameNumber !== targetFrame ? {
-                                [frameNumber]: 'FROM',
-                                [targetFrame]: 'TO',
+                                [frameNumber]: '从',
+                                [targetFrame]: '到',
                             } : undefined}
                             onChange={([value1, value2]: number[]) => {
                                 const value = value1 === frameNumber || value1 === targetFrame ? value2 : value1;
@@ -160,3 +160,5 @@ function PropagateConfirmComponent(): JSX.Element {
 }
 
 export default React.memo(PropagateConfirmComponent);
+
+

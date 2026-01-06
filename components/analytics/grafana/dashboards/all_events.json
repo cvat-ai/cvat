@@ -147,7 +147,7 @@
           "refId": "A"
         }
       ],
-      "title": "Overall Activity",
+      "title": "整体活动",
       "type": "timeseries"
     },
     {
@@ -192,6 +192,66 @@
                 "value": 158
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "scope"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "load:cvat": {
+                        "text": "加载:cvat"
+                      },
+                      "click:element": {
+                        "text": "点击:元素"
+                      },
+                      "send:working_time": {
+                        "text": "上报:工作时间"
+                      },
+                      "send:exception": {
+                        "text": "上报:异常"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "范围"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "load:cvat": {
+                        "text": "加载:cvat"
+                      },
+                      "click:element": {
+                        "text": "点击:元素"
+                      },
+                      "send:working_time": {
+                        "text": "上报:工作时间"
+                      },
+                      "send:exception": {
+                        "text": "上报:异常"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
@@ -215,6 +275,33 @@
         "sortBy": []
       },
       "pluginVersion": "9.3.6",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "scope": "范围",
+              "obj_name": "对象名称",
+              "obj_id": "对象ID",
+              "obj_val": "对象值",
+              "source": "来源",
+              "timestamp": "时间戳",
+              "count": "次数",
+              "duration": "时长",
+              "project_id": "项目ID",
+              "task_id": "任务ID",
+              "job_id": "作业ID",
+              "user_id": "用户ID",
+              "user_name": "用户名",
+              "user_email": "用户邮箱",
+              "org_id": "组织ID",
+              "org_slug": "组织标识",
+              "payload": "载荷",
+              "access_token_id": "访问令牌ID"
+            }
+          }
+        }
+      ],
       "targets": [
         {
           "builderOptions": {
@@ -295,7 +382,7 @@
           "refId": "A"
         }
       ],
-      "title": "All events",
+      "title": "全部事件",
       "type": "table"
     },
     {
@@ -401,7 +488,7 @@
           "refId": "A"
         }
       ],
-      "title": "Browser",
+      "title": "浏览器",
       "type": "barchart"
     },
     {
@@ -507,7 +594,7 @@
           "refId": "A"
         }
       ],
-      "title": "OS",
+      "title": "操作系统",
       "type": "barchart"
     }
   ],
@@ -535,7 +622,7 @@
         "definition": "SELECT DISTINCT scope\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
-        "label": "Scope",
+        "label": "范围",
         "multi": true,
         "name": "scopes",
         "options": [],
@@ -564,7 +651,7 @@
         "definition": "SELECT DISTINCT source\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
-        "label": "Source",
+        "label": "来源",
         "multi": true,
         "name": "sources",
         "options": [],
@@ -593,7 +680,7 @@
         "definition": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "User",
+        "label": "用户",
         "multi": true,
         "name": "users",
         "options": [],
@@ -618,7 +705,7 @@
         "definition": "SELECT DISTINCT user_name\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
-        "label": "Username",
+        "label": "用户名",
         "multi": true,
         "name": "usernames",
         "options": [],
@@ -647,7 +734,7 @@
         "definition": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "Project",
+        "label": "项目",
         "multi": true,
         "name": "projects",
         "options": [],
@@ -676,7 +763,7 @@
         "definition": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "Task",
+        "label": "任务",
         "multi": true,
         "name": "tasks",
         "options": [],
@@ -705,7 +792,7 @@
         "definition": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "Job",
+        "label": "作业",
         "multi": true,
         "name": "jobs",
         "options": [],
@@ -734,7 +821,7 @@
         "definition": "SELECT DISTINCT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "Organization",
+        "label": "组织",
         "multi": true,
         "name": "organizations",
         "options": [],
@@ -753,7 +840,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "All events",
+  "title": "全部事件",
   "uid": "EIGSTDAVz",
   "version": 1,
   "weekStart": ""

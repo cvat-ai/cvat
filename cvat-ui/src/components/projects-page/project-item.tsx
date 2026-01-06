@@ -118,13 +118,12 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                                         {ownerName && (
                                             <>
                                                 <Text type='secondary'>
-                                            Created
-                                                    {ownerName ? ` by ${ownerName}` : ''}
+                                                    {`创建${ownerName ? `：${ownerName}` : ''}`}
                                                 </Text>
                                                 <br />
                                             </>
                                         )}
-                                        <Text type='secondary'>{`Last updated ${updated}`}</Text>
+                                        <Text type='secondary'>{`最后更新 ${updated}`}</Text>
                                     </div>
                                     <div>
                                         <Button

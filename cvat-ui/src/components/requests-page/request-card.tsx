@@ -236,7 +236,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
                                         operation?.lightweight ? (
                                             <Row>
                                                 <Col className='cvat-lightweight-label'>
-                                                    <Text type='secondary'>Lightweight backup</Text>
+                                                    <Text type='secondary'>轻量备份</Text>
                                                 </Col>
                                             </Row>
                                         ) : null

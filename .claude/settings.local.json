@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(dev-browser)",
+      "Skill(dev-browser:*)"
+    ]
+  }
+}

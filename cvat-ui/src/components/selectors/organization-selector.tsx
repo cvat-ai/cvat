@@ -81,14 +81,14 @@ function OrganizationSelector(props: Props): JSX.Element {
     return (
         <AutoComplete
             defaultValue={searchPhrase}
-            placeholder='Select an organization'
+            placeholder='选择组织'
             showSearch
             onSearch={_.debounce(setSearchPhrase, 500)}
             options={[
                 ...(
                     (currentOrg) ? [{
                         value: '',
-                        label: 'Personal workspace',
+                        label: '个人工作区',
                     }] : []
                 ),
                 ...searchResults
@@ -121,3 +121,4 @@ function OrganizationSelector(props: Props): JSX.Element {
 }
 
 export default React.memo(OrganizationSelector);
+

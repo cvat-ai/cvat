@@ -1,0 +1,21 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+create@project,Webhook,Sandbox,N/A,,POST,/webhooks,Admin,N/A
+create@project,Webhook,Sandbox,Project:owner,,POST,/webhooks,Worker,N/A
+create@project,Webhook,Organization,N/A,,POST,/webhooks,Worker,Maintainer
+create@project,Webhook,Organization,Project:owner,,POST,/webhooks,Worker,Worker
+create@organization,Webhook,Organization,N/A,,POST,/webhooks,Admin,N/A
+create@organization,Webhook,Organization,N/A,,POST,/webhooks,Worker,Maintainer
+update,Webhook,Sandbox,N/A,,PATCH,/webhooks/{id},Admin,N/A
+update,Webhook,Sandbox,"Project:owner, owner",,PATCH,/webhooks/{id},Worker,N/A
+update,Webhook,Organization,N/A,,PATCH,/webhooks/{id},Worker,Maintainer
+update,Webhook,Organization,"Project:owner, owner",,PATCH,/webhooks/{id},Worker,Worker
+delete,Webhook,Sandbox,N/A,,DELETE,/webhooks/{id},Admin,N/A
+delete,Webhook,Sandbox,"Project:owner, owner",,DELETE,/webhooks/{id},Worker,N/A
+delete,Webhook,Organization,N/A,,DELETE,/webhooks/{id},Worker,Maintainer
+delete,Webhook,Organization,"Project:owner, owner",,DELETE,/webhooks/{id},Worker,Worker
+view,Webhook,Sandbox,N/A,,GET,/webhooks/{id},Admin,N/A
+view,Webhook,Sandbox,"Project:owner, owner",,GET,/webhooks/{id},None,N/A
+view,Webhook,Organization,N/A,,GET,/webhooks/{id},Worker,Maintainer
+view,Webhook,Organization,"Project:owner, owner",,GET,/webhooks/{id},None,Worker
+list,N/A,Sandbox,N/A,,GET,/webhooks,None,N/A
+list,N/A,Organization,N/A,,GET,/webhooks,None,Worker

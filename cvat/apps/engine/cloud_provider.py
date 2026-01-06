@@ -210,7 +210,7 @@ class _CloudStorage(ABC):
         """
 
         if start_byte > stop_byte:
-            raise ValidationError(f"Incorrect bytes range was received: {start_byte}-{stop_byte}")
+            raise ValidationError(f"收到的字节范围不正确: {start_byte}-{stop_byte}")
         return self._download_range_of_bytes(key, stop_byte=stop_byte, start_byte=start_byte)
 
     @abstractmethod
@@ -748,7 +748,7 @@ class S3CloudStorage(_CloudStorage):
                     slogger.glob.info(
                         f"Attempt to download empty file '{key}' from the '{self.name}' bucket."
                     )
-                    raise ValidationError(f"The {key} file is empty.")
+                    raise ValidationError(f"文件 {key} 为空。")
                 else:
                     slogger.glob.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
             raise

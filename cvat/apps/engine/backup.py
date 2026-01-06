@@ -986,20 +986,20 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
             gt_jobs = [v for v in jobs if v.get("type") == models.JobType.GROUND_TRUTH]
             if not gt_jobs:
-                raise ValidationError("Can't find any GT jobs info in the backup files")
+                raise ValidationError("在备份文件中找不到任何 GT 作业信息")
             elif len(gt_jobs) != 1:
-                raise ValidationError("A task can have only one GT job info in the backup files")
+                raise ValidationError("一个任务在备份文件中只能有一个 GT 作业信息")
 
             validation_params["frames"] = validation_params_serializer.initial_data["frames"]
 
             if validation_params["mode"] == models.ValidationMode.GT_POOL:
                 gt_job_frames = self._parse_segment_frames(jobs=gt_jobs)[0]
                 if set(gt_job_frames) != set(validation_params_serializer.initial_data["frames"]):
-                    raise ValidationError("GT job frames do not match validation frames")
+                    raise ValidationError("GT 作业帧与验证帧不匹配")
 
                 # Validation frames can have a different order, we must use the GT job order
                 if not job_file_mapping:
-                    raise ValidationError("Expected segment info in the backup files")
+                    raise ValidationError("备份文件中缺少分段信息")
 
                 job_file_mapping.append(gt_job_frames)
 

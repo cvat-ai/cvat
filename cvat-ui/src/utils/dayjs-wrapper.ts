@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
 
 import advancedFormat from 'dayjs/plugin/advancedFormat';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
@@ -24,5 +25,7 @@ dayjs.extend(weekYear);
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
+
+dayjs.locale('zh-cn');
 
 export default dayjs;

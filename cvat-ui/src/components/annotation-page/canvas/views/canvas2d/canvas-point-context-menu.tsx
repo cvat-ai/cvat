@@ -109,14 +109,14 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
                     (contextMenuFor.shapeType === ShapeType.POLYLINE && contextMenuFor.points.length > 4) ||
                     (contextMenuFor.shapeType === ShapeType.POINTS && contextMenuFor.points.length > 2)) &&
                 (
-                    <CVATTooltip title='Delete point [Alt + dblclick]'>
+                    <CVATTooltip title='删除点 [Alt + 双击]'>
                         <Button
                             type='link'
                             icon={<DeleteOutlined />}
                             onClick={onPointDelete}
                             className='cvat-canvas-point-context-menu-delete'
                         >
-                            Delete point
+                            删除点
                         </Button>
                     </CVATTooltip>
                 )}
@@ -128,7 +128,7 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
                         onClick={onSetStartPoint}
                         className='cvat-canvas-point-context-menu-set-start'
                     >
-                        Set start point
+                        设为起点
                     </Button>
                 )}
             </div>,
@@ -138,3 +138,4 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(CanvasPointContextMenu);
+

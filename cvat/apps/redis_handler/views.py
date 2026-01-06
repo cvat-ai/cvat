@@ -195,7 +195,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         job = self._get_rq_job_by_id(pk)
 
         if not job:
-            return HttpResponseNotFound("There is no request with specified id")
+            return HttpResponseNotFound("没有找到指定ID的请求")
 
         self.check_object_permissions(request, job)
 
@@ -232,7 +232,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:
-            return HttpResponseNotFound("There is no request with specified id")
+            return HttpResponseNotFound("没有找到指定ID的请求")
 
         self.check_object_permissions(request, rq_job)
 

@@ -1,0 +1,11 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+list,Membership,Sandbox,N/A,,GET,/memberships,None,N/A
+list,Membership,Organization,N/A,,GET,/memberships,None,Worker
+view,Membership,Sandbox,None,,GET,/membership/{id},Admin,N/A
+view,Membership,Sandbox,Self,,GET,/membership/{id},None,N/A
+view,Membership,Organization,"None, Self",,GET,/membership/{id},None,Worker
+change:role,Membership,Organization,None,"resource[""role""] != ""owner""",PATCH,/membership/{id},User,Owner
+change:role,Membership,Organization,None,"resource[""role""] not in [""maintainer"", ""owner""]",PATCH,/membership/{id},User,Maintainer
+delete,Membership,Organization,None,"resource[""role""] != ""owner""",DELETE,/membership/{id},User,Owner
+delete,Membership,Organization,None,"resource[""role""] not in [""maintainer"", ""owner""]",DELETE,/membership/{id},User,Maintainer
+delete,Membership,Organization,Self,"resource[""role""] != ""owner""",DELETE,/membership/{id},Worker,Worker

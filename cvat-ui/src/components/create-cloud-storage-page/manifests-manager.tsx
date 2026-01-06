@@ -60,7 +60,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                 label={(
                     <>
                         Manifests
-                        <Tooltip title='Click to open guide'>
+                        <Tooltip title='点击打开指南'>
                             <Button
                                 type='link'
                                 target='_blank'
@@ -88,12 +88,12 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                                 rules={[
                                                     {
                                                         required: true,
-                                                        message: 'Please specify a manifest name',
+                                                        message: '请输入清单名称',
                                                     },
                                                     {
                                                         type: 'string',
                                                         pattern: /^.*\.(jsonl)$/,
-                                                        message: 'Manifest file must have .jsonl extension',
+                                                        message: '清单文件必须具有 .jsonl 扩展名',
                                                     },
                                                 ]}
                                                 initialValue={field.name}
@@ -127,7 +127,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
             <Row justify='start'>
                 <Col>
                     <Button onClick={onAddManifestItem} className='cvat-add-manifest-button'>
-                        Add manifest
+                        添加清单
                         <PlusCircleOutlined />
                     </Button>
                 </Col>
@@ -138,7 +138,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                         <Alert
                             showIcon
                             type='info'
-                            message='We highly recommend attaching a manifest file to reduce the number of requests to the bucket'
+                            message='强烈建议附加清单文件，以减少对存储桶的请求次数'
                         />
                     </Col>
                 </Row>
@@ -146,3 +146,5 @@ export default function ManifestsManager(props: Props): JSX.Element {
         </>
     );
 }
+
+

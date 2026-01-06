@@ -93,14 +93,14 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
     if (downloadableCount > 0) {
         menuItems.push({
             key: 'download',
-            label: withCount('Download', downloadableCount),
+            label: withCount('下载', downloadableCount),
             onClick: onDownload,
         });
     }
     if (queuedCount > 0) {
         menuItems.push({
             key: 'cancel',
-            label: withCount('Cancel', queuedCount),
+            label: withCount('取消', queuedCount),
             onClick: onCancel,
         });
     }
@@ -126,3 +126,4 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
 }
 
 export default React.memo(RequestActionsComponent);
+

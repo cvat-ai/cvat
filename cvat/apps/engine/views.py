@@ -190,15 +190,11 @@ class ServerViewSet(viewsets.ViewSet):
     def about(request: ExtendedRequest):
         from cvat import __version__ as cvat_version
         about = {
-            "name": "Computer Vision Annotation Tool",
+            "name": "计算机视觉标注工具",
             "subtitle": settings.ABOUT_INFO["subtitle"],
-            "description": "CVAT is completely re-designed and re-implemented " +
-                "version of Video Annotation Tool from Irvine, California " +
-                "tool. It is free, online, interactive video and image annotation " +
-                "tool for computer vision. It is being used by our team to " +
-                "annotate million of objects with different properties. Many UI " +
-                "and UX decisions are based on feedbacks from professional data " +
-                "annotation team.",
+            "description": "CVAT 是一个开源的在线交互式图像/视频标注工具，"
+                "面向计算机视觉任务。我们团队使用它来标注海量对象及其属性；"
+                "许多 UI 与 UX 设计决策来自专业数据标注团队的反馈。",
             "version": cvat_version,
             "logo_url": request.build_absolute_uri(storages["staticfiles"].url(settings.LOGO_FILENAME)),
         }
@@ -432,7 +428,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             importer = BackupImporter(request=request, target=RequestTarget.PROJECT)
             return importer.enqueue_job()
 
-        return Response(data='Unknown upload was finished',
+        return Response(data='未知的上传已完成',
                         status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(exclude=True)
@@ -497,7 +493,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         first_task: models.Task | None = self._object.tasks.order_by('-id').first()
         if not first_task:
-            return HttpResponseNotFound('Project image preview not found')
+            return HttpResponseNotFound('未找到项目图片预览')
 
         data_getter = _TaskDataGetter(
             db_task=first_task,
@@ -534,12 +530,12 @@ class _DataGetter(metaclass=ABCMeta):
         possible_quality_values = ('compressed', 'original')
 
         if not data_type or data_type not in possible_data_type_values:
-            raise ValidationError('Data type not specified or has wrong value')
+            raise ValidationError('未指定数据类型或值错误')
         elif data_type == 'chunk' or data_type == 'frame' or data_type == 'preview':
             if data_num is None and data_type != 'preview':
-                raise ValidationError('Number is not specified')
+                raise ValidationError('未指定编号')
             elif data_quality not in possible_quality_values:
-                raise ValidationError('Wrong quality value')
+                raise ValidationError('质量值错误')
 
         self.type = data_type
         self.number = int(data_num) if data_num is not None else None
@@ -649,17 +645,17 @@ class _JobDataGetter(_DataGetter):
         possible_quality_values = ('compressed', 'original')
 
         if not data_type or data_type not in possible_data_type_values:
-            raise ValidationError('Data type not specified or has wrong value')
+            raise ValidationError('未指定数据类型或值错误')
         elif data_type == 'chunk' or data_type == 'frame' or data_type == 'preview':
             if data_type == 'chunk':
                 if data_num is None and data_index is None:
-                    raise ValidationError('Number or Index is not specified')
+                    raise ValidationError('未指定编号或索引')
                 if data_num is not None and data_index is not None:
-                    raise ValidationError('Number and Index cannot be used together')
+                    raise ValidationError('编号和索引不能同时使用')
             elif data_num is None and data_type != 'preview':
-                raise ValidationError('Number is not specified')
+                raise ValidationError('未指定编号')
             elif data_quality not in possible_quality_values:
-                raise ValidationError('Wrong quality value')
+                raise ValidationError('质量值错误')
 
         self.type = data_type
 
@@ -1140,7 +1136,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         elif self.action == 'import_backup':
             return _handle_upload_backup(request)
 
-        return Response(data='Unknown upload was finished',
+        return Response(data='未知的上传已完成',
                         status=status.HTTP_400_BAD_REQUEST)
 
     _UPLOAD_FILE_ORDER_FIELD = 'upload_file_order'
@@ -1275,7 +1271,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     self._object.data = task_data
                     locked_instance.save()
                 elif task_data.size != 0:
-                    return Response(data='Adding more data is not supported',
+                    return Response(data='不支持添加更多数据',
                         status=status.HTTP_400_BAD_REQUEST)
                 return self.upload_data(request)
         else:
@@ -1513,7 +1509,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object() # call check_object_permissions as well
 
         if not self._object.data:
-            return HttpResponseNotFound('Task image preview not found')
+            return HttpResponseNotFound('未找到任务图片预览')
 
         data_getter = _TaskDataGetter(
             db_task=self._object,
@@ -1714,7 +1710,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @transaction.atomic
     def perform_destroy(self, instance):
         if instance.type != JobType.GROUND_TRUTH:
-            raise ValidationError("Only ground truth jobs can be removed")
+            raise ValidationError("只能删除真值作业")
 
         validation_layout: models.ValidationLayout | None = getattr(
             instance.segment.task.data, 'validation_layout', None
@@ -1741,7 +1737,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             importer = DatasetImporter(request=request, db_instance=self._object)
             return importer.enqueue_job()
 
-        return Response(data='Unknown upload was finished',
+        return Response(data='未知的上传已完成',
                         status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(methods=['GET'],
@@ -2562,7 +2558,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if provider_type:
             if provider_type in CloudProviderChoice.values:
                 return queryset.filter(provider_type=provider_type)
-            raise ValidationError('Unsupported type of cloud provider')
+            raise ValidationError('不支持的云存储提供商类型')
         return queryset
 
     def perform_create(self, serializer):
@@ -2658,7 +2654,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(data=msg, status=ex.status_code)
         except Exception as ex:
             slogger.glob.error(str(ex))
-            return Response("An internal error has occurred",
+            return Response("发生内部错误",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(summary='Get a preview image for a cloud storage',
@@ -2678,7 +2674,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if not db_storage.has_at_least_one_manifest:
                 result = cache.get_cloud_preview(db_storage)
                 if not result:
-                    return HttpResponseNotFound('Cloud storage preview not found')
+                    return HttpResponseNotFound('未找到云存储预览')
                 return HttpResponse(result[0].getvalue(), result[1])
 
             preview, mime = cache.get_or_set_cloud_preview(db_storage)
@@ -2699,7 +2695,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             )
         except Exception as ex:
             slogger.glob.error(str(ex))
-            return Response("An internal error has occurred",
+            return Response("发生内部错误",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @extend_schema(summary='Get the status of a cloud storage',
@@ -2802,7 +2798,7 @@ class AssetsViewSet(
 
         db_guide = AnnotationGuide.objects.prefetch_related("assets").get(pk=serializer.validated_data['guide_id'])
         if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f"Maximum number of assets per guide reached")
+            raise ValidationError(f"已达到每个指南的最大资源数量")
 
         serializer.save(owner=self.request.user)
         return Response(

@@ -84,10 +84,10 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 const notificationKey = `cvat-notification-continue-job-${job.id}`;
                 notification.info({
                     key: notificationKey,
-                    message: `You finished working on frame ${latestFrame}`,
+                    message: `您已完成第 ${latestFrame} 帧的工作`,
                     description: (
                         <span>
-                            Press
+                            如需继续，请点击
                             <Button
                                 className='cvat-notification-continue-job-button'
                                 type='link'
@@ -96,9 +96,9 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                     notification.destroy(notificationKey);
                                 }}
                             >
-                                here
+                                这里
                             </Button>
-                            if you would like to continue
+                            。
                         </span>
                     ),
                     placement: 'topRight',
@@ -110,16 +110,14 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
             if (!job.labels.length) {
                 notification.warning({
-                    message: 'No labels',
+                    message: '没有标签',
                     description: (
                         <span>
-                            {`${job.projectId ? 'Project' : 'Task'} ${
-                                job.projectId || job.taskId
-                            } does not contain any labels. `}
+                            {`${job.projectId ? '项目' : '任务'} ${job.projectId || job.taskId} 不包含任何标签。`}
                             <a href={`/${job.projectId ? 'projects' : 'tasks'}/${job.projectId || job.taskId}/`}>
-                                Add
+                                添加
                             </a>
-                            {' the first one for editing annotation.'}
+                            {' 第一个标签以开始标注。'}
                         </span>
                     ),
                     placement: 'topRight',
@@ -162,3 +160,5 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         </Layout>
     );
 }
+
+

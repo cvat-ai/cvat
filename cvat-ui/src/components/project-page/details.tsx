@@ -62,7 +62,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                     />
                 </Col>
                 <Col>
-                    <Text type='secondary'>Assigned to</Text>
+                    <Text type='secondary'>分配给</Text>
                     <UserSelector
                         value={project.assignee}
                         onSelect={(user) => {
@@ -82,3 +82,4 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
         </div>
     );
 }
+

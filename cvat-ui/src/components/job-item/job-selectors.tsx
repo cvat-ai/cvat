@@ -20,7 +20,7 @@ export function JobStateSelector({ value, onSelect }: Readonly<JobStateSelectorP
             value={value}
             onChange={onSelect}
             onKeyDown={handleDropdownKeyDown}
-            placeholder='Select a state'
+            placeholder='选择状态'
         >
             <Select.Option value={JobState.NEW}>{JobState.NEW}</Select.Option>
             <Select.Option value={JobState.IN_PROGRESS}>{JobState.IN_PROGRESS}</Select.Option>
@@ -43,7 +43,7 @@ export function JobStageSelector({ value, onSelect }: Readonly<JobStageSelectorP
             value={value}
             onChange={onSelect}
             onKeyDown={handleDropdownKeyDown}
-            placeholder='Select a stage'
+            placeholder='选择阶段'
         >
             <Select.Option value={JobStage.ANNOTATION}>
                 {JobStage.ANNOTATION}
@@ -57,3 +57,4 @@ export function JobStageSelector({ value, onSelect }: Readonly<JobStageSelectorP
         </Select>
     );
 }
+

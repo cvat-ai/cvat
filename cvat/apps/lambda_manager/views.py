@@ -418,7 +418,7 @@ class LambdaFunction:
                 try:
                     db_label = next(x for x in _db_labels if x.name == db_label_name)
                 except StopIteration:
-                    raise ValidationError(f'Invalid mapping. Unknown db label "{db_label_name}"')
+                    raise ValidationError(f'无效的映射。未知的数据库标签 "{db_label_name}"')
 
                 if not labels_compatible(md_label, db_label):
                     raise ValidationError(
@@ -547,7 +547,7 @@ class LambdaFunction:
                     }
                 )
             except BadSignature as ex:
-                raise ValidationError("Invalid or expired tracker state") from ex
+                raise ValidationError("跟踪器状态无效或已过期") from ex
         else:
             raise ValidationError(
                 "`{}` lambda function has incorrect type: {}".format(self.id, self.kind),

@@ -148,13 +148,13 @@ function AppearanceBlock(props: Props): JSX.Element {
             items={[{
                 label: (
                     <Text strong className='cvat-objects-appearance-collapse-header'>
-                        Appearance
+                        外观
                     </Text>
                 ),
                 key: 'appearance',
                 children: (
                     <div className='cvat-objects-appearance-content'>
-                        <Text type='secondary'>Color by</Text>
+                        <Text type='secondary'>颜色依据</Text>
                         <Radio.Group
                             className='cvat-appearance-color-by-radio-group'
                             value={colorBy}
@@ -164,7 +164,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                             <Radio.Button value={ColorBy.INSTANCE}>{ColorBy.INSTANCE}</Radio.Button>
                             <Radio.Button value={ColorBy.GROUP}>{ColorBy.GROUP}</Radio.Button>
                         </Radio.Group>
-                        <Text type='secondary'>Opacity</Text>
+                        <Text type='secondary'>不透明度</Text>
                         <Slider
                             className='cvat-appearance-opacity-slider'
                             onChange={changeShapesOpacity}
@@ -172,7 +172,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                             min={0}
                             max={100}
                         />
-                        <Text type='secondary'>Selected opacity</Text>
+                        <Text type='secondary'>选中不透明度</Text>
                         <Slider
                             className='cvat-appearance-selected-opacity-slider'
                             onChange={changeSelectedShapesOpacity}
@@ -187,7 +187,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                             }}
                             checked={outlined}
                         >
-                            Outlined borders
+                            轮廓边框
                             <ColorPicker
                                 onChange={(color) => changeShapesOutlinedBorders(outlined, color)}
                                 value={outlineColor}
@@ -221,7 +221,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                                 onChange={changeShowBitmap}
                                 checked={showBitmap}
                             >
-                                Show bitmap
+                                显示位图
                             </Checkbox>
                         )}
                         {is2D && (
@@ -230,7 +230,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                                 onChange={changeShowProjections}
                                 checked={showProjections}
                             >
-                                Show projections
+                                显示投影
                             </Checkbox>
                         )}
                     </div>
@@ -241,3 +241,4 @@ function AppearanceBlock(props: Props): JSX.Element {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(React.memo(AppearanceBlock));
+

@@ -40,7 +40,7 @@ function PickFromModelComponent(props: Props): JSX.Element {
             { models.length ? (
                 <>
                     <div>
-                        <Text>Select a model to pick labels:</Text>
+                        <Text>选择一个模型以选择标签：</Text>
                     </div>
                     <Select
                         onSelect={(id: string): void => {
@@ -57,15 +57,15 @@ function PickFromModelComponent(props: Props): JSX.Element {
                         style={{ width: '150px' }}
                         onClick={onCancel}
                     >
-                        Done
+                        完成
                     </Button>
                 </>
 
             ) : (
                 <Empty description={(
                     <>
-                        <Text>No deployed models found</Text>
-                        <Button type='primary' onClick={onCancel}>Cancel</Button>
+                        <Text>未找到已部署的模型</Text>
+                        <Button type='primary' onClick={onCancel}>取消</Button>
                     </>
                 )}
                 />
@@ -73,7 +73,7 @@ function PickFromModelComponent(props: Props): JSX.Element {
 
             <div className='cvat-label-constructor-pick-from-model-list'>
                 { !!selectedModel && !labels.length && (
-                    <Empty description='Labels not found in the specified model' />
+                    <Empty description='指定模型中未找到标签' />
                 )}
                 {labels.map((label) => (
                     <Button
@@ -118,3 +118,4 @@ function PickFromModelComponent(props: Props): JSX.Element {
 }
 
 export default React.memo(PickFromModelComponent, compareProps);
+

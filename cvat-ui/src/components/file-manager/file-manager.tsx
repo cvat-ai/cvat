@@ -126,7 +126,7 @@ export class FileManager extends React.PureComponent<Props, State> {
 
         return {
             key: 'local',
-            label: 'My computer',
+            label: '我的电脑',
             className: 'cvat-file-manager-local-tab',
             children: (
                 <LocalFiles
@@ -150,7 +150,7 @@ export class FileManager extends React.PureComponent<Props, State> {
     private renderShareSelector(): NonNullable<TabsProps['items']>[0] {
         return {
             key: 'share',
-            label: 'Connected file share',
+            label: '连接的文件共享',
             className: 'cvat-file-manager-share-tab',
             children: (
                 <RemoteBrowser
@@ -167,12 +167,12 @@ export class FileManager extends React.PureComponent<Props, State> {
 
         return {
             key: 'remote',
-            label: 'Remote sources',
+            label: '远程源',
             className: 'cvat-file-manager-remote-tab',
             children: (
                 <Input.TextArea
                     className='cvat-file-selector-remote'
-                    placeholder='Enter one URL per line'
+                    placeholder='每行输入一个URL'
                     rows={6}
                     value={[...files.remote].join('\n')}
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>): void => {
@@ -195,7 +195,7 @@ export class FileManager extends React.PureComponent<Props, State> {
 
         return {
             key: 'cloudStorage',
-            label: 'Cloud Storage',
+            label: '云存储',
             className: 'cvat-create-task-page-cloud-storage-tab',
             children: (
                 <CloudStorageTab
@@ -241,3 +241,5 @@ export class FileManager extends React.PureComponent<Props, State> {
 }
 
 export default FileManager;
+
+

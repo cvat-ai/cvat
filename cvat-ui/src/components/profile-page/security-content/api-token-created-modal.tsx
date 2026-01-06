@@ -38,7 +38,7 @@ function ApiTokenCreatedModal({
 
     return (
         <Modal
-            title='Your token is ready'
+            title='您的令牌已准备就绪'
             open={visible}
             onCancel={onClose}
             footer={[
@@ -49,9 +49,7 @@ function ApiTokenCreatedModal({
                     style={{ background: '#faad14' }}
                     className='cvat-api-token-created-modal-confirm-saved-button'
                 >
-                    I have&nbsp;
-                    <strong>securely</strong>
-                    &nbsp;saved my token
+                    我已妥善保存我的令牌
                 </Button>,
             ]}
             width={500}
@@ -61,9 +59,9 @@ function ApiTokenCreatedModal({
             <Space direction='vertical' size='large' style={{ width: '100%' }}>
                 <div className='cvat-api-token-created-modal-content'>
                     <Typography.Text type='secondary'>
-                        Make sure to copy your new personal access token now.
+                        请立即复制新的个人访问令牌。
                         <br />
-                        You won&apos;t be able to see it again!
+                        之后将无法再次查看！
                     </Typography.Text>
                     <Space.Compact style={{ width: '100%' }}>
                         <Input
@@ -78,7 +76,7 @@ function ApiTokenCreatedModal({
                             onClick={handleCopyToClipboard}
                             className='cvat-api-token-copy-button'
                         >
-                            {copied ? 'Copied!' : 'Copy'}
+                            {copied ? '已复制！' : '复制'}
                         </Button>
                     </Space.Compact>
                 </div>
@@ -88,3 +86,5 @@ function ApiTokenCreatedModal({
 }
 
 export default React.memo(ApiTokenCreatedModal);
+
+

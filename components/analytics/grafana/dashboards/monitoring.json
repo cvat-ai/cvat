@@ -118,7 +118,7 @@
           "refId": "A"
         }
       ],
-      "title": "Active users (now)",
+      "title": "活跃用户 (现在)",
       "type": "stat"
     },
     {
@@ -221,7 +221,7 @@
           "refId": "A"
         }
       ],
-      "title": "Active users",
+      "title": "活跃用户",
       "type": "timeseries"
     },
     {
@@ -483,11 +483,11 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  avg(duration) as \"Average duration (ms)\",\r\n  min(duration) as \"Min duration (ms)\",\r\n  max(duration) as \"Max duration (ms)\"\r\nFROM events\r\nWHERE duration > 0\r\n  AND $__timeFilter(timestamp)\r\nGROUP BY scope, source",
+          "rawSql": "SELECT\r\n  scope as 范围,\r\n  source as 来源,\r\n  avg(duration) as \"平均耗时(ms)\",\r\n  min(duration) as \"最小耗时(ms)\",\r\n  max(duration) as \"最大耗时(ms)\"\r\nFROM events\r\nWHERE duration > 0\r\n  AND $__timeFilter(timestamp)\r\nGROUP BY scope, source",
           "refId": "A"
         }
       ],
-      "title": "Duration of events",
+      "title": "事件持续时间",
       "type": "table"
     },
     {
@@ -556,11 +556,11 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  count() as Count\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY scope, source",
+          "rawSql": "SELECT\r\n  scope as 范围,\r\n  source as 来源,\r\n  count() as 次数\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY scope, source",
           "refId": "A"
         }
       ],
-      "title": "Number of events",
+      "title": "事件数量",
       "type": "table"
     },
     {
@@ -719,7 +719,7 @@
           "refId": "A"
         }
       ],
-      "title": "Exceptions",
+      "title": "异常",
       "type": "timeseries"
     },
     {
@@ -951,7 +951,7 @@
           "refId": "A"
         }
       ],
-      "title": "Exceptions table",
+      "title": "异常表",
       "type": "table"
     }
   ],
@@ -978,7 +978,7 @@
         "definition": "SELECT DISTINCT source\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
-        "label": "Source",
+        "label": "来源",
         "multi": true,
         "name": "sources",
         "options": [],
@@ -1007,7 +1007,7 @@
         "definition": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "User",
+        "label": "用户",
         "multi": true,
         "name": "users",
         "options": [],
@@ -1032,7 +1032,7 @@
         "definition": "SELECT DISTINCT user_name\nFROM events\nWHERE $__timeFilter(timestamp)",
         "hide": 0,
         "includeAll": true,
-        "label": "Username",
+        "label": "用户名",
         "multi": true,
         "name": "usernames",
         "options": [],
@@ -1061,7 +1061,7 @@
         "definition": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "Project",
+        "label": "项目",
         "multi": true,
         "name": "projects",
         "options": [],
@@ -1090,7 +1090,7 @@
         "definition": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "Task",
+        "label": "任务",
         "multi": true,
         "name": "tasks",
         "options": [],
@@ -1119,7 +1119,7 @@
         "definition": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "Job",
+        "label": "作业",
         "multi": true,
         "name": "jobs",
         "options": [],
@@ -1148,7 +1148,7 @@
         "definition": "SELECT DISTINCT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
         "hide": 0,
         "includeAll": true,
-        "label": "Organization",
+        "label": "组织",
         "multi": true,
         "name": "organizations",
         "options": [],
@@ -1177,7 +1177,7 @@
         "definition": "SELECT\n  DISTINCT JSONExtractString(payload, 'message')\n  FROM cvat.events\nWHERE $__timeFilter(timestamp)\n  AND JSONHas(payload, 'message')\n  AND scope='send:exception'",
         "hide": 0,
         "includeAll": true,
-        "label": "Error message",
+        "label": "错误消息",
         "multi": true,
         "name": "errors",
         "options": [],

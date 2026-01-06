@@ -148,11 +148,10 @@ const PAID_PLACEHOLDER_CONFIG = {
         ' a Ground Truth job that works as benchmark. CVAT automatically compares all task-related jobs' +
         ' to this benchmark, calculating annotation precision to ensure high-quality results.',
         analyticsReport:
-        'The Analytics Report feature provides comprehensive insights into your resource, including key metrics like' +
-        ' object statistics, working time, and annotation speed. It allows you to filter data by time period,' +
-        ' subresource, or user, offering a clear view of performance trends. Additionally, it presents historical' +
-        ' job data within the resource, along with detailed charts to visualize the information.' +
-        ' This feature is perfect for those seeking in-depth analysis and better resource management.',
+        '“分析报告”功能可为你的资源提供全面洞察，包括对象统计、工作时长、标注速度等关键指标。' +
+        '你可以按时间范围、子资源或用户筛选数据，清晰查看性能趋势。' +
+        '此外，它还会展示资源内作业的历史数据，并通过详细图表帮助你可视化这些信息。' +
+        '如果你需要更深入的分析与更好的资源管理，这个功能会非常适合你。',
     },
 };
 

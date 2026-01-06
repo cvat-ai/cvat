@@ -88,7 +88,7 @@ function AnalyticsReportPage(): JSX.Element {
             }
         } catch (error: unknown) {
             notification.error({
-                message: 'Could not export events for the target resource',
+                message: '无法导出目标资源的事件',
                 description: error instanceof Error ? error.message : '',
             });
         } finally {
@@ -121,7 +121,7 @@ function AnalyticsReportPage(): JSX.Element {
                 setResource(_resource[0]);
             }).catch((error: unknown) => {
                 notification.error({
-                    message: 'Could not receive the target resource from the server',
+                    message: '无法从服务器获取目标资源',
                     description: error instanceof Error ? error.message : '',
                 });
             }).finally(() => {

@@ -156,7 +156,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                         className='cvat-objects-sidebar-state-item-elements-collapse'
                         items={[{
                             key: 'elements',
-                            label: <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>,
+                            label: <Text style={{ fontSize: 10 }} type='secondary'>部件</Text>,
                             children: elements.map((element: number) => (
                                 <ObjectItemElementComponent
                                     key={element}

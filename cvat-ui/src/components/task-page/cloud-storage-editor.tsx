@@ -23,7 +23,7 @@ export async function getCloudStorageById(id: number): Promise<CloudStorage | nu
         return data;
     } catch (error: any) {
         notification.error({
-            message: 'Could not fetch a cloud storage',
+            message: '无法获取云存储',
             description: error.toString(),
         });
     }
@@ -35,7 +35,7 @@ export default function CloudStorageEditorComponent(props: Props): JSX.Element |
 
     const [searchPhrase, setSearchPhrase] = useState(cloudStorageInstance ? cloudStorageInstance.displayName : '');
 
-    const label = <Text type='secondary'>Cloud storage</Text>;
+    const label = <Text type='secondary'>云存储</Text>;
 
     if (taskMeta.storage !== StorageLocation.CLOUD_STORAGE) {
         return null;

@@ -66,26 +66,26 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                     {percent === 100 ? (
                         <Row className='cvat-create-multi-tasks-state'>
                             <Col>
-                                Finished
+                                已完成
                             </Col>
                         </Row>
                     ) : null}
                     <Row className='cvat-create-multi-tasks-progress'>
                         <Col>
-                            {`Pending: ${countPending} `}
+                            {`等待中: ${countPending} `}
                         </Col>
                         <Col offset={1}>
-                            {`Progress: ${countProgress} `}
+                            {`进行中: ${countProgress} `}
                         </Col>
                         <Col offset={1}>
-                            {`Completed: ${countCompleted} `}
+                            {`已完成: ${countCompleted} `}
                         </Col>
                         <Col offset={1}>
-                            {`Failed: ${countFailed} `}
+                            {`失败: ${countFailed} `}
                         </Col>
-                        {countCancelled ? (<Col offset={1}>{`Cancelled: ${countCancelled} `}</Col>) : null}
+                        {countCancelled ? (<Col offset={1}>{`已取消: ${countCancelled} `}</Col>) : null}
                         <Col offset={1}>
-                            {`Total: ${countAll}.`}
+                            {`总计: ${countAll}`}
                         </Col>
                     </Row>
                     <Progress
@@ -105,7 +105,7 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                                 }}
                                 items={[{
                                     key: 'appearance',
-                                    label: <Text strong> Failed files </Text>,
+                                    label: <Text strong> 失败的文件 </Text>,
                                     children: (
                                         <List
                                             size='small'
@@ -127,7 +127,7 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                                             disabled={!countFailed}
                                             onClick={onRetryFailedTasks}
                                         >
-                                            Retry failed tasks
+                                            重试失败的任务
                                         </Button>
                                     </Col>
                                     {
@@ -138,7 +138,7 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                                                     disabled={!countCancelled}
                                                     onClick={onRetryCancelledTasks}
                                                 >
-                                                    Retry cancelled tasks
+                                                    重试已取消的任务
                                                 </Button>
                                             </Col>
                                         ) : null
@@ -149,7 +149,7 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                                             type='primary'
                                             onClick={onOk}
                                         >
-                                            Ok
+                                            确定
                                         </Button>
                                     </Col>
                                 </>
@@ -160,7 +160,7 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                                         onClick={onCancel}
                                         disabled={!countPending}
                                     >
-                                        Cancel pending tasks
+                                        取消等待中的任务
                                     </Button>
                                 </Col>
                             )}

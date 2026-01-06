@@ -100,10 +100,10 @@ function SearchFramesModal(): JSX.Element {
             <AutoComplete
                 ref={autoCompleteRef}
                 defaultValue={searchTerm}
-                placeholder='Type to search'
+                placeholder='输入搜索内容'
                 showSearch
                 onSearch={onSearch}
-                notFoundContent={searchTerm ? <Text>No frames found</Text> : null}
+                notFoundContent={searchTerm ? <Text>未找到帧</Text> : null}
                 options={searchResults.map((item) => ({
                     value: item.number,
                     label: (
@@ -122,3 +122,4 @@ function SearchFramesModal(): JSX.Element {
 }
 
 export default React.memo(SearchFramesModal);
+

@@ -99,7 +99,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         <Row align='middle'>
             <Col span={10}>
                 <Text style={{ fontSize: 12 }}>{clientID}</Text>
-                {isGroundTruth ? <Text style={{ fontSize: 12 }}>&nbsp;GT</Text> : null}
+                {isGroundTruth ? <Text style={{ fontSize: 12 }}>&nbsp;真值</Text> : null}
                 <br />
                 <Text
                     type='secondary'
@@ -110,7 +110,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                 </Text>
             </Col>
             <Col span={12}>
-                <CVATTooltip title='Change current label'>
+                <CVATTooltip title='更改当前标签'>
                     <LabelSelector
                         disabled={locked || readonly || shapeType === ShapeType.SKELETON}
                         size='small'
@@ -186,3 +186,4 @@ function ItemTopComponent(props: Props): JSX.Element {
 }
 
 export default React.memo(ItemTopComponent);
+

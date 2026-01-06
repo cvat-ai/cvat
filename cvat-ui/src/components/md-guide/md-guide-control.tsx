@@ -22,14 +22,14 @@ function MdGuideControl(props: Props): JSX.Element {
     return (
         <Row justify='start' className='cvat-md-guide-control-wrapper'>
             <Col span={24}>
-                <Text strong className='cvat-text-color'>{`${instanceType[0].toUpperCase()}${instanceType.slice(1)} description`}</Text>
+                <Text strong className='cvat-text-color'>{`${instanceType === 'task' ? '任务' : '项目'}说明`}</Text>
                 <br />
                 <Button
                     onClick={() => {
                         history.push(`/${instanceType}s/${id}/guide`);
                     }}
                 >
-                    Edit
+                    打开指南
                 </Button>
             </Col>
         </Row>
@@ -37,3 +37,4 @@ function MdGuideControl(props: Props): JSX.Element {
 }
 
 export default React.memo(MdGuideControl);
+

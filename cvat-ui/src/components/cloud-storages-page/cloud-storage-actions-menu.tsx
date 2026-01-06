@@ -33,13 +33,13 @@ export default function CloudStorageActionsMenu(props: Props): JSX.Element {
     const items = [
         {
             key: 'update',
-            label: withCount('Update', 'update'),
+            label: withCount('更新', 'update'),
             onClick: onUpdate,
             disabled: isDisabled('update'),
         },
         {
             key: 'delete',
-            label: withCount('Delete', 'delete'),
+            label: withCount('删除', 'delete'),
             onClick: onDelete,
             disabled: isDisabled('delete'),
         },
@@ -65,3 +65,4 @@ export default function CloudStorageActionsMenu(props: Props): JSX.Element {
         </Dropdown>
     );
 }
+

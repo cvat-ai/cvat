@@ -443,7 +443,7 @@ export const TopViewComponent = React.memo(
         return (
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-topview'>
                 { !canvasIsReady && <Spinner /> }
-                <div className='cvat-canvas3d-header'>Top</div>
+                <div className='cvat-canvas3d-header'>顶视图</div>
                 <div
                     className='cvat-canvas3d-fullsize'
                     ref={ref}
@@ -470,7 +470,7 @@ export const SideViewComponent = React.memo(
         return (
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-sideview'>
                 { !canvasIsReady && <Spinner /> }
-                <div className='cvat-canvas3d-header'>Side</div>
+                <div className='cvat-canvas3d-header'>侧视图</div>
                 <div
                     className='cvat-canvas3d-fullsize'
                     ref={ref}
@@ -497,7 +497,7 @@ export const FrontViewComponent = React.memo(
         return (
             <div className='cvat-canvas3d-orthographic-view cvat-canvas3d-frontview'>
                 { !canvasIsReady && <Spinner /> }
-                <div className='cvat-canvas3d-header'>Front</div>
+                <div className='cvat-canvas3d-header'>前视图</div>
                 <div
                     className='cvat-canvas3d-fullsize'
                     ref={ref}

@@ -286,7 +286,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         try:
             scopes.extend({scopes_per_field[field_name] for field_name in request.data})
         except KeyError as ex:
-            raise PermissionDenied("Attempted to update an unknown field") from ex
+            raise PermissionDenied("尝试更新未知字段") from ex
 
         return scopes
 

@@ -67,7 +67,7 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                 onChange={collapse}
                 items={[{
                     key: 'details',
-                    label: <Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>,
+                    label: <Text style={{ fontSize: 10 }} type='secondary'>详情</Text>,
                     children: [
                         sizeParams && (
                             <Row key='size' justify='space-around' className='cvat-objects-sidebar-size-params'>

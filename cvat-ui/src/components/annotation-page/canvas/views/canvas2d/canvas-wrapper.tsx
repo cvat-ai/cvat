@@ -268,8 +268,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 const componentShortcuts = {
     SWITCH_AUTOMATIC_BORDERING: {
-        name: 'Switch automatic bordering',
-        description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
+        name: '切换自动贴边',
+        description: '在绘制/编辑多边形与折线时切换自动贴边',
         sequences: ['ctrl+a'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
@@ -1009,7 +1009,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                                 } catch (error: any) {
                                     notification.error({
                                         description: error.toString(),
-                                        message: 'Image processing error occurred',
+                                        message: '图像处理错误',
                                         className: 'cvat-notification-notice-image-processing-error',
                                     });
                                 }
@@ -1194,3 +1194,4 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(CanvasWrapperComponent);
+

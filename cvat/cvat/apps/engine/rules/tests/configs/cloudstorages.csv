@@ -1,0 +1,21 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+create,Storage,Sandbox,N/A,,POST,/cloudstorages,User,N/A
+create,Storage,Organization,N/A,,POST,/cloudstorages,User,Maintainer
+list,Storage,Sandbox,N/A,,GET,/cloudstorages,None,N/A
+list,Storage,Organization,N/A,,GET,/cloudstorages,None,Worker
+view,Storage,Sandbox,None,,GET,"/cloudstorages/{id}, /cloudstorages/{id}/preview, /cloudstorages/{id}/status",Admin,N/A
+view,Storage,Sandbox,Owner,,GET,"/cloudstorages/{id}, /cloudstorages/{id}/preview, /cloudstorages/{id}/status",None,N/A
+view,Storage,Organization,Owner,,GET,"/cloudstorages/{id}, /cloudstorages/{id}/preview, /cloudstorages/{id}/status",None,Worker
+view,Storage,Organization,None,,GET,/cloudstorages/{id},User,Supervisor
+update,Storage,Sandbox,None,,PATCH,/cloudstorages/{id},Admin,N/A
+update,Storage,Sandbox,Owner,,PATCH,/cloudstorages/{id},Worker,N/A
+update,Storage,Organization,Owner,,PATCH,/cloudstorages/{id},Worker,Worker
+update,Storage,Organization,None,,PATCH,/cloudstorages/{id},User,Maintainer
+delete,Storage,Sandbox,None,,DELETE,/cloudstorages/{id},Admin,N/A
+delete,Storage,Sandbox,Owner,,DELETE,/cloudstorages/{id},Worker,N/A
+delete,Storage,Organization,Owner,,DELETE,/cloudstorages/{id},Worker,Worker
+delete,Storage,Organization,None,,DELETE,/cloudstorages/{id},User,Maintainer
+list:content,Storage,Sandbox,None,,GET,"/cloudstorages/{id}/content, /cloudstorages/{id}/content-v2",Admin,N/A
+list:content,Storage,Sandbox,Owner,,GET,"/cloudstorages/{id}/content, /cloudstorages/{id}/content-v2",None,N/A
+list:content,Storage,Organization,Owner,,GET,"/cloudstorages/{id}/content, /cloudstorages/{id}/content-v2",None,Worker
+list:content,Storage,Organization,None,,GET,"/cloudstorages/{id}/content, /cloudstorages/{id}/content-v2",User,Supervisor

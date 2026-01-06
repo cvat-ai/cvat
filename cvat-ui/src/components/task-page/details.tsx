@@ -149,14 +149,14 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                         {owner && (
                             <div>
                                 <Text type='secondary'>
-                                    {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
+                                    {`任务 #${taskInstance.id} 由 ${owner} 创建于 ${created}`}
                                 </Text>
                             </div>
                         )}
                         {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
                     </Col>
                     <Col>
-                        <Text type='secondary'>Assigned to</Text>
+                        <Text type='secondary'>负责人：</Text>
                         {assigneeSelect}
                     </Col>
                 </Row>
@@ -196,7 +196,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         return (
             <Row>
                 <Col span={24}>
-                    <Text className='cvat-text-color'>Subset:</Text>
+                    <Text className='cvat-text-color'>子集：</Text>
                 </Col>
                 <Col span={24}>
                     <ProjectSubsetField
@@ -273,3 +273,4 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(DetailsComponent);
+

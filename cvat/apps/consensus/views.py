@@ -68,12 +68,12 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
             try:
                 instance = Task.objects.get(pk=task_id)
             except Task.DoesNotExist as ex:
-                raise NotFound(f"Task {task_id} does not exist") from ex
+                raise NotFound(f"任务 {task_id} 不存在") from ex
         elif job_id:
             try:
                 instance = Job.objects.select_related("segment").get(pk=job_id)
             except Job.DoesNotExist as ex:
-                raise NotFound(f"Jobs {job_id} do not exist") from ex
+                raise NotFound(f"作业 {job_id} 不存在") from ex
 
         manager = merging.MergingManager(request=request, db_instance=instance)
         return manager.enqueue_job()

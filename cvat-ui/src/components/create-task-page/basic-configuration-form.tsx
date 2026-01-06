@@ -77,11 +77,11 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
                     className={many ? 'cvat-task-name-field-has-tooltip' : ''}
                     hasFeedback
                     name='name'
-                    label={<span>Name</span>}
+                    label={<span>名称</span>}
                     rules={[
                         {
                             required: true,
-                            message: 'Task name cannot be empty',
+                            message: '任务名称不能为空',
                         },
                     ]}
                     initialValue={this.initialName}
@@ -130,3 +130,5 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
         );
     }
 }
+
+

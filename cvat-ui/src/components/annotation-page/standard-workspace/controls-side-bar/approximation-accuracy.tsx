@@ -21,13 +21,13 @@ marks[0] = {
     style: {
         color: '#1890ff',
     },
-    label: <strong>less</strong>,
+    label: <strong>少</strong>,
 };
 marks[MAX_ACCURACY] = {
     style: {
         color: '#61c200',
     },
-    label: <strong>more</strong>,
+    label: <strong>多</strong>,
 };
 
 export function thresholdFromAccuracy(approxPolyAccuracy: number): number {
@@ -54,7 +54,7 @@ function ApproximationAccuracy(props: Props): React.ReactPortal | null {
         ReactDOM.createPortal(
             <Row align='middle' className='cvat-approx-poly-threshold-wrapper'>
                 <Col span={5}>
-                    <Text>Points: </Text>
+                    <Text>点数：</Text>
                 </Col>
                 <Col offset={1} span={18}>
                     <Slider

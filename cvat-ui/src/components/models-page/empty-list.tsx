@@ -18,18 +18,19 @@ export default function EmptyListComponent(): JSX.Element {
                     <div>
                         <Row justify='center' align='middle'>
                             <Col>
-                                <Text strong>No models deployed yet...</Text>
+                                <Text strong>暂无已部署的模型...</Text>
                             </Col>
                         </Row>
                         <Row justify='center' align='middle'>
                             <Col>
-                                <Text type='secondary'>To annotate your tasks automatically</Text>
+                                <Text type='secondary'>要自动标注您的任务</Text>
                             </Col>
                         </Row>
                         <Row justify='center' align='middle'>
                             <Col>
-                                <Text type='secondary'>deploy a model with </Text>
+                                <Text type='secondary'>请使用 </Text>
                                 <a href={`${config.NUCLIO_GUIDE}`}>nuclio</a>
+                                <Text type='secondary'> 部署模型</Text>
                             </Col>
                         </Row>
                     </div>

@@ -21,13 +21,13 @@ export default function IncorrectEmailConfirmationPage(): JSX.Element {
                 <Row justify='center' align='middle' id='incorrect-email-confirmation-page-container'>
                     <Col>
                         <h1>
-                            This e-mail confirmation link expired or is invalid.
+                            该邮箱确认链接已过期或无效。
                         </h1>
                         <p>
-                            Please issue a new e-mail confirmation request.
+                            请重新发起邮箱确认请求。
                         </p>
                         <Button className='cvat-go-to-login-button' type='link' href='/auth/login'>
-                            Go to login page
+                            前往登录页
                         </Button>
                     </Col>
                 </Row>

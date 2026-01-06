@@ -18,7 +18,7 @@ function InteractorTooltips(props: Props): JSX.Element {
     const {
         name, gif, message, withNegativePoints,
     } = props;
-    const UNKNOWN_MESSAGE = 'Selected interactor does not have a help message';
+    const UNKNOWN_MESSAGE = '所选交互器没有帮助信息';
     const desc = message || UNKNOWN_MESSAGE;
     return (
         <div className='cvat-interactor-tip-container'>
@@ -26,20 +26,20 @@ function InteractorTooltips(props: Props): JSX.Element {
                 <>
                     <Paragraph>{desc}</Paragraph>
                     <Paragraph>
-                        <Text>You can prevent server requests holding</Text>
+                        <Text>按住</Text>
                         <Text strong>{' Ctrl '}</Text>
-                        <Text>key</Text>
+                        <Text>键可以阻止向服务器发送请求</Text>
                     </Paragraph>
                     <Paragraph>
-                        <Text>Positive points can be added by left-clicking the image. </Text>
+                        <Text>左键点击图像可添加正点。</Text>
                         {withNegativePoints ? (
-                            <Text>Negative points can be added by right-clicking the image. </Text>
+                            <Text>右键点击图像可添加负点。</Text>
                         ) : null}
                     </Paragraph>
-                    {gif ? <Image className='cvat-interactor-tip-image' alt='Example gif' src={gif} /> : null}
+                    {gif ? <Image className='cvat-interactor-tip-image' alt='示例动图' src={gif} /> : null}
                 </>
             ) : (
-                <Text>Select an interactor to see help message</Text>
+                <Text>选择一个交互器以查看帮助信息</Text>
             )}
         </div>
     );

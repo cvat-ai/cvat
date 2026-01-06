@@ -369,11 +369,14 @@ services:
     environment:
       <<: *clickhouse-env
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      # Grafana UI language is controlled by users.default_language
+      GF_USERS_DEFAULT_LANGUAGE: zh-Hans
       GF_AUTH_BASIC_ENABLED: false
       GF_AUTH_ANONYMOUS_ENABLED: true
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
-      GF_SERVER_ROOT_URL: http://${CVAT_HOST:-localhost}/analytics
+      GF_SERVER_ROOT_URL: http://${CVAT_HOST:-localhost}:${CVAT_PORT:-8080}/analytics/
+      GF_SERVER_SERVE_FROM_SUB_PATH: true
       GF_INSTALL_PLUGINS: 'grafana-clickhouse-datasource 4.8.2'
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/all_events.json
     volumes:

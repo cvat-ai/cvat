@@ -9,7 +9,7 @@ import Empty from 'antd/lib/empty';
 function EmptyListComponent(): JSX.Element {
     return (
         <div className='cvat-empty-members-list'>
-            <Empty description={<Text strong>No results matched your search...</Text>} />
+            <Empty description={<Text strong>没有结果匹配您的搜索...</Text>} />
         </div>
     );
 }

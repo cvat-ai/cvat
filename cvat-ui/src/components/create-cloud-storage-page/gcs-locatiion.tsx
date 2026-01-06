@@ -26,7 +26,7 @@ export default function GCSLocation(props: Props): JSX.Element {
             internalCommonProps={internalCommonProps}
             values={config.DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS}
             name='location'
-            label='Location'
+            label='位置'
             href='https://cloud.google.com/storage/docs/locations#available-locations'
         />
     );

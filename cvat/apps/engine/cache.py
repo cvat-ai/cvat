@@ -1009,7 +1009,7 @@ class MediaCache:
 
         storage = db_storage_to_storage_instance(db_storage)
         if not db_storage.manifests.count():
-            raise ValidationError("Cannot get the cloud storage preview. There is no manifest file")
+            raise ValidationError("无法获取云存储预览，没有清单文件")
 
         preview_path = None
         for db_manifest in db_storage.manifests.all():

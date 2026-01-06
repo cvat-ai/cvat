@@ -77,9 +77,9 @@ class DownloadExportedExtension:
                 params["rq_job_id"] = ExportRequestId.parse_and_validate_queue(rq_id, expected_queue=AbstractExporter.QUEUE_NAME, try_legacy_format=True)
                 return
             except Exception:
-                raise ValidationError("Unexpected request id format")
+                raise ValidationError("意外的请求ID格式")
 
-        raise ValidationError("Missing request id in the query parameters")
+        raise ValidationError("查询参数中缺少请求ID")
 
     def extend_resource_with_rq_job_details(self, data: dict[str, Any]) -> None:
         data["rq_job"] = {
@@ -305,7 +305,7 @@ class ProjectPermission(
                 try:
                     dst_org = Organization.objects.get(pk=dst_org_id)
                 except Organization.DoesNotExist:
-                    raise ValidationError("Invalid org id")
+                    raise ValidationError("无效的组织ID")
                 dst_iam_context = get_iam_context(request, dst_org)
             else:
                 # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header
@@ -548,7 +548,7 @@ class TaskPermission(
                 try:
                     dst_org = Organization.objects.get(pk=dst_org_id)
                 except Organization.DoesNotExist:
-                    raise ValidationError("Invalid org id")
+                    raise ValidationError("无效的组织ID")
                 dst_iam_context = get_iam_context(request, dst_org)
             else: # sandbox
                 # do not use here get_iam_context since it checks also org_id/org_slug query params and X-Organization header

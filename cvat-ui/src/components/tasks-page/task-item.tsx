@@ -145,11 +145,11 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 <br />
                 {owner && (
                     <>
-                        <Text type='secondary'>{`Created ${owner ? `by ${owner}` : ''} on ${created}`}</Text>
+                        <Text type='secondary'>{`由 ${owner} 创建于 ${created}`}</Text>
                         <br />
                     </>
                 )}
-                <Text type='secondary'>{`Last updated ${updated}`}</Text>
+                <Text type='secondary'>{`最后更新 ${updated}`}</Text>
             </Col>
         );
     }
@@ -196,23 +196,23 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         <div>
                             { numOfCompleted > 0 && (
                                 <Text strong className='cvat-task-completed-progress'>
-                                    {`\u2022 ${numOfCompleted} done `}
+                                    {`\u2022 ${numOfCompleted} 已完成 `}
                                 </Text>
                             )}
 
                             { numOfValidation > 0 && (
                                 <Text strong className='cvat-task-validation-progress'>
-                                    {`\u2022 ${numOfValidation} on review `}
+                                    {`\u2022 ${numOfValidation} 审核中 `}
                                 </Text>
                             )}
 
                             { numOfAnnotation > 0 && (
                                 <Text strong className='cvat-task-annotation-progress'>
-                                    {`\u2022 ${numOfAnnotation} annotating `}
+                                    {`\u2022 ${numOfAnnotation} 标注中 `}
                                 </Text>
                             )}
                             <Text strong type='secondary'>
-                                {`\u2022 ${numOfJobs} total`}
+                                {`\u2022 ${numOfJobs} 总计`}
                             </Text>
                         </div>
                         <Progress
@@ -256,7 +256,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                                 history.push(`/tasks/${id}`);
                             }}
                         >
-                            Open
+                            打开
                         </Button>
                     </Col>
                 </Row>
@@ -270,7 +270,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             }}
                             className='cvat-task-item-actions-button cvat-actions-menu-button'
                         >
-                            <Text className='cvat-text-color'>Actions</Text>
+                            <Text className='cvat-text-color'>操作</Text>
                             <MoreOutlined className='cvat-menu-icon' />
                         </div>
                     </Col>
@@ -332,3 +332,4 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 }
 
 export default withRouter(TaskItemComponent);
+

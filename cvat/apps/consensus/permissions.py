@@ -33,7 +33,7 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
                 job_id = request.data.get("job_id")
 
                 if not (task_id or job_id):
-                    raise PermissionDenied("Either task_id or job_id must be specified")
+                    raise PermissionDenied("必须指定 task_id 或 job_id")
 
                 # merge is always at least at the task level, even for specific jobs
                 if task_id is not None or job_id is not None:
@@ -41,7 +41,7 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
                         try:
                             job = Job.objects.select_related("segment").get(id=job_id)
                         except Job.DoesNotExist:
-                            raise ValidationError("The specified job does not exist")
+                            raise ValidationError("指定的作业不存在")
 
                         task_id = job.get_task_id()
 
@@ -50,7 +50,7 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
                     try:
                         task = Task.objects.get(id=task_id)
                     except Task.DoesNotExist:
-                        raise ValidationError("The specified task does not exist")
+                        raise ValidationError("指定的任务不存在")
 
                     iam_context = get_iam_context(request, task)
 
@@ -94,7 +94,7 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
                 try:
                     task = Task.objects.get(id=self.task_id)
                 except Task.DoesNotExist:
-                    raise ValidationError("The specified task does not exist")
+                    raise ValidationError("指定的任务不存在")
 
             if task and task.project:
                 project = task.project

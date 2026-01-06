@@ -45,12 +45,12 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
             </Row>
             <Row>
                 <Col>
-                    <Title level={2}> Forgot password? </Title>
+                    <Title level={2}> 忘记密码？ </Title>
                 </Col>
             </Row>
             <Row>
                 <Col>
-                    <Title level={2}> Let&apos;s create a new one </Title>
+                    <Title level={2}> 让我们创建一个新的 </Title>
                 </Col>
             </Row>
             <Form
@@ -69,23 +69,23 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                     rules={[
                         {
                             type: 'email',
-                            message: 'The input is not valid E-mail!',
+                            message: '请输入有效的邮箱地址！',
                         },
                         {
                             required: true,
-                            message: 'Please specify an email address',
+                            message: '请填写邮箱地址',
                         },
                     ]}
                 >
                     <CVATSigningInput
                         autoComplete='email'
-                        placeholder='Email'
+                        placeholder='邮箱'
                         onReset={() => form.setFieldsValue({ email: '' })}
                     />
                 </Form.Item>
                 <Row>
                     <Col className='cvat-password-reset-tip'>
-                        <Text> We will send link to your email </Text>
+                        <Text> 我们将发送链接到您的邮箱 </Text>
                     </Col>
                 </Row>
                 <Form.Item>
@@ -94,7 +94,7 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
                         loading={fetching}
                         htmlType='submit'
                     >
-                        Send
+                        发送
                     </Button>
                 </Form.Item>
             </Form>
@@ -103,3 +103,5 @@ function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element 
 }
 
 export default React.memo(ResetPasswordFormComponent);
+
+

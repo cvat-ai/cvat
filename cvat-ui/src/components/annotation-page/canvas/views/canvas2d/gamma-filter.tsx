@@ -55,7 +55,7 @@ export default function GammaFilter(): JSX.Element {
                 <Col span={24}>
                     <Row className='cvat-image-setups-gamma'>
                         <Col span={6}>
-                            <Text className='cvat-text-color'> Gamma </Text>
+                            <Text className='cvat-text-color'> 伽马 </Text>
                         </Col>
                         <Col span={12}>
                             <Slider

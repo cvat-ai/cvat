@@ -43,7 +43,7 @@ class TusChunk:
         try:
             self.size = int(request.META["CONTENT_LENGTH"])
         except KeyError as ex:
-            raise serializers.ValidationError("Content-Length header is missing") from ex
+            raise serializers.ValidationError("缺少 Content-Length 请求头") from ex
         self.request = request
 
     @property

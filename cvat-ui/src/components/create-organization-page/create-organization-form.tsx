@@ -54,10 +54,10 @@ function CreateOrganizationForm(): JSX.Element {
             <Form.Item
                 hasFeedback
                 name='slug'
-                label='Short name'
+                label='简称'
                 rules={[
-                    { required: true, message: 'Short name is a required field' },
-                    { max: MAX_SLUG_LEN, message: `Short name must not exceed ${MAX_SLUG_LEN} characters` },
+                    { required: true, message: '简称为必填项' },
+                    { max: MAX_SLUG_LEN, message: `简称不能超过 ${MAX_SLUG_LEN} 个字符` },
                     { ...validationPatterns.validateOrganizationSlug },
                 ]}
             >
@@ -66,28 +66,28 @@ function CreateOrganizationForm(): JSX.Element {
             <Form.Item
                 hasFeedback
                 name='name'
-                label='Full name'
-                rules={[{ max: MAX_NAME_LEN, message: `Full name must not exceed ${MAX_NAME_LEN} characters` }]}
+                label='全称'
+                rules={[{ max: MAX_NAME_LEN, message: `全称不能超过 ${MAX_NAME_LEN} 个字符` }]}
             >
                 <Input />
             </Form.Item>
-            <Form.Item hasFeedback name='description' label='Description'>
+            <Form.Item hasFeedback name='description' label='描述'>
                 <Input.TextArea rows={3} />
             </Form.Item>
-            <Form.Item hasFeedback name='email' label='Email' rules={[{ type: 'email', message: 'The input is not a valid E-mail' }]}>
+            <Form.Item hasFeedback name='email' label='邮箱' rules={[{ type: 'email', message: '输入的邮箱格式不正确' }]}>
                 <Input autoComplete='email' placeholder='support@organization.com' />
             </Form.Item>
-            <Form.Item hasFeedback name='phoneNumber' label='Phone number' rules={[{ ...validationPatterns.validatePhoneNumber }]}>
+            <Form.Item hasFeedback name='phoneNumber' label='电话号码' rules={[{ ...validationPatterns.validatePhoneNumber }]}>
                 <Input autoComplete='phoneNumber' placeholder='+44 5555 555555' />
             </Form.Item>
-            <Form.Item hasFeedback name='location' label='Location'>
-                <Input autoComplete='location' placeholder='Country, State/Province, Address, Postal code' />
+            <Form.Item hasFeedback name='location' label='地址'>
+                <Input autoComplete='location' placeholder='国家、省/州、地址、邮编' />
             </Form.Item>
             <Form.Item>
                 <Space className='cvat-create-organization-form-buttons-block' align='end'>
-                    <Button className='cvat-cancel-new-organization-button' onClick={() => history.goBack()}>Cancel</Button>
+                    <Button className='cvat-cancel-new-organization-button' onClick={() => history.goBack()}>取消</Button>
                     <Button className='cvat-submit-new-organization-button' loading={creating} disabled={creating} htmlType='submit' type='primary'>
-                        Submit
+                        提交
                     </Button>
                 </Space>
             </Form.Item>
@@ -96,3 +96,5 @@ function CreateOrganizationForm(): JSX.Element {
 }
 
 export default React.memo(CreateOrganizationForm);
+
+

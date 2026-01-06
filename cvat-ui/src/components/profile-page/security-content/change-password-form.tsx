@@ -27,14 +27,14 @@ function ChangePasswordFormComponent({ onSubmit, onCancel }: Props): JSX.Element
                 rules={[
                     {
                         required: true,
-                        message: 'Please input your current password!',
+                        message: '请输入当前密码！',
                     },
                 ]}
             >
                 <Input.Password
                     autoComplete='current-password'
                     prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='Current password'
+                    placeholder='当前密码'
                 />
             </Form.Item>
 
@@ -44,7 +44,7 @@ function ChangePasswordFormComponent({ onSubmit, onCancel }: Props): JSX.Element
                 rules={[
                     {
                         required: true,
-                        message: 'Please input new password!',
+                        message: '请输入新密码！',
                     },
                     validatePassword,
                 ]}
@@ -52,7 +52,7 @@ function ChangePasswordFormComponent({ onSubmit, onCancel }: Props): JSX.Element
                 <Input.Password
                     autoComplete='new-password'
                     prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='New password'
+                    placeholder='新密码'
                 />
             </Form.Item>
 
@@ -63,7 +63,7 @@ function ChangePasswordFormComponent({ onSubmit, onCancel }: Props): JSX.Element
                 rules={[
                     {
                         required: true,
-                        message: 'Please confirm your new password!',
+                        message: '请确认新密码！',
                     },
                     validateConfirmation('newPassword1'),
                 ]}
@@ -71,7 +71,7 @@ function ChangePasswordFormComponent({ onSubmit, onCancel }: Props): JSX.Element
                 <Input.Password
                     autoComplete='new-password'
                     prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
-                    placeholder='Confirm new password'
+                    placeholder='确认新密码'
                 />
             </Form.Item>
 
@@ -81,14 +81,14 @@ function ChangePasswordFormComponent({ onSubmit, onCancel }: Props): JSX.Element
                         className='cvat-change-password-cancel-button'
                         onClick={onCancel}
                     >
-                        Cancel
+                        取消
                     </Button>
                     <Button
                         type='primary'
                         htmlType='submit'
                         className='cvat-change-password-form-button'
                     >
-                        Submit
+                        提交
                     </Button>
                 </Row>
             </Form.Item>
@@ -97,3 +97,5 @@ function ChangePasswordFormComponent({ onSubmit, onCancel }: Props): JSX.Element
 }
 
 export default React.memo(ChangePasswordFormComponent);
+
+

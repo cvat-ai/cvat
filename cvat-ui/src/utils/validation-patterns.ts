@@ -6,32 +6,32 @@
 const validationPatterns = {
     validatePasswordLength: {
         pattern: /(?=.{8,})/,
-        message: 'Password must have at least 8 characters',
+        message: '密码至少需要8个字符',
     },
 
     passwordContainsNumericCharacters: {
         pattern: /(?=.*[0-9])/,
-        message: 'Password must have at least 1 numeric characters',
+        message: '密码至少需要1个数字',
     },
 
     passwordContainsUpperCaseCharacter: {
         pattern: /(?=.*[A-Z])/,
-        message: 'Password must have at least 1 uppercase alphabetical character',
+        message: '密码至少需要1个大写字母',
     },
 
     passwordContainsLowerCaseCharacter: {
         pattern: /(?=.*[a-z])/,
-        message: 'Password must have at least 1 lowercase alphabetical character',
+        message: '密码至少需要1个小写字母',
     },
 
     validateUsernameLength: {
         pattern: /(?=.{5,})/,
-        message: 'Username must have at least 5 characters',
+        message: '用户名至少需要5个字符',
     },
 
     validateUsernameCharacters: {
         pattern: /^[a-zA-Z0-9_\-.]{5,}$/,
-        message: 'Only characters (a-z), (A-Z), (0-9), -, _, . are available',
+        message: '只能使用字符 (a-z)、(A-Z)、(0-9)、-、_、.',
     },
 
     /*
@@ -47,39 +47,40 @@ const validationPatterns = {
     validateName: {
         // eslint-disable-next-line
         pattern: /^(\p{L}|\p{Pd}|\p{Cf}|\p{Pc}|['\s]){2,}$/gu,
-        message: 'Invalid name',
+        message: '名称无效',
     },
 
     validateAttributeName: {
         pattern: /\S+/,
-        message: 'Invalid name',
+        message: '名称无效',
     },
 
     validateLabelName: {
         pattern: /\S+/,
-        message: 'Invalid name',
+        message: '名称无效',
     },
 
     validateAttributeValue: {
         pattern: /\S+/,
-        message: 'Invalid attribute value',
+        message: '属性值无效',
     },
 
     validateURL: {
         // eslint-disable-next-line
         pattern: /^(https?:\/\/)[^\s$.?#].[^\s]*$/, // url, ip
-        message: 'URL is not valid',
+        message: 'URL 无效',
     },
 
     validateOrganizationSlug: {
         pattern: /^[a-zA-Z\d]+$/,
-        message: 'Only Latin characters and numbers are allowed',
+        message: '只允许使用拉丁字符和数字',
     },
 
     validatePhoneNumber: {
         pattern: /^[+]*[-\s0-9]*$/g,
-        message: 'Input phone number is not correct',
+        message: '输入的电话号码不正确',
     },
 };
 
 export default validationPatterns;
+

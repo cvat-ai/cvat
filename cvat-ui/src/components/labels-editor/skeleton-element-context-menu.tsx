@@ -105,7 +105,7 @@ function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
                         icon={<DeleteOutlined />}
                         key='delete'
                     >
-                        Delete
+                        删除
                     </Button>
                 </div>
             )}
@@ -114,3 +114,4 @@ function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
 }
 
 export default React.memo(SkeletonElementContextMenu);
+

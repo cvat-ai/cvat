@@ -69,7 +69,7 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
                     setTaskInstance(_task);
                 }
             }).catch((error: any) => {
-                notification.error({ message: 'Could not get task details', description: error.toString() });
+                notification.error({ message: '无法获取任务详情', description: error.toString() });
             });
         }
     }, [visible, task]);
@@ -81,7 +81,7 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
             footer={[]}
             onCancel={(): void => closeDialog()}
             maskClosable
-            title='Automatic annotation'
+            title='自动标注'
         >
             { taskInstance ? (
                 <DetectorRunner
@@ -100,3 +100,5 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(ModelRunnerDialog);
+
+

@@ -220,9 +220,9 @@ def _count_files(data):
     for path in data["server_files"]:
         path = os.path.normpath(path).lstrip('/')
         if '..' in path.split(os.path.sep):
-            raise ValueError("Don't use '..' inside file paths")
+            raise ValueError("文件路径中不能使用 '..' ")
         if not (share_root / path).resolve().is_relative_to(share_root):
-            raise ValueError("Bad file path: " + path)
+            raise ValueError("无效的文件路径: " + path)
         server_files.append(path)
 
     sorted_server_files = sorted(server_files, reverse=True)
@@ -290,16 +290,15 @@ def _validate_data(counter, manifest_files=None):
         unique_types = ', '.join([k for k, v in MEDIA_TYPES.items() if v['unique']])
         multiply_types = ', '.join([k for k, v in MEDIA_TYPES.items() if not v['unique']])
         count = ', '.join(['{} {}(s)'.format(len(v), k) for k, v in counter.items()])
-        raise ValueError('Only one {} or many {} can be used simultaneously, \
-            but {} found.'.format(unique_types, multiply_types, count))
+        raise ValueError('只能同时使用一个 {} 或多个 {}，但发现了 {}'.format(unique_types, multiply_types, count))
 
     if unique_entries == 0 and multiple_entries == 0:
-        raise ValueError('No media data found')
+        raise ValueError('未找到媒体数据')
 
     task_modes = [MEDIA_TYPES[media_type]['mode'] for media_type, media_files in counter.items() if media_files]
 
     if not all(mode == task_modes[0] for mode in task_modes):
-        raise Exception('Could not combine different task modes for data')
+        raise Exception('无法组合不同的任务模式')
 
     return counter, task_modes[0]
 
@@ -355,7 +354,7 @@ def _validate_validation_params(
         (frames_per_job := params.get('frames_per_job_count')) and
         db_task.segment_size <= frames_per_job
     ):
-        raise ValidationError("Validation frame count per job cannot be greater than segment size")
+        raise ValidationError("每个作业的验证帧数不能大于分段大小")
 
     if params['mode'] != models.ValidationMode.GT_POOL:
         return params
@@ -364,7 +363,7 @@ def _validate_validation_params(
         data.get('sorting_method', db_task.data.sorting_method) != models.SortingMethod.RANDOM and
         not is_backup_restore
     ):
-        raise ValidationError('validation mode "{}" can only be used with "{}" sorting'.format(
+        raise ValidationError('验证模式 "{}" 只能与 "{}" 排序方式一起使用'.format(
             models.ValidationMode.GT_POOL.value,
             models.SortingMethod.RANDOM.value,
         ))
@@ -374,7 +373,7 @@ def _validate_validation_params(
             continue
 
         if data.get(incompatible_key):
-            raise ValidationError('validation mode "{}" cannot be used with "{}"'.format(
+            raise ValidationError('验证模式 "{}" 不能与 "{}" 一起使用'.format(
                 models.ValidationMode.GT_POOL.value,
                 incompatible_key,
             ))
@@ -393,7 +392,7 @@ def _validate_manifest(
         return None
 
     if len(manifests) != 1:
-        raise ValidationError('Only one manifest file can be attached to data')
+        raise ValidationError('只能附加一个清单文件到数据')
     manifest_file = manifests[0]
     full_manifest_path = root_dir / manifests[0]
 
@@ -407,7 +406,7 @@ def _validate_manifest(
             cloud_storage_instance.download_file(manifest_file, full_manifest_path)
 
     if not is_manifest(full_manifest_path):
-        raise ValidationError('Invalid manifest was uploaded')
+        raise ValidationError('上传的清单文件无效')
 
     return manifest_file
 
@@ -417,7 +416,7 @@ def _validate_scheme(url):
     parsed_url = urlparse.urlparse(url)
 
     if parsed_url.scheme not in ALLOWED_SCHEMES:
-        raise ValueError('Unsupported URL scheme: {}. Only http and https are supported'.format(parsed_url.scheme))
+        raise ValueError('不支持的 URL 协议: {}，仅支持 http 和 https'.format(parsed_url.scheme))
 
 def _download_data(
     urls: Iterable[str],
@@ -530,8 +529,7 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
     else:
         sequence, content = cloud_storage_manifest.get_subset(sorted_media)
     if not content:
-        raise ValidationError('There is no intersection of the files specified'
-                            'in the request with the contents of the bucket')
+        raise ValidationError('指定的文件与存储桶内容没有交集')
     sorted_content = (i[1] for i in sorted(zip(sequence, content)))
     manifest.create(sorted_content)
 
@@ -849,14 +847,13 @@ def create_thread(
     if (not is_backup_restore and manifest_file and
         data['sorting_method'] == models.SortingMethod.RANDOM
     ):
-        raise ValidationError("It isn't supported to upload manifest file and use random sorting")
+        raise ValidationError("不支持上传清单文件并使用随机排序")
 
     if (is_backup_restore and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and
         data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
     ):
         raise ValidationError(
-            "It isn't supported to import the task that was created "
-            "without cache but with random/predefined sorting"
+            "不支持导入未使用缓存但使用随机/预定义排序创建的任务"
         )
 
     # Extract input data
@@ -866,7 +863,7 @@ def create_thread(
             continue
 
         if extractor is not None:
-            raise ValidationError('Combined data types are not supported')
+            raise ValidationError('不支持组合数据类型')
 
         source_paths = [os.path.join(upload_dir, f) for f in media_files]
 
@@ -886,7 +883,7 @@ def create_thread(
         extractor = MEDIA_TYPES[media_type]['extractor'](**details)
 
     if extractor is None:
-        raise ValidationError("Can't create a task without data")
+        raise ValidationError("无法创建没有数据的任务")
 
     # filter server_files from server_files_exclude when share point is used and files are not copied to CVAT.
     # here we exclude the case when the files are copied to CVAT because files are already filtered out.
@@ -1055,7 +1052,7 @@ def create_thread(
                     manifest.validate_seek_key_frames()
 
                     if not len(manifest):
-                        raise ValidationError("No key frames found in the manifest")
+                        raise ValidationError("在清单中未找到关键帧")
 
                 except Exception as ex:
                     manifest.remove()
@@ -1148,7 +1145,7 @@ def create_thread(
 
                     # check mapping
                     if not image_path.endswith(f"{image_info['name']}{image_info['extension']}"):
-                        raise ValidationError('Incorrect file mapping to manifest content')
+                        raise ValidationError('文件映射与清单内容不匹配')
 
                     if (
                         image_info.get('width') is not None and
@@ -1236,7 +1233,7 @@ def create_thread(
                 elif frame_share := validation_params.get("frame_share"):
                     frame_count = max(1, int(len(images) * frame_share))
                 else:
-                    raise ValidationError("The number of validation frames is not specified")
+                    raise ValidationError("未指定验证帧数量")
 
                 pool_frames = rng.choice(
                     all_frames, size=frame_count, shuffle=False, replace=False
@@ -1253,7 +1250,7 @@ def create_thread(
                     pool_frames.append(frame_id)
 
                 if unknown_requested_frames:
-                    raise ValidationError("Unknown validation frames requested: {}".format(
+                    raise ValidationError("请求了未知的验证帧: {}".format(
                         format_list(sorted(unknown_requested_frames)))
                     )
             case _:
@@ -1261,8 +1258,8 @@ def create_thread(
 
         if len(all_frames) - len(pool_frames) < 1:
             raise ValidationError(
-                "Cannot create task: "
-                "too few non-honeypot frames left after selecting validation frames"
+                "无法创建任务: "
+                "选择验证帧后剩余的非蜜罐帧太少"
             )
 
         # Even though the sorting is random overall,
@@ -1277,13 +1274,13 @@ def create_thread(
         if frames_per_job_count := validation_params.get("frames_per_job_count"):
             if len(pool_frames) < frames_per_job_count and validation_params.get("frame_count"):
                 raise ValidationError(
-                    f"The requested number of validation frames per job ({frames_per_job_count}) "
-                    f"is greater than the validation pool size ({len(pool_frames)})"
+                    f"请求的每个作业验证帧数 ({frames_per_job_count}) "
+                    f"大于验证池大小 ({len(pool_frames)})"
                 )
         elif frames_per_job_share := validation_params.get("frames_per_job_share"):
             frames_per_job_count = max(1, int(frames_per_job_share * db_task.segment_size))
         else:
-            raise ValidationError("The number of validation frames is not specified")
+            raise ValidationError("未指定验证帧数量")
 
         frames_per_job_count = min(len(pool_frames), frames_per_job_count)
 
@@ -1441,7 +1438,7 @@ def create_thread(
                 elif frame_share := validation_params.get("frame_share"):
                     frame_count = max(1, int(frame_share * len(all_frames)))
                 else:
-                    raise ValidationError("The number of validation frames is not specified")
+                    raise ValidationError("未指定验证帧数量")
 
                 validation_frames = rng.choice(
                     all_frames, size=frame_count, shuffle=False, replace=False
@@ -1456,7 +1453,7 @@ def create_thread(
                 elif frame_share := validation_params.get("frames_per_job_share"):
                     frame_count = min(max(1, int(frame_share * db_task.segment_size)), db_data.size)
                 else:
-                    raise ValidationError("The number of validation frames is not specified")
+                    raise ValidationError("未指定验证帧数量")
 
                 validation_frames: list[int] = []
                 overlap = db_task.overlap
@@ -1498,7 +1495,7 @@ def create_thread(
                     validation_frames.append(frame_id)
 
                 if unknown_requested_frames:
-                    raise ValidationError("Unknown validation frames requested: {}".format(
+                    raise ValidationError("请求了未知的验证帧: {}".format(
                         format_list(sorted(unknown_requested_frames)))
                     )
             case _:

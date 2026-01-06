@@ -20,7 +20,7 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
 
     return (
         <Col>
-            <Text>Sort by</Text>
+            <Text>排序</Text>
             <Select
                 size='small'
                 className='cvat-objects-sidebar-ordering-selector'
@@ -46,3 +46,4 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
 }
 
 export default React.memo(StatesOrderingSelectorComponent);
+

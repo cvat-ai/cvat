@@ -13,7 +13,7 @@ function CreateProjectPageComponent(): JSX.Element {
     return (
         <Row justify='center' align='top' className='cvat-create-work-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
-                <Text className='cvat-title'>Create a new project</Text>
+                <Text className='cvat-title'>创建新项目</Text>
                 <CreateProjectContent />
             </Col>
         </Row>

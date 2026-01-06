@@ -93,7 +93,7 @@ function FiltersModalComponent(): JSX.Element {
             ...AntdConfig,
             fields: {
                 label: {
-                    label: 'Label',
+                    label: '标签',
                     type: 'select',
                     valueSources: ['value'] as ('value')[],
                     fieldSettings: {
@@ -104,60 +104,60 @@ function FiltersModalComponent(): JSX.Element {
                     },
                 },
                 type: {
-                    label: 'Type',
+                    label: '类型',
                     type: 'select',
                     fieldSettings: {
                         listValues: [
-                            { value: 'shape', title: 'Shape' },
-                            { value: 'track', title: 'Track' },
-                            { value: 'tag', title: 'Tag' },
+                            { value: 'shape', title: '形状' },
+                            { value: 'track', title: '轨迹' },
+                            { value: 'tag', title: '标签' },
                         ],
                     },
                 },
                 shape: {
-                    label: 'Shape',
+                    label: '形状',
                     type: 'select',
                     fieldSettings: {
                         listValues: [
-                            { value: 'rectangle', title: 'Rectangle' },
-                            { value: 'points', title: 'Points' },
-                            { value: 'polyline', title: 'Polyline' },
-                            { value: 'polygon', title: 'Polygon' },
-                            { value: 'cuboid', title: 'Cuboid' },
-                            { value: 'ellipse', title: 'Ellipse' },
-                            { value: 'skeleton', title: 'Skeleton' },
-                            { value: 'mask', title: 'Mask' },
+                            { value: 'rectangle', title: '矩形' },
+                            { value: 'points', title: '点' },
+                            { value: 'polyline', title: '折线' },
+                            { value: 'polygon', title: '多边形' },
+                            { value: 'cuboid', title: '长方体' },
+                            { value: 'ellipse', title: '椭圆' },
+                            { value: 'skeleton', title: '骨架' },
+                            { value: 'mask', title: '掩码' },
                         ],
                     },
                 },
                 occluded: {
-                    label: 'Occluded',
+                    label: '遮挡',
                     type: 'boolean',
                 },
                 width: {
-                    label: 'Width',
+                    label: '宽度',
                     type: 'number',
                     fieldSettings: { min: 0 },
                 },
                 height: {
-                    label: 'Height',
+                    label: '高度',
                     type: 'number',
                     fieldSettings: { min: 0 },
                 },
                 objectID: {
-                    label: 'ObjectID',
+                    label: '对象 ID',
                     type: 'number',
                     hideForCompare: true,
                     fieldSettings: { min: 0 },
                 },
                 serverID: {
-                    label: 'ServerID',
+                    label: '服务器 ID',
                     type: 'number',
                     hideForCompare: true,
                     fieldSettings: { min: 0 },
                 },
                 attr: {
-                    label: 'Attributes',
+                    label: '属性',
                     type: '!struct',
                     subfields: getAttributesSubfields(labels),
                     fieldSettings: {
@@ -286,14 +286,14 @@ function FiltersModalComponent(): JSX.Element {
                     onClick={() => applyFilters([])}
                     className='cvat-filters-modal-clear-button'
                 >
-                    Clear filters
+                    清除过滤
                 </Button>,
                 <Button
                     key='cancel'
                     onClick={() => dispatch(showFilters(false))}
                     className='cvat-filters-modal-cancel-button'
                 >
-                    Cancel
+                    取消
                 </Button>,
                 <Button
                     key='submit'
@@ -302,7 +302,7 @@ function FiltersModalComponent(): JSX.Element {
                     onClick={confirmModal}
                     className='cvat-filters-modal-submit-button'
                 >
-                    Submit
+                    提交
                 </Button>,
             ]}
         >
@@ -342,3 +342,4 @@ function FiltersModalComponent(): JSX.Element {
 }
 
 export default React.memo(FiltersModalComponent);
+

@@ -38,9 +38,9 @@ function InvitationItem(props: Props): JSX.Element {
             >
                 {owner}
             </Text>
-            <Text>&nbsp;has invited you to join the&nbsp;</Text>
+            <Text>&nbsp;邀请您加入&nbsp;</Text>
             <Text strong>{slug}</Text>
-            <Text>&nbsp;organization&nbsp;</Text>
+            <Text>&nbsp;组织&nbsp;</Text>
         </>
     );
 
@@ -50,7 +50,7 @@ function InvitationItem(props: Props): JSX.Element {
                 style={{ visibility: expired ? 'visible' : 'hidden' }}
                 className='cvat-invitation-item-ribbon'
                 placement='start'
-                text='Expired'
+                text='已过期'
                 color='gray'
             >
                 <Card className={`cvat-invitation-item ${declined ? 'cvat-invitation-item-declined' : ''}`}>
@@ -66,7 +66,7 @@ function InvitationItem(props: Props): JSX.Element {
                                     onAccept(key);
                                 }}
                             >
-                                Accept
+                                接受
                             </Button>
                             {
                                 expired ? (
@@ -79,7 +79,7 @@ function InvitationItem(props: Props): JSX.Element {
                                             });
                                         }}
                                     >
-                                        Remove
+                                        移除
                                     </Button>
                                 ) : (
                                     <Button
@@ -90,10 +90,10 @@ function InvitationItem(props: Props): JSX.Element {
                                                 title: (
                                                     <>
                                                         <Text>
-                                                            Would you like to decline the invitation to the&nbsp;
+                                                            是否拒绝加入&nbsp;
                                                         </Text>
                                                         <Text strong>{slug}</Text>
-                                                        <Text>&nbsp;organization&nbsp;</Text>
+                                                        <Text>&nbsp;组织&nbsp;</Text>
                                                     </>
                                                 ),
                                                 className: 'cvat-invitation-decline-modal',
@@ -102,12 +102,12 @@ function InvitationItem(props: Props): JSX.Element {
                                                         setDeclined(true);
                                                     });
                                                 },
-                                                okText: 'Decline',
+                                                okText: '拒绝',
                                                 okButtonProps: { danger: true },
                                             });
                                         }}
                                     >
-                                        Decline
+                                        拒绝
                                     </Button>
                                 )
                             }
@@ -120,3 +120,4 @@ function InvitationItem(props: Props): JSX.Element {
 }
 
 export default React.memo(InvitationItem);
+

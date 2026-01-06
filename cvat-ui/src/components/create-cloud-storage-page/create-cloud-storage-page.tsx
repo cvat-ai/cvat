@@ -13,7 +13,7 @@ export default function CreateCloudStoragePageComponent(): JSX.Element {
     return (
         <Row justify='center' align='top' className='cvat-attach-cloud-storage-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
-                <Text className='cvat-title'>Create a cloud storage</Text>
+                <Text className='cvat-title'>创建云存储</Text>
                 <CreateCloudStorageForm />
             </Col>
         </Row>

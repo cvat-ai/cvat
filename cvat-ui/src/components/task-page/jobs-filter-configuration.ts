@@ -8,34 +8,34 @@ import asyncFetchUsers from 'components/resource-sorting-filtering/request-users
 export const config: Partial<Config> = {
     fields: {
         state: {
-            label: 'State',
+            label: '状态',
             type: 'select',
             operators: ['select_any_in', 'select_equals'], // ['select_equals', 'select_not_equals', 'select_any_in', 'select_not_any_in']
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
-                    { value: 'new', title: 'new' },
-                    { value: 'in progress', title: 'in progress' },
-                    { value: 'rejected', title: 'rejected' },
-                    { value: 'completed', title: 'completed' },
+                    { value: 'new', title: '新建' },
+                    { value: 'in progress', title: '进行中' },
+                    { value: 'rejected', title: '已拒绝' },
+                    { value: 'completed', title: '已完成' },
                 ],
             },
         },
         stage: {
-            label: 'Stage',
+            label: '阶段',
             type: 'select',
             operators: ['select_any_in', 'select_equals'],
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
-                    { value: 'annotation', title: 'annotation' },
-                    { value: 'validation', title: 'validation' },
-                    { value: 'acceptance', title: 'acceptance' },
+                    { value: 'annotation', title: '标注' },
+                    { value: 'validation', title: '验证' },
+                    { value: 'acceptance', title: '验收' },
                 ],
             },
         },
         dimension: {
-            label: 'Dimension',
+            label: '维度',
             type: 'select',
             operators: ['select_equals'],
             valueSources: ['value'],
@@ -47,7 +47,7 @@ export const config: Partial<Config> = {
             },
         },
         assignee: {
-            label: 'Assignee',
+            label: '负责人',
             type: 'select',
             valueSources: ['value'],
             operators: ['select_equals'],
@@ -58,19 +58,19 @@ export const config: Partial<Config> = {
             },
         },
         updatedDate: {
-            label: 'Last updated',
+            label: '最后更新',
             type: 'datetime',
             operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
         },
         type: {
-            label: 'Type',
+            label: '类型',
             type: 'select',
             operators: ['select_equals'],
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
-                    { value: 'annotation', title: 'Annotation' },
-                    { value: 'ground_truth', title: 'Ground truth' },
+                    { value: 'annotation', title: '标注' },
+                    { value: 'ground_truth', title: '真值' },
                 ],
             },
         },
@@ -87,6 +87,7 @@ export const config: Partial<Config> = {
 export const localStorageRecentCapacity = 10;
 export const localStorageRecentKeyword = 'recentlyAppliedJobsFilters';
 export const predefinedFilterValues = {
-    'Assigned to me': '{"and":[{"==":[{"var":"assignee"},"<username>"]}]}',
-    'Not completed': '{"!":{"or":[{"==":[{"var":"state"},"completed"]},{"==":[{"var":"stage"},"acceptance"]}]}}',
+    '分配给我': '{"and":[{"==":[{"var":"assignee"},"<username>"]}]}',
+    '未完成': '{"!":{"or":[{"==":[{"var":"state"},"completed"]},{"==":[{"var":"stage"},"acceptance"]}]}}',
 };
+

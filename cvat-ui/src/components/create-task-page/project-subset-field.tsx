@@ -62,7 +62,7 @@ export default function ProjectSubsetField(props: Props): JSX.Element {
     return (
         <Autocomplete
             value={internalValue}
-            placeholder='Input subset'
+            placeholder='输入子集'
             className='cvat-project-search-field cvat-project-subset-field'
             onSearch={setInternalValue}
             onSelect={(_value) => {
@@ -81,3 +81,4 @@ export default function ProjectSubsetField(props: Props): JSX.Element {
         />
     );
 }
+

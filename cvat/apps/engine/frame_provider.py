@@ -406,7 +406,7 @@ class TaskFrameProvider(IFrameProvider):
 
     def _get_segment(self, validated_frame_number: int) -> models.Segment:
         if not self._db_task.data or not self._db_task.data.size:
-            raise ValidationError("Task has no data")
+            raise ValidationError("任务没有数据")
 
         abs_frame_number = self.get_abs_frame_number(validated_frame_number)
 
@@ -538,7 +538,7 @@ class SegmentFrameProvider(IFrameProvider):
     def validate_frame_number(self, frame_number: int) -> tuple[int, int, int]:
         frame_index = self.get_frame_index(frame_number)
         if frame_index is None:
-            raise ValidationError(f"Incorrect requested frame number: {frame_number}")
+            raise ValidationError(f"请求的帧号不正确: {frame_number}")
 
         chunk_number, frame_position = divmod(frame_index, self._db_segment.task.data.chunk_size)
         return frame_number, chunk_number, frame_position

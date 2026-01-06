@@ -36,12 +36,12 @@ function ProfilePageComponent(): JSX.Element {
         {
             key: 'profile',
             icon: <UserOutlined />,
-            label: <Text className='cvat-profile-page-menu-item-profile'>Profile</Text>,
+            label: <Text className='cvat-profile-page-menu-item-profile'>个人资料</Text>,
         },
         {
             key: 'security',
             icon: <LockOutlined />,
-            label: <Text className='cvat-profile-page-menu-item-security'>Security</Text>,
+            label: <Text className='cvat-profile-page-menu-item-security'>安全</Text>,
         },
     ];
 

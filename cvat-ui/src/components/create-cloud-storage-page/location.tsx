@@ -35,16 +35,17 @@ export default function Location(props: Props): JSX.Element {
     const [locations, setLocations] = useState<Locations>(() => Object.fromEntries(values));
     const [newRegionKey, setNewRegionKey] = useState<string>('');
     const [newRegionName, setNewRegionName] = useState<string>('');
+    const displayLabel = label === 'Location' ? '位置' : '区域';
 
     const handleAddingRegion = (): void => {
         if (!newRegionKey || !newRegionName) {
             notification.warning({
-                message: 'Incorrect region',
+                message: '区域无效',
                 className: 'cvat-incorrect-add-region-notification',
             });
         } else if (locations[newRegionKey]) {
             notification.warning({
-                message: 'This region already exists',
+                message: '该区域已存在',
                 className: 'cvat-incorrect-add-region-notification',
             });
         } else {
@@ -61,8 +62,8 @@ export default function Location(props: Props): JSX.Element {
         <Form.Item
             label={(
                 <>
-                    {label}
-                    <Tooltip title='More information'>
+                    {displayLabel}
+                    <Tooltip title='更多信息'>
                         <Button
                             className='cvat-cloud-storage-help-button'
                             type='link'
@@ -78,7 +79,7 @@ export default function Location(props: Props): JSX.Element {
             {...internalCommonProps}
         >
             <Select
-                placeholder={name}
+                placeholder={displayLabel}
                 defaultValue={selectedRegion ? locations[selectedRegion] : undefined}
                 dropdownRender={(menu) => (
                     <div>
@@ -89,19 +90,19 @@ export default function Location(props: Props): JSX.Element {
                                 value={newRegionKey}
                                 onChange={(event: any) => setNewRegionKey(event.target.value)}
                                 maxLength={14}
-                                placeholder='key'
+                                placeholder='键'
                             />
                             <Input
                                 value={newRegionName}
                                 onChange={(event: any) => setNewRegionName(event.target.value)}
-                                placeholder='name'
+                                placeholder='名称'
                             />
                             <Button
                                 className='cvat-cloud-storage-region-add-button'
                                 type='link'
                                 onClick={handleAddingRegion}
                             >
-                                Add region
+                                添加区域
                                 <PlusCircleOutlined />
                             </Button>
                         </div>
@@ -122,3 +123,4 @@ export default function Location(props: Props): JSX.Element {
         </Form.Item>
     );
 }
+

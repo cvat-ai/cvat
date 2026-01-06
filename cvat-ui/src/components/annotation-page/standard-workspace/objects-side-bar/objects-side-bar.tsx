@@ -91,7 +91,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 className='cvat-objects-sidebar-sider'
                 onClick={collapse}
             >
-                {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
+                {sidebarCollapsed ? <MenuFoldOutlined title='显示' /> : <MenuUnfoldOutlined title='隐藏' />}
             </span>
 
             <Tabs
@@ -100,14 +100,14 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 className='cvat-objects-sidebar-tabs'
                 items={[{
                     key: 'objects',
-                    label: 'Objects',
+                    label: '对象',
                     children: objectsList,
                 }, {
                     key: 'labels',
-                    label: 'Labels',
+                    label: '标签',
                     forceRender: true,
                     children: <LabelsList />,
-                }, ...(is2D ? [{ key: 'issues', label: 'Issues', children: <IssuesListComponent /> }] : [])]}
+                }, ...(is2D ? [{ key: 'issues', label: '问题', children: <IssuesListComponent /> }] : [])]}
             />
             {!sidebarCollapsed && <AppearanceBlock />}
         </Layout.Sider>
@@ -115,3 +115,5 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(React.memo(ObjectsSideBar));
+
+

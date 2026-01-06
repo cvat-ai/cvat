@@ -198,7 +198,7 @@ function RemoteBrowser(props: Props): JSX.Element {
             } catch (error: any) {
                 if (isRelevant()) {
                     notification.error({
-                        message: 'Storage content fetching failed',
+                        message: '获取存储内容失败',
                         description: error.toString(),
                     });
                 }
@@ -291,7 +291,7 @@ function RemoteBrowser(props: Props): JSX.Element {
 
     const columns = [
         {
-            title: 'Name',
+            title: '名称',
             dataIndex: 'name',
             key: 'name',
             render: (name: string, node: Node) => {
@@ -325,11 +325,11 @@ function RemoteBrowser(props: Props): JSX.Element {
             <>
                 <Empty />
                 <Paragraph className='cvat-remote-browser-empty'>
-                    Please, be sure you had
+                    请确认在构建 CVAT 前已
                     <Text strong>
-                        <a href={SHARE_MOUNT_GUIDE_URL}> mounted </a>
+                        <a href={SHARE_MOUNT_GUIDE_URL}>挂载</a>
                     </Text>
-                    share before you built CVAT and the shared storage contains files
+                    共享目录，并且共享存储中包含文件
                 </Paragraph>
             </>
         );
@@ -359,12 +359,12 @@ function RemoteBrowser(props: Props): JSX.Element {
                     <Input
                         addonBefore={<SearchOutlined />}
                         suffix={resource !== 'share' && !!resource.prefix && (
-                            <CVATTooltip title={`Default prefix "${resource.prefix}" is used`}>
+                            <CVATTooltip title={`正在使用默认前缀 "${resource.prefix}"`}>
                                 <InfoCircleOutlined style={{ opacity: 0.5 }} />
                             </CVATTooltip>
                         )}
                         disabled={isFetching}
-                        placeholder='Search by prefix'
+                        placeholder='按前缀搜索'
                         value={curSearchString}
                         onBlur={() => resetDataSource()}
                         onPressEnter={() => resetDataSource()}
@@ -374,7 +374,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                     />
                 </Col>
                 <Col>
-                    <CVATTooltip title='Refresh'>
+                    <CVATTooltip title='刷新'>
                         <Button
                             disabled={isFetching}
                             onClick={() => {
@@ -398,7 +398,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                             message={(
                                 <>
                                     <Text>
-                                        There is no intersection between the specified prefix and the default one
+                                        指定前缀与默认前缀没有交集
                                     </Text>
                                     <Text strong>{` "${defaultPrefix}". `}</Text>
                                 </>
@@ -563,3 +563,5 @@ function RemoteBrowser(props: Props): JSX.Element {
 }
 
 export default React.memo(RemoteBrowser);
+
+

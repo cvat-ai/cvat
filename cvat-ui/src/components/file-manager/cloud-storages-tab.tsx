@@ -54,9 +54,9 @@ export default function CloudStorageTab(props: Props): JSX.Element {
             />
             {cloudStorage ? (
                 <Form.Item
-                    label='Select data source'
+                    label='选择数据源'
                     name='manifestSelect'
-                    rules={[{ required: true, message: 'Please, specify a data source' }]}
+                    rules={[{ required: true, message: '请指定数据源' }]}
                     initialValue={(cloudStorage.manifests?.length) ? cloudStorage.manifests[0] : null}
                 >
                     <Select
@@ -75,9 +75,9 @@ export default function CloudStorageTab(props: Props): JSX.Element {
 
             {cloudStorage && selectedSource ? (
                 <Form.Item
-                    label='Files'
+                    label='文件'
                     name='cloudStorageFiles'
-                    rules={[{ required: true, message: 'Please, select a files' }]}
+                    rules={[{ required: true, message: '请选择文件' }]}
                 >
                     <CloudStorageBrowser
                         resource={cloudStorage}
@@ -90,3 +90,4 @@ export default function CloudStorageTab(props: Props): JSX.Element {
         </Form>
     );
 }
+

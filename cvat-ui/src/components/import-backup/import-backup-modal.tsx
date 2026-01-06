@@ -64,14 +64,14 @@ function ImportBackupModal(): JSX.Element {
                 return e?.fileList[0];
             }}
             name='dragger'
-            rules={[{ required: true, message: 'The file is required' }]}
+            rules={[{ required: true, message: '文件为必填项' }]}
         >
             <Upload.Dragger
                 listType='text'
                 fileList={file ? [file] : ([] as any[])}
                 beforeUpload={(_file: RcFile): boolean => {
                     if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
-                        message.error('Only ZIP archive is supported');
+                        message.error('仅支持 ZIP 压缩包');
                     } else {
                         setFile(_file);
                     }
@@ -84,7 +84,7 @@ function ImportBackupModal(): JSX.Element {
                 <p className='ant-upload-drag-icon'>
                     <InboxOutlined />
                 </p>
-                <p className='ant-upload-text'>Click or drag file to this area</p>
+                <p className='ant-upload-text'>点击或拖拽文件到此区域</p>
             </Upload.Dragger>
         </Form.Item>
     );
@@ -93,7 +93,7 @@ function ImportBackupModal(): JSX.Element {
         if (value) {
             const extension = value.toLowerCase().split('.')[1];
             if (extension !== 'zip') {
-                return Promise.reject(new Error('Only ZIP archive is supported'));
+                return Promise.reject(new Error('仅支持 ZIP 压缩包'));
             }
         }
 
@@ -102,12 +102,12 @@ function ImportBackupModal(): JSX.Element {
 
     const renderCustomName = (): JSX.Element => (
         <Form.Item
-            label={<Text strong>File name</Text>}
+            label={<Text strong>文件名</Text>}
             name='fileName'
-            rules={[{ validator: validateFileName }, { required: true, message: 'Please, specify a name' }]}
+            rules={[{ validator: validateFileName }, { required: true, message: '请输入名称' }]}
         >
             <Input
-                placeholder='Backup file name'
+                placeholder='备份文件名'
                 className='cvat-modal-import-filename-input'
             />
         </Form.Item>
@@ -126,7 +126,7 @@ function ImportBackupModal(): JSX.Element {
         (values: FormValues): void => {
             if (file === null && !values.fileName) {
                 Notification.error({
-                    message: 'No backup file specified',
+                    message: '未指定备份文件',
                 });
                 return;
             }
@@ -185,3 +185,5 @@ function ImportBackupModal(): JSX.Element {
 }
 
 export default React.memo(ImportBackupModal);
+
+

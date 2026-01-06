@@ -1,0 +1,4 @@
+-r development.in
+
+coverage==7.2.3
+fakeredis[lua]~=2.10

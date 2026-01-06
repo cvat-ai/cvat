@@ -39,6 +39,41 @@ export default function ResourceFilterHOC(
     predefinedFilterValues?: Record<string, string>,
 ): React.FunctionComponent<ResourceFilterProps> {
     const config: Config = { ...AntdConfig, ...filtrationCfg };
+    config.settings = {
+        ...config.settings,
+        valueLabel: '值',
+        valuePlaceholder: '值',
+        fieldLabel: '字段',
+        operatorLabel: '运算符',
+        funcLabel: '函数',
+        fieldPlaceholder: '选择字段',
+        funcPlaceholder: '选择函数',
+        operatorPlaceholder: '选择运算符',
+        lockLabel: '锁定',
+        lockedLabel: '已锁定',
+        deleteLabel: '删除',
+        addGroupLabel: '添加组',
+        addCaseLabel: '添加条件',
+        addDefaultCaseLabel: '添加默认条件',
+        defaultCaseLabel: '默认：',
+        addRuleLabel: '添加规则',
+        addSubRuleLabel: '添加子规则',
+        delGroupLabel: '删除',
+        notLabel: '非',
+        fieldSourcesPopupTitle: '选择来源',
+        valueSourcesPopupTitle: '选择值来源',
+    };
+    config.conjunctions = {
+        ...config.conjunctions,
+        AND: {
+            ...config.conjunctions.AND,
+            label: '且',
+        },
+        OR: {
+            ...config.conjunctions.OR,
+            label: '或',
+        },
+    };
     const defaultTree = QbUtils.checkTree(
         QbUtils.loadTree({ id: QbUtils.uuid(), type: 'group' }), config,
     ) as ImmutableTree;
@@ -245,7 +280,7 @@ export default function ResourceFilterHOC(
                                 type='default'
                                 onClick={() => onPredefinedVisibleChange(!predefinedVisible)}
                             >
-                                Quick filters
+                                快速筛选
                                 { appliedFilter.predefined ?
                                     <FilterFilled /> :
                                     <FilterOutlined />}
@@ -306,7 +341,7 @@ export default function ResourceFilterHOC(
                                             () => onRecentVisibleChange(!recentVisible)
                                         }
                                     >
-                                        Recent
+                                        最近
                                         <DownOutlined />
                                     </Button>
                                 </Popover>
@@ -334,7 +369,7 @@ export default function ResourceFilterHOC(
                                         });
                                     }}
                                 >
-                                    Reset
+                                    重置
                                 </Button>
                                 <Button
                                     className='cvat-apply-filters-button'
@@ -353,7 +388,7 @@ export default function ResourceFilterHOC(
                                         });
                                     }}
                                 >
-                                    Apply
+                                    应用
                                 </Button>
                             </Space>
                         </div>
@@ -365,7 +400,7 @@ export default function ResourceFilterHOC(
                         type='default'
                         onClick={() => onBuilderVisibleChange(!builderVisible)}
                     >
-                        Filter
+                        筛选
                         { appliedFilter.built || appliedFilter.recent ?
                             <FilterFilled /> :
                             <FilterOutlined />}
@@ -378,7 +413,7 @@ export default function ResourceFilterHOC(
                     type='link'
                     onClick={() => { setAppliedFilter({ ...defaultAppliedFilter }); }}
                 >
-                    Clear filters
+                    清除过滤
                 </Button>
             </div>
         );
@@ -386,3 +421,4 @@ export default function ResourceFilterHOC(
 
     return React.memo(ResourceFilterComponent);
 }
+

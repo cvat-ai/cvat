@@ -127,7 +127,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
             events = OrganizationEvents
 
         if events is None:
-            return Response("Incorrect value of type parameter", status=status.HTTP_400_BAD_REQUEST)
+            return Response("type 参数值不正确", status=status.HTTP_400_BAD_REQUEST)
 
         return Response(EventsSerializer().to_representation(events))
 

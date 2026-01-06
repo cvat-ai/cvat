@@ -16,13 +16,13 @@ export const config: Partial<Config> = {
             valueSources: ['value'],
         },
         name: {
-            label: 'Name',
+            label: '名称',
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
         },
         assignee: {
-            label: 'Assignee',
+            label: '负责人',
             type: 'select',
             valueSources: ['value'],
             operators: ['select_equals'],
@@ -33,7 +33,7 @@ export const config: Partial<Config> = {
             },
         },
         owner: {
-            label: 'Owner',
+            label: '创建者',
             type: 'select',
             valueSources: ['value'],
             operators: ['select_equals'],
@@ -44,20 +44,20 @@ export const config: Partial<Config> = {
             },
         },
         updated_date: {
-            label: 'Last updated',
+            label: '最后更新',
             type: 'datetime',
             operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
         },
         status: {
-            label: 'Status',
+            label: '状态',
             type: 'select',
             valueSources: ['value'],
             operators: ['select_equals', 'select_any_in', 'select_not_any_in'],
             fieldSettings: {
                 listValues: [
-                    { value: 'annotation', title: 'Annotation' },
-                    { value: 'validation', title: 'Validation' },
-                    { value: 'completed', title: 'Completed' },
+                    { value: 'annotation', title: '标注' },
+                    { value: 'validation', title: '验证' },
+                    { value: 'completed', title: '已完成' },
                 ],
             },
         },
@@ -67,7 +67,8 @@ export const config: Partial<Config> = {
 export const localStorageRecentCapacity = 10;
 export const localStorageRecentKeyword = 'recentlyAppliedProjectsFilters';
 export const predefinedFilterValues = {
-    'Assigned to me': '{"and":[{"==":[{"var":"assignee"},"<username>"]}]}',
-    'Owned by me': '{"and":[{"==":[{"var":"owner"},"<username>"]}]}',
-    'Not completed': '{"!":{"and":[{"==":[{"var":"status"},"completed"]}]}}',
+    '分配给我': '{"and":[{"==":[{"var":"assignee"},"<username>"]}]}',
+    '我创建的': '{"and":[{"==":[{"var":"owner"},"<username>"]}]}',
+    '未完成': '{"!":{"and":[{"==":[{"var":"status"},"completed"]}]}}',
 };
+

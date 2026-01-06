@@ -75,9 +75,9 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
             >
                 <Form.Item
                     name='issue_description'
-                    rules={[{ required: true, message: 'Please, fill out the field' }]}
+                    rules={[{ required: true, message: '请填写此字段' }]}
                 >
-                    <Input ref={inputRef} autoComplete='off' placeholder='Please, describe the issue' />
+                    <Input ref={inputRef} autoComplete='off' placeholder='请描述问题' />
                 </Form.Item>
                 <Row justify='space-between'>
                     <Col>
@@ -86,7 +86,7 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
                             disabled={fetching}
                             className='cvat-create-issue-dialog-cancel-button'
                         >
-                            Cancel
+                            取消
                         </Button>
                     </Col>
                     <Col>
@@ -97,7 +97,7 @@ function MessageForm(props: Readonly<FormProps>): JSX.Element {
                             htmlType='submit'
                             className='cvat-create-issue-dialog-submit-button'
                         >
-                            Submit
+                            提交
                         </Button>
                     </Col>
                 </Row>
@@ -149,3 +149,6 @@ export default function CreateIssueDialog(props: Props): ReactPortal {
         window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
     );
 }
+
+
+

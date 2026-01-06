@@ -45,46 +45,46 @@ export default function ProjectActionsItems(
     menuItems.push([{
         key: 'export-dataset',
         onClick: onExportDataset,
-        label: withCount('Export dataset', 'export-dataset'),
+        label: withCount('导出数据集', 'export-dataset'),
         disabled: isDisabled('export-dataset'),
     }, 0]);
 
     menuItems.push([{
         key: 'import-dataset',
         onClick: onImportDataset,
-        label: 'Import dataset',
+        label: '导入数据集',
         disabled: isDisabled('import-dataset'),
     }, 10]);
 
     menuItems.push([{
         key: 'backup-project',
         onClick: onBackupProject,
-        label: withCount('Backup Project', 'backup-project'),
+        label: withCount('备份项目', 'backup-project'),
         disabled: isDisabled('backup-project'),
     }, 20]);
 
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: <CVATMenuEditLabel>{withCount('Assignee', 'edit_assignee')}</CVATMenuEditLabel>,
+        label: <CVATMenuEditLabel>{withCount('负责人', 'edit_assignee')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_assignee'),
     }, 30]);
 
     menuItems.push([{
         key: 'view-analytics',
-        label: <Link to={`/projects/${projectId}/analytics`}>View analytics</Link>,
+        label: <Link to={`/projects/${projectId}/analytics`}>查看分析</Link>,
         disabled: isDisabled('view-analytics'),
     }, 40]);
 
     menuItems.push([{
         key: 'quality-control',
-        label: <Link to={`/projects/${projectId}/quality-control`}>Quality control</Link>,
+        label: <Link to={`/projects/${projectId}/quality-control`}>质量控制</Link>,
         disabled: isDisabled('quality-control'),
     }, 50]);
 
     menuItems.push([{
         key: 'set-webhooks',
-        label: <Link to={`/projects/${projectId}/webhooks`}>Setup webhooks</Link>,
+        label: <Link to={`/projects/${projectId}/webhooks`}>设置 Webhook</Link>,
         disabled: isDisabled('set-webhooks'),
     }, 60]);
 
@@ -95,13 +95,13 @@ export default function ProjectActionsItems(
     menuItems.push([{
         key: 'edit_organization',
         onClick: () => startEditField('organization'),
-        label: <CVATMenuEditLabel>Organization</CVATMenuEditLabel>,
+        label: <CVATMenuEditLabel>组织</CVATMenuEditLabel>,
     }, 70]);
 
     menuItems.push([{
         key: 'delete',
         onClick: onDeleteProject,
-        label: withCount('Delete', 'delete'),
+        label: withCount('删除', 'delete'),
         disabled: isDisabled('delete'),
     }, 80]);
 
@@ -114,3 +114,4 @@ export default function ProjectActionsItems(
 
     return menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }
+

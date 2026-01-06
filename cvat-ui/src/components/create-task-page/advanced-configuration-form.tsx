@@ -194,12 +194,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderCopyDataCheckbox(): JSX.Element {
         return (
             <Form.Item
-                help='If you have a low data transfer rate over the network you can copy data into CVAT to speed up work'
+                help='如果网络传输速率较低，可以将数据复制到 CVAT 以加快工作速度'
                 name='copyData'
                 valuePropName='checked'
             >
                 <Checkbox>
-                    <Text className='cvat-text-color'>Copy data into CVAT</Text>
+                    <Text className='cvat-text-color'>将数据复制到 CVAT</Text>
                 </Checkbox>
             </Form.Item>
         );
@@ -210,25 +210,25 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
         return (
             <Form.Item
-                label='Sorting method'
+                label='排序方式'
                 name='sortingMethod'
                 rules={[
                     {
                         required: true,
-                        message: 'The field is required.',
+                        message: '此字段为必填项。',
                     },
                 ]}
-                help='Specify how to sort images. It is not relevant for videos.'
+                help='指定图像排序方式。对视频无效。'
             >
                 <Radio.Group buttonStyle='solid' onChange={(e) => onChangeSortingMethod(e.target.value)}>
                     <Radio.Button value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
-                        Lexicographical
+                        字典序
                     </Radio.Button>
-                    <Radio.Button value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>Natural</Radio.Button>
+                    <Radio.Button value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>自然排序</Radio.Button>
                     <Radio.Button value={SortingMethod.PREDEFINED} key={SortingMethod.PREDEFINED}>
-                        Predefined
+                        预定义
                     </Radio.Button>
-                    <Radio.Button value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio.Button>
+                    <Radio.Button value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>随机</Radio.Button>
                 </Radio.Group>
             </Form.Item>
         );
@@ -236,14 +236,14 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderImageQuality(): JSX.Element {
         return (
-            <CVATTooltip title='Defines images compression level'>
+            <CVATTooltip title='定义图像压缩级别'>
                 <Form.Item
-                    label='Image quality'
+                    label='图像质量'
                     name='imageQuality'
                     rules={[
                         {
                             required: true,
-                            message: 'The field is required.',
+                            message: '此字段为必填项。',
                         },
                         { validator: isInteger({ min: 5, max: 100 }) },
                     ]}
@@ -256,9 +256,9 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderOverlap(): JSX.Element {
         return (
-            <CVATTooltip title='Defines a number of intersected frames between different segments'>
+            <CVATTooltip title='定义不同分段之间的重叠帧数'>
                 <Form.Item
-                    label='Overlap size'
+                    label='重叠大小'
                     name='overlapSize'
                     dependencies={['segmentSize']}
                     rules={[{ validator: isInteger({ min: 0 }) }, validateOverlapSize]}
@@ -271,8 +271,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderSegmentSize(): JSX.Element {
         return (
-            <CVATTooltip title='Defines a number of frames in a segment'>
-                <Form.Item label='Segment size' name='segmentSize' rules={[{ validator: isInteger({ min: 1 }) }]}>
+            <CVATTooltip title='定义分段中的帧数'>
+            <Form.Item label='分段大小' name='segmentSize' rules={[{ validator: isInteger({ min: 1 }) }]}>
                     <Input size='large' type='number' min={1} />
                 </Form.Item>
             </CVATTooltip>
@@ -281,7 +281,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderStartFrame(): JSX.Element {
         return (
-            <Form.Item label='Start frame' name='startFrame' rules={[{ validator: isInteger({ min: 0 }) }]}>
+            <Form.Item label='起始帧' name='startFrame' rules={[{ validator: isInteger({ min: 0 }) }]}>
                 <Input size='large' type='number' min={0} step={1} />
             </Form.Item>
         );
@@ -290,7 +290,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderStopFrame(): JSX.Element {
         return (
             <Form.Item
-                label='Stop frame'
+                label='结束帧'
                 name='stopFrame'
                 dependencies={['startFrame']}
                 rules={[{ validator: isInteger({ min: 0 }) }, validateStopFrame]}
@@ -302,7 +302,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderFrameStep(): JSX.Element {
         return (
-            <Form.Item label='Frame step' name='frameStep' rules={[{ validator: isInteger({ min: 1 }) }]}>
+            <Form.Item label='帧步长' name='frameStep' rules={[{ validator: isInteger({ min: 1 }) }]}>
                 <Input size='large' type='number' min={1} step={1} />
             </Form.Item>
         );
@@ -313,8 +313,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             <Form.Item
                 hasFeedback
                 name='bugTracker'
-                label='Issue tracker'
-                extra='Attach issue tracker where the task is described'
+                label='问题追踪'
+                extra='关联描述任务的 Issue 跟踪地址'
                 rules={[{ validator: validateURL }]}
             >
                 <Input size='large' />
@@ -332,8 +332,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 >
                     <Switch />
                 </Form.Item>
-                <Text className='cvat-text-color'>Prefer zip chunks</Text>
-                <Tooltip title='ZIP chunks have better quality, but they require more disk space and time to download. Relevant for video only'>
+                <Text className='cvat-text-color'>优先使用 ZIP 分块</Text>
+                <Tooltip title='ZIP 分块质量更好，但会占用更多磁盘空间且下载耗时更长。仅对视频有效。'>
                     <QuestionCircleOutlined style={{ opacity: 0.5 }} />
                 </Tooltip>
             </Space>
@@ -350,8 +350,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 >
                     <Switch defaultChecked />
                 </Form.Item>
-                <Text className='cvat-text-color'>Use cache</Text>
-                <Tooltip title='Using cache to store data.'>
+                <Text className='cvat-text-color'>使用缓存</Text>
+                <Tooltip title='使用缓存存储数据。'>
                     <QuestionCircleOutlined style={{ opacity: 0.5 }} />
                 </Tooltip>
             </Space>
@@ -378,7 +378,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     </>
                 )}
             >
-                <Form.Item label='Chunk size' name='dataChunkSize' rules={[{ validator: isInteger({ min: 1 }) }]}>
+                <Form.Item label='分块大小' name='dataChunkSize' rules={[{ validator: isInteger({ min: 1 }) }]}>
                     <Input size='large' type='number' />
                 </Form.Item>
             </CVATTooltip>
@@ -388,7 +388,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderConsensusReplicas(): JSX.Element {
         return (
             <Form.Item
-                label='Consensus Replicas'
+                label='共识副本数'
                 name='consensusReplicas'
                 rules={[
                     {
@@ -515,3 +515,5 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 }
 
 export default AdvancedConfigurationForm;
+
+

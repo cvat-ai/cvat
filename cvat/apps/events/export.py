@@ -174,7 +174,7 @@ class EventsExporter(AbstractExporter):
 def export(request: ExtendedRequest):
     action = request.query_params.get("action")
     if action not in (None, "download"):
-        raise serializers.ValidationError("Unexpected action specified for the request")
+        raise serializers.ValidationError("请求中指定了意外的操作")
 
     filename = request.query_params.get("filename")
     manager = EventsExporter(request=request)

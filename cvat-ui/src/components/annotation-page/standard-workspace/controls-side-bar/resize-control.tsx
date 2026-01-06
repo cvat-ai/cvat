@@ -19,7 +19,7 @@ function ResizeControl(props: Props): JSX.Element {
     const { activeControl, canvasInstance } = props;
 
     return (
-        <CVATTooltip title='Select a region of interest' placement='right'>
+        <CVATTooltip title='选择感兴趣区域' placement='right'>
             <Icon
                 component={ZoomIcon}
                 className={
@@ -41,3 +41,4 @@ function ResizeControl(props: Props): JSX.Element {
 }
 
 export default React.memo(ResizeControl);
+

@@ -22,22 +22,22 @@ export default function EmptyListComponent(props: Props): JSX.Element {
         <div className='cvat-empty-cloud-storages-list'>
             <Empty
                 description={notFound ? (
-                    <Text strong>No results matched your search...</Text>
+                    <Text strong>没有结果匹配您的搜索...</Text>
                 ) : (
                     <>
                         <Row justify='center' align='middle'>
                             <Col>
-                                <Text strong>No cloud storages attached yet...</Text>
+                                <Text strong>尚未连接任何云存储...</Text>
                             </Col>
                         </Row>
                         <Row justify='center' align='middle'>
                             <Col>
-                                <Text type='secondary'>To get started with your cloud storage</Text>
+                                <Text type='secondary'>要开始使用云存储，请</Text>
                             </Col>
                         </Row>
                         <Row justify='center' align='middle'>
                             <Col>
-                                <Link to='/cloudstorages/create'>attach a new one</Link>
+                                <Link to='/cloudstorages/create'>连接一个新的</Link>
                             </Col>
                         </Row>
                     </>

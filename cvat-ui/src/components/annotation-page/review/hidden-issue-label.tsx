@@ -63,7 +63,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
 
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
-        <CVATTooltip title={comments[0]?.message || 'No comments found'}>
+        <CVATTooltip title={comments[0]?.message || '暂无评论'}>
             <Tag
                 ref={ref}
                 id={elementID}

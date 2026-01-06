@@ -57,11 +57,11 @@ function NameConfigurationForm(
             <Form.Item
                 name='name'
                 hasFeedback
-                label='Name'
+                label='名称'
                 rules={[
                     {
                         required: true,
-                        message: 'Please, specify a name',
+                        message: '请输入名称',
                     },
                 ]}
             >
@@ -83,14 +83,14 @@ function AdvancedConfigurationForm(props: AdvancedConfigurationProps): JSX.Eleme
         <Form layout='vertical' ref={formRef} initialValues={initialValues}>
             <Form.Item
                 name='bug_tracker'
-                label='Issue tracker'
-                extra='Attach issue tracker where the project is described'
+                label='问题追踪'
+                extra='附加项目描述所在的问题追踪地址'
                 hasFeedback
                 rules={[
                     {
                         validator: (_, value, callback): void => {
                             if (value && !patterns.validateURL.pattern.test(value)) {
-                                callback('Issue tracker must be URL');
+                                callback('问题追踪必须是 URL');
                             } else {
                                 callback();
                             }
@@ -104,7 +104,7 @@ function AdvancedConfigurationForm(props: AdvancedConfigurationProps): JSX.Eleme
                 <Col span={11}>
                     <SourceStorageField
                         instanceId={null}
-                        storageDescription='Specify source storage for import resources like annotation, backups'
+                        storageDescription='指定用于导入资源（标注、备份等）的源存储'
                         locationValue={sourceStorageLocation}
                         onChangeLocationValue={onChangeSourceStorageLocation}
                     />
@@ -112,7 +112,7 @@ function AdvancedConfigurationForm(props: AdvancedConfigurationProps): JSX.Eleme
                 <Col span={11} offset={1}>
                     <TargetStorageField
                         instanceId={null}
-                        storageDescription='Specify target storage for export resources like annotation, backups'
+                        storageDescription='指定用于导出资源（标注、备份等）的目标存储'
                         locationValue={targetStorageLocation}
                         onChangeLocationValue={onChangeTargetStorageLocation}
                     />
@@ -181,16 +181,16 @@ export default function CreateProjectContent(): JSX.Element {
     };
 
     const onSubmitAndContinue = async (): Promise<void> => {
-        const res = await submit();
-        if (res) {
-            resetForm();
-            notification.info({
-                message: 'The project has been created',
-                className: 'cvat-notification-create-project-success',
-            });
-            focusForm();
-        }
-    };
+            const res = await submit();
+            if (res) {
+                resetForm();
+                notification.info({
+                    message: '项目已创建',
+                    className: 'cvat-notification-create-project-success',
+                });
+                focusForm();
+            }
+        };
 
     useEffect(() => {
         focusForm();
@@ -202,7 +202,7 @@ export default function CreateProjectContent(): JSX.Element {
                 <NameConfigurationForm formRef={nameFormRef} inputRef={nameInputRef} />
             </Col>
             <Col span={24}>
-                <Text className='cvat-text-color'>Labels:</Text>
+                <Text className='cvat-text-color'>标签：</Text>
                 <LabelsEditor
                     labels={projectLabels}
                     onSubmit={(newLabels): void => {
@@ -215,7 +215,7 @@ export default function CreateProjectContent(): JSX.Element {
                     className='cvat-advanced-configuration-wrapper'
                     items={[{
                         key: '1',
-                        label: <Text className='cvat-title'>Advanced configuration</Text>,
+                        label: <Text className='cvat-title'>高级配置</Text>,
                         children: (
                             <AdvancedConfigurationForm
                                 formRef={advancedFormRef}
@@ -236,12 +236,12 @@ export default function CreateProjectContent(): JSX.Element {
                 <Row justify='end' gutter={8}>
                     <Col>
                         <Button className='cvat-submit-open-project-button' type='primary' onClick={onSubmitAndOpen}>
-                            Submit & Open
+                            提交并打开
                         </Button>
                     </Col>
                     <Col>
                         <Button className='cvat-submit-continue-project-button' type='primary' onClick={onSubmitAndContinue}>
-                            Submit & Continue
+                            提交并继续
                         </Button>
                     </Col>
                 </Row>
@@ -249,3 +249,6 @@ export default function CreateProjectContent(): JSX.Element {
         </Row>
     );
 }
+
+
+

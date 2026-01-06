@@ -52,14 +52,14 @@ export default function JobActionsItems(
 
     menuItems.push([{
         key: 'task',
-        label: withCount('Go to the task', 'task', `/tasks/${taskId}`),
+        label: withCount('前往任务', 'task', `/tasks/${taskId}`),
         disabled: isDisabled('task'),
     }, 0]);
 
     if (projectId) {
         menuItems.push([{
             key: 'project',
-            label: withCount('Go to the project', 'project', `/projects/${projectId}`),
+            label: withCount('前往项目', 'project', `/projects/${projectId}`),
             disabled: isDisabled('project'),
         }, 10]);
     }
@@ -68,7 +68,7 @@ export default function JobActionsItems(
         menuItems.push([{
             key: 'bug_tracker',
             onClick: onOpenBugTracker,
-            label: withCount('Go to the bug tracker', 'bug_tracker'),
+            label: withCount('前往问题跟踪', 'bug_tracker'),
             disabled: isDisabled('bug_tracker'),
         }, 20]);
     }
@@ -76,14 +76,14 @@ export default function JobActionsItems(
     menuItems.push([{
         key: 'import_job',
         onClick: onImportAnnotations,
-        label: withCount('Import annotations', 'import_job'),
+        label: withCount('导入标注', 'import_job'),
         disabled: isDisabled('import_job'),
     }, 30]);
 
     menuItems.push([{
         key: 'export_job',
         onClick: onExportAnnotations,
-        label: withCount('Export annotations', 'export_job'),
+        label: withCount('导出标注', 'export_job'),
         disabled: isDisabled('export_job'),
     }, 40]);
 
@@ -91,7 +91,7 @@ export default function JobActionsItems(
         menuItems.push([{
             key: 'merge_specific_consensus_jobs',
             onClick: onMergeConsensusJob,
-            label: withCount('Merge consensus job', 'merge_specific_consensus_jobs'),
+            label: withCount('合并共识作业', 'merge_specific_consensus_jobs'),
             disabled: isMergingConsensusEnabled || isDisabled('merge_specific_consensus_jobs'),
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
         }, 50]);
@@ -100,27 +100,27 @@ export default function JobActionsItems(
     menuItems.push([{
         key: 'edit_assignee',
         onClick: () => startEditField('assignee'),
-        label: <CVATMenuEditLabel>{withCount('Assignee', 'edit_assignee')}</CVATMenuEditLabel>,
+        label: <CVATMenuEditLabel>{withCount('负责人', 'edit_assignee')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_assignee'),
     }, 60]);
 
     menuItems.push([{
         key: 'edit_state',
         onClick: () => startEditField('state'),
-        label: <CVATMenuEditLabel>{withCount('State', 'edit_state')}</CVATMenuEditLabel>,
+        label: <CVATMenuEditLabel>{withCount('状态', 'edit_state')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_state'),
     }, 70]);
 
     menuItems.push([{
         key: 'edit_stage',
         onClick: () => startEditField('stage'),
-        label: <CVATMenuEditLabel>{withCount('Stage', 'edit_stage')}</CVATMenuEditLabel>,
+        label: <CVATMenuEditLabel>{withCount('阶段', 'edit_stage')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_stage'),
     }, 80]);
 
     menuItems.push([{
         key: 'view-analytics',
-        label: withCount('View analytics', 'view-analytics', `/tasks/${taskId}/jobs/${jobId}/analytics`),
+        label: withCount('查看分析', 'view-analytics', `/tasks/${taskId}/jobs/${jobId}/analytics`),
         disabled: isDisabled('view-analytics'),
     }, 90]);
 
@@ -129,7 +129,7 @@ export default function JobActionsItems(
         menuItems.push([{
             key: 'delete',
             onClick: onDeleteJob,
-            label: withCount('Delete', 'delete'),
+            label: withCount('删除', 'delete'),
             disabled: isDisabled('delete'),
         }, 100]);
     }
@@ -145,3 +145,4 @@ export default function JobActionsItems(
     const sortedMenuItems = menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
     return sortedMenuItems.map((menuItem) => menuItem[0]);
 }
+
