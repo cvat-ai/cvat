@@ -23,7 +23,7 @@ def handler(context, event):
                 "objects": [{
                     "points": [],             # polygons or bboxes
                     "label": "",              # origin label
-                    "shapeType": type,        # bbox | polygons | mask (TODO: mask not support)
+                    "shapeType": type,        # bbox | polygons | mask | etc...
                     "clientID": annotationId, # annotation object unique ID
                 }, ...]
             }
