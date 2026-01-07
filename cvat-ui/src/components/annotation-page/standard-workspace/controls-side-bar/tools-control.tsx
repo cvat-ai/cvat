@@ -1060,10 +1060,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeLabelID, interactAutoClassActivated, activeAutoClassifier } = this.state;
         const { autoClassifiers, labels } = this.props;
 
-        if (autoClassifiers.length > 0) {
-            this.setActiveInteractorAutoClassifier(autoClassifiers[0].id as string);
-        }
-
         return (
             <>
                 <Row justify='start'>
