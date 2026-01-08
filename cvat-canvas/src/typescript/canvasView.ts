@@ -3138,9 +3138,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const withSource = content.includes('source');
         const withDescriptions = content.includes('descriptions');
         const withDimensions = content.includes('dimensions');
+        const withScore = content.includes('score');
         const textFontSize = this.configuration.textFontSize || 12;
         const {
-            label, clientID, attributes, source, descriptions,
+            label, clientID, attributes, source, descriptions, score,
         } = state;
 
         const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
@@ -3192,6 +3193,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             })
                             .addClass('cvat_canvas_text_description');
                     });
+                }
+                // Score visualization
+                if (withScore && score !== null && score !== undefined) {
+                    block
+                        .tspan(`Score: ${score.toFixed(2)}`)
+                        .attr({ dy: '1.25em', x: 0 })
+                        .addClass('cvat_canvas_text_score');
                 }
                 if (withAttr) {
                     Object.keys(attributes).forEach((attrID: string, idx: number) => {

@@ -8,6 +8,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
 import InputNumber from 'antd/lib/input-number';
+import Tag from 'antd/lib/tag';
 
 import ItemAttribute from './object-item-attribute';
 
@@ -20,6 +21,7 @@ interface Props {
     collapse(): void;
     sizeParams: SizeParams | null;
     changeSize(sizeType: SizeType, value: number): void;
+    score: number | null;
 }
 
 export enum SizeType {
@@ -49,6 +51,7 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
         nextProps.readonly === prevProps.readonly &&
         nextProps.collapsed === prevProps.collapsed &&
         nextProps.attributes === prevProps.attributes &&
+        nextProps.score === prevProps.score &&
         attrValuesAreEqual(nextProps.values, prevProps.values)
     );
 }
@@ -56,7 +59,7 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
 function ItemAttributesComponent(props: Props): JSX.Element {
     const {
         collapsed, attributes, values, readonly, changeAttribute, collapse,
-        sizeParams, changeSize,
+        sizeParams, changeSize, score,
     } = props;
 
     return (
@@ -67,7 +70,16 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                 onChange={collapse}
                 items={[{
                     key: 'details',
-                    label: <Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>,
+                    label: (
+                        <Row style={{ width: '100%' }} align='middle' justify='space-between'>
+                            <Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>
+                            {score !== null && (
+                                <Tag color='#FFB347' style={{ fontSize: 10, margin: 0 }}>
+                                    {score.toFixed(2)}
+                                </Tag>
+                            )}
+                        </Row>
+                    ),
                     children: [
                         sizeParams && (
                             <Row key='size' justify='space-around' className='cvat-objects-sidebar-size-params'>

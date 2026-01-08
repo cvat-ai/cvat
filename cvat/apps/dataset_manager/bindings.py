@@ -231,6 +231,7 @@ class CommonData(InstanceLabelData):
         elements: Sequence[CommonData.LabeledShape] = ()
         outside: bool = False
         id: int | None = None
+        score: float | None = None
 
     class TrackedShape(NamedTuple):
         type: int
@@ -248,6 +249,7 @@ class CommonData(InstanceLabelData):
         track_id: int = 0
         elements: Sequence[CommonData.TrackedShape] = ()
         id: int | None = None
+        score: float | None = None
 
     class Track(NamedTuple):
         label: int
@@ -264,6 +266,7 @@ class CommonData(InstanceLabelData):
         source: str | None
         group: int | None = 0
         id: int | None = None
+        score: float | None = None
 
     @attrs
     class Frame:
@@ -2248,6 +2251,9 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                 if hasattr(ann, 'label') and ann.label is None:
                     raise CvatImportError("annotation has no label")
 
+                # Extract score before creating attributes list
+                score = ann.attributes.pop('score', None)
+
                 attributes = [
                     instance_data.Attribute(name=n, value=str(v))
                     for n, v in ann.attributes.items()
@@ -2323,6 +2329,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                             rotation=rotation,
                             attributes=attributes,
                             elements=elements,
+                            score=score,
                         ))
                         continue
 
@@ -2390,6 +2397,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                         group=group_map.get(ann.group, 0),
                         source=SourceType.FILE,
                         attributes=attributes,
+                        score=score,
                     ))
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "

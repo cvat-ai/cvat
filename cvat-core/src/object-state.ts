@@ -45,6 +45,7 @@ export interface SerializedData {
     color?: string;
     updated?: number;
     source?: Source;
+    score?: number | null;
     zOrder?: number;
     points?: number[];
     occluded?: boolean;
@@ -88,6 +89,7 @@ export default class ObjectState {
         next: number | null;
         last: number | null;
     } | null;
+    public readonly score: number | null;
     public label: Label;
     public color: string;
     public hidden: boolean;
@@ -180,6 +182,7 @@ export default class ObjectState {
             objectType: serialized.objectType,
             shapeType: serialized.shapeType || null,
             updateFlags,
+            score: serialized.score ?? null,
         };
 
         Object.defineProperties(
@@ -203,6 +206,9 @@ export default class ObjectState {
                 },
                 isGroundTruth: {
                     get: () => data.source === Source.GT,
+                },
+                score: {
+                    get: () => data.score,
                 },
                 clientID: {
                     get: () => data.clientID,

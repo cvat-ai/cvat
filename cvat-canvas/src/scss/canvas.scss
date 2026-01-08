@@ -62,6 +62,11 @@ polyline.cvat_shape_drawing_opacity {
     font-style: oblique 40deg;
 }
 
+.cvat_canvas_text_score {
+    fill: #FFB347; // pastel orange for score
+    font-style: oblique 10deg;
+}
+
 .cvat_canvas_crosshair {
     stroke: red;
 }

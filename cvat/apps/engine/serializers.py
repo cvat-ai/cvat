@@ -3171,6 +3171,7 @@ class AnnotationSerializer(serializers.Serializer):
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
     source = serializers.CharField(default='manual')
+    score = serializers.FloatField(min_value=0, max_value=1, allow_null=True, default=None)
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3310,7 +3311,7 @@ class LabeledImageSerializerFromDB(serializers.BaseSerializer):
     # Because default DRF serializer is too slow on huge collections
     def to_representation(self, instance):
         def convert_tag(tag):
-            result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source'])
+            result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source', 'score'])
             result['attributes'] = _convert_attributes(tag['attributes'])
             return result
 
@@ -3322,7 +3323,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_shape(shape):
             result = _convert_annotation(shape, [
-                'id', 'label_id', 'type', 'frame', 'group', 'source',
+                'id', 'label_id', 'type', 'frame', 'group', 'source', 'score',
                 'occluded', 'outside', 'z_order', 'rotation', 'points',
             ])
             result['attributes'] = _convert_attributes(shape['attributes'])
@@ -3341,7 +3342,7 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
                 'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
                 'rotation', 'points', 'attributes',
             ]
-            result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source'])
+            result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source', 'score'])
             result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['shapes']]
             result['attributes'] = _convert_attributes(track['attributes'])
             for shape in result['shapes']:

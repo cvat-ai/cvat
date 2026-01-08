@@ -12,7 +12,6 @@ from typing import ClassVar, TypeAlias
 import attrs
 import datumaro as dm
 import datumaro.components.merge.intersect_merge
-from datumaro.components.errors import FailedLabelVotingError
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
@@ -384,10 +383,6 @@ class LabelMerger(AnnotationMerger, LabelMatcher):
 
         merged = []
         for label, count in votes.items():
-            if count < self.quorum:
-                self._context.add_item_error(FailedLabelVotingError, {label: count})
-                continue
-
             merged.append(
                 dm.Label(
                     self._context.get_label_id(label),
@@ -405,7 +400,7 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
     def merge_clusters(self, clusters):
         return list(filter(lambda x: x is not None, map(self.merge_cluster, clusters)))
 
-    def find_cluster_label(self, cluster: Sequence[dm.Annotation]) -> tuple[int | None, float]:
+    def find_cluster_label(self, cluster: Sequence[dm.Annotation]) -> tuple[int, float]:
         votes = {}
         for s in cluster:
             label = self._context.get_src_label_name(s, s.label)
@@ -414,11 +409,7 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
             state[1] += 1
 
         label, (score, count) = max(votes.items(), key=lambda e: e[1][0])
-        if count < self.quorum:
-            self._context.add_item_error(FailedLabelVotingError, votes)
-            label = None
-        else:
-            label = self._context.get_label_id(label)
+        label = self._context.get_label_id(label)
 
         score = score / self._context.dataset_count()
         return label, score
@@ -452,14 +443,10 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
     def merge_cluster(self, cluster):
         label, label_score = self.find_cluster_label(cluster)
 
-        # when the merged annotation is rejected due to quorum constraint
-        if label is None:
-            return None
-
         shape, shape_score = self.merge_cluster_shape(cluster)
         shape.z_order = max(cluster, key=lambda a: a.z_order).z_order
         shape.label = label
-        shape.attributes["score"] = label_score * shape_score
+        shape.attributes["score"] = round(label_score, 2)
 
         return shape
 

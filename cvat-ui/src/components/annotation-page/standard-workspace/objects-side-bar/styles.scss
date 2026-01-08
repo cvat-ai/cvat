@@ -277,8 +277,9 @@
 
         > .ant-collapse-header {
             align-items: baseline;
-            padding-top: 2px;
-            padding-bottom: 2px;
+            // padding-top: 2px;
+            // padding-bottom: 2px;
+            padding: 2px;
 
             .ant-collapse-arrow {
                 padding: 0;
@@ -485,5 +486,25 @@
     .ant-input-number {
         margin-left: $grid-unit-size * 0.5;
         width: $grid-unit-size * 9;
+    }
+}
+
+.cvat-objects-sidebar-consensus-info {
+    padding: $grid-unit-size;
+    margin-bottom: $grid-unit-size;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: $border-radius-base;
+
+    .ant-tag {
+        margin-right: $grid-unit-size * 0.5;
+        margin-bottom: $grid-unit-size * 0.5;
+    }
+
+    > .ant-col {
+        margin-bottom: $grid-unit-size * 0.5;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
     }
 }
