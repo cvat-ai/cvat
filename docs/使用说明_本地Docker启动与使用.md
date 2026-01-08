@@ -29,6 +29,12 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
 - 打开：`http://localhost:8080`
 - 默认登录（本环境常用）：用户名 `admin`，密码 `admin123`
 
+如果你执行过“完全重置”（`docker compose down -v`），数据库是空的，需要先创建/重置管理员账号：
+```powershell
+cd "D:/OneDrive/steven/code/5/cvat-develop"
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T cvat_server python manage.py shell -c "from django.contrib.auth import get_user_model; User=get_user_model(); u,created=User.objects.get_or_create(username='admin', defaults={'email':'admin@localhost','is_staff':True,'is_superuser':True}); u.is_staff=True; u.is_superuser=True; u.set_password('admin123'); u.save(); print('admin:', 'created' if created else 'updated')"
+```
+
 如果页面打不开：
 - 先跑一次 `docker compose ... ps` 看 `traefik` / `cvat_ui` 是否 `Up`
 - 再看日志：
@@ -86,4 +92,3 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-rec
 通常是 Docker Desktop 没完全起来或后端卡住：
 - 打开 Docker Desktop 确认处于 Running
 - 必要时重启 Docker Desktop 后再执行 `docker compose ... up -d`
-
