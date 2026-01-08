@@ -7,6 +7,8 @@
 - Windows + Docker Desktop（已安装并能正常运行）
 - 本仓库代码：`D:/OneDrive/steven/code/5/cvat-develop`
 
+如果你是“接手者/下一个 AI”，先看：`docs/交付与接力指南.md`
+
 > 注意：如果你之前把 CVAT 的容器“暂停（pause）”，端口仍然会被占用；要释放端口请用“停止（stop）”。
 
 ## 2. 一键启动（推荐）
