@@ -28,6 +28,21 @@ import {
     changeShowProjections as changeShowProjectionsAction,
     changeOrientationVisibility as changeOrientationVisibilityAction,
 } from 'actions/settings-actions';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
+
+const componentShortcuts = {
+    SWITCH_COLOR_BY_APPEARANCE: {
+        name: 'Switch color by label',
+        description: 'Set color by option to Label',
+        sequences: ['alt+q'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    }
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 interface StateToProps {
     appearanceCollapsed: boolean;
@@ -41,11 +56,12 @@ interface StateToProps {
     orientationVisibility: OrientationVisibility;
     workspace: Workspace;
     jobInstance: Job;
+    keyMap: KeyMap;
 }
 
 interface DispatchToProps {
     collapseAppearance(): void;
-    changeShapesColorBy(event: RadioChangeEvent): void;
+    changeShapesColorBy(colorBy: ColorBy): void;
     changeShapesOpacity(value: number): void;
     changeSelectedShapesOpacity(value: number): void;
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
@@ -67,6 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 orientationVisibility,
             },
         },
+        shortcuts: { keyMap },
     } = state;
 
     return {
@@ -81,6 +98,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         workspace,
         orientationVisibility,
         jobInstance: jobInstance as Job,
+        keyMap,
     };
 }
 
@@ -89,8 +107,8 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         collapseAppearance(): void {
             dispatch(collapseAppearanceAction());
         },
-        changeShapesColorBy(event: RadioChangeEvent): void {
-            dispatch(changeShapesColorByAction(event.target.value));
+        changeShapesColorBy(colorBy: ColorBy): void {
+            dispatch(changeShapesColorByAction(colorBy));
         },
         changeShapesOpacity(value: number): void {
             dispatch(changeShapesOpacityAction(value));
@@ -135,35 +153,52 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShowProjections,
         changeOrientationVisibility,
         jobInstance,
+        keyMap,
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
     const is3D = jobInstance.dimension === DimensionType.DIMENSION_3D;
 
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        SWITCH_COLOR_BY_APPEARANCE: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            const nextColorBy = {
+                [ColorBy.INSTANCE]: ColorBy.GROUP,
+                [ColorBy.GROUP]: ColorBy.LABEL,
+                [ColorBy.LABEL]: ColorBy.INSTANCE,
+            };
+            console.log(nextColorBy[colorBy], "next color by item");
+            changeShapesColorBy(nextColorBy[colorBy]);
+
+        },
+    };
+
     return (
-        <Collapse
-            onChange={collapseAppearance}
-            activeKey={appearanceCollapsed ? [] : ['appearance']}
-            className='cvat-objects-appearance-collapse'
-            items={[{
-                label: (
-                    <Text strong className='cvat-objects-appearance-collapse-header'>
-                        Appearance
-                    </Text>
-                ),
-                key: 'appearance',
-                children: (
-                    <div className='cvat-objects-appearance-content'>
-                        <Text type='secondary'>Color by</Text>
-                        <Radio.Group
-                            className='cvat-appearance-color-by-radio-group'
-                            value={colorBy}
-                            onChange={changeShapesColorBy}
-                        >
-                            <Radio.Button value={ColorBy.LABEL}>{ColorBy.LABEL}</Radio.Button>
-                            <Radio.Button value={ColorBy.INSTANCE}>{ColorBy.INSTANCE}</Radio.Button>
-                            <Radio.Button value={ColorBy.GROUP}>{ColorBy.GROUP}</Radio.Button>
-                        </Radio.Group>
+        <div className='cvat-appearance-block'>
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+            <Collapse
+                onChange={collapseAppearance}
+                activeKey={appearanceCollapsed ? [] : ['appearance']}
+                className='cvat-objects-appearance-collapse'
+                items={[{
+                    label: (
+                        <Text strong className='cvat-objects-appearance-collapse-header'>
+                            Appearance
+                        </Text>
+                    ),
+                    key: 'appearance',
+                    children: (
+                        <div className='cvat-objects-appearance-content'>
+                            <Text type='secondary'>Color by</Text>
+                            <Radio.Group
+                                className='cvat-appearance-color-by-radio-group'
+                                value={colorBy}
+                                onChange={(event: RadioChangeEvent) => changeShapesColorBy(event.target.value)}
+                            >
+                                <Radio.Button value={ColorBy.LABEL}>{ColorBy.LABEL}</Radio.Button>
+                                <Radio.Button value={ColorBy.INSTANCE}>{ColorBy.INSTANCE}</Radio.Button>
+                                <Radio.Button value={ColorBy.GROUP}>{ColorBy.GROUP}</Radio.Button>
+                            </Radio.Group>
                         <Text type='secondary'>Opacity</Text>
                         <Slider
                             className='cvat-appearance-opacity-slider'
@@ -237,6 +272,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                 ),
             }]}
         />
+        </div>
     );
 }
 
