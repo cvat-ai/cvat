@@ -28,7 +28,7 @@ export function confirmTransferModal(
     }
 
     Modal.confirm({
-        title: 'Data transfer between workspaces',
+        title: '工作区之间的数据传输',
         content: `${details} Would you like to proceed?`,
         className: 'cvat-modal-confirm-project-transfer-between-workspaces',
         onOk,
@@ -36,6 +36,6 @@ export function confirmTransferModal(
             type: 'primary',
             danger: true,
         },
-        okText: 'Continue',
+        okText: '继续',
     });
 }

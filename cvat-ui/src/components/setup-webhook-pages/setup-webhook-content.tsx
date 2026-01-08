@@ -120,7 +120,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
         try {
             const values: Store = await form.validateFields();
             let notificationConfig = {
-                message: 'Webhook has been successfully updated',
+                message: 'Webhook 已成功更新',
                 className: 'cvat-notification-update-webhook-success',
             };
             if (webhook) {
@@ -147,7 +147,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
                     type: projectId ? WebhookSourceType.PROJECT : WebhookSourceType.ORGANIZATION,
                 };
                 notificationConfig = {
-                    message: 'Webhook has been successfully added',
+                    message: 'Webhook 已成功添加',
                     className: 'cvat-notification-create-webhook-success',
                 };
                 await dispatch(createWebhookAsync(rawWebhookData));

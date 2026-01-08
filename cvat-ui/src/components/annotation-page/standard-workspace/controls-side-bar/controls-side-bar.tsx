@@ -59,14 +59,14 @@ interface Props {
 
 const componentShortcuts = {
     CLOCKWISE_ROTATION_STANDARD_CONTROLS: {
-        name: 'Rotate clockwise',
-        description: 'Change image angle (add 90 degrees)',
+        name: '顺时针旋转',
+        description: '旋转图像（+90度）',
         sequences: ['ctrl+r'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
     ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: {
-        name: 'Rotate anticlockwise',
-        description: 'Change image angle (subtract 90 degrees)',
+        name: '逆时针旋转',
+        description: '旋转图像（-90度）',
         sequences: ['ctrl+shift+r'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },

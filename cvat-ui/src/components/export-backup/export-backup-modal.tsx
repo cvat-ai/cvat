@@ -202,7 +202,7 @@ function ExportBackupModal(): JSX.Element {
                     'Bulk backup export was started. You can check progress [here](/requests).' :
                     'Backup export was started. You can check progress [here](/requests).';
                 Notification.info({
-                    message: isBulkMode ? '批量备份导出已开始' : 'Backup export started',
+                    message: isBulkMode ? '批量备份导出已开始' : '备份导出已开始',
                     description: (
                         <CVATMarkdown history={history}>{description}</CVATMarkdown>
                     ),

@@ -122,10 +122,10 @@ function DetectorRunner(props: Props): JSX.Element {
     return (
         <div className='cvat-run-model-content'>
             <Row align='middle'>
-                <Col span={4}>Model:</Col>
+                <Col span={4}>模型：</Col>
                 <Col span={20}>
                     <Select
-                        placeholder={dimension === DimensionType.DIMENSION_2D ? 'Select a model' : 'No models available'}
+                        placeholder={dimension === DimensionType.DIMENSION_2D ? '选择模型' : '无可用模型'}
                         disabled={dimension !== DimensionType.DIMENSION_2D}
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
@@ -272,7 +272,7 @@ function DetectorRunner(props: Props): JSX.Element {
                             }
                         }}
                     >
-                        Annotate
+                        标注
                     </Button>
                 </Col>
             </Row>

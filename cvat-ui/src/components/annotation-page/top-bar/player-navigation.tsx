@@ -63,7 +63,7 @@ const componentShortcuts = {
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
     FOCUS_INPUT_FRAME: {
-        name: 'Focus input frame',
+        name: '聚焦输入帧',
         description: '聚焦元素以更改当前帧',
         sequences: ['`'],
         displayedSequences: ['~'],

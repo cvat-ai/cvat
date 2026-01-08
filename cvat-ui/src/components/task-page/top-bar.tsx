@@ -33,7 +33,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         size='large'
                     >
                         <LeftOutlined />
-                        Back to project
+                        返回项目
                     </Button>
                 ) : (
                     <Button

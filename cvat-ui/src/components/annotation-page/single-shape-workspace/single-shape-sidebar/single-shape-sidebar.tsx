@@ -610,7 +610,7 @@ function SingleShapeSidebar(): JSX.Element {
                             dispatch(actionCreators.switchAutoNextFrame(!state.autoNextFrame));
                         }}
                     >
-                        Automatically go to the next frame
+                        自动跳转到下一帧
                     </Checkbox>
                 </Col>
             </Row>

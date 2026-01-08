@@ -323,7 +323,7 @@ function FiltersModalComponent(): JSX.Element {
                         type='text'
                         className='cvat-filters-modal-recently-used-button'
                     >
-                        Recently used
+                        最近使用
                         {' '}
                         <DownOutlined />
                     </Button>

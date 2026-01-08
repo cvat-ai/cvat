@@ -112,7 +112,7 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
                 className={previewClassName || ''}
                 src={preview.preview}
                 onClick={onClick}
-                alt='Preview image'
+                alt='预览图像'
                 aria-hidden
             />
         </div>

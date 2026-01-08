@@ -63,7 +63,7 @@ function WebhooksPage(): JSX.Element | null {
             size='large'
         >
             <LeftOutlined />
-            {projectsMatch ? 'Back to project' : 'Back to organization'}
+            {projectsMatch ? '返回项目' : '返回组织'}
         </Button>
     );
 

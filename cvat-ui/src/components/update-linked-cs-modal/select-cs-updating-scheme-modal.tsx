@@ -56,15 +56,14 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
                         title={(
                             <>
                                 <div>
-                                    <strong>Move & Detach</strong>
-                                    : Transfer and unlink from a cloud storage.
+                                    <strong>移动并分离</strong>
+                                    ：传输并从云存储取消链接。
                                 </div>
                                 <div>
-                                    <strong>Move & Auto Match</strong>
-                                    : Transfer and attempt to auto-link with a similar cloud storage
-                                     in the target workspace. A similar cloud storage is defined
-                                     by comparing the whole cloud storage configuration except credentials
-                                     and owner.
+                                    <strong>移动并自动匹配</strong>
+                                    ：传输并尝试与目标工作区中的类似云存储自动链接。
+                                     类似的云存储是通过比较除凭据
+                                     和所有者之外的整个云存储配置来定义的。
                                 </div>
                             </>
                         )}
@@ -98,7 +97,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
                         onUpdate();
                     }}
                 >
-                    Move & detach
+                    移动并分离
                 </Button>,
                 // do not show option "move and auto match" when only data storage is linked
                 (
@@ -114,7 +113,7 @@ function SelectCSUpdatingSchemeModal(): JSX.Element | null {
                             onUpdate();
                         }}
                     >
-                        Move & Auto match
+                        移动并自动匹配
                     </Button>
                 ),
             ]}

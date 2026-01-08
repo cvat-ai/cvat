@@ -171,7 +171,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                             setVisibility({ ...defaultVisibility, sorting: visible })
                         )}
                         defaultFields={query.sort?.split(',') || ['-ID']}
-                        sortingFields={['ID', 'Assignee', '状态', '阶段']}
+                        sortingFields={['ID', '负责人', '状态', '阶段']}
                         onApplySorting={(sort: string | null) => {
                             setQuery({
                                 ...query,
@@ -236,7 +236,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                     </Col>
                 </div>
             ) : (
-                <Empty description='No jobs found' />
+                <Empty description='未找到作业' />
             )}
             <Row justify='center' align='middle'>
                 <Col>

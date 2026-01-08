@@ -237,7 +237,7 @@ export default function ProjectPageComponent(): JSX.Element {
             )}
         </BulkWrapper>
     ) : (
-        <Empty description='No tasks found' />
+        <Empty description='未找到任务' />
     );
 
     return (
@@ -347,7 +347,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         className='cvat-create-multi-tasks-button'
                                         onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
                                     >
-                                        Create multi tasks
+                                        创建多个任务
                                     </Button>
                                 </CvatDropdownMenuPaper>
                             )}

@@ -78,3 +78,7 @@ cvat-ui/dist
 **/!.yarn/sdks
 **/!.yarn/versions
 .local/
+i18n.cache
+docs/lingo/
+.serena/
+nul

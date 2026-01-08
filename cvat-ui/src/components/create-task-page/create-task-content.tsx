@@ -109,8 +109,8 @@ const defaultState: State = {
 };
 
 const UploadFileErrorMessages = {
-    one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file or multiple images. ',
-    multi: 'Wrong list of files. You can upload one or more videos. ',
+    one: '文件列表错误。您可以上传包含图片的压缩包、视频、PDF 文件或多张图片。',
+    multi: '文件列表错误。您可以上传一个或多个视频。',
 };
 
 function receiveExtensions(files: RemoteFile[]): string[] {
@@ -1035,9 +1035,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         onClick={this.handleSubmitMultiTasks}
                         disabled={!!uploadFileErrorMessage}
                     >
-                        Submit&nbsp;
+                        提交 
                         {currentFiles.length}
-                        &nbsp;tasks
+                         任务
                     </Button>
                 </Col>
             </Row>

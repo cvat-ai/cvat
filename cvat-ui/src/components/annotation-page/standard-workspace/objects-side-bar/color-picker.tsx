@@ -100,7 +100,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                                     changeVisible(false);
                                 }}
                             >
-                                Ok
+                                确定
                             </Button>
                         </Col>
                     </Row>

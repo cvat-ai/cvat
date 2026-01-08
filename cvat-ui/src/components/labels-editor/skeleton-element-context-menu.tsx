@@ -95,7 +95,7 @@ function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
                         icon={<EditOutlined />}
                         key='configure_label'
                     >
-                        Configure
+                        配置
                     </Button>
                     <Button
                         type='link'

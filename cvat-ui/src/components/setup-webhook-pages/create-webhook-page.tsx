@@ -32,7 +32,7 @@ function CreateWebhookPage(): JSX.Element {
                         size='large'
                     >
                         <LeftOutlined />
-                        Back to webhooks
+                        返回 Webhooks
                     </Button>
                 </Col>
             </Row>

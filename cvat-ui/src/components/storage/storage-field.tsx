@@ -85,14 +85,14 @@ export default function StorageField(props: Props): JSX.Element {
                         key={`${storageType}-${StorageLocation.LOCAL.toLowerCase()}`}
                         className={`cvat-select-${storageType}-location`}
                     >
-                        Local
+                        本地
                     </Option>
                     <Option
                         value={StorageLocation.CLOUD_STORAGE}
                         key={`${storageType}-${StorageLocation.CLOUD_STORAGE.toLowerCase()}`}
                         className={`cvat-select-${storageType}-location`}
                     >
-                        Cloud storage
+                        云存储
                     </Option>
                 </Select>
             </Form.Item>

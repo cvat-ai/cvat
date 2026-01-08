@@ -211,7 +211,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                                         });
                                     }}
                                 >
-                                    Cuboid orientation
+                                    长方体方向
                                 </Checkbox>
                             </div>
                         )}

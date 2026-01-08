@@ -95,32 +95,32 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
                     <Text type='secondary'>
                         <Tooltip title={() => (
                             <>
-                                You can use in the template:
+                                您可以在模板中使用：
                                 <ul>
                                     <li>
-                                        some_text - any text
+                                        some_text - 任何文本
                                     </li>
                                     <li>
                                         {'{{'}
                                         index
                                         {'}}'}
-                                        &nbsp;- index file in set
+                                         - 集合中的索引文件
                                     </li>
                                     <li>
                                         {'{{'}
                                         file_name
                                         {'}}'}
-                                        &nbsp;- name of file
+                                         - 文件名
                                     </li>
                                 </ul>
-                                Example:&nbsp;
+                                示例： 
                                 <i>
                                     {exampleMultiTaskName || 'Task name 1 - video_1.mp4'}
                                 </i>
                             </>
                         )}
                         >
-                            When forming the name, a template is used.
+                            形成名称时使用模板。
                             {' '}
                             <QuestionCircleOutlined />
                         </Tooltip>

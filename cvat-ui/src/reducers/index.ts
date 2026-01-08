@@ -785,10 +785,10 @@ export enum ActiveControl {
 }
 
 export enum StatesOrdering {
-    ID_DESCENT = 'ID - descent',
-    ID_ASCENT = 'ID - ascent',
-    UPDATED = 'Updated time',
-    Z_ORDER = 'Z Order',
+    ID_DESCENT = 'ID - 降序',
+    ID_ASCENT = 'ID - 升序',
+    UPDATED = '更新时间',
+    Z_ORDER = 'Z 顺序',
 }
 
 export enum ContextMenuType {

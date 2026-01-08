@@ -95,7 +95,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
         actionType: MenuKeys.REMOVE_MEMBER | MenuKeys.DELETE_INVITATION,
     ): void => {
         const membershipsToRemove = actionsApplicable[actionType];
-        const actionLabel = actionType === MenuKeys.DELETE_INVITATION ? 'Deleting invitation for' : 'Removing member';
+        const actionLabel = actionType === MenuKeys.DELETE_INVITATION ? '正在删除邀请' : '正在移除成员';
 
         dispatch(makeBulkOperationAsync(
             membershipsToRemove,

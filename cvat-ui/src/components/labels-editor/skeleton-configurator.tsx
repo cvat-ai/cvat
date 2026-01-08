@@ -52,8 +52,8 @@ interface State {
 
 const componentShortcuts = {
     CANCEL_SKELETON_EDGE: {
-        name: 'Cancel skeleton drawing',
-        description: 'Interrupts drawing a new skeleton edge',
+        name: '取消骨架绘制',
+        description: '中断绘制新骨架边',
         sequences: ['esc'],
         scope: ShortcutScope.LABELS_EDITOR,
     },
@@ -886,7 +886,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                         this.setupSkeleton(svg.innerHTML, labels as Record<string, LabelOptColor>);
                                     } catch (_: unknown) {
                                         notification.error({
-                                            message: 'Wrong skeleton structure',
+                                            message: '骨架结构错误',
                                         });
                                     }
                                 });

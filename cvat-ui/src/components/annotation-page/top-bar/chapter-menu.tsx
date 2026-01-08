@@ -49,7 +49,7 @@ function ChapterMenu(props: Readonly<Props>): JSX.Element {
                                     {chapter.metadata.title}
                                 </strong>
                                 <div>
-                                    Frames
+                                    帧
                                     {' '}
                                     {chapter.start}
                                     -

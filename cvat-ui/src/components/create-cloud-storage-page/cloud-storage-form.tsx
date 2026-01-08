@@ -206,9 +206,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     useEffect(() => {
         if (cloudStorageId && cloudStorage.credentialsType !== CredentialsType.ANONYMOUS_ACCESS) {
             notification.info({
-                message: `For security reasons, your credentials are hidden and represented by fake values
-                    that will not be taken into account when updating the cloud storage.
-                    If you want to replace the original credentials, simply enter new ones.`,
+                message: `出于安全原因，您的凭据已被隐藏，并由虚假值表示，
+                    在更新云存储时不会考虑这些值。
+                    如果您想替换原始凭据，只需输入新的凭据。`,
                 className: 'cvat-notification-update-info-cloud-storage',
                 duration: 15,
             });

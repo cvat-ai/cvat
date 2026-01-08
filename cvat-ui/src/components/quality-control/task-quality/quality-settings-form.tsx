@@ -90,53 +90,53 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
     const generalTooltip = makeTooltip(
         <>
-            {makeTooltipFragment('Target metric', targetMetricDescription)}
-            {makeTooltipFragment('Target metric threshold', settings.descriptions.targetMetricThreshold)}
-            {makeTooltipFragment('Compare attributes', settings.descriptions.compareAttributes)}
-            {makeTooltipFragment('Empty frames are annotated', settings.descriptions.emptyIsAnnotated)}
-            {makeTooltipFragment('Job selection filter', settings.descriptions.jobFilter)}
+            {makeTooltipFragment('目标指标', targetMetricDescription)}
+            {makeTooltipFragment('目标指标阈值', settings.descriptions.targetMetricThreshold)}
+            {makeTooltipFragment('比较属性', settings.descriptions.compareAttributes)}
+            {makeTooltipFragment('空帧已标注', settings.descriptions.emptyIsAnnotated)}
+            {makeTooltipFragment('作业筛选过滤器', settings.descriptions.jobFilter)}
         </>,
     );
 
     const jobValidationTooltip = makeTooltip(
-        makeTooltipFragment('Max validations per job', settings.descriptions.maxValidationsPerJob),
+        makeTooltipFragment('每个作业最大验证数', settings.descriptions.maxValidationsPerJob),
     );
 
     const shapeComparisonTooltip = makeTooltip(
         <>
-            {makeTooltipFragment('Min overlap threshold (IoU)', settings.descriptions.iouThreshold)}
-            {makeTooltipFragment('Low overlap threshold', settings.descriptions.lowOverlapThreshold)}
+            {makeTooltipFragment('最小重叠阈值 (IoU)', settings.descriptions.iouThreshold)}
+            {makeTooltipFragment('低重叠阈值', settings.descriptions.lowOverlapThreshold)}
         </>,
     );
 
     const keypointTooltip = makeTooltip(
-        makeTooltipFragment('Object Keypoint Similarity (OKS)', settings.descriptions.oksSigma),
+        makeTooltipFragment('对象关键点相似度 (OKS)', settings.descriptions.oksSigma),
     );
 
     const pointTooltip = makeTooltip(
-        makeTooltipFragment('Point size base', pointSizeBaseDescription),
+        makeTooltipFragment('点大小基准', pointSizeBaseDescription),
     );
 
     const linesTooltip = makeTooltip(
         <>
-            {makeTooltipFragment('Line thickness', settings.descriptions.lineThickness)}
-            {makeTooltipFragment('Check orientation', settings.descriptions.compareLineOrientation)}
-            {makeTooltipFragment('Min similarity gain', settings.descriptions.lineOrientationThreshold)}
+            {makeTooltipFragment('线条粗细', settings.descriptions.lineThickness)}
+            {makeTooltipFragment('检查方向', settings.descriptions.compareLineOrientation)}
+            {makeTooltipFragment('最小相似度增益', settings.descriptions.lineOrientationThreshold)}
         </>,
     );
 
     const groupTooltip = makeTooltip(
         <>
-            {makeTooltipFragment('Compare groups', settings.descriptions.compareGroups)}
-            {makeTooltipFragment('Min group match threshold', settings.descriptions.groupMatchThreshold)}
+            {makeTooltipFragment('比较分组', settings.descriptions.compareGroups)}
+            {makeTooltipFragment('最小分组匹配阈值', settings.descriptions.groupMatchThreshold)}
         </>,
     );
 
     const segmentationTooltip = makeTooltip(
         <>
-            {makeTooltipFragment('Check object visibility', settings.descriptions.checkCoveredAnnotations)}
-            {makeTooltipFragment('Min visibility threshold', settings.descriptions.objectVisibilityThreshold)}
-            {makeTooltipFragment('Match only visible parts', settings.descriptions.panopticComparison)}
+            {makeTooltipFragment('检查对象可见性', settings.descriptions.checkCoveredAnnotations)}
+            {makeTooltipFragment('最小可见性阈值', settings.descriptions.objectVisibilityThreshold)}
+            {makeTooltipFragment('仅匹配可见部分', settings.descriptions.panopticComparison)}
         </>,
     );
 

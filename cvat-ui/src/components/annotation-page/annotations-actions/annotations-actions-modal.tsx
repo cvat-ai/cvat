@@ -622,7 +622,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                             }
                         }}
                     >
-                        Run
+                        运行
                     </Button>
                 </Col>
             </Row>

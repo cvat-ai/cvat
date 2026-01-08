@@ -44,7 +44,7 @@ export function ResourceSelectionInfo(
                 size='small'
                 type='link'
             >
-                Deselect
+                取消选择
             </Button>
         );
     }

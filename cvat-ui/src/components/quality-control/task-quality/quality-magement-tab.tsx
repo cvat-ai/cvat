@@ -64,7 +64,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
             { validationModeTextRepresentation ? (
                 <Row className='cvat-quality-control-validation-mode-hint'>
                     <Text type='secondary'>
-                        The task&apos;s validation mode is configured as&nbsp;
+                        任务的验证模式配置为 
                     </Text>
                     <Text type='secondary' strong>{validationModeTextRepresentation}</Text>
                 </Row>

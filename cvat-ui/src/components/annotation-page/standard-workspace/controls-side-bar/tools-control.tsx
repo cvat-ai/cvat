@@ -474,7 +474,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } catch (error: any) {
             notification.error({
                 description: <CVATMarkdown>{error.message}</CVATMarkdown>,
-                message: 'Interaction error occurred',
+                message: '交互错误',
                 duration: null,
             });
         }
@@ -568,7 +568,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } catch (error: any) {
             notification.error({
                 description: <CVATMarkdown>{error.message}</CVATMarkdown>,
-                message: 'Tracking error occurred',
+                message: '跟踪错误',
                 duration: null,
             });
         }
@@ -598,7 +598,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (interactor.version < MIN_SUPPORTED_INTERACTOR_VERSION) {
             notification.warning({
-                message: 'Interactor API is outdated',
+                message: '交互器 API 已过时',
                 description: '可能需要更新无服务器函数',
             });
         }
@@ -813,7 +813,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         trackingData.stateless.delete(trackerID);
                     } catch (error: any) {
                         notification.error({
-                            message: 'Tracker initialization error',
+                            message: '跟踪器初始化错误',
                             description: <CVATMarkdown>{error.message}</CVATMarkdown>,
                             duration: null,
                         });
@@ -866,7 +866,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         }
                     } catch (error: any) {
                         notification.error({
-                            message: 'Tracking error',
+                            message: '跟踪错误',
                             description: <CVATMarkdown>{error.message}</CVATMarkdown>,
                             duration: null,
                         });
@@ -920,7 +920,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private async initializeOpenCV(): Promise<void> {
         if (!openCVWrapper.isInitialized) {
-            const hide = message.loading('OpenCV client initialization..', 0);
+            const hide = message.loading('正在初始化 OpenCV 客户端..', 0);
             try {
                 await openCVWrapper.initialize(() => {});
             } catch (error: any) {
@@ -1191,7 +1191,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }
                             }}
                         >
-                            Interact
+                            交互
                         </Button>
                     </Col>
                 </Row>
@@ -1209,7 +1209,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
                     <Col>
                         <Text type='warning' className='cvat-text-color'>
-                            No available detectors found
+                            未找到可用的检测器
                         </Text>
                     </Col>
                 </Row>
@@ -1290,7 +1290,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     } catch (error: any) {
                         notification.error({
                             description: <CVATMarkdown>{error.message}</CVATMarkdown>,
-                            message: 'Detection error occurred',
+                            message: '检测错误',
                             duration: null,
                         });
                     } finally {
@@ -1307,7 +1307,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color' strong>
-                            AI Tools
+                            AI 工具
                         </Text>
                     </Col>
                 </Row>

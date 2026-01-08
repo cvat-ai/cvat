@@ -33,7 +33,7 @@ export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element
                     size='large'
                 >
                     <LeftOutlined />
-                    Back to projects
+                    返回项目列表
                 </Button>
             </Col>
             <Col className='cvat-project-top-bar-actions'>

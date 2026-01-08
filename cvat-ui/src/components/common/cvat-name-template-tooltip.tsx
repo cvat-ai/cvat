@@ -11,26 +11,26 @@ interface NameTemplateTooltipProps {
 function NameTemplateTooltip({ example }: NameTemplateTooltipProps) {
     return (
         <>
-            You can use the template:
+            您可以使用模板：
             <ul style={{ marginBottom: 0 }}>
                 <li>
                     <code>{'{{id}}'}</code>
                     <br />
-                    - resource id
+                    - 资源 ID
                 </li>
                 <li>
                     <code>{'{{name}}'}</code>
                     <br />
-                    - resource name
+                    - 资源名称
                 </li>
                 <li>
                     <code>{'{{index}}'}</code>
                     <br />
-                    - index in selection
+                    - 选择中的索引
                 </li>
             </ul>
             <div>
-                Example:
+                示例：
                 <br />
                 <i>{example}</i>
             </div>

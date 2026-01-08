@@ -59,9 +59,9 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
 
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
-        tag = 'Ground truth';
+        tag = '真值标注';
     } else if (job.type === JobType.ANNOTATION && job.consensusReplicas > 0) {
-        tag = 'Consensus';
+        tag = '共识标注';
     }
 
     const cardClassName = `cvat-job-page-list-item${selected ? ' cvat-item-selected' : ''}`;

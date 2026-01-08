@@ -114,8 +114,8 @@ function OrganizationTopBar(props: Readonly<Props>): JSX.Element {
             content: (
                 <div className='cvat-remove-organization-submit'>
                     <Text type='warning'>
-                        To remove the organization,
-                        enter its short name below
+                        要删除组织，
+                        请在下方输入其简称
                     </Text>
                     <Input
                         onChange={

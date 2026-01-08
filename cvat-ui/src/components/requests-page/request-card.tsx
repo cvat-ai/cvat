@@ -78,7 +78,7 @@ function constructTimestamps(request: Request): JSX.Element {
                 return (
                     <>
                         <Row>
-                            <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                            <Text type='secondary'>{`由 ${request.owner.username} 于 ${started} 开始`}</Text>
                         </Row>
                         <Row>
                             <Text type='secondary'>{`Expires on ${expired}`}</Text>
@@ -89,10 +89,10 @@ function constructTimestamps(request: Request): JSX.Element {
             return (
                 <>
                     <Row>
-                        <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                        <Text type='secondary'>{`由 ${request.owner.username} 于 ${started} 开始`}</Text>
                     </Row>
                     <Row>
-                        <Text type='secondary'>{`Finished on ${finished}`}</Text>
+                        <Text type='secondary'>{`于 ${finished} 完成`}</Text>
                     </Row>
                 </>
             );
@@ -100,11 +100,11 @@ function constructTimestamps(request: Request): JSX.Element {
         case RQStatus.FAILED: {
             return (request.startedDate ? (
                 <Row>
-                    <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                    <Text type='secondary'>{`由 ${request.owner.username} 于 ${started} 开始`}</Text>
                 </Row>
             ) : (
                 <Row>
-                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                    <Text type='secondary'>{`由 ${request.owner.username} 于 ${created} 加入队列`}</Text>
                 </Row>
             ));
         }
@@ -112,7 +112,7 @@ function constructTimestamps(request: Request): JSX.Element {
             return (
                 <>
                     <Row>
-                        <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                        <Text type='secondary'>{`由 ${request.owner.username} 于 ${created} 加入队列`}</Text>
                     </Row>
                     <Row>
                         <Text type='secondary'>{`Started on ${started}`}</Text>
@@ -123,7 +123,7 @@ function constructTimestamps(request: Request): JSX.Element {
         default: {
             return (
                 <Row>
-                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                    <Text type='secondary'>{`由 ${request.owner.username} 于 ${created} 加入队列`}</Text>
                 </Row>
             );
         }

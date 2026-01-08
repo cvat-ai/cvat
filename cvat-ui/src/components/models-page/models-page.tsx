@@ -75,7 +75,7 @@ function ModelsPageComponent(): JSX.Element {
         if (pageOutOfBounds) {
             notification.error({
                 message: '无法获取模型',
-                description: 'Invalid page',
+                description: '无效页面',
             });
         }
     }, []);

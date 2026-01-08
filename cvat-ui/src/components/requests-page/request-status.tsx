@@ -86,10 +86,10 @@ function StatusMessage(props: Props): JSX.Element {
                 }
 
                 if (status === RQStatus.UNKNOWN) {
-                    return statusMessage(message, 'Unknown status received');
+                    return statusMessage(message, '收到未知状态');
                 }
 
-                return statusMessage(message, 'Unknown status received');
+                return statusMessage(message, '收到未知状态');
             })()}
         </Text>
     );

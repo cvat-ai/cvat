@@ -99,7 +99,7 @@ function InvitationModal(props: Props): JSX.Element {
                             ))}
                             <Form.Item>
                                 <Button className='cvat-invite-more-org-members-button' icon={<PlusCircleOutlined />} onClick={() => add()}>
-                                        Invite more
+                                        邀请更多
                                 </Button>
                             </Form.Item>
                         </>

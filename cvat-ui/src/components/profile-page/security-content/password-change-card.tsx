@@ -42,7 +42,7 @@ function PasswordChangeCard(): JSX.Element {
                 <Row justify='space-between' align='middle'>
                     <Col>
                         <Typography.Text type='secondary'>
-                            Keep your account secure with a strong, unique password
+                            使用强且唯一的密码保护您的账户安全
                         </Typography.Text>
                     </Col>
                     <Col>

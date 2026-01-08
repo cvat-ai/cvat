@@ -53,7 +53,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         this.state = {
             importingState: taskInstance.size > 0 ? null : {
                 state: null,
-                message: 'Request current progress',
+                message: '正在请求当前进度',
                 progress: 0,
             },
         };

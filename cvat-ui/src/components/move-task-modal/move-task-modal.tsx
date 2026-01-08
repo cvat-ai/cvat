@@ -193,7 +193,7 @@ function MoveTaskModal({
         >
             { taskFetching && <CVATLoadingSpinner size='large' /> }
             <Row align='middle'>
-                <Col>Project:</Col>
+                <Col>项目：</Col>
                 <Col>
                     <ProjectSearch
                         value={projectId}

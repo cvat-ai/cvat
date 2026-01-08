@@ -363,18 +363,18 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             <CVATTooltip
                 title={(
                     <>
-                        Defines a number of frames to be packed in a chunk when send from client to server. Server
-                        defines automatically if empty.
+                        定义从客户端发送到服务器时打包到一个分块中的帧数。如果为空，
+                        服务器将自动定义。
                         <br />
-                        Recommended values:
+                        推荐值：
                         <br />
-                        1080p or less: 36
+                        1080p 或更低：36
                         <br />
-                        2k or less: 8 - 16
+                        2k 或更低：8 - 16
                         <br />
-                        4k or less: 4 - 8
+                        4k 或更低：4 - 8
                         <br />
-                        More: 1 - 4
+                        更高：1 - 4
                     </>
                 )}
             >

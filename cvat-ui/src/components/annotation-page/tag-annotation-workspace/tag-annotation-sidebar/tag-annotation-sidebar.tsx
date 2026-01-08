@@ -85,7 +85,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 const componentShortcuts = {
     SWITCH_DRAW_MODE_TAG_ANNOTATION: {
-        name: 'Create a tag',
+        name: '创建标签',
         description: '添加与所选标签对应的新标签。',
         sequences: ['n'],
         scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
@@ -306,7 +306,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                                 setSkipFrame(event.target.checked);
                             }}
                         >
-                            Automatically go to the next frame
+                            自动跳转到下一帧
                         </Checkbox>
                     </Col>
                 </Row>
@@ -318,8 +318,8 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 <Row justify='center' className='cvat-tag-annotation-sidebar-shortcut-help'>
                     <Col>
                         <Text>
-                            Use configured shortcuts to add a new tag.
-                            If a tag with such label is already exists on the frame, it will be removed.
+                            使用配置的快捷键添加新标签。
+                            如果该帧上已存在具有此类标签的标签，它将被删除。
                         </Text>
                     </Col>
                 </Row>

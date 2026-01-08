@@ -63,7 +63,7 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                         }}
                         className='cvat-open-bug-tracker-button'
                     >
-                        Open the issue
+                        打开问题
                     </Button>
                 </Col>
             </Row>

@@ -189,12 +189,12 @@ export default function LabelsListComponent(): JSX.Element {
                                 <Row justify='space-between'>
                                     <Col>
                                         <Text strong>
-                                            {`#${frameIssue.id} • Issue`}
+                                            {`#${frameIssue.id} • 问题`}
                                         </Text>
                                     </Col>
                                     <Col offset={1}>
                                         <Text type='secondary'>
-                                            {`created ${dayjs(frameIssue.createdDate).fromNow()}`}
+                                            {`创建于 ${dayjs(frameIssue.createdDate).fromNow()}`}
                                         </Text>
                                     </Col>
                                 </Row>
@@ -251,7 +251,7 @@ export default function LabelsListComponent(): JSX.Element {
                             <Row>
                                 <Text strong>
                                     {`#${frameConflict.id} • ${frameConflict.severity === ConflictSeverity.WARNING ?
-                                        'Warning' : 'Conflict'}`}
+                                        '警告' : '冲突'}`}
                                 </Text>
                             </Row>
                             <Row>

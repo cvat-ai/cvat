@@ -40,29 +40,29 @@ const DraggableArea = (
 
 const componentShortcuts = {
     ACTIVATE_BRUSH_TOOL_STANDARD_CONTROLS: {
-        name: 'Brush tool',
-        description: 'Activate brush tool on masks drawing toolbox',
+        name: '画笔工具',
+        description: '在蒙版绘制工具箱中激活画笔工具',
         sequences: ['shift+1'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
         displayWeight: 10,
     },
     ACTIVATE_ERASER_TOOL_STANDARD_CONTROLS: {
-        name: 'Eraser tool',
-        description: 'Activate eraser tool on masks drawing toolbox',
+        name: '橡皮擦工具',
+        description: '在蒙版绘制工具箱中激活橡皮擦工具',
         sequences: ['shift+2'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
         displayWeight: 15,
     },
     ACTIVATE_POLYGON_TOOL_STANDARD_CONTROLS: {
-        name: 'Polygon tool',
-        description: 'Activate polygon tool on masks drawing toolbox',
+        name: '多边形工具',
+        description: '在蒙版绘制工具箱中激活多边形工具',
         sequences: ['shift+3'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
         displayWeight: 20,
     },
     ACTIVATE_POLYGON_REMOVE_TOOL_STANDARD_CONTROLS: {
-        name: 'Polygon remove tool',
-        description: 'Activate polygon remove tool on masks drawing toolbox',
+        name: '多边形擦除工具',
+        description: '在蒙版绘制工具箱中激活多边形擦除工具',
         sequences: ['shift+4'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
         displayWeight: 25,
@@ -143,7 +143,7 @@ function BrushTools(): React.ReactPortal | null {
     getCore().config.removeUnderlyingMaskPixels.onEmptyMaskOccurrence = () => {
         notification.warning({
             message: '部分对象已删除',
-            description: 'As a result of removing the underlying pixels, some masks became empty and were subsequently deleted.',
+            description: '由于删除了底层像素，某些遮罩变为空并随后被删除。',
             className: 'cvat-empty-masks-notification',
             duration: null,
         });

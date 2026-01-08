@@ -59,7 +59,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                 className='cvat-manifests-manager-form-item'
                 label={(
                     <>
-                        Manifests
+                        清单文件
                         <Tooltip title='点击打开指南'>
                             <Button
                                 type='link'
