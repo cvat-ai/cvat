@@ -195,6 +195,15 @@ COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} components/analytics/clickhouse/init.py ${HOME}/components/analytics/clickhouse/init.py
 
+# Windows checkouts can introduce CRLF line endings, which break shebang resolution in Linux containers
+RUN sed -i 's/\r$//' \
+        ${HOME}/manage.py \
+        ${HOME}/rqscheduler.py \
+        ${HOME}/backend_entrypoint.sh \
+        ${HOME}/wait_for_deps.sh \
+        ${HOME}/backend_entrypoint.d/*.conf \
+        ${HOME}/components/analytics/clickhouse/init.py
+
 ARG COVERAGE_PROCESS_START
 RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
         echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
