@@ -8,6 +8,7 @@
 - 本仓库代码：`D:/OneDrive/steven/code/5/cvat-develop`
 
 如果你是“接手者/下一个 AI”，先看：`docs/交付与接力指南.md`
+中文文档总入口：`docs/README_中文索引.md`
 
 > 注意：如果你之前把 CVAT 的容器“暂停（pause）”，端口仍然会被占用；要释放端口请用“停止（stop）”。
 
@@ -84,6 +85,11 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-rec
 cd "D:/OneDrive/steven/code/5/cvat-develop"
 docker save -o ".local/docker-images/cvat-ui-dev.tar" cvat/ui:dev
 docker save -o ".local/docker-images/cvat-server-dev.tar" cvat/server:dev
+```
+
+或者用仓库脚本一键导出并打印绝对路径：
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File "dev/export-docker-images.ps1" -ProjectRoot (Get-Location).Path
 ```
 
 把这两个 tar 文件拷到服务器后，在服务器上导入：
