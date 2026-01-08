@@ -74,6 +74,31 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml build
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-recreate
 ```
 
+## 5.1 部署到服务器（离线拷贝镜像）
+
+如果服务器不能直接 `docker build`（或你希望把本机已构建镜像直接拷过去），可以把镜像导出成 tar 文件：
+
+```powershell
+cd "D:/OneDrive/steven/code/5/cvat-develop"
+docker save -o ".local/docker-images/cvat-ui-dev.tar" cvat/ui:dev
+docker save -o ".local/docker-images/cvat-server-dev.tar" cvat/server:dev
+```
+
+把这两个 tar 文件拷到服务器后，在服务器上导入：
+
+```bash
+docker load -i cvat-ui-dev.tar
+docker load -i cvat-server-dev.tar
+```
+
+然后在服务器上使用同一套 `docker-compose.yml`（以及你需要的覆盖文件，例如 `docker-compose.https.yml` / `docker-compose.external_db.yml`）启动：
+
+```bash
+docker compose up -d
+```
+
+> 说明：导入后镜像标签仍是 `cvat/ui:dev`、`cvat/server:dev`，compose 会直接使用它们。
+
 ## 6. 常见问题排查
 
 ### 6.1 端口冲突（尤其是 5432）
