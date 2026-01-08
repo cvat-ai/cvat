@@ -18,6 +18,7 @@ __pycache__
 .python-version
 /tmp*cvat/
 /temp*/
+cvat-page-*.png
 
 # Ignore generated test files
 docker-compose.tests.yml

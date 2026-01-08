@@ -8,11 +8,12 @@
 *.js            text
 *.py            text
 *.css           text
-*.md            text
+*.md            text eol=lf
 *.yml           text
-Dockerfile      text
+Dockerfile      text eol=lf
+Dockerfile*     text eol=lf
 LICENSE         text
-*.conf          text
+*.conf          text eol=lf
 *.mimetypes     text
 *.sh            text eol=lf
 
