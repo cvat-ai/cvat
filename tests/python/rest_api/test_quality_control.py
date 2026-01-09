@@ -1540,8 +1540,12 @@ class TestQualityReportContents(_PermissionTestBase):
         new_report = self.create_quality_report(user=admin_user, task_id=task_id)
 
         with make_api_client(admin_user) as api_client:
-            (old_report_data, _) = api_client.quality_api.retrieve_report_data(old_report["id"])
-            (new_report_data, _) = api_client.quality_api.retrieve_report_data(new_report["id"])
+            old_report_data = json.load(
+                api_client.quality_api.retrieve_report_data(old_report["id"])[0]
+            )
+            new_report_data = json.load(
+                api_client.quality_api.retrieve_report_data(new_report["id"])[0]
+            )
 
         assert (
             DeepDiff(
@@ -1669,7 +1673,7 @@ class TestQualityReportContents(_PermissionTestBase):
         assert report["created_date"] < "2024"
 
         with make_api_client(admin_user) as api_client:
-            (report_data, _) = api_client.quality_api.retrieve_report_data(report["id"])
+            report_data = json.load(api_client.quality_api.retrieve_report_data(report["id"])[0])
 
         # This report should have been created before the Jaccard index was included.
         for d in [report_data["comparison_summary"], *report_data["frame_results"].values()]:
@@ -2068,7 +2072,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
 
         # Check report data
         with make_api_client(admin_user) as api_client:
-            report_data, _ = api_client.quality_api.retrieve_report_data(report["id"])
+            report_data = json.load(api_client.quality_api.retrieve_report_data(report["id"])[0])
 
         for r in [report, report_data]:
             # Verify report was created
@@ -2302,6 +2306,8 @@ class TestProjectQualitySettingsBehavior(_PermissionTestBase):
             task_report = self.create_quality_report(user=admin_user, task_id=task_id)
 
             # Get report data to verify settings were inherited
-            task_report_data = api_client.quality_api.retrieve_report_data(task_report["id"])[0]
+            task_report_data = json.load(
+                api_client.quality_api.retrieve_report_data(task_report["id"])[0]
+            )
             assert task_report_data["parameters"]["empty_is_annotated"] == inherit
             assert task_report_data["parameters"]["inherited"] == inherit
