@@ -176,14 +176,14 @@ def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[by
 
 
 def prepare_report_for_downloading(
-    db_report: models.QualityReport, *, host: str, format: QualityReportExportFormat
+    db_report: models.QualityReport, *, host: str, export_format: QualityReportExportFormat
 ) -> tuple[IO[bytes], str]:
-    if format == QualityReportExportFormat.JSON:
+    if export_format == QualityReportExportFormat.JSON:
         return (
             prepare_json_report_for_downloading(db_report=db_report, host=host),
             "application/json",
         )
-    elif format == QualityReportExportFormat.CSV:
+    elif export_format == QualityReportExportFormat.CSV:
         return (
             prepare_csv_report_for_downloading(db_report=db_report),
             "text/csv",

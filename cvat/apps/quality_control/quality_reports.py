@@ -53,7 +53,6 @@ from cvat.apps.engine.models import (
     StageChoice,
     StateChoice,
     Task,
-    User,
     ValidationMode,
 )
 from cvat.apps.engine.utils import take_by

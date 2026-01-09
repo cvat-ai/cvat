@@ -456,7 +456,7 @@ class QualityReportViewSet(
             request.query_params.get("format", default=QualityReportExportFormat.JSON.label)
         )
         report_data, content_type = prepare_report_for_downloading(
-            report, host=get_server_url(request), format=format_name
+            report, host=get_server_url(request), export_format=format_name
         )
         return HttpResponse(report_data, content_type=content_type)
 
