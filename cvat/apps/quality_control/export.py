@@ -16,7 +16,11 @@ from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.models import Job, User
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.quality_reports import ComparisonReport
-from cvat.apps.quality_control.statistics import Averaging, compute_accuracy, compute_dice_coeff
+from cvat.apps.quality_control.statistics import (
+    Averaging,
+    compute_accuracy,
+    compute_dice_coefficient,
+)
 
 
 class QualityReportExportFormat(TextChoices):
@@ -144,7 +148,7 @@ def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[by
     dataset_accuracy_micro, *_ = compute_accuracy(
         confusion_rows, excluded_label_idx=labels.index(unmatched_label)
     )
-    dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, *_ = compute_dice_coeff(
+    dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, *_ = compute_dice_coefficient(
         confusion_rows,
         avg_mode=Averaging.macro,
         excluded_label_idx=labels.index(unmatched_label),
@@ -154,16 +158,16 @@ def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[by
 
     csv_text_wrapper = TextIOWrapper(csv_file, write_through=True)
     csv_writer = csv.writer(csv_text_wrapper)
-    csv_writer.writerow([""] + labels + ["precision"])
+    csv_writer.writerow(["label"] + labels + ["precision"])
 
     for confusion_row, label, precision in zip(confusion_rows, labels, precisions):
         csv_writer.writerow([label] + confusion_row.tolist() + [precision])
 
     csv_writer.writerow(["recall"] + recalls.tolist())
-    csv_writer.writerow(["dice coeff"] + dataset_dice_coeff_by_class.tolist())
+    csv_writer.writerow(["dice coefficient"] + dataset_dice_coeff_by_class.tolist())
     csv_writer.writerow(["jaccard index"] + jaccards.tolist())
-    csv_writer.writerow(["Avg. accuracy (micro)", dataset_accuracy_micro])
-    csv_writer.writerow(["Avg. dice coeff (macro)", dataset_dice_coeff_avg_macro])
+    csv_writer.writerow(["avg. accuracy (micro)", dataset_accuracy_micro])
+    csv_writer.writerow(["avg. dice coefficient (macro)", dataset_dice_coeff_avg_macro])
     csv_text_wrapper.detach()
 
     csv_file.seek(0)

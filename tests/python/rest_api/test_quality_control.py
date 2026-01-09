@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import csv
+import io
 import json
 import math
 from collections.abc import Callable, Collection, Iterable
@@ -513,10 +515,7 @@ class TestGetQualityReportData(_PermissionTestBase):
             r for r in quality_reports if r[self.key_field_for_target[target]] is not None
         )
         report_id = report["id"]
-
-        with make_api_client(admin_user) as api_client:
-            (report_data, response) = api_client.quality_api.retrieve_report_data(report_id)
-            assert response.status == HTTPStatus.OK
+        report_data = json.loads(self._test_get_report_data_200(admin_user, report_id).data)
 
         # Just check several keys exist
         for key in ["parameters", "comparison_summary"] + (
@@ -617,6 +616,25 @@ class TestGetQualityReportData(_PermissionTestBase):
             )
             == {}
         )
+
+    @pytest.mark.parametrize("target", ["project", "task", "job"])
+    def test_can_get_confusion_matrix_csv(self, admin_user, target, quality_reports):
+        report = next(
+            r for r in quality_reports if r[self.key_field_for_target[target]] is not None
+        )
+        report_id = report["id"]
+        report_data = io.StringIO(
+            self._test_get_report_data_200(admin_user, report_id, format="csv").data.decode()
+        )
+
+        # Simply check that the report can be parsed as csv
+        csv_reader = csv.DictReader(report_data)
+        row_count = 0
+        for row in csv_reader:
+            assert row
+            row_count += 1
+
+        assert row_count
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1486,7 +1504,7 @@ class TestPatchSettings(_PermissionTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestQualityReportMetrics(_PermissionTestBase):
+class TestQualityReportContents(_PermissionTestBase):
     demo_task_id = 22  # this task reproduces all the checkable cases
     demo_task_id_multiple_jobs = 23  # this task reproduces cases for multiple jobs
 
@@ -1977,6 +1995,39 @@ class TestQualityReportMetrics(_PermissionTestBase):
             "validation_frames",
         ]:
             assert summary[summary_field] == sum(r["summary"][summary_field] for r in task_reports)
+
+    @pytest.mark.parametrize("task_id", [demo_task_id])
+    def test_confusion_matrix_correct(self, admin_user, task_id, quality_reports, labels):
+        report_id = next(
+            r["id"] for r in quality_reports if r["task_id"] == task_id and r["target"] == "task"
+        )
+
+        with make_api_client(admin_user) as api_client:
+            report_data = io.StringIO(
+                api_client.quality_api.retrieve_report_data(report_id, format="csv")[
+                    1
+                ].data.decode()
+            )
+
+        label_names = set(
+            l["name"] for l in labels if l.get("task_id") == task_id if not l.get("parent_id")
+        )
+
+        csv_reader = csv.DictReader(report_data)
+        assert csv_reader.fieldnames[0] == "label"
+        assert set(csv_reader.fieldnames[1:-2]) == label_names
+        assert list(csv_reader.fieldnames[-2:]) == ["unmatched", "precision"]
+
+        rows = list(csv_reader)
+        assert set(r["label"] for r in rows[: len(label_names)]) == label_names
+        assert [r["label"] for r in rows[len(label_names) :]] == [
+            "unmatched",
+            "recall",
+            "dice coefficient",
+            "jaccard index",
+            "avg. accuracy (micro)",
+            "avg. dice coefficient (macro)",
+        ]
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

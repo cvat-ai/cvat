@@ -447,7 +447,7 @@ class QualityReportViewSet(
                 default=QualityReportExportFormat.JSON.label,
             ),
         ],
-        responses={"200": OpenApiTypes.OBJECT},
+        responses={"200": OpenApiTypes.BINARY},
     )
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
     def data(self, request: ExtendedRequest, pk):

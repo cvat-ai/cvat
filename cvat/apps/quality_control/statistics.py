@@ -13,14 +13,15 @@ class Averaging(Enum):
     macro = auto()
 
 
-def compute_dice_coeff(
+def compute_dice_coefficient(
     confusion_matrix,
     *,
     avg_mode: Averaging = Averaging.weighted,
     gt_ignored_label_idx: int | None = None,
     excluded_label_idx: int | None = None,
 ):
-    # Rows: GT \ cols: predictions
+    # Rows: GT
+    # Cols: predictions
 
     if gt_ignored_label_idx is not None:
         confusion_matrix = confusion_matrix.copy()
@@ -61,7 +62,8 @@ def compute_accuracy(
     excluded_label_idx: int | None = None,
     exclude_TN: bool = False,
 ) -> tuple[float, np.ndarray]:
-    # Rows: GT \ cols: predictions
+    # Rows: GT
+    # Cols: predictions
 
     if gt_ignored_label_idx is not None:
         confusion_matrix = confusion_matrix.copy()
