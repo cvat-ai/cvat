@@ -455,7 +455,7 @@ class TestPostTasks:
         filenames = ["image_0.jpg", "image_1.jpg", "image_2.jpg"]
         images = generate_image_files(len(filenames), filenames=filenames)
 
-        #manifest with shuffled orde
+        # manifest with shuffled orde
         manifest_order = ["image_1.jpg", "image_2.jpg", "image_0.jpg"]
 
         manifest_content = {"version": "1.1"}
@@ -480,7 +480,7 @@ class TestPostTasks:
         }
 
         client_files = images + [manifest_file]
-        #the same applies for lexicographical and random sorting as well
+        # the same applies for lexicographical and random sorting as well
         data_spec = {
             "image_quality": 75,
             "client_files": client_files,
@@ -488,12 +488,14 @@ class TestPostTasks:
         }
 
         task_id, _ = create_task(admin_user, task_spec, data_spec)
-
         with make_api_client(admin_user) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 3
-
-
+            (data, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            frames_meta = data.frames
+            assert frames_meta[0]["name"] == "image_0.jpg"
+            assert frames_meta[1]["name"] == "image_1.jpg"
+            assert frames_meta[2]["name"] == "image_2.jpg"
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
