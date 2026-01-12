@@ -506,13 +506,16 @@ class CommonData(InstanceLabelData):
         )
 
         get_shapes_for_frame = make_getter_by_frame_for_annotation_stream(
-            anno_manager.to_shapes(
-                self.stop + 1,
-                # Skip outside, deleted and excluded frames
-                included_frames=included_frames,
-                deleted_frames=self.deleted_frames.keys(),
-                include_outside=False,
-                use_server_track_ids=self._use_server_track_ids,
+            sorted(
+                anno_manager.to_shapes(
+                    self.stop + 1,
+                    # Skip outside, deleted and excluded frames
+                    included_frames=included_frames,
+                    deleted_frames=self.deleted_frames.keys(),
+                    include_outside=False,
+                    use_server_track_ids=self._use_server_track_ids,
+                ),
+                key=lambda shape: shape['frame']
             )
         )
 
