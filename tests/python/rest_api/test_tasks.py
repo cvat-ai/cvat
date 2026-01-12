@@ -990,57 +990,45 @@ class TestGetTaskDataset:
                         assert tuple(related_image["size"]) > (0, 0)
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_export_3d_annotations_via_rest_api(self, admin_user, tasks):
-        """Export 3D annotations via REST API v2 and verify returned archive."""
-        # find a task with 3d dimension and at least one frame
-        try:
-            task = next(t for t in tasks if t.get("dimension") == "3d" and t.get("size"))
-        except StopIteration:
-            pytest.skip("No 3D task found in fixtures")
+    @pytest.mark.parametrize(
+        "get_api,get_id",
+        [
+            pytest.param(
+                lambda client: client.tasks_api,
+                lambda tasks, jobs: next(
+                    t["id"] for t in tasks if t.get("dimension") == "3d" and t.get("size")
+                ),
+                id="task",
+            ),
+            pytest.param(
+                lambda client: client.jobs_api,
+                lambda tasks, jobs: next(
+                    j["id"] for j in jobs if tasks[j["task_id"]]["dimension"] == "3d"
+                ),
+                id="job",
+            ),
+        ],
+    )
+    def test_can_export_3d_annotations_via_rest_api(self, admin_user, tasks, jobs, get_api, get_id):
+        """Export 3D annotations via REST API v2 (task/job) and verify returned archive."""
+        item_id = get_id(tasks, jobs)
 
         with make_api_client(admin_user) as api_client:
+            api = get_api(api_client)
             dataset_bytes = export_dataset(
-                api_client.tasks_api,
-                id=task["id"],
+                api,
+                id=item_id,
                 save_images=False,
                 format="Datumaro 3D 1.0",
             )
 
-        assert dataset_bytes is not None
         assert zipfile.is_zipfile(io.BytesIO(dataset_bytes))
 
         with zipfile.ZipFile(io.BytesIO(dataset_bytes)) as zf:
-            # basic sanity: annotations folder should be present in the archive
             names = zf.namelist()
             assert any(
                 name.startswith("annotations/") for name in names
             ), f"No annotations folder in export archive: {names}"
-
-    @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_export_3d_annotations_from_job_via_rest_api(self, admin_user, tasks, jobs):
-        """Export 3D annotations from a Job via REST API v2 and verify returned archive."""
-        # find a 3D job (job belongs to a task with dimension == '3d')
-        try:
-            job = next(j for j in jobs if tasks[j["task_id"]]["dimension"] == "3d")
-        except StopIteration:
-            pytest.skip("No 3D job found in fixtures")
-
-        with make_api_client(admin_user) as api_client:
-            dataset_bytes = export_dataset(
-                api_client.jobs_api,
-                id=job["id"],
-                save_images=False,
-                format="Datumaro 3D 1.0",
-            )
-
-        assert dataset_bytes is not None
-        assert zipfile.is_zipfile(io.BytesIO(dataset_bytes))
-
-        with zipfile.ZipFile(io.BytesIO(dataset_bytes)) as zf:
-            names = zf.namelist()
-            assert any(
-                name.startswith("annotations/") for name in names
-            ), f"No annotations folder in job export archive: {names}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
