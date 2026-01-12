@@ -493,6 +493,16 @@ function HeaderComponent(props: Props): JSX.Element {
                 ) : null}
             </div>
             <div className='cvat-right-header'>
+                <Button
+                    type='primary'
+                    className='cvat-fetch-logit-button'
+                    onClick={(): void => {
+                        console.log('Fetch logit clicked');
+                        // TODO: Implement fetch logit logic
+                    }}
+                >
+                    Fetch logit
+                </Button>
                 <CVATTooltip overlay='Click to open repository'>
                     <Button
                         icon={<GithubOutlined />}
