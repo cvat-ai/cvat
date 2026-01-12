@@ -221,8 +221,7 @@ def _count_files(data):
         path = os.path.normpath(path).lstrip('/')
         if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
-        full_path = os.path.abspath(os.path.join(share_root, path))
-        if os.path.commonprefix([share_root, full_path]) != share_root:
+        if not (share_root / path).resolve().is_relative_to(share_root):
             raise ValueError("Bad file path: " + path)
         server_files.append(path)
 
@@ -384,7 +383,7 @@ def _validate_validation_params(
 
 def _validate_manifest(
     manifests: list[str],
-    root_dir: str | None,
+    root_dir: Path,
     *,
     is_in_cloud: bool,
     db_cloud_storage: Any | None,
@@ -396,7 +395,7 @@ def _validate_manifest(
     if len(manifests) != 1:
         raise ValidationError('Only one manifest file can be attached to data')
     manifest_file = manifests[0]
-    full_manifest_path = os.path.join(root_dir, manifests[0])
+    full_manifest_path = root_dir / manifests[0]
 
     if is_in_cloud and not is_backup_restore:
         cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
@@ -466,7 +465,7 @@ def _download_data_from_cloud_storage(
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
     cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
 
-def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageManifestManager:
+def _read_dataset_manifest(path: Path, *, create_index: bool = False) -> ImageManifestManager:
     """
     Reads an upload manifest file
     """
@@ -474,7 +473,7 @@ def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageMan
     if not is_dataset_manifest(path):
         raise ValidationError(
             "Can't recognize a dataset manifest file in "
-            "the uploaded file '{}'".format(os.path.basename(path))
+            "the uploaded file '{}'".format(path.name)
         )
 
     return ImageManifestManager(path, create_index=create_index)
@@ -629,7 +628,7 @@ def create_thread(
 
     # find and validate manifest file
     manifest_files = _find_manifest_files(data)
-    manifest_root = None
+    manifest_root: Path
 
     # we should also handle this case because files from the share source have not been downloaded yet
     if data['copy_data']:
@@ -666,7 +665,7 @@ def create_thread(
 
         if manifest_file:
             cloud_storage_manifest = ImageManifestManager(
-                os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
+                db_data.cloud_storage.get_storage_dirname() / manifest_file,
                 db_data.cloud_storage.get_storage_dirname()
             )
             cloud_storage_manifest.set_index()
@@ -841,7 +840,7 @@ def create_thread(
         media['image'].extend(
             [os.path.relpath(image, upload_dir) for image in
                 MEDIA_TYPES['directory']['extractor'](
-                    source_path=[os.path.join(upload_dir, f) for f in media['directory']],
+                    source_paths=[os.path.join(upload_dir, f) for f in media['directory']],
                 ).absolute_source_paths
             ]
         )
@@ -872,7 +871,7 @@ def create_thread(
         source_paths = [os.path.join(upload_dir, f) for f in media_files]
 
         details = {
-            'source_path': source_paths,
+            'source_paths': source_paths,
             'step': db_data.get_frame_step(),
             'start': db_data.start_frame,
             'stop': data['stop_frame'],
@@ -930,7 +929,7 @@ def create_thread(
 
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
-            source_files=[
+            source_paths=[
                 # We always work with .pcd files instead of .bin
                 (os.path.splitext(p)[0] + ".pcd") if p.endswith(".bin") else p
                 for p in extractor.absolute_source_paths
@@ -979,8 +978,8 @@ def create_thread(
                         .format(manifest_file or os.path.basename(db_data.get_manifest_path()))
                     )
 
-                manifest = _read_dataset_manifest(os.path.join(manifest_root, manifest_file),
-                    create_index=manifest_root.startswith(db_data.get_upload_dirname())
+                manifest = _read_dataset_manifest(manifest_root / manifest_file,
+                    create_index=manifest_root.is_relative_to(db_data.get_upload_dirname())
                 )
 
             sorted_media_files = _restore_file_order_from_manifest(extractor, manifest, upload_dir)
@@ -999,7 +998,7 @@ def create_thread(
 
         data['sorting_method'] = models.SortingMethod.PREDEFINED
         extractor.reconcile(
-            source_files=media_files,
+            source_paths=media_files,
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data['stop_frame'],
@@ -1029,7 +1028,7 @@ def create_thread(
     if (manifest_file and not os.path.exists(db_data.get_manifest_path())):
         shutil.copyfile(os.path.join(manifest_root, manifest_file),
             db_data.get_manifest_path())
-        if manifest_root and manifest_root.startswith(db_data.get_upload_dirname()):
+        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
             os.remove(os.path.join(manifest_root, manifest_file))
         manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
@@ -1049,7 +1048,7 @@ def create_thread(
                     update_status('Validating the input manifest file')
 
                     manifest = VideoManifestValidator(
-                        source_path=os.path.join(upload_dir, media_files[0]),
+                        source_path=upload_dir / media_files[0],
                         manifest_path=db_data.get_manifest_path()
                     )
                     manifest.init_index()

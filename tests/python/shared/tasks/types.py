@@ -18,6 +18,7 @@ from shared.utils.helpers import read_video_file
 @attrs.define
 class VideoTaskSpec(TaskSpecBase):
     source_data_type: ClassVar[SourceDataType] = SourceDataType.video
+    chapters: list[dict]
 
     _get_video_file: Callable[[], io.IOBase] = attrs.field(kw_only=True)
 
