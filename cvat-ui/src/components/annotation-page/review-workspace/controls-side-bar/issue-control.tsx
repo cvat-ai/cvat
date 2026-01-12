@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Icon from '@ant-design/icons';
 
 import { ActiveControl, CombinedState } from 'reducers';
@@ -40,6 +40,13 @@ function CreateIssueControl(props: Props): JSX.Element {
     } = props;
 
     const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
+
+    useEffect(() => {
+        if (disabled && activeControl === ActiveControl.OPEN_ISSUE) {
+            canvasInstance.selectRegion(false);
+            updateActiveControl(ActiveControl.CURSOR);
+        }
+    }, [disabled, activeControl, canvasInstance, updateActiveControl]);
 
     const handler = (): void => {
         if (activeControl === ActiveControl.OPEN_ISSUE) {

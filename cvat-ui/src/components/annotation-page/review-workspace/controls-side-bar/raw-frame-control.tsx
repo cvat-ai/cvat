@@ -52,6 +52,13 @@ function RawFrameControl(props: Props): JSX.Element {
         }
     }, [is2D, visible]);
 
+    useEffect(() => {
+        if (disabled && visible) {
+            setVisible(false);
+            window.dispatchEvent(new CustomEvent('cvat.rawCompareToggle', { detail: { active: false } }));
+        }
+    }, [disabled, visible]);
+
     const iconClassName = (disabled || !is2D) ?
         'cvat-raw-frame-control cvat-disabled-canvas-control cvat-antd-icon-control' :
         `cvat-raw-frame-control cvat-antd-icon-control${visible ? ' cvat-active-canvas-control' : ''}`;
