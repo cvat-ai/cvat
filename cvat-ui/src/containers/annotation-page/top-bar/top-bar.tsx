@@ -7,6 +7,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
+import message from 'antd/lib/message';
 
 import {
     changeFrameAsync,
@@ -17,6 +18,7 @@ import {
     redoActionAsync,
     restoreFrameAsync,
     saveAnnotationsAsync,
+    finishCurrentJobAsync,
     searchAnnotationsAsync,
     searchChaptersAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
@@ -106,6 +108,7 @@ interface DispatchToProps {
     restoreFrame(frame: number): void;
     switchNavigationBlocked(blocked: boolean): void;
     setNavigationType(navigationType: NavigationType): void;
+    onFinishJob(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -255,6 +258,16 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         setNavigationType(navigationType: NavigationType): void {
             dispatch(setNavigationTypeAction(navigationType));
+        },
+        onFinishJob(): void {
+            dispatch(finishCurrentJobAsync(() => {
+                message.open({
+                    duration: 1,
+                    type: 'success',
+                    content: 'You tagged the job as completed',
+                    className: 'cvat-annotation-job-finished-success',
+                });
+            }));
         },
     };
 }
@@ -722,6 +735,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             setNavigationType,
             switchShowSearchPallet,
             showSearchFrameByName,
+            onFinishJob,
         } = this.props;
 
         return (
@@ -750,6 +764,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 switchShowSearchPallet={switchShowSearchPallet}
                 showSearchFrameByName={showSearchFrameByName}
                 switchNavigationBlocked={switchNavigationBlocked}
+                onFinishJob={onFinishJob}
                 keyMap={keyMap}
                 workspace={workspace}
                 playing={playing}

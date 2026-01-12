@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Col } from 'antd/lib/grid';
-import Icon, { StopOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import Icon, { StopOutlined, CheckCircleOutlined, LoadingOutlined, CheckCircleTwoTone } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -36,6 +36,7 @@ interface Props {
     onRedoClick(): void;
     onFinishDraw(): void;
     onSwitchToolsBlockerState(): void;
+    onFinishJob(): void;
 }
 
 const componentShortcuts = {
@@ -77,6 +78,7 @@ function LeftGroup(props: Props): JSX.Element {
         onRedoClick,
         onFinishDraw,
         onSwitchToolsBlockerState,
+        onFinishJob,
     } = props;
 
     const includesDoneButton = finishDrawAvailable(activeControl);
@@ -141,6 +143,26 @@ function LeftGroup(props: Props): JSX.Element {
                     >
                         <Icon component={RedoIcon} />
                         Redo
+                    </Button>
+                </CVATTooltip>
+                <CVATTooltip overlay='Save and completed'>
+                    <Button
+                        type='link'
+                        disabled={saving}
+                        className='cvat-annotation-header-finish-job-button cvat-annotation-header-button'
+                        onClick={() => {
+                            Modal.confirm({
+                                title: 'Would you like to finish the job?',
+                                content: 'It will save annotations and set the job state to "completed"',
+                                okText: 'Finish job',
+                                cancelText: 'Cancel',
+                                className: 'cvat-modal-content-finish-job',
+                                onOk: onFinishJob,
+                            });
+                        }}
+                    >
+                        <CheckCircleTwoTone />
+                        Finish
                     </Button>
                 </CVATTooltip>
                 {includesDoneButton ? (

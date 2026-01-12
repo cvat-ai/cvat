@@ -79,6 +79,7 @@ interface Props {
     switchNavigationBlocked(blocked: boolean): void;
     setNavigationType(navigationType: NavigationType): void;
     switchShowSearchPallet(visible: boolean): void;
+    onFinishJob(): void;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -144,6 +145,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         switchNavigationBlocked,
         switchShowSearchPallet,
         showSearchFrameByName,
+        onFinishJob,
     } = props;
 
     const playerItems: [JSX.Element, number][] = [];
@@ -223,6 +225,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 onFinishDraw={onFinishDraw}
                 onSwitchToolsBlockerState={onSwitchToolsBlockerState}
                 keyMap={keyMap}
+                onFinishJob={onFinishJob}
             />
             <Col className='cvat-annotation-header-player-group'>
                 <Row align='middle'>

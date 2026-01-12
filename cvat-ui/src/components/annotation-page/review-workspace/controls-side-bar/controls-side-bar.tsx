@@ -16,6 +16,7 @@ import MoveControl from 'components/annotation-page/standard-workspace/controls-
 import FitControl from 'components/annotation-page/standard-workspace/controls-side-bar/fit-control';
 import ResizeControl from 'components/annotation-page/standard-workspace/controls-side-bar/resize-control';
 import IssueControl from './issue-control';
+import RawFrameControl from './raw-frame-control';
 
 interface Props {
     canvasInstance: Canvas;
@@ -47,12 +48,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION}
                 rotateFrame={rotateFrame}
             />
-
             <hr />
-
             <FitControl canvasInstance={canvasInstance} />
             <ResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
-
+            <hr />
+            <RawFrameControl disabled={controlsDisabled} />
             <hr />
             <IssueControl
                 canvasInstance={canvasInstance}

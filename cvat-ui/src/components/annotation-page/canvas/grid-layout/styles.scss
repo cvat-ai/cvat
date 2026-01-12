@@ -56,6 +56,58 @@
     }
 }
 
+.cvat-raw-frame-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: $grid-unit-size;
+
+    .cvat-raw-frame-view-header {
+        margin-bottom: $grid-unit-size;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: $grid-unit-size;
+        padding-right: $grid-unit-size * 4;
+    }
+
+    .cvat-raw-frame-view-title {
+        flex: 1;
+        text-align: center;
+    }
+
+    .cvat-raw-frame-view-controls {
+        display: flex;
+        align-items: center;
+        gap: $grid-unit-size * 1.5;
+
+        > span {
+            font-size: 16px;
+            cursor: pointer;
+        }
+    }
+
+    .cvat-raw-frame-view-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    }
+
+    .cvat-raw-frame-view-zoomable {
+        display: inline-block;
+        transition: transform 0.15s ease-in-out;
+    }
+}
+
 .cvat-canvas-grid-item {
     background-color: rgba(241, 241, 241, 70%);
     border-radius: $border-radius-base;

@@ -21,6 +21,7 @@ export enum ViewType {
     CANVAS_3D_SIDE = 'canvas3DSide',
     CANVAS_3D_FRONT = 'canvas3DFront',
     RELATED_IMAGE = 'relatedImage',
+    RAW_FRAME = 'rawFrame',
 }
 
 const defaultLayout: {
