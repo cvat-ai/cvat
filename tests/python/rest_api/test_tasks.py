@@ -731,6 +731,78 @@ class TestPatchTaskAnnotations:
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestGetTaskDataset:
 
+     # Add this fixture within your test class structure, perhaps in TestGetTaskDataset
+    @fixture(scope="class")
+    def fxt_project_with_name_collision(
+        self,
+        request: pytest.FixtureRequest,
+        tmp_path_factory: pytest.TempPathFactory,
+    ) -> Generator[tuple[int, list[str]], None, None]:
+        # This project aims to test image name mangling during project export
+        # Task 1: has image 'image_1.jpg'
+        # Task 2: also has image 'image_1.jpg'
+
+        # 1. Setup the project and common data
+        project_name = "test_project_with_name_collision"
+        labels = [{"name": "car"}]
+
+        with make_sdk_client(self._USERNAME) as client:
+            project_spec = models.ProjectWriteRequest(
+                name=project_name,
+                labels=labels
+            )
+            project = client.projects.create(project_spec)
+            project_id = project.id
+
+            # We need a shared file path that collides between two tasks
+            common_filename = "image_1.jpg"
+
+            # Create a temporary directory for local file resources
+            tmp_dir = tmp_path_factory.mktemp("name_collision_data")
+
+            # Create image file content
+            image_content = generate_image_files(1, filenames=[common_filename])[0].getvalue()
+
+            # 2. Create Task 1
+            task1_name = "Task1_Image_Collision"
+            task1_files = [Path(tmp_dir / f"task1_{common_filename}")]
+            task1_files[0].write_bytes(image_content)
+
+            task1 = client.tasks.create_from_data(
+                spec={"name": task1_name, "project_id": project_id},
+                resource_type=ResourceType.LOCAL,
+                resources=task1_files,
+            )
+
+            # 3. Create Task 2
+            task2_name = "Task2_Image_Collision"
+            task2_files = [Path(tmp_dir / f"task2_{common_filename}")]
+            task2_files[0].write_bytes(image_content)
+
+            task2 = client.tasks.create_from_data(
+                spec={"name": task2_name, "project_id": project_id},
+                resource_type=ResourceType.LOCAL,
+                resources=task2_files,
+            )
+
+            # Expected mangled names in the exported dataset.
+            # Task 1 uses the original name (first encounter globally).
+            # Task 2 gets mangled with its task_id since the base name is already used.
+            task1_image_basename, task1_image_ext = common_filename.rsplit(osp.extsep, maxsplit=1)
+
+            expected_filenames = [
+                # Task 1: First, should get the original name (no task_id suffix needed)
+                f"{task1_image_basename}.{task1_image_ext}",
+
+                # Task 2: Collides, should get mangled with -task_{task_id}
+                f"{task1_image_basename}-task_{task2.id}.{task1_image_ext}"
+            ]
+
+            yield project_id, expected_filenames
+
+            # Cleanup (optional, as restore_db_per_class handles DB, but good practice)
+            project.delete()
+            
     @staticmethod
     def _test_can_export_dataset(
         username: str,
@@ -988,6 +1060,42 @@ class TestGetTaskDataset:
                     assert not Path(related_image["path"]).is_absolute()
                     if "size" in related_image:
                         assert tuple(related_image["size"]) > (0, 0)
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("project_id, expected_filenames", [fixture_ref(fxt_project_with_name_collision)])
+    def test_project_export_with_image_name_collision(
+        self, tmp_path: Path, project_id: int, expected_filenames: list[str]
+    ):
+        with make_sdk_client(self._USERNAME) as client:
+            project = client.projects.retrieve(project_id)
+
+            dataset_file = tmp_path / f"project_{project_id}_export.zip"
+
+            # Export the project dataset
+            project.export_dataset(
+                format_name="CVAT for images 1.1",
+                filename=dataset_file,
+                include_images=True, # Need images to check filenames
+            )
+
+        assert dataset_file.is_file()
+
+        # Read filenames from the exported zip archive
+        exported_image_names = set()
+        with zipfile.ZipFile(dataset_file) as zf:
+            for name in zf.namelist():
+                # Filter for actual image files
+                if name.endswith(".jpg"):
+                    # The image is expected to be in a subdirectory like 'images/default/...'
+                    # We need only the filename part for comparison.
+                    exported_image_names.add(osp.basename(name))
+
+        # The exported image names must exactly match the original name and the mangled name.
+        # Note: The expected_filenames are built as full filename with extension.
+        expected_image_names_set = set(expected_filenames)
+
+        assert exported_image_names == expected_image_names_set, \
+            f"Image name mangling failed. Expected {expected_image_names_set}, but found {exported_image_names}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
