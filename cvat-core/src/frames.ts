@@ -999,7 +999,7 @@ export async function patchMeta(id: number, meta?: FramesMetaData, session: 'job
     const updatedFields = oldMeta.getUpdated();
     if (Object.keys(updatedFields).length) {
         const newMeta = await saveMeta(oldMeta, session, id);
-        return newMeta;
+        return session === 'job' ? frameMetaCache[id] : newMeta;
     }
     return oldMeta;
 }
