@@ -37,7 +37,7 @@ spec:
           args:
             - run
             - --server
-            - --addr=0.0.0.0:8181
+            - --addr=:8181
             - --set=decision_logs.console=true
             - --set=services.cvat.url=http://{{ .Release.Name }}-backend-service:8080
             - --set=bundles.cvat.service=cvat
