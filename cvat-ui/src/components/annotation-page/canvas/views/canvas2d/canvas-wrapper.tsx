@@ -273,6 +273,18 @@ const componentShortcuts = {
         sequences: ['ctrl+a'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
+    NEXT_OBJECT: {
+        name: 'Next object',
+        description: 'Go to the next object and center it on the canvas',
+        sequences: ['tab'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+    PREVIOUS_OBJECT: {
+        name: 'Previous object',
+        description: 'Go to the previous object and center it on the canvas',
+        sequences: ['shift+tab'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -1113,14 +1125,41 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             automaticBordering,
             showTagsOnFrame,
             canvasIsReady,
+            annotations,
+            activatedStateID,
+            focusedObjectPadding,
             onSwitchAutomaticBordering,
             onSwitchZLayer,
             onAddZLayer,
+            onActivateObject,
         } = this.props;
+        const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
                 event.preventDefault();
+            }
+        };
+
+        const navigateObject = (step: number): void => {
+            const filteredStates = annotations.filter(
+                (state) => !state.outside && !state.hidden && state.zOrder <= curZLayer,
+            );
+            if (filteredStates.length) {
+                const currentIndex = filteredStates.findIndex((state) => state.clientID === activatedStateID);
+                let nextIndex = currentIndex + step;
+                if (nextIndex > filteredStates.length - 1) {
+                    nextIndex = 0;
+                } else if (nextIndex < 0) {
+                    nextIndex = filteredStates.length - 1;
+                }
+                const nextState = filteredStates[nextIndex];
+                if (nextState && nextState.clientID !== null && nextState.clientID !== activatedStateID) {
+                    onActivateObject(nextState.clientID, null);
+                    if (nextState.objectType !== ObjectType.TAG && canvasInstance) {
+                        canvasInstance.focus(nextState.clientID, focusedObjectPadding);
+                    }
+                }
             }
         };
 
@@ -1130,6 +1169,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     preventDefault(event);
                     onSwitchAutomaticBordering(!automaticBordering);
                 }
+            },
+            NEXT_OBJECT: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                navigateObject(1);
+            },
+            PREVIOUS_OBJECT: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                navigateObject(-1);
             },
         };
 
