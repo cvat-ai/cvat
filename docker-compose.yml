@@ -321,6 +321,7 @@ services:
     command:
       - run
       - --server
+      - --addr=0.0.0.0:8181
       - --log-level=error
       - --set=services.cvat.url=http://cvat-server:8080
       - --set=bundles.cvat.service=cvat
