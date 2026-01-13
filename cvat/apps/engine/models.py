@@ -1418,6 +1418,11 @@ class AnnotationGuide(TimestampedModel):
     def organization_id(self):
         return self.target.organization_id
 
+    @staticmethod
+    def get_asset_ids_from_markdown(markdown: str) -> set[str]:
+        pattern = r"\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)"
+        return set(re.findall(pattern, markdown))
+
 class Asset(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     filename = models.CharField(max_length=1024)

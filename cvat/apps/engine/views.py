@@ -6,7 +6,6 @@
 import itertools
 import os
 import os.path as osp
-import re
 import shutil
 import textwrap
 import traceback
@@ -2866,14 +2865,11 @@ class AnnotationGuidesViewSet(
     def _update_related_assets(self, request: ExtendedRequest, guide: AnnotationGuide):
         existing_assets = list(guide.assets.all())
         new_assets = []
-
-        pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-        results = set(re.findall(pattern, guide.markdown))
-
+        asset_ids = AnnotationGuide.get_asset_ids_from_markdown(guide.markdown)
         db_assets_to_copy = {}
 
         # first check if we need to copy some assets and if user has permissions to access them
-        for asset_id in results:
+        for asset_id in asset_ids:
             with suppress(models.Asset.DoesNotExist):
                 db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
                 if db_asset.guide.id != guide.id:
@@ -2893,7 +2889,7 @@ class AnnotationGuidesViewSet(
         # then copy those assets, where user has permissions
         assets_mapping = {}
         with transaction.atomic():
-            for asset_id in results:
+            for asset_id in asset_ids:
                 db_asset = db_assets_to_copy.get(asset_id)
                 if db_asset is not None:
                     copied_asset = Asset(
@@ -2906,7 +2902,7 @@ class AnnotationGuidesViewSet(
 
         # finally apply changes on filesystem out of transaction
         try:
-            for asset_id in results:
+            for asset_id in asset_ids:
                 copied_asset = assets_mapping.get(asset_id)
                 if copied_asset is not None:
                     db_asset = db_assets_to_copy.get(asset_id)
