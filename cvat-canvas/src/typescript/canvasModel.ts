@@ -98,6 +98,7 @@ export interface Configuration {
     resetZoom?: boolean;
     hideEditedObject?: boolean;
     focusedObjectPadding?: number;
+    totalReplicaJobs?: number;
 }
 
 export interface BrushTool {
@@ -421,6 +422,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
                 hideEditedObject: false,
                 focusedObjectPadding: 50,
+                totalReplicaJobs: 0,
             },
             imageBitmap: false,
             image: null,
@@ -1015,6 +1017,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (typeof configuration.focusedObjectPadding === 'number') {
             this.data.configuration.focusedObjectPadding = Math.max(
                 configuration.focusedObjectPadding, 0,
+            );
+        }
+
+        if (typeof configuration.totalReplicaJobs === 'number') {
+            this.data.configuration.totalReplicaJobs = Math.max(
+                Math.floor(configuration.totalReplicaJobs), 0,
             );
         }
 

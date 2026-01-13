@@ -3196,8 +3196,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
                 // Score visualization
                 if (withScore && score !== null && score !== undefined) {
+                    const { totalReplicaJobs } = this.configuration;
+                    const votes = totalReplicaJobs ? Math.round(score * totalReplicaJobs) : null;
+                    const scoreText = votes !== null ?
+                        `Score: ${score.toFixed(2)}, Votes: ${votes}` :
+                        `Score: ${score.toFixed(2)}`;
                     block
-                        .tspan(`Score: ${score.toFixed(2)}`)
+                        .tspan(scoreText)
                         .attr({ dy: '1.25em', x: 0 })
                         .addClass('cvat_canvas_text_score');
                 }

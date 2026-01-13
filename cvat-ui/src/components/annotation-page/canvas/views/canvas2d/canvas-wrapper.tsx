@@ -388,6 +388,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showGroundTruth,
             resetZoom,
             focusedObjectPadding,
+            jobInstance,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -416,6 +417,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textContent,
             resetZoom,
             focusedObjectPadding,
+            totalReplicaJobs: jobInstance?.consensusReplicas ?? 0,
         });
 
         this.initialSetup();
