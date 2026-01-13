@@ -423,6 +423,7 @@ export interface SerializedShape {
     group: number;
     frame: number;
     source: Source;
+    score?: number | null;
     attributes: { spec_id: number; value: string }[];
     elements: Omit<SerializedShape, 'elements'>[];
     occluded: boolean;
@@ -440,6 +441,7 @@ export interface SerializedTrack {
     group: number;
     frame: number;
     source: Source;
+    score?: number | null;
     attributes: { spec_id: number; value: string }[];
     shapes: {
         attributes: SerializedTrack['attributes'];
@@ -462,6 +464,7 @@ export interface SerializedTag {
     frame: number;
     group: number;
     source: Source;
+    score?: number | null;
     attributes: { spec_id: number; value: string }[];
 }
 
