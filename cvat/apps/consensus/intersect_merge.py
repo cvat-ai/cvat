@@ -16,11 +16,8 @@ from datumaro.components.errors import FailedLabelVotingError
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
-from cvat.apps.quality_control.quality_reports import (
-    ComparisonParameters,
-    DistanceComparator,
-    segment_iou,
-)
+from cvat.apps.quality_control.annotation_matching import DistanceComparator, segment_iou
+from cvat.apps.quality_control.comparison_report import ComparisonParameters
 
 
 @attrs.define(kw_only=True, slots=False)

@@ -26,7 +26,8 @@ from cvat.apps.engine.models import (
     clear_annotations_in_jobs,
 )
 from cvat.apps.profiler import silk_profile
-from cvat.apps.quality_control.quality_reports import ComparisonParameters, JobDataProvider
+from cvat.apps.quality_control.comparison_report import ComparisonParameters
+from cvat.apps.quality_control.quality_reports import JobDataProvider
 from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
