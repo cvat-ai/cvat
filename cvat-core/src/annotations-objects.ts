@@ -78,6 +78,7 @@ export interface BasicInjection {
     jobType: JobType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
+    consensusReplicas?: number;
 }
 
 type AnnotationInjection = BasicInjection & {
@@ -105,6 +106,7 @@ class Annotation {
     protected color: string;
     protected source: Source;
     public score: number | null;
+    public votes: number | null;
     public updated: number;
     public attributes: Record<number, string>;
     protected groupObject: {
@@ -129,6 +131,8 @@ class Annotation {
         this.color = color;
         this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
         this.score = data.score ?? null;
+        this.votes = (this.score !== null && injection.consensusReplicas !== undefined) ?
+            Math.round(this.score * injection.consensusReplicas) : null;
         this.updated = Date.now();
         this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
             attributeAccumulator[attr.spec_id] = attr.value;
@@ -603,6 +607,7 @@ export class Shape extends Drawn {
             frame,
             source: this.source,
             score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
 
@@ -954,6 +959,7 @@ export class Track extends Drawn {
             frame,
             source: this.source,
             score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -1483,6 +1489,7 @@ export class Tag extends Annotation {
             frame,
             source: this.source,
             score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -2055,6 +2062,7 @@ export class SkeletonShape extends Shape {
             frame,
             source: this.source,
             score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -3098,6 +3106,7 @@ export class SkeletonTrack extends Track {
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
             score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }

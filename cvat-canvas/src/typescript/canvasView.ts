@@ -3141,7 +3141,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const withScore = content.includes('score');
         const textFontSize = this.configuration.textFontSize || 12;
         const {
-            label, clientID, attributes, source, descriptions, score,
+            label, clientID, attributes, source, descriptions, score, votes,
         } = state;
 
         const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
@@ -3196,8 +3196,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
                 // Score visualization
                 if (withScore && score !== null && score !== undefined) {
-                    const { totalReplicaJobs } = this.configuration;
-                    const votes = totalReplicaJobs ? Math.round(score * totalReplicaJobs) : null;
                     const scoreText = votes !== null ?
                         `Score: ${score.toFixed(2)}, Votes: ${votes}` :
                         `Score: ${score.toFixed(2)}`;
