@@ -21,6 +21,7 @@ class ShapeType(Enum):
     POINTS = "points"
     CUBOID = "cuboid"
 
+
 def make_2d_points(base=0.0, shape_type=ShapeType.RECTANGLE):
     if shape_type == ShapeType.RECTANGLE:
         return [1.0 + base, 2.0 + base, 3.0 + base, 4.0 + base]
@@ -31,6 +32,7 @@ def make_2d_points(base=0.0, shape_type=ShapeType.RECTANGLE):
     elif shape_type == ShapeType.POINTS:
         return [1.0 + base, 2.0 + base]
     return []
+
 
 def make_3d_points(base=0.0):
     return [
@@ -51,6 +53,7 @@ def make_3d_points(base=0.0):
         0.0,
         0.0,
     ]
+
 
 def make_shape(
     frame,
@@ -91,6 +94,7 @@ def make_shape(
         }
     return shape
 
+
 def make_track(shapes, frame=0, label_id=0, source="manual", attributes=None):
     return {
         "frame": frame,
@@ -101,13 +105,13 @@ def make_track(shapes, frame=0, label_id=0, source="manual", attributes=None):
         "shapes": shapes,
     }
 
+
 def get_dimension_type(dimension):
     if dimension == models.DimensionType.DIM_3D or dimension == "3d":
         return models.DimensionType.DIM_3D
     elif dimension == models.DimensionType.DIM_2D or dimension == "2d":
         return models.DimensionType.DIM_2D
     raise ValueError(f"Unknown dimension: {dimension}")
-
 
 
 class TrackManagerTest(TestCase):
@@ -142,9 +146,15 @@ class TrackManagerTest(TestCase):
         for dimension, shape_type in test_cases:
             with self.subTest(dimension=dimension, shape_type=shape_type):
                 shapes = [
-                    make_shape(0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type),
-                    make_shape(2, base=2.0, outside=True, dimension=dimension, shape_type=shape_type),
-                    make_shape(4, base=4.0, outside=False, dimension=dimension, shape_type=shape_type),
+                    make_shape(
+                        0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type
+                    ),
+                    make_shape(
+                        2, base=2.0, outside=True, dimension=dimension, shape_type=shape_type
+                    ),
+                    make_shape(
+                        4, base=4.0, outside=False, dimension=dimension, shape_type=shape_type
+                    ),
                 ]
                 track = make_track(shapes)
                 self._check_interpolation(track, dimension)
@@ -152,11 +162,21 @@ class TrackManagerTest(TestCase):
     def test_outside_shape_interpolation(self):
         for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
-                shape_type = ShapeType.CUBOID if dimension == models.DimensionType.DIM_3D else ShapeType.RECTANGLE
+                shape_type = (
+                    ShapeType.CUBOID
+                    if dimension == models.DimensionType.DIM_3D
+                    else ShapeType.RECTANGLE
+                )
                 shapes = [
-                    make_shape(0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type),
-                    make_shape(2, base=2.0, outside=True, dimension=dimension, shape_type=shape_type),
-                    make_shape(4, base=4.0, outside=True, dimension=dimension, shape_type=shape_type),
+                    make_shape(
+                        0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type
+                    ),
+                    make_shape(
+                        2, base=2.0, outside=True, dimension=dimension, shape_type=shape_type
+                    ),
+                    make_shape(
+                        4, base=4.0, outside=True, dimension=dimension, shape_type=shape_type
+                    ),
                 ]
                 track = make_track(shapes)
                 interpolated = TrackManager.get_interpolated_shapes(
@@ -166,7 +186,6 @@ class TrackManagerTest(TestCase):
                 got = [shape["frame"] for shape in interpolated]
                 self.assertEqual(expected, got)
 
-
     def test_outside_bbox_interpolation(self):
         shapes = [
             make_shape(0, base=0.0, outside=False, shape_type=ShapeType.RECTANGLE),
@@ -175,14 +194,23 @@ class TrackManagerTest(TestCase):
         ]
         track = make_track(shapes)
         expected_shapes = [
-            dict(make_shape(0, base=0.0, outside=False, shape_type=ShapeType.RECTANGLE), keyframe=True),
-            dict(make_shape(1, base=1.0, outside=False, shape_type=ShapeType.RECTANGLE), keyframe=False),
-            dict(make_shape(2, base=2.0, outside=True, shape_type=ShapeType.RECTANGLE), keyframe=True),
-            dict(make_shape(4, base=4.0, outside=True, shape_type=ShapeType.RECTANGLE), keyframe=True),
+            dict(
+                make_shape(0, base=0.0, outside=False, shape_type=ShapeType.RECTANGLE),
+                keyframe=True,
+            ),
+            dict(
+                make_shape(1, base=1.0, outside=False, shape_type=ShapeType.RECTANGLE),
+                keyframe=False,
+            ),
+            dict(
+                make_shape(2, base=2.0, outside=True, shape_type=ShapeType.RECTANGLE), keyframe=True
+            ),
+            dict(
+                make_shape(4, base=4.0, outside=True, shape_type=ShapeType.RECTANGLE), keyframe=True
+            ),
         ]
         interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 5, "2d")
         self.assertEqual(expected_shapes, interpolated_shapes)
-
 
     def test_outside_polygon_interpolation(self):
         shapes = [
@@ -191,9 +219,15 @@ class TrackManagerTest(TestCase):
         ]
         track = make_track(shapes)
         expected_shapes = [
-            dict(make_shape(0, base=0.0, outside=False, shape_type=ShapeType.POLYGON), keyframe=True),
-            dict(make_shape(1, base=1.0, outside=False, shape_type=ShapeType.POLYGON), keyframe=False),
-            dict(make_shape(2, base=2.0, outside=True, shape_type=ShapeType.POLYGON), keyframe=True),
+            dict(
+                make_shape(0, base=0.0, outside=False, shape_type=ShapeType.POLYGON), keyframe=True
+            ),
+            dict(
+                make_shape(1, base=1.0, outside=False, shape_type=ShapeType.POLYGON), keyframe=False
+            ),
+            dict(
+                make_shape(2, base=2.0, outside=True, shape_type=ShapeType.POLYGON), keyframe=True
+            ),
         ]
         interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 3, "2d")
         self.assertEqual(expected_shapes, interpolated_shapes)
@@ -201,11 +235,19 @@ class TrackManagerTest(TestCase):
     def test_duplicated_shape_interpolation(self):
         for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
-                shape_type = ShapeType.CUBOID if dimension == models.DimensionType.DIM_3D else ShapeType.RECTANGLE
+                shape_type = (
+                    ShapeType.CUBOID
+                    if dimension == models.DimensionType.DIM_3D
+                    else ShapeType.RECTANGLE
+                )
                 label = "car" if dimension == models.DimensionType.DIM_3D else "cat"
                 track_id = 777 if dimension == models.DimensionType.DIM_3D else 666
-                shape0 = make_shape(0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type)
-                shape1 = make_shape(1, base=0.0, outside=True, dimension=dimension, shape_type=shape_type)
+                shape0 = make_shape(
+                    0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type
+                )
+                shape1 = make_shape(
+                    1, base=0.0, outside=True, dimension=dimension, shape_type=shape_type
+                )
                 shapes = [shape0, shape1, shape1]
                 track = {
                     "id": track_id,
@@ -227,15 +269,29 @@ class TrackManagerTest(TestCase):
             with self.subTest(dimension=dimension):
                 deleted_frames = [2]
                 end_frame = 5
-                shape_type = ShapeType.CUBOID if dimension == models.DimensionType.DIM_3D else ShapeType.RECTANGLE
+                shape_type = (
+                    ShapeType.CUBOID
+                    if dimension == models.DimensionType.DIM_3D
+                    else ShapeType.RECTANGLE
+                )
                 shapes = [
-                    make_shape(0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type),
-                    make_shape(2, base=2.0, outside=False, dimension=dimension, shape_type=shape_type),
-                    make_shape(4, base=4.0, outside=False, dimension=dimension, shape_type=shape_type),
+                    make_shape(
+                        0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type
+                    ),
+                    make_shape(
+                        2, base=2.0, outside=False, dimension=dimension, shape_type=shape_type
+                    ),
+                    make_shape(
+                        4, base=4.0, outside=False, dimension=dimension, shape_type=shape_type
+                    ),
                 ]
                 track = make_track(shapes)
                 interpolated_shapes = TrackManager.get_interpolated_shapes(
-                    track, 0, end_frame, get_dimension_type(dimension), deleted_frames=deleted_frames
+                    track,
+                    0,
+                    end_frame,
+                    get_dimension_type(dimension),
+                    deleted_frames=deleted_frames,
                 )
                 expected_frames = [0, 1, 3, 4]
                 self.assertEqual(expected_frames, [s["frame"] for s in interpolated_shapes])
@@ -249,11 +305,26 @@ class TrackManagerTest(TestCase):
         ]
         track = make_track(shapes)
         all_expected_shapes = [
-            dict(make_shape(0, base=0.0, outside=False, shape_type=ShapeType.RECTANGLE), keyframe=True),
-            dict(make_shape(1, base=1.0, outside=False, shape_type=ShapeType.RECTANGLE), keyframe=False),
-            dict(make_shape(2, base=2.0, outside=False, shape_type=ShapeType.RECTANGLE), keyframe=True),
-            dict(make_shape(3, base=3.0, outside=False, shape_type=ShapeType.RECTANGLE), keyframe=False),
-            dict(make_shape(4, base=4.0, outside=False, shape_type=ShapeType.RECTANGLE), keyframe=True),
+            dict(
+                make_shape(0, base=0.0, outside=False, shape_type=ShapeType.RECTANGLE),
+                keyframe=True,
+            ),
+            dict(
+                make_shape(1, base=1.0, outside=False, shape_type=ShapeType.RECTANGLE),
+                keyframe=False,
+            ),
+            dict(
+                make_shape(2, base=2.0, outside=False, shape_type=ShapeType.RECTANGLE),
+                keyframe=True,
+            ),
+            dict(
+                make_shape(3, base=3.0, outside=False, shape_type=ShapeType.RECTANGLE),
+                keyframe=False,
+            ),
+            dict(
+                make_shape(4, base=4.0, outside=False, shape_type=ShapeType.RECTANGLE),
+                keyframe=True,
+            ),
         ]
         for included_frames in [None, [1, 3]]:
             interpolated_shapes = TrackManager.get_interpolated_shapes(
@@ -315,11 +386,21 @@ class AnnotationIRTest(TestCase):
             with self.subTest(dimension=dimension):
                 label = "car" if dimension == models.DimensionType.DIM_3D else "cat"
                 track_id = 666
-                shape_type = ShapeType.CUBOID if dimension == models.DimensionType.DIM_3D else ShapeType.RECTANGLE
+                shape_type = (
+                    ShapeType.CUBOID
+                    if dimension == models.DimensionType.DIM_3D
+                    else ShapeType.RECTANGLE
+                )
                 shapes = [
-                    make_shape(0, base=99.0, outside=False, dimension=dimension, shape_type=shape_type),
-                    make_shape(1, base=99.0, outside=True, dimension=dimension, shape_type=shape_type),
-                    make_shape(10, base=110.0, outside=False, dimension=dimension, shape_type=shape_type),
+                    make_shape(
+                        0, base=99.0, outside=False, dimension=dimension, shape_type=shape_type
+                    ),
+                    make_shape(
+                        1, base=99.0, outside=True, dimension=dimension, shape_type=shape_type
+                    ),
+                    make_shape(
+                        10, base=110.0, outside=False, dimension=dimension, shape_type=shape_type
+                    ),
                 ]
                 track = {
                     "id": track_id,
@@ -348,7 +429,7 @@ class TestTaskAnnotation(TestCase):
             with self.subTest(dimension=dimension):
                 # Create unique user for each subtest to avoid UNIQUE constraint error
                 user = models.User.objects.create_superuser(
-                    username=f"admin_{dimension}", email="", password="admin"
+                    username=f"admin_{dimension}", email="", password=""
                 )
 
                 db_data = models.Data.objects.create(size=31, stop_frame=30, image_quality=50)
@@ -361,7 +442,7 @@ class TestTaskAnnotation(TestCase):
                 }
                 db_task = models.Task.objects.create(data=db_data, **data)
 
-                # We assume that normally segments and annotation jobs
+                # We assume that norheapq.mergemally segments and annotation jobs
                 # are created in the ascending order for start_frame,
                 # so their ids correspond to this order. The DB, however,
                 # can return them in an arbitrary order, if not specified explicitly.
@@ -371,17 +452,23 @@ class TestTaskAnnotation(TestCase):
                 id_offset = 0 if dimension == "2d" else 1000000
 
                 models.Job.objects.create(
-                    segment=models.Segment.objects.create(task=db_task, start_frame=0, stop_frame=10),
+                    segment=models.Segment.objects.create(
+                        task=db_task, start_frame=0, stop_frame=10
+                    ),
                     type=models.JobType.ANNOTATION,
                     id=456789 + id_offset,
                 )
                 models.Job.objects.create(
-                    segment=models.Segment.objects.create(task=db_task, start_frame=10, stop_frame=20),
+                    segment=models.Segment.objects.create(
+                        task=db_task, start_frame=10, stop_frame=20
+                    ),
                     type=models.JobType.ANNOTATION,
                     id=123456 + id_offset,
                 )
                 models.Job.objects.create(
-                    segment=models.Segment.objects.create(task=db_task, start_frame=20, stop_frame=30),
+                    segment=models.Segment.objects.create(
+                        task=db_task, start_frame=20, stop_frame=30
+                    ),
                     type=models.JobType.ANNOTATION,
                     id=345678 + id_offset,
                 )
@@ -390,11 +477,17 @@ class TestTaskAnnotation(TestCase):
                 # if they are ordered, the test is not really testing anything anymore
 
                 unordered_ids = list(
-                    models.Job.objects.filter(segment__task_id=db_task.id).values_list("id", flat=True)
+                    models.Job.objects.filter(segment__task_id=db_task.id).values_list(
+                        "id", flat=True
+                    )
                 )
                 assert sorted(unordered_ids) != unordered_ids
 
-                dimension_type = models.DimensionType.DIM_3D if dimension == "3d" else models.DimensionType.DIM_2D
+                dimension_type = (
+                    models.DimensionType.DIM_3D
+                    if dimension == "3d"
+                    else models.DimensionType.DIM_2D
+                )
 
                 class DummyJobAnnotation(task_module.JobAnnotation):
                     called_ids = []
