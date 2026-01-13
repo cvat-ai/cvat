@@ -1881,7 +1881,6 @@ Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
     cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
     getJobItemMoreButton().scrollIntoView();
     getJobItemMoreButton().click();
-    // test commit
 
     cy.get('.cvat-job-item-menu').should('exist').and('be.visible');
     cy.contains('li', 'Merge consensus job').should('exist').and('be.visible')
