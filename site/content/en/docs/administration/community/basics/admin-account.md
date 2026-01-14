@@ -47,3 +47,25 @@ To manage users' permission, in the [Django administration panel](http://localho
 1. On the left menu click **Users**.
 2. On the main pane click **Admin** and scroll down to **Permissions** section.
 3. Select user groups and add/remove permissions.
+
+### Changing a user's password
+
+As a superuser, you can manually change passwords for other users
+through the Django administration panel. This is useful when users
+cannot use the "Forgot password" feature (e.g., when email is not
+configured or user email addresses are invalid).
+
+To change a user's password:
+
+1. Go to the [Django administration panel](http://localhost:8080/admin).
+2. On the left menu, click **Users**.
+3. Click on the username of the user whose password you want to change.
+4. In the **Password** field at the top of the user details page,
+   click the link that says **this form** (within the text
+   "Raw passwords are not stored, so there is no way to see this user's password,
+   but you can change the password using this form.").
+5. Enter and confirm the new password.
+6. Click **Change password** to save.
+
+The user can now log in with the new password and change it again
+in their account settings if desired.
