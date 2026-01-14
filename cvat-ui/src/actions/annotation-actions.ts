@@ -310,12 +310,27 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     };
 }
 
+// Track objects that user has explicitly unlocked in review mode
+const userUnlockedInReviewMode = new Set<number>();
+
 export function fetchAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
             const {
                 states, history, minZ, maxZ,
             } = await fetchAnnotations();
+
+            // Auto-lock objects in review mode (except ones user explicitly unlocked)
+            const { workspace } = getState().annotation;
+            if (workspace === Workspace.REVIEW) {
+                states.forEach((objectState: ObjectState) => {
+                    if (!objectState.lock && !objectState.isGroundTruth) {
+                        if (!userUnlockedInReviewMode.has(objectState.serverID as number)) {
+                            objectState.lock = true;
+                        }
+                    }
+                });
+            }
 
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
@@ -739,6 +754,18 @@ export function changeFrameAsync(
             const {
                 states, maxZ, minZ, history,
             } = await fetchAnnotations(toFrame);
+
+            // Auto-lock objects in review mode (except ones user explicitly unlocked)
+            if (state.annotation.workspace === Workspace.REVIEW) {
+                // Clear user unlocks when changing frame since we're showing different objects
+                userUnlockedInReviewMode.clear();
+                states.forEach((objectState: ObjectState) => {
+                    if (!objectState.lock && !objectState.isGroundTruth) {
+                        objectState.lock = true;
+                    }
+                });
+            }
+
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {
@@ -1167,6 +1194,66 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
                 payload: { error },
             });
             dispatch(fetchAnnotationsAsync());
+        }
+    };
+}
+
+// Track objects that were automatically locked when entering review mode
+const autoLockedObjectsInReviewMode = new Set<number>();
+
+// Called when user explicitly unlocks an object in review mode
+export function trackUserUnlockInReviewMode(serverID: number | null): void {
+    if (serverID !== null) {
+        userUnlockedInReviewMode.add(serverID);
+    }
+}
+
+export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
+        const {
+            annotation: {
+                annotations: { states: objectStates },
+                workspace: currentWorkspace,
+            },
+        } = state;
+
+        if (currentWorkspace === Workspace.REVIEW && workspace !== Workspace.REVIEW) {
+            userUnlockedInReviewMode.clear();
+
+            const statesToUnlock = objectStates.filter(
+                (objectState: ObjectState) => (
+                    objectState.lock &&
+                    !objectState.isGroundTruth &&
+                    autoLockedObjectsInReviewMode.has(objectState.clientID as number)
+                ),
+            );
+
+            if (statesToUnlock.length) {
+                for (const objectState of statesToUnlock) {
+                    objectState.lock = false;
+                }
+                autoLockedObjectsInReviewMode.clear();
+                dispatch(updateAnnotationsAsync(statesToUnlock));
+            } else {
+                autoLockedObjectsInReviewMode.clear();
+            }
+        }
+
+        dispatch(changeWorkspace(workspace));
+
+        if (workspace === Workspace.REVIEW && currentWorkspace !== Workspace.REVIEW) {
+            const statesToLock = objectStates.filter(
+                (objectState: ObjectState) => !objectState.lock && !objectState.isGroundTruth,
+            );
+
+            if (statesToLock.length) {
+                for (const objectState of statesToLock) {
+                    autoLockedObjectsInReviewMode.add(objectState.clientID as number);
+                    objectState.lock = true;
+                }
+                dispatch(updateAnnotationsAsync(statesToLock));
+            }
         }
     };
 }

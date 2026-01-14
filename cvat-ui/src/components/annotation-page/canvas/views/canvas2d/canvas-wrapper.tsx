@@ -385,7 +385,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             adaptiveZoom,
             intelligentPolygonCrop,
             showObjectsTextAlways,
-            workspace,
             showProjections,
             selectedOpacity,
             opacity,
@@ -400,7 +399,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showGroundTruth,
             resetZoom,
             focusedObjectPadding,
-            jobInstance,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -410,7 +408,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         wrapper.appendChild(canvasInstance.html());
 
         canvasInstance.configure({
-            forceDisableEditing: workspace === Workspace.REVIEW,
+            forceDisableEditing: false,
             undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
@@ -456,7 +454,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             brightnessLevel,
             contrastLevel,
             saturationLevel,
-            workspace,
             showObjectsTextAlways,
             textFontSize,
             controlPointsSize,
@@ -596,18 +593,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             if (prevProps.frameData === frameData) {
                 // explicitly rotated, not a new frame
                 canvasInstance.fit();
-            }
-        }
-
-        if (prevProps.workspace !== workspace) {
-            if (workspace === Workspace.REVIEW) {
-                canvasInstance.configure({
-                    forceDisableEditing: true,
-                });
-            } else if (prevProps.workspace === Workspace.REVIEW) {
-                canvasInstance.configure({
-                    forceDisableEditing: false,
-                });
             }
         }
 

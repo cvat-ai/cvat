@@ -20,6 +20,7 @@ import {
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
     changeHideActiveObjectAsync,
+    trackUserUnlockInReviewMode,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -37,7 +38,7 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 
 interface OwnProps {
-    readonly: boolean;
+    readonly?: boolean;
 }
 
 interface StateToProps {
@@ -129,7 +130,7 @@ const componentShortcuts = {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     TO_BACKGROUND: {
         name: 'To background',
@@ -398,11 +399,15 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private lockAllStates(locked: boolean): void {
-        const { updateAnnotations, readonly } = this.props;
+        const { updateAnnotations, readonly, workspace } = this.props;
         const { filteredStates } = this.state;
 
         if (!readonly) {
             for (const objectState of filteredStates) {
+                // Track user unlocks in review mode so they persist after fetch
+                if (!locked && workspace === Workspace.REVIEW) {
+                    trackUserUnlockInReviewMode(objectState.serverID);
+                }
                 objectState.lock = locked;
             }
 
@@ -491,6 +496,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly) {
+                    // Track user unlock in review mode so it persists after fetch
+                    if (state.lock && workspace === Workspace.REVIEW) {
+                        trackUserUnlockInReviewMode(state.serverID);
+                    }
                     state.lock = !state.lock;
                     updateAnnotations([state]);
                 }
