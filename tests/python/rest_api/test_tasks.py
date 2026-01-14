@@ -989,6 +989,46 @@ class TestGetTaskDataset:
                     if "size" in related_image:
                         assert tuple(related_image["size"]) > (0, 0)
 
+    @pytest.mark.parametrize(
+        "get_api,get_id",
+        [
+            pytest.param(
+                lambda client: client.tasks_api,
+                lambda tasks, jobs: next(
+                    t["id"] for t in tasks if t.get("dimension") == "3d" and t.get("size")
+                ),
+                id="task",
+            ),
+            pytest.param(
+                lambda client: client.jobs_api,
+                lambda tasks, jobs: next(
+                    j["id"] for j in jobs if tasks[j["task_id"]]["dimension"] == "3d"
+                ),
+                id="job",
+            ),
+        ],
+    )
+    def test_can_export_3d_annotations_via_rest_api(self, admin_user, tasks, jobs, get_api, get_id):
+        """Export 3D annotations via REST API v2 (task/job) and verify returned archive."""
+        item_id = get_id(tasks, jobs)
+
+        with make_api_client(admin_user) as api_client:
+            api = get_api(api_client)
+            dataset_bytes = export_dataset(
+                api,
+                id=item_id,
+                save_images=False,
+                format="Datumaro 3D 1.0",
+            )
+
+        assert zipfile.is_zipfile(io.BytesIO(dataset_bytes))
+
+        with zipfile.ZipFile(io.BytesIO(dataset_bytes)) as zf:
+            names = zf.namelist()
+            assert any(
+                name.startswith("annotations/") for name in names
+            ), f"No annotations folder in export archive: {names}"
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:
