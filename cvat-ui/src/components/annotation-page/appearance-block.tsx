@@ -35,9 +35,9 @@ import { subKeyMap } from 'utils/component-subkeymap';
 
 const componentShortcuts = {
     SWITCH_COLOR_BY_APPEARANCE: {
-        name: 'Switch color by label',
-        description: 'Set color by option to Label',
-        sequences: ['alt+q'],
+        name: 'Switch color_by appearance mode',
+        description: 'witch between color-by appearance modes annotation page',
+        sequences: [''],
         scope: ShortcutScope.ANNOTATION_PAGE,
     }
 };
@@ -158,24 +158,21 @@ function AppearanceBlock(props: Props): JSX.Element {
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
     const is3D = jobInstance.dimension === DimensionType.DIMENSION_3D;
+    const nextColorBy = {
+        [ColorBy.INSTANCE]: ColorBy.GROUP,
+        [ColorBy.GROUP]: ColorBy.LABEL,
+        [ColorBy.LABEL]: ColorBy.INSTANCE,
+    };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         SWITCH_COLOR_BY_APPEARANCE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            const nextColorBy = {
-                [ColorBy.INSTANCE]: ColorBy.GROUP,
-                [ColorBy.GROUP]: ColorBy.LABEL,
-                [ColorBy.LABEL]: ColorBy.INSTANCE,
-            };
-            console.log(nextColorBy[colorBy], "next color by item");
             changeShapesColorBy(nextColorBy[colorBy]);
 
         },
     };
 
     return (
-        <div className='cvat-appearance-block'>
-            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <Collapse
                 onChange={collapseAppearance}
                 activeKey={appearanceCollapsed ? [] : ['appearance']}
@@ -188,16 +185,17 @@ function AppearanceBlock(props: Props): JSX.Element {
                     ),
                     key: 'appearance',
                     children: (
-                        <div className='cvat-objects-appearance-content'>
+                        <div className='cvat-objects-appearance-content cvat-appearance-block'>
+                            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                             <Text type='secondary'>Color by</Text>
                             <Radio.Group
                                 className='cvat-appearance-color-by-radio-group'
                                 value={colorBy}
                                 onChange={(event: RadioChangeEvent) => changeShapesColorBy(event.target.value)}
                             >
-                                <Radio.Button value={ColorBy.LABEL}>{ColorBy.LABEL}</Radio.Button>
-                                <Radio.Button value={ColorBy.INSTANCE}>{ColorBy.INSTANCE}</Radio.Button>
-                                <Radio.Button value={ColorBy.GROUP}>{ColorBy.GROUP}</Radio.Button>
+                                {Object.keys(nextColorBy).map((val) => (
+                                    <Radio.Button value={val} key={val}>{val}</Radio.Button>
+                                ))}
                             </Radio.Group>
                         <Text type='secondary'>Opacity</Text>
                         <Slider
@@ -272,7 +270,6 @@ function AppearanceBlock(props: Props): JSX.Element {
                 ),
             }]}
         />
-        </div>
     );
 }
 
