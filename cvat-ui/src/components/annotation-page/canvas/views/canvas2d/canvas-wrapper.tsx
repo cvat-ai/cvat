@@ -1143,6 +1143,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     if (nextState.objectType !== ObjectType.TAG && canvasInstance) {
                         canvasInstance.focus(nextState.clientID, focusedObjectPadding);
                     }
+                    const sidebarItem = window.document.getElementById(
+                        `cvat-objects-sidebar-state-item-${nextState.clientID}`,
+                    );
+                    if (sidebarItem) {
+                        sidebarItem.scrollIntoView();
+                    }
                 }
             }
         };
