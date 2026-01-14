@@ -384,7 +384,7 @@ class AnnotationIRTest(TestCase):
     def test_slice_track_does_not_duplicate_outside_frame_on_the_end(self):
         for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
-                label = "car" if dimension == models.DimensionType.DIM_3D else "cat"
+                label = "car"
                 track_id = 666
                 shape_type = (
                     ShapeType.CUBOID
