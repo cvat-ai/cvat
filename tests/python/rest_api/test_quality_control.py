@@ -2018,13 +2018,13 @@ class TestQualityReportContents(_PermissionTestBase):
         )
 
         csv_reader = csv.DictReader(report_data)
-        assert csv_reader.fieldnames[0] == "label"
+        assert csv_reader.fieldnames[0] == "DS (row) \\ GT (col) label"
         assert set(csv_reader.fieldnames[1:-2]) == label_names
         assert list(csv_reader.fieldnames[-2:]) == ["unmatched", "precision"]
 
         rows = list(csv_reader)
-        assert set(r["label"] for r in rows[: len(label_names)]) == label_names
-        assert [r["label"] for r in rows[len(label_names) :]] == [
+        assert set(r["DS (row) \\ GT (col) label"] for r in rows[: len(label_names)]) == label_names
+        assert [r["DS (row) \\ GT (col) label"] for r in rows[len(label_names) :]] == [
             "unmatched",
             "recall",
             "dice coefficient",

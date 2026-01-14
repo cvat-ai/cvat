@@ -158,7 +158,7 @@ def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[by
 
     csv_text_wrapper = TextIOWrapper(csv_file, write_through=True, newline="")
     csv_writer = csv.writer(csv_text_wrapper)
-    csv_writer.writerow(["label"] + labels + ["precision"])
+    csv_writer.writerow(["DS (row) \\ GT (col) label"] + labels + ["precision"])
 
     for confusion_row, label, precision in zip(confusion_rows, labels, precisions):
         csv_writer.writerow([label] + confusion_row.tolist() + [precision])
