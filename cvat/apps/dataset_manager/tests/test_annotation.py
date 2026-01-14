@@ -438,7 +438,7 @@ class TestTaskAnnotation(TestCase):
                 }
                 db_task = models.Task.objects.create(data=db_data, **data)
 
-                # We assume that norheapq.mergemally segments and annotation jobs
+                # We assume that normally segments and annotation jobs
                 # are created in the ascending order for start_frame,
                 # so their ids correspond to this order. The DB, however,
                 # can return them in an arbitrary order, if not specified explicitly.
