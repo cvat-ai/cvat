@@ -218,7 +218,7 @@ cvat:
   opa:
     replicas: 1
     image: openpolicyagent/opa
-    tag: 0.63.0
+    tag: 1.12.2
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
