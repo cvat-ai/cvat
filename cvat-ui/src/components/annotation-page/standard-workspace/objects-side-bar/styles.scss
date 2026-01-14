@@ -487,26 +487,6 @@
     }
 }
 
-.cvat-objects-sidebar-consensus-info {
-    padding: $grid-unit-size;
-    margin-bottom: $grid-unit-size;
-    background: rgba(0, 0, 0, 0.02);
-    border-radius: $border-radius-base;
-
-    .ant-tag {
-        margin-right: $grid-unit-size * 0.5;
-        margin-bottom: $grid-unit-size * 0.5;
-    }
-
-    > .ant-col {
-        margin-bottom: $grid-unit-size * 0.5;
-
-        &:last-child {
-            margin-bottom: 0;
-        }
-    }
-}
-
 .cvat-object-item-score-votes-wrapper {
     gap: $grid-unit-size * 0.5;
     justify-content: flex-end;

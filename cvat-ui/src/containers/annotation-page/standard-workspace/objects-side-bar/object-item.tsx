@@ -19,7 +19,6 @@ import {
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy,
-    Workspace,
 } from 'reducers';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -54,7 +53,6 @@ interface StateToProps {
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas | Canvas3d;
-    workspace: Workspace;
 }
 
 interface DispatchToProps {
@@ -80,7 +78,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 frame: { number: frameNumber },
             },
             canvas: { instance: canvasInstance, ready, activeControl },
-            workspace,
         },
         settings: {
             shapes: { colorBy },
@@ -106,7 +103,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         maxZLayer,
         normalizedKeyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
-        workspace,
     };
 }
 
@@ -395,7 +391,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             normalizedKeyMap,
             readonly,
             jobInstance,
-            workspace,
         } = this.props;
 
         return (
@@ -416,7 +411,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 normalizedKeyMap={normalizedKeyMap}
                 labels={labels}
                 colorBy={colorBy}
-                workspace={workspace}
                 activate={this.activate}
                 remove={this.remove}
                 copy={this.copy}
