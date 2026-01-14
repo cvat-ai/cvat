@@ -1,3 +1,4 @@
 serverless/pytorch/glass
 serverless/pytorch/u2net
 serverless/onnx/yolov8
+serverless/onnx/NYC-DOT/yolov11

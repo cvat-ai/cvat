@@ -1,0 +1,88 @@
+metadata:
+  name: onnx-yolov11-speed-sign-detection-gpu
+  namespace: cvat
+  annotations:
+    name: YOLOv11-Speed-Sign
+    type: detector
+    spec: |
+      [
+        {"id": 0, "name": "15MPH", "type": "rectangle"},
+        {"id": 1, "name": "20MPH", "type": "rectangle"},
+        {"id": 2, "name": "25MPH", "type": "rectangle"},
+        {"id": 3, "name": "30MPH", "type": "rectangle"},
+        {"id": 4, "name": "35MPH", "type": "rectangle"},
+        {"id": 5, "name": "40MPH", "type": "rectangle"},
+        {"id": 6, "name": "45MPH", "type": "rectangle"},
+        {"id": 7, "name": "50MPH", "type": "rectangle"},
+        {"id": 8, "name": "55MPH", "type": "rectangle"},
+        {"id": 9, "name": "60MPH", "type": "rectangle"},
+        {"id": 10, "name": "65MPH", "type": "rectangle"}
+      ]
+
+spec:
+  description: YOLOv11 Detection model for speed sign detection (color image) via ONNX with GPU acceleration (CUDA 12.8)
+  runtime: 'python:3.11'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.onnx.yolov11.speed_sign:cuda12.8
+    baseImage: nvidia/cuda:12.8.0-devel-ubuntu22.04
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+        # Install system dependencies
+        - kind: RUN
+          value: apt-get update && apt-get install -y --no-install-recommends python3.11 python3.11-dev python3-pip libgl1 libglib2.0-0 wget && rm -rf /var/lib/apt/lists/*
+
+        # Install cuDNN 9 for CUDA 12
+        - kind: RUN
+          value: |
+            wget https://developer.download.nvidia.com/compute/cudnn/9.5.1/local_installers/cudnn-local-repo-ubuntu2204-9.5.1_1.0-1_amd64.deb && \
+            dpkg -i cudnn-local-repo-ubuntu2204-9.5.1_1.0-1_amd64.deb && \
+            cp /var/cudnn-local-repo-ubuntu2204-9.5.1/cudnn-*-keyring.gpg /usr/share/keyrings/ && \
+            apt-get update && \
+            apt-get install -y libcudnn9-cuda-12 libcudnn9-dev-cuda-12 && \
+            rm cudnn-local-repo-ubuntu2204-9.5.1_1.0-1_amd64.deb && \
+            rm -rf /var/lib/apt/lists/*
+
+        # Symlink python3 to python
+        - kind: RUN
+          value: ln -s /usr/bin/python3 /usr/bin/python
+
+        # Upgrade pip
+        - kind: RUN
+          value: python -m pip install --upgrade pip
+
+        # Install ONNX Runtime GPU with CUDA 12 support and nuclio dependencies
+        - kind: RUN
+          value: pip install onnxruntime-gpu opencv-python-headless pillow pyyaml numpy msgpack nuclio-sdk
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32766
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
