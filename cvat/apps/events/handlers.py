@@ -742,11 +742,11 @@ def handle_client_events_push(request, data: dict):
                 )
 
 def handle_chunk_create(
-    chunk_target: str,
-    chunk_target_id: int,
-    chunk_number: int,
-    chunk_quality: int,
-    chunk_size: int,
+    chunk_target: str | None = None,
+    chunk_target_id: int | None = None,
+    chunk_size: int = 0,
+    chunk_number: int | None = None,
+    chunk_quality: int | None = None,
     **payload_fields,
 ) -> None:
     record_server_event(
@@ -759,9 +759,9 @@ def handle_chunk_create(
             "chunk": {
                 "target": chunk_target,
                 "target_id": chunk_target_id,
-                "chunk_number": chunk_number,
-                "chunk_size": chunk_size,
-                "chunk_quality": chunk_quality
+                "number": chunk_number,
+                "size": chunk_size,
+                "quality": chunk_quality
             },
             **payload_fields,
         },

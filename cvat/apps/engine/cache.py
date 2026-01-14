@@ -248,12 +248,15 @@ class MediaCache:
                     )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
-                if chunk_info := cls._parse_cache_key(key):
-                    handle_chunk_create(
-                        **chunk_info,
-                        chunk_size=len(item_data_bytes),
-                        run_in_job=_is_run_inside_rq(),
-                    )
+                chunk_info = cls._parse_cache_key(key) or {}
+                handle_chunk_create(
+                    chunk_target=chunk_info.get("object_type"),
+                    chunk_target_id=chunk_info.get("object_id"),
+                    chunk_number=chunk_info.get("chunk_number"),
+                    chunk_quality=chunk_info.get("quality"),
+                    chunk_size=len(item_data_bytes),
+                    queue=getattr(rq.get_current_job(), 'origin'),
+                )
 
         return item
 
@@ -361,21 +364,35 @@ class MediaCache:
 
     @staticmethod
     def _parse_cache_key(key: str) -> dict | None:
-        pattern = re.compile(
+        chunk_pattern = re.compile(
             r'^(?P<object_type>task|segment|job|cloudstorage)_'
             r'(?P<object_id>\d+)_chunk_(?P<chunk_number>\d+)_'
-            r'(?P<quality>\d+)$'
+            r'(?P<quality>\w+)$'
         )
-        match = pattern.match(key)
-        if not match:
-            return None
+        match = chunk_pattern.match(key)
+        if match:
+            return {
+                "type": "chunk",
+                "object_type": match.group("object_type"),
+                "object_id": int(match.group("object_id")),
+                "chunk_number": int(match.group("chunk_number")),
+                "quality": match.group("quality"),
+            }
 
-        return {
-            "chunk_target": match.group("object_type"),
-            "chunk_target_id": int(match.group("object_id")),
-            "chunk_number": int(match.group("chunk_number")),
-            "chunk_quality": match.group("quality"),
-        }
+        # Try to match preview key pattern
+        preview_pattern = re.compile(
+            r'^(?P<object_type>segment|cloudstorage)_'
+            r'(?P<object_id>\d+)_preview$'
+        )
+        match = preview_pattern.match(key)
+        if match:
+            return {
+                "type": "preview",
+                "object_type": match.group("object_type"),
+                "object_id": int(match.group("object_id")),
+            }
+
+        return None
 
     def _make_preview_key(self, db_obj: models.Segment | models.CloudStorage) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_preview"
