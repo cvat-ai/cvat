@@ -38,6 +38,7 @@ spec:
         - kind: RUN
           value: |-
             pip install \
+              "typing-extensions<4.9" \
               jsonpickle opencv-python-headless \
               torch==1.7.1+cpu torchvision==0.8.2+cpu \
               --extra-index-url https://download.pytorch.org/whl/cpu

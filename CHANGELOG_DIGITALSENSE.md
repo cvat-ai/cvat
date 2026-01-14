@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - YOLOv8 segmentation model detection with ONNX runtime support for both CPU and GPU deployment. [PR #27]
 - CUDA 12.8 support for GLASS and U2Net models with dedicated GPU configurations and deployment scripts. [PR #28]
 - GPU-enabled startup script (startup-gpu-cuda12.8.sh) for CUDA 12.8 infrastructure deployment. [PR #28]
+- Set typing-extensions<4.9 for transT to be compatible with python 3.8 [PR #30]
 
 ### Changed
 - Updated files to utilize environment variables. [PR #22]
