@@ -1,0 +1,59 @@
+metadata:
+  name: onnx-yolov11-speed-sign-detection
+  namespace: cvat
+  annotations:
+    name: YOLOv11-Speed-Sign-CPU
+    type: detector
+    spec: |
+      [
+        {"id": 0, "name": "15MPH", "type": "rectangle"},
+        {"id": 1, "name": "20MPH", "type": "rectangle"},
+        {"id": 2, "name": "25MPH", "type": "rectangle"},
+        {"id": 3, "name": "30MPH", "type": "rectangle"},
+        {"id": 4, "name": "35MPH", "type": "rectangle"},
+        {"id": 5, "name": "40MPH", "type": "rectangle"},
+        {"id": 6, "name": "45MPH", "type": "rectangle"},
+        {"id": 7, "name": "50MPH", "type": "rectangle"},
+        {"id": 8, "name": "55MPH", "type": "rectangle"},
+        {"id": 9, "name": "60MPH", "type": "rectangle"},
+        {"id": 10, "name": "65MPH", "type": "rectangle"}
+      ]
+
+spec:
+  description: YOLOv11 Detection model for speed sign detection (color image) via ONNX
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.onnx.yolov11.speed_sign
+    baseImage: ubuntu:22.04
+
+    directives:
+      preCopy:
+        - kind: USER
+          value: root
+        - kind: RUN
+          value: apt update && apt install --no-install-recommends -y python3-pip
+        - kind: RUN
+          value: pip install onnxruntime opencv-python-headless pillow pyyaml numpy
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: ln -s /usr/bin/python3 /usr/bin/python
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32766
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
