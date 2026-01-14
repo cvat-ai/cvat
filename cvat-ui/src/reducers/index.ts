@@ -779,6 +779,7 @@ export enum ActiveControl {
     SLICE = 'slice',
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
+    OPEN_ISSUE_MASK = 'open_issue_mask',
     AI_TOOLS = 'ai_tools',
     PHOTO_CONTEXT = 'PHOTO_CONTEXT',
     OPENCV_TOOLS = 'opencv_tools',

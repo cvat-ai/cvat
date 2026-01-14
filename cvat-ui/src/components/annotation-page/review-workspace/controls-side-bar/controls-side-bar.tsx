@@ -15,6 +15,7 @@ import MoveControl from 'components/annotation-page/standard-workspace/controls-
 import FitControl from 'components/annotation-page/standard-workspace/controls-side-bar/fit-control';
 import ResizeControl from 'components/annotation-page/standard-workspace/controls-side-bar/resize-control';
 import IssueControl from './issue-control';
+import IssueMaskControl from './issue-mask-control';
 import RawFrameControl from './raw-frame-control';
 
 interface Props {
@@ -50,14 +51,19 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <FitControl canvasInstance={canvasInstance} />
             <ResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <hr />
-            <RawFrameControl disabled={controlsDisabled} />
-            <hr />
             <IssueControl
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 updateActiveControl={updateActiveControl}
                 disabled={controlsDisabled}
             />
+            <IssueMaskControl
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                updateActiveControl={updateActiveControl}
+                disabled={controlsDisabled}
+            />
+            <RawFrameControl disabled={controlsDisabled} />
         </Layout.Sider>
     );
 }

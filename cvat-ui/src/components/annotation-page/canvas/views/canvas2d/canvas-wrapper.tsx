@@ -658,6 +658,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             onUpdateEditedObject, activeObjectHidden, workspace,
         } = this.props;
 
+        // Skip creating annotations when using the issue-mask drawing control
+        if (this.props.activeControl === ActiveControl.OPEN_ISSUE_MASK) {
+            updateActiveControl(ActiveControl.CURSOR);
+            return;
+        }
+
         if (!event.detail.continue) {
             updateActiveControl(ActiveControl.CURSOR);
         }
