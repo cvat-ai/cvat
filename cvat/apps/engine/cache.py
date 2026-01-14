@@ -704,13 +704,13 @@ class MediaCache:
         truncate_common_filename_prefix: bool = True,  # should be done on the UI, probably
         decode: bool = True,
     ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str, str]], None, None]:
-        data_upload_dir = db_data.get_upload_dirname()
+        raw_data_dir = db_data.get_raw_data_dirname()
 
         def _validate_ri_path(path: str) -> str:
-            abs_path = (data_upload_dir / path).resolve()
+            abs_path = (raw_data_dir / path).resolve()
 
             try:
-                return os.fspath(abs_path.relative_to(data_upload_dir))
+                return os.fspath(abs_path.relative_to(raw_data_dir))
             except ValueError as ex:
                 raise Exception("Invalid related image path") from ex
 
@@ -737,12 +737,12 @@ class MediaCache:
                 ):
                     frame_media = []
 
-                    for related_image in frame.get("meta", {}).get("related_images", []):
-                        path = _validate_ri_path(related_image)
-                        output_path = os.path.join(tmp_dir, path)
+                    for ri_filename in frame.get("meta", {}).get("related_images", []):
+                        ri_filename = _validate_ri_path(ri_filename)
+                        ri_realpath = os.path.join(tmp_dir, ri_filename)
 
-                        files_to_download.append(path)
-                        frame_media.append((output_path, path, None))
+                        files_to_download.append(ri_filename)
+                        frame_media.append((ri_realpath, ri_filename, None))
 
                     media.append((frame_id, frame_media))
 
@@ -759,14 +759,13 @@ class MediaCache:
                 )
 
                 media = []
-                raw_data_dir = db_data.get_raw_data_dirname()
                 for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0]):
                     frame_media = []
 
-                    for frame_ri_file in frame_ris:
-                        path = _validate_ri_path(frame_ri_file[1])
-                        source_path = os.path.join(raw_data_dir, path)
-                        frame_media.append((source_path, path, None))
+                    for _, ri_path in frame_ris:
+                        ri_filename = _validate_ri_path(ri_path)
+                        ri_realpath = os.path.join(raw_data_dir, ri_filename)
+                        frame_media.append((ri_realpath, ri_filename, None))
 
                     media.append((frame_id, frame_media))
 
@@ -1053,7 +1052,7 @@ class MediaCache:
                 storage.download_file(db_manifest.filename, full_manifest_path)
 
             manifest = ImageManifestManager(
-                os.path.join(db_storage.get_storage_dirname(), db_manifest.filename),
+                db_storage.get_storage_dirname() / db_manifest.filename,
                 db_storage.get_storage_dirname(),
             )
             # need to update index
