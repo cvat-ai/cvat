@@ -46,6 +46,7 @@ import {
     getDataFailed,
     canvasErrorOccurred,
     updateEditedStateAsync,
+    collapseObjectItems,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -135,6 +136,7 @@ interface DispatchToProps {
     onJoinAnnotations(states: ObjectState[], points: number[]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
+    onExpandObject(objectState: ObjectState): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -327,6 +329,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             }
 
             dispatch(activateObject(activatedStateID, activatedElementID, null));
+        },
+        onExpandObject(objectState: ObjectState): void {
+            dispatch(collapseObjectItems([objectState], false));
         },
         onAddZLayer(): void {
             dispatch(addZLayer());
@@ -803,6 +808,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasShapeClicked = (e: any): void => {
+        const { onExpandObject } = this.props;
         const { clientID, parentID } = e.detail.state;
         let sidebarItem = null;
         if (Number.isInteger(parentID)) {
@@ -814,6 +820,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (sidebarItem) {
             sidebarItem.scrollIntoView();
         }
+        onExpandObject(e.detail.state);
     };
 
     private onCanvasShapeDeactivated = (e: any): void => {
@@ -1116,6 +1123,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             onSwitchZLayer,
             onAddZLayer,
             onActivateObject,
+            onExpandObject,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -1149,6 +1157,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     if (sidebarItem) {
                         sidebarItem.scrollIntoView();
                     }
+                    onExpandObject(nextState);
                 }
             }
         };
