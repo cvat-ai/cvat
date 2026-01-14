@@ -32,6 +32,7 @@ interface Props {
     attributes: any[];
     jobInstance: any;
     activate(activeElementID?: number): void;
+    focusAndExpand(): void;
     copy(): void;
     propagate(): void;
     switchOrientation(): void;
@@ -64,6 +65,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         normalizedKeyMap,
         isGroundTruth,
         activate,
+        focusAndExpand,
         copy,
         propagate,
         createURL,
@@ -97,6 +99,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div
                 onMouseEnter={activateState}
+                onDoubleClick={focusAndExpand}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
                 className={className}
                 style={{ '--state-item-background': `${color}` } as React.CSSProperties}

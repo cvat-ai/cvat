@@ -16,6 +16,7 @@ import {
     activateObject as activateObjectAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
+    collapseObjectItems,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy,
@@ -26,7 +27,7 @@ import { getObjectStateColor } from 'components/annotation-page/standard-workspa
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
-    Label, ObjectState, Attribute, Job, ShapeType,
+    Label, ObjectState, Attribute, Job, ShapeType, ObjectType,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
@@ -53,6 +54,7 @@ interface StateToProps {
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas | Canvas3d;
+    focusedObjectPadding: number;
 }
 
 interface DispatchToProps {
@@ -64,6 +66,7 @@ interface DispatchToProps {
     switchPropagateVisibility: (visible: boolean) => void;
     changeGroupColor(group: number, color: string): void;
     updateActiveControl(activeControl: ActiveControl): void;
+    expandObject(objectState: ObjectState): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -81,6 +84,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         },
         settings: {
             shapes: { colorBy },
+            workspace: { focusedObjectPadding },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -103,6 +107,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         maxZLayer,
         normalizedKeyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
+        focusedObjectPadding,
     };
 }
 
@@ -132,6 +137,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         updateActiveControl(activeControl: ActiveControl): void {
             dispatch(updateActiveControlAction(activeControl));
+        },
+        expandObject(objectState: ObjectState): void {
+            dispatch(collapseObjectItems([objectState], false));
         },
     };
 }
@@ -301,6 +309,17 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private focusAndExpand = (): void => {
+        const {
+            objectState, canvasInstance, focusedObjectPadding, expandObject,
+        } = this.props;
+
+        if (canvasInstance instanceof Canvas && objectState.objectType !== ObjectType.TAG) {
+            canvasInstance.focus(objectState.clientID as number, focusedObjectPadding);
+        }
+        expandObject(objectState);
+    };
+
     private changeColor = (color: string): void => {
         const { objectState, colorBy, changeGroupColor } = this.props;
 
@@ -412,6 +431,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 labels={labels}
                 colorBy={colorBy}
                 activate={this.activate}
+                focusAndExpand={this.focusAndExpand}
                 remove={this.remove}
                 copy={this.copy}
                 createURL={this.createURL}
