@@ -8638,6 +8638,12 @@ components:
         source:
           type: string
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         attributes:
           type: array
           items:
@@ -8666,6 +8672,12 @@ components:
           type: string
           minLength: 1
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         attributes:
           type: array
           items:
@@ -8715,6 +8727,12 @@ components:
         source:
           type: string
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         attributes:
           type: array
           items:
@@ -8770,6 +8788,12 @@ components:
           type: string
           minLength: 1
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         attributes:
           type: array
           items:
@@ -8802,6 +8826,12 @@ components:
         source:
           type: string
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         shapes:
           type: array
           items:
@@ -8839,6 +8869,12 @@ components:
           type: string
           minLength: 1
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         shapes:
           type: array
           items:
@@ -10879,6 +10915,12 @@ components:
         source:
           type: string
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         attributes:
           type: array
           items:
@@ -10930,6 +10972,12 @@ components:
           type: string
           minLength: 1
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         attributes:
           type: array
           items:
@@ -10958,6 +11006,12 @@ components:
         source:
           type: string
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         shapes:
           type: array
           items:
@@ -10991,6 +11045,12 @@ components:
           type: string
           minLength: 1
           default: manual
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
         shapes:
           type: array
           items:
