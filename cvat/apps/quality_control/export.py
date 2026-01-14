@@ -24,8 +24,8 @@ from cvat.apps.quality_control.statistics import (
 
 
 class QualityReportExportFormat(TextChoices):
-    CSV = ("csv", "csv")
-    JSON = ("json", "json")
+    CSV = ("csv", "CSV")
+    JSON = ("json", "JSON")
 
 
 def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host: str) -> IO[bytes]:
@@ -156,7 +156,7 @@ def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[by
 
     csv_file = BytesIO()
 
-    csv_text_wrapper = TextIOWrapper(csv_file, write_through=True)
+    csv_text_wrapper = TextIOWrapper(csv_file, write_through=True, newline='')
     csv_writer = csv.writer(csv_text_wrapper)
     csv_writer.writerow(["label"] + labels + ["precision"])
 
