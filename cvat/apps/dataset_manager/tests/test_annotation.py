@@ -240,8 +240,8 @@ class TrackManagerTest(TestCase):
                     if dimension == models.DimensionType.DIM_3D
                     else ShapeType.RECTANGLE
                 )
-                label = "car" if dimension == models.DimensionType.DIM_3D else "cat"
-                track_id = 777 if dimension == models.DimensionType.DIM_3D else 666
+                label = "car"
+                track_id = 777
                 shape0 = make_shape(
                     0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type
                 )
@@ -425,13 +425,11 @@ class AnnotationIRTest(TestCase):
 
 class TestTaskAnnotation(TestCase):
     def test_reads_ordered_jobs(self):
+        user = models.User.objects.create_superuser(
+                    username=f"admin", email="", password=""
+                )
         for dimension in ["2d", "3d"]:
             with self.subTest(dimension=dimension):
-                # Create unique user for each subtest to avoid UNIQUE constraint error
-                user = models.User.objects.create_superuser(
-                    username=f"admin_{dimension}", email="", password=""
-                )
-
                 db_data = models.Data.objects.create(size=31, stop_frame=30, image_quality=50)
 
                 data = {
