@@ -16,6 +16,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.54.0'></a>
+## \[2.54.0\] - 2025-12-24
+
+### Added
+
+- \[CLI\] Added an `Author-email` field to the package metadata
+  (<https://github.com/cvat-ai/cvat/pull/10143>)
+
+### Changed
+
+- \[CLI\] Replaced the deprecated `Home-page` field and license classifier
+  with `Project-URL` and `License-Expression` fields, respectively
+  (<https://github.com/cvat-ai/cvat/pull/10143>)
+
+### Fixed
+
+- Сonsecutive slicing of shapes without press Escape key
+  (<https://github.com/cvat-ai/cvat/pull/10107>)
+
+- Inability to access some tasks with videos with bad keyframes
+  (<https://github.com/cvat-ai/cvat/pull/10152>)
+
+- Related image display in tasks from the attached file share
+  (<https://github.com/cvat-ai/cvat/pull/10153>)
+
+<a id='changelog-2.53.0'></a>
+## \[2.53.0\] - 2025-12-18
+
+### Changed
+
+- \[Server API\] TUS upload endpoints no longer accept requests with no
+  `Content-Length` header
+  (<https://github.com/cvat-ai/cvat/pull/10098>)
+
+- \[SDK\] Package metadata no longer uses the deprecated `Home-page` and
+  `License` fields
+  (<https://github.com/cvat-ai/cvat/pull/10125>)
+
+### Fixed
+
+- Image scaling was not applied when image filter is enabled
+  (<https://github.com/cvat-ai/cvat/pull/10111>)
+
+- Fixed TUS resumable upload validation to properly reject chunks that would exceed the declared file size
+  (<https://github.com/cvat-ai/cvat/pull/10102>)
+
+- \[SDK\] Removed the redundant setuptools runtime dependency
+  (<https://github.com/cvat-ai/cvat/pull/10125>)
+
+### Security
+
+- Fixed a directory traversal vulnerability in the `/api/server/share`
+  endpoint
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-3g7v-xjh7-xmqx>)
+
 <a id='changelog-2.52.0'></a>
 ## \[2.52.0\] - 2025-12-15
 

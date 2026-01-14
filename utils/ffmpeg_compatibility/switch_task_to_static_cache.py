@@ -1,3 +1,8 @@
+# This script is intended to be used with an old release of CVAT, so it uses the internal
+# API as it existed in that release. Because of this, we cannot use Pylint, since it will attempt
+# to match the API calls against the current API and report spurious problems.
+# pylint: disable=all
+
 from __future__ import annotations
 
 import argparse

@@ -20,9 +20,9 @@ require('cy-verify-downloads').addCustomCommand();
 let selectedValueGlobal = '';
 
 Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
-    cy.get('#credential').type(username);
-    cy.get('#password').type(password);
-    cy.get('.cvat-credentials-action-button').click();
+    cy.get('#credential').should('be.visible').type(username);
+    cy.get('#password').should('be.visible').type(password);
+    cy.get('.cvat-credentials-action-button').should('be.visible').click();
     cy.url().should('contain', `/${page}`);
     cy.document().then((doc) => {
         const loadSettingFailNotice = Array.from(doc.querySelectorAll('.cvat-notification-notice-load-settings-fail'));
@@ -1347,7 +1347,7 @@ Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
 });
 
 Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
-    if (Cypress.browser.family !== 'chromium' && !window.localStorage.getItem('platformNotiticationShown')) {
+    if (Cypress.browser.family !== 'chromium' && !window.localStorage.getItem('platformNotificationShown')) {
         cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
             cy.contains('button', 'OK').click();
         });
@@ -1874,19 +1874,20 @@ Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
 });
 
 Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
-    cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
-    cy.get('.cvat-job-item')
+    const getJobItemMoreButton = () => cy.get('.cvat-job-item')
         .filter(':has(.cvat-tag-consensus)')
         .filter(`:contains("Job #${jobID}")`)
-        .find('.anticon-more').first().click();
+        .find('.cvat-job-item-more-button').first();
+    cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
+    getJobItemMoreButton().scrollIntoView();
+    getJobItemMoreButton().click();
 
-    cy.get('.ant-dropdown-menu')
-        .should('exist').and('be.visible')
-        .contains('li', 'Merge consensus job')
-        .click();
+    cy.get('.cvat-job-item-menu').should('exist').and('be.visible');
+    cy.contains('li', 'Merge consensus job').should('exist').and('be.visible')
+        .click({ scrollBehavior: false });
     cy.get('.cvat-modal-confirm-consensus-merge-job')
         .contains('button', 'Merge')
-        .click();
+        .click({ scrollBehavior: false });
 
     cy.wait('@mergeJob').its('response.statusCode').should('eq', status);
 });
