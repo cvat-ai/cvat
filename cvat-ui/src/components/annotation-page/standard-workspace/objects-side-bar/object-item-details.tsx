@@ -22,6 +22,7 @@ interface Props {
     sizeParams: SizeParams | null;
     changeSize(sizeType: SizeType, value: number): void;
     score: number | null;
+    votes: number | null;
 }
 
 export enum SizeType {
@@ -52,15 +53,41 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
         nextProps.collapsed === prevProps.collapsed &&
         nextProps.attributes === prevProps.attributes &&
         nextProps.score === prevProps.score &&
+        nextProps.votes === prevProps.votes &&
         attrValuesAreEqual(nextProps.values, prevProps.values)
     );
 }
 
-function ItemAttributesComponent(props: Props): JSX.Element {
+function ItemAttributesComponent(props: Props): JSX.Element | null {
     const {
         collapsed, attributes, values, readonly, changeAttribute, collapse,
-        sizeParams, changeSize, score,
+        sizeParams, changeSize, score, votes,
     } = props;
+
+    const hasDetails = attributes.length > 0 || sizeParams !== null;
+    const scoreTag = score !== null ? (
+        <Tag color='#FFB347' className='cvat-object-item-score-tag'>
+            {score.toFixed(2)}
+        </Tag>
+    ) : null;
+    const votesTag = votes !== null ? (
+        <Tag color='#FFB347' className='cvat-object-item-votes-tag'>
+            {votes}
+        </Tag>
+    ) : null;
+    const scoreVotesElement = scoreTag || votesTag ? (
+        <Row className='cvat-object-item-score-votes-wrapper'>
+            {scoreTag}
+            {votesTag}
+        </Row>
+    ) : null;
+
+    if (!hasDetails) {
+        if (scoreVotesElement) {
+            return scoreVotesElement;
+        }
+        return null;
+    }
 
     return (
         <Row>
@@ -73,11 +100,7 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                     label: (
                         <Row style={{ width: '100%' }} align='middle' justify='space-between'>
                             <Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>
-                            {score !== null && (
-                                <Tag color='#FFB347' style={{ fontSize: 10, margin: 0 }}>
-                                    {score.toFixed(2)}
-                                </Tag>
-                            )}
+                            {scoreVotesElement}
                         </Row>
                     ),
                     children: [

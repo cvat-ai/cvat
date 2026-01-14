@@ -144,13 +144,11 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     runAnnotationAction={runAnnotationAction}
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
-                {(!!attributes.length || sizeControlsVisible) && (
-                    <ItemDetailsContainer
-                        readonly={readonly || locked}
-                        clientID={clientID}
-                        parentID={null}
-                    />
-                )}
+                <ItemDetailsContainer
+                    readonly={readonly || locked}
+                    clientID={clientID}
+                    parentID={null}
+                />
                 {!!elements.length && (
                     <Collapse
                         className='cvat-objects-sidebar-state-item-elements-collapse'

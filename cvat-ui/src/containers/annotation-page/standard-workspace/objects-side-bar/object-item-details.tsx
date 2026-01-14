@@ -128,7 +128,6 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
                     length: parseFloat(state.points[8].toFixed(2)), // Z
                 };
             }
-
             return (
                 <ObjectItemDetails
                     readonly={readonly}
@@ -140,6 +139,7 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
                     changeSize={this.changeSize}
                     sizeParams={sizeParams}
                     score={state.score}
+                    votes={state.votes}
                 />
             );
         }
