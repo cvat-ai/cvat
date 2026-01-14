@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import math
-
 import datumaro as dm
 from django.conf import settings
 from django.db import transaction
@@ -111,7 +109,6 @@ class _TaskMerger:
         merger = IntersectMerge(
             conf=IntersectMerge.Conf(
                 pairwise_dist=self._settings.iou_threshold,
-                quorum=math.ceil(self._settings.quorum * len(consensus_datasets)),
                 sigma=comparison_parameters.oks_sigma,
                 torso_r=comparison_parameters.line_thickness,
                 included_annotation_types=comparison_parameters.included_annotation_types,

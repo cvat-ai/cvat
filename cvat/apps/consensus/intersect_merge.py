@@ -30,7 +30,6 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         sigma: float = 0.1
 
         output_conf_thresh: float = 0
-        quorum: int = 1
         ignored_attributes: Collection[str] = attrs.field(factory=tuple)
         torso_r: float = 0.01
 
@@ -369,8 +368,6 @@ class AnnotationMerger(AnnotationMatcher, metaclass=ABCMeta):
 
 @attrs.define(kw_only=True, slots=False)
 class LabelMerger(AnnotationMerger, LabelMatcher):
-    quorum: int = 0
-
     def merge_clusters(self, clusters):
         assert len(clusters) <= 1
         if len(clusters) == 0:
@@ -395,8 +392,6 @@ class LabelMerger(AnnotationMerger, LabelMatcher):
 
 @attrs.define(kw_only=True, slots=False)
 class ShapeMerger(AnnotationMerger, ShapeMatcher):
-    quorum = attrs.field(converter=int, default=0)
-
     def merge_clusters(self, clusters):
         return list(filter(lambda x: x is not None, map(self.merge_cluster, clusters)))
 

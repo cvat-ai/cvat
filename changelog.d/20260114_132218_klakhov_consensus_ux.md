@@ -14,3 +14,7 @@ now works in Standard, Review and Attribute Annotation workspaces
   (<https://github.com/cvat-ai/cvat/pull/10172>)
 - Double-clicking an object in the sidebar now centers it on the canvas and expands its details
   (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+### Removed
+- Consensus `quorum` setting
+  (<https://github.com/cvat-ai/cvat/pull/10172>)

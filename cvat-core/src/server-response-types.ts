@@ -377,7 +377,6 @@ export interface SerializedQualityReportData {
 export interface SerializedConsensusSettingsData {
     id?: number;
     task?: number;
-    quorum?: number;
     iou_threshold?: number;
     descriptions?: Record<string, string>;
 }

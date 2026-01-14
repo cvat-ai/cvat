@@ -7453,13 +7453,6 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
-        quorum:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Minimum required share of sources having an annotation for it to be accepted
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -9605,13 +9598,6 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
-        quorum:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Minimum required share of sources having an annotation for it to be accepted
     PatchedDataMetaWriteRequest:
       type: object
       properties:
