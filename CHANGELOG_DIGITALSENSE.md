@@ -17,12 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CUDA 12.8 support for GLASS and U2Net models with dedicated GPU configurations and deployment scripts. [PR #28]
 - GPU-enabled startup script (startup-gpu-cuda12.8.sh) for CUDA 12.8 infrastructure deployment. [PR #28]
+- Unified Dockerfile for PyTorch models to streamline deployment of GLASS, U2Net, and other PyTorch-based serverless functions. [PR #31]
+- Optimized GPU startup script (startup-gpu-cuda12.8-optimized.sh) for faster CUDA 12.8 infrastructure deployment. [PR #31]
 
 ### Changed
 - Updated files to utilize environment variables. [PR #22]
 - Enhanced docker-compose.override.yml and example.env to load email settings from environment variables with fallback defaults. [PR #25]
 - Enhanced Anomalib functions with GPU resource allocation and CUDA 12.8 support for improved inference performance. [PR #26]
 - Enhanced ModelHandler in GLASS and U2Net to support custom checkpoint paths in inference. [PR #28]
+- Unified Docker images for PyTorch models (GLASS, U2Net) to reduce redundancy and improve maintainability. [PR #31]
+- Optimized Anomalib GPU Docker image size for improved build times and resource efficiency. [PR #31]
+- Enhanced docker-compose.dev.yml for better integration with unified PyTorch serverless functions. [PR #31]
+- Updated GLASS and U2Net function configurations to use unified Docker base image with CUDA 12.8 support. [PR #31]
 
 ### Fixed
 - Fixed Task creating changing cvat base docker image to version v2.35.0 [PR #21]
