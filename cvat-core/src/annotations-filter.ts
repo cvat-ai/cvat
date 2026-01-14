@@ -80,6 +80,7 @@ interface ConvertedObjectData {
     type: ObjectType;
     shape: ShapeType;
     occluded: boolean;
+    score: number | null;
     votes: number | null;
 }
 
@@ -119,6 +120,7 @@ export default class AnnotationsFilter {
                 type: state.objectType,
                 shape: state.shapeType,
                 occluded: state.occluded,
+                score: state.score ?? null,
                 votes: state.votes ?? null,
             };
         });
@@ -168,6 +170,7 @@ export default class AnnotationsFilter {
                     shape: shape.type,
                     occluded: shape.occluded,
                     objectID: shape.clientID ?? null,
+                    score: null,
                     votes: null,
                 };
             }),
@@ -186,6 +189,7 @@ export default class AnnotationsFilter {
                     shape: null,
                     occluded: false,
                     objectID: tag.clientID ?? null,
+                    score: null,
                     votes: null,
                 };
             }),
@@ -204,6 +208,7 @@ export default class AnnotationsFilter {
                     shape: track.shapes[0]?.type ?? null,
                     occluded: null,
                     objectID: track.clientID ?? null,
+                    score: null,
                     votes: null,
                 };
             }),
