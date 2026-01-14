@@ -2029,6 +2029,7 @@ class TestQualityReportContents(_PermissionTestBase):
             "recall",
             "dice coefficient",
             "jaccard index",
+            "",
             "avg. accuracy (micro)",
             "avg. dice coefficient (macro)",
         ]

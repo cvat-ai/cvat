@@ -16,7 +16,7 @@ class Averaging(Enum):
 def compute_dice_coefficient(
     confusion_matrix,
     *,
-    avg_mode: Averaging = Averaging.weighted,
+    averaging: Averaging = Averaging.weighted,
     gt_ignored_label_idx: int | None = None,
     excluded_label_idx: int | None = None,
 ):
@@ -39,18 +39,18 @@ def compute_dice_coefficient(
 
     dice_coeffs[~existing_support] = np.nan
 
-    if avg_mode == Averaging.weighted:
+    if averaging == Averaging.weighted:
         if not np.any(existing_support):
             assert not np.any(dice_coeffs[existing_support])
             avg = 0
         else:
             avg = np.average(dice_coeffs[existing_support], weights=support[existing_support])
-    elif avg_mode == Averaging.micro:
+    elif averaging == Averaging.micro:
         avg = 2 * np.sum(matches[existing_support]) / (np.sum(total[existing_support]) or 1)
-    elif avg_mode == Averaging.macro:
+    elif averaging == Averaging.macro:
         avg = np.average(dice_coeffs[existing_support])
     else:
-        assert False, avg_mode
+        assert False, averaging
 
     return avg, dice_coeffs, support
 

@@ -150,13 +150,13 @@ def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[by
     )
     dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, *_ = compute_dice_coefficient(
         confusion_rows,
-        avg_mode=Averaging.macro,
+        averaging=Averaging.macro,
         excluded_label_idx=labels.index(unmatched_label),
     )
 
     csv_file = BytesIO()
 
-    csv_text_wrapper = TextIOWrapper(csv_file, write_through=True, newline='')
+    csv_text_wrapper = TextIOWrapper(csv_file, write_through=True, newline="")
     csv_writer = csv.writer(csv_text_wrapper)
     csv_writer.writerow(["label"] + labels + ["precision"])
 
@@ -166,6 +166,7 @@ def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[by
     csv_writer.writerow(["recall"] + recalls.tolist())
     csv_writer.writerow(["dice coefficient"] + dataset_dice_coeff_by_class.tolist())
     csv_writer.writerow(["jaccard index"] + jaccards.tolist())
+    csv_writer.writerow([""])
     csv_writer.writerow(["avg. accuracy (micro)", dataset_accuracy_micro])
     csv_writer.writerow(["avg. dice coefficient (macro)", dataset_dice_coeff_avg_macro])
     csv_text_wrapper.detach()
@@ -188,3 +189,5 @@ def prepare_report_for_downloading(
             prepare_csv_report_for_downloading(db_report=db_report),
             "text/csv",
         )
+    else:
+        assert False
