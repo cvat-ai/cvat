@@ -425,9 +425,7 @@ class AnnotationIRTest(TestCase):
 
 class TestTaskAnnotation(TestCase):
     def test_reads_ordered_jobs(self):
-        user = models.User.objects.create_superuser(
-                    username=f"admin", email="", password=""
-                )
+        user = models.User.objects.create_superuser(username=f"admin", email="", password="")
         for dimension in ["2d", "3d"]:
             with self.subTest(dimension=dimension):
                 db_data = models.Data.objects.create(size=31, stop_frame=30, image_quality=50)
