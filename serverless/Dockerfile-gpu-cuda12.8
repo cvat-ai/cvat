@@ -15,31 +15,32 @@ RUN apt-get update --fix-missing && apt-get upgrade -y && \
     libsm6 \
     libxrender1 \
     libxext6 \
+    libgomp1 \
     curl \
     python3-pip \
     git \
     wget \
     ca-certificates \
-    gcc \
-    g++ \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Symlink python3 to python
-RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN ln -s /usr/bin/python3.11 /usr/bin/python3 && \
+    ln -s /usr/bin/python3 /usr/bin/python
 
 # Upgrade pip
-RUN python -m pip install --upgrade pip
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Copy and install PyTorch requirements
 COPY requirements-torch-cuda12.8.txt /tmp/requirements-torch-cuda12.8.txt
-RUN pip install -r /tmp/requirements-torch-cuda12.8.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-torch-cuda12.8.txt && \
+    rm -f /tmp/requirements-torch-cuda12.8.txt
 
 # Install serverless framework
-RUN pip install msgpack nuclio_sdk
+RUN pip install --no-cache-dir msgpack nuclio_sdk
 
 # Install all GPU function dependencies
-RUN pip install \
+RUN pip install --no-cache-dir \
     timm \
     opencv-python-headless \
     pillow \
@@ -49,3 +50,11 @@ RUN pip install \
     pandas \
     jsonpickle \
     matplotlib
+
+# Clean up pip cache to reduce image size
+RUN pip cache purge && \
+    rm -rf /root/.cache/pip
+
+# Optimize Python bytecode
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
