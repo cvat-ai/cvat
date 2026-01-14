@@ -14,7 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GPU acceleration support for all 11 Anomalib models with dedicated deployment script and configuration files. [PR #26]
 - GPU-enabled startup script for complete CVAT infrastructure deployment with GPU-accelerated Anomalib functions. [PR #26]
 - YOLOv8 segmentation model detection with ONNX runtime support for both CPU and GPU deployment. [PR #27]
-
 - CUDA 12.8 support for GLASS and U2Net models with dedicated GPU configurations and deployment scripts. [PR #28]
 - GPU-enabled startup script (startup-gpu-cuda12.8.sh) for CUDA 12.8 infrastructure deployment. [PR #28]
 
@@ -27,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed Task creating changing cvat base docker image to version v2.35.0 [PR #21]
 - Fixed SITE_ID type conversion issue in email_settings.py that was causing container restart problems. [PR #25]
+- Fixed dependencies issues with CUDA 12.8 for YOLOv8 segmentation model detection with ONNX runtime. [PR #29]
 
 =======
 

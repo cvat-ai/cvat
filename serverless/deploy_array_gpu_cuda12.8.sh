@@ -39,7 +39,7 @@ while IFS= read -r func_path || [ -n "$func_path" ]; do
     done
 
     if [ "$found_any" = false ]; then
-        echo "⚠️  Warning: No function-gpu.yaml found in $func_path or its subfolders, skipping."
+        echo "⚠️  Warning: No function-gpu-cuda12.8.yaml found in $func_path or its subfolders, skipping."
     fi
 
 done < "$FUNCTIONS_LIST_FILE"
