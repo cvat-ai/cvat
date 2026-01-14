@@ -4556,9 +4556,9 @@ paths:
         schema:
           type: string
           enum:
-          - CSV
-          - JSON
-          default: JSON
+          - csv
+          - json
+          default: json
       - in: path
         name: id
         schema:

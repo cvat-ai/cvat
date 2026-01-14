@@ -443,8 +443,8 @@ class QualityReportViewSet(
             OpenApiParameter(
                 "format",
                 type=OpenApiTypes.STR,
-                enum=QualityReportExportFormat.labels,
-                default=QualityReportExportFormat.JSON.label,
+                enum=QualityReportExportFormat.values,
+                default=QualityReportExportFormat.JSON.value,
             ),
         ],
         responses={"200": OpenApiTypes.BINARY},
@@ -453,7 +453,7 @@ class QualityReportViewSet(
     def data(self, request: ExtendedRequest, pk):
         report = self.get_object()  # check permissions
         format_name = QualityReportExportFormat(
-            request.query_params.get("format", default=QualityReportExportFormat.JSON.label)
+            request.query_params.get("format", default=QualityReportExportFormat.JSON.value)
         )
         report_data, content_type = prepare_report_for_downloading(
             report, host=get_server_url(request), export_format=format_name
