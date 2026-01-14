@@ -4,8 +4,7 @@
   (<https://github.com/cvat-ai/cvat/pull/10172>)
 - In review mode, all annotations are locked by default; Users can unlock and edit individual annotations as needed
   (<https://github.com/cvat-ai/cvat/pull/10172>)
-- Next/Previous object navigation (`Shift+Tab`/`Shift` shortcuts by default)
-now works in Standard, Review and Attribute Annotation workspaces
+- Next/Previous object navigation (`Shift+Tab`/`Shift`) now works in Standard, Review, Attribute Annotation workspaces
   (<https://github.com/cvat-ai/cvat/pull/10172>)
 
 ### Added
