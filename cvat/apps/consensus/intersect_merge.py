@@ -446,6 +446,7 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
         shape, shape_score = self.merge_cluster_shape(cluster)
         shape.z_order = max(cluster, key=lambda a: a.z_order).z_order
         shape.label = label
+        shape.attributes["consensus_score"] = label_score * shape_score
         shape.attributes["score"] = round(label_score, 2)
 
         return shape

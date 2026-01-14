@@ -11,7 +11,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = (env) => {
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
-    const defaultPlugins = ['plugins/sam', '../../plugins/cache'];
+    const defaultPlugins = ['plugins/sam'];
 
     const sourceMapsDisabled = (process.env.DISABLE_SOURCE_MAPS || 'false').toLocaleLowerCase() === 'true';
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;

@@ -3194,7 +3194,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             .addClass('cvat_canvas_text_description');
                     });
                 }
-                // Score visualization
                 if (withScore && score !== null && score !== undefined) {
                     const scoreText = votes !== null ?
                         `Score: ${score.toFixed(2)}, Votes: ${votes}` :
