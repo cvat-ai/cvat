@@ -741,6 +741,7 @@ def handle_client_events_push(request, data: dict):
                     **common,
                 )
 
+
 def handle_chunk_create(
     chunk_target: str | None = None,
     chunk_target_id: int | None = None,
@@ -761,7 +762,7 @@ def handle_chunk_create(
                 "target_id": chunk_target_id,
                 "number": chunk_number,
                 "size": chunk_size,
-                "quality": chunk_quality
+                "quality": chunk_quality,
             },
             **payload_fields,
         },

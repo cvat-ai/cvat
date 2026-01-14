@@ -255,7 +255,7 @@ class MediaCache:
                     chunk_number=chunk_info.get("chunk_number"),
                     chunk_quality=chunk_info.get("quality"),
                     chunk_size=len(item_data_bytes),
-                    queue=getattr(rq.get_current_job(), 'origin'),
+                    queue=getattr(rq.get_current_job(), "origin"),
                 )
 
         return item
@@ -365,9 +365,9 @@ class MediaCache:
     @staticmethod
     def _parse_cache_key(key: str) -> dict | None:
         chunk_pattern = re.compile(
-            r'^(?P<object_type>task|segment|job|cloudstorage)_'
-            r'(?P<object_id>\d+)_chunk_(?P<chunk_number>\d+)_'
-            r'(?P<quality>\w+)$'
+            r"^(?P<object_type>task|segment|job|cloudstorage)_"
+            r"(?P<object_id>\d+)_chunk_(?P<chunk_number>\d+)_"
+            r"(?P<quality>\w+)$"
         )
         match = chunk_pattern.match(key)
         if match:
@@ -381,8 +381,7 @@ class MediaCache:
 
         # Try to match preview key pattern
         preview_pattern = re.compile(
-            r'^(?P<object_type>segment|cloudstorage)_'
-            r'(?P<object_id>\d+)_preview$'
+            r"^(?P<object_type>segment|cloudstorage)_(?P<object_id>\d+)_preview$"
         )
         match = preview_pattern.match(key)
         if match:
