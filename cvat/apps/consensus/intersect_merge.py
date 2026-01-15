@@ -30,6 +30,7 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         sigma: float = 0.1
 
         output_conf_thresh: float = 0
+        quorum: int = 0
         ignored_attributes: Collection[str] = attrs.field(factory=tuple)
         torso_r: float = 0.01
 
