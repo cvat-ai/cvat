@@ -766,6 +766,7 @@ def check_annotation_response(
         rotation=0,
         attributes=[],
         elements=[],
+        score=None,
     )  # if omitted, are set by the server
     # https://docs.cvat.ai/docs/api_sdk/sdk/reference/models/labeled-shape/
 
@@ -793,7 +794,7 @@ def check_annotation_response(
 
     def _key_defaults(key_path: list[str]) -> dict | None:
         if key_path and key_path[-1] == "tags":
-            return filter_dict(optional_fields, keep=["source", "attributes"])
+            return filter_dict(optional_fields, keep=["source", "attributes", "score"])
         if key_path and key_path[-1] == "shapes":
             return filter_dict(
                 optional_fields,
@@ -805,10 +806,11 @@ def check_annotation_response(
                     "source",
                     "attributes",
                     "elements",
+                    "score",
                 ],
             )
         if key_path and key_path[-1] == "tracks":
-            return filter_dict(optional_fields, keep=["source", "attributes", "elements"])
+            return filter_dict(optional_fields, keep=["source", "attributes", "elements", "score"])
         if key_path and _format_key(key_path).endswith("tracks.elements"):
             return filter_dict(optional_fields, keep=["source", "attributes"])
         if key_path and _format_key(key_path).endswith("tracks.elements.shapes"):
