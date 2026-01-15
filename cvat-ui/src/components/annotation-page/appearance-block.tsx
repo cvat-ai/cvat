@@ -159,9 +159,9 @@ function AppearanceBlock(props: Props): JSX.Element {
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
     const is3D = jobInstance.dimension === DimensionType.DIMENSION_3D;
     const nextColorBy = {
+        [ColorBy.LABEL]: ColorBy.INSTANCE,
         [ColorBy.INSTANCE]: ColorBy.GROUP,
         [ColorBy.GROUP]: ColorBy.LABEL,
-        [ColorBy.LABEL]: ColorBy.INSTANCE,
     };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
