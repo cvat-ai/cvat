@@ -364,6 +364,7 @@ class MediaCache:
 
     @staticmethod
     def _parse_cache_key(key: str) -> dict | None:
+        # Try to match chunk key pattern
         chunk_pattern = re.compile(
             r"^(?P<object_type>task|segment|job|cloudstorage)_"
             r"(?P<object_id>\d+)_chunk_(?P<chunk_number>\d+)_"
@@ -389,6 +390,19 @@ class MediaCache:
                 "type": "preview",
                 "object_type": match.group("object_type"),
                 "object_id": int(match.group("object_id")),
+            }
+
+        # Try to match context images chunk key pattern
+        context_images_pattern = re.compile(
+            r"^context_images_(?P<data_id>\d+)_(?P<frame_number>\d+)$"
+        )
+        match = context_images_pattern.match(key)
+        if match:
+            return {
+                "type": "context_images",
+                "object_type": "data",
+                "object_id": int(match.group("data_id")),
+                "frame_number": int(match.group("frame_number")),
             }
 
         return None
