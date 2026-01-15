@@ -989,7 +989,6 @@ class TestGetTaskDataset:
                     if "size" in related_image:
                         assert tuple(related_image["size"]) > (0, 0)
 
-    @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
         "get_api,get_id",
         [

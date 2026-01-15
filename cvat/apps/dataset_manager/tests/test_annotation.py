@@ -240,8 +240,8 @@ class TrackManagerTest(TestCase):
                     if dimension == models.DimensionType.DIM_3D
                     else ShapeType.RECTANGLE
                 )
-                label = "car" if dimension == models.DimensionType.DIM_3D else "cat"
-                track_id = 777 if dimension == models.DimensionType.DIM_3D else 666
+                label = "car"
+                track_id = 777
                 shape0 = make_shape(
                     0, base=0.0, outside=False, dimension=dimension, shape_type=shape_type
                 )
@@ -384,7 +384,7 @@ class AnnotationIRTest(TestCase):
     def test_slice_track_does_not_duplicate_outside_frame_on_the_end(self):
         for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
-                label = "car" if dimension == models.DimensionType.DIM_3D else "cat"
+                label = "car"
                 track_id = 666
                 shape_type = (
                     ShapeType.CUBOID
@@ -425,13 +425,9 @@ class AnnotationIRTest(TestCase):
 
 class TestTaskAnnotation(TestCase):
     def test_reads_ordered_jobs(self):
+        user = models.User.objects.create_superuser(username=f"admin", email="", password="")
         for dimension in ["2d", "3d"]:
             with self.subTest(dimension=dimension):
-                # Create unique user for each subtest to avoid UNIQUE constraint error
-                user = models.User.objects.create_superuser(
-                    username=f"admin_{dimension}", email="", password=""
-                )
-
                 db_data = models.Data.objects.create(size=31, stop_frame=30, image_quality=50)
 
                 data = {
@@ -442,7 +438,7 @@ class TestTaskAnnotation(TestCase):
                 }
                 db_task = models.Task.objects.create(data=db_data, **data)
 
-                # We assume that norheapq.mergemally segments and annotation jobs
+                # We assume that normally segments and annotation jobs
                 # are created in the ascending order for start_frame,
                 # so their ids correspond to this order. The DB, however,
                 # can return them in an arbitrary order, if not specified explicitly.
