@@ -35,8 +35,8 @@ import { subKeyMap } from 'utils/component-subkeymap';
 
 const componentShortcuts = {
     SWITCH_COLOR_BY_APPEARANCE: {
-        name: 'Switch color_by appearance mode',
-        description: 'witch between color-by appearance modes annotation page',
+        name: 'Switch objects appearance setting "Color by"',
+        description: 'Objects color mode may be by object, label, or group',
         sequences: [''],
         scope: ShortcutScope.ANNOTATION_PAGE,
     }
