@@ -498,6 +498,7 @@ def compare_annotations(a: dict, b: dict) -> dict:
             r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
             r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
             r"root(\['\w+'\]\[\d+\])+\['source'\]",
+            r"root(\['\w+'\]\[\d+\])+\['score'\]",
         ],
     )
 
