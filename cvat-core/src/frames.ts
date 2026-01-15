@@ -80,7 +80,8 @@ enum DeletedFrameState {
 }
 
 interface FramesMetaDataUpdatedData {
-    deletedFrames: Record<number, DeletedFrameState>;
+    cloudStorageId?: boolean;
+    deletedFrames?: Record<number, DeletedFrameState>;
 }
 
 export class ChapterMetaData {
@@ -279,16 +280,17 @@ export class FramesMetaData {
     }
 
     getUpdated(): FramesMetaDataUpdatedData {
-        const updatedFields = this.#updateTrigger.getUpdated(this);
-        const deletedFrames: FramesMetaDataUpdatedData['deletedFrames'] = {};
-        for (const key in updatedFields) {
-            if (Object.hasOwn(updatedFields, key) && key.startsWith('deletedFrames')) {
+        const updatedFields: FramesMetaDataUpdatedData = {};
+        for (const key of Object.keys(this.#updateTrigger.getUpdated(this))) {
+            if (key.startsWith('deletedFrames')) {
+                updatedFields.deletedFrames = updatedFields.deletedFrames ?? {};
                 const [, frame, state] = key.split(':');
-                deletedFrames[frame] = state;
+                updatedFields.deletedFrames[frame] = state;
+            } else if (key === 'cloudStorageId') {
+                updatedFields.cloudStorageId = true;
             }
         }
-
-        return { deletedFrames };
+        return updatedFields;
     }
 
     resetUpdated(): void {
@@ -663,13 +665,18 @@ function mergeMetaData(
     if (previousData instanceof Promise) {
         return previousData.then((prevMeta) => {
             const updatedFields = prevMeta.getUpdated();
-            const updatedDeletedFrames = updatedFields.deletedFrames;
-            for (const [frame, state] of Object.entries(updatedDeletedFrames)) {
-                if (state === DeletedFrameState.DELETED) {
-                    framesMetaData.deletedFrames[frame] = true;
-                } else if (state === DeletedFrameState.RESTORED) {
-                    delete framesMetaData.deletedFrames[frame];
+            if (updatedFields.deletedFrames) {
+                for (const [frame, state] of Object.entries(updatedFields.deletedFrames)) {
+                    if (state === DeletedFrameState.DELETED) {
+                        framesMetaData.deletedFrames[frame] = true;
+                    } else if (state === DeletedFrameState.RESTORED) {
+                        delete framesMetaData.deletedFrames[frame];
+                    }
                 }
+            }
+
+            if (updatedFields.cloudStorageId) {
+                framesMetaData.cloudStorageId = prevMeta.cloudStorageId;
             }
 
             return framesMetaData;
@@ -990,12 +997,11 @@ export async function restoreFrame(jobID: number, frame: number): Promise<void> 
 export async function patchMeta(id: number, meta?: FramesMetaData, session: 'job' | 'task' = 'job'): Promise<FramesMetaData> {
     const oldMeta = (session === 'job' ? await frameMetaCache[id] : meta);
     const updatedFields = oldMeta.getUpdated();
-    let newMeta = null;
     if (Object.keys(updatedFields).length) {
-        newMeta = await saveMeta(oldMeta, session, id);
+        const newMeta = await saveMeta(oldMeta, session, id);
+        return session === 'job' ? frameMetaCache[id] : newMeta;
     }
-    newMeta = (session === 'job' ? await frameMetaCache[id] : newMeta);
-    return newMeta;
+    return oldMeta;
 }
 
 export async function findFrame(
