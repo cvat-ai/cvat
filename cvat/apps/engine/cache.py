@@ -255,7 +255,7 @@ class MediaCache:
                     chunk_number=chunk_info.get("chunk_number"),
                     chunk_quality=chunk_info.get("quality"),
                     chunk_size=len(item_data_bytes),
-                    queue=getattr(rq.get_current_job(), "origin"),
+                    queue=getattr(rq.get_current_job(), "origin", None),
                 )
 
         return item
