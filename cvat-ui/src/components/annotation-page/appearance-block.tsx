@@ -37,7 +37,7 @@ const componentShortcuts = {
     SWITCH_COLOR_BY_APPEARANCE: {
         name: 'Switch objects appearance setting "Color by"',
         description: 'Objects color mode may be by object, label, or group',
-        sequences: [''],
+        sequences: [],
         scope: ShortcutScope.ANNOTATION_PAGE,
     }
 };
