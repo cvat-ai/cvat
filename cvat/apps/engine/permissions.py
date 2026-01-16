@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 
     from cvat.apps.iam.permissions import IamContext
 
-def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
+def _get_key(d: dict[str, Any], key_path: str | Sequence[str]) -> Any | None:
     """
     Like dict.get(), but supports nested fields. If the field is missing, returns None.
     """
@@ -93,7 +93,7 @@ class ExportableResourceExtension:
 
     @classmethod
     def update_scope_params(
-        cls: Type[OpenPolicyAgentPermission],
+        cls: type[OpenPolicyAgentPermission],
         scope_params: dict[str, Any],
         *,
         request: ExtendedRequest,
@@ -140,7 +140,7 @@ class ServerPermission(OpenPolicyAgentPermission):
         return None
 
 class UserPermission(OpenPolicyAgentPermission):
-    obj: Optional[User]
+    obj: User | None
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -194,7 +194,7 @@ class UserPermission(OpenPolicyAgentPermission):
         return data
 
 class CloudStoragePermission(OpenPolicyAgentPermission):
-    obj: Optional[CloudStorage]
+    obj: CloudStorage | None
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -268,7 +268,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
 class ProjectPermission(
     OpenPolicyAgentPermission, DownloadExportedExtension, ExportableResourceExtension
 ):
-    obj: Optional[Project]
+    obj: Project | None
 
     class Scopes(StrEnum):
         CREATE = 'create'
@@ -499,7 +499,7 @@ class ProjectPermission(
 class TaskPermission(
     OpenPolicyAgentPermission, DownloadExportedExtension, ExportableResourceExtension
 ):
-    obj: Optional[Task]
+    obj: Task | None
 
     class Scopes(StrEnum):
         CREATE = 'create'
@@ -790,8 +790,8 @@ class TaskPermission(
         return data
 
 class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
-    task_id: Optional[int]
-    obj: Optional[Job]
+    task_id: int | None
+    obj: Job | None
 
     class Scopes(StrEnum):
         CREATE = 'create'
@@ -1011,7 +1011,7 @@ class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
         return data
 
 class CommentPermission(OpenPolicyAgentPermission):
-    obj: Optional[Comment]
+    obj: Comment | None
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -1095,7 +1095,7 @@ class CommentPermission(OpenPolicyAgentPermission):
         return data
 
 class IssuePermission(OpenPolicyAgentPermission):
-    obj: Optional[Issue]
+    obj: Issue | None
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -1187,7 +1187,7 @@ class IssuePermission(OpenPolicyAgentPermission):
 
 
 class LabelPermission(OpenPolicyAgentPermission):
-    obj: Optional[Label]
+    obj: Label | None
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -1284,7 +1284,7 @@ class LabelPermission(OpenPolicyAgentPermission):
         return data
 
 class AnnotationGuidePermission(OpenPolicyAgentPermission):
-    obj: Optional[AnnotationGuide]
+    obj: AnnotationGuide | None
 
     class Scopes(StrEnum):
         VIEW = 'view'

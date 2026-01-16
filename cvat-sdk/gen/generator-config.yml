@@ -3,8 +3,7 @@ additionalProperties:
   packageUrl: "https://github.com/cvat-ai/cvat"
   packageName: "cvat_sdk.api_client"
   initRequiredVars: true
-  generateSourceCodeOnly: false
-  generatorLanguageVersion: '>=3.9'
+  generateSourceCodeOnly: true
 globalProperties:
   generateAliasAsModel: true
   apiTests: false

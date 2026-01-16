@@ -8,7 +8,7 @@ import io
 import json
 import warnings
 from collections.abc import Iterable
-from typing import Any, Optional, Union
+from typing import Any
 
 import tqdm
 import urllib3
@@ -20,7 +20,7 @@ from cvat_sdk.core.progress import BaseProgressReporter, ProgressReporter
 
 def get_paginated_collection(
     endpoint: Endpoint, *, return_json: bool = False, **kwargs
-) -> Union[list, list[dict[str, Any]]]:
+) -> list | list[dict[str, Any]]:
     """
     Accumulates results from all the pages
     """
@@ -49,7 +49,7 @@ def get_paginated_collection(
 
 
 class _BaseTqdmProgressReporter(BaseProgressReporter):
-    tqdm: Optional[tqdm.tqdm]
+    tqdm: tqdm.tqdm | None
 
     def report_status(self, progress: int):
         super().report_status(progress)
@@ -67,7 +67,7 @@ class TqdmProgressReporter(_BaseTqdmProgressReporter):
 
         self.tqdm = instance
 
-    def start2(self, total: int, *, desc: Optional[str] = None, **kwargs) -> None:
+    def start2(self, total: int, *, desc: str | None = None, **kwargs) -> None:
         super().start2(total=total, desc=desc, **kwargs)
 
         self.tqdm.reset(total)
@@ -79,7 +79,7 @@ class TqdmProgressReporter(_BaseTqdmProgressReporter):
 
 
 class DeferredTqdmProgressReporter(_BaseTqdmProgressReporter):
-    def __init__(self, tqdm_args: Optional[dict] = None) -> None:
+    def __init__(self, tqdm_args: dict | None = None) -> None:
         super().__init__()
         self.tqdm_args = tqdm_args or {}
         self.tqdm = None
@@ -88,7 +88,7 @@ class DeferredTqdmProgressReporter(_BaseTqdmProgressReporter):
         self,
         total: int,
         *,
-        desc: Optional[str] = None,
+        desc: str | None = None,
         unit: str = "it",
         unit_scale: bool = False,
         unit_divisor: int = 1000,
@@ -142,7 +142,7 @@ class StreamWithProgress:
         return self.stream.tell()
 
 
-def expect_status(codes: Union[int, Iterable[int]], response: urllib3.HTTPResponse) -> None:
+def expect_status(codes: int | Iterable[int], response: urllib3.HTTPResponse) -> None:
     if not hasattr(codes, "__iter__"):
         codes = [codes]
 

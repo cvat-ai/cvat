@@ -90,30 +90,59 @@ metadata:
 
 spec:
   description: RetinaNet R101 from Detectron2 optimized for GPU
-  runtime: 'python:3.8'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30s
 
   build:
     image: cvat.pth.facebookresearch.detectron2.retinanet_r101:latest-gpu
-    baseImage: ubuntu:20.04
+    baseImage: ubuntu:22.04
 
     directives:
       preCopy:
         - kind: ENV
           value: DEBIAN_FRONTEND=noninteractive
+        - kind: ENV
+          value: NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=compute,utility
         - kind: RUN
-          value: apt-get update && apt-get -y install curl git python3 python3-pip
+          value: |-
+            apt-get update \
+            && apt-get install -y --no-install-recommends \
+              curl \
+              git \
+              g++ \
+              python-is-python3 \
+              python3 \
+              python3-dev \
+              python3-pip \
+            && curl -fsSL -o /tmp/cuda-keyring.deb \
+              https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb \
+            && dpkg -i /tmp/cuda-keyring.deb \
+            && rm -f /tmp/cuda-keyring.deb \
+            && apt-get update \
+            && apt-get install -y --no-install-recommends \
+              cuda-nvcc-11-7 \
+              libcublas-dev-11-7 \
+              libcusolver-dev-11-7 \
+              libcusparse-dev-11-7 \
+            && rm -rf /var/lib/apt/lists/*
+        - kind: ENV
+          value: PATH=/usr/local/cuda-11.7/bin:${PATH} CUDA_HOME=/usr/local/cuda-11.7
+        - kind: RUN
+          value: |-
+            pip install \
+              torch==1.13.1+cu117 torchvision==0.14.1+cu117 numpy==1.26.4 \
+              --extra-index-url https://download.pytorch.org/whl/cu117 \
+              --no-cache-dir
+        - kind: RUN
+          value: |-
+            FORCE_CUDA=1 \
+            TORCH_CUDA_ARCH_LIST="Kepler;Kepler+Tesla;Maxwell;Maxwell+Tegra;Pascal;Volta;Turing" \
+            pip install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985' --no-cache-dir
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
-        - kind: RUN
-          value: pip3 install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985'
-        - kind: RUN
           value: curl -O https://dl.fbaipublicfiles.com/detectron2/COCO-Detection/retinanet_R_101_FPN_3x/190397697/model_final_971ab9.pkl
-        - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
 
   triggers:
     myHttpTrigger:

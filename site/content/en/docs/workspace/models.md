@@ -7,7 +7,7 @@ aliases:
 ---
 
 To deploy the models, you will need to install the necessary components using
-{{< ilink "/docs/administration/advanced/installation_automatic_annotation"
+{{< ilink "/docs/administration/community/advanced/installation_automatic_annotation"
   "Semi-automatic and Automatic Annotation guide" >}}.
 To learn how to deploy the model, read
 {{< ilink "/docs/guides/serverless-tutorial" "Serverless tutorial" >}}.

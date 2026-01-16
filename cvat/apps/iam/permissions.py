@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
 from attrs import define, field
 from django.apps import AppConfig
@@ -84,11 +84,11 @@ def get_membership(request, organization):
     ).first()
 
 
-IamContext = dict[str, Any]
+IamContext: TypeAlias = dict[str, Any]
 
 
 def build_iam_context(
-    request, organization: Optional[Organization], membership: Optional[Membership]
+    request, organization: Organization | None, membership: Membership | None
 ) -> IamContext:
     return {
         "user_id": request.user.id,

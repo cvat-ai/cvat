@@ -5,7 +5,6 @@
 from abc import ABC
 from collections.abc import Sequence
 from enum import Enum
-from typing import Optional
 
 from cvat_sdk import models
 from cvat_sdk.core.proxies.model_proxy import _EntityT
@@ -39,7 +38,7 @@ class AnnotationCrudMixin(ABC):
             patched_labeled_data_request=data,
         )
 
-    def remove_annotations(self: _EntityT, *, ids: Optional[Sequence[int]] = None):
+    def remove_annotations(self: _EntityT, *, ids: Sequence[int] | None = None):
         if ids:
             anns = self.get_annotations()
 

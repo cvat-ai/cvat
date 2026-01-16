@@ -8,13 +8,13 @@ import os
 import shutil
 import unittest
 import unittest.mock
-from collections.abc import Generator, Iterator, Sequence
+from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable, Collection, NoReturn, Protocol, TypeVar
+from typing import Any, NoReturn, Protocol, TypeVar
 from unittest import TestCase
 from urllib.parse import urlencode
 
@@ -128,7 +128,7 @@ class ApiTestBase(APITestCase):
         self._clear_rq_jobs()
 
         # clear cache files created after previous exports
-        export_cache_dir = Path(settings.EXPORT_CACHE_ROOT)
+        export_cache_dir = settings.EXPORT_CACHE_ROOT
         for child in export_cache_dir.iterdir():
             if child.is_dir():
                 shutil.rmtree(child)

@@ -15,7 +15,7 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from threading import Lock
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 from uuid import UUID
 
 import attrs
@@ -389,3 +389,30 @@ def linear_sort_shapes(shapes: Iterable) -> list:
             if i in d:
                 sorted_shapes.append(d[i])
     return sorted_shapes
+
+
+def make_getter_by_frame_for_annotation_stream(
+    gen: Iterable[dict],
+) -> Callable[[int], Generator[dict, None, None]]:
+    if isinstance(gen, list):
+        gen = iter(gen)
+    ann = None
+
+    def get(frame_index: int) -> Generator[dict, None, None]:
+        nonlocal ann
+
+        while True:
+            if ann is None:
+                try:
+                    ann = next(gen)
+                except StopIteration:
+                    break
+
+            assert ann["frame"] >= frame_index
+            if ann["frame"] == frame_index:
+                yield ann
+                ann = None
+            else:
+                break
+
+    return get

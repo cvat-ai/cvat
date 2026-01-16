@@ -90,9 +90,8 @@ context('Canvas 3D functionality. Grouping.', () => {
         it('Change group color.', () => {
             changeGroupColor('#cvat-objects-sidebar-state-item-2', yellowHex);
             for (const groupedSidebarItemShape of shapeSidebarItemArray) {
-                cy.get(groupedSidebarItemShape)
-                    .should('have.attr', 'style')
-                    .and('contain', `background-color: rgba(${yellowRgb}`);
+                cy.get(groupedSidebarItemShape).invoke('css', 'background-color')
+                    .should('contain', `rgba(${yellowRgb}`);
             }
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_change_group_color');
             cy.compareImagesAndCheckResult(

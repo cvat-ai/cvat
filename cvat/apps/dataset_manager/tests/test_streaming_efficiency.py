@@ -1,7 +1,7 @@
 import os
 import tempfile
 from collections import namedtuple
-from typing import Callable, Optional
+from collections.abc import Callable
 from unittest import TestCase, mock
 from unittest.mock import Mock
 
@@ -409,7 +409,7 @@ class TestImporters(ApiTestBase):
             temp_dir: str,
             instance_data: ProjectData | CommonData,
             *,
-            load_data_callback: Optional[Callable] = None,
+            load_data_callback: Callable | None = None,
             import_kwargs: dict | None = None,
             **kwargs,
         ):

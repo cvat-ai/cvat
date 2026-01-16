@@ -17,7 +17,8 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from logging import Logger
-from typing import Any, ClassVar, Optional, Type, Union
+from pathlib import Path
+from typing import Any, ClassVar
 from zipfile import ZipFile
 
 import rapidjson
@@ -49,7 +50,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import DataChoice, StorageChoice, StorageMethodChoice
+from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -92,7 +93,7 @@ def _get_label_mapping(db_labels):
 
 def _write_annotation_guide(
     zip_object: ZipFile,
-    annotation_guide: Optional[models.AnnotationGuide],
+    annotation_guide: models.AnnotationGuide | None,
     guide_filename: str,
     assets_dirname: str,
     target_dir: str,
@@ -422,6 +423,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         )
         self._label_mapping = _get_label_mapping(db_labels)
         self._lightweight = lightweight
+        self._manifest_was_filtered = False
 
     def _write_annotation_guide(self, zip_object: ZipFile, target_dir: str) -> None:
         annotation_guide = (
@@ -434,6 +436,46 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             self.ASSETS_DIRNAME,
             target_dir=target_dir,
         )
+
+    def _write_filtered_media_manifest(self, zip_object: ZipFile, target_dir: str) -> None:
+        # When making a heavyweight backup of a task with images, we only include those frames
+        # that match the task's frame range. This function filters the manifest so that it also
+        # includes only those frames. That way, we don't have a manifest referencing nonexistent
+        # images in the backup.
+
+        target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
+
+        if hasattr(self._db_data, "video"):
+            # No filtering necessary; just use the original manifest.
+            self._write_files(
+                source_dir=self._db_data.get_upload_dirname(),
+                zip_object=zip_object,
+                files=[self._db_data.get_manifest_path()],
+                target_dir=target_data_dir,
+            )
+            return
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            present_frame_nums = {im.frame for im in self._db_data.images.all()}
+
+            filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
+
+            imm_original = ImageManifestManager(
+                self._db_data.get_manifest_path(), create_index=False
+            )
+            imm_filtered = ImageManifestManager(filtered_manifest_path, create_index=False)
+            imm_filtered.create(
+                entry for frame_num, entry in imm_original if frame_num in present_frame_nums
+            )
+
+            self._write_files(
+                source_dir=tmp_dir,
+                zip_object=zip_object,
+                files=[filtered_manifest_path],
+                target_dir=target_data_dir,
+            )
+
+            self._manifest_was_filtered = True
 
     def _write_data(self, zip_object: ZipFile, target_dir: str) -> None:
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
@@ -460,12 +502,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
 
-            self._write_files(
-                source_dir=self._db_data.get_upload_dirname(),
-                zip_object=zip_object,
-                files=[self._db_data.get_manifest_path()],
-                target_dir=target_data_dir,
-            )
+            self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
+
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
             assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
 
@@ -479,7 +517,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     target_dir=target_data_dir,
                 )
             else:
-                files_for_local_copy = [self._db_data.get_manifest_path()]
+                self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
+
+                files_for_local_copy = []
 
                 media_files_to_download = []
                 for media_file in self._db_data.related_files.all():
@@ -652,10 +692,19 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 ]
                 data["validation_layout"] = validation_params
 
-            if self._db_data.storage == StorageChoice.CLOUD_STORAGE and not self._lightweight:
+            if (
+                self._db_data.storage == StorageChoice.SHARE
+                or self._db_data.storage == StorageChoice.CLOUD_STORAGE
+                and not self._lightweight
+            ):
                 data["storage"] = StorageChoice.LOCAL
             else:
                 data["storage"] = self._db_data.storage
+
+            if self._manifest_was_filtered:
+                del data["start_frame"]
+                del data["stop_frame"]
+                del data["frame_filter"]
 
             return self._prepare_data_meta(data)
 
@@ -705,12 +754,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         self._write_annotation_guide(zip_obj, target_dir)
 
     def export_to(self, file: str | ZipFile, target_dir: str = "") -> None:
-        if (
-            self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM
-            and self._db_task.data.storage == StorageChoice.SHARE
-        ):
-            raise Exception("The task cannot be exported because it does not contain any raw data")
-
         if isinstance(file, str):
             with ZipFile(file, "w") as zf:
                 self._export_task(zip_obj=zf, target_dir=target_dir)
@@ -864,9 +907,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     def _copy_input_files(
         self,
-        input_archive: Union[ZipFile, str],
+        input_archive: ZipFile | str,
         *,
-        excluded_filenames: Optional[Collection[str]] = None,
+        excluded_filenames: Collection[str] | None = None,
     ) -> list[str]:
         if isinstance(input_archive, str):
             with ZipFile(input_archive, "r") as zf:
@@ -1005,7 +1048,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 raise ValidationError(f"Expected {self.MEDIA_MANIFEST_FILENAME} in backup files")
 
             manifest = ImageManifestManager(
-                os.path.join(self._db_task.data.get_upload_dirname(), self.MEDIA_MANIFEST_FILENAME)
+                self._db_task.data.get_upload_dirname() / self.MEDIA_MANIFEST_FILENAME
             )
             data["server_files"] = []
             for _, manifest_entry in manifest:
@@ -1265,7 +1308,7 @@ def import_project(filename, user, org_id):
 
 def create_backup(
     instance_id: int,
-    Exporter: Type[ProjectExporter | TaskExporter],
+    Exporter: type[ProjectExporter | TaskExporter],
     logger: Logger,
     cache_ttl: timedelta,
     *,

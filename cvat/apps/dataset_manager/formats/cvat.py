@@ -7,9 +7,9 @@ import os
 import os.path as osp
 import zipfile
 from collections import OrderedDict
+from collections.abc import Callable
 from glob import glob
 from io import BufferedWriter
-from typing import Callable, Union
 
 from datumaro.components.annotation import (
     AnnotationType,
@@ -1564,7 +1564,7 @@ def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callb
 
 
 def dump_media_files(
-    instance_data: Union[TaskData, JobData], img_dir: str, project_data: ProjectData = None
+    instance_data: TaskData | JobData, img_dir: str, project_data: ProjectData = None
 ):
     frame_provider = make_frame_provider(instance_data.db_instance)
 

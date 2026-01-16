@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import itertools
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection
-from typing import ClassVar, Iterable, Sequence
+from collections.abc import Collection, Iterable, Sequence
+from typing import ClassVar, TypeAlias
 
 import attrs
 import datumaro as dm
@@ -143,7 +143,7 @@ class LabelMatcher(AnnotationMatcher):
         return [list(itertools.chain.from_iterable(sources))]
 
 
-CacheKey = tuple[int, int]
+CacheKey: TypeAlias = tuple[int, int]
 
 
 @attrs.define

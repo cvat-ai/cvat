@@ -6,10 +6,10 @@
 import io
 import itertools
 from collections import OrderedDict, defaultdict
+from collections.abc import Callable
 from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
-from typing import Callable, Optional, Union
 
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
@@ -485,7 +485,7 @@ class JobAnnotation:
         if not self._data_is_empty(self.data):
             self._set_updated_date()
 
-    def _validate_input_annotations(self, data: Union[AnnotationIR, dict]) -> AnnotationIR:
+    def _validate_input_annotations(self, data: AnnotationIR | dict) -> AnnotationIR:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_job.segment.task.dimension, data)
 
@@ -882,7 +882,7 @@ class TaskAnnotation:
     def reset(self):
         self.ir_data.reset()
 
-    def _patch_data(self, data: Union[AnnotationIR, dict], action: Optional[PatchAction]):
+    def _patch_data(self, data: AnnotationIR | dict, action: PatchAction | None):
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
 
@@ -922,7 +922,7 @@ class TaskAnnotation:
         self._patch_data(data, PatchAction.CREATE)
 
     def _preprocess_input_annotations_for_gt_pool_task(
-        self, data: Union[AnnotationIR, dict], *, action: Optional[PatchAction]
+        self, data: AnnotationIR | dict, *, action: PatchAction | None
     ) -> AnnotationIR:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)

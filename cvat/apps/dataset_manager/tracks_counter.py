@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict
-from typing import Callable, Dict, TypedDict
+from collections.abc import Callable
+from typing import TypedDict
 
 from cvat.apps.engine.models import Job, LabeledTrack, ShapeType
 from cvat.apps.engine.utils import defaultdict_to_regular
@@ -29,8 +30,8 @@ class TracksCounter:
     """
 
     def __init__(self):
-        self._tracks_per_job: Dict[int, Dict[int, _CountableTrack]] = {}
-        self._stop_frames_per_job: Dict[int, int] = {}
+        self._tracks_per_job: dict[int, dict[int, _CountableTrack]] = {}
+        self._stop_frames_per_job: dict[int, int] = {}
 
     def _init_stop_frames(self):
         if self._tracks_per_job:

@@ -8,7 +8,7 @@ const engine = platform.layout || 'unknown';
 const name = platform.name || 'unknown';
 const version = platform.version || 'unknown';
 const os = platform.os ? platform.os.toString() : 'unknown';
-let platformNotificationShown = window.localStorage.getItem('platformNotiticationShown') !== null;
+let platformNotificationShown = window.localStorage.getItem('platformNotificationShown') !== null;
 let featuresNotificationShown = window.localStorage.getItem('featuresNotificationShown') !== null;
 
 interface PlatformInfo {
@@ -31,7 +31,7 @@ export function stopNotifications(saveInStorage: boolean): void {
     platformNotificationShown = true;
     featuresNotificationShown = true;
     if (saveInStorage) {
-        window.localStorage.setItem('platformNotiticationShown', 'shown');
+        window.localStorage.setItem('platformNotificationShown', 'shown');
         window.localStorage.setItem('featuresNotificationShown', 'shown');
     }
 }

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import traceback
-from typing import Any, Optional, Union
+from typing import Any
 
 import rq
 from crum import get_current_request, get_current_user
@@ -554,11 +554,11 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
 
 
 def handle_dataset_io(
-    instance: Union[Project, Task, Job],
+    instance: Project | Task | Job,
     action: str,
     *,
     format_name: str,
-    cloud_storage_id: Optional[int],
+    cloud_storage_id: int | None,
     **payload_fields,
 ) -> None:
     payload = {"format": format_name, **payload_fields}
@@ -582,10 +582,10 @@ def handle_dataset_io(
 
 
 def handle_dataset_export(
-    instance: Union[Project, Task, Job],
+    instance: Project | Task | Job,
     *,
     format_name: str,
-    cloud_storage_id: Optional[int],
+    cloud_storage_id: int | None,
     save_images: bool,
 ) -> None:
     handle_dataset_io(
@@ -598,10 +598,10 @@ def handle_dataset_export(
 
 
 def handle_dataset_import(
-    instance: Union[Project, Task, Job],
+    instance: Project | Task | Job,
     *,
     format_name: str,
-    cloud_storage_id: Optional[int],
+    cloud_storage_id: int | None,
 ) -> None:
     handle_dataset_io(
         instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id
@@ -610,7 +610,7 @@ def handle_dataset_import(
 
 def handle_function_call(
     function_id: str,
-    target: Union[Task, Job],
+    target: Task | Job,
     **payload_fields,
 ) -> None:
     record_server_event(

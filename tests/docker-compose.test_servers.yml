@@ -10,7 +10,7 @@ services:
   cvat_server: *allow-webhook-receiver
 
   webhook_receiver:
-    image: python:3.9-slim
+    image: python:3.10-slim
     restart: always
     command: python3 /tmp/server.py
     init: true

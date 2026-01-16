@@ -1,0 +1,19 @@
+{{ define "main" }}
+
+<article class="td-content">
+
+  <header>
+    <h1>{{ .Title }}</h1>
+  </header>
+
+  {{ partial "product-tags.html" . }}
+
+  <hr class="product-tags-separator">
+
+  <div class="content">
+    {{ .Content }}
+  </div>
+
+</article>
+
+{{ end }}
