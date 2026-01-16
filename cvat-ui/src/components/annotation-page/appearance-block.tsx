@@ -39,7 +39,7 @@ const componentShortcuts = {
         description: 'Objects color mode may be by object, label, or group',
         sequences: [],
         scope: ShortcutScope.ANNOTATION_PAGE,
-    }
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -168,35 +168,34 @@ function AppearanceBlock(props: Props): JSX.Element {
         SWITCH_COLOR_BY_APPEARANCE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             changeShapesColorBy(nextColorBy[colorBy]);
-
         },
     };
 
     return (
-            <Collapse
-                onChange={collapseAppearance}
-                activeKey={appearanceCollapsed ? [] : ['appearance']}
-                className='cvat-objects-appearance-collapse'
-                items={[{
-                    label: (
-                        <Text strong className='cvat-objects-appearance-collapse-header'>
+        <Collapse
+            onChange={collapseAppearance}
+            activeKey={appearanceCollapsed ? [] : ['appearance']}
+            className='cvat-objects-appearance-collapse'
+            items={[{
+                label: (
+                    <Text strong className='cvat-objects-appearance-collapse-header'>
                             Appearance
-                        </Text>
-                    ),
-                    key: 'appearance',
-                    children: (
-                        <div className='cvat-objects-appearance-content cvat-appearance-block'>
-                            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
-                            <Text type='secondary'>Color by</Text>
-                            <Radio.Group
-                                className='cvat-appearance-color-by-radio-group'
-                                value={colorBy}
-                                onChange={(event: RadioChangeEvent) => changeShapesColorBy(event.target.value)}
-                            >
-                                {Object.keys(nextColorBy).map((val) => (
-                                    <Radio.Button value={val} key={val}>{val}</Radio.Button>
-                                ))}
-                            </Radio.Group>
+                    </Text>
+                ),
+                key: 'appearance',
+                children: (
+                    <div className='cvat-objects-appearance-content cvat-appearance-block'>
+                        <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+                        <Text type='secondary'>Color by</Text>
+                        <Radio.Group
+                            className='cvat-appearance-color-by-radio-group'
+                            value={colorBy}
+                            onChange={(event: RadioChangeEvent) => changeShapesColorBy(event.target.value)}
+                        >
+                            {Object.keys(nextColorBy).map((val) => (
+                                <Radio.Button value={val} key={val}>{val}</Radio.Button>
+                            ))}
+                        </Radio.Group>
                         <Text type='secondary'>Opacity</Text>
                         <Slider
                             className='cvat-appearance-opacity-slider'
