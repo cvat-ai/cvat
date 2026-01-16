@@ -11,12 +11,14 @@ import multiprocessing
 import random
 import secrets
 import shutil
+import sys
 import tempfile
 import threading
 import time
 from collections import OrderedDict
 from collections.abc import Callable, Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias
 
@@ -703,14 +705,7 @@ class _Agent:
         try:
             result = self._calculate_result_for_ar(ar_id, ar_params)
 
-            self._client.logger.info("Submitting result for AR %r...", ar_id)
-            self._client.api_client.call_api(
-                "/api/functions/queues/{queue_id}/requests/{request_id}/complete",
-                "POST",
-                path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
-                body={"agent_id": self._agent_id, **result},
-            )
-            self._client.logger.info("AR %r completed", ar_id)
+            self._complete_ar(ar_id, result)
         except Exception as ex:
             self._client.logger.error("Failed to process AR %r", ar_id, exc_info=True)
 
@@ -755,6 +750,43 @@ class _Agent:
             else:
                 self._client.logger.info("AR %r failed", ar_id)
 
+    def _handle_retryable_post_error(self, delay: _ExponentialBackoff) -> None:
+        # Normally, urllib3 handles retries for HTTP requests,
+        # but it only does it for idempotent ones.
+        # So for POST requests that are safe to retry, we have to do it ourselves.
+        # This function must be called from an exception handler.
+        # It will either re-raise the exception or delay for an appropriate amount of time.
+
+        _, ex, _ = sys.exc_info()
+        assert ex is not None
+
+        is_rate_limit = False
+        delay_sec = None
+
+        if isinstance(ex, ApiException):
+            try:
+                delay_sec = int(ex.headers["Retry-After"])
+            except (KeyError, ValueError):
+                pass
+
+            if ex.status == HTTPStatus.TOO_MANY_REQUESTS:
+                is_rate_limit = True
+            elif ex.status and 400 <= ex.status < 500:
+                # We did something wrong; no point in retrying.
+                raise
+
+        if delay_sec is None:
+            delay_multiplier = self._rng.uniform(1, 1 + _JITTER_AMOUNT)
+            delay_sec = delay.next().total_seconds() * delay_multiplier
+
+        if is_rate_limit:
+            self._client.logger.warning("Rate limited; will retry in %.2fs", delay_sec)
+        else:
+            self._client.logger.error(
+                "Request failed; will retry in %.2fs", delay_sec, exc_info=True
+            )
+        time.sleep(delay_sec)
+
     def _poll_for_ar(self, category: str) -> dict | None:
         retry_delay = _ExponentialBackoff(_POLLING_INTERVAL_MEAN_RARE, _DEFAULT_RETRY_DELAY)
 
@@ -770,18 +802,8 @@ class _Agent:
                     body={"agent_id": self._agent_id, "request_category": category},
                 )
                 break
-            except (urllib3.exceptions.HTTPError, ApiException) as ex:
-                if isinstance(ex, ApiException) and ex.status and 400 <= ex.status < 500:
-                    # We did something wrong; no point in retrying.
-                    raise
-
-                delay_multiplier = self._rng.uniform(1, 1 + _JITTER_AMOUNT)
-                delay_sec = retry_delay.next().total_seconds() * delay_multiplier
-
-                self._client.logger.error(
-                    "Acquire request failed; will retry in %.2f seconds", delay_sec, exc_info=True
-                )
-                time.sleep(delay_sec)
+            except (urllib3.exceptions.HTTPError, ApiException):
+                self._handle_retryable_post_error(retry_delay)
 
         response_data = json.loads(response.data)
         return response_data["ar_assignment"]
@@ -945,13 +967,47 @@ class _Agent:
         return sample, ds.labels
 
     def _update_ar(self, ar_id: str, progress: float) -> None:
-        self._client.logger.info("Updating AR %r progress to %.2f%%", ar_id, progress * 100)
-        self._client.api_client.call_api(
-            "/api/functions/queues/{queue_id}/requests/{request_id}/update",
-            "POST",
-            path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
-            body={"agent_id": self._agent_id, "progress": progress},
-        )
+        self._client.logger.info("Updating AR %r progress to %.2f%%...", ar_id, progress * 100)
+
+        try:
+            self._client.api_client.call_api(
+                "/api/functions/queues/{queue_id}/requests/{request_id}/update",
+                "POST",
+                path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
+                body={"agent_id": self._agent_id, "progress": progress},
+            )
+        except (urllib3.exceptions.HTTPError, ApiException):
+            # Updating the progress is not critical, so log and continue onwards.
+            self._client.logger.error("Failed to update AR %r progress", ar_id, exc_info=True)
+
+    def _complete_ar(self, ar_id: str, result: dict) -> None:
+        # It would be frustrating for the user if we calculate the result of an AR and then fail
+        # due to a transient error when submitting it, so we should retry at least a couple times.
+
+        delay = _ExponentialBackoff(_POLLING_INTERVAL_MEAN_RARE, _DEFAULT_RETRY_DELAY)
+        attempt_num = 0
+
+        while True:
+            self._client.logger.info("Submitting result for AR %r...", ar_id)
+            try:
+                self._client.api_client.call_api(
+                    "/api/functions/queues/{queue_id}/requests/{request_id}/complete",
+                    "POST",
+                    path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
+                    body={"agent_id": self._agent_id, **result},
+                )
+                break
+            except (urllib3.exceptions.HTTPError, ApiException):
+                if attempt_num >= 3:
+                    self._client.logger.error(
+                        "Exceeded maximum retries for submitting AR %r", ar_id
+                    )
+                    raise
+                self._handle_retryable_post_error(delay)
+
+            attempt_num += 1
+
+        self._client.logger.info("AR %r completed", ar_id)
 
 
 def run_agent(
