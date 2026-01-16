@@ -1180,7 +1180,7 @@ class Annotation(models.Model):
     group = models.PositiveIntegerField(null=True)
     source = models.CharField(max_length=16, choices=SourceType.choices(),
         default=str(SourceType.MANUAL), null=True)
-    score = models.FloatField(null=True, default=None)
+    score = models.FloatField(default=1)
 
     class Meta:
         abstract = True

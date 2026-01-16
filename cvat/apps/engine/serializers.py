@@ -3171,7 +3171,7 @@ class AnnotationSerializer(serializers.Serializer):
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
     source = serializers.CharField(default='manual')
-    score = serializers.FloatField(min_value=0, max_value=1, allow_null=True, default=None)
+    score = serializers.FloatField(min_value=0, max_value=1, default=1)
 
     def _validate_id_absent(self, value):
         if value is not None:

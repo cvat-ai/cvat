@@ -80,8 +80,8 @@ interface ConvertedObjectData {
     type: ObjectType;
     shape: ShapeType;
     occluded: boolean;
-    score: number | null;
-    votes: number | null;
+    score: number;
+    votes: number;
 }
 
 export default class AnnotationsFilter {

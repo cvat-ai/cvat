@@ -10,6 +10,7 @@ import Collapse from 'antd/lib/collapse';
 import InputNumber from 'antd/lib/input-number';
 import Tag from 'antd/lib/tag';
 
+import { Source } from 'cvat-core-wrapper';
 import ItemAttribute from './object-item-attribute';
 
 interface Props {
@@ -21,8 +22,10 @@ interface Props {
     collapse(): void;
     sizeParams: SizeParams | null;
     changeSize(sizeType: SizeType, value: number): void;
-    score: number | null;
-    votes: number | null;
+    source: Source;
+    score: number;
+    votes: number;
+    textContent: string;
 }
 
 export enum SizeType {
@@ -52,8 +55,10 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
         nextProps.readonly === prevProps.readonly &&
         nextProps.collapsed === prevProps.collapsed &&
         nextProps.attributes === prevProps.attributes &&
+        nextProps.source === prevProps.source &&
         nextProps.score === prevProps.score &&
         nextProps.votes === prevProps.votes &&
+        nextProps.textContent === prevProps.textContent &&
         attrValuesAreEqual(nextProps.values, prevProps.values)
     );
 }
@@ -61,16 +66,20 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
 function ItemAttributesComponent(props: Props): JSX.Element | null {
     const {
         collapsed, attributes, values, readonly, changeAttribute, collapse,
-        sizeParams, changeSize, score, votes,
+        sizeParams, changeSize, source, score, votes, textContent,
     } = props;
 
+    const isConsensus = source === Source.CONSENSUS;
+    const withScore = isConsensus && textContent.includes('score');
+    const withVotes = isConsensus && textContent.includes('votes');
+
     const hasDetails = attributes.length > 0 || sizeParams !== null;
-    const scoreTag = score !== null ? (
+    const scoreTag = withScore ? (
         <Tag color='#FFB347' className='cvat-object-item-score-tag'>
             {score.toFixed(2)}
         </Tag>
     ) : null;
-    const votesTag = votes !== null ? (
+    const votesTag = withVotes ? (
         <Tag color='#FFB347' className='cvat-object-item-votes-tag'>
             {votes}
         </Tag>

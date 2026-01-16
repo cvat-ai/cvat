@@ -3138,11 +3138,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const withSource = content.includes('source');
         const withDescriptions = content.includes('descriptions');
         const withDimensions = content.includes('dimensions');
-        const withScore = content.includes('score');
+
         const textFontSize = this.configuration.textFontSize || 12;
         const {
             label, clientID, attributes, source, descriptions, score, votes,
         } = state;
+        const isConsensus = source === 'consensus';
+        const withScore = isConsensus && content.includes('score');
+        const withVotes = isConsensus && content.includes('votes');
 
         const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
         if (state.shapeType === 'skeleton') {
@@ -3194,12 +3197,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             .addClass('cvat_canvas_text_description');
                     });
                 }
-                if (withScore && score !== null && score !== undefined) {
-                    const scoreText = votes !== null ?
-                        `Score: ${score.toFixed(2)}, Votes: ${votes}` :
-                        `Score: ${score.toFixed(2)}`;
+                if (withScore || withVotes) {
+                    const parts = [];
+                    if (withScore) {
+                        parts.push(`Score: ${score.toFixed(2)}`);
+                    }
+                    if (withVotes) {
+                        parts.push(`Votes: ${votes}`);
+                    }
                     block
-                        .tspan(scoreText)
+                        .tspan(parts.join(', '))
                         .attr({ dy: '1.25em', x: 0 })
                         .addClass('cvat_canvas_text_score');
                 }

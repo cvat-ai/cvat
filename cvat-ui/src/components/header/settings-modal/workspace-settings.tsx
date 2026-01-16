@@ -174,6 +174,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         <Select.Option value='descriptions'>Descriptions</Select.Option>
                         <Select.Option value='dimensions'>Dimensions</Select.Option>
                         <Select.Option value='score'>Score</Select.Option>
+                        <Select.Option value='votes'>Votes</Select.Option>
                     </Select>
                 </Col>
             </Row>

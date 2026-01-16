@@ -90,8 +90,8 @@ export default class ObjectState {
         next: number | null;
         last: number | null;
     } | null;
-    public readonly score: number | null;
-    public readonly votes: number | null;
+    public readonly score: number;
+    public readonly votes: number;
     public label: Label;
     public color: string;
     public hidden: boolean;

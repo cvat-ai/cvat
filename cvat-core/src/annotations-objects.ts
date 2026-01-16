@@ -105,8 +105,8 @@ class Annotation {
     protected readOnlyFields: string[];
     protected color: string;
     protected source: Source;
-    public score: number | null;
-    public votes: number | null;
+    public score: number;
+    public votes: number;
     public updated: number;
     public attributes: Record<number, string>;
     protected groupObject: {
@@ -130,9 +130,9 @@ class Annotation {
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
         this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
-        this.score = data.score ?? null;
-        this.votes = (this.score !== null && injection.consensusReplicas !== undefined) ?
-            Math.round(this.score * injection.consensusReplicas) : null;
+        this.score = data.score;
+        this.votes = injection.consensusReplicas !== undefined ?
+            Math.round(this.score * injection.consensusReplicas) : 0;
         this.updated = Date.now();
         this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
             attributeAccumulator[attr.spec_id] = attr.value;

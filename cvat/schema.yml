@@ -8645,7 +8645,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         attributes:
           type: array
           items:
@@ -8679,7 +8679,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         attributes:
           type: array
           items:
@@ -8734,7 +8734,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         attributes:
           type: array
           items:
@@ -8795,7 +8795,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         attributes:
           type: array
           items:
@@ -8833,7 +8833,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         shapes:
           type: array
           items:
@@ -8876,7 +8876,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         shapes:
           type: array
           items:
@@ -10915,7 +10915,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         attributes:
           type: array
           items:
@@ -10972,7 +10972,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         attributes:
           type: array
           items:
@@ -11006,7 +11006,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         shapes:
           type: array
           items:
@@ -11045,7 +11045,7 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          nullable: true
+          default: 1.0
         shapes:
           type: array
           items:

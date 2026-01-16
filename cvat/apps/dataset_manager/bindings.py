@@ -2252,6 +2252,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                     raise CvatImportError("annotation has no label")
 
                 score = ann.attributes.pop('score', None)
+                if score is None:
+                    score = 1
 
                 attributes = [
                     instance_data.Attribute(name=n, value=str(v))

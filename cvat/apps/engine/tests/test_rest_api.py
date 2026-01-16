@@ -2767,6 +2767,7 @@ class TaskMoveAPITestCase(ApiTestBase):
                     "label_id": cls.task.label_set.first().id,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                 }
             ],
@@ -2776,6 +2777,7 @@ class TaskMoveAPITestCase(ApiTestBase):
                     "label_id": cls.task.label_set.first().id,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": cls.task.label_set.first().attributespec_set.first().id,
@@ -2795,6 +2797,7 @@ class TaskMoveAPITestCase(ApiTestBase):
                     "label_id": cls.task.label_set.first().id,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": cls.task.label_set.first().attributespec_set.first().id,
@@ -5720,6 +5723,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                 }
             ],
@@ -5729,6 +5733,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -5748,6 +5753,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -5760,6 +5766,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -5795,6 +5802,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "shapes": [
                         {
@@ -5842,6 +5850,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                 }
             ],
@@ -5851,6 +5860,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -5870,6 +5880,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -5882,6 +5893,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -5917,6 +5929,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "shapes": [
                         {
@@ -5981,6 +5994,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": 11010101,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                 }
             ],
@@ -5990,6 +6004,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": 32234234,
@@ -6009,6 +6024,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": 1212121,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6021,6 +6037,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": 0,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "shapes": [
                         {
@@ -6055,6 +6072,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "shapes": [
                         {
@@ -6152,6 +6170,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                 }
             ],
@@ -6161,6 +6180,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6180,6 +6200,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6192,6 +6213,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6227,6 +6249,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "shapes": [
                         {
@@ -6274,6 +6297,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                 }
             ],
@@ -6283,6 +6307,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6302,6 +6327,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6314,6 +6340,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6349,6 +6376,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "shapes": [
                         {
@@ -6413,6 +6441,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": 11010101,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                 }
             ],
@@ -6422,6 +6451,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": 32234234,
@@ -6441,6 +6471,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": 1212121,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6453,6 +6484,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": 0,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "shapes": [
                         {
@@ -6487,6 +6519,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "shapes": [
                         {
@@ -6531,6 +6564,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6592,6 +6626,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "shapes": [
                             {
@@ -6627,6 +6662,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "shapes": [
                             {
@@ -6663,6 +6699,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6689,6 +6726,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][2]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][2]["attributes"][0]["id"],
@@ -6719,6 +6757,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "points": [2.0, 2.1, 40, 50.7],
                         "type": "rectangle",
@@ -6736,6 +6775,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
                         "type": "polygon",
@@ -6753,6 +6793,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 1,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6776,6 +6817,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 1,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "points": [4, 7, 10, 30, 4, 5.55],
                         "type": "polygon",
@@ -6793,6 +6835,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
                         "type": "points",
@@ -6809,6 +6852,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                     }
                 ]
@@ -6818,6 +6862,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6921,6 +6966,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "points": [4, 4, 5, 91, 96, 93, 97, 4],
                         "type": "polygon",
@@ -6933,6 +6979,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "points": [14, 14, 15, 85, 88, 87, 90, 13],
                         "type": "polygon",
@@ -6963,6 +7010,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6991,6 +7039,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "points": [
                             -3.62,
@@ -7022,6 +7071,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "points": [
                             23.01,
@@ -7057,6 +7107,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7075,6 +7126,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7092,6 +7144,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7113,6 +7166,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7142,6 +7196,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7187,6 +7242,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "group": 0,
                         "frame": 0,
                         "source": "manual",
+                    "score": 1.0,
                         "attributes": [],
                         "elements": [
                             {
@@ -7201,6 +7257,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "label_id": task["labels"][0]["sublabels"][0]["id"],
                                 "group": 0,
                                 "source": "manual",
+                    "score": 1.0,
                                 "attributes": [],
                             },
                             {
@@ -7215,6 +7272,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "label_id": task["labels"][0]["sublabels"][1]["id"],
                                 "group": 0,
                                 "source": "manual",
+                    "score": 1.0,
                                 "attributes": [],
                             },
                         ],
