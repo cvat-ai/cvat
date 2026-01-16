@@ -13,6 +13,7 @@ import secrets
 import shutil
 import tempfile
 import threading
+import time
 from collections import OrderedDict
 from collections.abc import Callable, Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
@@ -49,6 +50,7 @@ REQUEST_CATEGORIES_WITH_DECREASING_PRIORITY = (REQUEST_CATEGORY_INTERACTIVE, REQ
 _POLLING_INTERVAL_MEAN_FREQUENT = timedelta(seconds=60)
 _POLLING_INTERVAL_MEAN_RARE = timedelta(minutes=10)
 _JITTER_AMOUNT = 0.15
+_DEFAULT_RETRY_DELAY = timedelta(seconds=5)
 
 _UPDATE_INTERVAL = timedelta(seconds=30)
 
@@ -754,6 +756,8 @@ class _Agent:
                 self._client.logger.info("AR %r failed", ar_id)
 
     def _poll_for_ar(self, category: str) -> dict | None:
+        retry_delay = _ExponentialBackoff(_POLLING_INTERVAL_MEAN_RARE, _DEFAULT_RETRY_DELAY)
+
         while True:
             self._client.logger.info(
                 "Trying to acquire an annotation request of category %r...", category
@@ -771,8 +775,13 @@ class _Agent:
                     # We did something wrong; no point in retrying.
                     raise
 
-                self._client.logger.error("Acquire request failed; will retry", exc_info=True)
-                self._wait_between_polls()
+                delay_multiplier = self._rng.uniform(1, 1 + _JITTER_AMOUNT)
+                delay_sec = retry_delay.next().total_seconds() * delay_multiplier
+
+                self._client.logger.error(
+                    "Acquire request failed; will retry in %.2f seconds", delay_sec, exc_info=True
+                )
+                time.sleep(delay_sec)
 
         response_data = json.loads(response.data)
         return response_data["ar_assignment"]
