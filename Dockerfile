@@ -21,7 +21,10 @@ RUN apt-get update && \
         libxmlsec1-dev \
         libxmlsec1-openssl \
         libhdf5-dev \
-        cargo \
+        cargo-1.85 \
+    && update-alternatives \
+        --install /usr/bin/rustc rustc /usr/bin/rustc-1.85 185 \
+        --slave /usr/bin/cargo cargo /usr/bin/cargo-1.85 \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PIP_VERSION
