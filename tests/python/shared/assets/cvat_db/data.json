@@ -9176,8 +9176,7 @@
     "label": 17,
     "frame": 2,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9188,8 +9187,7 @@
     "label": 16,
     "frame": 3,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9200,8 +9198,7 @@
     "label": 39,
     "frame": 2,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9212,8 +9209,7 @@
     "label": 38,
     "frame": 3,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9224,8 +9220,7 @@
     "label": 67,
     "frame": 0,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9236,8 +9231,7 @@
     "label": 67,
     "frame": 1,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9248,8 +9242,7 @@
     "label": 78,
     "frame": 0,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9260,8 +9253,7 @@
     "label": 78,
     "frame": 0,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9272,8 +9264,7 @@
     "label": 78,
     "frame": 0,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9284,8 +9275,7 @@
     "label": 78,
     "frame": 0,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9296,8 +9286,7 @@
     "label": 80,
     "frame": 0,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9308,8 +9297,7 @@
     "label": 80,
     "frame": 0,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9320,8 +9308,7 @@
     "label": 90,
     "frame": 0,
     "group": 0,
-    "source": "manual",
-    "score": 1.0
+    "source": "manual"
   }
 },
 {
@@ -9332,8 +9319,7 @@
     "label": 80,
     "frame": 0,
     "group": 0,
-    "source": "file",
-    "score": 1.0
+    "source": "file"
   }
 },
 {
@@ -9455,14 +9441,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "223.39453125, 226.0751953125, 513.7663269042969, 377.9619903564453",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9474,14 +9460,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "63.0791015625, 139.75390625, 132.19337349397574, 112.3867469879533, 189.71144578313397, 159.23614457831354, 191.1030120481937, 246.9048192771097, 86.73554216867524, 335.5012048192784, 32.00060240964012, 250.15180722891637",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9493,14 +9479,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "83.0244140625, 216.75390625, 112.24759036144678, 162.48313253012202, 167.44638554216908, 183.35662650602535, 149.35602409638705, 252.0072289156633, 84.41626506024113, 292.8265060240974, 72.81987951807241, 258.9650602409638",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9512,14 +9498,14 @@
     "frame": 2,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "24.443359375, 107.2275390625, 84.91109877913368, 61.125083240844106, 169.4316315205324, 75.1561598224198, 226.5581576026634, 113.90865704772477, 240.5892341842391, 205.77880133185317, 210.52264150943483, 270.9230854605994",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9531,14 +9517,14 @@
     "frame": 22,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "148.94921875, 285.6865234375, 313.515094339622, 400.32830188679145, 217.36415094339463, 585.2339622641503, 64.81698113207494, 499.25283018867776",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9550,14 +9536,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "448.3779296875, 356.4892578125, 438.2558352402775, 761.3861556064112, 744.1780320366161, 319.37356979405195, 446.1288329519466, 163.03832951945333",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9569,14 +9555,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "364.0361328125, 528.87890625, 609.5286041189956, 586.544622425632, 835.2494279176244, 360.0000000000018, 543.6247139588122, 175.4691075514893, 326.9656750572103, 192.76887871853796, 244.58581235698148, 319.63386727689067",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9588,14 +9574,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "440.0439453125, 84.0791015625, 71.83311938382576, 249.81514762516053, 380.4441591784325, 526.585365853658, 677.6251604621302, 260.42875481386363, 629.4557124518615, 127.35044929396645",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9607,14 +9593,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "65.6189987163034, 100.96585365853753, 142.12734274711147, 362.6243902439037",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9626,14 +9612,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "100.14453125, 246.03515625, 408.8692551505537, 327.5483359746413, 588.5839936608554, 289.0380348652925, 623.8851030110927, 183.77654516640177, 329.2812995245622, 71.45483359746322",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9645,14 +9631,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "106.361328125, 85.150390625, 240.083984375, 241.263671875",
     "rotation": 45.9,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9664,14 +9650,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "414.29522752496996, 124.8035516093205, 522.2641509433943, 286.75693673695605",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9683,14 +9669,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "skeleton",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "[]",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9702,14 +9688,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "135.8260869565238, 118.10276296228554",
     "rotation": 0.0,
-    "parent": 36
+    "parent": 36,
+    "score": 1.0
   }
 },
 {
@@ -9721,14 +9707,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "172.10450871201368, 274.6245183225243",
     "rotation": 0.0,
-    "parent": 36
+    "parent": 36,
+    "score": 1.0
   }
 },
 {
@@ -9740,14 +9726,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "259.91862203681984, 67.8260869565238",
     "rotation": 0.0,
-    "parent": 36
+    "parent": 36,
+    "score": 1.0
   }
 },
 {
@@ -9759,14 +9745,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "283.65217391304554, 276.52173913043686",
     "rotation": 0.0,
-    "parent": 36
+    "parent": 36,
+    "score": 1.0
   }
 },
 {
@@ -9778,14 +9764,14 @@
     "frame": 15,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "53.062929061787145, 301.6390160183091, 197.94851258581548, 763.3266590389048",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9797,14 +9783,14 @@
     "frame": 16,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "172.0810546875, 105.990234375, 285.97262095255974, 138.40000000000146",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9816,14 +9802,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "120.81927710843593, 213.52074966532928, 258.7576974564945, 643.614457831327",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9835,14 +9821,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "479.97322623828586, 408.0053547523421, 942.6238286479238, 513.3868808567604",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9854,14 +9840,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "106.361328125, 85.150390625, 240.083984375, 241.263671875",
     "rotation": 45.9,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9873,14 +9859,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "414.29522752496996, 124.8035516093205, 522.2641509433943, 286.75693673695605",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9892,14 +9878,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "skeleton",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "[]",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -9911,14 +9897,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "136.46993006993034, 138.72697241590762",
     "rotation": 0.0,
-    "parent": 49
+    "parent": 49,
+    "score": 1.0
   }
 },
 {
@@ -9930,14 +9916,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "192.9001336620433, 421.9659673659692",
     "rotation": 0.0,
-    "parent": 49
+    "parent": 49,
+    "score": 1.0
   }
 },
 {
@@ -9949,14 +9935,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "326.2062528608664, 107.42983682983868",
     "rotation": 0.0,
-    "parent": 49
+    "parent": 49,
+    "score": 1.0
   }
 },
 {
@@ -9968,14 +9954,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "412.07832167832197, 337.46374412038085",
     "rotation": 0.0,
-    "parent": 49
+    "parent": 49,
+    "score": 1.0
   }
 },
 {
@@ -9987,14 +9973,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "244.32906271072352, 57.53054619015711, 340.34389750505943, 191.28914362778414",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10006,14 +9992,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "424.4396493594086, 86.6660822656795, 664.8078219824692, 251.54672960215976",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10025,14 +10011,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "35.913636363637124, 80.58636363636288, 94.8227272727272, 170.58636363636288",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10044,14 +10030,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "190.95909090909117, 100.22272727272684, 297.7318181818191, 209.8590909090908",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10063,14 +10049,14 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "42.63157931421483, 51.228199155397306, 106.13274329786509, 138.0929989443539",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10082,14 +10068,14 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "skeleton",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "[]",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10101,14 +10087,14 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "103.73647295885894, 51.085564225393554",
     "rotation": 0.0,
-    "parent": 59
+    "parent": 59,
+    "score": 1.0
   }
 },
 {
@@ -10120,14 +10106,14 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "125.86783527366472, 101.86367376801435",
     "rotation": 0.0,
-    "parent": 59
+    "parent": 59,
+    "score": 1.0
   }
 },
 {
@@ -10139,14 +10125,14 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "155.7276059652392, 30.260833689097126",
     "rotation": 0.0,
-    "parent": 59
+    "parent": 59,
+    "score": 1.0
   }
 },
 {
@@ -10158,14 +10144,14 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "199.28775272671066, 114.13029555429613",
     "rotation": 0.0,
-    "parent": 59
+    "parent": 59,
+    "score": 1.0
   }
 },
 {
@@ -10177,14 +10163,14 @@
     "frame": 0,
     "group": 3,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "439.001953125, 238.072265625, 442.27361979103625, 279.29221193910234",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10196,14 +10182,14 @@
     "frame": 0,
     "group": 1,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "109.6181640625, 93.6806640625, 150.7451171875, 154.708984375",
     "rotation": 118.39999999999998,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10215,14 +10201,14 @@
     "frame": 0,
     "group": 3,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "414.140625, 256.392578125, 467.1372624053729, 255.08366924483562",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10234,14 +10220,14 @@
     "frame": 0,
     "group": 4,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "210.00390625, 274.0576171875, 240.10078833736043, 258.3547764811883, 267.10000000000036, 266.40000000000146, 278.7035955631618, 261.62685883520135, 281.32071996591367, 253.77548562694574",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10253,14 +10239,14 @@
     "frame": 0,
     "group": 5,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "227.015625, 87.587890625, 225.052845018663, 153.01643273565423, 283.90000000000146, 158.20000000000073, 251.90000000000146, 121.0",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10272,14 +10258,14 @@
     "frame": 0,
     "group": 2,
     "source": "manual",
-    "score": 1.0,
     "type": "mask",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "37.0, 25.0, 49.0, 32.0, 23.0, 59.0, 19.0, 61.0, 17.0, 63.0, 15.0, 65.0, 14.0, 66.0, 12.0, 68.0, 11.0, 69.0, 10.0, 70.0, 9.0, 70.0, 9.0, 70.0, 9.0, 70.0, 9.0, 71.0, 8.0, 71.0, 8.0, 72.0, 7.0, 72.0, 7.0, 72.0, 7.0, 72.0, 7.0, 72.0, 7.0, 73.0, 6.0, 73.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 4.0, 75.0, 4.0, 75.0, 4.0, 75.0, 3.0, 76.0, 3.0, 76.0, 3.0, 77.0, 2.0, 77.0, 2.0, 77.0, 2.0, 77.0, 2.0, 77.0, 2.0, 77.0, 1.0, 1184.0, 1.0, 77.0, 3.0, 76.0, 4.0, 75.0, 4.0, 75.0, 4.0, 74.0, 5.0, 73.0, 7.0, 71.0, 9.0, 67.0, 13.0, 65.0, 15.0, 9.0, 1.0, 53.0, 29.0, 16.0, 4.0, 29.0, 31.0, 11.0, 16.0, 20.0, 12.0, 458.0, 87.0, 536.0, 158.0",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10291,14 +10277,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "459.5, 81.90000000000146, 545.8000000000011, 155.80020141601562",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10310,14 +10296,14 @@
     "frame": 0,
     "group": 6,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "414.48681640625, 261.001953125, 467.4834538116229, 259.6930442448356",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10329,14 +10315,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 3,
     "points": "502.5, 319.90000000000146, 635.3000000000011, 319.90000000000146, 651.0, 374.7000000000007, 499.90000000000146, 375.5",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10348,14 +10334,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "532.6000000000004, 300.2000000000007, 533.2000000000007, 391.8000000000011, 678.4693480835958, 393.13736007351145, 639.866763142998, 300.8837248764885",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10367,14 +10353,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 3,
     "points": "618.228515625, 215.12753906250146, 688.3285156250004, 284.5275390625011, 690.2463290244214, 278.63711201903425, 626.1000000000004, 206.70000000000073",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10386,14 +10372,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "673.2000000000007, 222.40000000000146, 693.5177345278626, 240.03542476937582, 647.8000000000011, 287.2000000000007, 620.8925323514832, 266.8609498975875",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10405,14 +10391,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "310.763369496879, 196.19874876639187, 339.55173792715505, 228.9128038007966",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10424,14 +10410,14 @@
     "frame": 0,
     "group": 15,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "213.966796875, 46.7294921875, 239.5, 72.30000000000109",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10443,14 +10429,14 @@
     "frame": 0,
     "group": 16,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "147.900390625, 45.4208984375, 171.40000000000146, 70.30000000000109",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10462,14 +10448,14 @@
     "frame": 0,
     "group": 16,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "179.9443359375, 46.0751953125, 206.0, 72.80000000000109",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10481,14 +10467,14 @@
     "frame": 0,
     "group": 16,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "113.80000000000109, 45.400000000001455, 137.3818359375, 69.0",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10500,14 +10486,14 @@
     "frame": 0,
     "group": 12,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "147.8466796875, 17.6083984375, 170.1457031250011, 39.871289443968635",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10519,14 +10505,14 @@
     "frame": 0,
     "group": 7,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "113.80000000000109, 17.600000000000364, 138.65410232543945, 40.47109413146973",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10538,14 +10524,14 @@
     "frame": 0,
     "group": 7,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "179.908203125, 18.216796875, 203.40000000000146, 41.80000000000109",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10557,14 +10543,14 @@
     "frame": 0,
     "group": 11,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "603.9000000000015, 13.654296875, 632.6692943572998, 42.400000000001455",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10576,14 +10562,14 @@
     "frame": 0,
     "group": 11,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "641.2000000000007, 13.0, 670.6457023620605, 42.5",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10595,14 +10581,14 @@
     "frame": 0,
     "group": 11,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "681.0859375, 13.0, 711.3000000000011, 43.20000000000073",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10614,14 +10600,14 @@
     "frame": 0,
     "group": 12,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 1,
     "points": "212.6220703125, 18.9169921875, 236.8000000000011, 42.5",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10633,14 +10619,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "361.0, 302.10000000000036, 368.90000000000146, 316.0, 348.10000000000036, 318.60000000000036",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10652,14 +10638,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "225.70703125, 314.6240234375",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10671,14 +10657,14 @@
     "frame": 0,
     "group": 17,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "60.828125, 302.1923828125",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10690,14 +10676,14 @@
     "frame": 0,
     "group": 17,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "34.65674500649766, 268.16966984208375, 75.22217324915982, 324.43784450126077",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10709,14 +10695,14 @@
     "frame": 0,
     "group": 17,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "50.359375, 283.8720703125",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10728,14 +10714,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "138.0, 339.5, 155.0, 338.8000000000011",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10747,14 +10733,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "43.162109375, 178.533203125, 59.51942683264497, 190.96449996088631, 71.29648664503111, 177.22459684643582, 100.08485507530895, 167.41038033611403",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10766,14 +10752,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "101.3935546875, 200.7783203125, 135.41603451246556, 214.5186195856586, 117.75044479388816, 248.54123682144018, 85.03638975948161, 235.4556148076772, 73.25932994709547, 204.0501219746493",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10785,14 +10771,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "ellipse",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "216.5673828125, 208.00537109375, 252.552734375, 191.6484375",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10804,14 +10790,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "455.359375, 88.2421875, 463.2108659572077, 158.9047260271691, 545.6502846439089, 155.6333205237297, 536.4903492342764, 84.97096164941286",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10823,14 +10809,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "227.015625, 88.2421875, 223.74398310536162, 155.6333205237297, 297.0234663824285, 156.94188272510473, 299.6405907851804, 84.97096164941286, 261.0380058445826, 128.80779539551622",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10842,14 +10828,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "284.591796875, 248.541015625, 264.9636924487113, 261.62685883520135, 242.71813502531586, 251.15836122419205, 219.16401540054358, 270.7867942448356",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10861,14 +10847,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "419.3740234375, 260.318359375, 436.38534082899605, 259.0097344324495, 448.8166817420697, 258.35545333176196, 463.86514705789705, 258.35545333176196",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10880,14 +10866,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "107.28194718287705, 91.51377265629344, 152.42734313035726, 154.32475832235104",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10899,14 +10885,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "362.451171875, 298.9208984375, 345.4402678333481, 317.24075239369085, 368.9943874581204, 315.93219019231583",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10918,14 +10904,14 @@
     "frame": 0,
     "group": 1,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "113.8251953125, 18.234375, 136.0714843750011, 40.5",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10937,14 +10923,14 @@
     "frame": 0,
     "group": 1,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "147.84765625, 18.888671875, 170.06289062500036, 42.408593750000364",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10956,14 +10942,14 @@
     "frame": 0,
     "group": 2,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "180.5615234375, 19.54296875, 202.1408203125011, 41.771484375",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10975,14 +10961,14 @@
     "frame": 0,
     "group": 2,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "213.2763671875, 18.234375, 236.82363281250036, 44.371484375000364",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -10994,14 +10980,14 @@
     "frame": 0,
     "group": 3,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "567.9000000000015, 14.30859375, 595.3747291564941, 43.80000000000109",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11013,14 +10999,14 @@
     "frame": 0,
     "group": 3,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "603.9000000000015, 13.654296875, 632.0144577026367, 43.100000000000364",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11032,14 +11018,14 @@
     "frame": 0,
     "group": 3,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "643.8000000000011, 12.345703125, 671.9000015258789, 43.80000000000109",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11051,14 +11037,14 @@
     "frame": 0,
     "group": 3,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "681.0859375, 14.30859375, 711.8000000000011, 43.80000000000109",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11070,14 +11056,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "112.5166015625, 47.0224609375, 138.03356448933664, 69.92229946158295",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11089,14 +11075,14 @@
     "frame": 0,
     "group": 4,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "147.84737542554103, 47.02265780950256, 172.05577615100083, 72.5396207363392",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11108,14 +11094,14 @@
     "frame": 0,
     "group": 4,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "181.21571156063328, 47.67693891019189, 205.42411228609308, 73.84818293771605",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11127,14 +11113,14 @@
     "frame": 0,
     "group": 4,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "213.2754854943505, 47.67693891019189, 238.13816732049781, 73.84818293771605",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11146,14 +11132,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "527.0, 319.60000000000036, 530.3000000000011, 372.60000000000036, 500.83202924677244, 375.2100579146554, 502.7948725488368, 319.5961643561677",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11165,14 +11151,14 @@
     "frame": 0,
     "group": 5,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "672.5810546875, 219.0986328125, 692.2092511980463, 239.3813014118059, 671.2722559760259, 257.70117223107445, 655.5695095595111, 239.3813014118059",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11184,14 +11170,14 @@
     "frame": 0,
     "group": 5,
     "source": "manual",
-    "score": 1.0,
     "type": "mask",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "21.0, 5.0, 32.0, 10.0, 30.0, 12.0, 27.0, 15.0, 25.0, 17.0, 23.0, 19.0, 21.0, 21.0, 19.0, 23.0, 17.0, 25.0, 14.0, 28.0, 12.0, 30.0, 10.0, 31.0, 9.0, 33.0, 8.0, 34.0, 6.0, 36.0, 5.0, 36.0, 5.0, 36.0, 4.0, 38.0, 2.0, 39.0, 2.0, 326.0, 2.0, 38.0, 3.0, 38.0, 3.0, 37.0, 5.0, 35.0, 6.0, 34.0, 8.0, 31.0, 10.0, 29.0, 13.0, 26.0, 16.0, 23.0, 19.0, 21.0, 21.0, 18.0, 24.0, 15.0, 27.0, 13.0, 29.0, 9.0, 22.0, 627.0, 244.0, 667.0, 284.0",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11203,14 +11189,14 @@
     "frame": 0,
     "group": 7,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "37.2744140625, 267.5166015625, 83.07409111066772, 328.36474392649325",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11222,14 +11208,14 @@
     "frame": 0,
     "group": 7,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "46.43359375, 290.4150390625",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11241,14 +11227,14 @@
     "frame": 0,
     "group": 7,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "64.75390625, 302.1923828125",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11260,14 +11246,14 @@
     "frame": 0,
     "group": 7,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "47.7421875, 309.3896484375",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11279,14 +11265,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "140.70000000000073, 338.8000000000011",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11298,14 +11284,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "225.0, 315.2000000000007",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11317,14 +11303,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "213.076171875, 27.58203125, 242.67217060073926, 54.958764913635605, 220.4750788758156, 73.4563413510732, 182.00011988594815, 63.097698546107495, 165.72225262100437, 25.36264261373799",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11336,14 +11322,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "ellipse",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "359.22314453125, 57.5439453125, 381.7900390625, 37.9365234375",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11355,14 +11341,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "cuboid",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "503.8579498973395, 51.35924962614954, 503.8579498973395, 95.65343307599687, 574.1487403595966, 51.25924962614954, 574.1487403595966, 95.65343307599687, 581.1778194058222, 46.91983128116481, 581.1778194058222, 91.11401473101215, 510.88702894356516, 46.91983128116481, 510.88702894356516, 91.11401473101215",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11374,14 +11360,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "mask",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "45.0, 8.0, 64.0, 5.0, 7.0, 11.0, 61.0, 7.0, 5.0, 14.0, 58.0, 9.0, 3.0, 16.0, 56.0, 11.0, 2.0, 18.0, 54.0, 11.0, 2.0, 20.0, 52.0, 35.0, 50.0, 36.0, 49.0, 38.0, 47.0, 39.0, 45.0, 42.0, 43.0, 43.0, 42.0, 45.0, 40.0, 46.0, 39.0, 47.0, 16.0, 7.0, 15.0, 48.0, 14.0, 9.0, 14.0, 48.0, 13.0, 12.0, 12.0, 13.0, 11.0, 25.0, 11.0, 14.0, 10.0, 13.0, 14.0, 24.0, 10.0, 15.0, 9.0, 13.0, 16.0, 23.0, 8.0, 17.0, 7.0, 14.0, 16.0, 23.0, 8.0, 18.0, 5.0, 15.0, 17.0, 23.0, 6.0, 19.0, 5.0, 15.0, 18.0, 23.0, 4.0, 21.0, 3.0, 16.0, 19.0, 23.0, 3.0, 22.0, 2.0, 16.0, 19.0, 23.0, 3.0, 40.0, 19.0, 24.0, 2.0, 40.0, 20.0, 23.0, 2.0, 41.0, 19.0, 23.0, 2.0, 41.0, 19.0, 11.0, 1.0, 12.0, 1.0, 11.0, 1.0, 29.0, 19.0, 11.0, 1.0, 12.0, 1.0, 11.0, 1.0, 29.0, 19.0, 11.0, 2.0, 23.0, 2.0, 29.0, 18.0, 11.0, 2.0, 23.0, 3.0, 28.0, 18.0, 11.0, 2.0, 24.0, 3.0, 28.0, 17.0, 11.0, 3.0, 24.0, 3.0, 27.0, 16.0, 12.0, 3.0, 25.0, 2.0, 28.0, 15.0, 12.0, 2.0, 12.0, 1.0, 43.0, 14.0, 12.0, 3.0, 12.0, 2.0, 43.0, 13.0, 12.0, 3.0, 12.0, 2.0, 44.0, 11.0, 13.0, 3.0, 12.0, 3.0, 43.0, 11.0, 13.0, 3.0, 11.0, 4.0, 43.0, 10.0, 13.0, 4.0, 11.0, 5.0, 44.0, 8.0, 12.0, 5.0, 11.0, 6.0, 44.0, 7.0, 12.0, 5.0, 11.0, 7.0, 45.0, 4.0, 12.0, 5.0, 12.0, 9.0, 14.0, 3.0, 27.0, 3.0, 12.0, 5.0, 12.0, 11.0, 9.0, 7.0, 41.0, 5.0, 12.0, 12.0, 7.0, 9.0, 40.0, 5.0, 12.0, 28.0, 39.0, 5.0, 12.0, 30.0, 38.0, 5.0, 11.0, 32.0, 37.0, 5.0, 11.0, 33.0, 35.0, 5.0, 12.0, 34.0, 33.0, 6.0, 12.0, 35.0, 32.0, 6.0, 11.0, 37.0, 31.0, 6.0, 11.0, 39.0, 29.0, 5.0, 12.0, 40.0, 28.0, 5.0, 12.0, 42.0, 26.0, 4.0, 13.0, 44.0, 40.0, 46.0, 39.0, 47.0, 38.0, 49.0, 35.0, 57.0, 27.0, 60.0, 24.0, 62.0, 22.0, 65.0, 19.0, 68.0, 15.0, 71.0, 13.0, 77.0, 7.0, 14.0, 23.0, 57.0, 107.0, 124.0",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11393,14 +11379,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "276.7080078125, 105.2724609375, 301.1245121430384, 121.5500400884066, 273.74809901563276, 137.08800429585244, 252.29091034820522, 122.28994314590454",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11412,14 +11398,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "393.6123046875, 109.7119140625, 417.28929217013683, 139.30771346834626, 432.08735332008655, 123.02984620340249, 461.68347561998416, 140.0476165258424",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11431,14 +11417,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "420.9888074576247, 33.50157624620988, 450.58492975752233, 62.357795488609554",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11450,14 +11436,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "skeleton",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "[]",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11469,14 +11455,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "skeleton",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "[]",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11488,14 +11474,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": true,
     "outside": false,
     "z_order": 0,
     "points": "694.826171875, 75.810546875",
     "rotation": 0.0,
-    "parent": 131
+    "parent": 131,
+    "score": 1.0
   }
 },
 {
@@ -11507,14 +11493,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": true,
     "outside": false,
     "z_order": 0,
     "points": "741.2801300238552, 102.21971169729295",
     "rotation": 0.0,
-    "parent": 131
+    "parent": 131,
+    "score": 1.0
   }
 },
 {
@@ -11526,14 +11512,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": true,
     "z_order": 0,
     "points": "695.9322103203158, 102.5765956792493",
     "rotation": 0.0,
-    "parent": 131
+    "parent": 131,
+    "score": 1.0
   }
 },
 {
@@ -11545,14 +11531,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": true,
     "outside": false,
     "z_order": 0,
     "points": "697.5912898439183, 126.84447272867328",
     "rotation": 0.0,
-    "parent": 131
+    "parent": 131,
+    "score": 1.0
   }
 },
 {
@@ -11564,14 +11550,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "582.2900390625, 68.61328125",
     "rotation": 0.0,
-    "parent": 132
+    "parent": 132,
+    "score": 1.0
   }
 },
 {
@@ -11583,14 +11569,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "614.3498129962172, 98.06965739794214",
     "rotation": 0.0,
-    "parent": 132
+    "parent": 132,
+    "score": 1.0
   }
 },
 {
@@ -11602,14 +11588,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "583.0533613698299, 98.46772030089414",
     "rotation": 0.0,
-    "parent": 132
+    "parent": 132,
+    "score": 1.0
   }
 },
 {
@@ -11621,14 +11607,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": true,
     "z_order": 0,
     "points": "584.1983599142877, 125.53573700986453",
     "rotation": 0.0,
-    "parent": 132
+    "parent": 132,
+    "score": 1.0
   }
 },
 {
@@ -11640,14 +11626,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "skeleton",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "[]",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11659,14 +11645,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "skeleton",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "[]",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11678,14 +11664,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "616.3137942416288, 65.9970703125",
     "rotation": 0.0,
-    "parent": 141
+    "parent": 141,
+    "score": 1.0
   }
 },
 {
@@ -11697,14 +11683,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "616.9673812833025, 96.87642507954297",
     "rotation": 0.0,
-    "parent": 141
+    "parent": 141,
+    "score": 1.0
   }
 },
 {
@@ -11716,14 +11702,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "585.0322265625, 97.32024233915763",
     "rotation": 0.0,
-    "parent": 141
+    "parent": 141,
+    "score": 1.0
   }
 },
 {
@@ -11735,14 +11721,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": true,
     "z_order": 4,
     "points": "615.6438723666288, 128.1533203125",
     "rotation": 0.0,
-    "parent": 141
+    "parent": 141,
+    "score": 1.0
   }
 },
 {
@@ -11754,14 +11740,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": true,
     "z_order": 4,
     "points": "698.337805670104, 67.95976734549367",
     "rotation": 0.0,
-    "parent": 142
+    "parent": 142,
+    "score": 1.0
   }
 },
 {
@@ -11773,14 +11759,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 4,
     "points": "738.9471427604549, 102.15625",
     "rotation": 0.0,
-    "parent": 142
+    "parent": 142,
+    "score": 1.0
   }
 },
 {
@@ -11792,14 +11778,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": true,
     "outside": false,
     "z_order": 4,
     "points": "699.3046875, 102.618369002279",
     "rotation": 0.0,
-    "parent": 142
+    "parent": 142,
+    "score": 1.0
   }
 },
 {
@@ -11811,14 +11797,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": true,
     "z_order": 4,
     "points": "700.7550293506938, 134.04215851499248",
     "rotation": 0.0,
-    "parent": 142
+    "parent": 142,
+    "score": 1.0
   }
 },
 {
@@ -11830,14 +11816,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "44.898003339767456, 63.52153968811035, 426.46817803382874, 271.5955777168274",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11849,14 +11835,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "43.79357561469078, 28.97564932703972, 136.88880816102028, 164.59188774228096",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11868,14 +11854,14 @@
     "frame": 2,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "108.50460643768383, 165.35334844589306, 795.2833482742317, 679.8631751060493",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11887,14 +11873,14 @@
     "frame": 3,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "40.11789474487341, 128.13260302543677, 104.97083768844641, 182.6914280414585",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11906,14 +11892,14 @@
     "frame": 4,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "19.106867015361786, 71.99510070085489, 200.8463572859764, 196.5581221222874",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11925,14 +11911,14 @@
     "frame": 5,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "55.147965204716456, 27.993821200729144, 354.91261003613545, 129.34078386128022",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11944,14 +11930,14 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "55.67655109167208, 27.202181529999507, 314.5855129838001, 333.9054008126259",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11963,14 +11949,14 @@
     "frame": 7,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "30.75535711050179, 51.1681019723419, 245.49246947169377, 374.42159963250197",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -11982,14 +11968,14 @@
     "frame": 8,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "78.72917294502258, 28.6186763048172, 456.07723474502563, 214.25403320789337",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12001,14 +11987,14 @@
     "frame": 9,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "40.30229317843805, 20.90870136916601, 277.9420801371325, 141.0943407505747",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12020,14 +12006,14 @@
     "frame": 10,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "37.5426108896736, 44.316280591488976, 109.0776273667816, 115.21824382543673",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12039,14 +12025,14 @@
     "frame": 4,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "24.722413063049316, 37.791320228576296, 270.78543078899384, 610.5770170927044",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12058,14 +12044,14 @@
     "frame": 5,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "87.86122530400826, 22.648517262936366, 277.2987968593843, 128.69934738874508",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12077,14 +12063,14 @@
     "frame": 6,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "8.219268488885064, 76.40050053596497, 46.97136907577624, 76.9621251821518",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12096,14 +12082,14 @@
     "frame": 7,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "40.372303777934576, 55.821463263035184, 232.15283377170636, 366.6659974813465",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12115,14 +12101,14 @@
     "frame": 8,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "114.91701781749725, 49.88939428329468, 426.5192240476608, 201.82309412956238",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12134,14 +12120,14 @@
     "frame": 9,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "69.46096818744991, 42.89721039235519, 143.9282634973515, 85.61091347932779",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12153,14 +12139,14 @@
     "frame": 10,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "35.64345116019285, 190.86810638308634, 41.340930348635084, 213.02496989369502",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12172,14 +12158,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "19.650000000003274,13.100000000002183,31.850000000004002,18.900000000001455",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12191,14 +12177,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "18.650000000003274,10.500000000001819,28.650000000003274,15.200000000002547",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12210,14 +12196,14 @@
     "frame": 1,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "18.850000000002183,19.50000000000182,27.05000000000291,24.900000000001455",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12229,14 +12215,14 @@
     "frame": 5,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "26.25000000000182,16.50000000000182,40.95000000000255,23.900000000001455",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12248,14 +12234,14 @@
     "frame": 8,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "14.650000000003274,10.000000000001819,25.750000000003638,17.30000000000109",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12267,14 +12253,14 @@
     "frame": 8,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "30.350000000002183,18.700000000002547,43.05000000000291,26.400000000003274",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12286,14 +12272,14 @@
     "frame": 9,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "9.200000000002547,34.35000000000218,21.900000000003274,38.55000000000291",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12305,14 +12291,14 @@
     "frame": 9,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "40.900390625,29.0498046875,48.80000000000291,30.350000000002183,45.10000000000218,39.25000000000182,45.70000000000255,24.450000000002547",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12324,14 +12310,14 @@
     "frame": 12,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "16.791015625,32.8505859375,27.858705213058784,37.01258996859542,21.633141273523506,39.77950727505595",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12343,14 +12329,14 @@
     "frame": 16,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "29.0498046875,14.2998046875,30.350000000002183,22.00000000000182,20.650000000003274,21.600000000002183,20.650000000003274,11.30000000000291",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12362,14 +12348,14 @@
     "frame": 17,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "51.2001953125,10.900390625,56.60000000000218,15.700000000002547,48.400000000003274,20.400000000003274",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12381,14 +12367,14 @@
     "frame": 20,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "37.2998046875,7.7001953125,42.400000000003274,11.900000000003274,35.80000000000291,17.200000000002547,28.400000000003274,8.80000000000291,37.400000000003274,12.100000000002183",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12400,14 +12386,14 @@
     "frame": 20,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "17.600000000002183,14.900000000003274,27.200000000002547,21.600000000004002",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12419,14 +12405,14 @@
     "frame": 21,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "43.15465253950242,24.59525439814206,55.395253809205315,35.071444674014856",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12438,14 +12424,14 @@
     "frame": 22,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "38.50000000000182,9.600000000002183,51.80000000000109,17.100000000002183",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12457,14 +12443,14 @@
     "frame": 22,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "52.10000000000218,17.30000000000291,59.400000000001455,21.500000000003638",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12476,14 +12462,14 @@
     "frame": 23,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "17.650000000003274,11.30000000000291,30.55000000000291,21.700000000002547",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12495,14 +12481,14 @@
     "frame": 24,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "18.850000000002183,12.000000000001819,25.850000000002183,19.50000000000182",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12514,14 +12500,14 @@
     "frame": 24,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "26.150000000003274,25.00000000000182,34.150000000003274,34.50000000000182",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12533,14 +12519,14 @@
     "frame": 25,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "24.600000000002183,11.500000000001819,37.10000000000218,18.700000000002547",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12552,14 +12538,14 @@
     "frame": 27,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "17.863216443472993,36.43614886308387,41.266725327279346,42.765472201610464",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12571,14 +12557,14 @@
     "frame": 27,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "34.349609375,52.806640625,27.086274131672326,63.1830161588623,40.229131337355284,67.44868033965395,48.87574792004307,59.03264019917333,45.53238950807099,53.3835173651496",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12590,14 +12576,14 @@
     "frame": 8,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "160.71132684643453,59.61108186333331,254.8470583598446,111.65360009838878",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12609,14 +12595,14 @@
     "frame": 8,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "434.6998787309949,78.74436062622226,502.0490199763608,127.72555425921564",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12628,14 +12614,14 @@
     "frame": 9,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "245.67336843180783,162.98163621791718,334.90269485918907,215.98915686784676",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12647,14 +12633,14 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "472.58377068151276,63.05507204065361,535.3409250237855,110.50560337261595",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12666,14 +12652,14 @@
     "frame": 5,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "183.389531668141,181.09253910664302,247.88201512555497,226.14893165908325",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12685,14 +12671,14 @@
     "frame": 5,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "344.1790109729245,311.8444233764694,391.8857795578606,376.3369068338834",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12704,14 +12690,14 @@
     "frame": 5,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "169.25419282815892,210.24667546410456,239.0474283505664,239.4008118215661",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12723,14 +12709,14 @@
     "frame": 5,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "336.22788287543517,361.3181093164021,398.9534489778507,424.9271340963169",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12742,14 +12728,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "300.6455078125,100.701171875,400.5,200.10000000000036",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12761,14 +12747,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "300.76953125,101.1005859375,400.40000000000146,168.20000000000073",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12780,14 +12766,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "500.689453125,101.70703125,599.7000000000007,136.70000000000073",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12799,14 +12785,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "96.42351020313072,99.40830169014043,145.4047038361241,134.61353461385443",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12818,14 +12804,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "189.7939453125,99.408203125,224.23381233922373,98.64297053962582,208.16185817839687,130.0215477107613",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12837,14 +12823,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "263.265625,116.2451171875,291.58295358458963,103.23495744271895,310.7162323474786,128.49088540973025,339.7988160670684,107.06161319529565",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12856,14 +12842,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "277.0419921875,68.029296875,290.817622434075,38.94714079941332,307.6549077454165,68.02972451900314,322.1961996052123,40.47780310044436",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12875,14 +12861,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "ellipse",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "399.884765625,117.7861328125,420.931640625,97.1220703125",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12894,14 +12880,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "cuboid",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "502.049255907923,93.39047190463862,502.049255907923,137.6748346606255,545.6731314873086,93.29541089258055,545.6731314873086,137.6748346606455,571.4791182468543,81.07113365704572,571.4791182468543,124.59332935967359,528.6418953937628,81.1900421050359,528.6418953937628,124.62080992126721",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12913,14 +12899,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "mask",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "127,2,151,9,143,17,136,24,129,31,122,38,115,46,56,4,49,51,53,7,48,52,51,10,47,52,48,14,46,52,46,17,45,52,43,21,44,52,41,24,43,52,38,27,43,52,36,30,42,52,33,34,42,51,31,37,41,51,28,41,40,52,25,43,40,52,23,46,39,52,20,50,38,52,18,53,37,52,15,57,36,52,13,60,35,52,10,63,35,52,8,66,34,52,5,70,34,51,3,73,33,51,1,76,32,48,2,79,31,46,4,79,31,44,5,81,30,41,8,82,29,39,9,84,28,37,10,86,27,34,13,87,26,32,14,88,26,30,16,51,1,34,29,26,18,50,3,33,30,24,19,49,4,32,32,22,21,47,6,30,34,19,23,46,7,30,35,17,25,44,9,28,37,15,26,43,10,27,39,12,28,42,12,26,40,10,30,41,12,25,42,8,31,40,14,24,43,5,34,38,15,23,46,2,35,37,17,21,84,36,18,21,85,34,20,19,141,18,141,17,143,15,144,15,145,13,146,12,148,11,148,10,150,9,150,8,152,6,153,6,154,4,155,4,156,2,157,1,87,375,13,533,80",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12932,14 +12918,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "96.42351020313072,99.40830169014043,145.4047038361241,134.61353461385443",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12951,14 +12937,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "189.7939453125,99.408203125,219.60000000000036,108.60000000000036,208.16185817839687,130.0215477107613",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12970,14 +12956,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "267.90000000000146,123.90000000000146,291.58295358458963,103.23495744271895,310.7162323474786,128.49088540973025,323,103.20000000000073",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -12989,14 +12975,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "277.0419921875,68.029296875,290.817622434075,38.94714079941332,322.1961996052123,40.47780310044436",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13008,14 +12994,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "ellipse",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "412.1189453125007,126.21103515624964,445.40000000000146,96.72207031249854",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13027,14 +13013,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "cuboid",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "502.049255907923,93.39047190463316,502.049255907923,152.18125991462875,559.4494986748086,93.26539073985441,559.4494986748086,152.22223330696215,585.0063249908471,81.0335845571608,585.0063249908471,138.85086779521043,528.6418953937846,81.19004210502862,528.6418953937846,138.84761929236265",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13046,14 +13032,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "mask",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "127,2,151,9,143,17,136,24,129,31,122,38,115,46,56,4,49,51,53,7,48,52,51,10,47,52,48,14,46,52,46,17,45,52,43,21,44,52,41,24,43,52,38,27,43,52,36,30,42,52,33,34,42,51,31,37,41,51,28,41,40,52,25,43,40,52,23,46,39,52,20,50,38,52,18,53,37,52,15,57,36,52,13,60,35,52,10,63,35,52,8,66,34,52,5,70,34,51,3,73,33,51,1,76,32,48,2,79,31,46,4,79,31,44,5,81,30,41,8,82,29,39,9,84,28,37,10,86,27,34,13,87,26,32,14,88,26,30,16,51,1,34,29,26,18,50,3,33,30,24,19,49,4,32,32,22,21,47,6,30,34,19,23,46,7,30,35,17,25,44,9,28,37,15,26,43,10,27,39,12,28,42,12,26,40,10,30,41,12,25,42,8,31,40,14,24,43,5,34,38,15,23,46,2,35,37,17,21,84,36,18,21,85,34,20,19,141,18,141,17,143,15,144,15,145,13,146,12,148,11,148,10,150,9,150,8,152,6,153,6,154,4,155,4,156,2,157,1,87,375,13,533,80",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13065,14 +13051,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "96.423828125,78.70000000000073,145.40502175799338,134.6134376525879",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13084,14 +13070,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "189,113.20000000000073,224.23381233922373,98.64297053962582,208.16185817839687,130.0215477107613",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13103,14 +13089,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "271.7000000000007,119.30000000000109,304.60000000000036,104,310.7162323474786,128.49088540973025,339.7988160670684,107.06161319529565",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13122,14 +13108,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "277.0419921875,68.029296875,290.817622434075,38.94714079941332,307.6549077454165,68.02972451900314",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13141,14 +13127,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "ellipse",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "399.884765625,108.27509765625109,420.931640625,78.45000000000073",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13160,14 +13146,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "cuboid",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "502.049255907923,101.79330723501334,502.049255907923,137.6748346606273,537.2541861748086,101.73114849558442,537.2541861748086,137.6748346606455,563.2122646078951,89.3489492958688,563.2122646078951,124.59863263951047,528.6418953937591,89.43091015684695,528.6418953937591,124.6208099212563",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13179,14 +13165,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "mask",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "127,2,151,9,143,17,136,24,129,31,122,38,115,46,56,4,49,51,53,7,48,52,51,10,47,52,48,14,46,52,46,17,45,52,43,21,44,52,41,24,43,52,38,27,43,52,36,30,42,52,33,34,42,51,31,37,41,51,28,41,40,52,25,43,40,52,23,46,39,52,20,50,38,52,18,53,37,52,15,57,36,52,13,60,35,52,10,63,35,52,8,66,34,52,5,70,34,51,3,73,33,51,1,76,32,48,2,79,31,46,4,79,31,44,5,81,30,41,8,82,29,39,9,84,28,37,10,86,27,34,13,87,26,32,14,88,26,30,16,51,1,34,29,26,18,50,3,33,30,24,19,49,4,32,32,22,21,47,6,30,34,19,23,46,7,30,35,17,25,44,9,28,37,15,26,43,10,27,39,12,28,42,12,26,40,10,30,41,12,25,42,8,31,40,14,24,43,5,34,38,15,23,46,2,35,37,17,21,84,36,18,21,85,34,20,19,141,18,141,17,143,15,144,15,145,13,146,12,148,11,148,10,150,9,150,8,152,6,153,6,154,4,155,4,156,2,157,1,87,375,13,533,80",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13198,14 +13184,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "179.44667968750036,160.21328125000036,229.94667968750036,141.9132812500011,212.37865505339687,167.1504539607613",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13217,14 +13203,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "288.52924264708963,139.59823869271895,307.6625214099786,164.85416665973025,336.7451051295684,143.42489444529565",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13236,14 +13222,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "216.205078125,45.8447265625,246.8179936829165,45.84515420650314,261.3592855427123,18.293232787944362",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13255,14 +13241,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "mask",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "127,3,151,10,143,18,136,25,129,32,122,39,115,47,109,52,108,53,107,54,107,54,107,54,107,54,107,54,38,1,68,54,36,3,68,54,33,5,69,54,31,6,71,53,28,9,71,54,25,10,72,54,23,11,73,54,20,14,35,2,36,54,18,15,34,5,35,54,15,17,34,7,34,54,13,19,32,10,33,54,10,21,32,11,33,54,8,22,31,14,32,54,5,25,29,17,31,54,3,26,29,19,31,53,1,27,28,22,30,81,26,25,29,49,2,29,26,26,29,47,4,29,24,29,28,45,5,29,24,31,27,42,8,28,24,33,26,40,9,29,23,35,25,38,10,29,23,37,24,35,13,28,23,38,24,33,14,29,22,38,25,31,16,28,23,36,28,27,18,28,25,34,29,25,19,29,24,33,31,23,21,28,25,31,33,20,23,28,25,31,34,18,25,28,25,29,36,16,26,28,25,28,38,13,28,28,26,27,39,11,30,28,25,26,41,9,31,28,26,25,42,6,34,27,26,24,45,3,35,28,26,22,84,28,26,22,85,28,26,20,141,19,141,18,143,16,144,16,145,14,146,13,148,12,148,11,150,10,150,9,152,7,153,7,154,5,155,5,156,3,157,2,87,616,13,775,81",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13274,14 +13260,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "96.42,78.7,145.41,134.61",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13293,14 +13279,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "189.79,99.41,224.23,98.64,208.16,130.02",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13312,14 +13298,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "polygon",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "179.45,160.21,229.95,141.91,212.38,167.15",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13331,14 +13317,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "271.7,119.3,304.6,104.0,310.72,128.49,339.8,107.06",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13350,14 +13336,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "polyline",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "288.53,139.6,307.66,164.85,336.75,143.42",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13369,14 +13355,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "277.04,68.03,290.82,38.95,307.65,68.03,322.2,40.48",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13388,14 +13374,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "216.21,45.84,246.82,45.85,261.36,18.29",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13407,14 +13393,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "ellipse",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "399.885,108.275,420.93,78.45",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13426,14 +13412,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "mask",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "127,2,151,9,143,17,136,24,129,31,122,38,115,46,56,4,49,51,53,7,48,52,51,10,47,52,48,14,46,52,46,17,45,52,43,21,44,52,41,24,43,52,38,27,43,52,36,30,42,52,33,34,42,51,31,37,41,51,28,41,40,52,25,43,40,52,23,46,39,52,20,50,38,52,18,53,37,52,15,57,36,52,13,60,35,52,10,63,35,52,8,66,34,52,5,70,34,51,3,73,33,51,1,76,32,48,2,79,31,46,4,79,31,44,5,81,30,41,8,82,29,39,9,84,28,37,10,86,27,34,13,87,26,32,14,88,26,30,16,51,1,34,29,26,18,50,3,33,30,24,19,49,4,32,32,22,21,47,6,30,34,19,23,46,7,30,35,17,25,44,9,28,37,15,26,43,10,27,39,12,28,42,12,26,40,10,30,41,12,25,42,8,31,40,14,24,43,5,34,38,15,23,46,2,35,37,17,21,84,36,18,21,85,34,20,19,141,18,141,17,143,15,144,15,145,13,146,12,148,11,148,10,150,9,150,8,152,6,153,6,154,4,155,4,156,2,157,1,87,375,13,533,80",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13445,14 +13431,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "mask",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "127,3,151,10,143,18,136,25,129,32,122,39,115,47,109,52,108,53,107,54,107,54,107,54,107,54,107,54,38,1,68,54,36,3,68,54,33,5,69,54,31,6,71,53,28,9,71,54,25,10,72,54,23,11,73,54,20,14,35,2,36,54,18,15,34,5,35,54,15,17,34,7,34,54,13,19,32,10,33,54,10,21,32,11,33,54,8,22,31,14,32,54,5,25,29,17,31,54,3,26,29,19,31,53,1,27,28,22,30,81,26,25,29,49,2,29,26,26,29,47,4,29,24,29,28,45,5,29,24,31,27,42,8,28,24,33,26,40,9,29,23,35,25,38,10,29,23,37,24,35,13,28,23,38,24,33,14,29,22,38,25,31,16,28,23,36,28,27,18,28,25,34,29,25,19,29,24,33,31,23,21,28,25,31,33,20,23,28,25,31,34,18,25,28,25,29,36,16,26,28,25,28,38,13,28,28,26,27,39,11,30,28,25,26,41,9,31,28,26,25,42,6,34,27,26,24,45,3,35,28,26,22,84,28,26,22,85,28,26,20,141,19,141,18,143,16,144,16,145,14,146,13,148,12,148,11,150,10,150,9,152,7,153,7,154,5,155,5,156,3,157,2,87,616,13,775,81",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13464,14 +13450,14 @@
     "frame": 2,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "76.04824766629827,45.000626824174105,121.52444077094151,84.28634338054144",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13483,14 +13469,14 @@
     "frame": 3,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "94.8566120606265,47.85101029703401,124.65913276641004,80.07650016588923",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13502,14 +13488,14 @@
     "frame": 1,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "57.55191292719792,91.01746029323476,93.51269847403637,113.40121456218549",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13521,14 +13507,14 @@
     "frame": 1,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "117.7311866994587,44.78216459015675,154.0589190375922,83.67852446735014",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13540,14 +13526,14 @@
     "frame": 1,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "118.46508028204698,92.85219424970637,155.15975941147371,114.86900172736205",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13559,14 +13545,14 @@
     "frame": 3,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "98.24876888892686,49.789385627491356,122.23616360333835,77.89582791912471",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13578,14 +13564,14 @@
     "frame": 2,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "67.14615968245562,48.403442455484765,110.06492751035148,81.73397491757532",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13597,14 +13583,14 @@
     "frame": 5,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "64.064226886303,46.34882059138363,112.69027767003718,81.73397491757532",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13616,14 +13602,14 @@
     "frame": 5,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "20.004002467239843,84.47347073637684,43.74629956352328,103.64994146798927",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13635,14 +13621,14 @@
     "frame": 7,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "76.21506661595231,47.68005129647099,124.058206073767,81.51198562735408",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13654,14 +13640,14 @@
     "frame": 8,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "33.41885724702297,41.82305888866176,72.56171420808096,84.03594384666576",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13673,14 +13659,14 @@
     "frame": 8,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "97.69756843307368,42.974319387516516,145.4748791355414,84.03594384666576",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13692,14 +13678,14 @@
     "frame": 9,
     "group": 0,
     "source": "Ground truth",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "68.74419891008984,45.20736400021633,113.71758860208683,83.33201414520954",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13711,14 +13697,14 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "500.57275390625,101.80351562500073,600.42724609375,201.2023437500011",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13730,14 +13716,14 @@
     "frame": 2,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "100.49996298562837,0,201.0332959775842,103.53329630866392",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -13749,14 +13735,14 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "type": "rectangle",
     "occluded": false,
     "outside": false,
     "z_order": 0,
     "points": "300.65,100.7,400.5,200.1",
     "rotation": 0.0,
-    "parent": null
+    "parent": null,
+    "score": 1.0
   }
 },
 {
@@ -15748,7 +15734,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": null
   }
 },
@@ -15761,7 +15746,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 1
   }
 },
@@ -15774,7 +15758,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 1
   }
 },
@@ -15787,7 +15770,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 1
   }
 },
@@ -15800,7 +15782,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 1
   }
 },
@@ -15813,7 +15794,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": null
   }
 },
@@ -15826,7 +15806,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 6
   }
 },
@@ -15839,7 +15818,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 6
   }
 },
@@ -15852,7 +15830,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 6
   }
 },
@@ -15865,7 +15842,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 6
   }
 },
@@ -15878,7 +15854,6 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": null
   }
 },
@@ -15891,7 +15866,6 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 11
   }
 },
@@ -15904,7 +15878,6 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 11
   }
 },
@@ -15917,7 +15890,6 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 11
   }
 },
@@ -15930,7 +15902,6 @@
     "frame": 6,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": 11
   }
 },
@@ -15943,7 +15914,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": null
   }
 },
@@ -15956,7 +15926,6 @@
     "frame": 0,
     "group": 0,
     "source": "manual",
-    "score": 1.0,
     "parent": null
   }
 },
@@ -15969,7 +15938,6 @@
     "frame": 0,
     "group": 0,
     "source": "consensus",
-    "score": 1.0,
     "parent": null
   }
 },
@@ -16395,7 +16363,7 @@
       "admin1"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:10.300Z",
+    "last_activity_date": "2026-01-17T12:23:53.610Z",
     "has_analytics_access": true
   }
 },
@@ -16407,7 +16375,7 @@
       "user1"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.691Z",
+    "last_activity_date": "2026-01-17T12:23:58.680Z",
     "has_analytics_access": false
   }
 },
@@ -16419,7 +16387,7 @@
       "user2"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.673Z",
+    "last_activity_date": "2026-01-17T12:23:58.658Z",
     "has_analytics_access": false
   }
 },
@@ -16431,7 +16399,7 @@
       "user3"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.657Z",
+    "last_activity_date": "2026-01-17T12:23:58.634Z",
     "has_analytics_access": false
   }
 },
@@ -16443,7 +16411,7 @@
       "user4"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.640Z",
+    "last_activity_date": "2026-01-17T12:23:58.610Z",
     "has_analytics_access": true
   }
 },
@@ -16455,7 +16423,7 @@
       "worker1"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.624Z",
+    "last_activity_date": "2026-01-17T12:23:58.586Z",
     "has_analytics_access": false
   }
 },
@@ -16467,7 +16435,7 @@
       "worker2"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.608Z",
+    "last_activity_date": "2026-01-17T12:23:58.564Z",
     "has_analytics_access": false
   }
 },
@@ -16479,7 +16447,7 @@
       "worker3"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.592Z",
+    "last_activity_date": "2026-01-17T12:23:58.542Z",
     "has_analytics_access": false
   }
 },
@@ -16491,7 +16459,7 @@
       "worker4"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.576Z",
+    "last_activity_date": "2026-01-17T12:23:58.523Z",
     "has_analytics_access": true
   }
 },
@@ -16503,7 +16471,7 @@
       "user7"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.559Z",
+    "last_activity_date": "2026-01-17T12:23:58.504Z",
     "has_analytics_access": false
   }
 },
@@ -16515,7 +16483,7 @@
       "user8"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.542Z",
+    "last_activity_date": "2026-01-17T12:23:58.486Z",
     "has_analytics_access": false
   }
 },
@@ -16527,7 +16495,7 @@
       "user9"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.526Z",
+    "last_activity_date": "2026-01-17T12:23:58.465Z",
     "has_analytics_access": false
   }
 },
@@ -16539,7 +16507,7 @@
       "user10"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.510Z",
+    "last_activity_date": "2026-01-17T12:23:58.442Z",
     "has_analytics_access": false
   }
 },
@@ -16551,7 +16519,7 @@
       "dummy1"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.493Z",
+    "last_activity_date": "2026-01-17T12:23:58.420Z",
     "has_analytics_access": false
   }
 },
@@ -16563,7 +16531,7 @@
       "dummy2"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.481Z",
+    "last_activity_date": "2026-01-17T12:23:58.407Z",
     "has_analytics_access": false
   }
 },
@@ -16575,7 +16543,7 @@
       "dummy3"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.469Z",
+    "last_activity_date": "2026-01-17T12:23:58.390Z",
     "has_analytics_access": false
   }
 },
@@ -16587,7 +16555,7 @@
       "dummy4"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.456Z",
+    "last_activity_date": "2026-01-17T12:23:58.377Z",
     "has_analytics_access": false
   }
 },
@@ -16599,7 +16567,7 @@
       "admin2"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.444Z",
+    "last_activity_date": "2026-01-17T12:23:58.363Z",
     "has_analytics_access": true
   }
 },
@@ -16611,7 +16579,7 @@
       "user5"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.425Z",
+    "last_activity_date": "2026-01-17T12:23:58.344Z",
     "has_analytics_access": false
   }
 },
@@ -16623,7 +16591,7 @@
       "user6"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.407Z",
+    "last_activity_date": "2026-01-17T12:23:58.324Z",
     "has_analytics_access": false
   }
 },
@@ -16635,7 +16603,7 @@
       "lonely_user"
     ],
     "rating": 0.0,
-    "last_activity_date": "2026-01-15T08:22:45.388Z",
+    "last_activity_date": "2026-01-17T12:23:58.306Z",
     "has_analytics_access": false
   }
 },

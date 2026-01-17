@@ -23,7 +23,7 @@ const MINIMUM_TEXT_FONT_SIZE = 8;
 const SKELETON_RECT_MARGIN = 20;
 
 const DEFAULT_SHAPE_TEXT_SIZE = 12;
-const DEFAULT_SHAPE_TEXT_CONTENT = 'id,label,attributes,source,descriptions,score';
+const DEFAULT_SHAPE_TEXT_CONTENT = 'id,label,attributes,source,descriptions';
 const DEFAULT_SHAPE_TEXT_POSITION: 'auto' | 'center' = 'auto';
 const DEFAULT_UNDEFINED_ATTR_VALUE = '__undefined__';
 

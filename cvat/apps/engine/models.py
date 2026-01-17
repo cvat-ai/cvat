@@ -1180,7 +1180,6 @@ class Annotation(models.Model):
     group = models.PositiveIntegerField(null=True)
     source = models.CharField(max_length=16, choices=SourceType.choices(),
         default=str(SourceType.MANUAL), null=True)
-    score = models.FloatField(default=1)
 
     class Meta:
         abstract = True
@@ -1207,6 +1206,7 @@ class LabeledImageAttributeVal(AttributeVal):
 
 class LabeledShape(Annotation, Shape):
     parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
+    score = models.FloatField(default=1)
 
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(LabeledShape, on_delete=models.DO_NOTHING,

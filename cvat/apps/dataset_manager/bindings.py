@@ -231,7 +231,7 @@ class CommonData(InstanceLabelData):
         elements: Sequence[CommonData.LabeledShape] = ()
         outside: bool = False
         id: int | None = None
-        score: float | None = None
+        score: float = 1.0
 
     class TrackedShape(NamedTuple):
         type: int
@@ -249,7 +249,6 @@ class CommonData(InstanceLabelData):
         track_id: int = 0
         elements: Sequence[CommonData.TrackedShape] = ()
         id: int | None = None
-        score: float | None = None
 
     class Track(NamedTuple):
         label: int
@@ -266,7 +265,6 @@ class CommonData(InstanceLabelData):
         source: str | None
         group: int | None = 0
         id: int | None = None
-        score: float | None = None
 
     @attrs
     class Frame:
@@ -2398,7 +2396,6 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                         group=group_map.get(ann.group, 0),
                         source=SourceType.FILE,
                         attributes=attributes,
-                        score=score,
                     ))
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "

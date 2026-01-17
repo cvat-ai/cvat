@@ -11,17 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name="labeledimage",
-            name="score",
-            field=models.FloatField(default=1),
-        ),
-        migrations.AddField(
             model_name="labeledshape",
-            name="score",
-            field=models.FloatField(default=1),
-        ),
-        migrations.AddField(
-            model_name="labeledtrack",
             name="score",
             field=models.FloatField(default=1),
         ),

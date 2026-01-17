@@ -794,7 +794,7 @@ def check_annotation_response(
 
     def _key_defaults(key_path: list[str]) -> dict | None:
         if key_path and key_path[-1] == "tags":
-            return filter_dict(optional_fields, keep=["source", "attributes", "score"])
+            return filter_dict(optional_fields, keep=["source", "attributes"])
         if key_path and key_path[-1] == "shapes":
             return filter_dict(
                 optional_fields,
@@ -810,7 +810,7 @@ def check_annotation_response(
                 ],
             )
         if key_path and key_path[-1] == "tracks":
-            return filter_dict(optional_fields, keep=["source", "attributes", "elements", "score"])
+            return filter_dict(optional_fields, keep=["source", "attributes", "elements"])
         if key_path and _format_key(key_path).endswith("tracks.elements"):
             return filter_dict(optional_fields, keep=["source", "attributes"])
         if key_path and _format_key(key_path).endswith("tracks.elements.shapes"):
@@ -820,7 +820,7 @@ def check_annotation_response(
         if key_path and _format_key(key_path).endswith("shapes.elements"):
             return filter_dict(
                 optional_fields,
-                keep=["occluded", "outside", "z_order", "rotation", "source", "attributes", "score"],
+                keep=["occluded", "outside", "z_order", "rotation", "source", "attributes"],
             )
 
         return None

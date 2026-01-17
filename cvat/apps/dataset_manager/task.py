@@ -610,7 +610,6 @@ class JobAnnotation:
                 "label_id",
                 "group",
                 "source",
-                "score",
             )
             .order_by("frame")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
@@ -718,7 +717,6 @@ class JobAnnotation:
                 "label_id",
                 "group",
                 "source",
-                "score",
                 "parent",
                 "shape__type",
                 "shape__occluded",

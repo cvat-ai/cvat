@@ -3171,7 +3171,6 @@ class AnnotationSerializer(serializers.Serializer):
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
     source = serializers.CharField(default='manual')
-    score = serializers.FloatField(min_value=0, max_value=1, default=1)
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3278,6 +3277,7 @@ class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
+    score = serializers.FloatField(min_value=0, max_value=1, default=1)
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -3311,7 +3311,7 @@ class LabeledImageSerializerFromDB(serializers.BaseSerializer):
     # Because default DRF serializer is too slow on huge collections
     def to_representation(self, instance):
         def convert_tag(tag):
-            result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source', 'score'])
+            result = _convert_annotation(tag, ['id', 'label_id', 'frame', 'group', 'source'])
             result['attributes'] = _convert_attributes(tag['attributes'])
             return result
 
@@ -3321,6 +3321,14 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
     # Use this serializer to export data from the database
     # Because default DRF serializer is too slow on huge collections
     def to_representation(self, instance):
+        def convert_element(shape):
+            result = _convert_annotation(shape, [
+                'id', 'label_id', 'type', 'frame', 'group', 'source',
+                'occluded', 'outside', 'z_order', 'rotation', 'points',
+            ])
+            result['attributes'] = _convert_attributes(shape['attributes'])
+            return result
+
         def convert_shape(shape):
             result = _convert_annotation(shape, [
                 'id', 'label_id', 'type', 'frame', 'group', 'source', 'score',
@@ -3328,7 +3336,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
             ])
             result['attributes'] = _convert_attributes(shape['attributes'])
             if shape.get('elements', None) is not None and shape['parent'] is None:
-                result['elements'] = [convert_shape(element) for element in shape['elements']]
+                result['elements'] = [convert_element(element) for element in shape['elements']]
             return result
 
         return convert_shape(instance)
@@ -3342,7 +3350,7 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
                 'id', 'type', 'frame', 'occluded', 'outside', 'z_order',
                 'rotation', 'points', 'attributes',
             ]
-            result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source', 'score'])
+            result = _convert_annotation(track, ['id', 'label_id', 'frame', 'group', 'source'])
             result['shapes'] = [_convert_annotation(shape, shape_keys) for shape in track['shapes']]
             result['attributes'] = _convert_attributes(track['attributes'])
             for shape in result['shapes']:

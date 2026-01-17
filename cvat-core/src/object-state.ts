@@ -45,8 +45,8 @@ export interface SerializedData {
     color?: string;
     updated?: number;
     source?: Source;
-    score?: number | null;
-    votes?: number | null;
+    score?: number;
+    votes?: number;
     zOrder?: number;
     points?: number[];
     occluded?: boolean;
@@ -90,8 +90,8 @@ export default class ObjectState {
         next: number | null;
         last: number | null;
     } | null;
-    public readonly score: number;
-    public readonly votes: number;
+    public readonly score: number | undefined;
+    public readonly votes: number | undefined;
     public label: Label;
     public color: string;
     public hidden: boolean;
@@ -184,8 +184,9 @@ export default class ObjectState {
             objectType: serialized.objectType,
             shapeType: serialized.shapeType || null,
             updateFlags,
-            score: serialized.score ?? null,
-            votes: serialized.votes ?? null,
+            // score and votes are only available for shapes (not tracks or tags)
+            score: serialized.objectType === ObjectType.SHAPE ? (serialized.score ?? 1.0) : undefined,
+            votes: serialized.objectType === ObjectType.SHAPE ? (serialized.votes ?? 0) : undefined,
         };
 
         Object.defineProperties(

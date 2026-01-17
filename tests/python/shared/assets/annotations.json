@@ -428,7 +428,6 @@
           "group": 0,
           "id": 1,
           "label_id": 17,
-          "score": 1.0,
           "source": "manual"
         },
         {
@@ -437,7 +436,6 @@
           "group": 0,
           "id": 2,
           "label_id": 16,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -467,7 +465,6 @@
                 118.10276296228554
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -485,7 +482,6 @@
                 274.6245183225243
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -508,7 +504,6 @@
                 67.8260869565238
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -526,7 +521,6 @@
                 276.52173913043686
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -562,7 +556,6 @@
               "group": 0,
               "id": 2,
               "label_id": 23,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -601,7 +594,6 @@
               "group": 0,
               "id": 3,
               "label_id": 24,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -645,7 +637,6 @@
               "group": 0,
               "id": 4,
               "label_id": 25,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -684,7 +675,6 @@
               "group": 0,
               "id": 5,
               "label_id": 26,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -722,7 +712,6 @@
           "group": 0,
           "id": 1,
           "label_id": 22,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],
@@ -842,7 +831,6 @@
           "group": 0,
           "id": 5,
           "label_id": 39,
-          "score": 1.0,
           "source": "manual"
         },
         {
@@ -851,7 +839,6 @@
           "group": 0,
           "id": 6,
           "label_id": 38,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -876,7 +863,6 @@
                 138.72697241590762
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -894,7 +880,6 @@
                 421.9659673659692
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -912,7 +897,6 @@
                 107.42983682983868
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -930,7 +914,6 @@
                 337.46374412038085
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1085,7 +1068,6 @@
               "group": 0,
               "id": 7,
               "label_id": 59,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -1124,7 +1106,6 @@
               "group": 0,
               "id": 8,
               "label_id": 60,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -1149,7 +1130,6 @@
               "group": 0,
               "id": 9,
               "label_id": 61,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -1174,7 +1154,6 @@
               "group": 0,
               "id": 10,
               "label_id": 62,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -1198,7 +1177,6 @@
           "group": 0,
           "id": 6,
           "label_id": 58,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],
@@ -1256,7 +1234,6 @@
                 51.085564225393554
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1274,7 +1251,6 @@
                 101.86367376801435
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1292,7 +1268,6 @@
                 30.260833689097126
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1310,7 +1285,6 @@
                 114.13029555429613
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1341,7 +1315,6 @@
               "group": 0,
               "id": 12,
               "label_id": 59,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -1366,7 +1339,6 @@
               "group": 0,
               "id": 13,
               "label_id": 60,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -1391,7 +1363,6 @@
               "group": 0,
               "id": 14,
               "label_id": 61,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -1416,7 +1387,6 @@
               "group": 0,
               "id": 15,
               "label_id": 62,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -1440,7 +1410,6 @@
           "group": 0,
           "id": 11,
           "label_id": 58,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],
@@ -2577,7 +2546,6 @@
                 65.9970703125
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2595,7 +2563,6 @@
                 96.87642507954297
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2613,7 +2580,6 @@
                 97.32024233915763
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2631,7 +2597,6 @@
                 128.1533203125
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2666,7 +2631,6 @@
                 67.95976734549367
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2684,7 +2648,6 @@
                 102.15625
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2702,7 +2665,6 @@
                 102.618369002279
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2720,7 +2682,6 @@
                 134.04215851499248
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2746,6 +2707,31 @@
     },
     "28": {
       "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 97,
+          "label_id": 66,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            455.359375,
+            88.2421875,
+            463.2108659572077,
+            158.9047260271691,
+            545.6502846439089,
+            155.6333205237297,
+            536.4903492342764,
+            84.97096164941286
+          ],
+          "rotation": 0.0,
+          "score": 1.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        },
         {
           "attributes": [
             {
@@ -2935,36 +2921,6 @@
             18.234375,
             136.0714843750011,
             40.5
-          ],
-          "rotation": 0.0,
-          "score": 1.0,
-          "source": "manual",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 13,
-              "value": "yy"
-            },
-            {
-              "spec_id": 14,
-              "value": "1"
-            }
-          ],
-          "elements": [],
-          "frame": 0,
-          "group": 1,
-          "id": 104,
-          "label_id": 67,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            147.84765625,
-            18.888671875,
-            170.06289062500036,
-            42.408593750000364
           ],
           "rotation": 0.0,
           "score": 1.0,
@@ -3601,28 +3557,33 @@
           "z_order": 0
         },
         {
-          "attributes": [],
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "yy"
+            },
+            {
+              "spec_id": 14,
+              "value": "1"
+            }
+          ],
           "elements": [],
           "frame": 0,
-          "group": 0,
-          "id": 97,
-          "label_id": 66,
+          "group": 1,
+          "id": 104,
+          "label_id": 67,
           "occluded": false,
           "outside": false,
           "points": [
-            455.359375,
-            88.2421875,
-            463.2108659572077,
-            158.9047260271691,
-            545.6502846439089,
-            155.6333205237297,
-            536.4903492342764,
-            84.97096164941286
+            147.84765625,
+            18.888671875,
+            170.06289062500036,
+            42.408593750000364
           ],
           "rotation": 0.0,
           "score": 1.0,
           "source": "manual",
-          "type": "polygon",
+          "type": "rectangle",
           "z_order": 0
         },
         {
@@ -3641,7 +3602,6 @@
                 102.21971169729295
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3659,7 +3619,6 @@
                 102.5765956792493
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3677,7 +3636,6 @@
                 126.84447272867328
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3695,7 +3653,6 @@
                 75.810546875
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3730,7 +3687,6 @@
                 125.53573700986453
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3748,7 +3704,6 @@
                 68.61328125
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3766,7 +3721,6 @@
                 98.06965739794214
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3784,7 +3738,6 @@
                 98.46772030089414
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -4347,7 +4300,6 @@
           "group": 0,
           "id": 7,
           "label_id": 67,
-          "score": 1.0,
           "source": "manual"
         },
         {
@@ -4365,7 +4317,6 @@
           "group": 0,
           "id": 8,
           "label_id": 67,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -6245,7 +6196,6 @@
           "group": 0,
           "id": 13,
           "label_id": 78,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -6718,7 +6668,6 @@
           "group": 0,
           "id": 11,
           "label_id": 78,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -7191,7 +7140,6 @@
           "group": 0,
           "id": 10,
           "label_id": 78,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -8049,7 +7997,6 @@
           "group": 0,
           "id": 9,
           "label_id": 78,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -8339,7 +8286,6 @@
           "group": 0,
           "id": 22,
           "label_id": 80,
-          "score": 1.0,
           "source": "file"
         }
       ],
@@ -8356,7 +8302,6 @@
           "group": 0,
           "id": 19,
           "label_id": 80,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],
@@ -8479,7 +8424,6 @@
           "group": 0,
           "id": 14,
           "label_id": 80,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -8496,7 +8440,6 @@
           "group": 0,
           "id": 18,
           "label_id": 80,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],
@@ -8613,7 +8556,6 @@
           "group": 0,
           "id": 15,
           "label_id": 80,
-          "score": 1.0,
           "source": "manual"
         },
         {
@@ -8622,7 +8564,6 @@
           "group": 0,
           "id": 16,
           "label_id": 90,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -8639,7 +8580,6 @@
           "group": 0,
           "id": 17,
           "label_id": 80,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],
@@ -9428,7 +9368,6 @@
           "group": 0,
           "id": 1,
           "label_id": 17,
-          "score": 1.0,
           "source": "manual"
         },
         {
@@ -9437,7 +9376,6 @@
           "group": 0,
           "id": 2,
           "label_id": 16,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -9467,7 +9405,6 @@
                 118.10276296228554
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9485,7 +9422,6 @@
                 274.6245183225243
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9508,7 +9444,6 @@
                 67.8260869565238
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9526,7 +9461,6 @@
                 276.52173913043686
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9562,7 +9496,6 @@
               "group": 0,
               "id": 2,
               "label_id": 23,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -9601,7 +9534,6 @@
               "group": 0,
               "id": 3,
               "label_id": 24,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -9645,7 +9577,6 @@
               "group": 0,
               "id": 4,
               "label_id": 25,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -9684,7 +9615,6 @@
               "group": 0,
               "id": 5,
               "label_id": 26,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -9722,7 +9652,6 @@
           "group": 0,
           "id": 1,
           "label_id": 22,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],
@@ -9842,7 +9771,6 @@
           "group": 0,
           "id": 5,
           "label_id": 39,
-          "score": 1.0,
           "source": "manual"
         },
         {
@@ -9851,7 +9779,6 @@
           "group": 0,
           "id": 6,
           "label_id": 38,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -9876,7 +9803,6 @@
                 138.72697241590762
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9894,7 +9820,6 @@
                 421.9659673659692
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9912,7 +9837,6 @@
                 107.42983682983868
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9930,7 +9854,6 @@
                 337.46374412038085
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -10111,7 +10034,6 @@
                 51.085564225393554
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -10129,7 +10051,6 @@
                 101.86367376801435
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -10147,7 +10068,6 @@
                 30.260833689097126
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -10165,7 +10085,6 @@
                 114.13029555429613
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -10196,7 +10115,6 @@
               "group": 0,
               "id": 7,
               "label_id": 59,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -10249,7 +10167,6 @@
               "group": 0,
               "id": 8,
               "label_id": 60,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -10288,7 +10205,6 @@
               "group": 0,
               "id": 9,
               "label_id": 61,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -10327,7 +10243,6 @@
               "group": 0,
               "id": 10,
               "label_id": 62,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -10365,7 +10280,6 @@
           "group": 0,
           "id": 6,
           "label_id": 58,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],
@@ -10401,7 +10315,6 @@
               "group": 0,
               "id": 12,
               "label_id": 59,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -10426,7 +10339,6 @@
               "group": 0,
               "id": 13,
               "label_id": 60,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -10451,7 +10363,6 @@
               "group": 0,
               "id": 14,
               "label_id": 61,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -10476,7 +10387,6 @@
               "group": 0,
               "id": 15,
               "label_id": 62,
-              "score": 1.0,
               "shapes": [
                 {
                   "attributes": [],
@@ -10500,7 +10410,6 @@
           "group": 0,
           "id": 11,
           "label_id": 58,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],
@@ -11637,7 +11546,6 @@
                 65.9970703125
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11655,7 +11563,6 @@
                 96.87642507954297
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11673,7 +11580,6 @@
                 97.32024233915763
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11691,7 +11597,6 @@
                 128.1533203125
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11726,7 +11631,6 @@
                 67.95976734549367
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11744,7 +11648,6 @@
                 102.15625
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11762,7 +11665,6 @@
                 102.618369002279
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11780,7 +11682,6 @@
                 134.04215851499248
               ],
               "rotation": 0.0,
-              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -13592,7 +13493,6 @@
           "group": 0,
           "id": 13,
           "label_id": 78,
-          "score": 1.0,
           "source": "manual"
         }
       ],
@@ -13640,7 +13540,6 @@
           "group": 0,
           "id": 22,
           "label_id": 80,
-          "score": 1.0,
           "source": "file"
         }
       ],
@@ -13657,7 +13556,6 @@
           "group": 0,
           "id": 19,
           "label_id": 80,
-          "score": 1.0,
           "shapes": [
             {
               "attributes": [],

@@ -876,7 +876,6 @@ export class Track extends Drawn {
             frame: this.frame,
             group: this.group,
             source: this.source,
-            score: this.score,
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 if (!labelAttributes[attrId].mutable) {
                     attributeAccumulator.push({
@@ -1451,7 +1450,6 @@ export class Tag extends Annotation {
             frame: this.frame,
             label_id: this.label.id,
             source: this.source,
-            score: this.score,
             group: 0, // TODO: why server requires group for tags?
             attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                 attributeAccumulator.push({
@@ -2020,6 +2018,7 @@ export class SkeletonShape extends Shape {
             label_id: this.label.id,
             group: this.group,
             source: this.source,
+            score: this.score,
         };
 
         if (this.serverID !== null) {
