@@ -68,6 +68,34 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
                 };
             }
         });
+
+        if (label.type === 'skeleton' && label.structure?.sublabels) {
+            label.structure.sublabels.forEach((sublabel: any): void => {
+                const adjustedSublabelName = adjustName(sublabel.name);
+                labelSubfields[adjustedSublabelName] = {
+                    type: '!struct',
+                    label: sublabel.name,
+                    subfields: {},
+                };
+
+                const sublabelSubfields = labelSubfields[adjustedSublabelName].subfields;
+                sublabel.attributes.forEach((attr: any): void => {
+                    const adjustedAttrName = adjustName(attr.name);
+                    sublabelSubfields[adjustedAttrName] = {
+                        label: attr.name,
+                        type: getConvertedInputType(attr.inputType),
+                    };
+                    if (sublabelSubfields[adjustedAttrName].type === 'select') {
+                        sublabelSubfields[adjustedAttrName] = {
+                            ...sublabelSubfields[adjustedAttrName],
+                            fieldSettings: {
+                                listValues: attr.values,
+                            },
+                        };
+                    }
+                });
+            });
+        }
     });
 
     return subfields;
