@@ -112,12 +112,6 @@ const componentShortcuts = {
         sequences: ['space'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
-    TOGGLE_FILTERED_NAV: {
-        name: 'Toggle filtered navigation',
-        description: 'Toggle between regular and filtered frame navigation',
-        sequences: ['shift+f'],
-        scope: ShortcutScope.ANNOTATION_PAGE,
-    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -148,7 +142,7 @@ function PlayerButtons(props: Props): JSX.Element {
         onSelectChapter,
     } = props;
 
-    const handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
+    const handlers: Partial<Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)>> = {
         NEXT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             onNextFrame();
@@ -157,44 +151,36 @@ function PlayerButtons(props: Props): JSX.Element {
             event?.preventDefault();
             onPrevFrame();
         },
-        ...(workspace !== Workspace.SINGLE_SHAPE
-            ? {
-                  FORWARD_FRAME: (event: KeyboardEvent | undefined) => {
-                      event?.preventDefault();
-                      onForward();
-                  },
-                  BACKWARD_FRAME: (event: KeyboardEvent | undefined) => {
-                      event?.preventDefault();
-                      onBackward();
-                  },
-                  SEARCH_FORWARD: (event: KeyboardEvent | undefined) => {
-                      event?.preventDefault();
-                      onSearchAnnotations('forward');
-                  },
-                  SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
-                      event?.preventDefault();
-                      onSearchAnnotations('backward');
-                  },
-                  CHAPTER_BACKWARD: (event: KeyboardEvent | undefined) => {
-                      event?.preventDefault();
-                      onSearchChapters('backward');
-                  },
-                  CHAPTER_FORWARD: (event: KeyboardEvent | undefined) => {
-                      event?.preventDefault();
-                      onSearchChapters('forward');
-                  },
-                  PLAY_PAUSE: (event: KeyboardEvent | undefined) => {
-                      event?.preventDefault();
-                      onSwitchPlay();
-                  },
-                  TOGGLE_FILTERED_NAV: (event: KeyboardEvent | undefined) => {
-                      event?.preventDefault();
-                      setNavigationType(
-                          navigationType === NavigationType.FILTERED ? NavigationType.REGULAR : NavigationType.FILTERED,
-                      );
-                  },
-              }
-            : {}),
+        ...(workspace !== Workspace.SINGLE_SHAPE ? {
+            FORWARD_FRAME: (event: KeyboardEvent | undefined) => {
+                event?.preventDefault();
+                onForward();
+            },
+            BACKWARD_FRAME: (event: KeyboardEvent | undefined) => {
+                event?.preventDefault();
+                onBackward();
+            },
+            SEARCH_FORWARD: (event: KeyboardEvent | undefined) => {
+                event?.preventDefault();
+                onSearchAnnotations('forward');
+            },
+            SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
+                event?.preventDefault();
+                onSearchAnnotations('backward');
+            },
+            CHAPTER_BACKWARD: (event: KeyboardEvent | undefined) => {
+                event?.preventDefault();
+                onSearchChapters('backward');
+            },
+            CHAPTER_FORWARD: (event: KeyboardEvent | undefined) => {
+                event?.preventDefault();
+                onSearchChapters('forward');
+            },
+            PLAY_PAUSE: (event: KeyboardEvent | undefined) => {
+                event?.preventDefault();
+                onSwitchPlay();
+            },
+        } : {}),
     };
 
     const prevRegularText = 'Go back';
@@ -224,11 +210,7 @@ function PlayerButtons(props: Props): JSX.Element {
         prevButtonTooltipMessage = prevEmptyText;
     } else if (navigationType === NavigationType.CHAPTER) {
         prevButton = (
-            <Icon
-                className='cvat-player-previous-button-chapter'
-                component={PreviousChapterIcon}
-                onClick={onPrevFrame}
-            />
+            <Icon className='cvat-player-previous-button-chapter' component={PreviousChapterIcon} onClick={onPrevFrame} />
         );
         prevButtonTooltipMessage = prevChapterText;
     }
@@ -250,23 +232,21 @@ function PlayerButtons(props: Props): JSX.Element {
         nextButtonTooltipMessage = nextChapterText;
     }
 
-    const navIconStyle: CSSProperties =
-        workspace === Workspace.SINGLE_SHAPE
-            ? {
-                  pointerEvents: 'none',
-                  opacity: 0.5,
-              }
-            : {};
+    const navIconStyle: CSSProperties = workspace === Workspace.SINGLE_SHAPE ? {
+        pointerEvents: 'none',
+        opacity: 0.5,
+    } : {};
 
     return (
         <Col className='cvat-player-buttons'>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
-            {chapters.length > 0 && (
+            { (chapters.length > 0) && (
                 <ChapterMenu
                     chapters={chapters}
                     onSelectChapter={onSelectChapter}
                     onHoveredChapter={onHoveredChapter}
                 />
+
             )}
             <CVATTooltip title='Go to the first frame'>
                 <Icon
@@ -287,7 +267,7 @@ function PlayerButtons(props: Props): JSX.Element {
             <Popover
                 trigger='contextMenu'
                 placement='bottom'
-                content={
+                content={(
                     <>
                         <CVATTooltip title={`${prevRegularText}`}>
                             <Icon
@@ -318,7 +298,7 @@ function PlayerButtons(props: Props): JSX.Element {
                             />
                         </CVATTooltip>
                     </>
-                }
+                )}
             >
                 <CVATTooltip placement='top' title={`${prevButtonTooltipMessage} ${previousFrameShortcut}`}>
                     {prevButton}
@@ -348,7 +328,7 @@ function PlayerButtons(props: Props): JSX.Element {
             <Popover
                 trigger='contextMenu'
                 placement='bottom'
-                content={
+                content={(
                     <>
                         <CVATTooltip title={`${nextRegularText}`}>
                             <Icon
@@ -379,7 +359,7 @@ function PlayerButtons(props: Props): JSX.Element {
                             />
                         </CVATTooltip>
                     </>
-                }
+                )}
             >
                 <CVATTooltip placement='top' title={`${nextButtonTooltipMessage} ${nextFrameShortcut}`}>
                     {nextButton}
