@@ -146,6 +146,9 @@ class UserPermission(OpenPolicyAgentPermission):
         LIST = 'list'
         VIEW = 'view'
         UPDATE = 'update'
+        UPDATE_EMAIL = 'update:email'
+        UPDATE_PERMISSIONS = 'update:permissions'
+        UPDATE_PERSONAL_DATA = 'update:personal_data'
         DELETE = 'delete'
 
     @classmethod
@@ -164,13 +167,30 @@ class UserPermission(OpenPolicyAgentPermission):
     @classmethod
     def _get_scopes(cls, request: ExtendedRequest, view: ViewSet, obj: User | None):
         Scopes = cls.Scopes
-        return [{
+        scope = {
             'list': Scopes.LIST,
             'self': Scopes.VIEW,
             'retrieve': Scopes.VIEW,
             'partial_update': Scopes.UPDATE,
             'destroy': Scopes.DELETE,
-        }[view.action]]
+        }[view.action]
+
+        scopes = []
+        if scope == Scopes.UPDATE:
+            scopes.extend(cls.get_per_field_update_scopes(request, {
+                "email": Scopes.UPDATE_EMAIL,
+                "first_name": Scopes.UPDATE_PERSONAL_DATA,
+                "groups": Scopes.UPDATE_PERMISSIONS,
+                "is_active": Scopes.UPDATE_PERMISSIONS,
+                "is_staff": Scopes.UPDATE_PERMISSIONS,
+                "is_superuser": Scopes.UPDATE_PERMISSIONS,
+                "last_name": Scopes.UPDATE_PERSONAL_DATA,
+                "username": Scopes.UPDATE_PERSONAL_DATA,
+            }))
+        else:
+            scopes.append(scope)
+
+        return scopes
 
     @classmethod
     def create_scope_view(cls, iam_context: dict[str, Any], user_id: int | str):
