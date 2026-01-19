@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.52.1
+  version: 2.55.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -4551,6 +4551,14 @@ paths:
       operationId: quality_retrieve_report_data
       summary: Get quality report contents
       parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+          default: json
       - in: path
         name: id
         schema:
@@ -4571,7 +4579,8 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                type: object
+                type: string
+                format: binary
           description: ''
   /api/quality/settings:
     get:
