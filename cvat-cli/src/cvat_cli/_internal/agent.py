@@ -13,6 +13,7 @@ import secrets
 import shutil
 import tempfile
 import threading
+import time
 from collections import OrderedDict
 from collections.abc import Callable, Generator, Iterator, Sequence
 from datetime import datetime, timedelta, timezone
@@ -49,10 +50,25 @@ REQUEST_CATEGORIES_WITH_DECREASING_PRIORITY = (REQUEST_CATEGORY_INTERACTIVE, REQ
 _POLLING_INTERVAL_MEAN_FREQUENT = timedelta(seconds=60)
 _POLLING_INTERVAL_MEAN_RARE = timedelta(minutes=10)
 _JITTER_AMOUNT = 0.15
+_DEFAULT_RETRY_DELAY = timedelta(seconds=5)
 
 _UPDATE_INTERVAL = timedelta(seconds=30)
 
 _MAX_AGE_OF_TRACKING_STATE = timedelta(hours=8)
+
+
+class _ExponentialBackoff:
+    def __init__(self, max_delay: timedelta, current_delay: timedelta) -> None:
+        self._max_delay = max_delay
+        self._current_delay = current_delay
+
+    def reset(self, current_delay: timedelta) -> None:
+        self._current_delay = current_delay
+
+    def next(self) -> timedelta:
+        delay = self._current_delay
+        self._current_delay = min(self._current_delay * 2, self._max_delay)
+        return delay
 
 
 class _RecoverableExecutor:
@@ -414,7 +430,9 @@ class _Agent:
         # In this case, it doesn't make sense to continue trying to connect frequently,
         # although we should still be trying occasionally in case the error is transient.
         # Once we're successful, we'll rely on the server to set a new reconnection delay.
-        self._queue_reconnection_delay = _POLLING_INTERVAL_MEAN_RARE
+        self._queue_reconnection_delay = _ExponentialBackoff(
+            _POLLING_INTERVAL_MEAN_RARE, _POLLING_INTERVAL_MEAN_RARE
+        )
 
     def _validate_function_compatibility(self, remote_function: dict) -> None:
         function_id = remote_function["id"]
@@ -552,12 +570,7 @@ class _Agent:
     def _wait_before_reconnecting_to_queue(self):
         delay_multiplier = self._rng.uniform(1, 1 + _JITTER_AMOUNT)
         self._queue_watcher_should_stop.wait(
-            timeout=self._queue_reconnection_delay.total_seconds() * delay_multiplier
-        )
-
-        # Apply exponential backoff.
-        self._queue_reconnection_delay = min(
-            self._queue_reconnection_delay * 2, _POLLING_INTERVAL_MEAN_RARE
+            timeout=self._queue_reconnection_delay.next().total_seconds() * delay_multiplier
         )
 
     def _watch_queue(self) -> None:
@@ -593,10 +606,10 @@ class _Agent:
                     if isinstance(message, _Event):
                         self._dispatch_queue_event(message)
                     elif isinstance(message, _NewReconnectionDelay):
-                        self._queue_reconnection_delay = message.delay
+                        self._queue_reconnection_delay.reset(message.delay)
                         self._client.logger.info(
                             "New queue event stream reconnection delay is %fs",
-                            self._queue_reconnection_delay.total_seconds(),
+                            message.delay.total_seconds(),
                         )
                     else:
                         assert False, f"unexpected message type {type(message)}"
@@ -743,6 +756,8 @@ class _Agent:
                 self._client.logger.info("AR %r failed", ar_id)
 
     def _poll_for_ar(self, category: str) -> dict | None:
+        retry_delay = _ExponentialBackoff(_POLLING_INTERVAL_MEAN_RARE, _DEFAULT_RETRY_DELAY)
+
         while True:
             self._client.logger.info(
                 "Trying to acquire an annotation request of category %r...", category
@@ -760,8 +775,13 @@ class _Agent:
                     # We did something wrong; no point in retrying.
                     raise
 
-                self._client.logger.error("Acquire request failed; will retry", exc_info=True)
-                self._wait_between_polls()
+                delay_multiplier = self._rng.uniform(1, 1 + _JITTER_AMOUNT)
+                delay_sec = retry_delay.next().total_seconds() * delay_multiplier
+
+                self._client.logger.error(
+                    "Acquire request failed; will retry in %.2f seconds", delay_sec, exc_info=True
+                )
+                time.sleep(delay_sec)
 
         response_data = json.loads(response.data)
         return response_data["ar_assignment"]

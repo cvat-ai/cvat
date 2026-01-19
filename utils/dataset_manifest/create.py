@@ -43,9 +43,9 @@ def get_args():
     )
     parser.add_argument(
         "--output-dir",
-        type=str,
+        type=Path,
         help="Directory where the manifest file will be saved",
-        default=os.getcwd(),
+        default=Path.cwd(),
     )
     parser.add_argument(
         "--sorting",
@@ -60,9 +60,8 @@ def get_args():
 def main():
     args = get_args()
 
-    manifest_directory = os.path.abspath(args.output_dir)
-    if not os.path.exists(manifest_directory):
-        os.makedirs(manifest_directory)
+    manifest_directory: Path = args.output_dir.resolve()
+    manifest_directory.mkdir(parents=True, exist_ok=True)
     source = os.path.abspath(os.path.expanduser(args.source))
 
     sources = []

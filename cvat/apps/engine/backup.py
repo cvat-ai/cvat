@@ -17,6 +17,7 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from logging import Logger
+from pathlib import Path
 from typing import Any, ClassVar
 from zipfile import ZipFile
 
@@ -457,7 +458,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         with tempfile.TemporaryDirectory() as tmp_dir:
             present_frame_nums = {im.frame for im in self._db_data.images.all()}
 
-            filtered_manifest_path = os.path.join(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
+            filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
 
             imm_original = ImageManifestManager(
                 self._db_data.get_manifest_path(), create_index=False
@@ -1047,7 +1048,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 raise ValidationError(f"Expected {self.MEDIA_MANIFEST_FILENAME} in backup files")
 
             manifest = ImageManifestManager(
-                os.path.join(self._db_task.data.get_upload_dirname(), self.MEDIA_MANIFEST_FILENAME)
+                self._db_task.data.get_upload_dirname() / self.MEDIA_MANIFEST_FILENAME
             )
             data["server_files"] = []
             for _, manifest_entry in manifest:

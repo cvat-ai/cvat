@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from openvino.inference_engine import IECore
 
+
 class ModelLoader:
     def __init__(self, model, weights):
         ie_core = IECore()
@@ -22,8 +23,10 @@ class ModelLoader:
                 self._input_info_name = blob_name
             else:
                 raise RuntimeError(
-                    "Unsupported {}D input layer '{}'. Only 2D and 4D input layers are supported"
-                    .format(len(network.input_info[blob_name].tensor_desc.dims), blob_name))
+                    "Unsupported {}D input layer '{}'. Only 2D and 4D input layers are supported".format(
+                        len(network.input_info[blob_name].tensor_desc.dims), blob_name
+                    )
+                )
 
         # Initialize output blob
         self._output_blob_name = next(iter(network.outputs))
@@ -36,10 +39,10 @@ class ModelLoader:
         _, _, h, w = self._input_layout
         if preprocessing:
             image = image if image.shape[:-1] == (h, w) else cv2.resize(image, (w, h))
-            if len(image.shape) < 3: # grayscale image
+            if len(image.shape) < 3:  # grayscale image
                 image = image[:, :, np.newaxis]
             else:
-                if image.shape[2] == 4: # the image has alpha channel
+                if image.shape[2] == 4:  # the image has alpha channel
                     image = image[:, :, :3]
 
             image = image.transpose((2, 0, 1))  # Change data layout from HWC to CHW

@@ -1080,7 +1080,7 @@ class TrackManager(ObjectManager):
 
             if dimension == DimensionType.DIM_3D:
                 yield from simple_3d_interpolation(shape0, shape1)
-            if is_rectangle or is_cuboid or is_ellipse or is_skeleton:
+            elif is_rectangle or is_cuboid or is_ellipse or is_skeleton:
                 yield from simple_interpolation(shape0, shape1)
             elif is_points:
                 yield from points_interpolation(shape0, shape1)

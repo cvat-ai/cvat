@@ -1024,7 +1024,7 @@ class MediaCache:
                 storage.download_file(db_manifest.filename, full_manifest_path)
 
             manifest = ImageManifestManager(
-                os.path.join(db_storage.get_storage_dirname(), db_manifest.filename),
+                db_storage.get_storage_dirname() / db_manifest.filename,
                 db_storage.get_storage_dirname(),
             )
             # need to update index

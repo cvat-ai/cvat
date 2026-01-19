@@ -10,6 +10,7 @@ import io
 import numpy as np
 from model_handler import ModelHandler
 
+
 def init_context(context):
     context.logger.info("Init context...  0%")
 
@@ -17,6 +18,7 @@ def init_context(context):
     context.user_data.model = model
 
     context.logger.info("Init context...100%")
+
 
 def handler(context, event):
     context.logger.info("call handler")
@@ -35,8 +37,8 @@ def handler(context, event):
 
     mask = context.user_data.model.handle(image, obj_bbox, pos_points, neg_points, threshold)
     return context.Response(
-        body=json.dumps({ 'mask': mask.tolist() }),
+        body=json.dumps({"mask": mask.tolist()}),
         headers={},
-        content_type='application/json',
-        status_code=200
+        content_type="application/json",
+        status_code=200,
     )

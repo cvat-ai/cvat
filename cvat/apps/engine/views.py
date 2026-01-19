@@ -2622,8 +2622,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if (manifest_path := request.query_params.get('manifest_path')):
                 manifest_prefix = os.path.dirname(manifest_path)
 
-                full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
-                if not os.path.exists(full_manifest_path) or \
+                full_manifest_path = db_storage.get_storage_dirname() / manifest_path
+                if not full_manifest_path.exists() or \
                         datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
                     storage.download_file(manifest_path, full_manifest_path)
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())

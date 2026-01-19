@@ -12,13 +12,14 @@ def init_context(context):
     model_handler = ModelLoader(model_path)
     context.user_data.model_handler = model_handler
 
-    with open("/opt/nuclio/function.yaml", 'rb') as function_file:
+    with open("/opt/nuclio/function.yaml", "rb") as function_file:
         functionconfig = yaml.safe_load(function_file)
-    labels_spec = functionconfig['metadata']['annotations']['spec']
-    labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
+    labels_spec = functionconfig["metadata"]["annotations"]["spec"]
+    labels = {item["id"]: item["name"] for item in json.loads(labels_spec)}
     context.user_data.labels = labels
 
     context.logger.info("Init context...100%")
+
 
 def handler(context, event):
     context.logger.info("Run faster_rcnn_inception_v2_coco model")
@@ -40,12 +41,15 @@ def handler(context, event):
             xbr = boxes[0][i][3] * image.width
             ybr = boxes[0][i][2] * image.height
 
-            results.append({
-                "confidence": str(obj_score),
-                "label": obj_label,
-                "points": [xtl, ytl, xbr, ybr],
-                "type": "rectangle",
-            })
+            results.append(
+                {
+                    "confidence": str(obj_score),
+                    "label": obj_label,
+                    "points": [xtl, ytl, xbr, ybr],
+                    "type": "rectangle",
+                }
+            )
 
-    return context.Response(body=json.dumps(results), headers={},
-        content_type='application/json', status_code=200)
+    return context.Response(
+        body=json.dumps(results), headers={}, content_type="application/json", status_code=200
+    )

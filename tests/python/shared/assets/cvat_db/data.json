@@ -23602,12 +23602,12 @@
   "fields": {
     "prefix": "UODahKbn",
     "hashed_key": "md5$damuD8CQt8fOi6Tnn2TWYF$48aacd12520f4ac63e1132bc2ffe79fa",
-    "created": "2000-01-01T01:00:00Z",
+    "created": "1900-01-01T01:00:00Z",
     "name": "test stale token",
     "revoked": false,
     "expiry_date": null,
-    "updated_date": "2010-01-01T15:07:32.016Z",
-    "last_used_date": null,
+    "updated_date": "2001-01-01T15:07:32.016Z",
+    "last_used_date": "1901-01-01T01:00:00Z",
     "read_only": true,
     "owner": [
       "admin2"
