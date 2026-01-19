@@ -44,9 +44,6 @@ function defaultTaskSpec({
     if (chunkSize) {
         taskSpec.data_chunk_size = chunkSize;
     }
-    if (consensusReplicas) {
-        taskSpec.consensus_replicas = consensusReplicas
-    }
 
     const dataSpec = {
         server_files: serverFiles,
@@ -94,6 +91,10 @@ function defaultTaskSpec({
         }
 
         extras.validation_params = convertedParams;
+    }
+
+    if (consensusReplicas) {
+        extras.consensus_replicas = consensusReplicas
     }
 
     return {
