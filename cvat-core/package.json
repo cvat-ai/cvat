@@ -26,6 +26,7 @@
     "axios-retry": "^4.0.0",
     "cvat-data": "link:./../cvat-data",
     "detect-browser": "^5.2.1",
+    "dompurify": "^3.3.1",
     "error-stack-parser": "^2.0.2",
     "form-data": "^4.0.4",
     "js-cookie": "^3.0.1",
