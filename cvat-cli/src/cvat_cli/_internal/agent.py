@@ -11,7 +11,6 @@ import multiprocessing
 import random
 import secrets
 import shutil
-import sys
 import tempfile
 import threading
 import time
@@ -750,15 +749,13 @@ class _Agent:
             else:
                 self._client.logger.info("AR %r failed", ar_id)
 
-    def _handle_retryable_post_error(self, delay: _ExponentialBackoff) -> None:
+    def _handle_retryable_post_error(self, ex: Exception, delay: _ExponentialBackoff) -> bool:
         # Normally, urllib3 handles retries for HTTP requests,
         # but it only does it for idempotent ones.
         # So for POST requests that are safe to retry, we have to do it ourselves.
         # This function must be called from an exception handler.
-        # It will either re-raise the exception or delay for an appropriate amount of time.
-
-        _, ex, _ = sys.exc_info()
-        assert ex is not None
+        # It will return True if the operation should be retried,
+        # or False if the exception should be re-raised.
 
         is_rate_limit = False
         delay_sec = None
@@ -773,7 +770,7 @@ class _Agent:
                 is_rate_limit = True
             elif ex.status and 400 <= ex.status < 500:
                 # We did something wrong; no point in retrying.
-                raise
+                return False
 
         if delay_sec is None:
             delay_multiplier = self._rng.uniform(1, 1 + _JITTER_AMOUNT)
@@ -786,6 +783,7 @@ class _Agent:
                 "Request failed; will retry in %.2fs", delay_sec, exc_info=True
             )
         time.sleep(delay_sec)
+        return True
 
     def _poll_for_ar(self, category: str) -> dict | None:
         retry_delay = _ExponentialBackoff(_POLLING_INTERVAL_MEAN_RARE, _DEFAULT_RETRY_DELAY)
@@ -802,8 +800,9 @@ class _Agent:
                     body={"agent_id": self._agent_id, "request_category": category},
                 )
                 break
-            except (urllib3.exceptions.HTTPError, ApiException):
-                self._handle_retryable_post_error(retry_delay)
+            except (urllib3.exceptions.HTTPError, ApiException) as ex:
+                if not self._handle_retryable_post_error(ex, retry_delay):
+                    raise
 
         response_data = json.loads(response.data)
         return response_data["ar_assignment"]
@@ -997,13 +996,15 @@ class _Agent:
                     body={"agent_id": self._agent_id, **result},
                 )
                 break
-            except (urllib3.exceptions.HTTPError, ApiException):
+            except (urllib3.exceptions.HTTPError, ApiException) as ex:
                 if attempt_num >= 3:
                     self._client.logger.error(
                         "Exceeded maximum retries for submitting AR %r", ar_id
                     )
                     raise
-                self._handle_retryable_post_error(delay)
+
+                if not self._handle_retryable_post_error(ex, delay):
+                    raise
 
             attempt_num += 1
 
