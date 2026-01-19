@@ -491,6 +491,18 @@ function HeaderComponent(props: Props): JSX.Element {
                 >
                     Requests
                 </Button>
+                 <Button
+                    className={getButtonClassName('clearml')}
+                    type='link'
+                    value='clearml'
+                    href='/clearml'
+                    onClick={(event: React.MouseEvent): void => {
+                        event.preventDefault();
+                        history.push('/clearml');
+                    }}
+                >
+                    ClearML
+                </Button>
                 {isModelsPluginActive ? (
                     <Button
                         className={getButtonClassName('models')}

@@ -411,6 +411,30 @@ services:
         aliases:
           - grafana
 
+  clearml_api:
+    container_name: clearml_api
+    build:
+      context: ./components/clearml_api
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8500:8000"
+    volumes:
+      - ./components/clearml_api/clearml.conf:/app/clearml.conf:ro
+      - ./components/clearml_api/.env:/app/.env:ro
+    environment:
+      - DEBUG=false
+      - APP_NAME=CVAT ClearML API
+      - API_VERSION=v1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cvat
+
 volumes:
   cvat_db:
   cvat_data:

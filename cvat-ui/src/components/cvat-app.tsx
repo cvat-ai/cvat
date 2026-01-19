@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React,  { Suspense } from 'react';
 import { Redirect, Route, Switch } from 'react-router';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
@@ -561,6 +561,17 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/invitations' component={InvitationsPage} />
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
+                                        <Route
+                                            exact
+                                            path='/clearml'
+                                            render={() => (
+                                                <Suspense fallback={<Spin size='large' className='cvat-spinner' />}>
+                                                    {React.createElement(
+                                                        React.lazy(() => import('./clearml-page/clearml-page')),
+                                                    )}
+                                                </Suspense>
+                                            )}
+                                        />
                                         { routesToRender }
                                         {isModelPluginActive && (
                                             <Route
