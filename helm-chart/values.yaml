@@ -145,7 +145,7 @@ cvat:
         extraArgs: []
     replicas: 1
     image: cvat/server
-    tag: v2.54.0
+    tag: v2.55.0
     imagePullPolicy: Always
     permissionFix:
       enabled: true
@@ -167,7 +167,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.54.0
+    tag: v2.55.0
     imagePullPolicy: Always
     labels: {}
     #  test: test
@@ -218,7 +218,7 @@ cvat:
   opa:
     replicas: 1
     image: openpolicyagent/opa
-    tag: 0.63.0
+    tag: 1.12.2
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test

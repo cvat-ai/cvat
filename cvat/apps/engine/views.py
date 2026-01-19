@@ -2469,13 +2469,11 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         user = self.request.user
         is_self = int(self.kwargs.get("pk", 0)) == user.id or \
             self.action == "self"
-        if user.is_staff:
-            return UserSerializer if not is_self else UserSerializer
+
+        if is_self or user.is_superuser:
+            return UserSerializer
         else:
-            if is_self and self.request.method in SAFE_METHODS:
-                return UserSerializer
-            else:
-                return BasicUserSerializer
+            return BasicUserSerializer
 
     @extend_schema(summary='Get details of the current user',
         responses={
@@ -2622,8 +2620,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if (manifest_path := request.query_params.get('manifest_path')):
                 manifest_prefix = os.path.dirname(manifest_path)
 
-                full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
-                if not os.path.exists(full_manifest_path) or \
+                full_manifest_path = db_storage.get_storage_dirname() / manifest_path
+                if not full_manifest_path.exists() or \
                         datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
                     storage.download_file(manifest_path, full_manifest_path)
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())

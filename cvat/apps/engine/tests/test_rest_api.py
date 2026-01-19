@@ -826,25 +826,32 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
     def test_api_v2_users_id_admin_partial(self):
         data = {"username": "user09", "last_name": "my last name"}
         response = self._run_api_v2_users_id(self.admin, self.user.id, data)
+        self._check_response_with_data(self.user, response, data, True)
 
+        data = {"is_staff": True, "is_superuser": True, "is_active": False, "groups": ["admin"]}
+        response = self._run_api_v2_users_id(self.admin, self.user.id, data)
         self._check_response_with_data(self.user, response, data, True)
 
     def test_api_v2_users_id_user_partial(self):
         data = {"username": "user10", "first_name": "my name"}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self._check_response_with_data(self.user, response, data, False)
+        self._check_response_with_data(self.user, response, data, True)
+
+        data = {"email": "unverified@example.com"}
+        response = self._run_api_v2_users_id(self.user, self.user.id, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"is_staff": True}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"username": "admin", "is_superuser": True}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"username": "non_active", "is_active": False}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"username": "annotator01", "first_name": "slave"}
         response = self._run_api_v2_users_id(self.user, self.annotator.id, data)
@@ -1401,6 +1408,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
     @classmethod
     def _create_media(cls):
+        share_root: Path = settings.SHARE_ROOT
         cls.media_data = []
         cls.media = {
             "files": [],
@@ -1470,7 +1478,7 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         with open(path, "wb") as video:
             video.write(data.read())
 
-        manifest_path = os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl")
+        manifest_path = share_root / "videos" / "manifest.jsonl"
         generate_manifest_file(
             data_type=ManifestDataType.video, manifest_path=manifest_path, sources=[path]
         )
@@ -1485,14 +1493,12 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
             }
         )
 
-        manifest_path = manifest_path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
+        manifest_path = share_root / "manifest.jsonl"
         generate_manifest_file(
             data_type=ManifestDataType.images,
             manifest_path=manifest_path,
-            sources=[
-                os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)
-            ],
-            root_dir=settings.SHARE_ROOT,
+            sources=[share_root / imagename_pattern.format(i) for i in range(1, 8)],
+            root_dir=share_root,
         )
         cls.media["files"].append(manifest_path)
         cls.media_data.append(
@@ -3006,6 +3012,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
+        share_root: Path = settings.SHARE_ROOT
 
         cls.media_data = []
 
@@ -3115,7 +3122,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                     generate_manifest_file(
                         ManifestDataType.point_clouds,
                         manifest_path,
-                        glob(os.path.join(temp_dir, "**/*.*"), recursive=True),
+                        list(Path(temp_dir).glob("**/*.*")),
                         sorting_method=SortingMethod.PREDEFINED,
                         root_dir=temp_dir,
                     )
@@ -3133,7 +3140,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         generate_manifest_file(
             data_type=ManifestDataType.video,
-            manifest_path=os.path.join(settings.SHARE_ROOT, "videos", "manifest.jsonl"),
+            manifest_path=share_root / "videos" / "manifest.jsonl",
             sources=[path],
         )
 
@@ -3149,11 +3156,9 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         generate_manifest_file(
             data_type=ManifestDataType.images,
-            manifest_path=os.path.join(settings.SHARE_ROOT, "manifest.jsonl"),
-            sources=[
-                os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)
-            ],
-            root_dir=settings.SHARE_ROOT,
+            manifest_path=share_root / "manifest.jsonl",
+            sources=[share_root / imagename_pattern.format(i) for i in range(1, 8)],
+            root_dir=share_root,
         )
         cls.media_data.append(
             {
@@ -3548,7 +3553,7 @@ class ManifestDataType(str, Enum):
 
 def generate_manifest_file(
     data_type: ManifestDataType,
-    manifest_path,
+    manifest_path: Path,
     sources,
     *,
     sorting_method=SortingMethod.LEXICOGRAPHICAL,
@@ -3579,7 +3584,7 @@ def generate_manifest_file(
     manifest.create()
 
 
-def get_manifest_images_list(manifest_path):
+def get_manifest_images_list(manifest_path: Path):
     return list(ImageManifestManager(manifest_path, create_index=False).data)
 
 
@@ -3605,6 +3610,7 @@ class TaskDataAPITestCase(ApiTestBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        share_root: Path = settings.SHARE_ROOT
 
         cls._share_image_sizes = {}
         cls._share_files = []
@@ -3709,8 +3715,8 @@ class TaskDataAPITestCase(ApiTestBase):
         filename = "videos/manifest.jsonl"
         generate_manifest_file(
             data_type=ManifestDataType.video,
-            manifest_path=os.path.join(settings.SHARE_ROOT, filename),
-            sources=[os.path.join(settings.SHARE_ROOT, "videos", "test_video_1.mp4")],
+            manifest_path=share_root / filename,
+            sources=[share_root / "videos" / "test_video_1.mp4"],
         )
         cls._share_files.append(filename)
 
@@ -3727,12 +3733,12 @@ class TaskDataAPITestCase(ApiTestBase):
             filename = "images_manifest{}.jsonl".format("_sorted" if ordered else "")
             generate_manifest_file(
                 data_type=ManifestDataType.images,
-                manifest_path=os.path.join(settings.SHARE_ROOT, filename),
-                sources=[os.path.join(settings.SHARE_ROOT, fn) for fn in image_files],
+                manifest_path=share_root / filename,
+                sources=[share_root / fn for fn in image_files],
                 sorting_method=(
                     SortingMethod.LEXICOGRAPHICAL if ordered else SortingMethod.PREDEFINED
                 ),
-                root_dir=settings.SHARE_ROOT,
+                root_dir=share_root,
             )
             cls._share_files.append(filename)
 
@@ -4064,7 +4070,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 # Apply the requested sorting to the expected results
                 sorting = data.get("sorting_method", SortingMethod.LEXICOGRAPHICAL)
                 if sorting == SortingMethod.PREDEFINED and manifest:
-                    manifest = _add_prefix(_name_key(manifest))
+                    manifest = Path(_add_prefix(_name_key(manifest)))
                     manifest_root = os.path.dirname(manifest)
                     manifest_files = get_manifest_images_list(manifest)
                     assert len(manifest_files) == len(source_images)
@@ -4768,7 +4774,7 @@ class TaskDataAPITestCase(ApiTestBase):
         }
 
         manifest_name = "images_manifest_sorted.jsonl"
-        images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
+        images = get_manifest_images_list(settings.SHARE_ROOT / manifest_name)
         image_sizes = [self._share_image_sizes[fn] for fn in images]
         task_data.update(
             {f"server_files[{i}]": fn for i, fn in enumerate(images + [manifest_name])}
@@ -4828,7 +4834,7 @@ class TaskDataAPITestCase(ApiTestBase):
         task_data_common = {"image_quality": 70, "sorting_method": SortingMethod.PREDEFINED}
 
         manifest_name = "images_manifest.jsonl"
-        images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
+        images = get_manifest_images_list(settings.SHARE_ROOT / manifest_name)
         image_sizes = [self._share_image_sizes[v] for v in images]
 
         for caching_enabled, manifest in product([True, False], [True, False]):
@@ -4893,7 +4899,7 @@ class TaskDataAPITestCase(ApiTestBase):
             task_data_common = {"image_quality": 75, "sorting_method": SortingMethod.PREDEFINED}
 
             for caching_enabled, manifest in product([True, False], [True, False]):
-                manifest_path = os.path.join(test_dir, "manifest.jsonl")
+                manifest_path = Path(test_dir, "manifest.jsonl")
                 generate_manifest_file(
                     ManifestDataType.images,
                     manifest_path,
@@ -4981,7 +4987,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 task_data["server_files[0]"] = archive_name
 
                 manifest_name = "images_manifest.jsonl"
-                images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
+                images = get_manifest_images_list(settings.SHARE_ROOT / manifest_name)
                 image_sizes = [self._share_image_sizes[v] for v in images]
 
                 kwargs = {}
@@ -5055,7 +5061,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 ):
                     task_data = task_data_common.copy()
 
-                    manifest_path = os.path.join(test_dir, "manifest.jsonl")
+                    manifest_path = Path(test_dir, "manifest.jsonl")
                     generate_manifest_file(
                         ManifestDataType.images,
                         manifest_path,
