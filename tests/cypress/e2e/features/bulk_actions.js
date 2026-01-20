@@ -6,6 +6,7 @@
 
 import { defaultTaskSpec } from '../../support/default-specs';
 import { createDummyAWSBucket } from '../../support/dummy-data';
+import { getBulkActionsMenu, assignAllJobsTo } from '../../support/utils.cy';
 
 context('Bulk actions in UI', () => {
     const taskName = 'task_bulk_actions';
@@ -54,22 +55,9 @@ context('Bulk actions in UI', () => {
         ...projectSpec,
         name: stringID(i, projectName),
     });
-    function selectAll() {
-        cy.get('.cvat-bulk-wrapper').should('exist').and('be.visible');
-        cy.contains('Select all').click();
-    }
-    function getBulkActionsMenu() {
-        selectAll();
-        cy.get('.cvat-item-selected').first().within(() => {
-            cy.get('.cvat-actions-menu-button').click();
-        });
-        return cy.get('.ant-dropdown');
-    }
 
     function assignToAdmin() {
-        cy.contains(`Assignee (${numberOfObjects})`).click();
-        cy.get('.cvat-user-search-field').type('admin', { delay: 0 }); // all at once
-        return cy.get('.cvat-user-search-field').type('{enter}');
+        assignAllJobsTo('admin', numberOfObjects);
     }
 
     before(() => {
