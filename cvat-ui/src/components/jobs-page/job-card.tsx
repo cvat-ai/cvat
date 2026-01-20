@@ -72,7 +72,6 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
     return (
         <JobActionsComponent
             jobInstance={job}
-            consensusJobsPresent={false}
             dropdownTrigger={['contextMenu']}
             triggerElement={(
                 <Card

@@ -25,7 +25,6 @@ import JobActionsItems from './actions-menu-items';
 
 interface Props {
     jobInstance: Job;
-    consensusJobsPresent: boolean;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
@@ -36,7 +35,6 @@ function JobActionsComponent(
     const {
         jobInstance,
         triggerElement,
-        consensusJobsPresent,
         dropdownTrigger,
     } = props;
     const dispatch = useDispatch();
@@ -77,7 +75,7 @@ function JobActionsComponent(
     }, [jobInstance]);
 
     const onMergeConsensusJob = useCallback(() => {
-        if (consensusJobsPresent && jobInstance.parentJobId === null) {
+        if (jobInstance.hasReplicas) {
             Modal.confirm({
                 title: 'The consensus job will be merged',
                 content: 'Existing annotations in the parent job will be updated. Continue?',
@@ -92,7 +90,7 @@ function JobActionsComponent(
                 okText: 'Merge',
             });
         }
-    }, [consensusJobsPresent, jobInstance]);
+    }, [jobInstance]);
 
     const onDeleteJob = useCallback(() => {
         const jobsToDelete = allJobs.filter((job) => selectedIds.includes(job.id));
@@ -198,7 +196,7 @@ function JobActionsComponent(
             onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
             onImportAnnotations,
             onExportAnnotations,
-            onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ? onMergeConsensusJob : null,
+            onMergeConsensusJob: jobInstance.hasReplicas ? onMergeConsensusJob : null,
             onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
             selectedIds,
         }, props);

@@ -22,7 +22,6 @@ export interface BulkSelectProps {
 interface BulkWrapperProps {
     currentResourceIds: (number | string)[];
     resourceType: SelectedResourceType;
-    parentToChildrenMap?: Record<number, number[]>;
     children: (selectProps: (id: number | string, idx: number) => BulkSelectProps) => React.ReactNode;
 }
 
@@ -145,26 +144,11 @@ function BulkWrapper(props: Readonly<BulkWrapperProps>): JSX.Element {
         };
     }, [dispatch]);
 
-    const { parentToChildrenMap = {} } = props;
-
-    function handleChildren(rangeIds: (number | string)[]): (number | string)[] {
-        const childIds = [];
-        for (const resourceId of rangeIds) {
-            if (parentToChildrenMap[resourceId as number]) {
-                const childrenIDs = parentToChildrenMap[resourceId as number];
-                childIds.push(...childrenIDs);
-            }
-        }
-        return childIds;
-    }
-
     function updateResources(
         rangeIds: (number | string)[],
         action: (ids: (number | string)[]) => Action<SelectionActionsTypes>,
     ): void {
-        const childrenIds = handleChildren(rangeIds);
-        const allIds = rangeIds.concat(childrenIds);
-        dispatch(action(allIds));
+        dispatch(action(rangeIds));
     }
 
     const selectProps = (

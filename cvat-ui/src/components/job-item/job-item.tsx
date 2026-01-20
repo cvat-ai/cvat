@@ -5,12 +5,11 @@
 import './styles.scss';
 
 import React, {
-    useCallback, useEffect, useState,
+    useEffect, useState,
 } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import dayjs, { Dayjs } from 'dayjs';
-import PropTypes from 'prop-types';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
@@ -27,7 +26,6 @@ import { useIsMounted, useContextMenuClick } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
-import Collapse from 'antd/lib/collapse';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
 import JobActionsComponent from 'components/jobs-page/actions-menu';
 import { JobStageSelector, JobStateSelector } from './job-selectors';
@@ -40,9 +38,6 @@ interface Props {
     job: Job;
     task: Task;
     onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
-    childJobs?: Job[];
-    defaultCollapsed?: boolean;
-    onCollapseChange?: (jobID: number, collapsed: boolean) => void;
     selected?: boolean;
     onClick?: (event?: React.MouseEvent) => void;
 }
@@ -112,7 +107,7 @@ function ReviewSummaryComponent({ jobInstance }: Readonly<{ jobInstance: Job }>)
 
 function JobItem(props: Readonly<Props>): JSX.Element {
     const {
-        job, task, onJobUpdate, childJobs, defaultCollapsed, onCollapseChange, selected, onClick,
+        job, task, onJobUpdate, selected, onClick,
     } = props;
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
@@ -132,14 +127,6 @@ function JobItem(props: Readonly<Props>): JSX.Element {
     const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     const jobName = `Job #${job.id}`;
-
-    let childJobViews: React.JSX.Element[] = [];
-    if (childJobs && childJobs.length > 0) {
-        const sortedChildJobs = [...childJobs].sort((a, b) => a.id - b.id);
-        childJobViews = sortedChildJobs.map((eachJob: Job) => (
-            <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} selected={selected} />
-        ));
-    }
 
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
@@ -161,12 +148,6 @@ function JobItem(props: Readonly<Props>): JSX.Element {
             </Col>
         );
     }
-
-    const onCollapse = useCallback((keys: string | string[]) => {
-        if (onCollapseChange) {
-            onCollapseChange(job.id, Array.isArray(keys) ? keys.length === 0 : keys === '');
-        }
-    }, [onCollapseChange]);
 
     /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
     const card = (
@@ -296,45 +277,18 @@ function JobItem(props: Readonly<Props>): JSX.Element {
             >
                 <MoreOutlined className='cvat-menu-icon' />
             </div>
-            {childJobViews.length > 0 && (
-                <Collapse
-                    className='cvat-consensus-job-collapse'
-                    defaultActiveKey={defaultCollapsed ? [] : ['1']}
-                    onChange={onCollapse}
-                    items={[
-                        {
-                            key: '1',
-                            label: <Text>{`${childJobViews.length} Replicas`}</Text>,
-                            children: childJobViews,
-                        },
-                    ]}
-                />
-            )}
         </Card>
     );
 
     return (
         <Col span={24}>
-            {
-                job.parentJobId === null ? (
-                    <JobActionsComponent
-                        jobInstance={job}
-                        consensusJobsPresent={(childJobs as Job[]).length > 0}
-                        dropdownTrigger={['contextMenu']}
-                        triggerElement={card}
-                    />
-                ) : card
-            }
+            <JobActionsComponent
+                jobInstance={job}
+                dropdownTrigger={['contextMenu']}
+                triggerElement={card}
+            />
         </Col>
     );
 }
-
-JobItem.defaultProps = {
-    childJobs: [],
-};
-
-JobItem.propTypes = {
-    childJobs: PropTypes.arrayOf(PropTypes.instanceOf(Job)),
-};
 
 export default React.memo(JobItem);
