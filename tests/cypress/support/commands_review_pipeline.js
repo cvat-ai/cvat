@@ -5,7 +5,7 @@
 
 /// <reference types="cypress" />
 
-import { assignAllJobsTo } from './utils.cy';
+import { assignAllTo } from './utils.cy';
 
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
@@ -44,7 +44,7 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('assignAllJobsToUser', (user) => assignAllJobsTo(user));
+Cypress.Commands.add('assignAllJobsToUser', (user) => assignAllTo(user));
 
 Cypress.Commands.add('collectIssueLabel', () => {
     cy.document().then((doc) => Array.from(doc.querySelectorAll('.cvat-hidden-issue-label')));

@@ -16,8 +16,7 @@ export function getBulkActionsMenu() {
     return cy.get('.ant-dropdown');
 }
 
-export function assignAllJobsTo(username, numberOfObjects = null) {
-    cy.url().should('contain', 'tasks');
+export function assignAllTo(username, numberOfObjects = null) {
     if (numberOfObjects) {
         // if caller asks, check number of jobs
         cy.contains(`Assignee (${numberOfObjects})`)

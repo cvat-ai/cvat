@@ -6,7 +6,7 @@
 
 import { defaultTaskSpec } from '../../support/default-specs';
 import { createDummyAWSBucket } from '../../support/dummy-data';
-import { getBulkActionsMenu, assignAllJobsTo } from '../../support/utils.cy';
+import { getBulkActionsMenu, assignAllTo } from '../../support/utils.cy';
 
 context('Bulk actions in UI', () => {
     const taskName = 'task_bulk_actions';
@@ -57,7 +57,7 @@ context('Bulk actions in UI', () => {
     });
 
     function assignToAdmin() {
-        assignAllJobsTo('admin', numberOfObjects);
+        assignAllTo('admin', numberOfObjects);
     }
 
     before(() => {
