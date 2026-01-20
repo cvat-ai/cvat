@@ -8355,6 +8355,10 @@ components:
         consensus_replicas:
           type: integer
           readOnly: true
+          deprecated: true
+        has_replicas:
+          type: boolean
+          readOnly: true
       required:
       - issues
       - labels

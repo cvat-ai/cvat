@@ -751,12 +751,23 @@ class JobReadListSerializer(serializers.ListSerializer):
                 ).values_list("id", "issue__count")
             )
 
+            # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
+            # limiting in only for the page
+            children_counts = dict(
+                models.Job.objects.with_child_jobs_counts().filter(
+                    id__in=set(j.id for j in page)
+                ).values_list("id", "child_jobs__count")
+            )
+
             for job in page:
                 job.user_can_view_task = job.get_task_id() in visible_tasks
                 job.issue__count = issue_counts.get(job.id, 0)
+                job.child_jobs__count = children_counts.get(job.id, 0)
 
         return super().to_representation(data)
 
+
+@extend_schema_serializer(deprecate_fields=["consensus_replicas"])
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="get_task_id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
@@ -779,6 +790,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     parent_job_id = serializers.ReadOnlyField(allow_null=True)
     consensus_replicas = serializers.IntegerField(read_only=True)
+    has_replicas = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = models.Job
@@ -788,21 +800,19 @@ class JobReadSerializer(serializers.ModelSerializer):
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
             'target_storage', 'source_storage', 'assignee_updated_date', 'parent_job_id',
-            'consensus_replicas'
+            'consensus_replicas', 'has_replicas',
         )
         read_only_fields = fields
         list_serializer_class = JobReadListSerializer
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: models.Job):
         data = super().to_representation(instance)
 
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
 
-        if instance.type == models.JobType.ANNOTATION:
-            data['consensus_replicas'] = instance.segment.task.consensus_replicas
-        else:
-            data['consensus_replicas'] = 0
+        data['consensus_replicas'] = instance.child_jobs__count
+        data['has_replicas'] = instance.child_jobs__count > 0
 
         if request := self.context.get('request'):
             can_view_task = getattr(instance, "user_can_view_task", None)
