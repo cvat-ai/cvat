@@ -8,6 +8,8 @@ import Tag from 'antd/lib/tag';
 export enum TagType {
     GROUND_TRUTH = 'ground_truth',
     CONSENSUS = 'consensus',
+    REPLICATED = 'replicated',
+    REPLICA = 'replica',
 }
 
 interface TagProps {
@@ -22,6 +24,10 @@ function CVATTag(props: TagProps): JSX.Element | null {
             return <Tag className='cvat-tag-ground-truth' color='#ED9C00'>Ground truth</Tag>;
         case TagType.CONSENSUS:
             return <Tag className='cvat-tag-consensus' color='#1890FF'>Consensus</Tag>;
+        case TagType.REPLICATED:
+            return <Tag className='cvat-tag-replicated' color='#1890FF'>Replicated</Tag>;
+        case TagType.REPLICA:
+            return <Tag className='cvat-tag-replica' color='#58C0FF'>Replica</Tag>;
         default:
             return null;
     }

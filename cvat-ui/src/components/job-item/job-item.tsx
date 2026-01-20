@@ -148,10 +148,16 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                 <CVATTag type={TagType.GROUND_TRUTH} />
             </Col>
         );
-    } else if (job.consensusReplicas) {
+    } else if (job.hasReplicas) {
         tag = (
             <Col offset={1}>
-                <CVATTag type={TagType.CONSENSUS} />
+                <CVATTag type={TagType.REPLICATED} />
+            </Col>
+        );
+    } else if (job.parentJobId !== null) {
+        tag = (
+            <Col offset={1}>
+                <CVATTag type={TagType.REPLICA} />
             </Col>
         );
     }
