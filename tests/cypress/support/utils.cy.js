@@ -20,7 +20,10 @@ export function assignAllJobsTo(username, numberOfObjects = null) {
     cy.url().should('contain', 'tasks');
     if (numberOfObjects) {
         // if caller asks, check number of jobs
-        cy.contains(`Assignee (${numberOfObjects})`).click();
+        cy.contains(`Assignee (${numberOfObjects})`)
+            .should('exist').and('be.visible').click();
+    } else {
+        cy.contains('Assignee (').click();
     }
     cy.get('.cvat-user-search-field').type(username, { delay: 0 }); // all at once
     return cy.get('.cvat-user-search-field').type('{enter}');
