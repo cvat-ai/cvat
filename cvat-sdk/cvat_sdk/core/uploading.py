@@ -11,13 +11,13 @@ import os
 from contextlib import AbstractContextManager
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import urllib3
 
 from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.exceptions import CvatSdkException
-from cvat_sdk.core.helpers import StreamWithProgress, expect_status
+from cvat_sdk.core.helpers import StreamWithProgress, expect_status, make_request_headers
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 
 if TYPE_CHECKING:
@@ -35,7 +35,7 @@ def _upload_with_tus(
     file_stream: StreamWithProgress,
     logger: logging.Logger,
 ) -> str:
-    common_headers = {**api_client.get_common_headers(), "Tus-Resumable": "1.0.0"}
+    common_headers = {**make_request_headers(api_client), "Tus-Resumable": "1.0.0"}
 
     file_stream.seek(0, os.SEEK_END)
     upload_length = file_stream.tell()
@@ -132,8 +132,8 @@ class Uploader:
         *,
         meta: dict[str, Any],
         query_params: dict[str, Any] = None,
-        fields: Optional[dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
+        fields: dict[str, Any] | None = None,
+        pbar: ProgressReporter | None = None,
         logger=None,
     ) -> urllib3.HTTPResponse:
         """
@@ -198,7 +198,7 @@ class Uploader:
             query_params=query_params,
             headers={
                 "Upload-Start": "",
-                **self._client.api_client.get_common_headers(),
+                **make_request_headers(self._client.api_client),
             },
         )
         expect_status(202, response)
@@ -209,7 +209,7 @@ class Uploader:
             url,
             headers={
                 "Upload-Finish": "",
-                **self._client.api_client.get_common_headers(),
+                **make_request_headers(self._client.api_client),
             },
             query_params=query_params,
             post_params=fields,
@@ -225,10 +225,10 @@ class AnnotationUploader(Uploader):
         filename: Path,
         format_name: str,
         *,
-        conv_mask_to_poly: Optional[bool] = None,
-        url_params: Optional[dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
+        conv_mask_to_poly: bool | None = None,
+        url_params: dict[str, Any] | None = None,
+        pbar: ProgressReporter | None = None,
+        status_check_period: int | None = None,
     ):
         url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
@@ -252,10 +252,10 @@ class DatasetUploader(Uploader):
         filename: Path,
         format_name: str,
         *,
-        url_params: Optional[dict[str, Any]] = None,
-        conv_mask_to_poly: Optional[bool] = None,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
+        url_params: dict[str, Any] | None = None,
+        conv_mask_to_poly: bool | None = None,
+        pbar: ProgressReporter | None = None,
+        status_check_period: int | None = None,
     ):
         url = self._client.api_map.make_endpoint_url(upload_endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
@@ -282,7 +282,7 @@ class DataUploader(Uploader):
         url: str,
         resources: list[Path],
         *,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
         **kwargs,
     ):
         bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
@@ -310,7 +310,7 @@ class DataUploader(Uploader):
                     headers={
                         "Content-Type": "multipart/form-data",
                         "Upload-Multiple": "",
-                        **self._client.api_client.get_common_headers(),
+                        **make_request_headers(self._client.api_client),
                     },
                 )
                 expect_status(200, response)

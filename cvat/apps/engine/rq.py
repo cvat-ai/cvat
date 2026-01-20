@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 from types import NoneType
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 import attrs
 import django_rq
@@ -393,7 +394,7 @@ def define_dependent_job(
     user_id: int,
     should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
     *,
-    rq_id: Optional[str] = None,
+    rq_id: str | None = None,
 ) -> RQDependency:
     if not should_be_dependent:
         return None

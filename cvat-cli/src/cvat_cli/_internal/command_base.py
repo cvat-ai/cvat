@@ -7,8 +7,8 @@ import json
 import textwrap
 import types
 from abc import ABCMeta, abstractmethod
-from collections.abc import Mapping, Sequence
-from typing import Callable, Protocol
+from collections.abc import Callable, Mapping, Sequence
+from typing import Protocol
 
 from cvat_sdk import Client
 

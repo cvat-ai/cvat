@@ -17,11 +17,7 @@ from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import (
-    CvatTaskOrJobDataExtractor,
-    TaskData,
-    find_dataset_root,
-)
+from cvat.apps.dataset_manager.bindings import CvatDataExtractor, TaskData, find_dataset_root
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import (
     ensure_extractors_efficiency,
@@ -425,7 +421,7 @@ class TaskExportTest(_DbTestBase):
         task_ann.init_from_db()
         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task["id"]))
 
-        extractor = CvatTaskOrJobDataExtractor(task_data)
+        extractor = CvatDataExtractor(task_data)
         dm_dataset = datumaro.components.project.Dataset.from_extractors(extractor)
         self.assertEqual(4, len(dm_dataset.get("image_1").annotations))
 
@@ -589,7 +585,7 @@ class TaskExportTest(_DbTestBase):
         task_ann = TaskAnnotation(task["id"])
         task_ann.init_from_db()
         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task["id"]))
-        extractor = CvatTaskOrJobDataExtractor(task_data)
+        extractor = CvatDataExtractor(task_data)
         dm_dataset = Dataset.from_extractors(extractor)
 
         assert len(dm_dataset.get("image_3").annotations) == 0

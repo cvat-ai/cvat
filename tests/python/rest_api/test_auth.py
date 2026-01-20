@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from collections.abc import Generator
 from contextlib import contextmanager
 from http import HTTPStatus
-from typing import Generator, Optional
 from unittest import mock
 
 import pytest
@@ -44,7 +44,7 @@ class TestTokenAuth:
 
     @classmethod
     @contextmanager
-    def make_client(cls, username: Optional[str] = None) -> Generator[ApiClient, None, None]:
+    def make_client(cls, username: str | None = None) -> Generator[ApiClient, None, None]:
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
             if username:
                 cls.login(api_client, username)
@@ -123,7 +123,7 @@ class TestSessionAuth:
 
     @classmethod
     @contextmanager
-    def make_client(cls, username: Optional[str] = None) -> Generator[ApiClient, None, None]:
+    def make_client(cls, username: str | None = None) -> Generator[ApiClient, None, None]:
         with ApiClient(Configuration(host=BASE_URL)) as api_client:
             if username:
                 cls.login(api_client, username)
@@ -187,6 +187,72 @@ class TestSessionAuth:
                 _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.UNAUTHORIZED
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestAccessTokenAuth:
+    @classmethod
+    @contextmanager
+    def make_client(cls, *, token: str | None = None) -> Generator[ApiClient, None, None]:
+        with ApiClient(Configuration(host=BASE_URL)) as api_client:
+            if token:
+                api_client.configuration.access_token = token
+
+            yield api_client
+
+    def _test_can_use_auth(self, api_client: ApiClient, *, username: str, access_token: str):
+        from cvat_sdk.api_client.rest import RESTClientObject
+
+        original_request = RESTClientObject.request
+
+        def patched_request(*args, **kwargs):
+            assert "sessionid" not in kwargs["headers"].get("Cookie", "")
+            assert "X-CSRFToken" not in kwargs["headers"]
+            assert kwargs["headers"]["Authorization"] == "Bearer " + access_token
+
+            return original_request(api_client.rest_client, *args, **kwargs)
+
+        with mock.patch.object(
+            api_client.rest_client, "request", side_effect=patched_request
+        ) as mock_request:
+            (user, response) = api_client.users_api.retrieve_self()
+
+            mock_request.assert_called_once()
+
+        assert response.status == HTTPStatus.OK
+        assert user.username == username
+
+    def test_can_use_token_auth(self, admin_user: str, access_tokens_by_username):
+        token = access_tokens_by_username[admin_user][0]["private_key"]
+        with self.make_client(token=token) as api_client:
+            self._test_can_use_auth(api_client, username=admin_user, access_token=token)
+
+    def test_logout_is_not_an_error(self, admin_user: str, access_tokens_by_username):
+        token = access_tokens_by_username[admin_user][0]["private_key"]
+        with ApiClient(Configuration(host=BASE_URL)) as session_api_client:
+            session_api_client.auth_api.create_login(
+                login_serializer_ex_request=models.LoginSerializerExRequest(
+                    username=admin_user, password=USER_PASS
+                )
+            )
+            session_api_client.set_default_header(
+                "Origin", session_api_client.build_origin_header()
+            )
+            session_api_client.set_default_header(
+                "X-CSRFToken", session_api_client.cookies["csrftoken"].value
+            )
+
+            with self.make_client(token=token) as token_api_client:
+                # It must be a noop call in the case of API access token auth
+                (_, response) = token_api_client.auth_api.create_logout()
+                assert response.status == HTTPStatus.OK
+
+                # the credentials are still in the client and can be used
+                assert token_api_client.configuration.access_token == token
+                self._test_can_use_auth(token_api_client, username=admin_user, access_token=token)
+
+            # Other sessions must not be affected by the logout
+            session_api_client.users_api.retrieve_self()
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

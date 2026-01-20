@@ -5,9 +5,10 @@
 
 /// <reference types="cypress" />
 
-import { projectName } from '../../../support/const_project';
+import { projectNameDelete } from '../../../support/const_project';
 
 context('Base actions on the project', () => {
+    const projectName = projectNameDelete;
     const labelName = `Base label for ${projectName}`;
     const taskName = {
         firstTask: `First task for ${projectName}`,
@@ -55,12 +56,13 @@ context('Base actions on the project', () => {
     }
 
     before(() => {
+        cy.prepareUserSession('/projects');
         cy.openProject(projectName);
     });
 
     after(() => {
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [userName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteUsers(authHeaders, [userName]);
         });
     });
 

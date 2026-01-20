@@ -8,11 +8,11 @@ import mimetypes
 import os
 import re
 import struct
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Collection, Iterable, Sequence
 from enum import Enum
 from pathlib import Path
 from random import shuffle
-from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import IO, Literal, Protocol
 
 import cv2 as cv
 import numpy as np
@@ -21,6 +21,33 @@ from natsort import os_sorted
 from PIL import Image
 
 from .errors import InvalidPcdError
+
+
+class Openable(Protocol):
+    # The mode is required so that Path can be used as an Openable.
+    def open(self, mode: Literal["rb"]) -> IO[bytes]: ...
+
+
+class NamedOpenable(Openable, Protocol):
+    def __fspath__(self) -> str: ...  # Must return the path that should be used for sorting.
+
+
+class MemOpenable:
+    def __init__(self, contents: bytes) -> None:
+        self._contents = contents
+
+    def open(self, mode: str) -> IO[bytes]:
+        assert mode == "rb"
+        return io.BytesIO(self._contents)
+
+
+class MemNamedOpenable(MemOpenable):
+    def __init__(self, contents: bytes, path: str) -> None:
+        super().__init__(contents)
+        self._path = path
+
+    def __fspath__(self) -> str:
+        return self._path
 
 
 def rotate_image(image, angle):
@@ -37,7 +64,7 @@ def rotate_image(image, angle):
     return matrix
 
 
-def md5_hash(frame: Union[str, Image.Image, VideoFrame, io.RawIOBase]) -> str:
+def md5_hash(frame: str | Image.Image | VideoFrame | IO[bytes]) -> str:
     buffer = frame
 
     if isinstance(buffer, str):
@@ -79,7 +106,7 @@ def is_point_cloud(media_file: str) -> bool:
     return os.path.splitext(media_file)[1].lower() in (".pcd", ".bin")
 
 
-def _prepare_context_list(files: Iterable[str], base_dir: Optional[str] = None):
+def _prepare_context_list(files: Iterable[str], base_dir: str | None = None):
     return sorted(
         os.path.relpath(x, base_dir) if base_dir is not None else x for x in filter(is_image, files)
     )
@@ -88,8 +115,8 @@ def _prepare_context_list(files: Iterable[str], base_dir: Optional[str] = None):
 def _find_related_images_2D(
     dataset_paths: Sequence[str],
     *,
-    scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
-) -> Tuple[Set[str], Dict[str, List[str]]]:
+    scene_paths: Callable[[str], bool] | Collection[str] | None = None,
+) -> tuple[set[str], dict[str, list[str]]]:
     """
     Expected 2D format is:
 
@@ -131,8 +158,8 @@ def _find_related_images_2D(
 def _find_related_images_3D(
     dataset_paths: Sequence[str],
     *,
-    scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
-) -> Tuple[Set[str], Dict[str, List[str]]]:
+    scene_paths: Callable[[str], bool] | Collection[str] | None = None,
+) -> tuple[set[str], dict[str, list[str]]]:
     """
     Supported 3D formats:
 
@@ -177,14 +204,14 @@ def _find_related_images_3D(
     # There's no point in disallowing multiple layouts simultaneously, but mixing is
     # unlikely to be encountered
 
-    scenes: Dict[str, str] = {
+    scenes: dict[str, str] = {
         os.path.splitext(p)[0]: p
         for p in dataset_paths
         if p.lower().endswith((".pcd", ".bin"))
         if scene_paths is None or callable(scene_paths) and scene_paths(p) or p in scene_paths
     }  # { scene name -> scene path }
 
-    related_images: Dict[str, List[str]] = {}  # { scene_name -> [related images] }
+    related_images: dict[str, list[str]] = {}  # { scene_name -> [related images] }
     for image_path in dataset_paths:
         image_name, image_ext = os.path.splitext(image_path)
         if image_ext.lower() in (".pcd", ".bin"):
@@ -245,9 +272,9 @@ def _find_related_images_3D(
 def find_related_images(
     dataset_paths: Sequence[str],
     *,
-    root_path: Optional[str] = None,
-    scene_paths: Optional[Union[Callable[[str], bool], Collection[str]]] = None,
-) -> Tuple[Set[str], Dict[str, List[str]]]:
+    root_path: str | None = None,
+    scene_paths: Callable[[str], bool] | Collection[str] | None = None,
+) -> tuple[set[str], dict[str, list[str]]]:
     """
     Finds related images for scenes in the dataset.
 
@@ -405,32 +432,27 @@ class PcdReader:
     )
 
     @classmethod
-    def parse_pcd_header(
-        cls, fp: Union[os.PathLike[str], io.RawIOBase], *, verify_version: bool = False
-    ) -> Dict[str, str]:
-        if not hasattr(fp, "read"):
-            with open(fp, "rb") as file:
-                return cls.parse_pcd_header(file, verify_version=verify_version)
-
+    def parse_pcd_header(cls, pcd: Openable, *, verify_version: bool = False) -> dict[str, str]:
         properties = {}
 
-        for line_number, line in enumerate(fp):
-            try:
-                line = line.decode("utf-8")
-            except UnicodeDecodeError as e:
-                raise InvalidPcdError(f"line {line_number}: failed to parse pcd header") from e
+        with pcd.open("rb") as fp:
+            for line_number, line in enumerate(fp):
+                try:
+                    line = line.decode("utf-8")
+                except UnicodeDecodeError as e:
+                    raise InvalidPcdError(f"line {line_number}: failed to parse pcd header") from e
 
-            if line.startswith("#"):
-                continue
+                if line.startswith("#"):
+                    continue
 
-            line_parts = line.split(" ", maxsplit=1)
-            if len(line_parts) != 2:
-                raise InvalidPcdError(f"line {line_number}: invalid line format")
+                line_parts = line.split(" ", maxsplit=1)
+                if len(line_parts) != 2:
+                    raise InvalidPcdError(f"line {line_number}: invalid line format")
 
-            k, v = line_parts
-            properties[k.upper()] = v.strip()
-            if "DATA" in line:
-                break
+                k, v = line_parts
+                properties[k.upper()] = v.strip()
+                if "DATA" in line:
+                    break
 
         if verify_version:
             version = properties.get("VERSION", None)
@@ -440,15 +462,13 @@ class PcdReader:
         return properties
 
     @classmethod
-    def parse_bin_header(cls, fp: Union[os.PathLike[str], io.RawIOBase]) -> dict[str, float]:
-        if not hasattr(fp, "read"):
-            with open(fp, "rb") as f:
-                return cls.parse_bin_header(f)
-
-        properties = {}
+    def parse_bin_header(cls, pcd: Openable) -> dict[str, float]:
         size_float = 4
         line_size = 4 * size_float
-        buffer = fp.read(line_size)
+
+        with pcd.open("rb") as fp:
+            buffer = fp.read(line_size)
+
         if not buffer or len(buffer) != line_size:
             raise InvalidPcdError("failed to parse bin pcd header")
 
@@ -457,6 +477,7 @@ class PcdReader:
         except struct.error as e:
             raise InvalidPcdError("failed to parse bin pcd header") from e
 
+        properties = {}
         properties["x"] = x
         properties["y"] = y
         properties["z"] = z
@@ -465,15 +486,10 @@ class PcdReader:
         return properties
 
     @classmethod
-    def convert_bin_to_pcd(
-        cls, path: Union[os.PathLike[str], io.RawIOBase], *, delete_source: bool = True
-    ) -> str:
-        pcd_file = io.BytesIO()
-        cls.convert_bin_to_pcd_file(path, output_file=pcd_file)
-
+    def convert_bin_to_pcd(cls, path: str, *, delete_source: bool = True) -> str:
         pcd_filename = os.path.splitext(path)[0] + ".pcd"
         with open(pcd_filename, "wb") as f:
-            f.write(pcd_file.getbuffer())
+            cls.convert_bin_to_pcd_file(Path(path), output_file=f)
 
         if delete_source:
             os.remove(path)
@@ -481,13 +497,13 @@ class PcdReader:
         return pcd_filename
 
     @classmethod
-    def convert_bin_to_pcd_file(
-        cls, fp: Union[os.PathLike[str], io.RawIOBase], *, output_file: io.RawIOBase
-    ):
-        if not hasattr(fp, "read"):
-            with open(fp, "rb") as file:
-                return cls.convert_bin_to_pcd_file(file, output_file=output_file)
+    def convert_bin_to_pcd_buffer(cls, bin_: Openable) -> bytes:
+        output_file = io.BytesIO()
+        cls.convert_bin_to_pcd_file(bin_, output_file=output_file)
+        return output_file.getvalue()
 
+    @classmethod
+    def convert_bin_to_pcd_file(cls, bin_: Openable, *, output_file: IO[bytes]) -> None:
         def write_header(file_obj: io.TextIOBase, width: int, height: int):
             file_obj.writelines(
                 f"{line}\n"
@@ -508,12 +524,15 @@ class PcdReader:
         list_pcd = []
         size_float = 4
         line_size = 4 * size_float
-        while buffer := fp.read(line_size):
-            if len(buffer) != line_size:
-                raise InvalidPcdError(f"failed to parse bin pcd point at pos {fp.tell()}")
 
-            x, y, z, intensity = struct.unpack("ffff", buffer)
-            list_pcd.append([x, y, z, intensity])
+        with bin_.open("rb") as fp:
+            while buffer := fp.read(line_size):
+                if len(buffer) != line_size:
+                    raise InvalidPcdError(f"failed to parse bin pcd point at pos {fp.tell()}")
+
+                x, y, z, intensity = struct.unpack("ffff", buffer)
+                list_pcd.append([x, y, z, intensity])
+
         np_pcd = np.asarray(list_pcd)
 
         output_file_as_text = io.TextIOWrapper(output_file, newline="\n")
@@ -521,5 +540,3 @@ class PcdReader:
         output_file_as_text.detach()
 
         output_file.write(np_pcd.astype("float32").tobytes())
-
-        return output_file

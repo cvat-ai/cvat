@@ -21,7 +21,10 @@ RUN apt-get update && \
         libxmlsec1-dev \
         libxmlsec1-openssl \
         libhdf5-dev \
-        cargo \
+        cargo-1.85 \
+    && update-alternatives \
+        --install /usr/bin/rustc rustc /usr/bin/rustc-1.85 185 \
+        --slave /usr/bin/cargo cargo /usr/bin/cargo-1.85 \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PIP_VERSION
@@ -82,7 +85,7 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.24.4 AS build-smokescreen
+FROM golang:1.25.5 AS build-smokescreen
 
 RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
 RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen
@@ -135,8 +138,7 @@ RUN apt-get update && \
         wait-for-it \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
-    rm -rf /var/lib/apt/lists/* && \
-    echo 'application/wasm wasm' >> /etc/mime.types
+    rm -rf /var/lib/apt/lists/*
 
 # Install smokescreen
 COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen

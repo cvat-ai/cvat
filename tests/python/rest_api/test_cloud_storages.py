@@ -7,7 +7,7 @@ import io
 import json
 from functools import partial
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
@@ -430,7 +430,7 @@ class TestGetCloudStorageContent:
     def _test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        manifest: Optional[str] = None,
+        manifest: str | None = None,
         **kwargs,
     ):
         with make_api_client(self.USER) as api_client:
@@ -641,11 +641,11 @@ class TestGetCloudStorageContent:
     def test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        manifest: Optional[str],
-        prefix: Optional[str],
-        default_bucket_prefix: Optional[str],
-        page_size: Optional[int],
-        expected_content: Optional[Any],
+        manifest: str | None,
+        prefix: str | None,
+        default_bucket_prefix: str | None,
+        page_size: int | None,
+        expected_content: Any | None,
         cloud_storages,
     ):
         if default_bucket_prefix:
@@ -693,7 +693,8 @@ class TestGetCloudStorageContent:
             if not next_token:
                 break
 
-        assert expected_content == current_content
+        # Each page is currently sorted individually, so we have to resort after combining.
+        assert expected_content == sorted(current_content, key=lambda el: el["type"].value)
 
     @pytest.mark.parametrize("cloud_storage_id", [2])
     def test_can_get_storage_content_with_manually_created_dirs(
@@ -750,3 +751,17 @@ class TestListCloudStorages:
         self._test_can_see_cloud_storages(
             "admin2", list(cloud_storages), page_size="all", org_id=query_value
         )
+
+
+class TestCloudStorageStatus:
+    @pytest.mark.parametrize(
+        "cloud_storage_id, expected_response",
+        [
+            (3, "AVAILABLE"),
+            (4, "NOT_FOUND"),
+        ],
+    )
+    def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
+        with make_api_client(admin_user) as api_client:
+            (data, _) = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
+            assert data == expected_response

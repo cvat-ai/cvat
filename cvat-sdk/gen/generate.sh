@@ -8,7 +8,7 @@ set -e
 
 GENERATOR_VERSION="v6.0.1"
 
-VERSION="2.46.2"
+VERSION="2.55.1"
 LIB_NAME="cvat_sdk"
 LAYER1_LIB_NAME="${LIB_NAME}/api_client"
 DST_DIR="$(cd "$(dirname -- "$0")/.." && pwd)"
@@ -17,8 +17,7 @@ GEN_DIR="${DST_DIR}/gen"
 POST_PROCESS_SCRIPT="${GEN_DIR}/postprocess.py"
 SCHEMA_PATH="${DST_DIR}/../cvat/schema.yml"
 
-rm -f -r "$DOCS_DIR" "${DST_DIR}/${LAYER1_LIB_NAME}" \
-    "${DST_DIR}/requirements/api_client.txt"
+rm -f -r "$DOCS_DIR" "${DST_DIR}/${LAYER1_LIB_NAME}"
 
 # Pass template dir here
 # https://github.com/OpenAPITools/openapi-generator/issues/8420
@@ -36,15 +35,14 @@ docker run --rm -u "$(id -u)":"$(id -g)" \
         -o "/mnt/dst"
 
 echo "VERSION = \"$VERSION\"" > "${DST_DIR}/${LIB_NAME}/version.py"
-mv "${DST_DIR}/requirements.txt" "${DST_DIR}/requirements/api_client.txt"
 
 API_DOCS_DIR="${DOCS_DIR}/apis/"
 MODEL_DOCS_DIR="${DOCS_DIR}/models/"
-mkdir "${API_DOCS_DIR}"
-mkdir "${MODEL_DOCS_DIR}"
-mv "${DOCS_DIR}/"*Api.md "${API_DOCS_DIR}"
-mv "${DOCS_DIR}/"*.md "${MODEL_DOCS_DIR}"
+mkdir -p -- "${API_DOCS_DIR}" "${MODEL_DOCS_DIR}"
+mv "${DST_DIR}/${LAYER1_LIB_NAME}/docs/"*Api.md "${API_DOCS_DIR}"
+mv "${DST_DIR}/${LAYER1_LIB_NAME}/docs/"*.md "${MODEL_DOCS_DIR}"
 mv "${DST_DIR}/api_summary.md" "${DOCS_DIR}"
+rmdir "${DST_DIR}/${LAYER1_LIB_NAME}/docs"
 
 # Do custom postprocessing for code files
 "${POST_PROCESS_SCRIPT}" --schema "${SCHEMA_PATH}" \

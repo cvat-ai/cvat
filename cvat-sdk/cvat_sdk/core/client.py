@@ -7,11 +7,13 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from abc import ABCMeta
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
+from urllib.parse import urlsplit
 
 import attrs
 import packaging.specifiers as specifiers
@@ -51,11 +53,38 @@ class Config:
     allow_unsupported_server: bool = True
     """Allow to use SDK with an unsupported server version. If disabled, raise an exception"""
 
-    verify_ssl: Optional[bool] = None
+    verify_ssl: bool | None = None
     """Whether to verify host SSL certificate or not"""
 
     cache_dir: Path = attrs.field(converter=Path, default=_DEFAULT_CACHE_DIR)
     """Directory in which to store cached server data"""
+
+
+class Credentials(metaclass=ABCMeta):
+    pass
+
+
+@attrs.define
+class PasswordCredentials(Credentials):
+    """
+    Represents password authentication credentials.
+    """
+
+    user: str
+    """Username for authentication"""
+
+    password: str
+    """Password for authentication"""
+
+
+@attrs.define
+class AccessTokenCredentials(Credentials):
+    """
+    Represents API access token authentication credentials.
+    """
+
+    token: str
+    """API access token for authentication"""
 
 
 _VERSION_OBJ = pv.Version(VERSION)
@@ -76,8 +105,8 @@ class Client:
         self,
         url: str,
         *,
-        logger: Optional[logging.Logger] = None,
-        config: Optional[Config] = None,
+        logger: logging.Logger | None = None,
+        config: Config | None = None,
         check_server_version: bool = True,
     ) -> None:
         self.logger = logger or logging.getLogger(__name__)
@@ -105,7 +134,7 @@ class Client:
     _ORG_SLUG_HEADER = "X-Organization"
 
     @property
-    def organization_slug(self) -> Optional[str]:
+    def organization_slug(self) -> str | None:
         """
         If this is set to a slug for an organization,
         all requests will be made in the context of that organization.
@@ -118,7 +147,7 @@ class Client:
         return self.api_client.default_headers.get(self._ORG_SLUG_HEADER)
 
     @organization_slug.setter
-    def organization_slug(self, org_slug: Optional[str]):
+    def organization_slug(self, org_slug: str | None):
         if org_slug is None:
             self.api_client.default_headers.pop(self._ORG_SLUG_HEADER, None)
         else:
@@ -200,34 +229,55 @@ class Client:
     def close(self) -> None:
         return self.__exit__(None, None, None)
 
-    def login(self, credentials: tuple[str, str]) -> None:
+    def login(self, credentials: Credentials | tuple[str, str]) -> None:
+        if self.has_credentials():
+            self.logout()
+
+        if isinstance(credentials, PasswordCredentials):
+            credentials = (credentials.user, credentials.password)
+        elif isinstance(credentials, AccessTokenCredentials):
+            self.api_client.configuration.access_token = credentials.token
+            return
+        elif not isinstance(credentials, tuple) or len(credentials) != 2:
+            raise TypeError(f"Invalid credentials format")
+
         self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
         assert "sessionid" in self.api_client.cookies
         assert "csrftoken" in self.api_client.cookies
-        self.api_client.set_default_header("Origin", self.api_client.build_origin_header())
-        self.api_client.set_default_header(
-            "X-CSRFToken", self.api_client.cookies["csrftoken"].value
-        )
+        self.api_client.configuration.api_key["csrfHeaderAuth"] = self.api_client.cookies[
+            "csrftoken"
+        ].value
 
     def has_credentials(self) -> bool:
-        return ("sessionid" in self.api_client.cookies) or ("csrftoken" in self.api_client.cookies)
+        return (
+            ("sessionid" in self.api_client.cookies)
+            or ("csrftoken" in self.api_client.cookies)
+            or self.api_client.configuration.access_token
+        )
+
+    def _clear_credentials(self):
+        self.api_client.cookies.pop("sessionid", None)
+        self.api_client.cookies.pop("csrftoken", None)
+        self.api_client.configuration.api_key.pop("csrfHeaderAuth", None)
+        self.api_client.configuration.access_token = None
 
     def logout(self) -> None:
-        if self.has_credentials():
+        if not self.has_credentials():
+            return
+
+        if "sessionid" in self.api_client.cookies or "csrftoken" in self.api_client.cookies:
             self.api_client.auth_api.create_logout()
-            self.api_client.cookies.pop("sessionid", None)
-            self.api_client.cookies.pop("csrftoken", None)
-            self.api_client.default_headers.pop("Origin", None)
-            self.api_client.default_headers.pop("X-CSRFToken", None)
+
+        self._clear_credentials()
 
     def wait_for_completion(
         self: Client,
         rq_id: str,
         *,
-        status_check_period: Optional[int] = None,
-        log_prefix: Optional[str] = None,
+        status_check_period: int | None = None,
+        log_prefix: str | None = None,
     ) -> tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
@@ -252,7 +302,7 @@ class Client:
 
         return request, response
 
-    def check_server_version(self, fail_if_unsupported: Optional[bool] = None) -> None:
+    def check_server_version(self, fail_if_unsupported: bool | None = None) -> None:
         if fail_if_unsupported is None:
             fail_if_unsupported = not self.config.allow_unsupported_server
 
@@ -341,9 +391,9 @@ class CVAT_API_V2:
         self,
         path: str,
         *,
-        psub: Optional[Sequence[Any]] = None,
-        kwsub: Optional[dict[str, Any]] = None,
-        query_params: Optional[dict[str, Any]] = None,
+        psub: Sequence[Any] | None = None,
+        kwsub: dict[str, Any] | None = None,
+        query_params: dict[str, Any] | None = None,
     ) -> str:
         url = self.host + path
         if psub or kwsub:
@@ -354,13 +404,51 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: Optional[int] = None, credentials: Optional[tuple[str, str]] = None
+    host: str,
+    *,
+    port: int | None = None,
+    credentials: Credentials | tuple[str, str] | None = None,
+    access_token: str | None = None,
 ) -> Client:
+    """
+    Create a Client object with the specified parameters.
+
+    Passing 'credentials' or 'access_token' allows to authenticate the client immediately.
+    These parameters cannot be used together.
+
+    Parameters:
+    :param host: allows to specify the server url. Can include scheme and port.
+    :param port: allows to specify the server port. Cannot be used together with a host
+      that contains a port component (e.g. localhost:80).
+    :param credentials: will automatically log in the client with the specified credentials.
+    :param access_token: a Personal Access Token (PAT) to be used for authentication.
+
+    Returns: a new Client object
+    """
+
+    if credentials is not None and access_token is not None:
+        raise ValueError(
+            "'credentials' and 'access_token' cannot be used together. Please use only one."
+        )
+
     url = host.rstrip("/")
+
     if port:
+        parsed_url = urlsplit(("https://" if "://" not in url else "") + host)
+        if parsed_url.port:
+            raise ValueError(
+                "The 'host' with a port and the 'port' argument cannot be used together. "
+                "Please specify only one port."
+            )
+
         url = f"{url}:{port}"
 
     client = Client(url=url)
+
+    if access_token is not None:
+        credentials = AccessTokenCredentials(access_token)
+
     if credentials is not None:
         client.login(credentials)
+
     return client

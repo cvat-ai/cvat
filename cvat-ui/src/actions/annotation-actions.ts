@@ -103,6 +103,7 @@ export enum AnnotationActionTypes {
     SAVE_ANNOTATIONS_FAILED = 'SAVE_ANNOTATIONS_FAILED',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
+    UPDATE_CACHED_CHUNKS = 'UPDATE_CACHED_CHUNKS',
 
     UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
 
@@ -154,6 +155,7 @@ export enum AnnotationActionTypes {
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
+    SEARCH_CHAPTERS_FAILED = 'SEARCH_CHAPTERS_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
@@ -171,6 +173,16 @@ export enum AnnotationActionTypes {
     RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
     UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
     HIGHLIGHT_CONFLICT = 'HIGHLIGHT_CONFCLICT',
+    HOVERED_CHAPTER = 'HOVERED_CHAPTER',
+}
+
+export function setHoveredChapter(id: number | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.HOVERED_CHAPTER,
+        payload: {
+            id,
+        },
+    };
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -361,7 +373,7 @@ export function updateCanvasBrushTools(config: {
 }
 
 export function removeAnnotationsAsync(
-    startFrame: number, stopFrame: number, delTrackKeyframesOnly: boolean,
+    startFrame: number | undefined, stopFrame: number | undefined, delTrackKeyframesOnly: boolean,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
@@ -600,20 +612,23 @@ export function switchShowSearchFramesModal(visible: boolean): AnyAction {
     };
 }
 
-function confirmCanvasReady(ranges?: string): AnyAction {
+function updateCachedChunks(ranges: string): AnyAction {
     return {
-        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
+        type: AnnotationActionTypes.UPDATE_CACHED_CHUNKS,
         payload: { ranges },
     };
 }
 
-export function confirmCanvasReadyAsync(): ThunkAction {
+export function updateCachedChunksAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
             const state: CombinedState = getState();
             const job = state.annotation.job.instance as Job;
+            if (!job) {
+                return;
+            }
+
             const includedFrames = state.annotation.job.frameNumbers;
-            const { changeFrameEvent } = state.annotation.player.frame;
             const chunks = await job.frames.cachedChunks() as number[];
             const { frameCount, dataChunkSize } = job;
 
@@ -632,12 +647,27 @@ export function confirmCanvasReadyAsync(): ThunkAction {
                 return acc;
             }, []).map(([start, end]) => `${start}:${end}`).join(';');
 
-            dispatch(confirmCanvasReady(ranges));
-            await changeFrameEvent?.close();
+            dispatch(updateCachedChunks(ranges));
         } catch (error) {
             // even if error happens here, do not need to notify the users
-            dispatch(confirmCanvasReady());
         }
+    };
+}
+
+function confirmCanvasReady(): AnyAction {
+    return {
+        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
+        payload: {},
+    };
+}
+
+export function confirmCanvasReadyAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+        const state: CombinedState = getState();
+        const { changeFrameEvent } = state.annotation.player.frame;
+        await dispatch(updateCachedChunksAsync());
+        dispatch(confirmCanvasReady());
+        await changeFrameEvent?.close();
     };
 }
 
@@ -922,7 +952,7 @@ export function getJobAsync({
             getCore().config.globalObjectsCounter = 0;
             const [job] = await cvat.jobs.get({ jobID });
             let gtJob: Job | null = null;
-            if (job.type === JobType.ANNOTATION) {
+            if (job.type === JobType.ANNOTATION || job.type === JobType.CONSENSUS_REPLICA) {
                 try {
                     [gtJob] = await cvat.jobs.get({ taskID, type: JobType.GROUND_TRUTH });
                 } catch (e) {
@@ -1319,6 +1349,40 @@ export function searchAnnotationsAsync(
                 payload: {
                     error,
                 },
+            });
+        }
+    };
+}
+
+export function searchChaptersAsync(
+    sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
+    frameFrom: number,
+    frameTo: number,
+) {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+        try {
+            const {
+                settings: {
+                    player: { showDeletedFrames },
+                },
+            } = getState();
+
+            const frame = await sessionInstance.frames
+                .search(
+                    {
+                        notDeleted: showDeletedFrames,
+                        chapterMark: true,
+                    },
+                    frameFrom,
+                    frameTo,
+                );
+            if (frame !== null) {
+                dispatch(changeFrameAsync(frame));
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SEARCH_CHAPTERS_FAILED,
+                payload: { error },
             });
         }
     };

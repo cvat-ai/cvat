@@ -152,7 +152,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v4
@@ -267,7 +267,8 @@ jobs:
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml \
+            run --env PYTHONDEVMODE=1 cvat_ci /bin/bash \
             -c 'coverage run -a manage.py test -v 2 cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
 
       - name: Uploading code coverage results as an artifact
@@ -300,10 +301,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
-                'issues_prs', 'issues_prs2', 'features']
+                'actions_projects_models', 'canvas3d_functionality',
+                'issues_prs', 'issues_prs2', 'features', 'features2']
     steps:
       - uses: actions/checkout@v4
 
@@ -372,11 +373,11 @@ jobs:
               --headed \
               --browser chrome \
               --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
           mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
 
@@ -500,8 +501,8 @@ jobs:
         # We don't have external services in Helm tests, so we ignore corresponding cases
         # They are still tested without Helm
         run: |
-          kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
-          kubectl cp tests/mounted_file_share/videos $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+          kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
+          kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
           pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-cli-level DEBUG
 
       - name: Creating a log file from "cvat" container logs

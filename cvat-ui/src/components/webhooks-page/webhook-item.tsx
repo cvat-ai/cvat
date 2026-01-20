@@ -15,6 +15,7 @@ import { groupEvents } from 'components/setup-webhook-pages/setup-webhook-conten
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import { useContextMenuClick } from 'utils/hooks';
 import WebhookActionsMenu from './actions-menu';
 
 export interface WebhookItemProps {
@@ -63,6 +64,8 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
     const { lastStatus } = webhookInstance;
     const [webhookStatus, setWebhookStatus] = useState<WebhookStatus>(setUpWebhookStatus(lastStatus));
 
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
+
     const deletes = useSelector((state: CombinedState) => state.webhooks.activities.deletes);
     const deleted = webhookInstance.id in deletes ? deletes[webhookInstance.id] : false;
 
@@ -81,12 +84,14 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
 
     const rowClassName = `cvat-webhooks-list-item${selected ? ' cvat-item-selected' : ''}`;
 
+    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
     return (
         <WebhookActionsMenu
             webhookInstance={webhookInstance}
             dropdownTrigger={['contextMenu']}
             triggerElement={(
                 <Row
+                    ref={itemRef}
                     className={rowClassName}
                     style={deleted ? { opacity: 0.5, pointerEvents: 'none' } : {}}
                     onClick={onClick}
@@ -162,15 +167,13 @@ function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
                         </Row>
                         <Row justify='end'>
                             <Col>
-                                <WebhookActionsMenu
-                                    webhookInstance={webhookInstance}
-                                    triggerElement={(
-                                        <div className='cvat-webhooks-page-actions-button cvat-actions-menu-button'>
-                                            <Text className='cvat-text-color'>Actions</Text>
-                                            <MoreOutlined className='cvat-menu-icon' />
-                                        </div>
-                                    )}
-                                />
+                                <div
+                                    className='cvat-webhooks-page-actions-button cvat-actions-menu-button'
+                                    onClick={handleContextMenuClick}
+                                >
+                                    <Text className='cvat-text-color'>Actions</Text>
+                                    <MoreOutlined className='cvat-menu-icon' />
+                                </div>
                             </Col>
                         </Row>
                     </Col>

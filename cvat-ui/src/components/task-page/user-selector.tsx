@@ -12,6 +12,7 @@ import debounce from 'lodash/debounce';
 import { User, getCore, ServerError } from 'cvat-core-wrapper';
 import { getCVATStore } from 'cvat-store';
 import { handleDropdownKeyDown } from 'utils/dropdown-utils';
+import { useUpdateEffect } from 'utils/hooks';
 
 const core = getCore();
 
@@ -135,17 +136,19 @@ export default function UserSelector(props: Readonly<Props>): JSX.Element {
         }
     };
 
+    useUpdateEffect(() => {
+        if (value && !users.filter((user) => user.id === value.id).length) {
+            core.users.get({ id: value.id }).then((result: User[]) => {
+                const [user] = result;
+                if (user) {
+                    setUsers([...users, user]);
+                }
+            });
+        }
+    }, [value]);
+
     useEffect(() => {
         if (value) {
-            if (!users.filter((user) => user.id === value.id).length) {
-                core.users.get({ id: value.id }).then((result: User[]) => {
-                    const [user] = result;
-                    if (user) {
-                        setUsers([...users, user]);
-                    }
-                });
-            }
-
             setSearchPhrase(value.username);
         } else {
             setSearchPhrase('');

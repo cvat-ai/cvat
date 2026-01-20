@@ -1,3 +1,8 @@
+# This script is intended to be used with an old release of CVAT, so it uses the internal
+# API as it existed in that release. Because of this, we cannot use Pylint, since it will attempt
+# to match the API calls against the current API and report spurious problems.
+# pylint: disable=all
+
 from __future__ import annotations
 
 import argparse
@@ -16,7 +21,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.media_extractors import MEDIA_TYPES
 from cvat.apps.engine.task import _create_static_chunks
 
-EXPECTED_LAST_ENGINE_MIGRATION = "0093_issue_assignee_updated_date_alter_issue_assignee_and_more"
+EXPECTED_LAST_ENGINE_MIGRATION = "0095_fix_related_names"
 
 
 def _ensure_last_engine_applied_migration_name():

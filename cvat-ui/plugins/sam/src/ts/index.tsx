@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Tensor } from 'onnxruntime-web';
 import { LRUCache } from 'lru-cache';
 import { CVATCore, MLModel, Job } from 'cvat-core-wrapper';
 import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
@@ -46,8 +45,8 @@ interface SAMPlugin {
         jobs: Record<number, Job>;
         modelID: string;
         modelURL: string;
-        embeddings: LRUCache<string, Tensor>;
-        lowResMasks: LRUCache<string, Tensor>;
+        embeddings: LRUCache<string, Float32Array>;
+        lowResMasks: LRUCache<string, Float32Array>;
         lastClicks: ClickType[];
     };
     callbacks: {
@@ -61,6 +60,25 @@ interface ClickType {
     y: number;
 }
 
+function toMatImage(input: number[], width: number, height: number): number[][] {
+    const image = Array(height).fill(0);
+    for (let i = 0; i < image.length; i++) {
+        image[i] = Array(width).fill(0);
+    }
+
+    for (let i = 0; i < input.length; i++) {
+        const row = Math.floor(i / width);
+        const col = i % width;
+        image[row][col] = input[i] > 0 ? 255 : 0;
+    }
+
+    return image;
+}
+
+function onnxToImage(input: any, width: number, height: number): number[][] {
+    return toMatImage(input, width, height);
+}
+
 function getModelScale(w: number, h: number): number {
     // Input images to SAM must be resized so the longest side is 1024
     const LONG_SIDE_LENGTH = 1024;
@@ -68,45 +86,31 @@ function getModelScale(w: number, h: number): number {
     return scale;
 }
 
-function modelData(
-    {
-        clicks, tensor, modelScale, maskInput,
-    }: {
-        clicks: ClickType[];
-        tensor: Tensor;
-        modelScale: { height: number; width: number; scale: number };
-        maskInput: Tensor | null;
-    },
-): DecodeBody {
-    const imageEmbedding = tensor;
-
-    const n = clicks.length;
-    const pointCoords = new Float32Array(2 * n);
-    const pointLabels = new Float32Array(n);
+function modelData({
+    clicks, imageEmbeddings, modelScale, lowResMask,
+}: {
+    clicks: ClickType[];
+    imageEmbeddings: Float32Array;
+    modelScale: { height: number; width: number; scale: number };
+    lowResMask: Float32Array | null;
+}): DecodeBody {
+    const pointCoords = new Float32Array(2 * clicks.length);
+    const pointLabels = new Float32Array(clicks.length);
 
     // Scale and add clicks
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < clicks.length; i++) {
         pointCoords[2 * i] = clicks[i].x * modelScale.scale;
         pointCoords[2 * i + 1] = clicks[i].y * modelScale.scale;
         pointLabels[i] = clicks[i].clickType;
     }
 
-    // Create the tensor
-    const pointCoordsTensor = new Tensor('float32', pointCoords, [1, n, 2]);
-    const pointLabelsTensor = new Tensor('float32', pointLabels, [1, n]);
-    const imageSizeTensor = new Tensor('float32', [modelScale.height, modelScale.width]);
-
-    const prevMask = maskInput ||
-        new Tensor('float32', new Float32Array(256 * 256), [1, 1, 256, 256]);
-    const hasMaskInput = new Tensor('float32', [maskInput ? 1 : 0]);
-
     return {
-        image_embeddings: imageEmbedding,
-        point_coords: pointCoordsTensor,
-        point_labels: pointLabelsTensor,
-        orig_im_size: imageSizeTensor,
-        mask_input: prevMask,
-        has_mask_input: hasMaskInput,
+        imageEmbeddings,
+        pointCoords,
+        pointLabels,
+        width: modelScale.width,
+        height: modelScale.height,
+        maskInput: lowResMask ?? null,
     };
 }
 
@@ -119,7 +123,7 @@ const samPlugin: SAMPlugin = {
                 async leave(
                     plugin: SAMPlugin,
                     results: any[],
-                    query: { jobID?: number },
+                    query: { jobID?: number; },
                 ): Promise<any> {
                     if (typeof query.jobID === 'number') {
                         [plugin.data.jobs[query.jobID]] = results;
@@ -133,7 +137,7 @@ const samPlugin: SAMPlugin = {
                 async enter(
                     plugin: SAMPlugin,
                     taskID: number,
-                    model: MLModel, { frame }: { frame: number },
+                    model: MLModel, { frame }: { frame: number; },
                 ): Promise<null | APIWrapperEnterOptions> {
                     return new Promise((resolve, reject) => {
                         function resolvePromise(): void {
@@ -179,19 +183,21 @@ const samPlugin: SAMPlugin = {
 
                 async leave(
                     plugin: SAMPlugin,
-                    result: any,
+                    result: unknown,
                     taskID: number,
                     model: MLModel,
                     {
                         frame, pos_points, neg_points, obj_bbox,
                     }: {
-                        frame: number, pos_points: number[][], neg_points: number[][], obj_bbox: number[][],
+                        frame: number;
+                        pos_points: number[][];
+                        neg_points: number[][];
+                        obj_bbox: number[][];
                     },
-                ): Promise<
-                    {
+                ): Promise<{
                         mask: number[][];
                         bounds: [number, number, number, number];
-                    }> {
+                    } | unknown> {
                     return new Promise((resolve, reject) => {
                         if (model.id !== plugin.data.modelID) {
                             resolve(result);
@@ -216,20 +222,13 @@ const samPlugin: SAMPlugin = {
                                 const key = `${taskID}_${frame}`;
 
                                 if (result) {
-                                    const bin = window.atob(result.blob);
-                                    const uint8Array = new Uint8Array(bin.length);
+                                    const bin = window.atob((result as { blob: string }).blob);
+                                    const bytes = new Uint8Array(bin.length);
                                     for (let i = 0; i < bin.length; i++) {
-                                        uint8Array[i] = bin.charCodeAt(i);
+                                        bytes[i] = bin.charCodeAt(i);
                                     }
-                                    const float32Arr = new Float32Array(uint8Array.buffer);
-                                    plugin.data.embeddings.set(key, new Tensor('float32', float32Arr, [1, 256, 64, 64]));
+                                    plugin.data.embeddings.set(key, new Float32Array(bytes.buffer));
                                 }
-
-                                const modelScale = {
-                                    width: imWidth,
-                                    height: imHeight,
-                                    scale: getModelScale(imWidth, imHeight),
-                                };
 
                                 const clicks: ClickType[] = [];
                                 if (obj_bbox.length) {
@@ -245,52 +244,37 @@ const samPlugin: SAMPlugin = {
                                     clicks.push({ clickType: 0, x: point[0], y: point[1] });
                                 });
 
-                                const isLowResMaskSuitable = JSON
+                                const isLowResMaskRelevant = JSON
                                     .stringify(clicks.slice(0, -1)) === JSON.stringify(plugin.data.lastClicks);
-                                const feeds = modelData({
-                                    clicks,
-                                    tensor: plugin.data.embeddings.get(key) as Tensor,
-                                    modelScale,
-                                    maskInput: isLowResMaskSuitable ? plugin.data.lowResMasks.get(key) || null : null,
-                                });
-
-                                function toMatImage(input: number[], width: number, height: number): number[][] {
-                                    const image = Array(height).fill(0);
-                                    for (let i = 0; i < image.length; i++) {
-                                        image[i] = Array(width).fill(0);
-                                    }
-
-                                    for (let i = 0; i < input.length; i++) {
-                                        const row = Math.floor(i / width);
-                                        const col = i % width;
-                                        image[row][col] = input[i] > 0 ? 255 : 0;
-                                    }
-
-                                    return image;
-                                }
-
-                                function onnxToImage(input: any, width: number, height: number): number[][] {
-                                    return toMatImage(input, width, height);
-                                }
 
                                 plugin.data.worker.postMessage({
                                     action: WorkerAction.DECODE,
-                                    payload: feeds,
+                                    payload: modelData({
+                                        imageEmbeddings: plugin.data.embeddings.get(key)!,
+                                        lowResMask: isLowResMaskRelevant ?
+                                            plugin.data.lowResMasks.get(key) ?? null : null,
+                                        modelScale: {
+                                            width: imWidth,
+                                            height: imHeight,
+                                            scale: getModelScale(imWidth, imHeight),
+                                        },
+                                        clicks,
+                                    }),
                                 });
 
                                 plugin.data.worker.onmessage = ((e) => {
                                     if (e.data.action !== WorkerAction.DECODE) {
-                                        const error = 'Caught unexpected action response from worker: ' +
-                                                `${e.data.action}, while "${WorkerAction.DECODE}" was expected`;
-                                        reject(new Error(error));
+                                        const msg = 'Caught unexpected action response from worker: ' +
+                                                `${e.data.action}, while "${WorkerAction.DECODE}" expected`;
+                                        reject(new Error(msg));
                                     }
 
                                     if (!e.data.error) {
                                         const {
-                                            masks, lowResMasks, xtl, ytl, xbr, ybr,
+                                            mask, lowResMask, xtl, ytl, xbr, ybr,
                                         } = e.data.payload;
-                                        const imageData = onnxToImage(masks.data, masks.dims[3], masks.dims[2]);
-                                        plugin.data.lowResMasks.set(key, lowResMasks);
+                                        const imageData = onnxToImage(mask, xbr - xtl + 1, ybr - ytl + 1);
+                                        plugin.data.lowResMasks.set(key, lowResMask);
                                         plugin.data.lastClicks = clicks;
 
                                         resolve({
@@ -343,7 +327,15 @@ const builder: ComponentBuilder = ({ core }) => {
 
     return {
         name: samPlugin.name,
-        destructor: () => {},
+        destructor: () => {
+            samPlugin.data.embeddings.clear();
+            samPlugin.data.lowResMasks.clear();
+            samPlugin.data.worker.terminate();
+            samPlugin.data.lastClicks = [];
+            samPlugin.data.jobs = {};
+            samPlugin.data.core = null;
+            samPlugin.data.initialized = false;
+        },
     };
 };
 

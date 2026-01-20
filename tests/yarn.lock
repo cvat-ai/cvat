@@ -832,6 +832,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"allure-js-commons@npm:^3.4.1":
+  version: 3.4.1
+  resolution: "allure-js-commons@npm:3.4.1"
+  dependencies:
+    md5: "npm:^2.3.0"
+  peerDependencies:
+    allure-playwright: 3.4.1
+  peerDependenciesMeta:
+    allure-playwright:
+      optional: true
+  checksum: 10c0/0024346a209821a037edbe8f8ffa751c0837ad9a52a64b29704f04beceff58cb672ab5afaf772cec52ee3ab8030c6b69dd42fa840c340010a7982d38f31682ef
+  languageName: node
+  linkType: hard
+
 "ansi-colors@npm:^4.1.1":
   version: 4.1.3
   resolution: "ansi-colors@npm:4.1.3"
@@ -924,6 +938,13 @@ __metadata:
   version: 1.0.0
   resolution: "archy@npm:1.0.0"
   checksum: 10c0/200c849dd1c304ea9914827b0555e7e1e90982302d574153e28637db1a663c53de62bad96df42d50e8ce7fc18d05e3437d9aa8c4b383803763755f0956c7d308
+  languageName: node
+  linkType: hard
+
+"arg@npm:5.0.2":
+  version: 5.0.2
+  resolution: "arg@npm:5.0.2"
+  checksum: 10c0/ccaf86f4e05d342af6666c569f844bec426595c567d32a8289715087825c2ca7edd8a3d204e4d2fb2aa4602e09a57d0c13ea8c9eea75aac3dbb4af5514e6800e
   languageName: node
   linkType: hard
 
@@ -1049,7 +1070,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bluebird@npm:^3.7.2":
+"bluebird@npm:3.7.2, bluebird@npm:^3.7.2":
   version: 3.7.2
   resolution: "bluebird@npm:3.7.2"
   checksum: 10c0/680de03adc54ff925eaa6c7bb9a47a0690e8b5de60f4792604aae8ed618c65e6b63a7893b57ca924beaf53eee69c5af4f8314148c08124c550fe1df1add897d2
@@ -1435,6 +1456,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cypress-repeat@npm:^2.3.10":
+  version: 2.3.10
+  resolution: "cypress-repeat@npm:2.3.10"
+  dependencies:
+    arg: "npm:5.0.2"
+    bluebird: "npm:3.7.2"
+    debug: "npm:4.4.3"
+    dotenv: "npm:8.2.0"
+  peerDependencies:
+    cypress: ">=5.3.0"
+  bin:
+    cypress-repeat: index.js
+  checksum: 10c0/bb59e89abd880869f7330bc12c7d36852591b7831359cdc6361acf7406f56662a2e82fa28f29ca5790e80a06b45f79396b1db0ac82f6320b138771d41632a126
+  languageName: node
+  linkType: hard
+
 "cypress@npm:^13.10.0":
   version: 13.10.0
   resolution: "cypress@npm:13.10.0"
@@ -1522,6 +1559,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"debug@npm:4.4.3":
+  version: 4.4.3
+  resolution: "debug@npm:4.4.3"
+  dependencies:
+    ms: "npm:^2.1.3"
+  peerDependenciesMeta:
+    supports-color:
+      optional: true
+  checksum: 10c0/d79136ec6c83ecbefd0f6a5593da6a9c91ec4d7ddc4b54c883d6e71ec9accb5f67a1a5e96d00a328196b5b5c86d365e98d8a3a70856aaf16b4e7b1985e67f5a6
+  languageName: node
+  linkType: hard
+
 "debug@npm:^3.1.0":
   version: 3.2.7
   resolution: "debug@npm:3.2.7"
@@ -1567,6 +1616,13 @@ __metadata:
   version: 0.1.2
   resolution: "dom-walk@npm:0.1.2"
   checksum: 10c0/4d2ad9062a9423d890f8577aa202b597a6b85f9489bdde656b9443901b8b322b289655c3affefc58ec2e41931e0828dfee0a1d2db6829a607d76def5901fc5a9
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:8.2.0":
+  version: 8.2.0
+  resolution: "dotenv@npm:8.2.0"
+  checksum: 10c0/b6a07a2c400b13ad4e59c34e4682256e6bb846469781a3963b36861ee608ed312e6125c4a7635a9edcf957bb294a6966e218f0e26b82ff0bda9184211d4bc141
   languageName: node
   linkType: hard
 
@@ -2699,11 +2755,11 @@ __metadata:
   linkType: hard
 
 "min-document@npm:^2.19.0":
-  version: 2.19.0
-  resolution: "min-document@npm:2.19.0"
+  version: 2.19.1
+  resolution: "min-document@npm:2.19.1"
   dependencies:
     dom-walk: "npm:^0.1.0"
-  checksum: 10c0/783724da716fc73a51c171865d7b29bf2b855518573f82ef61c40d214f6898d7b91b5c5419e4d22693cdb78d4615873ebc3b37d7639d3dd00ca283e5a07c7af9
+  checksum: 10c0/3924861e38e820428c1076c42f2eacff7dcbf1aeff0ddcd5bc8a22c47ac338505c87e6fd66ebe97378207ea3a410e4f639d1de652a9e64b8ef738002909e1b8f
   languageName: node
   linkType: hard
 
@@ -2739,7 +2795,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ms@npm:^2.1.1":
+"ms@npm:^2.1.1, ms@npm:^2.1.3":
   version: 2.1.3
   resolution: "ms@npm:2.1.3"
   checksum: 10c0/d924b57e7312b3b63ad21fc5b3dc0af5e78d61a1fc7cfb5457edaf26326bf62be5307cc87ffb6862ef1c2b33b0233cdb5d4f01c4c958cc0d660948b65a287a48
@@ -3296,12 +3352,14 @@ __metadata:
   dependencies:
     "@cypress/code-coverage": "npm:^3.9.10"
     allure-cypress: "npm:^3.2.2"
+    allure-js-commons: "npm:^3.4.1"
     archiver: "npm:^5.3.0"
     cy-verify-downloads: "npm:^0.0.5"
     cypress: "npm:^13.10.0"
     cypress-file-upload: "npm:^5.0.8"
     cypress-localstorage-commands: "npm:^1.7.0"
     cypress-real-events: "npm:^1.14.0"
+    cypress-repeat: "npm:^2.3.10"
     extract-zip: "npm:^2.0.1"
     fast-glob: "npm:^3.3.3"
     fs-extra: "npm:^10.1.0"

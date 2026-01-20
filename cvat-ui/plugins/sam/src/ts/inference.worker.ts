@@ -18,13 +18,12 @@ export interface InitBody {
 }
 
 export interface DecodeBody {
-    image_embeddings: Tensor;
-    point_coords: Tensor;
-    point_labels: Tensor;
-    orig_im_size: Tensor;
-    mask_input: Tensor;
-    has_mask_input: Tensor;
-    readonly [name: string]: Tensor;
+    imageEmbeddings: Float32Array;
+    pointCoords: Float32Array;
+    pointLabels: Float32Array;
+    maskInput: Float32Array | null;
+    width: number;
+    height: number;
 }
 
 export interface WorkerOutput {
@@ -70,16 +69,37 @@ if ((self as any).importScripts) {
                 error: 'Worker was not initialized',
             });
         } else if (e.data.action === WorkerAction.DECODE) {
-            decoder.run((e.data.payload as DecodeBody)).then((results) => {
+            const body = e.data.payload as DecodeBody;
+            const inputs: Record<string, Tensor> = {
+                image_embeddings: new Tensor('float32', body.imageEmbeddings, [1, 256, 64, 64]),
+                point_coords: new Tensor('float32', body.pointCoords, [1, body.pointCoords.length / 2, 2]),
+                point_labels: new Tensor('float32', body.pointLabels, [1, body.pointLabels.length]),
+                orig_im_size: new Tensor('float32', [body.height, body.width]),
+                mask_input: body.maskInput ?
+                    new Tensor('float32', body.maskInput, [1, 1, 256, 256]) :
+                    new Tensor('float32', new Float32Array(256 * 256), [1, 1, 256, 256]),
+                has_mask_input: new Tensor('float32', [body.maskInput ? 1 : 0]),
+            };
+
+            decoder.run(inputs).then((results) => (
+                Promise.all([
+                    results.xtl.getData(),
+                    results.ytl.getData(),
+                    results.xbr.getData(),
+                    results.ybr.getData(),
+                    results.masks.getData(),
+                    results.low_res_masks.getData(),
+                ])
+            )).then(([xtl, ytl, xbr, ybr, mask, lowResMask]) => {
                 postMessage({
                     action: WorkerAction.DECODE,
                     payload: {
-                        masks: results.masks,
-                        lowResMasks: results.low_res_masks,
-                        xtl: Number(results.xtl.data[0]),
-                        ytl: Number(results.ytl.data[0]),
-                        xbr: Number(results.xbr.data[0]),
-                        ybr: Number(results.ybr.data[0]),
+                        mask,
+                        lowResMask,
+                        xtl: Number(xtl[0]),
+                        ytl: Number(ytl[0]),
+                        xbr: Number(xbr[0]),
+                        ybr: Number(ybr[0]),
                     },
                 });
             }).catch((error: unknown) => {

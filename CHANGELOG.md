@@ -16,6 +16,374 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.55.0'></a>
+## \[2.55.0\] - 2026-01-19
+
+### Added
+
+- An option to download quality report as a confusion matrix CSV file
+  (<https://github.com/cvat-ai/cvat/pull/10177>)
+
+### Fixed
+
+- Added reading HTTP request data in chunks instead of loading entire body into memory for TUS PATCH requests
+  (<https://github.com/cvat-ai/cvat/issues/5261>)
+
+- Return a 404 for HEAD requests after a file upload is completed via TUS, instead of a 500 Internal Server Error
+  (<https://github.com/cvat-ai/cvat/issues/5261>)
+
+- When creating a task, manifest files uploaded alongside videos are no longer ignored
+  (<https://github.com/cvat-ai/cvat/pull/10162>)
+
+- Improved annotation import performance for Ultralytics YOLO Classification
+  (<https://github.com/cvat-ai/cvat/pull/10163>)
+
+- Fixed a AssertionError that occurred during the download of 3D annotations.
+  (<https://github.com/cvat-ai/cvat/pull/10165>)
+
+- Removed redundant `PATCH: /api/jobs/<id>/meta` requests sent from annotation view
+  (<https://github.com/cvat-ai/cvat/pull/10184>)
+
+- \[CLI\] Fixed agents waiting for inappropriate amounts between retrying
+  failed AR acquire requests
+  (<https://github.com/cvat-ai/cvat/pull/10193>)
+
+- \[CLI\] Made agents handle failure of queue-related HTTP requests
+  in a more robust manner
+  (<https://github.com/cvat-ai/cvat/pull/10194>)
+
+### Security
+
+- Fixed XSS vulnerabilities related to skeleton SVG images
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-3m7p-wx65-c7mp>)
+
+- Upgrade OPA to new version (1.12.2)
+  (<https://github.com/cvat-ai/cvat/pull/10183>)
+
+- Users with staff status can no longer change their permissions
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-7pvv-w55f-qmw7>)
+
+<a id='changelog-2.54.0'></a>
+## \[2.54.0\] - 2025-12-24
+
+### Added
+
+- \[CLI\] Added an `Author-email` field to the package metadata
+  (<https://github.com/cvat-ai/cvat/pull/10143>)
+
+### Changed
+
+- \[CLI\] Replaced the deprecated `Home-page` field and license classifier
+  with `Project-URL` and `License-Expression` fields, respectively
+  (<https://github.com/cvat-ai/cvat/pull/10143>)
+
+### Fixed
+
+- Сonsecutive slicing of shapes without press Escape key
+  (<https://github.com/cvat-ai/cvat/pull/10107>)
+
+- Inability to access some tasks with videos with bad keyframes
+  (<https://github.com/cvat-ai/cvat/pull/10152>)
+
+- Related image display in tasks from the attached file share
+  (<https://github.com/cvat-ai/cvat/pull/10153>)
+
+<a id='changelog-2.53.0'></a>
+## \[2.53.0\] - 2025-12-18
+
+### Changed
+
+- \[Server API\] TUS upload endpoints no longer accept requests with no
+  `Content-Length` header
+  (<https://github.com/cvat-ai/cvat/pull/10098>)
+
+- \[SDK\] Package metadata no longer uses the deprecated `Home-page` and
+  `License` fields
+  (<https://github.com/cvat-ai/cvat/pull/10125>)
+
+### Fixed
+
+- Image scaling was not applied when image filter is enabled
+  (<https://github.com/cvat-ai/cvat/pull/10111>)
+
+- Fixed TUS resumable upload validation to properly reject chunks that would exceed the declared file size
+  (<https://github.com/cvat-ai/cvat/pull/10102>)
+
+- \[SDK\] Removed the redundant setuptools runtime dependency
+  (<https://github.com/cvat-ai/cvat/pull/10125>)
+
+### Security
+
+- Fixed a directory traversal vulnerability in the `/api/server/share`
+  endpoint
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-3g7v-xjh7-xmqx>)
+
+<a id='changelog-2.52.0'></a>
+## \[2.52.0\] - 2025-12-15
+
+### Added
+
+- Video chapters now can be displayed in the frame player
+  and can be used for frame navigation during annotation.
+  (<https://github.com/cvat-ai/cvat/pull/9924>)
+
+- "Return to Previous Page" button on Task, Project, Job, and Cloud Storage Not Found pages
+  (<https://github.com/cvat-ai/cvat/pull/10028>)
+
+- Double click on a shape in 2D or 3D workspace now fits the shape into scene
+  (<https://github.com/cvat-ai/cvat/pull/10108>)
+
+- Parameter "Control points size" now have effect for points on 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/10119>)
+
+### Changed
+
+- It is now possible to back up tasks created from a mounted file share that
+  use static chunk storage
+  (<https://github.com/cvat-ai/cvat/pull/9972>)
+
+- Updated Nuclio to 1.15.9
+  (<https://github.com/cvat-ai/cvat/pull/10091>)
+
+- Reduced RAM usage on track export
+  (<https://github.com/cvat-ai/cvat/pull/10041>)
+
+- Better zoom-in, zoom-out algorithm on side views of 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/10109>)
+
+- Last zoom value on side cameras of 3D canvas memoized per object and restored when object reselected
+  (<https://github.com/cvat-ai/cvat/pull/10110>)
+
+- Settings AAM Zoom Margin is now more general and responsible for paddings around focused objects
+  (<https://github.com/cvat-ai/cvat/pull/10108>)
+
+- Improved algorithm for default zoom on side views of 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/10120>)
+
+### Removed
+
+- SiamMask and some OpenVINO-based functions
+  (<https://github.com/cvat-ai/cvat/pull/10091>)
+
+### Fixed
+
+- Backups of tasks created from a mounted file share no longer fail to import.
+  Note that backups of such tasks created by previous versions of CVAT still cannot be imported
+  (<https://github.com/cvat-ai/cvat/pull/9972>)
+
+- Heavyweight backups created from tasks using cloud storage that have
+  images as frames and non-default start frame, stop frame or frame step
+  settings no longer fail to import. Note that the fix is for backup
+  creation; as such, CVAT will still not be able to import backups of
+  such tasks created by previous versions
+  (<https://github.com/cvat-ai/cvat/pull/10004>)
+
+- \[CLI\] Fixed a truncated error message that could be printed when running
+  an agent for a remote function missing a (sub)label from the loaded AA function
+  (<https://github.com/cvat-ai/cvat/pull/10070>)
+
+- Fixed creation of tasks from images in cloud storage without a manifest
+  that use static chunks and a custom frame range
+  (<https://github.com/cvat-ai/cvat/pull/10079>)
+
+- Low visibility of object details over canvas if background or image is dark
+  (<https://github.com/cvat-ai/cvat/pull/10105>)
+
+- Weird camera behaviour when layout of 3D canvas gets resized
+  (<https://github.com/cvat-ai/cvat/pull/10117>)
+
+<a id='changelog-2.51.0'></a>
+## \[2.51.0\] - 2025-12-01
+
+### Added
+
+- Documentation for using Backblaze B2 as an S3-compatible cloud storage option in CVAT
+  (<https://github.com/cvat-ai/cvat/pull/9952>)
+
+### Changed
+
+- Relaxed video manifest creation to make use of keyframes even if seek lands earlier
+  (<https://github.com/cvat-ai/cvat/pull/9994>)
+
+### Removed
+
+- Python 3.9 support (due to Python 3.9 EOL)
+  (<https://github.com/cvat-ai/cvat/pull/10051>)
+
+### Fixed
+
+- Fixed OpenAPI schema for `retrieve_data` endpoints: marked `type` parameter as required for both tasks and jobs API
+  (<https://github.com/cvat-ai/cvat/issues/9315>)
+
+- Calculation of statistics in the job is failed when there is a track without keyframes
+  (<https://github.com/cvat-ai/cvat/pull/10050>)
+
+- Update the `updated_date` field of the Task when PATCHing `/api/tasks/<id>/data/meta`
+  (<https://github.com/cvat-ai/cvat/pull/10052>)
+
+- Incorrect retry handling of `429 TooManyRequests` error in case of data uploading via TUS protocol
+  (<https://github.com/cvat-ai/cvat/pull/10055>)
+
+- Error message is not displayed if not possible to fetch data for 3D canvas
+  (<https://github.com/cvat-ai/cvat/pull/10059>)
+
+<a id='changelog-2.50.0'></a>
+## \[2.50.0\] - 2025-11-26
+
+### Added
+
+- \[Helm\] Kvrocks PVC configuration via annotations
+  (<https://github.com/cvat-ai/cvat/pull/10021>)
+
+- Added kvrocks PVC VolumeAttributeClass support
+  (<https://github.com/cvat-ai/cvat/pull/10026>)
+
+- Added VolumeAttributesClass creation to public chart
+  (<https://github.com/cvat-ai/cvat/pull/10030>)
+
+### Changed
+
+- Change expiration date format view in 'Security' -> 'Create API Token'
+  from default ISO to DD/MM/YYYY so that it matches the dates in the token table
+  (<https://github.com/cvat-ai/cvat/pull/9975>)
+
+- Files located in the `data/tasks/<id>` directory are no longer included
+  in task backups, nor extracted from such backups when restoring. Recent
+  versions of CVAT (since v2.6.2) no longer create or use such files
+  (<https://github.com/cvat-ai/cvat/pull/10001>)
+
+- Updated Traefik to v3.6.x
+  (<https://github.com/cvat-ai/cvat/pull/10018>)
+
+### Fixed
+
+- Excessive `GET /api/users` requests on task page for each assigned job
+  (<https://github.com/cvat-ai/cvat/pull/9989>)
+
+- Actions menu can be opened twice on different resource cards: Projects, Jobs, Cloud storages, etc.
+  (<https://github.com/cvat-ai/cvat/pull/9986>)
+
+- Quality conflicts can now be displayed in the review mode of consensus replicas
+  (<https://github.com/cvat-ai/cvat/pull/10022>)
+
+- Fixed cloud storage status. Unavailable storages now return NOT_FOUND status instead of 400 Bad Request
+  (<https://github.com/cvat-ai/cvat/pull/10011>)
+
+<a id='changelog-2.49.0'></a>
+## \[2.49.0\] - 2025-11-06
+
+### Added
+
+- Helm charts are now available on Docker Hub, at <https://hub.docker.com/r/cvat/cvat>
+  (<https://github.com/cvat-ai/cvat/pull/9925>)
+
+### Changed
+
+- Admins will no longer see access tokens of other users on the token management page
+  (<https://github.com/cvat-ai/cvat/pull/9950>)
+
+### Removed
+
+- \[Server API\] Removed `GOOGLE_DRIVE` from the list of accepted cloud
+  storage provider types; it has never been implemented
+  (<https://github.com/cvat-ai/cvat/pull/9928>)
+
+- \[Server API\] Only own access tokens will be returned in the `GET /api/auth/access_tokens`
+  responses for everyone, including admins
+  (<https://github.com/cvat-ai/cvat/pull/9950>)
+- \[Server API\] The `owner` filters are removed from the `GET /api/auth/access_tokens` endpoint
+  (<https://github.com/cvat-ai/cvat/pull/9950>)
+
+- \[Server API\] The redundant `storage` parameter of the `POST /api/tasks/<id>/data`
+  endpoint has been removed; the storage location is determined based on
+  other parameters
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-x396-w86c-gf6w>)
+
+### Fixed
+
+- Improved memory use in project dataset exports
+  (<https://github.com/cvat-ai/cvat/pull/9913>)
+
+- Aligned the names of cloud storage services in the UI with their official
+  names
+  (<https://github.com/cvat-ai/cvat/pull/9961>)
+
+- Improved performance of access token editing page in the admin panel
+  (<https://github.com/cvat-ai/cvat/pull/9971>)
+
+- Incorrect chunk creation for some video files after FFmpeg update
+  (<https://github.com/cvat-ai/cvat/pull/9974>)
+
+### Security
+
+- Fixed a vulnerability that let users write to the attached network share
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-x396-w86c-gf6w>)
+
+<a id='changelog-2.48.1'></a>
+## \[2.48.1\] - 2025-10-29
+
+### Removed
+
+- It is no longer possible to upgrade directly from CVAT releases prior
+  to v2.0.0
+  (<https://github.com/cvat-ai/cvat/pull/9930>)
+
+### Fixed
+
+- UI crush on failed `GET /api/server/annotation/formats` request
+  (<https://github.com/cvat-ai/cvat/pull/9927>)
+
+<a id='changelog-2.48.0'></a>
+## \[2.48.0\] - 2025-10-27
+
+### Added
+
+- \[CLI\] `CVAT_ACCESS_TOKEN` environment variable can now be used for authentication with an API token
+  (<https://github.com/cvat-ai/cvat/pull/9563>)
+- \[SDK\] `Client.login()` and `make_client()` can now be called with an API token
+  (<https://github.com/cvat-ai/cvat/pull/9563>)
+- \[SDK\] `make_client()` can now be called with a server URL that contains a port component
+  (<https://github.com/cvat-ai/cvat/pull/9563>)
+
+- \[Server API\] Support for API access tokens
+  (<https://github.com/cvat-ai/cvat/pull/9680>)
+
+- \[Server\] A configuration option to set maximum job limit per task
+  (<https://github.com/cvat-ai/cvat/pull/9888>)
+
+### Fixed
+
+- Tracks does not leak to other jobs on task export
+  (<https://github.com/cvat-ai/cvat/pull/9905>)
+
+- Incorrect cloud storage value in tasks within a project after transferring between organizations
+  (<https://github.com/cvat-ai/cvat/pull/9912>)
+
+- Inefficient memory usage when counting number of objects in tracks
+  when updating job annotations or analytics report computing
+  (<https://github.com/cvat-ai/cvat/pull/9903>)
+
+<a id='changelog-2.47.0'></a>
+## \[2.47.0\] - 2025-10-14
+
+### Added
+
+- Made disk usage health check threshold configurable and updated documentation
+  (<https://github.com/cvat-ai/cvat/pull/9870>)
+
+### Changed
+
+- FFmpeg updated to 8.0
+  (<https://github.com/cvat-ai/cvat/pull/9552>)
+
+- \[SDK\] Enabled retrying on some server error statuses by default
+  (<https://github.com/cvat-ai/cvat/pull/9880>)
+
+### Fixed
+
+- Improved performance of task creation from cloud without manifest
+  (<https://github.com/cvat-ai/cvat/pull/9827>)
+
 <a id='changelog-2.46.1'></a>
 ## \[2.46.1\] - 2025-10-09
 
@@ -418,7 +786,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/9521>)
 
 - Incorrect width of project field on webhook setup page
-  (<https://github.com/cvat-ai/cvat/pull/XXXX>)
+  (<https://github.com/cvat-ai/cvat/pull/9534>)
 
 - Relevant task quality reports now can be reused in project quality reports
   (<https://github.com/cvat-ai/cvat/pull/9538>)

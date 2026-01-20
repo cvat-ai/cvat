@@ -13,6 +13,7 @@ import { Membership } from 'cvat-core-wrapper';
 import { MoreOutlined } from '@ant-design/icons';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import { updateOrganizationMemberAsync } from 'actions/organization-actions';
+import { useContextMenuClick } from 'utils/hooks';
 import MemberActionsMenu from './actions-menu';
 import MemberRoleSelector from './member-role-selector';
 
@@ -45,6 +46,8 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
         selfUserName: state.auth.user?.username ?? '',
     }), shallowEqual);
 
+    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
+
     const rowClassName = `cvat-organization-member-item${selected ? ' cvat-item-selected' : ''}`;
     const canUpdateRole = (membership: Membership): boolean => (membership.role !== 'owner');
     const onUpdateMembershipRole = (newRole: string): void => {
@@ -70,6 +73,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
         ));
     };
 
+    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
     return (
         <MemberActionsMenu
             membershipInstance={membershipInstance}
@@ -79,6 +83,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
             onUpdateMembershipRole={onUpdateMembershipRole}
             triggerElement={(
                 <Row
+                    ref={itemRef}
                     className={rowClassName}
                     justify='space-between'
                     onClick={onClick}
@@ -105,16 +110,13 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
                             disabled={role === 'owner'}
                         />
                     </Col>
-                    <Col span={1} className='cvat-organization-member-item-remove'>
-                        <MemberActionsMenu
-                            membershipInstance={membershipInstance}
-                            onUpdateMembershipRole={onUpdateMembershipRole}
-                            selfUserName={selfUserName}
-                            fetchMembers={fetchMembers}
-                            triggerElement={
-                                <MoreOutlined className='cvat-organization-actions-button cvat-actions-menu-button cvat-menu-icon' />
-                            }
-                        />
+                    <Col span={1}>
+                        <div
+                            onClick={handleContextMenuClick}
+                            className='cvat-organization-actions-button cvat-actions-menu-button cvat-menu-icon'
+                        >
+                            <MoreOutlined className='cvat-menu-icon' />
+                        </div>
                     </Col>
                 </Row>
             )}
