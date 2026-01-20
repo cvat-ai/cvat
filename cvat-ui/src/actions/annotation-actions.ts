@@ -1097,31 +1097,12 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
 
 export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
-        const { jobInstance, frame } = receiveAnnotationsParameters();
+        const { jobInstance } = receiveAnnotationsParameters();
 
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
                 dispatch(activateObject(null, null, null));
-            }
-
-            /**
-             * 🧠 FIX: Update source when label category changes
-             * Context:
-             * - Automatically annotated objects are marked as "AUTO".
-             * - Changing their label category is a manual user action.
-             * - Expected behavior: source should become "SEMI-AUTO".
-             */
-            try {
-                const existingAnnotations = await jobInstance.annotations.get(frame);
-                statesToUpdate.forEach((objectState: any) => {
-                    const previous = existingAnnotations.find((ann: any) => ann.clientID === objectState.clientID);
-                    if (previous && previous.label.id !== objectState.label.id) {
-                        objectState.source = 'semi-auto';
-                    }
-                });
-            } catch (err) {
-                console.warn('Warning: unable to check previous annotation state', err);
             }
 
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
