@@ -213,7 +213,11 @@ class Annotation {
         const undoLabel = this.label;
         const redoLabel = label;
         const undoAttributes = { ...this.attributes };
+        const undoSource = this.source;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+
         this.label = label;
+        this.source = redoSource;
         this.attributes = {};
         this.appendDefaultAttributes(label);
 
@@ -235,11 +239,13 @@ class Annotation {
             () => {
                 this.label = undoLabel;
                 this.attributes = undoAttributes;
+                this.source = undoSource;
                 this.updated = Date.now();
             },
             () => {
                 this.label = redoLabel;
                 this.attributes = redoAttributes;
+                this.source = redoSource;
                 this.updated = Date.now();
             },
             [this.clientID],
@@ -1040,6 +1046,8 @@ export class Track extends Drawn {
     protected saveLabel(label: Label, frame: number): void {
         const undoLabel = this.label;
         const redoLabel = label;
+        const undoSource = this.source;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoAttributes = {
             unmutable: { ...this.attributes },
             mutable: Object.keys(this.shapes).map((key) => ({
@@ -1049,6 +1057,7 @@ export class Track extends Drawn {
         };
 
         this.label = label;
+        this.source = redoSource;
         this.attributes = {};
         for (const shape of Object.values(this.shapes)) {
             shape.attributes = {};
@@ -1068,6 +1077,7 @@ export class Track extends Drawn {
             () => {
                 this.label = undoLabel;
                 this.attributes = undoAttributes.unmutable;
+                this.source = undoSource;
                 for (const mutable of undoAttributes.mutable) {
                     this.shapes[mutable.frame].attributes = mutable.attributes;
                 }
@@ -1076,6 +1086,7 @@ export class Track extends Drawn {
             () => {
                 this.label = redoLabel;
                 this.attributes = redoAttributes.unmutable;
+                this.source = redoSource;
                 for (const mutable of redoAttributes.mutable) {
                     this.shapes[mutable.frame].attributes = mutable.attributes;
                 }

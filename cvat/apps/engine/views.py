@@ -2469,13 +2469,11 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         user = self.request.user
         is_self = int(self.kwargs.get("pk", 0)) == user.id or \
             self.action == "self"
-        if user.is_staff:
-            return UserSerializer if not is_self else UserSerializer
+
+        if is_self or user.is_superuser:
+            return UserSerializer
         else:
-            if is_self and self.request.method in SAFE_METHODS:
-                return UserSerializer
-            else:
-                return BasicUserSerializer
+            return BasicUserSerializer
 
     @extend_schema(summary='Get details of the current user',
         responses={
