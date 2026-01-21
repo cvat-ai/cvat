@@ -217,6 +217,7 @@ class Annotation {
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.label = label;
+        this.source = redoSource;
         this.attributes = {};
         this.appendDefaultAttributes(label);
 
@@ -250,8 +251,6 @@ class Annotation {
             [this.clientID],
             frame,
         );
-
-        this.source = redoSource;
     }
 
     protected saveAttributes(attributes: Record<number, string>, frame: number): void {
