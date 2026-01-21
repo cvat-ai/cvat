@@ -112,6 +112,7 @@ class _TaskMerger:
                 sigma=comparison_parameters.oks_sigma,
                 torso_r=comparison_parameters.line_thickness,
                 included_annotation_types=comparison_parameters.included_annotation_types,
+                ignored_attributes={"track_id", "keyframe"},
             )
         )
         merged_dataset = merger(*consensus_datasets)

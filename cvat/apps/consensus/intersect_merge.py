@@ -12,6 +12,7 @@ from typing import ClassVar, TypeAlias
 import attrs
 import datumaro as dm
 import datumaro.components.merge.intersect_merge
+from datumaro.util import filter_dict
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
@@ -55,6 +56,16 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
     def _check_annotation_distance(self, t, merged_clusters):
         return  # disabled, need to clarify how to compare merged instances correctly
+
+    def _merge_clusters(self, t, clusters):
+        # A workaround for the incorrect implementation of attribute filtering in Datumaro
+        # TODO: fix in Datumaro
+        merged_annotations = super()._merge_clusters(t, clusters)
+
+        for ann in merged_annotations:
+            ann.attributes = filter_dict(ann.attributes, exclude_keys=self.conf.ignored_attributes)
+
+        return merged_annotations
 
     def get_ann_dataset_id(self, ann_id: int) -> int:
         return self._dataset_map[self.get_ann_source(ann_id)][1]
