@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 
 slogger = ServerLogManager(__name__)
 
-CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
+CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation', 'source', 'score'}
 
 class InstanceLabelData:
     class Attribute(NamedTuple):

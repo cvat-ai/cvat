@@ -411,7 +411,7 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
         votes = {}
         for s in cluster:
             label = self._context.get_src_label_name(s, s.label)
-            votes[label] = votes.get(label, 0) + s.attributes.get("score", 1.0)
+            votes[label] = votes.get(label, 0) + 1
 
         label, score = max(votes.items(), key=lambda e: e[1])
         label = self._context.get_label_id(label)
