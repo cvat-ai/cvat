@@ -16,6 +16,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.55.0'></a>
+## \[2.55.0\] - 2026-01-19
+
+### Added
+
+- An option to download quality report as a confusion matrix CSV file
+  (<https://github.com/cvat-ai/cvat/pull/10177>)
+
+### Fixed
+
+- Added reading HTTP request data in chunks instead of loading entire body into memory for TUS PATCH requests
+  (<https://github.com/cvat-ai/cvat/issues/5261>)
+
+- Return a 404 for HEAD requests after a file upload is completed via TUS, instead of a 500 Internal Server Error
+  (<https://github.com/cvat-ai/cvat/issues/5261>)
+
+- When creating a task, manifest files uploaded alongside videos are no longer ignored
+  (<https://github.com/cvat-ai/cvat/pull/10162>)
+
+- Improved annotation import performance for Ultralytics YOLO Classification
+  (<https://github.com/cvat-ai/cvat/pull/10163>)
+
+- Fixed a AssertionError that occurred during the download of 3D annotations.
+  (<https://github.com/cvat-ai/cvat/pull/10165>)
+
+- Removed redundant `PATCH: /api/jobs/<id>/meta` requests sent from annotation view
+  (<https://github.com/cvat-ai/cvat/pull/10184>)
+
+- \[CLI\] Fixed agents waiting for inappropriate amounts between retrying
+  failed AR acquire requests
+  (<https://github.com/cvat-ai/cvat/pull/10193>)
+
+- \[CLI\] Made agents handle failure of queue-related HTTP requests
+  in a more robust manner
+  (<https://github.com/cvat-ai/cvat/pull/10194>)
+
+### Security
+
+- Fixed XSS vulnerabilities related to skeleton SVG images
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-3m7p-wx65-c7mp>)
+
+- Upgrade OPA to new version (1.12.2)
+  (<https://github.com/cvat-ai/cvat/pull/10183>)
+
+- Users with staff status can no longer change their permissions
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-7pvv-w55f-qmw7>)
+
 <a id='changelog-2.54.0'></a>
 ## \[2.54.0\] - 2025-12-24
 
