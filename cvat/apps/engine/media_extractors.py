@@ -940,7 +940,7 @@ class ZipChunkWriter(IChunkWriter):
 class ZipCompressedChunkWriter(ZipChunkWriter):
     def save_as_chunk(
         self,
-        images: Iterator[tuple[Image.Image | io.IOBase | str, str, str]],
+        images: Iterator[tuple[Image.Image | io.IOBase | str, str | None, str]],
         chunk_path: str | io.IOBase,
         *,
         compress_frames: bool = True,
@@ -953,6 +953,9 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
                         try:
                             image_buf = self._compress_image(image, self._image_quality)
                         except Exception as ex:
+                            if path is None:
+                                raise
+
                             raise RuntimeError(
                                 f"Exception occurred during compression of image {os.path.basename(path)!r}"
                             ) from ex
@@ -964,6 +967,7 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
                     if isinstance(image, io.BytesIO):
                         image_buf, extension = self._write_pcd_file(image)
                     else:
+                        assert path is not None
                         image_buf, extension = self._write_pcd_file(path)
 
                 arcname = "{:06d}.{}".format(idx, extension)
