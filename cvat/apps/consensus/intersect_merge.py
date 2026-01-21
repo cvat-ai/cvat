@@ -440,10 +440,8 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
     def merge_cluster_shape_mean_nearest(self, cluster: Sequence[dm.Annotation]) -> dm.Annotation:
         return self._merge_cluster_shape_mean_box_nearest(cluster)
 
-    def merge_cluster_shape(self, cluster: Sequence[dm.Annotation]) -> tuple[dm.Annotation, float]:
-        shape = self.merge_cluster_shape_mean_nearest(cluster)
-        shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
-        return shape, shape_score
+    def merge_cluster_shape(self, cluster: Sequence[dm.Annotation]) -> dm.Annotation:
+        return self.merge_cluster_shape_mean_nearest(cluster)
 
     def merge_cluster(self, cluster):
         label, label_score = self.find_cluster_label(cluster)
