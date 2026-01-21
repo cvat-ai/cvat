@@ -50,7 +50,7 @@ class _ChunkLoader(metaclass=ABCMeta):
         self.chunk_reader: RandomAccessIterator | None = None
         self.reader_factory = reader_factory
 
-    def load(self, chunk_id: int) -> RandomAccessIterator[tuple[Any, str, int]]:
+    def load(self, chunk_id: int) -> RandomAccessIterator[tuple[Any, str]]:
         if self.chunk_id != chunk_id:
             self.unload()
 
@@ -332,7 +332,7 @@ class TaskFrameProvider(IFrameProvider):
                 frame, frame_name = segment_frame_provider._get_raw_frame(
                     task_chunk_frames_with_rel_numbers[task_chunk_frame_id], quality=quality
                 )
-                task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
+                task_chunk_frames[task_chunk_frame_id] = (frame, frame_name)
 
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
@@ -588,7 +588,7 @@ class SegmentFrameProvider(IFrameProvider):
         _, chunk_number, frame_offset = self.validate_frame_number(frame_number)
         loader = self._loaders[quality]
         chunk_reader = loader.load(chunk_number)
-        frame, frame_name, _ = chunk_reader[frame_offset]
+        frame, frame_name = chunk_reader[frame_offset]
         return frame, frame_name
 
     def get_frame(
