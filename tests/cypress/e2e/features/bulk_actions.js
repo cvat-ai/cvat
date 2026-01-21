@@ -6,7 +6,7 @@
 
 import { defaultTaskSpec } from '../../support/default-specs';
 import { createDummyAWSBucket } from '../../support/dummy-data';
-import { getBulkActionsMenu, assignAllTo } from '../../support/utils.cy';
+import { getBulkActionsMenu, assignAllTo, selectAll } from '../../support/utils.cy';
 
 context('Bulk actions in UI', () => {
     const taskName = 'task_bulk_actions';
@@ -115,6 +115,7 @@ context('Bulk actions in UI', () => {
             });
 
             it('Bulk-change assignees', () => {
+                selectAll();
                 getBulkActionsMenu().within(() => {
                     assignToAdmin();
                 });
@@ -136,6 +137,7 @@ context('Bulk actions in UI', () => {
             });
 
             it('Bulk-change assignees', () => {
+                selectAll();
                 getBulkActionsMenu().within(() => {
                     assignToAdmin();
                 });
@@ -147,6 +149,7 @@ context('Bulk actions in UI', () => {
             });
 
             it('Bulk-change state', () => {
+                selectAll();
                 getBulkActionsMenu().within(() => {
                     cy.contains(`State (${numberOfObjects})`).click();
                     cy.get('.cvat-job-item-state').click();
@@ -168,6 +171,7 @@ context('Bulk actions in UI', () => {
             cy.openTaskById(taskTwoJobs.ID);
         });
         it('Bulk-export job annotations', () => {
+            selectAll();
             getBulkActionsMenu().within(() => {
                 cy.contains(`Export annotations (${numberOfObjects})`)
                     .should('be.visible')
@@ -196,6 +200,7 @@ context('Bulk actions in UI', () => {
         it('Delete all tasks, ensure deletion', () => {
             cy.intercept('DELETE', '/api/tasks/**').as('deleteTask');
 
+            selectAll();
             getBulkActionsMenu().within(() => {
                 cy.contains(`Delete (${numberOfObjects})`).click();
             });
@@ -228,6 +233,7 @@ context('Bulk actions in UI', () => {
             cy.goToCloudStoragesPage();
         });
         it('Delete all CS, ensure deleted ', () => {
+            selectAll();
             getBulkActionsMenu().within(() => {
                 cy.contains(`Delete (${numberOfObjects})`).click();
             });

@@ -8,8 +8,8 @@ export function selectAll() {
     cy.get('.cvat-bulk-wrapper').should('exist').and('be.visible');
     cy.contains('Select all').click();
 }
+
 export function getBulkActionsMenu() {
-    selectAll();
     cy.get('.cvat-item-selected').first().within(() => {
         cy.get('.cvat-actions-menu-button').click();
     });
@@ -18,7 +18,7 @@ export function getBulkActionsMenu() {
 
 export function assignAllTo(username, numberOfObjects = null) {
     if (numberOfObjects) {
-        // if caller asks, check number of jobs
+        // if caller asks, check number of objects
         cy.contains(`Assignee (${numberOfObjects})`)
             .should('exist').and('be.visible').click();
     } else {
