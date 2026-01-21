@@ -500,3 +500,12 @@ class SkeletonMerger(ShapeMerger, SkeletonMatcher):
             dist[idx] = a_cluster_distance / len(cluster)
 
         return cluster[min(dist, key=dist.get)]
+
+    def merge_cluster(self, cluster):
+        shape = super().merge_cluster(cluster)
+
+        if shape is not None:
+            for element in shape.elements:
+                element.attributes["source"] = "consensus"
+
+        return shape
