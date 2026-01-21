@@ -13,7 +13,7 @@ context('Basic manipulations with consensus job replicas', () => {
     const serverFiles = ['archive.zip'];
     const consensusReplicas = 4;
     const { taskSpec, dataSpec, extras } = defaultTaskSpec({
-        serverFiles, labelName, taskName,
+        serverFiles, labelName, taskName, consensusReplicas,
     });
 
     before(() => {
