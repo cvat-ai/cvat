@@ -312,18 +312,6 @@ class OrgTransferableMixin():
         raise NotImplementedError()
 
 class BasicUserSerializer(serializers.ModelSerializer):
-    def validate(self, attrs):
-        if hasattr(self, 'initial_data'):
-            unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
-            if unknown_keys:
-                if set(['is_staff', 'is_superuser', 'groups']) & unknown_keys:
-                    message = 'You do not have permissions to access some of' + \
-                        ' these fields: {}'.format(unknown_keys)
-                else:
-                    message = 'Got unknown fields: {}'.format(unknown_keys)
-                raise serializers.ValidationError(message)
-        return attrs
-
     class Meta:
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name')
