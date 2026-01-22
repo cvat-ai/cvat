@@ -9,7 +9,6 @@ import io
 import os
 import os.path
 import pickle  # nosec
-import re
 import tempfile
 import time
 import zipfile
@@ -59,6 +58,7 @@ from cvat.apps.engine.utils import (
     get_rq_lock_for_job,
     md5_hash,
 )
+
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -222,7 +222,7 @@ class MediaCache:
         create_callback: Callback,
         cache_item_ttl: int | None = None,
     ) -> DataWithMime:
-        from cvat.apps.events.handlers import handle_chunk_create
+        from cvat.apps.engine.signals import cache_item_created_signal
 
         timestamp = django_tz.now()
         item_data = create_callback()
@@ -248,14 +248,11 @@ class MediaCache:
                     )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
-                chunk_info = cls._parse_cache_key(key) or {}
-                handle_chunk_create(
-                    chunk_target=chunk_info.get("object_type"),
-                    chunk_target_id=chunk_info.get("object_id"),
-                    chunk_number=chunk_info.get("chunk_number"),
-                    chunk_quality=chunk_info.get("quality"),
-                    chunk_size=len(item_data_bytes),
-                    queue=getattr(rq.get_current_job(), "origin", None),
+                cache_item_created_signal.send(
+                    sender=cls,
+                    item_key=key,
+                    item_data_size=item_size,
+                    rq_queue=getattr(rq.get_current_job(), "origin", None),
                 )
 
         return item
@@ -361,51 +358,6 @@ class MediaCache:
         quality: models.FrameQuality,
     ) -> str:
         return f"{cls._make_cache_key_prefix(db_obj)}_chunk_{chunk_number}_{quality}"
-
-    @staticmethod
-    def _parse_cache_key(key: str) -> dict | None:
-        # Try to match chunk key pattern
-        chunk_pattern = re.compile(
-            r"^(?P<object_type>task|segment|job|cloudstorage)_"
-            r"(?P<object_id>\d+)_chunk_(?P<chunk_number>\d+)_"
-            r"(?P<quality>\w+)$"
-        )
-        match = chunk_pattern.match(key)
-        if match:
-            return {
-                "type": "chunk",
-                "object_type": match.group("object_type"),
-                "object_id": int(match.group("object_id")),
-                "chunk_number": int(match.group("chunk_number")),
-                "quality": match.group("quality"),
-            }
-
-        # Try to match preview key pattern
-        preview_pattern = re.compile(
-            r"^(?P<object_type>segment|cloudstorage)_(?P<object_id>\d+)_preview$"
-        )
-        match = preview_pattern.match(key)
-        if match:
-            return {
-                "type": "preview",
-                "object_type": match.group("object_type"),
-                "object_id": int(match.group("object_id")),
-            }
-
-        # Try to match context images chunk key pattern
-        context_images_pattern = re.compile(
-            r"^context_images_(?P<data_id>\d+)_(?P<frame_number>\d+)$"
-        )
-        match = context_images_pattern.match(key)
-        if match:
-            return {
-                "type": "context_images",
-                "object_type": "data",
-                "object_id": int(match.group("data_id")),
-                "frame_number": int(match.group("frame_number")),
-            }
-
-        return None
 
     def _make_preview_key(self, db_obj: models.Segment | models.CloudStorage) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_preview"

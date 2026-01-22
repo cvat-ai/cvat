@@ -742,27 +742,29 @@ def handle_client_events_push(request, data: dict):
                 )
 
 
-def handle_chunk_create(
-    chunk_target: str | None = None,
-    chunk_target_id: int | None = None,
-    chunk_size: int = 0,
-    chunk_number: int | None = None,
-    chunk_quality: int | None = None,
+def handle_cache_item_create(
+    item_type: str,
+    target: str | None = None,
+    target_id: int | None = None,
+    size: int = 0,
+    number: int | None = None,
+    quality: int | None = None,
     **payload_fields,
 ) -> None:
     record_server_event(
-        scope=event_scope("create", "chunk"),
+        scope=event_scope("create", "cache_item"),
         request_info=request_info(),
         user_id=user_id(),
         user_name=user_name(),
         user_email=user_email(),
         payload={
-            "chunk": {
-                "target": chunk_target,
-                "target_id": chunk_target_id,
-                "number": chunk_number,
-                "size": chunk_size,
-                "quality": chunk_quality,
+            "cache_item": {
+                "type": item_type,
+                "target": target,
+                "target_id": target_id,
+                "number": number,
+                "size": size,
+                "quality": quality,
             },
             **payload_fields,
         },

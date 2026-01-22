@@ -1056,11 +1056,11 @@
           },
           "pluginVersion": "4.8.2",
           "queryType": "timeseries",
-          "rawSql": "SELECT\r\n    $__timeInterval(timestamp) AS time,\r\n    JSONExtractString(payload, 'queue') AS queue,\r\n    sum(JSONExtractUInt(JSONExtractRaw(payload, 'chunk'), 'size')) \r\n        / $__interval_s \r\n        / 1048576 AS Throughput\r\nFROM events\r\nWHERE\r\n    $__timeFilter(timestamp)\r\n    AND scope = 'create:chunk'\r\nGROUP BY\r\n    time,\r\n    queue\r\nORDER BY\r\n    time ASC",
+          "rawSql": "SELECT\r\n    $__timeInterval(timestamp) AS time,\r\n    JSONExtractString(payload, 'queue') AS queue,\r\n    sum(JSONExtractUInt(JSONExtractRaw(payload, 'cache_item'), 'size')) \r\n        / $__interval_s \r\n        / 1048576 AS Throughput\r\nFROM events\r\nWHERE\r\n    $__timeFilter(timestamp)\r\n    AND scope = 'create:cache_item'\r\nGROUP BY\r\n    time,\r\n    queue\r\nORDER BY\r\n    time ASC",
           "refId": "A"
         }
       ],
-      "title": "Chunk Throughput by Queue",
+      "title": "Cache Throughput by Queue",
       "transformations": [],
       "type": "timeseries"
     }
