@@ -864,7 +864,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project_name', 'name', 'owner', 'status', 'assignee',
         'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode'
     )
-    filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
+    filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date', 'created_date']
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
