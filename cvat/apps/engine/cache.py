@@ -58,7 +58,6 @@ from cvat.apps.engine.utils import (
     get_rq_lock_for_job,
     md5_hash,
 )
-
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)

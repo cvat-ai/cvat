@@ -10,7 +10,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save, pre_save
-from django.dispatch import receiver, Signal
+from django.dispatch import Signal, receiver
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.cache import MediaCache
