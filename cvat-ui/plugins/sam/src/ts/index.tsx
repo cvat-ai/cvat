@@ -43,7 +43,7 @@ interface SAMPlugin {
         worker: Worker;
         core: CVATCore | null;
         jobs: Record<number, Job>;
-        modelID: string;
+        modelID: string[];
         modelURL: string;
         embeddings: LRUCache<string, Float32Array>;
         lowResMasks: LRUCache<string, Float32Array>;
@@ -149,7 +149,7 @@ const samPlugin: SAMPlugin = {
                             }
                         }
 
-                        if (model.id === plugin.data.modelID) {
+                        if (plugin.data.modelID.includes(model.id as string)) {
                             if (!plugin.data.initialized) {
                                 samPlugin.data.worker.postMessage({
                                     action: WorkerAction.INIT,
@@ -176,7 +176,10 @@ const samPlugin: SAMPlugin = {
                                 resolvePromise();
                             }
                         } else {
-                            resolve(null);
+                            throw new Error(
+                                `Interactor does not support model id "${model.id}". ` +
+                                `Only model IDs are temporarily supported: [${plugin.data.modelID.join(', ')}]`,
+                            );
                         }
                     });
                 },
@@ -199,9 +202,11 @@ const samPlugin: SAMPlugin = {
                         bounds: [number, number, number, number];
                     } | unknown> {
                     return new Promise((resolve, reject) => {
-                        if (model.id !== plugin.data.modelID) {
-                            resolve(result);
-                            return;
+                        if (!plugin.data.modelID.includes(model.id as string)) {
+                            throw new Error(
+                                `Interactor does not support model id "${model.id}". ` +
+                                `Only model IDs are temporarily supported: [${plugin.data.modelID.join(', ')}]`,
+                            );
                         }
 
                         const job = Object.values(plugin.data.jobs).find((_job) => (
@@ -300,7 +305,7 @@ const samPlugin: SAMPlugin = {
         core: null,
         worker: new Worker(new URL('./inference.worker', import.meta.url)),
         jobs: {},
-        modelID: 'pth-facebookresearch-sam-vit-h',
+        modelID: ['pth-facebookresearch-sam-vit-h', 'trt-facebookresearch-sam-vit-h'],
         modelURL: '/assets/decoder.onnx',
         embeddings: new LRUCache({
             // float32 tensor [256, 64, 64] is 4 MB, max 128 MB
