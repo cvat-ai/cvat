@@ -137,7 +137,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
         scan: any;
         rotation: any;
-        frameCoordinates: any;
         detected: any;
         initialMouseVector: any;
     };
@@ -207,11 +206,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.isCtrlDown = false;
         this.action = {
             scan: null,
-            frameCoordinates: {
-                x: 0,
-                y: 0,
-                z: 0,
-            },
             detected: false,
             initialMouseVector: new THREE.Vector2(),
             translation: {
@@ -674,10 +668,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         up.copy(new THREE.Vector3().crossVectors(right, forward).normalize());
 
         // 4) Project corners onto right/up to get world extents independent of current distance
-        let minU = +Infinity; let
-            maxU = -Infinity;
-        let minV = +Infinity; let
-            maxV = -Infinity;
+        let minU = +Infinity;
+        let maxU = -Infinity;
+        let minV = +Infinity;
+        let maxV = -Infinity;
         for (const c of worldCorners) {
             const u = c.dot(right);
             const v = c.dot(up);
@@ -715,7 +709,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private fitCanvas(animation: boolean): void {
-        const { x, y, z } = this.action.frameCoordinates;
+        const [x, y, z] = this.cameraSettings.perspective.lookAt;
         this.positionAllViews(x, y, z, animation);
         this.updateCameraFrustumPlane();
     }
@@ -1715,21 +1709,40 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const getCameraSettingsToFitScene = (
             camera: THREE.PerspectiveCamera,
             boundingBox: THREE.Box3,
-        ): [number, number, number] => {
-            const offset = 5;
+        ): {
+            position: [number, number, number],
+            lookAt: [number, number, number],
+        } => {
             const width = boundingBox.max.x - boundingBox.min.x;
             const height = boundingBox.max.y - boundingBox.min.y;
+            const depth = boundingBox.max.z - boundingBox.min.z;
 
-            // find the maximum width or height, compute z to approximately fit the scene
-            const maxDim = Math.max(width, height);
-            const fov = camera.fov * (Math.PI / 180);
-            const cameraZ = Math.abs((maxDim / 8) * Math.tan(fov * 2));
+            // Center of the scene
+            const centerX = boundingBox.min.x + width / 2;
+            const centerY = boundingBox.min.y + height / 2;
+            const centerZ = boundingBox.min.z + depth / 2;
 
-            return [
-                boundingBox.min.x + offset,
-                boundingBox.max.y + offset,
-                cameraZ + offset,
-            ];
+            // Calculate distance to fit the scene: distance = (size / 2) / tan(fov / 2)
+            const maxDim = Math.max(width, height, depth);
+            const fovRadians = camera.fov * (Math.PI / 180);
+            const distance = (maxDim / 2) / Math.tan(fovRadians / 2);
+
+            // Position camera above and slightly offset from center
+            const offset = 5;
+            const cameraDistance = distance * 1.2; // Add 20% margin
+
+            return {
+                position: [
+                    centerX + offset,
+                    centerY + offset,
+                    centerZ + cameraDistance + offset,
+                ],
+                lookAt: [
+                    centerX,
+                    centerY,
+                    centerZ,
+                ],
+            };
         };
 
         // eslint-disable-next-line no-param-reassign
@@ -1744,13 +1757,19 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         // updating correct camera settings
         points.geometry.computeBoundingBox();
-        this.cameraSettings.perspective.position = getCameraSettingsToFitScene(
+        const { position, lookAt } = getCameraSettingsToFitScene(
             this.views.perspective.camera as THREE.PerspectiveCamera, points.geometry.boundingBox,
         );
 
+        this.cameraSettings.perspective.position = position;
+        this.cameraSettings.perspective.lookAt = lookAt;
+
         this.sceneBBox = new THREE.Box3().setFromObject(points);
         this.views.perspective.scene.add(points.clone());
-        this.views.perspective.scene.add(new THREE.AxesHelper(5));
+
+        const axesHelper = new THREE.AxesHelper(5);
+        axesHelper.position.set(lookAt[0], lookAt[1], lookAt[2]);
+        this.views.perspective.scene.add(axesHelper);
         // Setup TopView
         const canvasTopView = this.views.top.renderer.domElement;
         const topScenePlane = new THREE.Mesh(
@@ -1831,9 +1850,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.front.controls
         ) {
             this.views.perspective.controls.setLookAt(
-                x + this.cameraSettings.perspective.position[0],
-                y - this.cameraSettings.perspective.position[1],
-                z + this.cameraSettings.perspective.position[2],
+                this.cameraSettings.perspective.position[0],
+                this.cameraSettings.perspective.position[1],
+                this.cameraSettings.perspective.position[2],
                 x, y, z, animation,
             );
 
