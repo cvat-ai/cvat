@@ -6,9 +6,10 @@ import numpy as np
 import torch
 from segment_anything import sam_model_registry, SamPredictor
 
+
 class ModelHandler:
     def __init__(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.sam_checkpoint = "/opt/nuclio/sam/sam_vit_h_4b8939.pth"
         self.model_type = "vit_h"
         self.latest_image = None
