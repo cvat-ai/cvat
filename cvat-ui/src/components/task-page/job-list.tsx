@@ -58,6 +58,7 @@ function filterJobs(jobs: Job[], query: JobsQuery): Job[] {
             updatedDate: job.updatedDate,
             type: job.type,
             id: job.id,
+            parentJobId: job.parentJobId,
         }));
         const filter = JSON.parse(query.filter);
         result = result.filter((job, index) => jsonLogic.apply(filter, converted[index]));
