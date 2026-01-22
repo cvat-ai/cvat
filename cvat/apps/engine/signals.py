@@ -138,10 +138,15 @@ def __delete_cloudstorage_handler(instance, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_storage_dirname(), ignore_errors=True)
     )
+
+
 cache_item_created_signal = Signal()
 
+
 @receiver(cache_item_created_signal, sender=MediaCache)
-def __cache_item_created_handler(sender, item_key: str, item_data_size: int, rq_queue: str | None = None, **kwargs):
+def __cache_item_created_handler(
+    sender, item_key: str, item_data_size: int, rq_queue: str | None = None, **kwargs
+):
     def parse_cache_key(item_key: str) -> dict | None:
         # Try to match chunk key pattern
         chunk_pattern = re.compile(
