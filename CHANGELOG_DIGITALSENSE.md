@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add YOLOv11 street light detection model with GPU support for CUDA 12.8. [PR #33]
 - Integrate ClearML into CVAT UI [PR #34]
 - Use checkpoint from interface in U2Net model [Pr #35]
+- Allow indicating checkpoint path from the interface for onnx models. [PR #36]
 
 ### Changed
 - Updated files to utilize environment variables. [PR #22]
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed Task creating changing cvat base docker image to version v2.35.0 [PR #21]
 - Fixed SITE_ID type conversion issue in email_settings.py that was causing container restart problems. [PR #25]
 - Fixed dependencies issues with CUDA 12.8 for YOLOv8 segmentation model detection with ONNX runtime. [PR #29]
+- Fix error creating cvat_server image due to incompatibilities between datumaro and cargo dependencies. [PR #36]
 
 =======
 

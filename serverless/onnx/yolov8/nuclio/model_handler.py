@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import cv2
+import os
 import numpy as np
 import onnxruntime as ort
 import yaml
@@ -17,6 +18,10 @@ class ModelHandler:
         self.input_size = self.config.get('input_config', {}).get('imgsz', 256)
         self.conf_threshold = self.config.get('export_config', {}).get('conf_thres', 0.25)
         self.iou_threshold = self.config.get('export_config', {}).get('iou_thres', 0.45)
+        self.current_model_path = None
+        self.input_details = None
+        self.output_details = None
+        # Load default model
         self.load_network()
 
     def load_config(self):
@@ -37,10 +42,39 @@ class ModelHandler:
             print(f"Warning: Unexpected error loading {config_path}: {e}. Using default values.")
             return {}
 
-    def load_network(self):
-        """Load the ONNX model for inference."""
-        model_name = self.config.get('model_info', {}).get('model_name', 'yolov8_sienz_oranges_color')
-        model_path = f"{model_name}.onnx"
+    def load_network(self, checkpoint=None):
+        """Load the ONNX model for inference.
+
+        Args:
+            checkpoint: Optional path to model checkpoint. If provided, loads this model.
+                       Priority: checkpoint parameter > env var > config > default
+        """
+        # Determine model path with priority
+        if checkpoint:
+            model_path = checkpoint
+        else:
+            # Priority: Environment variable > config file > default
+            model_path = os.environ.get('MODEL_PATH')
+
+            if not model_path:
+                # Try to get model_path from config
+                model_path = self.config.get('model_info', {}).get('model_path')
+
+            if not model_path:
+                # Fallback to old behavior if model_path is not specified
+                model_name = self.config.get('model_info', {}).get('model_name', 'yolov8_sienz_oranges_color')
+                model_path = f"{model_name}.onnx"
+
+        # Extract just the filename from the full path if provided
+        if '/' in model_path or '\\' in model_path:
+            model_path = Path(model_path).name
+
+        # Check if model is already loaded
+        if self.current_model_path == model_path and self.model is not None:
+            print(f"Model already loaded: {model_path}")
+            return
+
+        print(f"Loading model from: {model_path}")
 
         try:
             # Set up execution providers (GPU first if available, then CPU)
@@ -65,6 +99,9 @@ class ModelHandler:
             print(f"Loaded ONNX model: {model_path}")
             print(f"Execution provider: {self.model.get_providers()[0]}")
             print(f"Model outputs: {len(self.output_details)}")
+
+            # Store current model path
+            self.current_model_path = model_path
 
         except Exception as e:
             raise Exception(f"Cannot load model {model_path}: {e}")
@@ -335,17 +372,22 @@ class ModelHandler:
             'num_detections': len(final_boxes)
         }
 
-    def infer(self, image, threshold):
+    def infer(self, image, threshold, checkpoint=None):
         """
         Run inference on an image.
 
         Args:
             image: PIL Image
             threshold: Confidence threshold for filtering detections
+            checkpoint: Optional path to model checkpoint. If provided, loads this model.
 
         Returns:
             List of detection results in CVAT format with masks
         """
+        # Load model if checkpoint is specified
+        if checkpoint:
+            self.load_network(checkpoint=checkpoint)
+
         self.conf_threshold = threshold
 
         # Preprocess image
