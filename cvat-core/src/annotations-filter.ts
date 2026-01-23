@@ -170,7 +170,7 @@ export default class AnnotationsFilter {
                     shape: shape.type,
                     occluded: shape.occluded,
                     objectID: shape.clientID ?? null,
-                    score: null,
+                    score: shape.score ?? null,
                     votes: null,
                 };
             }),
