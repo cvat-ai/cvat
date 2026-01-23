@@ -97,6 +97,9 @@ module.exports = (on, config) => {
             if (browser.isHeadless) {
                 launchOptions.args.push('--disable-gpu');
             }
+            // fix 'Error creating WebGL context'
+            // which started after Chromium 144
+            // https://chromium.googlesource.com/chromium/src/+/refs/heads/main/docs/gpu/swiftshader.md
             launchOptions.args.push('--enable-unsafe-swiftshader');
         }
         return launchOptions;
