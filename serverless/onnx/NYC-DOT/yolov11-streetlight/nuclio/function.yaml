@@ -1,0 +1,50 @@
+metadata:
+  name: onnx-yolov11-street-light-detection
+  namespace: cvat
+  annotations:
+    name: YOLOv11-Street-Light-CPU
+    type: detector
+    spec: |
+      [
+        {"id": 0, "name": "streetlight_working", "type": "rectangle"},
+        {"id": 1, "name": "streetlight_broken", "type": "rectangle"}
+      ]
+
+spec:
+  description: YOLOv11 Detection model for street light detection (color image) via ONNX
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.onnx.yolov11.street_light:cpu
+    baseImage: ubuntu:22.04
+
+    directives:
+      preCopy:
+        - kind: USER
+          value: root
+        - kind: RUN
+          value: apt update && apt install --no-install-recommends -y python3-pip
+        - kind: RUN
+          value: pip install onnxruntime opencv-python-headless pillow pyyaml numpy
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: ln -s /usr/bin/python3 /usr/bin/python
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32767
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
