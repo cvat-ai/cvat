@@ -66,12 +66,12 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
 function ItemAttributesComponent(props: Props): JSX.Element | null {
     const {
         collapsed, attributes, values, readonly, changeAttribute, collapse,
-        sizeParams, changeSize, source, score, votes, textContent,
+        sizeParams, changeSize, source, score, votes,
     } = props;
 
     const isConsensus = source === Source.CONSENSUS;
-    const withScore = isConsensus && textContent.includes('score');
-    const withVotes = isConsensus && textContent.includes('votes');
+    const withScore = isConsensus;
+    const withVotes = isConsensus;
 
     const hasDetails = attributes.length > 0 || sizeParams !== null;
     const scoreTag = withScore ? (

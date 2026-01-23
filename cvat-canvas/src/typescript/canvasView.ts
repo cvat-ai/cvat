@@ -3144,8 +3144,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             label, clientID, attributes, source, descriptions, score, votes,
         } = state;
         const isConsensus = source === 'consensus';
-        const withScore = isConsensus && content.includes('score');
-        const withVotes = isConsensus && content.includes('votes');
+        const withScore = isConsensus;
+        const withVotes = isConsensus;
 
         const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
         if (state.shapeType === 'skeleton') {

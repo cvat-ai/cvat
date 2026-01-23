@@ -55,6 +55,10 @@ function computeNewSource(currentSource: Source): Source {
         return Source.SEMI_AUTO;
     }
 
+    if (currentSource === Source.CONSENSUS) {
+        return Source.CONSENSUS;
+    }
+
     return Source.MANUAL;
 }
 
