@@ -9,6 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
 import InputNumber from 'antd/lib/input-number';
 import Tag from 'antd/lib/tag';
+import Tooltip from 'antd/lib/tooltip';
 
 import { Source } from 'cvat-core-wrapper';
 import ItemAttribute from './object-item-attribute';
@@ -75,14 +76,18 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
 
     const hasDetails = attributes.length > 0 || sizeParams !== null;
     const scoreTag = withScore ? (
-        <Tag color='#FFB347' className='cvat-object-item-score-tag'>
-            {score.toFixed(2)}
-        </Tag>
+        <Tooltip title='Consensus score'>
+            <Tag color='#FFB347' className='cvat-object-item-score-tag'>
+                {score.toFixed(2)}
+            </Tag>
+        </Tooltip>
     ) : null;
     const votesTag = withVotes ? (
-        <Tag color='#FFB347' className='cvat-object-item-votes-tag'>
-            {votes}
-        </Tag>
+        <Tooltip title='Number of votes'>
+            <Tag color='#FFB347' className='cvat-object-item-votes-tag'>
+                {votes}
+            </Tag>
+        </Tooltip>
     ) : null;
     const scoreVotesElement = scoreTag || votesTag ? (
         <Row className='cvat-object-item-score-votes-wrapper'>
