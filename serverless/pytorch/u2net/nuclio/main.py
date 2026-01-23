@@ -29,12 +29,14 @@ def handler(context, event):
         data = event.body
 
         threshold = float(data.get("threshold", 0.5))
+        keyword = data.get("keyword", None)
+        print(f"Threshold: {threshold}, ckpt_Path: {keyword}")
 
         buf = io.BytesIO(base64.b64decode(data["image"]))
         image = Image.open(buf)
         context.logger.info("Image loaded successfully")
 
-        result = context.user_data.model.infer(image, threshold)
+        result = context.user_data.model.infer(image, threshold, ckpt_path=keyword)
 
         return context.Response(body=json.dumps(result),
             headers={},

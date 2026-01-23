@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add YOLOv11 speed sign detection model with GPU support for CUDA 12.8. [PR #32]
 - Add YOLOv11 street light detection model with GPU support for CUDA 12.8. [PR #33]
 - Integrate ClearML into CVAT UI [PR #34]
+- Use checkpoint from interface in U2Net model [Pr #35]
 
 ### Changed
 - Updated files to utilize environment variables. [PR #22]
