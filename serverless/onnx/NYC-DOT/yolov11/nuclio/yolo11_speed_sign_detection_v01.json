@@ -1,0 +1,8 @@
+{
+  "model_name": "yolo11_speed_sign_detection_v01",
+  "model_path": "yolo11_speed_sign_detection_v01.onnx",
+  "input_size": 1280,
+  "conf_threshold": 0.3,
+  "iou_threshold": 0.45,
+  "description": "YOLOv11 speed sign detection model - version 01"
+}

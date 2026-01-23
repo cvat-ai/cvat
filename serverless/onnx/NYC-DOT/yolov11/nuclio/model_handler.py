@@ -2,12 +2,45 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+import os
 import cv2
 import numpy as np
 import onnxruntime as ort
 
 
 class ModelHandler:
+    @staticmethod
+    def load_model_config(model_path):
+        """
+        Load model configuration from JSON file.
+
+        Args:
+            model_path: Path to the ONNX model file (with or without .onnx extension)
+
+        Returns:
+            Dictionary with model configuration parameters
+        """
+        # Remove .onnx extension if present to get config filename
+        base_name = model_path.replace('.onnx', '')
+        config_path = f"{base_name}.json"
+
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(
+                f"Configuration file not found: {config_path}. "
+                f"Each model must have a corresponding .json config file."
+            )
+
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+
+        required_fields = ['model_path', 'input_size', 'conf_threshold', 'iou_threshold']
+        for field in required_fields:
+            if field not in config:
+                raise ValueError(f"Missing required field '{field}' in {config_path}")
+
+        return config
+
     def __init__(self, labels, model_path, input_size, conf_threshold, iou_threshold):
         """
         Initialize YOLOv11 detection model handler.
@@ -27,8 +60,37 @@ class ModelHandler:
         self.model = None
         self.load_network()
 
-    def load_network(self):
-        """Load the ONNX model for inference."""
+    def load_network(self, model_path=None):
+        """Load the ONNX model for inference.
+
+        Args:
+            model_path: Optional path to model file. If provided, updates self.model_path
+                       and loads configuration from corresponding JSON file.
+        """
+        if model_path:
+            print(f"Attempting to switch to model: {model_path}")
+            # Try to load configuration for the new model
+            try:
+                config = self.load_model_config(model_path)
+                self.model_path = config['model_path']
+                self.input_size = config['input_size']
+                self.conf_threshold = config['conf_threshold']
+                self.iou_threshold = config['iou_threshold']
+                print(f"Loaded config from JSON - input_size: {self.input_size}, "
+                      f"conf: {self.conf_threshold}, iou: {self.iou_threshold}")
+            except FileNotFoundError as e:
+                print(f"No JSON config found for {model_path}: {e}")
+                print(f"Warning: Switching model without config may cause inference errors")
+                print(f"Keeping current settings - input_size: {self.input_size}, "
+                      f"conf: {self.conf_threshold}, iou: {self.iou_threshold}")
+                # Just update the model path, keep current settings
+                self.model_path = model_path
+            except Exception as e:
+                print(f"Error loading config for {model_path}: {e}")
+                # Fallback to just updating model_path
+                self.model_path = model_path
+                print(f"Using current settings: input_size={self.input_size}")
+
         try:
             # Set up execution providers (GPU first if available, then CPU)
             providers = ['CPUExecutionProvider']
@@ -299,5 +361,3 @@ class ModelHandler:
                     "points": [xtl, ytl, xbr, ybr],
                     "type": "rectangle",
                 })
-
-        return results

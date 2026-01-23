@@ -29,9 +29,16 @@ def handler(context, event):
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"]))
     threshold = float(data.get("threshold", 0.5))
+    keyword = data.get("keyword")
+
+    # Log checkpoint info
+    if keyword:
+        context.logger.info(f"Checkpoint received from request: {keyword}")
+    else:
+        context.logger.info("No checkpoint provided, using current model")
+
     image = Image.open(buf).convert("RGB")
 
-    results = context.user_data.model.infer(image, threshold)
-
-    return context.Response(body=json.dumps(results), headers={},
-        content_type='application/json', status_code=200)
+    # Reload model if checkpoint is provided and different from current
+    if keyword:
+        context.user_data.model.load_network(model=keyword)
