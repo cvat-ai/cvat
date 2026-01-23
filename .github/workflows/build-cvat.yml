@@ -2,13 +2,20 @@
 # CI Workflow: Build CVAT Images and Push to GCP Artifact Registry
 # =============================================================================
 #
-# This workflow ONLY builds and pushes images. Deployment is handled by:
-#   - deploy-int.yml  (manual trigger for INT environment)
-#   - deploy-stg.yml  (auto trigger for STG environment)
+# Triggers:
+#   - Manual (workflow_dispatch): Run on ANY branch via GitHub UI
+#   - Auto (push to sst-main): For STG deployments
+#   - PR to sst-main: For code review builds
+#
+# How to use:
+#   1. Go to Actions tab → "Build CVAT Images"
+#   2. Click "Run workflow"
+#   3. Select your branch from dropdown
+#   4. Click "Run workflow" button
 #
 # Tagging Strategy:
 #   - sst-main branch:  "latest" + "sst-main-{short_sha}"
-#   - feature/* branch: "{branch_name}-{short_sha}"
+#   - Other branches:   "{branch_name}-{short_sha}"
 #   - STG uses "latest" tag (only built from sst-main)
 #   - INT can use any specific tag
 #
@@ -21,10 +28,15 @@
 name: Build CVAT Images
 
 on:
+  # Manual trigger - allows running on ANY branch via GitHub UI
+  workflow_dispatch:
+
+  # Auto trigger - only on sst-main (for STG deployments)
   push:
     branches:
       - 'sst-main'
-      - 'feature/**'
+
+  # PR trigger - for code review builds
   pull_request:
     branches:
       - 'sst-main'
