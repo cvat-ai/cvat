@@ -293,6 +293,7 @@ export function useContextMenuClick<T extends HTMLElement = HTMLElement>(
         'a',
         'input',
         '.ant-dropdown-menu-item',
+        '.ant-select-item-option',
         '.ant-select-selector',
     ],
 ): ContextMenuClick<T> {
