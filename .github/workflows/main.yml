@@ -357,14 +357,29 @@ jobs:
             (( max_tries-- ))
           done
 
+      - name: DEBUG, Start Xvfb
+        run: |
+          export DISPLAY=':99.0'
+          Xvfb :99 -screen 0 1920x1080x24 &
+
+      - name: Install Mesa drivers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mesa-utils libgl1-mesa-dri
+
       - name: DEBUG, run tmate
         uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
       - name: Run E2E tests
         env:
           DJANGO_SU_NAME: 'admin'
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
+
+        # debug stmt to launch only 3d tests
+        if: ${{ startsWith(matrix.specs, 'canvas3d_') }}
         run: |
           docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
