@@ -357,15 +357,15 @@ jobs:
             (( max_tries-- ))
           done
 
-      - name: DEBUG, Start Xvfb
-        run: |
-          export DISPLAY=':99.0'
-          Xvfb :99 -screen 0 1920x1080x24 &
+      # - name: DEBUG, Start Xvfb
+      #   run: |
+      #     export DISPLAY=':99.0'
+      #     Xvfb :99 -screen 0 1920x1080x24 &
 
-      - name: Install Mesa drivers
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mesa-utils libgl1-mesa-dri
+      # - name: Install Mesa drivers
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y mesa-utils libgl1-mesa-dri
 
       # - name: DEBUG, run tmate
       #   uses: mxschmitt/action-tmate@v3
