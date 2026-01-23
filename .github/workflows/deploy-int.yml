@@ -1,0 +1,245 @@
+# =============================================================================
+# CD Workflow: Deploy to INT Environment
+# =============================================================================
+#
+# This workflow deploys CVAT to the INT (Integration) environment.
+# It is triggered MANUALLY via workflow_dispatch.
+#
+# Usage:
+#   1. Go to Actions tab in GitHub
+#   2. Select "Deploy to INT" workflow
+#   3. Click "Run workflow"
+#   4. Enter the image tag to deploy (e.g., "sst-main-abc1234" or "feature-auth-xyz999")
+#   5. Click "Run workflow" button
+#
+# Prerequisites (GitHub Secrets):
+#   - GCP_SA_KEY:      Service Account JSON key
+#   - GCP_PROJECT_ID:  GCP Project ID (sandbox-446907)
+#   - GCP_ZONE:        VM zone (us-central1-a)
+#   - INT_VM_NAME:     INT VM instance name
+#
+# =============================================================================
+
+name: Deploy to INT
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (e.g., sst-main-abc1234)'
+        required: true
+        type: string
+      skip_backup:
+        description: 'Skip backup before deployment'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  # GCP Configuration
+  GCP_REGION: us-central1
+  REGISTRY: us-central1-docker.pkg.dev
+  REPO_NAME: cvat-repo
+
+  # Deployment Configuration
+  DEPLOY_PATH: ~/cvat  # Path on VM where CVAT is deployed
+
+jobs:
+  deploy:
+    name: Deploy to INT Environment
+    runs-on: ubuntu-latest
+
+    steps:
+      # ============================================
+      # Step 1: Print deployment info
+      # ============================================
+      - name: Deployment Info
+        run: |
+          echo "============================================"
+          echo "Deploying to INT Environment"
+          echo "============================================"
+          echo "Image Tag:    ${{ github.event.inputs.image_tag }}"
+          echo "Skip Backup:  ${{ github.event.inputs.skip_backup }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "============================================"
+
+      # ============================================
+      # Step 2: Checkout code (for docker-compose files)
+      # ============================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ============================================
+      # Step 3: Authenticate to Google Cloud
+      # ============================================
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # ============================================
+      # Step 4: Set up gcloud CLI
+      # ============================================
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      # ============================================
+      # Step 5: Verify image exists in registry
+      # ============================================
+      - name: Verify image exists
+        run: |
+          echo "Checking if images exist in registry..."
+
+          SERVER_IMAGE="${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/cvat-server:${{ github.event.inputs.image_tag }}"
+          UI_IMAGE="${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/cvat-ui:${{ github.event.inputs.image_tag }}"
+
+          echo "Checking: ${SERVER_IMAGE}"
+          if ! gcloud artifacts docker images describe "${SERVER_IMAGE}" > /dev/null 2>&1; then
+            echo "::error::Image not found: ${SERVER_IMAGE}"
+            echo "Available tags:"
+            gcloud artifacts docker tags list "${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/cvat-server" --limit=10 || true
+            exit 1
+          fi
+          echo "✓ Server image found"
+
+          echo "Checking: ${UI_IMAGE}"
+          if ! gcloud artifacts docker images describe "${UI_IMAGE}" > /dev/null 2>&1; then
+            echo "::error::Image not found: ${UI_IMAGE}"
+            echo "Available tags:"
+            gcloud artifacts docker tags list "${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/cvat-ui" --limit=10 || true
+            exit 1
+          fi
+          echo "✓ UI image found"
+
+          echo "All images verified!"
+
+      # ============================================
+      # Step 6: Deploy to INT VM
+      # ============================================
+      - name: Deploy to INT VM
+        run: |
+          # Set variables for the deployment script
+          IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+          REGISTRY="${{ env.REGISTRY }}"
+          PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}"
+          REPO_NAME="${{ env.REPO_NAME }}"
+          DEPLOY_PATH="${{ env.DEPLOY_PATH }}"
+          SKIP_BACKUP="${{ github.event.inputs.skip_backup }}"
+
+          # SSH to VM and run deployment
+          gcloud compute ssh ${{ secrets.INT_VM_NAME }} \
+            --zone=${{ secrets.GCP_ZONE }} \
+            --command="
+              set -e
+              echo '============================================'
+              echo 'Starting deployment on INT VM'
+              echo '============================================'
+
+              # Navigate to deployment directory
+              cd ${DEPLOY_PATH}
+
+              # Configure Docker for Artifact Registry
+              echo 'Configuring Docker for Artifact Registry...'
+              gcloud auth configure-docker ${REGISTRY} --quiet
+
+              # Create backup (unless skipped)
+              if [ '${SKIP_BACKUP}' != 'true' ]; then
+                echo 'Creating backup of current state...'
+                BACKUP_TAG=\$(date +%Y%m%d_%H%M%S)
+                docker compose ps > backup_\${BACKUP_TAG}.txt 2>/dev/null || true
+                echo \"Backup saved to backup_\${BACKUP_TAG}.txt\"
+              fi
+
+              # Set image environment variables
+              export CVAT_SERVER_IMAGE='${REGISTRY}/${PROJECT_ID}/${REPO_NAME}/cvat-server:${IMAGE_TAG}'
+              export CVAT_UI_IMAGE='${REGISTRY}/${PROJECT_ID}/${REPO_NAME}/cvat-ui:${IMAGE_TAG}'
+
+              echo 'Pulling new images...'
+              echo \"  Server: \${CVAT_SERVER_IMAGE}\"
+              echo \"  UI:     \${CVAT_UI_IMAGE}\"
+
+              docker pull \${CVAT_SERVER_IMAGE}
+              docker pull \${CVAT_UI_IMAGE}
+
+              echo 'Stopping current containers...'
+              docker compose down --remove-orphans || true
+
+              echo 'Starting containers with new images...'
+              docker compose up -d
+
+              echo 'Waiting for services to start...'
+              sleep 10
+
+              echo 'Checking container status...'
+              docker compose ps
+
+              echo '============================================'
+              echo 'Deployment complete!'
+              echo 'Image tag: ${IMAGE_TAG}'
+              echo '============================================'
+            "
+
+      # ============================================
+      # Step 7: Health check
+      # ============================================
+      - name: Health Check
+        run: |
+          echo "Running health check..."
+
+          # Give services more time to fully start
+          sleep 20
+
+          # Check if containers are running via SSH
+          gcloud compute ssh ${{ secrets.INT_VM_NAME }} \
+            --zone=${{ secrets.GCP_ZONE }} \
+            --command="
+              cd ${{ env.DEPLOY_PATH }}
+
+              echo 'Container Status:'
+              docker compose ps
+
+              # Check critical services
+              FAILED=0
+
+              for SERVICE in cvat_server cvat_ui cvat_db; do
+                STATUS=\$(docker compose ps \${SERVICE} --format '{{.Status}}' 2>/dev/null || echo 'not found')
+                if [[ \"\${STATUS}\" == *'Up'* ]]; then
+                  echo \"✓ \${SERVICE}: Running\"
+                else
+                  echo \"✗ \${SERVICE}: \${STATUS}\"
+                  FAILED=1
+                fi
+              done
+
+              if [ \${FAILED} -eq 1 ]; then
+                echo ''
+                echo 'Some services failed to start. Check logs with:'
+                echo '  docker compose logs <service_name>'
+                exit 1
+              fi
+
+              echo ''
+              echo 'All critical services are running!'
+            "
+
+      # ============================================
+      # Step 8: Deployment summary
+      # ============================================
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | INT |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Tag | \`${{ github.event.inputs.image_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| VM | \`${{ secrets.INT_VM_NAME }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered By | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Images Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/cvat-server:${{ github.event.inputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/cvat-ui:${{ github.event.inputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

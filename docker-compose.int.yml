@@ -1,0 +1,64 @@
+# =============================================================================
+# Docker Compose Override for INT Environment
+# =============================================================================
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.int.yml up -d
+#
+# Features enabled for INT:
+#   - Traefik dashboard (port 8090)
+#   - Uses images from Artifact Registry (set via environment variables)
+#
+# Environment variables (set before running):
+#   CVAT_SERVER_IMAGE  - Server image from Artifact Registry
+#   CVAT_UI_IMAGE      - UI image from Artifact Registry
+#
+# Example:
+#   export CVAT_SERVER_IMAGE=us-central1-docker.pkg.dev/sandbox-446907/cvat-repo/cvat-server:sst-main-abc1234
+#   export CVAT_UI_IMAGE=us-central1-docker.pkg.dev/sandbox-446907/cvat-repo/cvat-ui:sst-main-abc1234
+#   docker compose -f docker-compose.yml -f docker-compose.int.yml up -d
+#
+# =============================================================================
+
+services:
+  # Override server to use Artifact Registry image
+  cvat_server:
+    image: ${CVAT_SERVER_IMAGE:-cvat/server:dev}
+
+  # Override UI to use Artifact Registry image
+  cvat_ui:
+    image: ${CVAT_UI_IMAGE:-cvat/ui:dev}
+
+  # Override workers to use Artifact Registry image (they all use server image)
+  cvat_worker_import:
+    image: ${CVAT_SERVER_IMAGE:-cvat/server:dev}
+
+  cvat_worker_export:
+    image: ${CVAT_SERVER_IMAGE:-cvat/server:dev}
+
+  cvat_worker_annotation:
+    image: ${CVAT_SERVER_IMAGE:-cvat/server:dev}
+
+  cvat_worker_webhooks:
+    image: ${CVAT_SERVER_IMAGE:-cvat/server:dev}
+
+  cvat_worker_quality_reports:
+    image: ${CVAT_SERVER_IMAGE:-cvat/server:dev}
+
+  cvat_worker_analytics_reports:
+    image: ${CVAT_SERVER_IMAGE:-cvat/server:dev}
+
+  cvat_worker_chunks:
+    image: ${CVAT_SERVER_IMAGE:-cvat/server:dev}
+
+  # Enable Traefik dashboard for INT environment
+  traefik:
+    environment:
+      # Enable Traefik API Dashboard
+      TRAEFIK_API_DASHBOARD: "true"
+      TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.dashboard.entrypoints: dashboard
+      traefik.http.routers.dashboard.service: api@internal
+      traefik.http.routers.dashboard.rule: Host(`${CVAT_HOST:-localhost}`)

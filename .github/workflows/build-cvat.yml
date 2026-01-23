@@ -1,0 +1,183 @@
+# =============================================================================
+# CI Workflow: Build CVAT Images and Push to GCP Artifact Registry
+# =============================================================================
+#
+# This workflow ONLY builds and pushes images. Deployment is handled by:
+#   - deploy-int.yml  (manual trigger for INT environment)
+#   - deploy-stg.yml  (auto trigger for STG environment)
+#
+# Tagging Strategy:
+#   - sst-main branch:  "latest" + "sst-main-{short_sha}"
+#   - feature/* branch: "{branch_name}-{short_sha}"
+#   - STG uses "latest" tag (only built from sst-main)
+#   - INT can use any specific tag
+#
+# Prerequisites (GitHub Secrets):
+#   - GCP_SA_KEY:      Service Account JSON key
+#   - GCP_PROJECT_ID:  GCP Project ID (sandbox-446907)
+#
+# =============================================================================
+
+name: Build CVAT Images
+
+on:
+  push:
+    branches:
+      - 'sst-main'
+      - 'feature/**'
+  pull_request:
+    branches:
+      - 'sst-main'
+
+# Prevent duplicate runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # GCP Configuration (VM is in us-central1-a)
+  GCP_REGION: us-central1
+  REGISTRY: us-central1-docker.pkg.dev
+  REPO_NAME: cvat-repo
+
+jobs:
+  build:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+
+    # Only run if secrets are available (skip for external PRs from forks)
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      # ============================================
+      # Step 1: Checkout the code
+      # ============================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ============================================
+      # Step 2: Generate image tags based on branch
+      # ============================================
+      - name: Generate image tags
+        id: tags
+        run: |
+          # Get short SHA (7 characters)
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+          # Get branch name and make it tag-friendly (replace / with -)
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          BRANCH_TAG=$(echo "${BRANCH_NAME}" | sed 's/\//-/g')
+          echo "branch_tag=${BRANCH_TAG}" >> $GITHUB_OUTPUT
+
+          # Create the version tag: {branch}-{short_sha}
+          VERSION_TAG="${BRANCH_TAG}-${SHORT_SHA}"
+          echo "version_tag=${VERSION_TAG}" >> $GITHUB_OUTPUT
+
+          # Determine if we should also push "latest" tag (only for sst-main)
+          if [ "$BRANCH_NAME" = "sst-main" ]; then
+            echo "is_main=true" >> $GITHUB_OUTPUT
+            echo "::notice::Building from sst-main - will tag as 'latest'"
+          else
+            echo "is_main=false" >> $GITHUB_OUTPUT
+            echo "::notice::Building from ${BRANCH_NAME} - version tag only"
+          fi
+
+          echo "============================================"
+          echo "Branch:      ${BRANCH_NAME}"
+          echo "Version Tag: ${VERSION_TAG}"
+          echo "Is Main:     $( [ "$BRANCH_NAME" = "sst-main" ] && echo 'yes' || echo 'no' )"
+          echo "============================================"
+
+      # ============================================
+      # Step 3: Authenticate to Google Cloud
+      # ============================================
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # ============================================
+      # Step 4: Set up gcloud CLI
+      # ============================================
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      # ============================================
+      # Step 5: Configure Docker for Artifact Registry
+      # ============================================
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+          echo "Docker configured for ${{ env.REGISTRY }}"
+
+      # ============================================
+      # Step 6: Set up Docker Buildx (for better caching)
+      # ============================================
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ============================================
+      # Step 7: Build and Push CVAT Server Image
+      # ============================================
+      - name: Build and Push CVAT Server
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/cvat-server:${{ steps.tags.outputs.version_tag }}
+            ${{ steps.tags.outputs.is_main == 'true' && format('{0}/{1}/{2}/cvat-server:latest', env.REGISTRY, secrets.GCP_PROJECT_ID, env.REPO_NAME) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ============================================
+      # Step 8: Build and Push CVAT UI Image
+      # ============================================
+      - name: Build and Push CVAT UI
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.ui
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/cvat-ui:${{ steps.tags.outputs.version_tag }}
+            ${{ steps.tags.outputs.is_main == 'true' && format('{0}/{1}/{2}/cvat-ui:latest', env.REGISTRY, secrets.GCP_PROJECT_ID, env.REPO_NAME) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ============================================
+      # Step 9: Summary output
+      # ============================================
+      - name: Build Summary
+        run: |
+          echo "## Build Complete! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Branch Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: \`${{ steps.tags.outputs.branch_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: \`${{ steps.tags.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Images Pushed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | Tags |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|------|" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.tags.outputs.is_main }}" = "true" ]; then
+            echo "| cvat-server | \`${{ steps.tags.outputs.version_tag }}\`, \`latest\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| cvat-ui | \`${{ steps.tags.outputs.version_tag }}\`, \`latest\` |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| cvat-server | \`${{ steps.tags.outputs.version_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| cvat-ui | \`${{ steps.tags.outputs.version_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Registry" >> $GITHUB_STEP_SUMMARY
+          echo "\`${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.tags.outputs.is_main }}" = "true" ]; then
+            echo "- :white_check_mark: **STG**: Ready to auto-deploy (uses \`latest\` tag)" >> $GITHUB_STEP_SUMMARY
+            echo "- :arrow_right: **INT**: Run \`deploy-int.yml\` with tag \`${{ steps.tags.outputs.version_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- :x: **STG**: Not available (only sst-main builds)" >> $GITHUB_STEP_SUMMARY
+            echo "- :arrow_right: **INT**: Run \`deploy-int.yml\` with tag \`${{ steps.tags.outputs.version_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
