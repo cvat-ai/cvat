@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unified Dockerfile for PyTorch models to streamline deployment of GLASS, U2Net, and other PyTorch-based serverless functions. [PR #31]
 - Optimized GPU startup script (startup-gpu-cuda12.8-optimized.sh) for faster CUDA 12.8 infrastructure deployment. [PR #31]
 - Add YOLOv11 speed sign detection model with GPU support for CUDA 12.8. [PR #32]
+- Integrate ClearML into CVAT UI [PR #34]
 
 
 ### Changed
