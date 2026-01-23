@@ -367,10 +367,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mesa-utils libgl1-mesa-dri
 
-      - name: DEBUG, run tmate
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
+      # - name: DEBUG, run tmate
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     limit-access-to-actor: true
 
       - name: Run E2E tests
         env:

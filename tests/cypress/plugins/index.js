@@ -97,6 +97,7 @@ module.exports = (on, config) => {
             if (browser.isHeadless) {
                 launchOptions.args.push('--disable-gpu');
             }
+            launchOptions.args.push('--enable-unsafe-swiftshader');
         }
         return launchOptions;
     });
