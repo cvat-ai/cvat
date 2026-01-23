@@ -7,6 +7,7 @@ import { Indexable } from 'reducers';
 import SortingComponent from './sorting';
 import ResourceFilterHOC from './filtering';
 import { ResourceSelectionInfo } from './resource-selection-info';
+import { useResourceFilteringQuery } from './hooks';
 
 const defaultVisibility = {
     predefined: false,
@@ -33,4 +34,5 @@ export {
     ResourceSelectionInfo,
     defaultVisibility,
     updateHistoryFromQuery,
+    useResourceFilteringQuery,
 };

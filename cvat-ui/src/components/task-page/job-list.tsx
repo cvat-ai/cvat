@@ -19,8 +19,8 @@ import { Task, Job } from 'cvat-core-wrapper';
 import JobItem from 'components/job-item/job-item';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery, ResourceSelectionInfo,
+    useResourceFilteringQuery,
 } from 'components/resource-sorting-filtering';
-import { useResourceQuery } from 'utils/hooks';
 import BulkWrapper from 'components/bulk-wrapper';
 import { selectionActions } from 'actions/selection-actions';
 import {
@@ -84,9 +84,9 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
         pageSize: 10,
         sort: null,
         search: null,
-        filter: null,
+        filter: '{"and":[{"!":{"var":"parentJobId"}}]}',
     };
-    const updatedQuery = useResourceQuery<JobsQuery>(defaultQuery);
+    const updatedQuery = useResourceFilteringQuery<JobsQuery>(defaultQuery, defaultQuery);
 
     const [query, setQuery] = useState<JobsQuery>(updatedQuery);
     const filteredJobs = filterJobs(jobs, query);
