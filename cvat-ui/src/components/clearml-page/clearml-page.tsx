@@ -63,7 +63,7 @@ function ClearMLPageComponent(props: Props): JSX.Element {
     const [selectedArtifact, setSelectedArtifact] = useState<string | null>(null);
 
     // ClearML Web UI URL helper functions
-    const getClearMLBaseUrl = () => 'http://192.168.0.220:8083';
+    const getClearMLBaseUrl = () => process.env.REACT_APP_CLEARML_WEB_URL || 'http://localhost:8083';
 
     const getClearMLProjectUrl = (projectId: string) => {
         return `${getClearMLBaseUrl()}/projects/${encodeURIComponent(projectId)}`;
@@ -84,7 +84,7 @@ function ClearMLPageComponent(props: Props): JSX.Element {
 
         try {
             // The ClearML API is available at port 8500 as specified in the text
-            const response = await fetch('http://192.168.0.220:8008/debug.ping', {
+            const response = await fetch(`${getClearMLApiUrl()}/debug.ping`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
@@ -120,12 +120,14 @@ function ClearMLPageComponent(props: Props): JSX.Element {
     };
 
     const getAuthHeader = () => {
-        const accessKey = "ZB2HMDZLWBLS49EXX2UF";
-        const secretKey = "yGADE5dyv0hnHU4WxIhJIP9Xd5dACI4zK2KyW0U4hb6dvvKNxa";
+        const accessKey = process.env.REACT_APP_CLEARML_ACCESS_KEY || '';
+        const secretKey = process.env.REACT_APP_CLEARML_SECRET_KEY || '';
         // Encode the credentials to Base64
         const encoded = btoa(`${accessKey}:${secretKey}`);
-    return { 'Authorization': `Basic ${encoded}` };
+        return { 'Authorization': `Basic ${encoded}` };
     };
+
+    const getClearMLApiUrl = () => process.env.REACT_APP_CLEARML_API_URL || 'http://localhost:8008';
 
     const fetchClearMLProjects = async (): Promise<void> => {
         if (connectionStatus !== 'success' && !isConnecting) {
@@ -139,7 +141,7 @@ function ClearMLPageComponent(props: Props): JSX.Element {
         setIsLoadingProjects(true);
 
         try {
-            const response = await fetch('http://192.168.0.220:8008/projects.get_all', {
+            const response = await fetch(`${getClearMLApiUrl()}/projects.get_all`, {
                 method: 'POST',
                 headers: {
                 'Content-Type': 'application/json',
@@ -181,7 +183,7 @@ function ClearMLPageComponent(props: Props): JSX.Element {
         setSelectedArtifact(null); // Clear artifact selection
 
         try {
-            const response = await fetch(`http://192.168.0.220:8008/tasks.get_all`, {
+            const response = await fetch(`${getClearMLApiUrl()}/tasks.get_all`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -218,7 +220,7 @@ function ClearMLPageComponent(props: Props): JSX.Element {
         setSelectedArtifact(null); // Clear artifact selection
 
         try {
-            const response = await fetch(`http://192.168.0.220:8008/projects/${encodeURIComponent(projectName)}/tasks/${encodeURIComponent(taskId)}/artifacts`);
+            const response = await fetch(`${getClearMLApiUrl()}/projects/${encodeURIComponent(projectName)}/tasks/${encodeURIComponent(taskId)}/artifacts`);
             if (response.ok) {
                 const data = await response.json();
                 setTaskArtifacts(data.artifacts || []);

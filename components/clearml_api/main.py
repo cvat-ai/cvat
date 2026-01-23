@@ -11,16 +11,25 @@ from models import (
 )
 from config import settings
 
-# Hardcoded ClearML credentials - direct configuration
-print("Configuring ClearML with hardcoded credentials")
+# ClearML credentials from environment variables
+print("Configuring ClearML with environment credentials")
 try:
-    # Set ClearML credentials directly with hardcoded values
+    # Set ClearML credentials from environment variables
+    api_host = os.getenv("CLEARML_API_HOST")
+    web_host = os.getenv("CLEARML_WEB_HOST")
+    files_host = os.getenv("CLEARML_FILES_HOST")
+    api_key = os.getenv("CLEARML_API_KEY")
+    api_secret = os.getenv("CLEARML_API_SECRET")
+
+    if not all([api_host, web_host, files_host, api_key, api_secret]):
+        raise ValueError("Missing ClearML environment variables. Please set CLEARML_API_HOST, CLEARML_WEB_HOST, CLEARML_FILES_HOST, CLEARML_API_KEY, and CLEARML_API_SECRET")
+
     Task.set_credentials(
-        api_host="http://192.168.0.220:8008",
-        web_host="http://192.168.0.220:8080",
-        files_host="http://192.168.0.220:8081",
-        key="DFDQOY53OMXJUU2VV0G9",
-        secret="EoXFbXkqjqcBQSFp85In1K4tWafmiPFUFnP4dvVLj9Qp1moaF3"
+        api_host=api_host,
+        web_host=web_host,
+        files_host=files_host,
+        key=api_key,
+        secret=api_secret
     )
     print("ClearML credentials configured successfully")
 except Exception as e:
@@ -651,7 +660,7 @@ async def get_all_datasets():
                     "files_count": dataset.get('files_count'),
                     "uri": dataset.get('url', dataset.get('uri')),
                 }
-                
+
                 created = dataset.get('created')
                 if created:
                     dataset_data["created"] = created.isoformat() if hasattr(created, 'isoformat') else str(created)
@@ -716,7 +725,7 @@ async def get_project_datasets(project_name: str):
                     "files_count": dataset.get('files_count'),
                     "uri": dataset.get('url', dataset.get('uri')),
                 }
-                
+
                 created = dataset.get('created')
                 if created:
                     dataset_data["created"] = created.isoformat() if hasattr(created, 'isoformat') else str(created)
@@ -790,7 +799,7 @@ async def get_dataset_details(dataset_id: str):
             # Get dataset versions/lineage
             dataset_name = dataset.name
             dataset_project = getattr(dataset, 'project', None)
-            
+
             if dataset_project:
                 all_versions = Dataset.list_datasets(
                     dataset_name=dataset_name,
@@ -798,7 +807,7 @@ async def get_dataset_details(dataset_id: str):
                 )
             else:
                 all_versions = Dataset.list_datasets(dataset_name=dataset_name)
-            
+
             for version_dataset in all_versions:
                 # Handle both dict and object responses from Dataset.list_datasets()
                 if isinstance(version_dataset, dict):
@@ -810,11 +819,11 @@ async def get_dataset_details(dataset_id: str):
                         "files_count": version_dataset.get('files_count'),
                         "uri": version_dataset.get('url', version_dataset.get('uri')),
                     }
-                    
+
                     created = version_dataset.get('created')
                     if created:
                         version_data["created"] = created.isoformat() if hasattr(created, 'isoformat') else str(created)
-                    
+
                     # Try to get changeset information
                     changeset = version_dataset.get('changeset')
                     if changeset:
@@ -829,10 +838,10 @@ async def get_dataset_details(dataset_id: str):
                         "files_count": getattr(version_dataset, 'files_count', None),
                         "uri": getattr(version_dataset, 'url', getattr(version_dataset, 'uri', None)),
                     }
-                    
+
                     if hasattr(version_dataset, 'created') and version_dataset.created:
                         version_data["created"] = version_dataset.created.isoformat() if hasattr(version_dataset.created, 'isoformat') else str(version_dataset.created)
-                    
+
                     # Try to get changeset information
                     try:
                         changeset = getattr(version_dataset, 'changeset', None)
@@ -840,9 +849,9 @@ async def get_dataset_details(dataset_id: str):
                             version_data["changeset"] = changeset
                     except:
                         pass
-                
+
                 versions_data.append(version_data)
-                
+
         except Exception as versions_error:
             print(f"Warning: Could not fetch versions for dataset {dataset_id}: {versions_error}")
 
@@ -855,7 +864,7 @@ async def get_dataset_details(dataset_id: str):
             print(f"Warning: Could not fetch metadata for dataset {dataset_id}: {metadata_error}")
 
         response_data = {"dataset": dataset_data}
-        
+
         if versions_data:
             response_data["versions"] = versions_data
         if metadata:
@@ -884,13 +893,13 @@ async def get_dataset_versions(dataset_id: str):
 
         # Get the base dataset to get its name and project
         base_dataset = Dataset.get(dataset_id=dataset_id)
-        
+
         if not base_dataset:
             raise HTTPException(status_code=404, detail=f"Dataset {dataset_id} not found")
 
         dataset_name = base_dataset.name
         dataset_project = getattr(base_dataset, 'project', None)
-        
+
         # Get all versions of this dataset
         if dataset_project:
             all_versions = Dataset.list_datasets(
@@ -899,7 +908,7 @@ async def get_dataset_versions(dataset_id: str):
             )
         else:
             all_versions = Dataset.list_datasets(dataset_name=dataset_name)
-        
+
         versions_data = []
         for version_dataset in all_versions:
             # Handle both dict and object responses from Dataset.list_datasets()
@@ -913,11 +922,11 @@ async def get_dataset_versions(dataset_id: str):
                     "uri": version_dataset.get('url', version_dataset.get('uri')),
                     "tags": version_dataset.get('tags', []),
                 }
-                
+
                 created = version_dataset.get('created')
                 if created:
                     version_data["created"] = created.isoformat() if hasattr(created, 'isoformat') else str(created)
-                
+
                 # Try to get changeset information
                 changeset = version_dataset.get('changeset')
                 if changeset:
@@ -933,10 +942,10 @@ async def get_dataset_versions(dataset_id: str):
                     "uri": getattr(version_dataset, 'url', getattr(version_dataset, 'uri', None)),
                     "tags": getattr(version_dataset, 'tags', []),
                 }
-                
+
                 if hasattr(version_dataset, 'created') and version_dataset.created:
                     version_data["created"] = version_dataset.created.isoformat() if hasattr(version_dataset.created, 'isoformat') else str(version_dataset.created)
-                
+
                 # Try to get changeset information
                 try:
                     changeset = getattr(version_dataset, 'changeset', None)
@@ -944,7 +953,7 @@ async def get_dataset_versions(dataset_id: str):
                         version_data["changeset"] = changeset
                 except:
                     pass
-            
+
             versions_data.append(version_data)
 
         # Sort versions by creation date (newest first)
@@ -973,7 +982,7 @@ async def get_dataset_files(dataset_id: str):
 
         # Get the dataset by ID
         dataset = Dataset.get(dataset_id=dataset_id)
-        
+
         if not dataset:
             raise HTTPException(status_code=404, detail=f"Dataset {dataset_id} not found")
 
@@ -987,7 +996,7 @@ async def get_dataset_files(dataset_id: str):
                         "path": file_path,
                         "name": file_path.split('/')[-1] if '/' in file_path else file_path,
                     }
-                    
+
                     # Try to get file size and other metadata
                     try:
                         file_meta = dataset.get_file_metadata(file_path)
@@ -995,7 +1004,7 @@ async def get_dataset_files(dataset_id: str):
                             file_info.update(file_meta)
                     except:
                         pass
-                    
+
                     files_data.append(file_info)
             elif hasattr(dataset, 'get_local_copy') and callable(dataset.get_local_copy):
                 # If direct file listing isn't available, try to get local copy info
