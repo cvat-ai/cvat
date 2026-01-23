@@ -7236,6 +7236,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "label_id": task["labels"][0]["sublabels"][0]["id"],
                                 "group": 0,
                                 "source": "manual",
+                                "score": 1.0,
                                 "attributes": [],
                             },
                             {
@@ -7250,6 +7251,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "label_id": task["labels"][0]["sublabels"][1]["id"],
                                 "group": 0,
                                 "source": "manual",
+                                "score": 1.0,
                                 "attributes": [],
                             },
                         ],

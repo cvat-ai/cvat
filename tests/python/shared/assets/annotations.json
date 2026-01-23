@@ -465,6 +465,7 @@
                 118.10276296228554
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -482,6 +483,7 @@
                 274.6245183225243
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -504,6 +506,7 @@
                 67.8260869565238
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -521,6 +524,7 @@
                 276.52173913043686
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -863,6 +867,7 @@
                 138.72697241590762
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -880,6 +885,7 @@
                 421.9659673659692
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -897,6 +903,7 @@
                 107.42983682983868
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -914,6 +921,7 @@
                 337.46374412038085
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1234,6 +1242,7 @@
                 51.085564225393554
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1251,6 +1260,7 @@
                 101.86367376801435
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1268,6 +1278,7 @@
                 30.260833689097126
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1285,6 +1296,7 @@
                 114.13029555429613
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -2546,6 +2558,7 @@
                 65.9970703125
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2563,6 +2576,7 @@
                 96.87642507954297
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2580,6 +2594,7 @@
                 97.32024233915763
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2597,6 +2612,7 @@
                 128.1533203125
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2631,6 +2647,7 @@
                 67.95976734549367
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2648,6 +2665,7 @@
                 102.15625
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2665,6 +2683,7 @@
                 102.618369002279
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2682,6 +2701,7 @@
                 134.04215851499248
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -3602,6 +3622,7 @@
                 102.21971169729295
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3619,6 +3640,7 @@
                 102.5765956792493
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3636,6 +3658,7 @@
                 126.84447272867328
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3653,6 +3676,7 @@
                 75.810546875
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3687,6 +3711,7 @@
                 125.53573700986453
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3704,6 +3729,7 @@
                 68.61328125
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3721,6 +3747,7 @@
                 98.06965739794214
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3738,6 +3765,7 @@
                 98.46772030089414
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9405,6 +9433,7 @@
                 118.10276296228554
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9422,6 +9451,7 @@
                 274.6245183225243
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9444,6 +9474,7 @@
                 67.8260869565238
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9461,6 +9492,7 @@
                 276.52173913043686
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9803,6 +9835,7 @@
                 138.72697241590762
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9820,6 +9853,7 @@
                 421.9659673659692
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9837,6 +9871,7 @@
                 107.42983682983868
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9854,6 +9889,7 @@
                 337.46374412038085
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -10034,6 +10070,7 @@
                 51.085564225393554
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -10051,6 +10088,7 @@
                 101.86367376801435
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -10068,6 +10106,7 @@
                 30.260833689097126
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -10085,6 +10124,7 @@
                 114.13029555429613
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -11546,6 +11586,7 @@
                 65.9970703125
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11563,6 +11604,7 @@
                 96.87642507954297
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11580,6 +11622,7 @@
                 97.32024233915763
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11597,6 +11640,7 @@
                 128.1533203125
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11631,6 +11675,7 @@
                 67.95976734549367
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11648,6 +11693,7 @@
                 102.15625
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11665,6 +11711,7 @@
                 102.618369002279
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11682,6 +11729,7 @@
                 134.04215851499248
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4

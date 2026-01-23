@@ -3129,7 +3129,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private addText(state: any, options: { textContent?: string } = {}): SVG.Text {
+    private addText(state: any, options: { textContent?: string, isSkeletonElement?: boolean } = {}): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
         const content = options.textContent || this.configuration.textContent;
         const withID = content.includes('id');
@@ -3144,8 +3144,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             label, clientID, attributes, source, descriptions, score, votes,
         } = state;
         const isConsensus = source === 'consensus';
-        const withScore = isConsensus;
-        const withVotes = isConsensus;
+        const withScore = isConsensus && !options.isSkeletonElement;
+        const withVotes = isConsensus && !options.isSkeletonElement;
 
         const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
         if (state.shapeType === 'skeleton') {
@@ -3155,7 +3155,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         textContent: [
                             ...(withLabel ? ['label'] : []),
                             ...(withAttr ? ['attributes'] : []),
+                            // Note: explicitly exclude 'score' and 'votes' for skeleton elements
                         ].join(',') || ' ',
+                        isSkeletonElement: true,
                     });
                 }
             });

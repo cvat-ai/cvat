@@ -8722,16 +8722,16 @@ components:
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
-        elements:
-          type: array
-          items:
-            $ref: '#/components/schemas/SubLabeledShape'
         score:
           type: number
           format: double
           maximum: 1
           minimum: 0
           default: 1.0
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubLabeledShape'
       required:
       - frame
       - label_id
@@ -8783,16 +8783,16 @@ components:
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
-        elements:
-          type: array
-          items:
-            $ref: '#/components/schemas/SubLabeledShapeRequest'
         score:
           type: number
           format: double
           maximum: 1
           minimum: 0
           default: 1.0
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubLabeledShapeRequest'
       required:
       - frame
       - label_id
@@ -10891,6 +10891,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
       required:
       - frame
       - label_id
@@ -10942,6 +10948,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
       required:
       - frame
       - label_id

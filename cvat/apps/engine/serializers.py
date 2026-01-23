@@ -3262,10 +3262,10 @@ class ShapeSerializer(serializers.Serializer):
 
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True, default=[])
+    score = serializers.FloatField(min_value=0, max_value=1, default=1)
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
-    score = serializers.FloatField(min_value=0, max_value=1, default=1)
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -3309,14 +3309,6 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
     # Use this serializer to export data from the database
     # Because default DRF serializer is too slow on huge collections
     def to_representation(self, instance):
-        def convert_element(shape):
-            result = _convert_annotation(shape, [
-                'id', 'label_id', 'type', 'frame', 'group', 'source',
-                'occluded', 'outside', 'z_order', 'rotation', 'points',
-            ])
-            result['attributes'] = _convert_attributes(shape['attributes'])
-            return result
-
         def convert_shape(shape):
             result = _convert_annotation(shape, [
                 'id', 'label_id', 'type', 'frame', 'group', 'source', 'score',
@@ -3324,7 +3316,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
             ])
             result['attributes'] = _convert_attributes(shape['attributes'])
             if shape.get('elements', None) is not None and shape['parent'] is None:
-                result['elements'] = [convert_element(element) for element in shape['elements']]
+                result['elements'] = [convert_shape(element) for element in shape['elements']]
             return result
 
         return convert_shape(instance)
