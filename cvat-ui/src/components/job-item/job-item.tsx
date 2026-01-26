@@ -139,7 +139,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
     } else if (job.hasReplicas) {
         tag = (
             <Col offset={1}>
-                <CVATTag type={TagType.REPLICATED} />
+                <CVATTag type={TagType.PARENT} />
             </Col>
         );
     } else if (job.parentJobId !== null) {

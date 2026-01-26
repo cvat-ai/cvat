@@ -64,7 +64,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
     if (job.type === JobType.GROUND_TRUTH) {
         tag = 'Ground truth';
     } else if (job.hasReplicas) {
-        tag = 'Replicated';
+        tag = 'Parent';
     } else if (job.parentJobId !== null) {
         tag = 'Replica';
     }
