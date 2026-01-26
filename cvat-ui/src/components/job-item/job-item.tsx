@@ -40,6 +40,7 @@ interface Props {
     onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
     selected?: boolean;
     onClick?: (event?: React.MouseEvent) => void;
+    onApplyFilter?: (filter: string | null) => void;
 }
 
 function ReviewSummaryComponent({ jobInstance }: Readonly<{ jobInstance: Job }>): JSX.Element {
@@ -107,7 +108,7 @@ function ReviewSummaryComponent({ jobInstance }: Readonly<{ jobInstance: Job }>)
 
 function JobItem(props: Readonly<Props>): JSX.Element {
     const {
-        job, task, onJobUpdate, selected, onClick,
+        job, task, onJobUpdate, selected, onClick, onApplyFilter,
     } = props;
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
@@ -287,6 +288,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                 jobInstance={job}
                 dropdownTrigger={['contextMenu']}
                 triggerElement={card}
+                onApplyFilter={onApplyFilter}
             />
         </Col>
     );

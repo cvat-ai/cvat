@@ -58,7 +58,7 @@ function filterJobs(jobs: Job[], query: JobsQuery): Job[] {
             updatedDate: job.updatedDate,
             type: job.type,
             id: job.id,
-            parentJobId: job.parentJobId,
+            parent_job_id: job.parentJobId,
         }));
         const filter = JSON.parse(query.filter);
         result = result.filter((job, index) => jsonLogic.apply(filter, converted[index]));
@@ -111,6 +111,13 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
         dispatch(selectionActions.selectResources(allJobIds, SelectedResourceType.JOBS));
     }, [dispatch, filteredJobs]);
 
+    const onApplyFilter = useCallback((filter: string | null) => {
+        setQuery({
+            ...query,
+            filter,
+        });
+    }, [query]);
+
     return (
         <>
             <div className='cvat-jobs-list-filters-wrapper'>
@@ -149,12 +156,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                         onRecentVisibleChange={(visible: boolean) => (
                             setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
                         )}
-                        onApplyFilter={(filter: string | null) => {
-                            setQuery({
-                                ...query,
-                                filter,
-                            });
-                        }}
+                        onApplyFilter={onApplyFilter}
                     />
                     <div className='cvat-job-add-wrapper'>
                         <Button onClick={onCreateJob} type='primary' className='cvat-create-job' icon={<PlusOutlined />} />
@@ -180,6 +182,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                                                 onJobUpdate={onJobUpdate}
                                                 selected={selected}
                                                 onClick={onClick}
+                                                onApplyFilter={onApplyFilter}
                                             />
                                         );
                                     })
