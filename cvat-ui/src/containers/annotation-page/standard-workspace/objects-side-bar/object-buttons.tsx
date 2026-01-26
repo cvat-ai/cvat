@@ -13,9 +13,8 @@ import {
     updateAnnotationsAsync,
     changeFrameAsync,
     changeHideActiveObjectAsync,
-    trackUserUnlockInReviewMode,
 } from 'actions/annotation-actions';
-import { CombinedState, Workspace } from 'reducers';
+import { CombinedState } from 'reducers';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
 
 interface OwnProps {
@@ -35,7 +34,6 @@ interface StateToProps {
     hiddenDisabled: boolean;
     keyframeDisabled: boolean;
     editedState: ObjectState | null,
-    workspace: Workspace;
 }
 
 interface DispatchToProps {
@@ -53,7 +51,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 frame: { number: frameNumber },
             },
             editing: { objectState: editedState },
-            workspace,
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -76,7 +73,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         outsideDisabled: typeof outsideDisabled === 'undefined' ? false : outsideDisabled,
         hiddenDisabled: typeof hiddenDisabled === 'undefined' ? false : hiddenDisabled,
         keyframeDisabled: typeof keyframeDisabled === 'undefined' ? false : keyframeDisabled,
-        workspace,
     };
 }
 
@@ -136,12 +132,8 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private unlock = (): void => {
-        const { objectState, readonly, workspace } = this.props;
+        const { objectState, readonly } = this.props;
         if (!readonly) {
-            // Track user unlock in review mode so it persists after fetch
-            if (workspace === Workspace.REVIEW) {
-                trackUserUnlockInReviewMode(objectState.serverID);
-            }
             objectState.lock = false;
             this.commit();
         }
