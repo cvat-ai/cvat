@@ -312,18 +312,6 @@ class OrgTransferableMixin():
         raise NotImplementedError()
 
 class BasicUserSerializer(serializers.ModelSerializer):
-    def validate(self, attrs):
-        if hasattr(self, 'initial_data'):
-            unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
-            if unknown_keys:
-                if set(['is_staff', 'is_superuser', 'groups']) & unknown_keys:
-                    message = 'You do not have permissions to access some of' + \
-                        ' these fields: {}'.format(unknown_keys)
-                else:
-                    message = 'Got unknown fields: {}'.format(unknown_keys)
-                raise serializers.ValidationError(message)
-        return attrs
-
     class Meta:
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name')
@@ -1164,11 +1152,11 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         db_job = instance
         db_segment = db_job.segment
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         if not (
-            hasattr(db_job.segment.task.data, 'validation_layout') and
-            db_job.segment.task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+            hasattr(db_data, 'validation_layout') and
+            db_data.validation_layout.mode == models.ValidationMode.GT_POOL
         ):
             raise serializers.ValidationError(
                 "Honeypots can only be modified if the task "
@@ -1432,7 +1420,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         initial_chunks_updated_date = db_segment.chunks_updated_date
         db_task = db_segment.task
         task_frame_provider = TaskFrameProvider(db_task)
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         def _iterate_chunk_frames():
             for chunk_frame in chunk_frames:
@@ -1489,7 +1477,7 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
             db_segment = instance.segment
             segment_frame_set = db_segment.frame_set
 
-            db_data = db_segment.task.data
+            db_data = db_segment.task.require_data()
             frame_step = db_data.get_frame_step()
 
             def _to_rel_frame(abs_frame: int) -> int:
@@ -3088,7 +3076,7 @@ class JobDataMetaWriteSerializer(serializers.ModelSerializer):
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
         db_segment = instance.segment
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         deleted_frames = validated_data['deleted_frames']
 

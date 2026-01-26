@@ -141,19 +141,13 @@ class IFrameProvider(metaclass=ABCMeta):
             raise RuntimeError(f"Failed to encode image to '{ext}' format")
         return BytesIO(result.tobytes())
 
-    def _convert_frame(
-        self, frame: Any, reader_class: type[IMediaReader], out_type: FrameOutputType
-    ) -> AnyFrame:
+    def _convert_frame(self, frame: Any, out_type: FrameOutputType) -> AnyFrame:
         if out_type == FrameOutputType.BUFFER:
-            return (
-                self._av_frame_to_png_bytes(frame)
-                if issubclass(reader_class, VideoReader)
-                else frame
-            )
+            return self._av_frame_to_png_bytes(frame) if isinstance(frame, av.VideoFrame) else frame
         elif out_type == FrameOutputType.PIL:
-            return frame.to_image() if issubclass(reader_class, VideoReader) else Image.open(frame)
+            return frame.to_image() if isinstance(frame, av.VideoFrame) else Image.open(frame)
         elif out_type == FrameOutputType.NUMPY_ARRAY:
-            if issubclass(reader_class, VideoReader):
+            if isinstance(frame, av.VideoFrame):
                 image = frame.to_ndarray(format="bgr24")
             else:
                 image = np.array(Image.open(frame))
@@ -264,7 +258,7 @@ class TaskFrameProvider(IFrameProvider):
         if cached_chunk:
             return return_type(cached_chunk[0], cached_chunk[1])
 
-        db_data = self._db_task.data
+        db_data = self._db_task.require_data()
         step = db_data.get_frame_step()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
         task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1
@@ -339,7 +333,7 @@ class TaskFrameProvider(IFrameProvider):
                 ):
                     continue
 
-                frame, frame_name, _ = segment_frame_provider._get_raw_frame(
+                frame, frame_name = segment_frame_provider._get_raw_frame(
                     task_chunk_frames_with_rel_numbers[task_chunk_frame_id], quality=quality
                 )
                 task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
@@ -470,7 +464,7 @@ class SegmentFrameProvider(IFrameProvider):
         super().__init__()
         self._db_segment = db_segment
 
-        db_data = db_segment.task.data
+        db_data = db_segment.task.require_data()
 
         reader_class: dict[models.DataChoice, tuple[type[IMediaReader], dict | None]] = {
             models.DataChoice.IMAGESET: (ZipReader, None),
@@ -601,12 +595,12 @@ class SegmentFrameProvider(IFrameProvider):
         frame_number: int,
         *,
         quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
-    ) -> tuple[Any, str, type[IMediaReader]]:
+    ) -> tuple[Any, str]:
         _, chunk_number, frame_offset = self.validate_frame_number(frame_number)
         loader = self._loaders[quality]
         chunk_reader = loader.load(chunk_number)
         frame, frame_name, _ = chunk_reader[frame_offset]
-        return frame, frame_name, loader.reader_class
+        return frame, frame_name
 
     def get_frame(
         self,
@@ -617,13 +611,16 @@ class SegmentFrameProvider(IFrameProvider):
     ) -> DataWithMeta[AnyFrame]:
         return_type = DataWithMeta[AnyFrame]
 
-        frame, frame_name, reader_class = self._get_raw_frame(frame_number, quality=quality)
+        frame, frame_name = self._get_raw_frame(frame_number, quality=quality)
 
-        frame = self._convert_frame(frame, reader_class, out_type)
-        if issubclass(reader_class, VideoReader):
-            return return_type(frame, mime=self.VIDEO_FRAME_MIME)
+        if isinstance(frame, av.VideoFrame):
+            mime = self.VIDEO_FRAME_MIME
+        else:
+            mime = mimetypes.guess_type(frame_name)[0]
 
-        return return_type(frame, mime=mimetypes.guess_type(frame_name)[0])
+        frame = self._convert_frame(frame, out_type)
+
+        return return_type(frame, mime=mime)
 
     def get_frame_context_images_chunk(
         self,
@@ -631,7 +628,7 @@ class SegmentFrameProvider(IFrameProvider):
     ) -> DataWithMeta[BytesIO] | None:
         self.validate_frame_number(frame_number)
 
-        db_data = self._db_segment.task.data
+        db_data = self._db_segment.task.require_data()
 
         cache = MediaCache()
         if db_data.storage_method == models.StorageMethodChoice.CACHE:
@@ -695,7 +692,7 @@ class JobFrameProvider(SegmentFrameProvider):
         if cached_chunk:
             return return_type(cached_chunk[0], cached_chunk[1])
 
-        db_data = self._db_segment.task.data
+        db_data = self._db_segment.task.require_data()
         step = db_data.get_frame_step()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
         task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1

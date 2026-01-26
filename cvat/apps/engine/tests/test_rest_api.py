@@ -826,25 +826,32 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
     def test_api_v2_users_id_admin_partial(self):
         data = {"username": "user09", "last_name": "my last name"}
         response = self._run_api_v2_users_id(self.admin, self.user.id, data)
+        self._check_response_with_data(self.user, response, data, True)
 
+        data = {"is_staff": True, "is_superuser": True, "is_active": False, "groups": ["admin"]}
+        response = self._run_api_v2_users_id(self.admin, self.user.id, data)
         self._check_response_with_data(self.user, response, data, True)
 
     def test_api_v2_users_id_user_partial(self):
         data = {"username": "user10", "first_name": "my name"}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self._check_response_with_data(self.user, response, data, False)
+        self._check_response_with_data(self.user, response, data, True)
+
+        data = {"email": "unverified@example.com"}
+        response = self._run_api_v2_users_id(self.user, self.user.id, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"is_staff": True}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"username": "admin", "is_superuser": True}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"username": "non_active", "is_active": False}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"username": "annotator01", "first_name": "slave"}
         response = self._run_api_v2_users_id(self.user, self.annotator.id, data)
@@ -3949,7 +3956,7 @@ class TaskDataAPITestCase(ApiTestBase):
             self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
             self.assertEqual(expected_original_type, task["data_original_chunk_type"])
             self.assertEqual(len(expected_image_sizes), task["size"])
-            db_data = Task.objects.get(pk=task_id).data
+            db_data = Task.objects.get(pk=task_id).require_data()
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
             # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share

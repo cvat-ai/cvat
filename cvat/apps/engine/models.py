@@ -670,6 +670,10 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
             return True
         return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
 
+    def require_data(self) -> Data:
+        assert self.data is not None
+        return self.data
+
     @cached_property
     def completed_jobs_count(self) -> int | None:
         # Requires this field to be defined externally,
