@@ -28,10 +28,13 @@ interface Props {
     job: Job;
     selected: boolean;
     onClick: (event: React.MouseEvent) => boolean;
+    onApplyFilter?: (filter: string | null) => void;
 }
 
 function JobCardComponent(props: Readonly<Props>): JSX.Element {
-    const { job, selected, onClick } = props;
+    const {
+        job, selected, onClick, onApplyFilter,
+    } = props;
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
@@ -119,6 +122,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
             jobInstance={job}
             dropdownTrigger={['contextMenu']}
             triggerElement={card}
+            onApplyFilter={onApplyFilter}
         />
     );
 }

@@ -49,6 +49,16 @@ function JobsPageComponent(): JSX.Element {
         ));
     }, [currentJobs]);
 
+    const onApplyFilter = (filter: string | null) => {
+        dispatch(
+            getJobsAsync({
+                ...query,
+                filter,
+                page: 1,
+            }),
+        );
+    };
+
     const updatedQuery = useResourceQuery<JobsQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
@@ -68,7 +78,7 @@ function JobsPageComponent(): JSX.Element {
 
     const content = count ? (
         <>
-            <JobsContentComponent />
+            <JobsContentComponent onApplyFilter={onApplyFilter} />
             <Row justify='space-around' about='middle' className='cvat-resource-pagination-wrapper'>
                 <Col md={22} lg={18} xl={16} xxl={16}>
                     <Pagination
@@ -109,15 +119,7 @@ function JobsPageComponent(): JSX.Element {
                         }),
                     );
                 }}
-                onApplyFilter={(filter: string | null) => {
-                    dispatch(
-                        getJobsAsync({
-                            ...query,
-                            filter,
-                            page: 1,
-                        }),
-                    );
-                }}
+                onApplyFilter={onApplyFilter}
                 onApplySorting={(sorting: string | null) => {
                     dispatch(
                         getJobsAsync({

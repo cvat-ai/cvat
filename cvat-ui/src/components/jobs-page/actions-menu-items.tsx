@@ -20,6 +20,8 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
+    onGoToParent: (() => void) | null;
+    onGoToReplicas: (() => void) | null;
     startEditField: (key: string) => void;
     selectedIds: number[];
 }
@@ -41,6 +43,8 @@ export default function JobActionsItems(
         onMergeConsensusJob,
         onDeleteJob,
         selectedIds = [],
+        onGoToParent,
+        onGoToReplicas,
     } = menuItemsData;
 
     const isBulkMode = selectedIds.length > 1;
@@ -132,6 +136,26 @@ export default function JobActionsItems(
             label: withCount('Delete', 'delete'),
             disabled: isDisabled('delete'),
         }, 100]);
+    }
+
+    if (onGoToParent || onGoToReplicas) {
+        menuItems.push([{ type: 'divider' }, 199]);
+    }
+    if (onGoToParent) {
+        menuItems.push([{
+            key: 'go-to-parent',
+            onClick: onGoToParent,
+            label: withCount('Go to parent', 'go-to-parent'),
+            disabled: isDisabled('go-to-parent'),
+        }, 200]);
+    }
+    if (onGoToReplicas) {
+        menuItems.push([{
+            key: 'go-to-replicas',
+            onClick: onGoToReplicas,
+            label: withCount('Go to replicas', 'go-to-replicas'),
+            disabled: isDisabled('go-to-replicas'),
+        }, 201]);
     }
 
     menuItems.push(

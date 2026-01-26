@@ -27,6 +27,7 @@ interface Props {
     jobInstance: Job;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    onApplyFilter?: (filter: string | null) => void;
 }
 
 function JobActionsComponent(
@@ -36,6 +37,7 @@ function JobActionsComponent(
         jobInstance,
         triggerElement,
         dropdownTrigger,
+        onApplyFilter,
     } = props;
     const dispatch = useDispatch();
 
@@ -124,6 +126,18 @@ function JobActionsComponent(
         });
     }, [jobInstance, allJobs, selectedIds, dispatch]);
 
+    const onGoToParent = useCallback(() => {
+        if (jobInstance.parentJobId && onApplyFilter) {
+            onApplyFilter(`{"and":[{"==":[{"var":"id"},${jobInstance.parentJobId}]}]}`);
+        }
+    }, [jobInstance.parentJobId, onApplyFilter]);
+
+    const onGoToReplicas = useCallback(() => {
+        if (onApplyFilter) {
+            onApplyFilter(`{"and":[{"==":[{"var":"parent_job_id"},${jobInstance.id}]}]}`);
+        }
+    }, [jobInstance.id, onApplyFilter]);
+
     const onUpdateJobField = useCallback((
         fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>,
     ) => {
@@ -198,6 +212,8 @@ function JobActionsComponent(
             onExportAnnotations,
             onMergeConsensusJob: jobInstance.hasReplicas ? onMergeConsensusJob : null,
             onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
+            onGoToParent: jobInstance.parentJobId ? onGoToParent : null,
+            onGoToReplicas: jobInstance.hasReplicas ? onGoToReplicas : null,
             selectedIds,
         }, props);
     }

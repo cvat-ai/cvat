@@ -81,7 +81,7 @@ export const config: Partial<Config> = {
             fieldSettings: { min: 0 },
             valueSources: ['value'],
         },
-        parentJobId: {
+        parent_job_id: {
             label: 'parentID',
             type: 'number',
             operators: ['is_empty', 'is_not_empty', 'equal', 'between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
@@ -96,5 +96,5 @@ export const localStorageRecentKeyword = 'recentlyAppliedJobsFilters';
 export const predefinedFilterValues = {
     'Assigned to me': '{"and":[{"==":[{"var":"assignee"},"<username>"]}]}',
     'Not completed': '{"!":{"or":[{"==":[{"var":"state"},"completed"]},{"==":[{"var":"stage"},"acceptance"]}]}}',
-    'Not a replica': '{"and":[{"!":{"var":"parentJobId"}}]}',
+    'Not a replica': '{"and":[{"!":{"var":"parent_job_id"}}]}',
 };

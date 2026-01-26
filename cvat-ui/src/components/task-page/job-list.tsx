@@ -84,7 +84,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
         pageSize: 10,
         sort: null,
         search: null,
-        filter: '{"and":[{"!":{"var":"parentJobId"}}]}',
+        filter: '{"and":[{"!":{"var":"parent_job_id"}}]}',
     };
     const updatedQuery = useResourceFilteringQuery<JobsQuery>(defaultQuery, defaultQuery);
 
