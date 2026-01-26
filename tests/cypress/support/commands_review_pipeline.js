@@ -23,13 +23,15 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
 });
 
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
-    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').click();
-    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').clear();
+    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input')
+        .first() // it could be a nested job
+        .click();
+    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').first().clear();
 
     cy.intercept('PATCH', `/api/jobs/${jobID}`).as('patchJobAssignee');
     if (user) {
         cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
-        cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').type(user);
+        cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').first().type(user);
         cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
         cy.get('.cvat-user-search-dropdown')
             .should('be.visible')
