@@ -258,7 +258,7 @@ class TaskFrameProvider(IFrameProvider):
         if cached_chunk:
             return return_type(cached_chunk[0], cached_chunk[1])
 
-        db_data = self._db_task.data
+        db_data = self._db_task.require_data()
         step = db_data.get_frame_step()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
         task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1
@@ -464,7 +464,7 @@ class SegmentFrameProvider(IFrameProvider):
         super().__init__()
         self._db_segment = db_segment
 
-        db_data = db_segment.task.data
+        db_data = db_segment.task.require_data()
 
         reader_class: dict[models.DataChoice, tuple[type[IMediaReader], dict | None]] = {
             models.DataChoice.IMAGESET: (ZipReader, None),
@@ -628,7 +628,7 @@ class SegmentFrameProvider(IFrameProvider):
     ) -> DataWithMeta[BytesIO] | None:
         self.validate_frame_number(frame_number)
 
-        db_data = self._db_segment.task.data
+        db_data = self._db_segment.task.require_data()
 
         cache = MediaCache()
         if db_data.storage_method == models.StorageMethodChoice.CACHE:
@@ -692,7 +692,7 @@ class JobFrameProvider(SegmentFrameProvider):
         if cached_chunk:
             return return_type(cached_chunk[0], cached_chunk[1])
 
-        db_data = self._db_segment.task.data
+        db_data = self._db_segment.task.require_data()
         step = db_data.get_frame_step()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
         task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1
