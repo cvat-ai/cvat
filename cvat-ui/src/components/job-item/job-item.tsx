@@ -112,7 +112,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
-    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
 
     const { stage, state } = job;
     const created = dayjs(job.createdDate);
@@ -157,6 +157,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
             style={{ ...style }}
             data-row-id={job.id}
             onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
         >
             <Row align='middle'>
                 <Col span={6}>

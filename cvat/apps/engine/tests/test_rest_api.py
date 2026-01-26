@@ -3956,7 +3956,7 @@ class TaskDataAPITestCase(ApiTestBase):
             self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
             self.assertEqual(expected_original_type, task["data_original_chunk_type"])
             self.assertEqual(len(expected_image_sizes), task["size"])
-            db_data = Task.objects.get(pk=task_id).data
+            db_data = Task.objects.get(pk=task_id).require_data()
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
             # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share
