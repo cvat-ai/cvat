@@ -16,7 +16,6 @@ import ItemBasics from './object-item-basics';
 
 interface Props {
     normalizedKeyMap: Record<string, string>;
-    readonly: boolean;
     activated: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
@@ -51,7 +50,6 @@ interface Props {
 function ObjectItemComponent(props: Props): JSX.Element {
     const {
         activated,
-        readonly,
         objectType,
         shapeType,
         clientID,
@@ -106,7 +104,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
             >
                 <ItemBasics
                     jobInstance={jobInstance}
-                    readonly={readonly}
                     serverID={serverID}
                     clientID={clientID}
                     labelID={labelID}
@@ -141,9 +138,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     slice={slice}
                     runAnnotationAction={runAnnotationAction}
                 />
-                <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
+                <ObjectButtonsContainer clientID={clientID} />
                 <ItemDetailsContainer
-                    readonly={readonly || locked}
+                    readonly={locked}
                     clientID={clientID}
                     parentID={null}
                 />
@@ -156,7 +153,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                             children: elements.map((element: number) => (
                                 <ObjectItemElementComponent
                                     key={element}
-                                    readonly={readonly}
                                     parentID={clientID}
                                     clientID={element}
                                     onMouseLeave={activateState}

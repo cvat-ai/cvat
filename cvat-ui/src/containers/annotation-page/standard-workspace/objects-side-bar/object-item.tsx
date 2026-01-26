@@ -35,7 +35,6 @@ import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
 
 interface OwnProps {
-    readonly: boolean;
     clientID: number;
     objectStates: ObjectState[];
 }
@@ -174,25 +173,21 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     }
 
     private copy = (): void => {
-        const { objectState, readonly, copyShape } = this.props;
-        if (!readonly) {
-            copyShape(objectState);
-        }
+        const { objectState, copyShape } = this.props;
+        copyShape(objectState);
     };
 
     private propagate = (): void => {
-        const { switchPropagateVisibility, readonly } = this.props;
-        if (!readonly) {
-            switchPropagateVisibility(true);
-        }
+        const { switchPropagateVisibility } = this.props;
+        switchPropagateVisibility(true);
     };
 
     private edit = (): void => {
         const {
-            objectState, readonly, canvasInstance, updateActiveControl,
+            objectState, canvasInstance, updateActiveControl,
         } = this.props;
 
-        if (!readonly && canvasInstance instanceof Canvas &&
+        if (canvasInstance instanceof Canvas &&
             [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
         ) {
             if (canvasInstance.mode() !== CanvasMode.IDLE) {
@@ -206,10 +201,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private slice = async (): Promise<void> => {
         const {
-            objectState, readonly, canvasInstance, updateActiveControl,
+            objectState, canvasInstance, updateActiveControl,
         } = this.props;
 
-        if (!readonly && canvasInstance instanceof Canvas &&
+        if (canvasInstance instanceof Canvas &&
             [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
         ) {
             if (canvasInstance.mode() !== CanvasMode.IDLE) {
@@ -227,12 +222,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private remove = (): void => {
         const {
-            objectState, readonly, removeObject,
+            objectState, removeObject,
         } = this.props;
 
-        if (!readonly) {
-            removeObject(objectState);
-        }
+        removeObject(objectState);
     };
 
     private createURL = (): void => {
@@ -246,10 +239,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private switchOrientation = (): void => {
-        const { objectState, readonly, updateState } = this.props;
-        if (readonly) {
-            return;
-        }
+        const { objectState, updateState } = this.props;
 
         if (objectState.shapeType === ShapeType.CUBOID) {
             this.switchCuboidOrientation();
@@ -279,21 +269,17 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private toBackground = (): void => {
-        const { objectState, readonly, minZLayer } = this.props;
+        const { objectState, minZLayer } = this.props;
 
-        if (!readonly) {
-            objectState.zOrder = minZLayer - 1;
-            this.commit();
-        }
+        objectState.zOrder = minZLayer - 1;
+        this.commit();
     };
 
     private toForeground = (): void => {
-        const { objectState, readonly, maxZLayer } = this.props;
+        const { objectState, maxZLayer } = this.props;
 
-        if (!readonly) {
-            objectState.zOrder = maxZLayer + 1;
-            this.commit();
-        }
+        objectState.zOrder = maxZLayer + 1;
+        this.commit();
     };
 
     private activate = (activeElementID?: number): void => {
@@ -332,11 +318,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private changeLabel = (label: any): void => {
-        const { objectState, readonly } = this.props;
-        if (!readonly) {
-            objectState.label = label;
-            this.commit();
-        }
+        const { objectState } = this.props;
+        objectState.label = label;
+        this.commit();
     };
 
     private switchCuboidOrientation = (): void => {
@@ -344,9 +328,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             return points[12] > points[0];
         }
 
-        const { objectState, readonly } = this.props;
+        const { objectState } = this.props;
 
-        if (!readonly && objectState.shapeType === ShapeType.CUBOID) {
+        if (objectState.shapeType === ShapeType.CUBOID) {
             const points = objectState.points as number[];
             this.resetCuboidPerspective(false);
             objectState.points = shift(points, cuboidOrientationIsLeft(points) ? 4 : -4);
@@ -358,9 +342,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
         }
-        const { objectState, readonly } = this.props;
+        const { objectState } = this.props;
 
-        if (!readonly && objectState.shapeType === ShapeType.CUBOID) {
+        if (objectState.shapeType === ShapeType.CUBOID) {
             const points = objectState.points as number[];
             const minD = {
                 x: (points[6] - points[2]) * 0.001,
@@ -394,10 +378,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private commit(): void {
-        const { objectState, readonly, updateState } = this.props;
-        if (!readonly) {
-            updateState(objectState);
-        }
+        const { objectState, updateState } = this.props;
+        updateState(objectState);
     }
 
     public render(): JSX.Element {
@@ -408,14 +390,12 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             activated,
             colorBy,
             normalizedKeyMap,
-            readonly,
             jobInstance,
         } = this.props;
 
         return (
             <ObjectStateItemComponent
                 jobInstance={jobInstance}
-                readonly={readonly}
                 activated={activated}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
