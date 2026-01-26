@@ -581,7 +581,7 @@ class MediaCache:
     def read_raw_images(
         db_task: models.Task, frame_ids: Sequence[int], *, decode: bool = True
     ) -> Generator[tuple[PIL.Image.Image | str, str, str], None, None]:
-        db_data = db_task.data
+        db_data = db_task.require_data()
         manifest_path = db_data.get_manifest_path()
 
         if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
@@ -768,7 +768,7 @@ class MediaCache:
                 prev_frame <= cur_frame
             ), f"Requested frame ids must be sorted, got a ({prev_frame}, {cur_frame}) pair"
 
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         if hasattr(db_data, "video"):
             source_path = os.path.join(db_data.get_raw_data_dirname(), db_data.video.path)
@@ -822,7 +822,7 @@ class MediaCache:
         self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         chunk_size = db_data.chunk_size
         chunk_frame_ids = list(db_segment.frame_set)[
@@ -842,7 +842,7 @@ class MediaCache:
         self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         chunk_size = db_data.chunk_size
         chunk_frame_ids = sorted(db_segment.frame_set)[
@@ -866,7 +866,7 @@ class MediaCache:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         frame_step = db_data.get_frame_step()
 
@@ -1102,7 +1102,7 @@ def prepare_chunk(
 ) -> DataWithMime:
     # TODO: refactor all chunk building into another class
 
-    db_data = db_task.data
+    db_data = db_task.require_data()
 
     writer_classes: dict[models.FrameQuality, type[IChunkWriter]] = {
         models.FrameQuality.COMPRESSED: (
