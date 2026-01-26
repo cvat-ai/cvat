@@ -3928,6 +3928,11 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
     project_id = serializers.IntegerField(required=False, allow_null=True)
     task_id = serializers.IntegerField(required=False, allow_null=True)
 
+    def validate_markdown(self, markdown: str) -> str:
+        if len(models.AnnotationGuide.get_asset_ids_from_markdown(markdown)) > settings.ASSET_MAX_COUNT_PER_GUIDE:
+            raise serializers.ValidationError("Maximum number of assets per guide reached")
+        return markdown
+
     @transaction.atomic
     def create(self, validated_data):
         project_id = validated_data.get("project_id", None)
