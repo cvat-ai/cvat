@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { LRUCache } from 'lru-cache';
-import { CVATCore, MLModel, Job } from 'cvat-core-wrapper';
+import { CVATCore, MLModel, ModelKind, Job} from 'cvat-core-wrapper';
 import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
 import { InitBody, DecodeBody, WorkerAction } from './inference.worker';
 
@@ -149,7 +149,14 @@ const samPlugin: SAMPlugin = {
                             }
                         }
 
-                        if (plugin.data.modelID.includes(model.id as string)) {
+                        if (model.kind === ModelKind.INTERACTOR) {
+                            if (!plugin.data.modelID.includes(model.id as string)) {
+                                throw new Error(
+                                    `Interactor does not support model id "${model.id}". ` +
+                                    `Only model IDs are temporarily supported: [${plugin.data.modelID.join(', ')}]`,
+                                );
+                            }
+
                             if (!plugin.data.initialized) {
                                 samPlugin.data.worker.postMessage({
                                     action: WorkerAction.INIT,
@@ -176,10 +183,7 @@ const samPlugin: SAMPlugin = {
                                 resolvePromise();
                             }
                         } else {
-                            throw new Error(
-                                `Interactor does not support model id "${model.id}". ` +
-                                `Only model IDs are temporarily supported: [${plugin.data.modelID.join(', ')}]`,
-                            );
+                            resolve(null);
                         }
                     });
                 },
@@ -202,6 +206,11 @@ const samPlugin: SAMPlugin = {
                         bounds: [number, number, number, number];
                     } | unknown> {
                     return new Promise((resolve, reject) => {
+                        if (model.kind !== ModelKind.INTERACTOR) {
+                            resolve(result);
+                            return;
+                        }
+
                         if (!plugin.data.modelID.includes(model.id as string)) {
                             throw new Error(
                                 `Interactor does not support model id "${model.id}". ` +
