@@ -181,7 +181,6 @@ context('Basic manipulations with consensus job replicas', () => {
 
             // Go back to task page
             cy.get('.cvat-back-btn').should('be.visible').click();
-            cy.get('.cvat-clear-filters-button').click();
         });
 
         it('Create annotations and check that job replicas merge correctly', () => {
@@ -220,7 +219,6 @@ context('Basic manipulations with consensus job replicas', () => {
                     .and('include', 'consensus');
             });
             cy.go('back'); // go to previous page
-            cy.get('.cvat-clear-filters-button').click();
             // After returning to task page, consensus job should be 'completed'
             cy.get('.cvat-job-item').last()
                 .find('.cvat-job-item-state').first()

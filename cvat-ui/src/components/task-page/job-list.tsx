@@ -114,7 +114,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
     const onApplyFilter = useCallback((filter: string | null) => {
         setQuery({
             ...query,
-            filter,
+            filter: filter || '{}',
         });
     }, [query]);
 
