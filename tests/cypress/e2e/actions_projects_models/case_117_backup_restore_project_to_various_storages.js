@@ -28,7 +28,7 @@ context('Tests source & target storage for backups.', () => {
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
-        manifest: 'manifest.jsonl',
+        manifest: 'images_with_manifest/manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
 
@@ -125,8 +125,8 @@ context('Tests source & target storage for backups.', () => {
         cy.goToCloudStoragesPage();
         cy.deleteCloudStorage(cloudStorageData.displayName);
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteProjects(authKey, [project.name]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteProjects(authHeaders, [project.name]);
         });
     });
 

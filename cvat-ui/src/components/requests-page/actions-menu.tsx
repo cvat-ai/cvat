@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import { MenuProps } from 'antd/lib/menu';
 import { Request, RQStatus } from 'cvat-core-wrapper';
@@ -13,9 +13,8 @@ import { CombinedState } from 'reducers';
 
 interface Props {
     requestInstance: Request;
-    triggerElement: JSX.Element;
+    triggerElement: (menuItems: NonNullable<MenuProps['items']>) => JSX.Element | null;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
-    renderTriggerIfEmpty?: boolean;
 }
 
 function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
@@ -23,12 +22,18 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
         requestInstance,
         triggerElement,
         dropdownTrigger,
-        renderTriggerIfEmpty = true,
     } = props;
     const dispatch = useDispatch();
-    const selectedIds = useSelector((state: CombinedState) => state.requests.selected);
-    const requestsMap = useSelector((state: CombinedState) => state.requests.requests);
-    const cancelled = useSelector((state: CombinedState) => state.requests.cancelled);
+    const {
+        selectedIds,
+        requestsMap,
+        cancelled,
+    } = useSelector((state: CombinedState) => ({
+        selectedIds: state.requests.selected,
+        requestsMap: state.requests.requests,
+        cancelled: state.requests.cancelled,
+    }), shallowEqual);
+
     const allRequests = Object.values(requestsMap);
     const isCardMenu = !dropdownTrigger;
 
@@ -100,7 +105,8 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
         });
     }
 
-    if (!renderTriggerIfEmpty && menuItems.length === 0) {
+    const renderedTrigger = triggerElement(menuItems);
+    if (!renderedTrigger) {
         return null;
     }
 
@@ -114,7 +120,7 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
                 className: 'cvat-request-menu',
             }}
         >
-            {triggerElement}
+            {renderedTrigger}
         </Dropdown>
     );
 }

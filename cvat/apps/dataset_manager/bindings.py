@@ -8,16 +8,18 @@ from __future__ import annotations
 import os.path as osp
 import re
 import sys
-from collections import OrderedDict, defaultdict
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections import defaultdict
+from collections.abc import Callable, Generator, Iterable, Iterator, Mapping, Sequence
 from functools import partial, reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Callable, Literal, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import attr
 import datumaro as dm
+import datumaro.components
+import datumaro.components.media
 import datumaro.util
 import defusedxml.ElementTree as ET
 import rq
@@ -30,13 +32,15 @@ from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
-from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, TaskFrameProvider
+from cvat.apps.engine.cache import MediaCache
+from cvat.apps.engine.frame_provider import FrameOutputType, TaskFrameProvider
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import add_prefetch_fields
 from cvat.apps.engine.models import (
     AttributeSpec,
     AttributeType,
     DimensionType,
+    FrameQuality,
     Job,
     JobType,
     Label,
@@ -52,6 +56,10 @@ from cvat.apps.engine.rq import ImportRQMeta
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import MaskConverter
+from .util import make_getter_by_frame_for_annotation_stream
+
+if TYPE_CHECKING:
+    from .project import ProjectAnnotation
 
 slogger = ServerLogManager(__name__)
 
@@ -73,17 +81,17 @@ class InstanceLabelData:
             'sublabels',
         ])
 
-    def __init__(self, instance: Union[Task, Project]) -> None:
+    def __init__(self, instance: Task | Project) -> None:
         instance = instance.project if isinstance(instance, Task) and instance.project_id is not None else instance
 
         db_labels = self.add_prefetch_info(instance.label_set.all())
 
         # If this flag is set to true, create attribute within annotations import
         self._soft_attribute_import = False
-        self._label_mapping = OrderedDict[int, Label](
-            (db_label.id, db_label)
+        self._label_mapping: dict[int, Label] = {
+            db_label.id: db_label
             for db_label in sorted(db_labels, key=lambda v: v.pk)
-        )
+        }
 
         self._attribute_mapping = {db_label.id: {
             'mutable': {}, 'immutable': {}, 'spec': {}}
@@ -257,19 +265,28 @@ class CommonData(InstanceLabelData):
         group: int | None = 0
         id: int | None = None
 
-    class Frame(NamedTuple):
-        idx: int
-        id: int
-        frame: int
-        name: str
-        width: int
-        height: int
-        labeled_shapes: Sequence[CommonData.LabeledShape]
-        tags: Sequence[CommonData.Tag]
-        shapes: Sequence[CommonData.Shape]
-        labels: Mapping[int, CommonData.Label]
-        subset: str
-        task_id: int
+    @attrs
+    class Frame:
+        idx: int = attrib()
+        id: int = attrib()
+        frame: int = attrib()
+        name: str = attrib()
+        width: int = attrib()
+        height: int = attrib()
+        labeled_shapes: Sequence[CommonData.LabeledShape] = attrib(default=None)
+        tags: Sequence[CommonData.Tag] = attrib(default=None)
+        shapes: Sequence[CommonData.Shape] = attrib(default=None)
+        labels: Mapping[int, CommonData.Label] = attrib(default=None)
+        subset: str = attrib(default=None)
+        task_id: int = attrib(default=None)
+        _annotation_getter: Callable[[CommonData.Frame], None] | None = attrib(default=None)
+
+        def __getattribute__(self, name):
+            if name in ("labeled_shapes", "tags", "shapes", "labels"):
+                if self._annotation_getter is not None:
+                    getter, self._annotation_getter = self._annotation_getter, None
+                    getter(self)
+            return object.__getattribute__(self, name)
 
     class Label(NamedTuple):
         id: int
@@ -284,7 +301,7 @@ class CommonData(InstanceLabelData):
         host: str = '',
         create_callback=None,
         use_server_track_ids: bool = False,
-        included_frames: Optional[Sequence[int]] = None
+        included_frames: Sequence[int] | None = None
     ) -> None:
         self._dimension = annotation_ir.dimension
         self._annotation_ir = annotation_ir
@@ -297,13 +314,17 @@ class CommonData(InstanceLabelData):
         self._db_data: models.Data = db_task.data
         self._use_server_track_ids = use_server_track_ids
         self._required_frames = included_frames
-        self._initialized_included_frames: Optional[set[int]] = None
+        self._initialized_included_frames: set[int] | None = None
         self._db_subset = db_task.subset
 
         super().__init__(db_task)
 
         self._init_frame_info()
         self._init_meta()
+
+    @property
+    def is_stream(self) -> bool:
+        return self._annotation_ir.is_stream
 
     @property
     def rel_range(self):
@@ -367,19 +388,20 @@ class CommonData(InstanceLabelData):
     def _convert_db_labels(db_labels):
         labels = []
         for db_label in db_labels:
-            label = OrderedDict([
-                ("name", db_label.name),
-                ("color", db_label.color),
-                ("type", db_label.type),
-                ("attributes", [
-                    ("attribute", OrderedDict([
-                        ("name", db_attr.name),
-                        ("mutable", str(db_attr.mutable)),
-                        ("input_type", db_attr.input_type),
-                        ("default_value", db_attr.default_value),
-                        ("values", db_attr.values)]))
-                    for db_attr in db_label.attributespec_set.all()])
-            ])
+            label = {
+                "name": db_label.name,
+                "color": db_label.color,
+                "type": db_label.type,
+                "attributes": [
+                    ("attribute", {
+                        "name": db_attr.name,
+                        "mutable": str(db_attr.mutable),
+                        "input_type": db_attr.input_type,
+                        "default_value": db_attr.default_value,
+                        "values": db_attr.values})
+                    for db_attr in db_label.attributespec_set.all()
+                ]
+            }
 
             if db_label.parent:
                 label["parent"] = db_label.parent.name
@@ -477,38 +499,13 @@ class CommonData(InstanceLabelData):
             type=label.type
         )
 
-    def group_by_frame(self, include_empty: bool = False):
-        frames = {}
-        def get_frame(idx):
-            frame_info = self._frame_info[idx]
-            frame = self.abs_frame_id(idx)
-            if frame not in frames:
-                frames[frame] = CommonData.Frame(
-                    idx=idx,
-                    id=frame_info.get("id", 0),
-                    subset=frame_info["subset"],
-                    frame=frame,
-                    name=frame_info["path"],
-                    height=frame_info["height"],
-                    width=frame_info["width"],
-                    labeled_shapes=[],
-                    tags=[],
-                    shapes=[],
-                    labels={},
-                    task_id=self._db_task.id,
-                )
-            return frames[frame]
-
+    def group_by_frame(self, include_empty: bool = False) -> Generator[CommonData.Frame, None, None]:
         included_frames = self.get_included_frames()
-
-        if include_empty:
-            for idx in sorted(set(self._frame_info) & included_frames):
-                get_frame(idx)
-
         anno_manager = AnnotationManager(
             self._annotation_ir, dimension=self._annotation_ir.dimension
         )
-        for shape in sorted(
+
+        get_shapes_for_frame = make_getter_by_frame_for_annotation_stream(
             anno_manager.to_shapes(
                 self.stop + 1,
                 # Skip outside, deleted and excluded frames
@@ -516,33 +513,69 @@ class CommonData(InstanceLabelData):
                 deleted_frames=self.deleted_frames.keys(),
                 include_outside=False,
                 use_server_track_ids=self._use_server_track_ids,
-            ),
-            key=lambda shape: shape.get("z_order", 0)
-        ):
-            shape_data = ''
+            )
+        )
 
-            if 'track_id' in shape:
-                if shape['outside']:
+        get_tags_for_frame = make_getter_by_frame_for_annotation_stream(
+            sorted(
+                (
+                    tag
+                    for tag in self._annotation_ir.tags
+                    if tag['frame'] in included_frames
+                ),
+                key=lambda tag: tag['frame']
+            )
+        )
+
+        def fill_annotations(frame: CommonData.Frame) -> None:
+            frame.labeled_shapes = []
+            frame.tags = []
+            frame.shapes = []
+            frame.labels = {}
+            for shape in sorted(
+                get_shapes_for_frame(frame.idx),
+                key=lambda shape: shape.get("z_order", 0),
+            ):
+                shape_data = ''
+
+                if 'track_id' in shape:
+                    if shape['outside']:
+                        continue
+                    exported_shape = self._export_tracked_shape(shape)
+                else:
+                    exported_shape = self._export_labeled_shape(shape)
+                    shape_data = self._export_shape(shape)
+
+                frame.labeled_shapes.append(exported_shape)
+
+                if shape_data:
+                    frame.shapes.append(shape_data)
+                    for label in self._label_mapping.values():
+                        label = self._export_label(label)
+                        frame.labels.update({label.id: label})
+
+            for tag in get_tags_for_frame(frame.idx):
+                frame.tags.append(self._export_tag(tag))
+
+        for frame_idx in sorted(set(self._frame_info) & included_frames):
+            frame_info = self._frame_info[frame_idx]
+            frame = CommonData.Frame(
+                idx=frame_idx,
+                id=frame_info.get("id", 0),
+                subset=frame_info["subset"],
+                frame=self.abs_frame_id(frame_idx),
+                name=frame_info["path"],
+                height=frame_info["height"],
+                width=frame_info["width"],
+                task_id=self._db_task.id,
+                annotation_getter=fill_annotations,
+            )
+            if not include_empty:
+                assert not self._annotation_ir.is_stream
+                if not (frame.labeled_shapes or frame.tags or frame.labels or frame.shapes):
                     continue
-                exported_shape = self._export_tracked_shape(shape)
-            else:
-                exported_shape = self._export_labeled_shape(shape)
-                shape_data = self._export_shape(shape)
+            yield frame
 
-            get_frame(shape['frame']).labeled_shapes.append(exported_shape)
-
-            if shape_data:
-                get_frame(shape['frame']).shapes.append(shape_data)
-                for label in self._label_mapping.values():
-                    label = self._export_label(label)
-                    get_frame(shape['frame']).labels.update({label.id: label})
-
-        for tag in self._annotation_ir.tags:
-            if tag['frame'] not in included_frames:
-                continue
-            get_frame(tag['frame']).tags.append(self._export_tag(tag))
-
-        return iter(frames.values())
 
     @property
     def shapes(self):
@@ -734,8 +767,8 @@ class CommonData(InstanceLabelData):
         return osp.splitext(path)[0]
 
     def match_frame(self,
-        path: str, root_hint: Optional[str] = None, *, path_has_ext: bool = True
-    ) -> Optional[int]:
+        path: str, root_hint: str | None = None, *, path_has_ext: bool = True
+    ) -> int | None:
         if path_has_ext:
             path = self._get_filename(path)
 
@@ -747,7 +780,7 @@ class CommonData(InstanceLabelData):
 
         return match
 
-    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> Optional[int]:
+    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> int | None:
         # Preconditions:
         # - The input dataset is full, i.e. all items present. Partial dataset
         # matching can't be correct for all input cases.
@@ -773,47 +806,47 @@ class JobData(CommonData):
 
     def _init_meta(self):
         db_segment = self._db_job.segment
-        self._meta = OrderedDict([
-            (JobData.META_FIELD, OrderedDict([
-                ("id", str(self._db_job.id)),
-                ("size", str(len(self))),
-                ("mode", self._db_task.mode),
-                ("overlap", str(self._db_task.overlap)),
-                ("bugtracker", self._db_task.bug_tracker),
-                ("created", str(timezone.localtime(self._db_task.created_date))),
-                ("updated", str(timezone.localtime(self._db_job.updated_date))),
-                ("subset", self._db_task.subset or dm.DEFAULT_SUBSET_NAME),
-                ("start_frame", str(self._db_data.start_frame + db_segment.start_frame * self._frame_step)),
-                ("stop_frame", str(self._db_data.start_frame + db_segment.stop_frame * self._frame_step)),
-                ("frame_filter", self._db_data.frame_filter),
-                ("segments", [
-                    ("segment", OrderedDict([
-                        ("id", str(db_segment.id)),
-                        ("start", str(db_segment.start_frame)),
-                        ("stop", str(db_segment.stop_frame)),
-                        ("url", "{}/api/jobs/{}".format(self._host, self._db_job.id))])),
-                ]),
-                ("owner", OrderedDict([
-                    ("username", self._db_task.owner.username),
-                    ("email", self._db_task.owner.email)
-                ]) if self._db_task.owner else ""),
+        self._meta = {
+            JobData.META_FIELD: {
+                "id": str(self._db_job.id),
+                "size": str(len(self)),
+                "mode": self._db_task.mode,
+                "overlap": str(self._db_task.overlap),
+                "bugtracker": self._db_task.bug_tracker,
+                "created": str(timezone.localtime(self._db_task.created_date)),
+                "updated": str(timezone.localtime(self._db_job.updated_date)),
+                "subset": self._db_task.subset or dm.DEFAULT_SUBSET_NAME,
+                "start_frame": str(self._db_data.start_frame + db_segment.start_frame * self._frame_step),
+                "stop_frame": str(self._db_data.start_frame + db_segment.stop_frame * self._frame_step),
+                "frame_filter": self._db_data.frame_filter,
+                "segments": [
+                    ("segment", {
+                        "id": str(db_segment.id),
+                        "start": str(db_segment.start_frame),
+                        "stop": str(db_segment.stop_frame),
+                        "url": "{}/api/jobs/{}".format(self._host, self._db_job.id)}),
+                ],
+                "owner": {
+                    "username": self._db_task.owner.username,
+                    "email": self._db_task.owner.email
+                } if self._db_task.owner else "",
 
-                ("assignee", OrderedDict([
-                    ("username", self._db_job.assignee.username),
-                    ("email", self._db_job.assignee.email)
-                ]) if self._db_job.assignee else ""),
-            ])),
-            ("dumped", str(timezone.localtime(timezone.now()))),
-        ])
+                "assignee": {
+                    "username": self._db_job.assignee.username,
+                    "email": self._db_job.assignee.email
+                } if self._db_job.assignee else "",
+            },
+            "dumped": str(timezone.localtime(timezone.now())),
+        }
 
         if self._label_mapping is not None:
             self._meta[JobData.META_FIELD]["labels"] = CommonData._convert_db_labels(self._label_mapping.values())
 
         if hasattr(self._db_data, "video"):
-            self._meta["original_size"] = OrderedDict([
-                ("width", str(self._db_data.video.width)),
-                ("height", str(self._db_data.video.height))
-            ])
+            self._meta["original_size"] = {
+                "width": str(self._db_data.video.width),
+                "height": str(self._db_data.video.height)
+            }
 
     def _init_frame_info(self):
         super()._init_frame_info()
@@ -879,51 +912,51 @@ class TaskData(CommonData):
             Prefetch('job_set', models.Job.objects.order_by("pk"))
         )
 
-        meta = OrderedDict([
-            ("id", str(db_task.id)),
-            ("name", db_task.name),
-            ("size", str(db_task.data.size)),
-            ("mode", db_task.mode),
-            ("overlap", str(db_task.overlap)),
-            ("bugtracker", db_task.bug_tracker),
-            ("created", str(timezone.localtime(db_task.created_date))),
-            ("updated", str(timezone.localtime(db_task.updated_date))),
-            ("subset", db_task.subset or dm.DEFAULT_SUBSET_NAME),
-            ("start_frame", str(db_task.data.start_frame)),
-            ("stop_frame", str(db_task.data.stop_frame)),
-            ("frame_filter", db_task.data.frame_filter),
+        meta = {
+            "id": str(db_task.id),
+            "name": db_task.name,
+            "size": str(db_task.data.size),
+            "mode": db_task.mode,
+            "overlap": str(db_task.overlap),
+            "bugtracker": db_task.bug_tracker,
+            "created": str(timezone.localtime(db_task.created_date)),
+            "updated": str(timezone.localtime(db_task.updated_date)),
+            "subset": db_task.subset or dm.DEFAULT_SUBSET_NAME,
+            "start_frame": str(db_task.data.start_frame),
+            "stop_frame": str(db_task.data.stop_frame),
+            "frame_filter": db_task.data.frame_filter,
 
-            ("segments", [
-                ("segment", OrderedDict([
-                    ("id", str(db_segment.id)),
-                    ("start", str(db_segment.start_frame)),
-                    ("stop", str(db_segment.stop_frame)),
-                    ("url", "{}/api/jobs/{}".format(
-                        host, db_segment.job_set.first().id))]
-                ))
+            "segments": [
+                ("segment", {
+                    "id": str(db_segment.id),
+                    "start": str(db_segment.start_frame),
+                    "stop": str(db_segment.stop_frame),
+                    "url": "{}/api/jobs/{}".format(
+                        host, db_segment.job_set.first().id)
+                })
                 for db_segment in db_segments
                 if db_segment.job_set.first().type == JobType.ANNOTATION
-            ]),
+            ],
 
-            ("owner", OrderedDict([
-                ("username", db_task.owner.username),
-                ("email", db_task.owner.email)
-            ]) if db_task.owner else ""),
+            "owner": {
+                "username": db_task.owner.username,
+                "email": db_task.owner.email
+            } if db_task.owner else "",
 
-            ("assignee", OrderedDict([
-                ("username", db_task.assignee.username),
-                ("email", db_task.assignee.email)
-            ]) if db_task.assignee else ""),
-        ])
+            "assignee": {
+                "username": db_task.assignee.username,
+                "email": db_task.assignee.email
+            } if db_task.assignee else "",
+        }
 
         if label_mapping is not None:
             meta['labels'] = CommonData._convert_db_labels(label_mapping.values())
 
         if hasattr(db_task.data, "video"):
-            meta["original_size"] = OrderedDict([
-                ("width", str(db_task.data.video.width)),
-                ("height", str(db_task.data.video.height))
-            ])
+            meta["original_size"] = {
+                "width": str(db_task.data.video.width),
+                "height": str(db_task.data.video.height)
+            }
 
             # Add source to dumped file
             meta["source"] = str(osp.basename(db_task.data.video.path))
@@ -931,10 +964,10 @@ class TaskData(CommonData):
         return meta
 
     def _init_meta(self):
-        self._meta = OrderedDict([
-            (TaskData.META_FIELD, self.meta_for_task(self._db_task, self._host, self._label_mapping)),
-            ("dumped", str(timezone.localtime(timezone.now())))
-        ])
+        self._meta = {
+            TaskData.META_FIELD: self.meta_for_task(self._db_task, self._host, self._label_mapping),
+            "dumped": str(timezone.localtime(timezone.now())),
+        }
 
     def __len__(self):
         return self._db_data.size
@@ -1028,25 +1061,11 @@ class ProjectData(InstanceLabelData):
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
 
-    @attrs
-    class Frame:
-        idx: int = attrib()
-        id: int = attrib()
-        frame: int = attrib()
-        name: str = attrib()
-        width: int = attrib()
-        height: int = attrib()
-        labeled_shapes: list[Union['ProjectData.LabeledShape', 'ProjectData.TrackedShape']] = attrib()
-        tags: list['ProjectData.Tag'] = attrib()
-        task_id: int = attrib(default=None)
-        subset: str = attrib(default=None)
-
     def __init__(self,
         annotation_irs: Mapping[str, AnnotationIR],
         db_project: Project,
         host: str = '',
         task_annotations: Mapping[int, Any] = None,
-        project_annotation=None,
         *,
         use_server_track_ids: bool = False
     ):
@@ -1055,7 +1074,6 @@ class ProjectData(InstanceLabelData):
         self._task_annotations = task_annotations
         self._host = host
         self._soft_attribute_import = False
-        self._project_annotation = project_annotation
         self._tasks_data: dict[int, TaskData] = {}
         self._frame_info: dict[tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
         # (subset, path): (task id, frame number)
@@ -1066,7 +1084,6 @@ class ProjectData(InstanceLabelData):
 
         InstanceLabelData.__init__(self, db_project)
         self.init()
-
 
     def abs_frame_id(self, task_id: int, relative_id: int) -> int:
         task = self._db_tasks[task_id]
@@ -1089,10 +1106,10 @@ class ProjectData(InstanceLabelData):
         self._init_meta()
 
     def _init_tasks(self):
-        self._db_tasks: OrderedDict[int, Task] = OrderedDict(
-            (db_task.id, db_task)
+        self._db_tasks: dict[int, Task] = {
+            db_task.id: db_task
             for db_task in self._db_project.tasks.exclude(data=None).order_by("subset","id").all()
-        )
+        }
 
         subsets = set()
         for task in self._db_tasks.values():
@@ -1112,7 +1129,6 @@ class ProjectData(InstanceLabelData):
                 subset = task.subset
             self._task_frame_offsets[task.id] = s
             s += task.data.start_frame + task.data.get_frame_step() * task.data.size
-
 
     def _init_frame_info(self):
         self._frame_info = dict()
@@ -1145,50 +1161,51 @@ class ProjectData(InstanceLabelData):
         }
 
     def _init_meta(self):
-        self._meta = OrderedDict([
-            (ProjectData.META_FIELD, OrderedDict([
-                ('id', str(self._db_project.id)),
-                ('name', self._db_project.name),
-                ("bugtracker", self._db_project.bug_tracker),
-                ("created", str(timezone.localtime(self._db_project.created_date))),
-                ("updated", str(timezone.localtime(self._db_project.updated_date))),
-                ("tasks", [
+        self._meta = {
+            ProjectData.META_FIELD: {
+                "id": str(self._db_project.id),
+                "name": self._db_project.name,
+                "bugtracker": self._db_project.bug_tracker,
+                "created": str(timezone.localtime(self._db_project.created_date)),
+                "updated": str(timezone.localtime(self._db_project.updated_date)),
+                "tasks": [
                     ('task',
                         TaskData.meta_for_task(db_task, self._host)
                     ) for db_task in self._db_tasks.values()
-                ]),
+                ],
 
-                ("subsets", '\n'.join([s if s else dm.DEFAULT_SUBSET_NAME for s in self._subsets])),
+                "subsets": '\n'.join([s if s else dm.DEFAULT_SUBSET_NAME for s in self._subsets]),
 
-                ("owner", OrderedDict([
-                    ("username", self._db_project.owner.username),
-                    ("email", self._db_project.owner.email),
-                ]) if self._db_project.owner else ""),
+                "owner": {
+                    "username": self._db_project.owner.username,
+                    "email": self._db_project.owner.email,
+                } if self._db_project.owner else "",
 
-                ("assignee", OrderedDict([
-                    ("username", self._db_project.assignee.username),
-                    ("email", self._db_project.assignee.email),
-                ]) if self._db_project.assignee else ""),
-            ])),
-            ("dumped", str(timezone.localtime(timezone.now())))
-        ])
+                "assignee": {
+                    "username": self._db_project.assignee.username,
+                    "email": self._db_project.assignee.email,
+                } if self._db_project.assignee else "",
+            },
+            "dumped": str(timezone.localtime(timezone.now())),
+        }
 
         if self._label_mapping is not None:
             labels = []
             for db_label in self._label_mapping.values():
-                label = OrderedDict([
-                    ("name", db_label.name),
-                    ("color", db_label.color),
-                    ("type", db_label.type),
-                    ("attributes", [
-                        ("attribute", OrderedDict([
-                            ("name", db_attr.name),
-                            ("mutable", str(db_attr.mutable)),
-                            ("input_type", db_attr.input_type),
-                            ("default_value", db_attr.default_value),
-                            ("values", db_attr.values)]))
-                        for db_attr in db_label.attributespec_set.all()])
-                ])
+                label = {
+                    "name": db_label.name,
+                    "color": db_label.color,
+                    "type": db_label.type,
+                    "attributes": [
+                        ("attribute", {
+                            "name": db_attr.name,
+                            "mutable": str(db_attr.mutable),
+                            "input_type": db_attr.input_type,
+                            "default_value": db_attr.default_value,
+                            "values": db_attr.values})
+                        for db_attr in db_label.attributespec_set.all()
+                    ]
+                }
 
                 if db_label.parent:
                     label["parent"] = db_label.parent.name
@@ -1270,69 +1287,36 @@ class ProjectData(InstanceLabelData):
                 for i, element in enumerate(track.get("elements", []))]
         )
 
-    def group_by_frame(self, include_empty: bool = False):
-        frames: dict[tuple[str, int], ProjectData.Frame] = {}
-        def get_frame(task_id: int, idx: int) -> ProjectData.Frame:
-            frame_info = self._frame_info[(task_id, idx)]
-            abs_frame = self.abs_frame_id(task_id, idx)
-            if (frame_info["subset"], abs_frame) not in frames:
-                frames[(frame_info["subset"], abs_frame)] = ProjectData.Frame(
-                    task_id=task_id,
+    def group_by_frame(self, include_empty: bool = False) -> Generator[CommonData.Frame, None, None]:
+        for task_id in self._db_tasks.keys():
+            task_data = self._task_data(task_id)
+            for task_frame in task_data.group_by_frame(include_empty=include_empty):
+                frame_info = self._frame_info[(task_id, task_frame.idx)]
+
+                def fill_annotations(frame: CommonData.Frame, original_frame: CommonData.Frame):
+                    def fix_anno_frame(shape):
+                        shape = shape._replace(frame=frame.frame)
+                        if hasattr(shape, "elements"):
+                            shape._replace(elements=[fix_anno_frame(element) for element in shape.elements])
+                        return shape
+
+                    frame.labeled_shapes = [fix_anno_frame(shape) for shape in original_frame.labeled_shapes]
+                    frame.tags = [fix_anno_frame(tag) for tag in original_frame.tags]
+                    frame.shapes = original_frame.shapes
+                    frame.labels = original_frame.labels
+
+                yield attr.evolve(
+                    task_frame,
+                    frame=task_frame.frame + self._task_frame_offsets[task_id],
                     subset=frame_info["subset"],
-                    idx=idx,
-                    id=frame_info.get('id',0),
-                    frame=abs_frame,
                     name=frame_info["path"],
-                    height=frame_info["height"],
-                    width=frame_info["width"],
+                    annotation_getter=partial(fill_annotations, original_frame=task_frame),
+                    # otherwise evolve reads these fields
                     labeled_shapes=[],
                     tags=[],
+                    shapes=[],
+                    labels={},
                 )
-            return frames[(frame_info["subset"], abs_frame)]
-
-        if include_empty:
-            for task_id, frame in sorted(self._frame_info):
-                if not self._tasks_data.get(task_id):
-                    self.init_task_data(task_id)
-
-                task_included_frames = self._tasks_data[task_id].get_included_frames()
-                if frame in task_included_frames:
-                    get_frame(task_id, frame)
-
-        for task_data in self.all_task_data:
-            task: Task = task_data.db_instance
-
-            anno_manager = AnnotationManager(
-                self._annotation_irs[task.id], dimension=self._annotation_irs[task.id].dimension
-            )
-            task_included_frames = task_data.get_included_frames()
-
-            for shape in sorted(
-                anno_manager.to_shapes(
-                    task.data.size,
-                    included_frames=task_included_frames,
-                    deleted_frames=task_data.deleted_frames.keys(),
-                    include_outside=False,
-                    use_server_track_ids=self._use_server_track_ids,
-                ),
-                key=lambda shape: shape.get("z_order", 0)
-            ):
-                assert (task.id, shape['frame']) in self._frame_info
-
-                if 'track_id' in shape:
-                    if shape['outside']:
-                        continue
-                    exported_shape = self._export_tracked_shape(shape, task.id)
-                else:
-                    exported_shape = self._export_labeled_shape(shape, task.id)
-                get_frame(task.id, shape['frame']).labeled_shapes.append(exported_shape)
-
-            for tag in self._annotation_irs[task.id].tags:
-                if (task.id, tag['frame']) not in self._frame_info:
-                    continue
-                get_frame(task.id, tag['frame']).tags.append(self._export_tag(tag, task.id))
-
-        return iter(frames.values())
 
     @property
     def shapes(self):
@@ -1397,7 +1381,6 @@ class ProjectData(InstanceLabelData):
         for task_data in self._tasks_data.values():
             task_data.soft_attribute_import = value
 
-
     def init_task_data(self, task_id: int) -> TaskData:
         try:
             task = self._db_tasks[task_id]
@@ -1435,7 +1418,7 @@ class ProjectData(InstanceLabelData):
     def match_frame(self,
         path: str, subset: str = dm.DEFAULT_SUBSET_NAME,
         root_hint: str = None, path_has_ext: bool = True
-    ) -> Optional[int]:
+    ) -> int | None:
         if path_has_ext:
             path = self._get_filename(path)
 
@@ -1447,7 +1430,7 @@ class ProjectData(InstanceLabelData):
 
         return match_task, match_frame
 
-    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> Optional[int]:
+    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> int | None:
         if path_has_ext:
             path = self._get_filename(path)
 
@@ -1466,17 +1449,9 @@ class ProjectData(InstanceLabelData):
             subset_dataset: dm.Dataset = dataset.subsets()[task_data.db_instance.subset].as_dataset()
             yield subset_dataset, task_data
 
-    def add_labels(self, labels: list[dict]):
-        attributes = []
-        _labels = []
-        for label in labels:
-            _attributes = label.pop('attributes')
-            _labels.append(Label(**label))
-            attributes += [(label['name'], AttributeSpec(**at)) for at in _attributes]
-        self._project_annotation.add_labels(_labels, attributes)
+    def __len__(self) -> int:
+        return sum(db_task.data.size for db_task in self._db_tasks.values())
 
-    def add_task(self, task, files):
-        self._project_annotation.add_task(task, files, self)
 
 @attrs(frozen=True, auto_attribs=True)
 class MediaSource:
@@ -1486,12 +1461,14 @@ class MediaSource:
     def is_video(self) -> bool:
         return self.db_task.mode == 'interpolation'
 
+
 class MediaProvider:
     def __init__(self, sources: dict[int, MediaSource]) -> None:
         self._sources = sources
 
     def unload(self) -> None:
         pass
+
 
 class MediaProvider2D(MediaProvider):
     def __init__(self, sources: dict[int, MediaSource]) -> None:
@@ -1545,33 +1522,143 @@ class MediaProvider2D(MediaProvider):
         self._current_source_id = None
 
 class MediaProvider3D(MediaProvider):
+    class PointCloudFromLazyChunk(datumaro.components.media.PointCloudFromBytes):
+        def __init__(
+            self,
+            path: str,
+            extra_images: list[dm.Image],
+            *args,
+            data_getter: Callable[[], bytes],
+            **kwargs
+        ):
+            super().__init__(data_getter, *args, extra_images=extra_images, **kwargs)
+            self._path = path
+
+        @property
+        def path(self) -> str:
+            return self._path.replace("\\", "/")
+
+    class ImageFromLazyChunk(datumaro.components.media.ImageFromBytes):
+        def __init__(
+            self,
+            path: str,
+            *args,
+            data_getter: Callable[[], bytes],
+            **kwargs
+        ):
+            kwargs.setdefault("ext", osp.splitext(path)[1])
+            super().__init__(
+                data_getter,
+                *args,
+                **kwargs
+            )
+            self._path = path
+
+        @property
+        def path(self) -> str:
+            return self._path.replace("\\", "/")
+
     def __init__(self, sources: dict[int, MediaSource]) -> None:
         super().__init__(sources)
-        self._images_per_source = {
-            source_id: {
-                image.id: image
-                for image in source.db_task.data.images.prefetch_related('related_files')
-            }
-            for source_id, source in sources.items()
-        }
+        self._current_source_id = None
+        self._frame_provider = None
+
+        self._ri_cache: dict[int, dict[str, bytes]] = {}
+        "{source_id -> {task path -> file data}}"
+
+        ThroughModel = models.RelatedFile.images.through
+
+        self._ri_per_source: dict[int, dict[int, list[str]]] = {}
+        "{source_id -> {frame_id -> [ri, ...]}}"
+
+        for source_id, source in sources.items():
+            source_ris = self._ri_per_source.setdefault(source_id, {})
+
+            db_related_files = (
+                ThroughModel.objects.filter(relatedfile__data=source.db_task.data)
+                .order_by("image__frame", "relatedfile__path")
+                .values_list("image__frame", "relatedfile__path")
+            )
+            for frame_idx, ri_path in db_related_files:
+                source_ris.setdefault(frame_idx, []).append(ri_path)
+
+    def unload(self) -> None:
+        self._unload_source()
 
     def get_media_for_frame(self, source_id: int, frame_id: int, **image_kwargs) -> dm.PointCloud:
         source = self._sources[source_id]
 
-        point_cloud_path = osp.join(
-            source.db_task.data.get_upload_dirname(), image_kwargs['path'],
-        )
+        upload_dir = source.db_task.data.get_upload_dirname()
+        point_cloud_path = image_kwargs['path']
 
-        image = self._images_per_source[source_id][frame_id]
-
-        related_images = [
-            dm.Image.from_file(path=path)
-            for rf in image.related_files.all()
-            for path in [osp.realpath(str(rf.path))]
-            if osp.isfile(path)
+        related_image_paths = [
+            osp.relpath(str(ri_path), upload_dir)
+            for ri_path in self._ri_per_source[source_id].get(frame_id, [])
         ]
 
-        return dm.PointCloud.from_file(point_cloud_path, extra_images=related_images)
+        def get_pcd_bytes():
+            self._load_source(source_id, source)
+
+            return self._frame_provider.get_frame(
+                frame_id, quality=FrameQuality.ORIGINAL, out_type=FrameOutputType.BUFFER
+            ).data.getvalue()
+
+        def get_ri_frame(path: str) -> bytes:
+            self._load_source(source_id, source)
+
+            return self._get_ri_chunk(frame_id)[path]
+
+        dm_related_images = [
+            self.ImageFromLazyChunk(ri_path, data_getter=partial(get_ri_frame, ri_path))
+            for ri_path in related_image_paths
+        ]
+
+        return self.PointCloudFromLazyChunk(
+            point_cloud_path, extra_images=dm_related_images, data_getter=get_pcd_bytes
+        )
+
+    def _get_ri_chunk(self, frame_id: int) -> dict[str, bytes]:
+        frame_related_images = self._ri_cache.get(frame_id, None)
+
+        if frame_related_images is None:
+            self._clear_ri_chunk_cache()
+
+            # frame provider doesn't cache RIs and can return only compressed RI chunks for the UI
+            cache = MediaCache()
+
+            frame_related_images = {
+                ri_path: Path(ri_realpath).read_bytes()
+                for _, (ri_realpath, ri_path, _) in cache.read_raw_context_images(
+                    self._sources[self._current_source_id].db_task.data,
+                    frame_ids=[frame_id],
+                    truncate_common_filename_prefix=False,
+                    decode=False,
+                )
+            }
+
+            self._ri_cache[frame_id] = frame_related_images
+
+        return frame_related_images
+
+    def _clear_ri_chunk_cache(self):
+        self._ri_cache.clear()
+
+    def _load_source(self, source_id: int, source: MediaSource) -> None:
+        if self._current_source_id == source_id:
+            return
+
+        self._unload_source()
+        self._frame_provider = TaskFrameProvider(source.db_task)
+        self._current_source_id = source_id
+
+    def _unload_source(self) -> None:
+        if self._frame_provider:
+            self._frame_provider.unload()
+            self._frame_provider = None
+
+            self._clear_ri_chunk_cache()
+
+        self._current_source_id = None
 
 MEDIA_PROVIDERS_BY_DIMENSION: dict[DimensionType, MediaProvider] = {
     DimensionType.DIM_3D: MediaProvider3D,
@@ -1584,7 +1671,7 @@ class CVATDataExtractorMixin:
     ):
         self.convert_annotations = convert_annotations or convert_cvat_anno_to_dm
 
-        self._media_provider: Optional[MediaProvider] = None
+        self._media_provider: MediaProvider | None = None
 
     def __enter__(self):
         return self
@@ -1634,10 +1721,10 @@ class CVATDataExtractorMixin:
         }
 
 
-class CvatDataExtractorBase(CVATDataExtractorMixin):
+class CvatDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
     def __init__(
         self,
-        instance_data: CommonData,
+        instance_data: CommonData | ProjectData,
         *,
         include_images: bool = False,
         format_type: str = None,
@@ -1677,22 +1764,31 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
             for is_video in [task.mode == 'interpolation']
         }
 
-    def _process_one_frame_data(self, frame_data: CommonData.Frame | ProjectData.Frame) -> dm.DatasetItem:
+        if isinstance(instance_data, ProjectData):
+            subsets = [
+                get_defaulted_subset(subset, self._instance_data.subsets)
+                for subset in self._instance_data.subsets
+            ]
+        else:
+            subsets = [self._instance_meta['subset']]
+
+        dm.DatasetBase.__init__(
+            self,
+            length=len(self._instance_data),
+            subsets=subsets,
+            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
+        )
+        self._categories = self.load_categories(self._instance_meta['labels'])
+
+    def _process_one_frame_data(self, frame_data: CommonData.Frame) -> dm.DatasetItem:
         dm_media_args = {
             'path': frame_data.name + self._ext_per_task[frame_data.task_id],
             'ext': self._ext_per_task[frame_data.task_id] or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
         }
         if self._dimension == DimensionType.DIM_3D:
             dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
-                frame_data.task_id, frame_data.id, **dm_media_args
+                frame_data.task_id, frame_data.idx, **dm_media_args
             )
-
-            if not self._include_images:
-                dm_media_args["extra_images"] = [
-                    dm.Image.from_file(path=osp.basename(image.path))
-                    for image in dm_media.extra_images
-                ]
-                dm_media = dm.PointCloud.from_file(**dm_media_args)
         else:
             dm_media_args['size'] = (frame_data.height, frame_data.width)
             if self._include_images:
@@ -1734,7 +1830,7 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
 
         return dm_item
 
-    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame | ProjectData.Frame, labels: list):
+    def _read_cvat_anno(self, cvat_frame_anno: CommonData.Frame, labels: list):
         categories = self.categories()
         label_cat = categories[dm.AnnotationType.label]
         def map_label(name, parent=''): return label_cat.find(name, parent)[0]
@@ -1746,36 +1842,8 @@ class CvatDataExtractorBase(CVATDataExtractorMixin):
         return self.convert_annotations(cvat_frame_anno,
             label_attrs, map_label, self._format_type, self._dimension)
 
-
-class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
-    def __init__(self, *args, **kwargs):
-        CvatDataExtractorBase.__init__(self, *args, **kwargs)
-        dm.SubsetBase.__init__(
-            self,
-            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
-            subset=self._instance_meta['subset'],
-        )
-        self._categories = self.load_categories(self._instance_meta['labels'])
-
-        self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
-
-    @staticmethod
-    def copy_frame_data_with_replaced_lazy_lists(frame_data: CommonData.Frame) -> CommonData.Frame:
-        return frame_data._replace(
-            labeled_shapes=[
-                (
-                    shape._replace(points=shape.points.lazy_copy())
-                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                    else shape
-                )
-                for shape in frame_data.labeled_shapes
-            ]
-        )
-
     def __iter__(self):
-        for frame_data in self._grouped_by_frame:
-            # do not keep parsed lazy list data after this iteration
-            frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
+        for frame_data in self._instance_data.group_by_frame(include_empty=True):
             yield self._process_one_frame_data(frame_data)
 
     def __len__(self):
@@ -1789,50 +1857,8 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CvatDataExtractorBase):
         return True
 
 
-class CVATProjectDataExtractor(dm.DatasetBase, CvatDataExtractorBase):
-    def __init__(self, *args, **kwargs):
-        CvatDataExtractorBase.__init__(self, *args, **kwargs)
-
-        self._grouped_by_frame = list(self._instance_data.group_by_frame(include_empty=True))
-
-        dm.DatasetBase.__init__(
-            self,
-            length=len(self._grouped_by_frame),
-            subsets=list(set(frame_data.subset for frame_data in self._grouped_by_frame)),
-            media_type=dm.Image if self._dimension == DimensionType.DIM_2D else dm.PointCloud,
-        )
-        self._categories = self.load_categories(self._instance_meta['labels'])
-
-    @staticmethod
-    def copy_frame_data_with_replaced_lazy_lists(frame_data: ProjectData.Frame) -> ProjectData.Frame:
-        return attr.evolve(
-            frame_data,
-            labeled_shapes=[
-                (
-                    attr.evolve(shape, points=shape.points.lazy_copy())
-                    if isinstance(shape.points, LazyList) and not shape.points.is_parsed
-                    else shape
-                )
-                for shape in frame_data.labeled_shapes
-            ],
-        )
-
-    def __iter__(self):
-        for frame_data in self._grouped_by_frame:
-            # do not keep parsed lazy list data after this iteration
-            frame_data = self.copy_frame_data_with_replaced_lazy_lists(frame_data)
-            yield self._process_one_frame_data(frame_data)
-
-    def categories(self):
-        return self._categories
-
-    @property
-    def is_stream(self) -> bool:
-        return True
-
-
 def GetCVATDataExtractor(
-    instance_data: Union[ProjectData, CommonData],
+    instance_data: ProjectData | CommonData,
     include_images: bool = False,
     format_type: str = None,
     dimension: DimensionType = DimensionType.DIM_2D,
@@ -1843,10 +1869,7 @@ def GetCVATDataExtractor(
         'format_type': format_type,
         'dimension': dimension,
     })
-    if isinstance(instance_data, ProjectData):
-        return CVATProjectDataExtractor(instance_data, **kwargs)
-    else:
-        return CvatTaskOrJobDataExtractor(instance_data, **kwargs)
+    return CvatDataExtractor(instance_data, **kwargs)
 
 
 class CvatImportError(Exception):
@@ -2107,8 +2130,8 @@ def convert_cvat_anno_to_dm(
 
 def match_dm_item(
     item: dm.DatasetItem,
-    instance_data: Union[ProjectData, CommonData],
-    root_hint: Optional[str] = None
+    instance_data: ProjectData | CommonData,
+    root_hint: str | None = None
 ) -> int:
     is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
 
@@ -2128,8 +2151,8 @@ def match_dm_item(
     return frame_number
 
 def find_dataset_root(
-    dm_dataset: dm.IDataset, instance_data: Union[ProjectData, CommonData]
-) -> Optional[str]:
+    dm_dataset: dm.IDataset, instance_data: ProjectData | CommonData
+) -> str | None:
     longest_path_item = max(dm_dataset, key=lambda item: len(Path(item.id).parts), default=None)
     if longest_path_item is None:
         return None
@@ -2146,7 +2169,7 @@ def find_dataset_root(
 
     return prefix
 
-def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectData, CommonData]):
+def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | CommonData):
     if len(dm_dataset) == 0:
         return
 
@@ -2421,7 +2444,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
             track['elements'] = list(track['elements'].values())
             instance_data.add_track(instance_data.Track(**track))
 
-def import_labels_to_project(project_annotation, dataset: dm.Dataset):
+def import_labels_to_project(project_annotation: ProjectAnnotation, dataset: dm.Dataset) -> None:
     labels = []
     label_colors = []
     for label in dataset.categories()[dm.AnnotationType.label].items:
@@ -2434,7 +2457,9 @@ def import_labels_to_project(project_annotation, dataset: dm.Dataset):
         label_colors.append(db_label.color)
     project_annotation.add_labels(labels)
 
-def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
+def load_dataset_data(
+    project_annotation: ProjectAnnotation, dataset: dm.Dataset, project_data: ProjectData
+) -> None:
     if not project_annotation.db_project.label_set.count():
         import_labels_to_project(project_annotation, dataset)
     else:

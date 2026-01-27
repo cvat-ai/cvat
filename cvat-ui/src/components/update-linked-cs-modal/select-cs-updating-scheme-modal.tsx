@@ -2,70 +2,69 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
-
+import Space from 'antd/lib/space';
 import Button from 'antd/lib/button';
 import Alert from 'antd/lib/alert';
 
-import { Storage, getCore, Task } from 'cvat-core-wrapper';
-
-import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { updateProjectAsync } from 'actions/projects-actions';
+import { Storage, Task } from 'cvat-core-wrapper';
 import { cloudStoragesActions } from 'actions/cloud-storage-actions';
-import { updateTaskAsync } from 'actions/tasks-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import Space from 'antd/lib/space';
-import { QuestionCircleOutlined } from '@ant-design/icons';
-import { ResourceUpdateTypes } from 'utils/enums';
 
-const core = getCore();
+function SelectCSUpdatingSchemeModal(): JSX.Element | null {
+    const {
+        instances,
+        onUpdate,
+    } = useSelector((state: CombinedState) => ({
+        instances: state.cloudStorages.updateWorkspace.instances,
+        onUpdate: state.cloudStorages.updateWorkspace.onUpdate!,
+    }), shallowEqual);
 
-function SelectCSUpdatingSchemeModal(): JSX.Element {
-    const instance = useSelector((state: CombinedState) => state.cloudStorages.updateWorkspace.instance);
     const [instanceType, setInstanceType] = useState('');
     const dispatch = useDispatch();
 
-    const saveInstance = useCallback(() => {
-        if (instance instanceof core.classes.Project) {
-            dispatch(updateProjectAsync(instance, ResourceUpdateTypes.UPDATE_ORGANIZATION));
-        } else if (instance instanceof core.classes.Task) {
-            dispatch(updateTaskAsync(instance, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
-        }
-    }, [instance]);
-
-    const closeModal = useCallback(() => {
-        if (instance) {
-            dispatch(cloudStoragesActions.closeLinkedCloudStorageUpdatingModal());
-        }
-    }, [instance]);
+    const closeModal = () => {
+        dispatch(cloudStoragesActions.closeLinkedCloudStorageUpdatingModal());
+    };
 
     useEffect(() => {
-        if (instance) {
-            setInstanceType(instance.constructor.name.toLowerCase());
+        if (instances?.length) {
+            setInstanceType(instances[0] instanceof Task ? 'task' : 'project');
         }
-    }, [instance]);
+    }, [instances]);
+
+    if (!instances) {
+        return null;
+    }
+
+    const capitalizedInstanceType = instanceType.charAt(0).toUpperCase() + instanceType.slice(1);
+    const alert = 'Data-linked storage will only be reset during the transfer and must be updated manually afterward';
+    const message = instances.length > 1 ?
+        'Some resources are linked to a cloud storage' :
+        `${capitalizedInstanceType} #${instances[0].id} is linked to a cloud storage`;
 
     return (
         <Modal
             title={(
                 <Space>
-                    {`${instanceType.charAt(0).toUpperCase() + instanceType.slice(1)}
-                        #${instance?.id} is linked to cloud storage`}
+                    {message}
                     <CVATTooltip
                         title={(
                             <>
                                 <div>
                                     <strong>Move & Detach</strong>
-                                    : Transfer and unlink a resource from a cloud storage.
+                                    : Transfer and unlink from a cloud storage.
                                 </div>
                                 <div>
-                                    <strong>Move & Auto-match</strong>
+                                    <strong>Move & Auto Match</strong>
                                     : Transfer and attempt to auto-link with a similar cloud storage
                                      in the target workspace. A similar cloud storage is defined
                                      by comparing the whole cloud storage configuration except credentials
-                                     and owner when resource is transferring into an organization.
+                                     and owner.
                                 </div>
                             </>
                         )}
@@ -75,8 +74,8 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
                 </Space>
             )}
             className='cvat-modal-choose-cloud-storage-change-scheme'
-            open={!!instance}
             closable={false}
+            open
             footer={[
                 <Button key='cancel' onClick={() => closeModal()}>
                     Cancel
@@ -85,49 +84,56 @@ function SelectCSUpdatingSchemeModal(): JSX.Element {
                     key='move_and_detach'
                     type='primary'
                     onClick={() => {
-                        if (instance!.sourceStorage?.isCloudLinked()) {
-                            instance!.sourceStorage = Storage.buildLocalStorage();
-                        }
-                        if (instance!.targetStorage?.isCloudLinked()) {
-                            instance!.targetStorage = Storage.buildLocalStorage();
-                        }
-                        saveInstance();
+                        instances.forEach((instance) => {
+                            if (instance.sourceStorage.isCloudLinked()) {
+                                instance.sourceStorage = Storage.buildLocalStorage();
+                            }
+
+                            if (instance.targetStorage.isCloudLinked()) {
+                                instance.targetStorage = Storage.buildLocalStorage();
+                            }
+                        });
+
                         closeModal();
+                        onUpdate();
                     }}
                 >
                     Move & detach
                 </Button>,
                 // do not show option "move and auto match" when only data storage is linked
                 (
-                    instance?.sourceStorage?.isCloudLinked() || instance?.targetStorage?.isCloudLinked()
+                    instances.some((instance) => (
+                        instance.sourceStorage.isCloudLinked() || instance.targetStorage.isCloudLinked()
+                    ))
                 ) && (
                     <Button
                         key='move_and_auto_match'
                         type='primary'
                         onClick={() => {
-                            saveInstance();
                             closeModal();
+                            onUpdate();
                         }}
                     >
-                        Move & auto match
+                        Move & Auto match
                     </Button>
                 ),
             ]}
         >
             {
                 (
-                    instance instanceof Task && instance.cloudStorageId &&
-                    (instance!.sourceStorage?.isCloudLinked() || instance!.targetStorage?.isCloudLinked())
+                    instances.some((instance) => (
+                        instance instanceof Task && instance.cloudStorageId &&
+                        (instance.sourceStorage.isCloudLinked() || instance.targetStorage.isCloudLinked())
+                    ))
                 ) && (
                     <Alert
-                        message='Data-linked storage will only be reset during the transfer and must be updated manually afterward'
+                        message={alert}
                         type='warning'
                     />
                 )
             }
 
             <p>
-                {`This ${instanceType} is linked to cloud storage. `}
                 Please choose how you would like the transfer to be done.
             </p>
         </Modal>

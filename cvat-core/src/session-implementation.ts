@@ -79,7 +79,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 };
 
                 if (jobData.assignee) {
-                    checkObjectType('job assignee', jobData.assignee, null, User);
+                    checkObjectType('job assignee', jobData.assignee, null, { cls: User, name: 'User' });
                     jobData.assignee = jobData.assignee.id;
                 }
 
@@ -136,7 +136,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             issue: Parameters<typeof JobClass.prototype.openIssue>[0],
             message: Parameters<typeof JobClass.prototype.openIssue>[1],
         ): ReturnType<typeof JobClass.prototype.openIssue> {
-            checkObjectType('issue', issue, null, Issue);
+            checkObjectType('issue', issue, null, { cls: Issue, name: 'Issue' });
             checkObjectType('message', message, 'string');
             const result = await serverProxy.issues.create({
                 ...issue.serialize(),
@@ -286,12 +286,21 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.frames.contextImageData, 'implementation', {
+        value: function contextImageDataImplementation(
+            this: JobClass,
+            frameId: Parameters<typeof JobClass.prototype.frames.contextImageData>[0],
+        ): ReturnType<typeof JobClass.prototype.frames.contextImageData> {
+            return serverProxy.frames.getImageContext(this.id, frameId);
+        },
+    });
+
     Object.defineProperty(Job.prototype.frames.contextImage, 'implementation', {
         value: function contextImageImplementation(
             this: JobClass,
             frameId: Parameters<typeof JobClass.prototype.frames.contextImage>[0],
         ): ReturnType<typeof JobClass.prototype.frames.contextImage> {
-            return getContextImage(this.id, frameId);
+            return getContextImage(this.id, frameId, (frame) => this.frames.contextImageData(frame));
         },
     });
 
@@ -1047,6 +1056,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             return null;
+        },
+    });
+
+    Object.defineProperty(Task.prototype.frames.contextImageData, 'implementation', {
+        value: function contextImageDataImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.contextImageData> {
+            throw new Error('Not implemented for Task');
         },
     });
 

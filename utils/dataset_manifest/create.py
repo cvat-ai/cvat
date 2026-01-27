@@ -5,15 +5,32 @@
 #
 # SPDX-License-Identifier: MIT
 
-import argparse
 import os
-import re
 import sys
+
+if __name__ == "__main__":
+    # fix types.py import
+
+    # Remove the script directory from the path, it can be appended by the interpreter
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    try:
+        sys.path.remove(script_dir)
+    except ValueError:
+        ...
+
+    # Make the component visible as dataset_manifest module
+    base_dir = os.path.dirname(script_dir)
+    sys.path.append(base_dir)
+
+
+import argparse
+import re
 from glob import glob
+from pathlib import Path
 
+from dataset_manifest.core import ImageManifestManager, VideoManifestManager
+from dataset_manifest.utils import SortingMethod, find_related_images, is_image, is_video
 from tqdm import tqdm
-
-from utils import SortingMethod, detect_related_images, is_image, is_video
 
 
 def get_args():
@@ -26,9 +43,9 @@ def get_args():
     )
     parser.add_argument(
         "--output-dir",
-        type=str,
+        type=Path,
         help="Directory where the manifest file will be saved",
-        default=os.getcwd(),
+        default=Path.cwd(),
     )
     parser.add_argument(
         "--sorting",
@@ -43,9 +60,8 @@ def get_args():
 def main():
     args = get_args()
 
-    manifest_directory = os.path.abspath(args.output_dir)
-    if not os.path.exists(manifest_directory):
-        os.makedirs(manifest_directory)
+    manifest_directory: Path = args.output_dir.resolve()
+    manifest_directory.mkdir(parents=True, exist_ok=True)
     source = os.path.abspath(os.path.expanduser(args.source))
 
     sources = []
@@ -71,20 +87,26 @@ def main():
                 sys.exit(str(ex))
             sources = list(filter(is_image, glob(source, recursive=True)))
 
-        sources = list(filter(lambda x: "related_images{}".format(os.sep) not in x, sources))
-
         # If the source is a glob expression, we need additional processing
         abs_root = source
         while abs_root and re.search(r"[*?\[\]]", abs_root):
             abs_root = os.path.split(abs_root)[0]
 
-        related_images = detect_related_images(sources, abs_root)
+        scene_paths, related_images = find_related_images(
+            sources,
+            root_path=abs_root,
+            scene_paths=(
+                lambda p: not re.search(r"(^|{0})related_images{0}".format(os.sep), p)
+                # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
+            ),
+        )
+        sources = [p for p in sources if os.path.relpath(p, abs_root) in scene_paths]
         meta = {k: {"related_images": related_images[k]} for k in related_images}
         try:
             assert len(sources), "A images was not found"
             manifest = ImageManifestManager(manifest_path=manifest_directory)
             manifest.link(
-                sources=sources,
+                sources=list(map(Path, sources)),
                 meta=meta,
                 sorting_method=args.sorting,
                 use_image_hash=True,
@@ -99,7 +121,7 @@ def main():
                 source
             ), "You can specify a video path or a directory/pattern with images"
             manifest = VideoManifestManager(manifest_path=manifest_directory)
-            manifest.link(media_file=source, force=args.force)
+            manifest.link(media_file=Path(source), force=args.force)
             try:
                 manifest.create(_tqdm=tqdm)
             except AssertionError as ex:
@@ -119,8 +141,4 @@ def main():
 
 
 if __name__ == "__main__":
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.append(base_dir)
-    from dataset_manifest.core import ImageManifestManager, VideoManifestManager
-
     main()

@@ -20,6 +20,7 @@ context('Navigation to empty frames', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.goCheckFrameNumber(2);
         cy.createRectangle(createRectangleShape2Points);

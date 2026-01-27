@@ -15,7 +15,7 @@ from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -222,8 +222,8 @@ class TestPostJobs:
         [
             # The results have to be the same in different CVAT revisions,
             # so the task ids are fixed
-            (21, [3, 5, 7]),  # annotation task
-            (5, [11, 14, 20]),  # interpolation task
+            (21, [4, 6, 8]),  # annotation task
+            (5, [12, 15, 21]),  # interpolation task
         ],
     )
     def test_can_create_gt_job_with_random_frames_and_seed(self, admin_user, task_id, frame_ids):
@@ -233,7 +233,7 @@ class TestPostJobs:
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
             "frame_count": 3,
-            "seed": 42,
+            "random_seed": 42,
         }
 
         response = self._test_create_job_ok(user, job_spec)
@@ -544,7 +544,7 @@ class TestDeleteJobs:
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
     def _test_get_job_200(
-        self, user, jid, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
+        self, user, jid, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as client:
             (_, response) = client.jobs_api.retrieve(jid, **kwargs)
@@ -1450,7 +1450,7 @@ class TestJobDataset:
         *,
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_job_dataset(username, save_images=True, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
@@ -1462,7 +1462,7 @@ class TestJobDataset:
     @staticmethod
     def _test_export_annotations(
         username: str, jid: int, *, local_download: bool = True, **kwargs
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_job_dataset(username, save_images=False, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))

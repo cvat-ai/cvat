@@ -11,7 +11,7 @@ import Descriptions from 'antd/lib/descriptions';
 import { MoreOutlined } from '@ant-design/icons';
 
 import { Job, JobType } from 'cvat-core-wrapper';
-import { useCardHeightHOC } from 'utils/hooks';
+import { useCardHeightHOC, useContextMenuClick } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import { CombinedState } from 'reducers';
 import JobActionsComponent from './actions-menu';
@@ -38,6 +38,7 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
 
     const history = useHistory();
     const height = useCardHeight();
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
     const handleCardClick = useCallback((event: React.MouseEvent): void => {
         const cancel = onClick(event);
         if (!cancel) {
@@ -65,54 +66,58 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
 
     const cardClassName = `cvat-job-page-list-item${selected ? ' cvat-item-selected' : ''}`;
 
+    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
+    const card = (
+        <Card
+            ref={itemRef}
+            style={{ ...style, height }}
+            className={cardClassName}
+            cover={(
+                <>
+                    <Preview
+                        job={job}
+                        onClick={handleCardClick}
+                        loadingClassName='cvat-job-item-loading-preview'
+                        emptyPreviewClassName='cvat-job-item-empty-preview'
+                        previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
+                        previewClassName='cvat-jobs-page-job-item-card-preview'
+                    />
+                    <div className='cvat-job-page-list-item-id'>
+                        ID:
+                        {` ${job.id}`}
+                    </div>
+                    {tag && <div className='cvat-job-page-list-item-type'>{tag}</div>}
+                    <div className='cvat-job-page-list-item-dimension'>{job.dimension.toUpperCase()}</div>
+                </>
+            )}
+            hoverable
+            onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
+        >
+            <Descriptions column={1} size='small'>
+                <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>
+                <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
+                {job.assignee ? (
+                    <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
+                ) : (
+                    <Descriptions.Item label='Assignee'> </Descriptions.Item>
+                )}
+            </Descriptions>
+            <div
+                onClick={handleContextMenuClick}
+                className='cvat-job-card-more-button cvat-actions-menu-button'
+            >
+                <MoreOutlined className='cvat-menu-icon' />
+            </div>
+        </Card>
+    );
+
     return (
         <JobActionsComponent
             jobInstance={job}
             consensusJobsPresent={false}
             dropdownTrigger={['contextMenu']}
-            triggerElement={(
-                <Card
-                    style={{ ...style, height }}
-                    className={cardClassName}
-                    cover={(
-                        <>
-                            <Preview
-                                job={job}
-                                onClick={handleCardClick}
-                                loadingClassName='cvat-job-item-loading-preview'
-                                emptyPreviewClassName='cvat-job-item-empty-preview'
-                                previewWrapperClassName='cvat-jobs-page-job-item-card-preview-wrapper'
-                                previewClassName='cvat-jobs-page-job-item-card-preview'
-                            />
-                            <div className='cvat-job-page-list-item-id'>
-                        ID:
-                                {` ${job.id}`}
-                            </div>
-                            {tag && <div className='cvat-job-page-list-item-type'>{tag}</div>}
-                            <div className='cvat-job-page-list-item-dimension'>{job.dimension.toUpperCase()}</div>
-                        </>
-                    )}
-                    hoverable
-                    onClick={onClick}
-                >
-                    <Descriptions column={1} size='small'>
-                        <Descriptions.Item label='Stage and state'>{`${job.stage} ${job.state}`}</Descriptions.Item>
-                        <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
-                        {job.assignee ? (
-                            <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
-                        ) : (
-                            <Descriptions.Item label='Assignee'> </Descriptions.Item>
-                        )}
-                    </Descriptions>
-                    <JobActionsComponent
-                        jobInstance={job}
-                        consensusJobsPresent={false} // consensus merging is not allowed from jobs page
-                        triggerElement={
-                            <MoreOutlined className='cvat-job-card-more-button cvat-actions-menu-button' />
-                        }
-                    />
-                </Card>
-            )}
+            triggerElement={card}
         />
     );
 }

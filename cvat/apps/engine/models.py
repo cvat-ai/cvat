@@ -6,15 +6,15 @@
 from __future__ import annotations
 
 import datetime
-import os
 import re
 import shutil
 import uuid
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
-from enum import Enum
+from enum import Enum, IntEnum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -200,7 +200,9 @@ class AbstractArrayField(models.TextField):
     separator = ","
     converter = staticmethod(lambda x: x)
 
-    def __init__(self, *args, store_sorted:Optional[bool]=False, unique_values:Optional[bool]=False, **kwargs):
+    def __init__(
+        self, *args, store_sorted: bool | None = False, unique_values: bool | None = False, **kwargs
+    ):
         self._store_sorted = store_sorted
         self._unique_values = unique_values
         super().__init__(*args,**{'default': '', **kwargs})
@@ -263,7 +265,8 @@ class ValidationParams(models.Model):
 
 class ValidationFrame(models.Model):
     validation_params = models.ForeignKey(
-        ValidationParams, on_delete=models.CASCADE, related_name="frames"
+        ValidationParams, on_delete=models.CASCADE,
+        related_name="frames", related_query_name="frame",
     )
     path = models.CharField(max_length=1024, default='')
 
@@ -288,6 +291,12 @@ class ValidationLayout(models.Model):
     def active_frames(self) -> Sequence[int]:
         "An ordered sequence of active (non-disabled) validation frames"
         return set(self.frames).difference(self.disabled_frames)
+
+
+class FrameQuality(IntEnum):
+    COMPRESSED = 0
+    ORIGINAL = 100
+
 
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
@@ -333,24 +342,30 @@ class Data(models.Model):
     def get_valid_frame_indices(self):
         return range(self.start_frame, self.stop_frame + 1, self.get_frame_step())
 
-    def get_data_dirname(self):
-        return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
+    def get_data_dirname(self) -> Path:
+        return settings.MEDIA_DATA_ROOT / str(self.id)
 
-    def get_upload_dirname(self):
-        return os.path.join(self.get_data_dirname(), "raw")
+    def get_upload_dirname(self) -> Path:
+        return self.get_data_dirname() / "raw"
 
-    def get_raw_data_dirname(self) -> str:
+    def get_raw_data_dirname(self) -> Path:
         return {
             StorageChoice.LOCAL: self.get_upload_dirname(),
             StorageChoice.SHARE: settings.SHARE_ROOT,
             StorageChoice.CLOUD_STORAGE: self.get_upload_dirname(),
         }[self.storage]
 
-    def get_compressed_cache_dirname(self):
-        return os.path.join(self.get_data_dirname(), "compressed")
+    def get_static_cache_dirname(self, quality: FrameQuality) -> Path:
+        return self.get_data_dirname() / quality.name.lower()
 
-    def get_original_cache_dirname(self):
-        return os.path.join(self.get_data_dirname(), "original")
+    def get_chunk_type(self, quality: FrameQuality) -> DataChoice:
+        if quality == FrameQuality.ORIGINAL:
+            chunk_type = self.original_chunk_type
+        elif quality == FrameQuality.COMPRESSED:
+            chunk_type = self.compressed_chunk_type
+        else:
+            assert False, f"unexpected chunk quality: {quality}"
+        return DataChoice(chunk_type)
 
     @staticmethod
     def _get_chunk_name(segment_id: int, chunk_number: int, chunk_type: DataChoice | str) -> str:
@@ -363,35 +378,30 @@ class Data(models.Model):
 
         return 'segment_{}-{}.{}'.format(segment_id, chunk_number, ext)
 
-    def _get_compressed_chunk_name(self, segment_id: int, chunk_number: int) -> str:
-        return self._get_chunk_name(segment_id, chunk_number, self.compressed_chunk_type)
+    def get_static_segment_chunk_path(
+        self, chunk_number: int, segment_id: int, quality: FrameQuality
+    ) -> Path:
+        return Path(
+            self.get_static_cache_dirname(quality),
+            self._get_chunk_name(segment_id, chunk_number, self.get_chunk_type(quality)),
+        )
 
-    def _get_original_chunk_name(self, segment_id: int, chunk_number: int) -> str:
-        return self._get_chunk_name(segment_id, chunk_number, self.original_chunk_type)
-
-    def get_original_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
-        return os.path.join(self.get_original_cache_dirname(),
-            self._get_original_chunk_name(segment_id, chunk_number))
-
-    def get_compressed_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
-        return os.path.join(self.get_compressed_cache_dirname(),
-            self._get_compressed_chunk_name(segment_id, chunk_number))
-
-    def get_manifest_path(self) -> str:
-        return os.path.join(self.get_upload_dirname(), self.MANIFEST_FILENAME)
+    def get_manifest_path(self) -> Path:
+        return self.get_upload_dirname() / self.MANIFEST_FILENAME
 
     def make_dirs(self):
         data_path = self.get_data_dirname()
-        if os.path.isdir(data_path):
+        if data_path.is_dir():
             shutil.rmtree(data_path)
-        os.makedirs(self.get_compressed_cache_dirname())
-        os.makedirs(self.get_original_cache_dirname())
-        os.makedirs(self.get_upload_dirname())
+
+        for quality in FrameQuality:
+            self.get_static_cache_dirname(quality).mkdir(parents=True)
+        self.get_upload_dirname().mkdir(parents=True)
 
     @transaction.atomic
     def update_validation_layout(
-        self, validation_layout: Optional[ValidationLayout]
-    ) -> Optional[ValidationLayout]:
+        self, validation_layout: ValidationLayout | None
+    ) -> ValidationLayout | None:
         if validation_layout:
             validation_layout.task_data = self
             validation_layout.save()
@@ -401,7 +411,7 @@ class Data(models.Model):
         return validation_layout
 
     @property
-    def validation_mode(self) -> Optional[ValidationMode]:
+    def validation_mode(self) -> ValidationMode | None:
         return getattr(getattr(self, 'validation_layout', None), 'mode', None)
 
 
@@ -416,7 +426,9 @@ class Video(models.Model):
 
 
 class Image(models.Model):
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="images", null=True)
+    data = models.ForeignKey(
+        Data, on_delete=models.CASCADE, related_name="images", related_query_name="image", null=True
+    )
     path = models.CharField(max_length=1024, default='')
     frame = models.PositiveIntegerField()
     width = models.PositiveIntegerField()
@@ -468,16 +480,16 @@ class ABCModelMeta(ABCMeta, ModelBase):
 
 class FileSystemRelatedModel(metaclass=ABCModelMeta):
     @abstractmethod
-    def get_dirname(self) -> str:
+    def get_dirname(self) -> Path:
         ...
 
-    def get_tmp_dirname(self) -> str:
+    def get_tmp_dirname(self) -> Path:
         """
         The method returns a directory that is only used
         to store temporary files or folders related to the object
         """
-        dir_path = os.path.join(self.get_dirname(), "tmp")
-        os.makedirs(dir_path, exist_ok=True)
+        dir_path = self.get_dirname() / "tmp"
+        dir_path.mkdir(parents=True, exist_ok=True)
 
         return dir_path
 
@@ -542,8 +554,8 @@ class Project(TimestampedModel, AssignableModel, FileSystemRelatedModel):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self) -> str:
-        return os.path.join(settings.PROJECTS_ROOT, str(self.id))
+    def get_dirname(self) -> Path:
+        return settings.PROJECTS_ROOT / str(self.id)
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -618,11 +630,13 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     segment_size = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
+    data = models.ForeignKey(
+        Data, on_delete=models.CASCADE, null=True, related_name="tasks", related_query_name="task"
+    )
     dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
     subset = models.CharField(max_length=64, blank=True, default="")
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
-        blank=True, on_delete=models.SET_NULL, related_name="tasks")
+        blank=True, on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
     source_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
@@ -646,8 +660,8 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self) -> str:
-        return os.path.join(settings.TASKS_ROOT, str(self.id))
+    def get_dirname(self) -> Path:
+        return settings.TASKS_ROOT / str(self.id)
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -656,22 +670,26 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
             return True
         return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
 
+    def require_data(self) -> Data:
+        assert self.data is not None
+        return self.data
+
     @cached_property
-    def completed_jobs_count(self) -> Optional[int]:
+    def completed_jobs_count(self) -> int | None:
         # Requires this field to be defined externally,
         # e.g. by calling Task.objects.with_job_summary,
         # to avoid unexpected DB queries on access.
         return None
 
     @cached_property
-    def validation_jobs_count(self) -> Optional[int]:
+    def validation_jobs_count(self) -> int | None:
         # Requires this field to be defined externally,
         # e.g. by calling Task.objects.with_job_summary,
         # to avoid unexpected DB queries on access.
         return None
 
     @cached_property
-    def gt_job(self) -> Optional[Job]:
+    def gt_job(self) -> Job | None:
         try:
             return Job.objects.get(segment__task=self, type=JobType.GROUND_TRUTH)
         except Job.DoesNotExist:
@@ -712,13 +730,16 @@ class MyFileSystemStorage(FileSystemStorage):
             raise IOError('`{}` file already exists or its name is too long'.format(name))
         return name
 
-def upload_path_handler(instance, filename):
+def upload_path_handler(instance: ClientFile, filename: str) -> Path:
     # relative path is required since Django 3.1.11
-    return os.path.join(os.path.relpath(instance.data.get_upload_dirname(), settings.BASE_DIR), filename)
+    return instance.data.get_upload_dirname().relative_to(settings.BASE_DIR) / filename
 
 # For client files which the user is uploaded
 class ClientFile(models.Model):
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='client_files')
+    data = models.ForeignKey(
+        Data, on_delete=models.CASCADE, null=True,
+        related_name='client_files', related_query_name='client_file',
+    )
     file = models.FileField(upload_to=upload_path_handler,
         max_length=1024, storage=MyFileSystemStorage())
 
@@ -732,7 +753,10 @@ class ClientFile(models.Model):
 
 # For server files on the mounted share
 class ServerFile(models.Model):
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='server_files')
+    data = models.ForeignKey(
+        Data, on_delete=models.CASCADE, null=True,
+        related_name='server_files', related_query_name='server_file',
+    )
     file = models.CharField(max_length=1024)
 
     class Meta:
@@ -745,7 +769,10 @@ class ServerFile(models.Model):
 
 # For URLs
 class RemoteFile(models.Model):
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='remote_files')
+    data = models.ForeignKey(
+        Data, on_delete=models.CASCADE, null=True,
+        related_name='remote_files', related_query_name='remote_file',
+    )
     file = models.CharField(max_length=1024)
 
     class Meta:
@@ -758,10 +785,16 @@ class RemoteFile(models.Model):
 
 
 class RelatedFile(models.Model):
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
+    data = models.ForeignKey(
+        Data, on_delete=models.CASCADE,
+        related_name="related_files", related_query_name="related_file",
+        default=1, null=True,
+    )
     path = models.FileField(upload_to=upload_path_handler,
                             max_length=1024, storage=MyFileSystemStorage())
-    images = models.ManyToManyField(Image, related_name="related_files")
+    images = models.ManyToManyField(
+        Image, related_name="related_files", related_query_name="related_file"
+    )
 
     class Meta:
         default_permissions = ()
@@ -890,7 +923,7 @@ class JobQuerySet(models.QuerySet):
             raise TaskGroundTruthJobsLimitError()
 
     def with_issue_counts(self):
-        return self.annotate(issues__count=models.Count('issues'))
+        return self.annotate(issue__count=models.Count('issue'))
 
 
 
@@ -928,17 +961,17 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     user_can_view_task: MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
-    issues__count: MaybeUndefined[int]
+    issue__count: MaybeUndefined[int]
     "Can be defined by the fetching queryset"
 
-    def get_target_storage(self) -> Optional[Storage]:
+    def get_target_storage(self) -> Storage | None:
         return self.segment.task.target_storage
 
-    def get_source_storage(self) -> Optional[Storage]:
+    def get_source_storage(self) -> Storage | None:
         return self.segment.task.source_storage
 
-    def get_dirname(self) -> str:
-        return os.path.join(settings.JOBS_ROOT, str(self.id))
+    def get_dirname(self) -> Path:
+        return settings.JOBS_ROOT / str(self.id)
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
@@ -992,9 +1025,9 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
 
     def make_dirs(self):
         job_path = self.get_dirname()
-        if os.path.isdir(job_path):
+        if job_path.is_dir():
             shutil.rmtree(job_path)
-        os.makedirs(job_path)
+        job_path.mkdir(parents=True)
 
 
 class InvalidLabel(ValueError):
@@ -1006,7 +1039,10 @@ class Label(models.Model):
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
     type = models.CharField(max_length=32, choices=LabelType.choices(), default=LabelType.ANY)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sublabels')
+    parent = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True,
+        related_name='sublabels', related_query_name='sublabel',
+    )
 
     def __str__(self):
         return self.name
@@ -1211,7 +1247,9 @@ class Profile(models.Model):
 class Issue(TimestampedModel, AssignableModel):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
-    job = models.ForeignKey(Job, related_name='issues', on_delete=models.CASCADE)
+    job = models.ForeignKey(
+        Job, related_name="issues", related_query_name="issue", on_delete=models.CASCADE
+    )
     owner = models.ForeignKey(User, null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL)
     resolved = models.BooleanField(default=False)
@@ -1234,7 +1272,9 @@ class Issue(TimestampedModel, AssignableModel):
 
 
 class Comment(TimestampedModel):
-    issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
+    issue = models.ForeignKey(
+        Issue, related_name="comments", related_query_name="comment", on_delete=models.CASCADE
+    )
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     message = models.TextField(default='')
 
@@ -1254,22 +1294,10 @@ class Comment(TimestampedModel):
     def get_job_id(self):
         return self.issue.get_job_id()
 
-class CloudProviderChoice(str, Enum):
-    AWS_S3 = 'AWS_S3_BUCKET'
-    AZURE_CONTAINER = 'AZURE_CONTAINER'
-    GOOGLE_DRIVE = 'GOOGLE_DRIVE'
-    GOOGLE_CLOUD_STORAGE = 'GOOGLE_CLOUD_STORAGE'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return [x.value for x in cls]
-
-    def __str__(self):
-        return self.value
+class CloudProviderChoice(TextChoices):
+    AMAZON_S3 = "AWS_S3_BUCKET", "Amazon S3"
+    AZURE_BLOB_STORAGE = "AZURE_CONTAINER", "Azure Blob Storage"
+    GOOGLE_CLOUD_STORAGE = "GOOGLE_CLOUD_STORAGE", "Google Cloud Storage"
 
 class CredentialsTypeChoice(str, Enum):
     # ignore bandit issues because false positives
@@ -1292,7 +1320,10 @@ class CredentialsTypeChoice(str, Enum):
 
 class Manifest(models.Model):
     filename = models.CharField(max_length=1024, default='manifest.jsonl')
-    cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.CASCADE, null=True, related_name='manifests')
+    cloud_storage = models.ForeignKey(
+        'CloudStorage', on_delete=models.CASCADE, null=True,
+        related_name='manifests', related_query_name='manifest',
+    )
 
     def __str__(self):
         return '{}'.format(self.filename)
@@ -1329,17 +1360,20 @@ class CloudStorage(TimestampedModel):
     # specific attributes:
     # location - max 23
     # project ID: 6 - 30 (https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin)
-    provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices())
+    provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices)
     resource = models.CharField(max_length=222)
     display_name = models.CharField(max_length=63)
     owner = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="cloud_storages")
+        on_delete=models.SET_NULL, related_name="cloud_storages", related_query_name="cloud_storage"
+    )
     credentials = models.CharField(max_length=1024, null=True, blank=True)
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
     specific_attributes = models.CharField(max_length=1024, blank=True)
     description = models.TextField(blank=True)
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
-        blank=True, on_delete=models.SET_NULL, related_name="cloudstorages")
+        blank=True, on_delete=models.SET_NULL,
+        related_name="cloud_storages", related_query_name="cloud_storage",
+    )
 
     class Meta:
         default_permissions = ()
@@ -1347,14 +1381,14 @@ class CloudStorage(TimestampedModel):
     def __str__(self):
         return "{} {} {}".format(self.provider_type, self.display_name, self.id)
 
-    def get_storage_dirname(self):
-        return os.path.join(settings.CLOUD_STORAGE_ROOT, str(self.id))
+    def get_storage_dirname(self) -> Path:
+        return settings.CLOUD_STORAGE_ROOT / str(self.id)
 
     def get_specific_attributes(self):
         return parse_specific_attributes(self.specific_attributes)
 
-    def get_key_file_path(self):
-        return os.path.join(self.get_storage_dirname(), 'key.json')
+    def get_key_file_path(self) -> Path:
+        return self.get_storage_dirname() / "key.json"
 
     @property
     def has_at_least_one_manifest(self) -> bool:
@@ -1388,20 +1422,30 @@ class AnnotationGuide(TimestampedModel):
     def organization_id(self):
         return self.target.organization_id
 
+    @staticmethod
+    def get_asset_ids_from_markdown(markdown: str) -> set[str]:
+        pattern = r"\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)"
+        return set(re.findall(pattern, markdown))
+
 class Asset(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     filename = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True)
-    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
-    guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
+    owner = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="assets", related_query_name="asset",
+    )
+    guide = models.ForeignKey(
+        AnnotationGuide, on_delete=models.CASCADE, related_name="assets", related_query_name="asset"
+    )
     content_size = models.PositiveBigIntegerField(null=True)
 
     @property
     def organization_id(self):
         return self.guide.organization_id
 
-    def get_asset_dir(self):
-        return os.path.join(settings.ASSETS_ROOT, str(self.uuid))
+    def get_asset_dir(self) -> Path:
+        return settings.ASSETS_ROOT / str(self.uuid)
 
 class RequestAction(TextChoices):
     AUTOANNOTATE = "autoannotate"

@@ -7,9 +7,9 @@ import os
 import os.path as osp
 import zipfile
 from collections import OrderedDict
+from collections.abc import Callable
 from glob import glob
 from io import BufferedWriter
-from typing import Callable, Union
 
 from datumaro.components.annotation import (
     AnnotationType,
@@ -29,8 +29,7 @@ from datumaro.plugins.data_formats.cvat.base import CvatImporter as _CvatImporte
 from defusedxml import ElementTree
 
 from cvat.apps.dataset_manager.bindings import (
-    CVATProjectDataExtractor,
-    CvatTaskOrJobDataExtractor,
+    CommonData,
     JobData,
     NoMediaInAnnotationFileError,
     ProjectData,
@@ -41,7 +40,8 @@ from cvat.apps.dataset_manager.bindings import (
     match_dm_item,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
-from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, make_frame_provider
+from cvat.apps.engine.frame_provider import FrameOutputType, make_frame_provider
+from cvat.apps.engine.models import FrameQuality
 
 from .registry import dm_env, exporter, importer
 
@@ -677,33 +677,28 @@ def create_xml_dumper(file_object):
             self._level += 1
             self._add_version()
 
-        def _add_meta(self, meta):
+        def _add_kv_pairs(self, pairs):
             self._level += 1
-            for k, v in meta.items():
-                if isinstance(v, OrderedDict):
+            for k, v in pairs:
+                self._indent()
+                self.xmlgen.startElement(k, {})
+
+                if isinstance(v, dict):
+                    self._add_kv_pairs(v.items())
                     self._indent()
-                    self.xmlgen.startElement(k, {})
-                    self._add_meta(v)
-                    self._indent()
-                    self.xmlgen.endElement(k)
                 elif isinstance(v, list):
+                    self._add_kv_pairs(v)
                     self._indent()
-                    self.xmlgen.startElement(k, {})
-                    for tup in v:
-                        self._add_meta(OrderedDict([tup]))
-                    self._indent()
-                    self.xmlgen.endElement(k)
                 else:
-                    self._indent()
-                    self.xmlgen.startElement(k, {})
                     self.xmlgen.characters(v)
-                    self.xmlgen.endElement(k)
+
+                self.xmlgen.endElement(k)
             self._level -= 1
 
         def add_meta(self, meta):
             self._indent()
             self.xmlgen.startElement("meta", {})
-            self._add_meta(meta)
+            self._add_kv_pairs(meta.items())
             self._indent()
             self.xmlgen.endElement("meta")
 
@@ -835,7 +830,7 @@ def create_xml_dumper(file_object):
     return XmlAnnotationWriter(file_object)
 
 
-def dump_as_cvat_annotation(dumper, annotations):
+def dump_as_cvat_annotation(dumper, annotations: JobData | TaskData | ProjectData):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
 
@@ -856,16 +851,6 @@ def dump_as_cvat_annotation(dumper, annotations):
                 [("width", str(frame_annotation.width)), ("height", str(frame_annotation.height))]
             )
         )
-
-        # do not keep parsed lazy list data after this iteration
-        if isinstance(annotations, ProjectData):
-            frame_annotation = CVATProjectDataExtractor.copy_frame_data_with_replaced_lazy_lists(
-                frame_annotation
-            )
-        else:
-            frame_annotation = CvatTaskOrJobDataExtractor.copy_frame_data_with_replaced_lazy_lists(
-                frame_annotation
-            )
 
         dumper.open_image(image_attrs)
 
@@ -1026,7 +1011,7 @@ def dump_as_cvat_annotation(dumper, annotations):
     dumper.close_root()
 
 
-def dump_as_cvat_interpolation(dumper, annotations):
+def dump_as_cvat_interpolation(dumper, annotations: CommonData | ProjectData):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
 
@@ -1579,7 +1564,7 @@ def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callb
 
 
 def dump_media_files(
-    instance_data: Union[TaskData, JobData], img_dir: str, project_data: ProjectData = None
+    instance_data: TaskData | JobData, img_dir: str, project_data: ProjectData = None
 ):
     frame_provider = make_frame_provider(instance_data.db_instance)
 

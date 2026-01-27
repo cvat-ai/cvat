@@ -1,6 +1,10 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, { useCallback } from 'react';
 import { useHistory } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import { MenuProps } from 'antd/lib/menu';
@@ -16,18 +20,21 @@ interface WebhookActionsMenuProps {
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
 
-export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuProps>): JSX.Element {
-    const {
-        webhookInstance, triggerElement, dropdownTrigger,
-    } = props;
+export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuProps>): JSX.Element | null {
+    const { webhookInstance, triggerElement, dropdownTrigger } = props;
 
     const history = useHistory();
     const dispatch = useDispatch();
 
-    const selectedIds = useSelector((state: CombinedState) => state.webhooks.selected);
-    const allWebhooks = useSelector((state: CombinedState) => state.webhooks.current);
-    const isBulk = selectedIds.length > 1;
+    const {
+        selectedIds,
+        allWebhooks,
+    } = useSelector((state: CombinedState) => ({
+        selectedIds: state.webhooks.selected,
+        allWebhooks: state.webhooks.current,
+    }), shallowEqual);
 
+    const isBulk = selectedIds.length > 1;
     const onEdit = useCallback(() => {
         history.push(`/webhooks/update/${webhookInstance.id}`);
     }, [webhookInstance]);

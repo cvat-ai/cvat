@@ -12,7 +12,7 @@
     {
       "id": 2,
       "iou_threshold": 0.4,
-      "quorum": 0.5,
+      "quorum": 0.6,
       "task_id": 31
     }
   ]

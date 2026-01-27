@@ -7,7 +7,7 @@ import io
 import json
 from functools import partial
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
@@ -156,7 +156,7 @@ class TestPostCloudStorage:
         "secret_key": "minio_secret_key",
         "specific_attributes": "endpoint_url=http://minio:9000",
         "description": "Some description",
-        "manifests": ["manifest.jsonl"],
+        "manifests": ["images_with_manifest/manifest.jsonl"],
     }
     _EXCLUDE_PATHS = [
         f"root['{extra_field}']"
@@ -236,16 +236,16 @@ class TestPatchCloudStorage:
         "display_name": "New display name",
         "description": "New description",
         "manifests": [
-            "manifest_1.jsonl",
-            "manifest_2.jsonl",
+            "images_with_manifest/manifest_1.jsonl",
+            "images_with_manifest/manifest_2.jsonl",
         ],
     }
     _PRIVATE_BUCKET_SPEC = {
         "display_name": "New display name",
         "description": "New description",
         "manifests": [
-            "sub/manifest_1.jsonl",
-            "sub/manifest_2.jsonl",
+            "sub/images_with_manifest/manifest_1.jsonl",
+            "sub/images_with_manifest/manifest_2.jsonl",
         ],
     }
     _EXCLUDE_PATHS = [
@@ -430,7 +430,7 @@ class TestGetCloudStorageContent:
     def _test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        manifest: Optional[str] = None,
+        manifest: str | None = None,
         **kwargs,
     ):
         with make_api_client(self.USER) as api_client:
@@ -451,8 +451,8 @@ class TestGetCloudStorageContent:
         "manifest, prefix, default_bucket_prefix, page_size, expected_content",
         [
             (
-                # [v2] list the top level of bucket with based on manifest
-                "sub/manifest.jsonl",
+                # [v2] list root of bucket with based on manifest
+                "sub/images_with_manifest/manifest.jsonl",
                 None,
                 None,
                 None,
@@ -460,8 +460,8 @@ class TestGetCloudStorageContent:
             ),
             (
                 # [v2] search by some prefix in bucket content based on manifest
-                "sub/manifest.jsonl",
-                "sub/image_case_65_1",
+                "sub/images_with_manifest/manifest.jsonl",
+                "sub/images_with_manifest/image_case_65_1",
                 None,
                 None,
                 [
@@ -469,9 +469,9 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                # [v2] list the second layer (directory "sub") of bucket content based on manifest
-                "sub/manifest.jsonl",
-                "sub/",
+                # [v2] list nested directory of bucket content based on manifest
+                "sub/images_with_manifest/manifest.jsonl",
+                "sub/images_with_manifest/",
                 None,
                 None,
                 [
@@ -480,7 +480,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                # [v2] list the top layer of real bucket content
+                # [v2] list root of real bucket content
                 None,
                 None,
                 None,
@@ -488,9 +488,9 @@ class TestGetCloudStorageContent:
                 [FileInfo(mime_type="DIR", name="sub", type="DIR")],
             ),
             (
-                # [v2] list the second layer (directory "sub") of real bucket content
+                # [v2] list nested directory of real bucket content
                 None,
-                "sub/",
+                "sub/images_with_manifest/",
                 None,
                 2,
                 [
@@ -500,7 +500,7 @@ class TestGetCloudStorageContent:
             ),
             (
                 None,
-                "/sub/",  # cover case: API is identical to share point API
+                "/sub/images_with_manifest/",  # cover case: API is identical to share point API
                 None,
                 None,
                 [
@@ -514,9 +514,9 @@ class TestGetCloudStorageContent:
             ),
             (
                 # [v2] list bucket content based on manifest when default bucket prefix is set to directory
-                "sub/manifest.jsonl",
+                "sub/images_with_manifest/manifest.jsonl",
                 None,
-                "sub/",
+                "sub/images_with_manifest/",
                 None,
                 [
                     FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
@@ -526,9 +526,9 @@ class TestGetCloudStorageContent:
             (
                 # [v2] list bucket content based on manifest when default bucket prefix
                 # is set to template from which the files should start
-                "sub/manifest.jsonl",
+                "sub/images_with_manifest/manifest.jsonl",
                 None,
-                "sub/image_case_65_1",
+                "sub/images_with_manifest/image_case_65_1",
                 None,
                 [
                     FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
@@ -536,9 +536,9 @@ class TestGetCloudStorageContent:
             ),
             (
                 # [v2] list bucket content based on manifest when specified prefix is stricter than default bucket prefix
-                "sub/manifest.jsonl",
-                "sub/image_case_65_1",
-                "sub/image_case",
+                "sub/images_with_manifest/manifest.jsonl",
+                "sub/images_with_manifest/image_case_65_1",
+                "sub/images_with_manifest/image_case",
                 None,
                 [
                     FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
@@ -546,9 +546,9 @@ class TestGetCloudStorageContent:
             ),
             (
                 # [v2] list bucket content based on manifest when default bucket prefix is stricter than specified prefix
-                "sub/manifest.jsonl",
-                "sub/image_case",
-                "sub/image_case_65_1",
+                "sub/images_with_manifest/manifest.jsonl",
+                "sub/images_with_manifest/image_case",
+                "sub/images_with_manifest/image_case_65_1",
                 None,
                 [
                     FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
@@ -556,17 +556,17 @@ class TestGetCloudStorageContent:
             ),
             (
                 # [v2] list bucket content based on manifest when default bucket prefix and specified prefix have no intersection
-                "sub/manifest.jsonl",
-                "sub/image_case_65_1",
-                "sub/image_case_65_2",
+                "sub/images_with_manifest/manifest.jsonl",
+                "sub/images_with_manifest/image_case_65_1",
+                "sub/images_with_manifest/image_case_65_2",
                 None,
                 [],
             ),
             (
                 # [v2] list bucket content based on manifest when default bucket prefix contains dirs and prefix starts with it
-                "sub/manifest.jsonl",
+                "sub/images_with_manifest/manifest.jsonl",
                 "s",
-                "sub/",
+                "sub/images_with_manifest/",
                 None,
                 [
                     FileInfo(mime_type="DIR", name="sub", type="DIR"),
@@ -576,7 +576,7 @@ class TestGetCloudStorageContent:
                 # [v2] list real bucket content when default bucket prefix is set to directory
                 None,
                 None,
-                "sub/",
+                "sub/images_with_manifest/",
                 None,
                 [
                     FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
@@ -592,7 +592,7 @@ class TestGetCloudStorageContent:
                 # is set to template from which the files should start
                 None,
                 None,
-                "sub/demo",
+                "sub/images_with_manifest/demo",
                 None,
                 [
                     FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
@@ -601,8 +601,8 @@ class TestGetCloudStorageContent:
             (
                 # [v2] list real bucket content when specified prefix is stricter than default bucket prefix
                 None,
-                "sub/image_case_65_1",
-                "sub/image_case",
+                "sub/images_with_manifest/image_case_65_1",
+                "sub/images_with_manifest/image_case",
                 None,
                 [
                     FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
@@ -611,8 +611,8 @@ class TestGetCloudStorageContent:
             (
                 # [v2] list real bucket content when default bucket prefix is stricter than specified prefix
                 None,
-                "sub/image_case",
-                "sub/image_case_65_1",
+                "sub/images_with_manifest/image_case",
+                "sub/images_with_manifest/image_case_65_1",
                 None,
                 [
                     FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
@@ -621,8 +621,8 @@ class TestGetCloudStorageContent:
             (
                 # [v2] list real bucket content when default bucket prefix and specified prefix have no intersection
                 None,
-                "sub/image_case_65_1",
-                "sub/image_case_65_2",
+                "sub/images_with_manifest/image_case_65_1",
+                "sub/images_with_manifest/image_case_65_2",
                 None,
                 [],
             ),
@@ -630,7 +630,7 @@ class TestGetCloudStorageContent:
                 # [v2] list real bucket content when default bucket prefix contains dirs and prefix starts with it
                 None,
                 "s",
-                "sub/",
+                "sub/images_with_manifest/",
                 None,
                 [
                     FileInfo(mime_type="DIR", name="sub", type="DIR"),
@@ -641,11 +641,11 @@ class TestGetCloudStorageContent:
     def test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        manifest: Optional[str],
-        prefix: Optional[str],
-        default_bucket_prefix: Optional[str],
-        page_size: Optional[int],
-        expected_content: Optional[Any],
+        manifest: str | None,
+        prefix: str | None,
+        default_bucket_prefix: str | None,
+        page_size: int | None,
+        expected_content: Any | None,
         cloud_storages,
     ):
         if default_bucket_prefix:
@@ -693,7 +693,8 @@ class TestGetCloudStorageContent:
             if not next_token:
                 break
 
-        assert expected_content == current_content
+        # Each page is currently sorted individually, so we have to resort after combining.
+        assert expected_content == sorted(current_content, key=lambda el: el["type"].value)
 
     @pytest.mark.parametrize("cloud_storage_id", [2])
     def test_can_get_storage_content_with_manually_created_dirs(
@@ -750,3 +751,17 @@ class TestListCloudStorages:
         self._test_can_see_cloud_storages(
             "admin2", list(cloud_storages), page_size="all", org_id=query_value
         )
+
+
+class TestCloudStorageStatus:
+    @pytest.mark.parametrize(
+        "cloud_storage_id, expected_response",
+        [
+            (3, "AVAILABLE"),
+            (4, "NOT_FOUND"),
+        ],
+    )
+    def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
+        with make_api_client(admin_user) as api_client:
+            (data, _) = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
+            assert data == expected_response

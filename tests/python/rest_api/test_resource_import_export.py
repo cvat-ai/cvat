@@ -3,9 +3,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Callable
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -407,8 +408,8 @@ class TestUploads:
         users: Container,
         *,
         get_owner_func: Callable = lambda r: r["owner"],
-        user_to_skip: Optional[int] = None,
-    ) -> Tuple[dict, int]:
+        user_to_skip: int | None = None,
+    ) -> tuple[dict, int]:
         for resource in resources:
             malefactor = get_owner_func(resource)
             if not users[malefactor["id"]]["is_superuser"] and malefactor["id"] != user_to_skip:
@@ -629,13 +630,13 @@ class TestUploads:
     )
     def test_user_can_use_only_own_uploads(
         self,
-        src_resource_id: Optional[int],
+        src_resource_id: int | None,
         archive_path: Path,
         owner: dict,
         malefactor: dict,
-        dst_resource_id: Optional[str],
+        dst_resource_id: str | None,
         endpoint_path: str,
-        query_params: Optional[dict],
+        query_params: dict | None,
     ):
         with (
             make_sdk_client(owner["username"]) as owner_client,

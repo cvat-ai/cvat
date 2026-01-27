@@ -5,9 +5,13 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
+import { AllureTag } from '../../support/const_allure';
+
 import { generateString } from '../../support/utils';
 
 context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () => {
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '101';
     const labelName = `Case ${caseId}`;
     const newLabel = `Case ${caseId}`;
@@ -204,7 +208,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         });
 
         // Waiting for fix https://github.com/openvinotoolkit/cvat/issues/3474
-        it.skip('Redraw the shape created with "Intelligent cissors".', () => {
+        it.skip('Redraw the shape created with "Intelligent scissors".', () => {
             cy.get('.cvat-canvas-container').click();
             cy.get('.cvat-opencv-control-popover').should('be.hidden');
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');

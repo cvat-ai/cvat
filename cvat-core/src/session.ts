@@ -264,6 +264,14 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
+                async contextImageData(frameId) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.frames.contextImageData,
+                        frameId,
+                    );
+                    return result;
+                },
                 async contextImage(frameId) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -422,10 +430,12 @@ export class Session {
         frameNumbers: () => Promise<number[]>;
         preview: () => Promise<string>;
         contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
+        contextImageData: (frame: number) => Promise<ArrayBuffer>;
         search: (
             filters: {
                 offset?: number,
                 notDeleted: boolean,
+                chapterMark?: boolean,
             },
             frameFrom: number,
             frameTo: number,
@@ -488,6 +498,7 @@ export class Session {
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
+            contextImageData: Object.getPrototypeOf(this).frames.contextImageData.bind(this),
             chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
         };
 
@@ -1128,7 +1139,7 @@ export class Task extends Session {
                         for (const value of clientFiles) {
                             if (!(value instanceof File)) {
                                 throw new ArgumentError(
-                                    `Array values must be a File. But ${value.constructor.name} has been got.`,
+                                    'Array values must be a File.',
                                 );
                             }
                         }

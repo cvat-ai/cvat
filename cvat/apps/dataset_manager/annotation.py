@@ -3,17 +3,20 @@
 #
 # SPDX-License-Identifier: MIT
 
+import heapq
 import math
-from collections.abc import Container, Sequence
+from collections.abc import Callable, Container, Generator, Iterable, Iterator, Sequence
 from copy import copy, deepcopy
 from itertools import chain
-from typing import Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
-from cvat.apps.dataset_manager.util import faster_deepcopy
+from cvat.apps.dataset_manager.util import (
+    faster_deepcopy,
+    make_getter_by_frame_for_annotation_stream,
+)
 from cvat.apps.engine.models import DimensionType, ShapeType
 from cvat.apps.engine.serializers import LabeledDataSerializer
 
@@ -24,16 +27,19 @@ class AnnotationIR:
         self.dimension = dimension
         if data:
             self.tags = getattr(data, "tags", []) or data["tags"]
-            self.shapes = getattr(data, "shapes", []) or data["shapes"]
+            self.shapes: list | Iterable = getattr(data, "shapes", []) or data["shapes"]
             self.tracks = getattr(data, "tracks", []) or data["tracks"]
 
     def add_tag(self, tag):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.tags.append(tag)
 
     def add_shape(self, shape):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.shapes.append(shape)
 
     def add_track(self, track):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.tracks.append(track)
 
     @property
@@ -59,6 +65,7 @@ class AnnotationIR:
         self.tracks = data["tracks"]
 
     def serialize(self):
+        assert not self.is_stream, "Not implemented for streaming"
         serializer = LabeledDataSerializer(data=self.data)
         if serializer.is_valid(raise_exception=True):
             return serializer.data
@@ -158,6 +165,7 @@ class AnnotationIR:
         return track
 
     def slice(self, start, stop):
+        assert not self.is_stream, "Not allowed to slice when streaming"
         # makes a data copy from specified frame interval
         splitted_data = AnnotationIR(self.dimension)
         splitted_data.tags = [
@@ -182,6 +190,10 @@ class AnnotationIR:
         self.shapes = []
         self.tracks = []
 
+    @property
+    def is_stream(self) -> bool:
+        return not isinstance(self.shapes, list)
+
 
 class AnnotationManager:
     def __init__(self, data: AnnotationIR, *, dimension: DimensionType):
@@ -192,8 +204,13 @@ class AnnotationManager:
         tags = TagManager(self.data.tags, dimension=self.dimension)
         tags.merge(data.tags, start_frame, overlap)
 
-        shapes = ShapeManager(self.data.shapes, dimension=self.dimension)
-        shapes.merge(data.shapes, start_frame, overlap)
+        shapes_manager = ShapeManager(self.data.shapes, dimension=self.dimension)
+        if data.is_stream:
+            assert self.data.is_stream or not self.data.shapes
+            self.data.shapes = shapes_manager.merge_stream(data.shapes, start_frame, overlap)
+        else:
+            assert not self.data.is_stream
+            shapes_manager.merge(data.shapes, start_frame, overlap)
 
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
         tracks.merge(data.tracks, start_frame, overlap)
@@ -220,17 +237,21 @@ class AnnotationManager:
         included_frames: Sequence[int] | None = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False,
-    ) -> list:
+    ) -> Generator[dict, None, None]:
+        """
+        Generates shapes ordered by frame id
+        """
         shapes = self.data.shapes
+
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
 
         if included_frames is not None:
-            shapes = [s for s in shapes if s["frame"] in included_frames]
+            shapes = (s for s in shapes if s["frame"] in included_frames)
 
         if deleted_frames is not None:
-            shapes = [s for s in shapes if s["frame"] not in deleted_frames]
+            shapes = (s for s in shapes if s["frame"] not in deleted_frames)
 
-        return shapes + tracks.to_shapes(
+        track_shapes = tracks.to_shapes(
             end_frame,
             included_frames=included_frames,
             deleted_frames=deleted_frames,
@@ -238,11 +259,75 @@ class AnnotationManager:
             use_server_track_ids=use_server_track_ids,
         )
 
+        if not self.data.is_stream:
+            shapes = sorted(shapes, key=lambda shape: shape["frame"])
+
+        yield from heapq.merge(shapes, track_shapes, key=lambda shape: shape["frame"])
+
     def to_tracks(self):
         tracks = self.data.tracks
         shapes = ShapeManager(self.data.shapes, dimension=self.dimension)
 
         return tracks + shapes.to_tracks()
+
+
+class StreamMerger:
+    class HeapElem:
+        def __init__(self, first_item: dict, iterator: Iterator, iterator_index: int):
+            self.first_item = first_item
+            self.iterator = iterator
+            self.iterator_index = iterator_index
+
+        def _make_key(self):
+            return (
+                self.first_item["frame"],
+                self.iterator_index,
+            )
+
+        def __lt__(self, other):
+            return self._make_key() < other._make_key()
+
+    def __init__(self, merge_objects: Callable):
+        self._iterators: list[Iterator] = []
+        self._merge_objects = merge_objects
+
+    def add(self, it: Iterator[dict]):
+        self._iterators.append(it)
+
+    def __iter__(self):
+        heap: list[StreamMerger.HeapElem] = []
+
+        def push_iterator_to_heap(iterator, iterator_index):
+            if next_element := next(iterator, None):
+                heapq.heappush(heap, StreamMerger.HeapElem(next_element, iterator, iterator_index))
+
+        for iterator_index, iterator in enumerate(self._iterators):
+            push_iterator_to_heap(iterator, iterator_index)
+
+        # make it impossible to iterate again or to add more sources
+        del self._iterators
+
+        def generator():
+            while heap:
+                frame_id = heap[0].first_item["frame"]
+                objects_grouped_by_iterator_index = [(heap[0].iterator_index, [])]
+
+                while heap and heap[0].first_item["frame"] == frame_id:
+                    elem: StreamMerger.HeapElem = heapq.heappop(heap)
+                    if objects_grouped_by_iterator_index[-1][0] != elem.iterator_index:
+                        objects_grouped_by_iterator_index.append((elem.iterator_index, []))
+                    objects_grouped_by_iterator_index[-1][1].append(elem.first_item)
+
+                    push_iterator_to_heap(elem.iterator, elem.iterator_index)
+
+                result_objects = objects_grouped_by_iterator_index[0][1]
+                for _, int_objects in objects_grouped_by_iterator_index[1:]:
+                    new_objects = self._merge_objects(int_objects, result_objects)
+                    result_objects.extend(new_objects)
+
+                yield from result_objects
+
+        return generator()
 
 
 class ObjectManager:
@@ -263,7 +348,7 @@ class ObjectManager:
         return objects_by_frame
 
     @staticmethod
-    def _get_cost_threshold():
+    def _get_cost_threshold() -> float:
         raise NotImplementedError()
 
     @staticmethod
@@ -277,7 +362,26 @@ class ObjectManager:
     def _modify_unmatched_object(self, obj, end_frame):
         raise NotImplementedError()
 
+    def merge_stream(self, objects: Iterator[dict], start_frame: int, overlap: int):
+        assert not isinstance(objects, list)
+
+        if isinstance(self.objects, list):
+            assert not self.objects
+
+            def merge_objects(int_objects: list, old_objects: list):
+                return self._merge_objects_on_one_frame(
+                    int_objects, old_objects, start_frame, overlap
+                )
+
+            self.objects = StreamMerger(merge_objects)
+
+        assert isinstance(self.objects, StreamMerger)
+
+        self.objects.add(objects)
+        return self.objects
+
     def merge(self, objects, start_frame, overlap):
+        assert isinstance(objects, list) and isinstance(self.objects, list)
         # 1. Split objects on two parts: new and which can be intersected
         # with existing objects.
         new_objects = [obj for obj in objects if obj["frame"] >= start_frame + overlap]
@@ -303,44 +407,59 @@ class ObjectManager:
         # 4. Build cost matrix for each frame and find correspondence using
         # Hungarian algorithm. In this case min_cost_thresh is stronger
         # because we compare only on one frame.
-        min_cost_thresh = self._get_cost_threshold()
         for frame in int_objects_by_frame:
             if frame in old_objects_by_frame:
                 int_objects = int_objects_by_frame[frame]
                 old_objects = old_objects_by_frame[frame]
-                cost_matrix = np.empty(shape=(len(int_objects), len(old_objects)), dtype=float)
-                # 5.1 Construct cost matrix for the frame.
-                for i, int_obj in enumerate(int_objects):
-                    for j, old_obj in enumerate(old_objects):
-                        cost_matrix[i][j] = 1 - self._calc_objects_similarity(
-                            int_obj, old_obj, start_frame, overlap, self.dimension
-                        )
-
-                # 6. Find optimal solution using Hungarian algorithm.
-                row_ind, col_ind = linear_sum_assignment(cost_matrix)
-                old_objects_indexes = list(range(0, len(old_objects)))
-                int_objects_indexes = list(range(0, len(int_objects)))
-                for i, j in zip(row_ind, col_ind):
-                    # Reject the solution if the cost is too high. Remember
-                    # inside int_objects_indexes objects which were handled.
-                    if cost_matrix[i][j] <= min_cost_thresh:
-                        old_objects[j] = self._unite_objects(int_objects[i], old_objects[j])
-                        int_objects_indexes[i] = -1
-                        old_objects_indexes[j] = -1
-
-                # 7. Add all new objects which were not processed.
-                for i in int_objects_indexes:
-                    if i != -1:
-                        self.objects.append(int_objects[i])
-
-                # 8. Modify all old objects which were not processed
-                # (e.g. generate a shape with outside=True at the end).
-                for j in old_objects_indexes:
-                    if j != -1:
-                        self._modify_unmatched_object(old_objects[j], start_frame + overlap)
+                new_objects = self._merge_objects_on_one_frame(
+                    int_objects, old_objects, start_frame, overlap
+                )
+                self.objects.extend(new_objects)
             else:
                 # We don't have old objects on the frame. Let's add all new ones.
                 self.objects.extend(int_objects_by_frame[frame])
+
+    def _merge_objects_on_one_frame(
+        self, int_objects: list, old_objects: list, start_frame: int, overlap: int
+    ):
+        # 4. Build cost matrix for each frame and find correspondence using
+        # Hungarian algorithm. In this case min_cost_thresh is stronger
+        # because we compare only on one frame.
+        new_objects = []
+
+        min_cost_thresh = self._get_cost_threshold()
+        cost_matrix = np.empty(shape=(len(int_objects), len(old_objects)), dtype=float)
+        # 5.1 Construct cost matrix for the frame.
+        for i, int_obj in enumerate(int_objects):
+            for j, old_obj in enumerate(old_objects):
+                cost_matrix[i][j] = 1 - self._calc_objects_similarity(
+                    int_obj, old_obj, start_frame, overlap, self.dimension
+                )
+
+        # 6. Find optimal solution using Hungarian algorithm.
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+        old_objects_indexes = list(range(0, len(old_objects)))
+        int_objects_indexes = list(range(0, len(int_objects)))
+        for i, j in zip(row_ind, col_ind):
+            # Reject the solution if the cost is too high. Remember
+            # inside int_objects_indexes objects which were handled.
+            if cost_matrix[i][j] <= min_cost_thresh:
+                old_objects[j] = self._unite_objects(int_objects[i], old_objects[j])
+                int_objects_indexes[i] = -1
+                old_objects_indexes[j] = -1
+
+        # 7. Add all new objects which were not processed.
+        for i in int_objects_indexes:
+            if i != -1:
+                new_objects.append(int_objects[i])
+
+        # 8. Modify all old objects which were not processed
+        # (e.g. generate a shape with outside=True at the end).
+        for j in old_objects_indexes:
+            if j != -1:
+                self._modify_unmatched_object(old_objects[j], start_frame + overlap)
+
+        return new_objects
 
     def clear_frames(self, frames: Container[int]):
         new_objects = [obj for obj in self.objects if obj["frame"] not in frames]
@@ -494,37 +613,41 @@ class TrackManager(ObjectManager):
         deleted_frames: Sequence[int] | None = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False,
-    ) -> list:
-        shapes = []
-        for idx, track in enumerate(self.objects):
+    ) -> Generator[dict, None, None]:
+        def generate_track_shapes(track, idx):
             track_id = track["id"] if use_server_track_ids else idx
-            track_shapes = {}
 
-            for shape in TrackManager.get_interpolated_shapes(
-                track,
-                0,
-                end_frame,
-                self.dimension,
-                include_outside=include_outside,
-                included_frames=included_frames,
-                deleted_frames=deleted_frames,
-            ):
-                shape["label_id"] = track["label_id"]
-                shape["group"] = track["group"]
-                shape["track_id"] = track_id
-                shape["source"] = track["source"]
-                shape["attributes"] += track["attributes"]
-                shape["elements"] = []
-
-                track_shapes[shape["frame"]] = shape
-
-            if not track_shapes:
-                # This track has no elements on the included frames
-                continue
+            track_shapes = (
+                dict(
+                    shape,
+                    label_id=track["label_id"],
+                    group=track["group"],
+                    track_id=track_id,
+                    source=track["source"],
+                    attributes=shape["attributes"] + track["attributes"],
+                    elements=[],
+                )
+                for shape in TrackManager.get_interpolated_shapes(
+                    track,
+                    0,
+                    end_frame,
+                    self.dimension,
+                    include_outside=include_outside,
+                    included_frames=included_frames,
+                    deleted_frames=deleted_frames,
+                    streaming=True,
+                )
+            )
 
             if track.get("elements"):
+                track_shapes = list(track_shapes)
+
+                if not track_shapes:
+                    # This track has no elements on the included frames
+                    return
+
                 track_elements = TrackManager(track["elements"], dimension=self.dimension)
-                element_included_frames = set(track_shapes.keys())
+                element_included_frames = {shape["frame"] for shape in track_shapes}
                 if included_frames is not None:
                     element_included_frames = element_included_frames.intersection(included_frames)
                 element_shapes = track_elements.to_shapes(
@@ -534,22 +657,29 @@ class TrackManager(ObjectManager):
                     include_outside=True,  # elements are controlled by the parent shape
                     use_server_track_ids=use_server_track_ids,
                 )
+                get_elements_on_frame = make_getter_by_frame_for_annotation_stream(element_shapes)
 
-                for shape in element_shapes:
-                    track_shapes[shape["frame"]]["elements"].append(shape)
+                track_shapes = (
+                    dict(shape, elements=list(get_elements_on_frame(shape["frame"])))
+                    for shape in track_shapes
+                )
 
                 # The whole shape can be filtered out, if all its elements are outside,
                 # and outside shapes are not requested.
                 if not include_outside:
-                    track_shapes = {
-                        frame_number: shape
-                        for frame_number, shape in track_shapes.items()
+                    track_shapes = (
+                        shape
+                        for shape in track_shapes
                         if not shape["elements"]
                         or not all(elem["outside"] for elem in shape["elements"])
-                    }
+                    )
 
-            shapes.extend(track_shapes.values())
-        return shapes
+            yield from track_shapes
+
+        yield from heapq.merge(
+            *[generate_track_shapes(track, idx) for idx, track in enumerate(self.objects)],
+            key=lambda shape: shape["frame"],
+        )
 
     @staticmethod
     def _get_objects_by_frame(objects, start_frame):
@@ -631,10 +761,11 @@ class TrackManager(ObjectManager):
         end_frame: int,
         dimension: DimensionType | str,
         *,
-        included_frames: Optional[Sequence[int]] = None,
-        deleted_frames: Optional[Sequence[int]] = None,
+        included_frames: Sequence[int] | None = None,
+        deleted_frames: Sequence[int] | None = None,
         include_outside: bool = False,
-    ):
+        streaming: bool = False,
+    ) -> Generator[dict, None, None]:
         # If a task or job contains deleted frames that contain track keyframes,
         # these keyframes should be excluded from the interpolation.
         # In jobs having specific frames included (e.g. GT jobs),
@@ -676,7 +807,6 @@ class TrackManager(ObjectManager):
             return angle_diff
 
         def simple_interpolation(shape0, shape1):
-            shapes = []
             distance = shape1["frame"] - shape0["frame"]
             diff = np.subtract(shape1["points"], shape0["points"])
 
@@ -690,16 +820,13 @@ class TrackManager(ObjectManager):
                 points = shape0["points"] + diff * offset
 
                 if included_frames is None or frame in included_frames:
-                    shapes.append(copy_shape(shape0, frame, points, rotation))
-
-            return shapes
+                    yield copy_shape(shape0, frame, points, rotation)
 
         def simple_3d_interpolation(shape0, shape1):
-            result = simple_interpolation(shape0, shape1)
             angles = shape0["points"][3:6] + shape1["points"][3:6]
             distance = shape1["frame"] - shape0["frame"]
 
-            for shape in result:
+            for shape in simple_interpolation(shape0, shape1):
                 offset = (shape["frame"] - shape0["frame"]) / distance
                 for i, angle0 in enumerate(angles):
                     if i < 3:
@@ -709,18 +836,15 @@ class TrackManager(ObjectManager):
                         angle = angle0 + find_angle_diff(angle1, angle0) * offset * math.pi / 180
                         shape["points"][i + 3] = angle if angle <= math.pi else angle - math.pi * 2
 
-            return result
+                yield shape
 
         def points_interpolation(shape0, shape1):
             if len(shape0["points"]) == 2 and len(shape1["points"]) == 2:
-                return simple_interpolation(shape0, shape1)
+                yield from simple_interpolation(shape0, shape1)
             else:
-                shapes = []
                 for frame in range(shape0["frame"] + 1, shape1["frame"]):
                     if included_frames is None or frame in included_frames:
-                        shapes.append(copy_shape(shape0, frame))
-
-            return shapes
+                        yield copy_shape(shape0, frame)
 
         def interpolate_position(left_position, right_position, offset):
             def to_array(points):
@@ -911,7 +1035,6 @@ class TrackManager(ObjectManager):
             return to_array(reducedPoints).tolist()
 
         def polyshape_interpolation(shape0, shape1):
-            shapes = []
             is_polygon = shape0["type"] == ShapeType.POLYGON
             if is_polygon:
                 # Make the polygon closed for computations
@@ -921,21 +1044,26 @@ class TrackManager(ObjectManager):
                 shape1["points"] = shape1["points"] + shape1["points"][:2]
 
             distance = shape1["frame"] - shape0["frame"]
-            for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                offset = (frame - shape0["frame"]) / distance
-                points = interpolate_position(shape0, shape1, offset)
 
-                if included_frames is None or frame in included_frames:
-                    shapes.append(copy_shape(shape0, frame, points))
+            def generate_shapes():
+                for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                    offset = (frame - shape0["frame"]) / distance
+                    points = interpolate_position(shape0, shape1, offset)
+
+                    if included_frames is None or frame in included_frames:
+                        yield copy_shape(shape0, frame, points)
+
+            shapes = generate_shapes()
 
             if is_polygon:
-                # Remove the extra point added
-                shape0["points"] = shape0["points"][:-2]
-                shape1["points"] = shape1["points"][:-2]
-                for shape in shapes:
-                    shape["points"] = shape["points"][:-2]
 
-            return shapes
+                def remove_extra_point_added(shape):
+                    shape["points"] = shape["points"][:-2]
+                    return shape
+
+                shapes = map(remove_extra_point_added, shapes)
+
+            yield from shapes
 
         def interpolate(shape0, shape1):
             is_same_type = shape0["type"] == shape1["type"]
@@ -950,84 +1078,81 @@ class TrackManager(ObjectManager):
             if not is_same_type:
                 raise NotImplementedError()
 
-            shapes = []
             if dimension == DimensionType.DIM_3D:
-                shapes = simple_3d_interpolation(shape0, shape1)
-            if is_rectangle or is_cuboid or is_ellipse or is_skeleton:
-                shapes = simple_interpolation(shape0, shape1)
+                yield from simple_3d_interpolation(shape0, shape1)
+            elif is_rectangle or is_cuboid or is_ellipse or is_skeleton:
+                yield from simple_interpolation(shape0, shape1)
             elif is_points:
-                shapes = points_interpolation(shape0, shape1)
+                yield from points_interpolation(shape0, shape1)
             elif is_polygon or is_polyline:
-                shapes = polyshape_interpolation(shape0, shape1)
+                yield from polyshape_interpolation(shape0, shape1)
             else:
                 raise NotImplementedError()
 
-            return shapes
-
         def propagate(shape: dict, end_frame, *, included_frames=None):
-            return [
+            yield from (
                 copy_shape(shape, i)
                 for i in range(shape["frame"] + 1, end_frame)
                 if included_frames is None or i in included_frames
-            ]
+            )
 
-        shapes = []
-        prev_shape: dict | None = None
-        for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
-            curr_frame = shape["frame"]
-            if curr_frame in deleted_frames:
-                continue
-            if prev_shape and end_frame <= curr_frame:
-                # If we exceed the end_frame and there was a previous shape,
-                # we still need to interpolate up to the next keyframe,
-                # but keep the results only up to the end_frame:
-                #        vvvvvvv
-                # ---- | ------- | ----- | ----->
-                #     prev      end   cur kf
-                interpolated = interpolate(prev_shape, shape)
-                interpolated.append(shape)
+        def generate_shapes():
+            prev_shape: dict | None = None
+            for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
+                curr_frame = shape["frame"]
+                if curr_frame in deleted_frames:
+                    continue
+                if prev_shape and end_frame <= curr_frame:
+                    # If we exceed the end_frame and there was a previous shape,
+                    # we still need to interpolate up to the next keyframe,
+                    # but keep the results only up to the end_frame:
+                    #        vvvvvvv
+                    # ---- | ------- | ----- | ----->
+                    #     prev      end   cur kf
+                    interpolated = interpolate(prev_shape, shape)
+                    interpolated = heapq.merge(interpolated, [shape], key=lambda sh: sh["frame"])
 
-                for shape in sorted(interpolated, key=lambda shape: shape["frame"]):
-                    if shape["frame"] < end_frame:
-                        shapes.append(shape)
-                    else:
-                        break
+                    for shape in interpolated:
+                        if shape["frame"] < end_frame:
+                            yield shape
+                        else:
+                            break
 
-                # Update the last added shape
+                    # Update the last added shape
+                    shape["keyframe"] = True
+                    prev_shape = shape
+
+                    break  # The track finishes here
+
+                if prev_shape:
+                    if curr_frame == prev_shape["frame"] and dict(
+                        shape, id=None, keyframe=None
+                    ) == dict(prev_shape, id=None, keyframe=None):
+                        continue
+                    assert (
+                        curr_frame > prev_shape["frame"]
+                    ), f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}"  # Catch invalid tracks
+
+                    # Propagate attributes
+                    for attr in prev_shape["attributes"]:
+                        if attr["spec_id"] not in (el["spec_id"] for el in shape["attributes"]):
+                            shape["attributes"].append(faster_deepcopy(attr))
+
+                    if not prev_shape["outside"] or include_outside:
+                        yield from interpolate(prev_shape, shape)
+
                 shape["keyframe"] = True
+                yield shape
                 prev_shape = shape
 
-                break  # The track finishes here
+            if prev_shape and (not prev_shape["outside"] or include_outside):
+                # When the latest keyframe of a track is less than the end_frame
+                # and it is not outside, need to propagate
+                yield from propagate(prev_shape, end_frame, included_frames=included_frames)
 
-            if prev_shape:
-                if curr_frame == prev_shape["frame"] and dict(
-                    shape, id=None, keyframe=None
-                ) == dict(prev_shape, id=None, keyframe=None):
-                    continue
-                assert (
-                    curr_frame > prev_shape["frame"]
-                ), f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}"  # Catch invalid tracks
-
-                # Propagate attributes
-                for attr in prev_shape["attributes"]:
-                    if attr["spec_id"] not in (el["spec_id"] for el in shape["attributes"]):
-                        shape["attributes"].append(faster_deepcopy(attr))
-
-                if not prev_shape["outside"] or include_outside:
-                    shapes.extend(interpolate(prev_shape, shape))
-
-            shape["keyframe"] = True
-            shapes.append(shape)
-            prev_shape = shape
-
-        if prev_shape and (not prev_shape["outside"] or include_outside):
-            # When the latest keyframe of a track is less than the end_frame
-            # and it is not outside, need to propagate
-            shapes.extend(propagate(prev_shape, end_frame, included_frames=included_frames))
-
-        shapes = [
+        shapes = (
             shape
-            for shape in shapes
+            for shape in generate_shapes()
             #
             if shape["frame"] not in deleted_frames
             #
@@ -1043,7 +1168,10 @@ class TrackManager(ObjectManager):
             if shape["keyframe"] or not shape["outside"] or include_outside
             #
             if included_frames is None or shape["frame"] in included_frames
-        ]
+        )
+
+        if not streaming:
+            shapes = list(shapes)
 
         return shapes
 

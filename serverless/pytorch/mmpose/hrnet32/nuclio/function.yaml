@@ -170,13 +170,13 @@ metadata:
 
 spec:
   description: Whole Body points
-  runtime: 'python:3.8'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30s
 
   build:
     image: cvat.pth.mmpose.hrnet32
-    baseImage: python:3.8
+    baseImage: python:3.10
 
     directives:
       preCopy:
@@ -187,7 +187,7 @@ spec:
         - kind: RUN
           value: pip install openmim torch==2.0.0+cpu torchvision==0.15.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
         - kind: RUN
-          value: mim install mmcv==2.0.1 mmdet==3.2.0 mmpose==1.2.0
+          value: mim install mmcv==2.0.1 mmdet==3.2.0 mmpose==1.2.0 'numpy<2'
         - kind: RUN
           value: git clone -b v1.2.0 --depth=1 https://github.com/open-mmlab/mmpose.git
         - kind: ADD

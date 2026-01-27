@@ -6,20 +6,10 @@ from __future__ import annotations
 
 import json
 from abc import ABC
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from copy import deepcopy
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Generic,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, overload
 
 from typing_extensions import Self
 
@@ -100,7 +90,7 @@ class Repo(ModelProxy[ModelType, ApiType]):
 
 
 def build_model_bases(
-    mt: type[ModelType], at: type[ApiType], *, api_member_name: Optional[str] = None
+    mt: type[ModelType], at: type[ApiType], *, api_member_name: str | None = None
 ) -> tuple[type[Entity[ModelType, ApiType]], type[Repo[ModelType, ApiType]]]:
     """
     Helps to remove code duplication in declarations of derived classes
@@ -125,7 +115,7 @@ _EntityT = TypeVar("_EntityT", bound=Entity)
 
 
 class ModelCreateMixin(Generic[_EntityT, IModel]):
-    def create(self: Repo, spec: Union[dict[str, Any], IModel]) -> _EntityT:
+    def create(self: Repo, spec: dict[str, Any] | IModel) -> _EntityT:
         """
         Creates a new object on the server and returns the corresponding local object
         """
@@ -151,7 +141,7 @@ class ModelListMixin(Generic[_EntityT]):
     @overload
     def list(self: Repo, *, return_json: Literal[True] = False) -> list[Any]: ...
 
-    def list(self: Repo, *, return_json: bool = False) -> list[Union[_EntityT, Any]]:
+    def list(self: Repo, *, return_json: bool = False) -> list[_EntityT | Any]:
         """
         Retrieves all objects from the server and returns them in basic or JSON format.
         """
@@ -192,7 +182,7 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
     def _model_partial_update_arg(self: Entity) -> str: ...
 
     def _export_update_fields(
-        self: Entity, overrides: Optional[Union[dict[str, Any], IModel]] = None
+        self: Entity, overrides: dict[str, Any] | IModel | None = None
     ) -> dict[str, Any]:
         # TODO: support field conversion and assignment updating
         # fields = to_json(self._model)
@@ -212,7 +202,7 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
         (self._model, _) = self.api.retrieve(id=getattr(self, self._model_id_field))
         return self
 
-    def update(self: Entity, values: Union[dict[str, Any], IModel]) -> Self:
+    def update(self: Entity, values: dict[str, Any] | IModel) -> Self:
         """
         Commits model changes to the server
 
@@ -244,12 +234,12 @@ class _ExportMixin(Generic[_EntityT]):
         endpoint: Callable,
         filename: StrPath,
         *,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
-        location: Optional[Location] = None,
-        cloud_storage_id: Optional[int] = None,
+        pbar: ProgressReporter | None = None,
+        status_check_period: int | None = None,
+        location: Location | None = None,
+        cloud_storage_id: int | None = None,
         **query_params,
-    ) -> None:
+    ) -> Path | None:
         query_params = {
             **query_params,
             **({"location": location} if location else {}),
@@ -306,7 +296,7 @@ class _ExportMixin(Generic[_EntityT]):
             )
 
         if result_url:
-            downloader.download_file(result_url, output_path=Path(filename), pbar=pbar)
+            return downloader.download_file(result_url, output_path=Path(filename), pbar=pbar)
 
 
 class ExportDatasetMixin(_ExportMixin):
@@ -315,33 +305,39 @@ class ExportDatasetMixin(_ExportMixin):
         format_name: str,
         filename: StrPath,
         *,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
+        pbar: ProgressReporter | None = None,
+        status_check_period: int | None = None,
         include_images: bool = True,
-        location: Optional[Location] = None,
-        cloud_storage_id: Optional[int] = None,
-    ) -> None:
+        location: Location | None = None,
+        cloud_storage_id: int | None = None,
+    ) -> Path | None:
         """
         Export a dataset in the specified format (e.g. 'YOLO 1.1').
         By default, a result file will be downloaded based on the default configuration.
         To force file downloading, pass `location=Location.LOCAL`.
-        To save a file to a specific cloud storage, use the `location` and `cloud_storage_id` arguments.
+        To save a file to a specific cloud storage, use the `location` and `cloud_storage_id`
+        arguments.
 
         Args:
-            filename (StrPath): A path to which a file will be downloaded
-            status_check_period (int, optional): Sleep interval in seconds between status checks.
-                Defaults to None, which means the `Config.status_check_period` is used.
-            pbar (Optional[ProgressReporter], optional): Can be used to show a progress when downloading file locally.
-                Defaults to None.
-            location (Optional[Location], optional): Location to which a file will be uploaded.
-                Can be Location.LOCAL or Location.CLOUD_STORAGE. Defaults to None.
-            cloud_storage_id (Optional[int], optional): ID of cloud storage to which a file should be uploaded. Defaults to None.
+            filename: A custom path to save the exported file to. For local exports, a directory
+                path can be specified. If a directory path is passed,
+                the name generated by the server is used.
+            include_images: Whether to include images or not.
+            status_check_period: Sleep interval in seconds between status checks.
+                If None, the `Config.status_check_period` is used.
+            pbar: Can be used to show a progress when downloading file locally.
+            location: Location to which a file will be uploaded.
+                Can be `Location.LOCAL` or `Location.CLOUD_STORAGE`.
+            cloud_storage_id: ID of cloud storage to which a file should be uploaded.
 
         Raises:
-            ValueError: When location is Location.CLOUD_STORAGE but no cloud_storage_id is passed
+            ValueError: If location is `Location.CLOUD_STORAGE` but no `cloud_storage_id` is passed
+
+        Returns:
+            For local downloads, output file path.
         """
 
-        self.export(
+        output_path = self.export(
             self.api.create_dataset_export_endpoint,
             filename,
             pbar=pbar,
@@ -353,8 +349,11 @@ class ExportDatasetMixin(_ExportMixin):
         )
 
         self._client.logger.info(
-            f"Dataset for {self.__class__.__name__.lower()} {self.id} has been downloaded to {filename}"
+            f"Dataset for {self.__class__.__name__.lower()} {self.id} "
+            f"has been downloaded to {output_path or filename}"
         )
+
+        return output_path
 
 
 class DownloadBackupMixin(_ExportMixin):
@@ -363,32 +362,39 @@ class DownloadBackupMixin(_ExportMixin):
         filename: StrPath,
         *,
         status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
-        location: Optional[str] = None,
-        cloud_storage_id: Optional[int] = None,
+        pbar: ProgressReporter | None = None,
+        location: str | None = None,
+        cloud_storage_id: int | None = None,
         lightweight: bool = False,
-    ) -> None:
+    ) -> Path | None:
         """
         Create a resource backup and download it locally or upload to a cloud storage.
         By default, a result file will be downloaded based on the default configuration.
         To force file downloading, pass `location=Location.LOCAL`.
-        To save a file to a specific cloud storage, use the `location` and `cloud_storage_id` arguments.
+        To save a file to a specific cloud storage, use the `location` and `cloud_storage_id`
+        arguments.
 
         Args:
-            filename (StrPath): A path to which a file will be downloaded
-            status_check_period (int, optional): Sleep interval in seconds between status checks.
-                Defaults to None, which means the `Config.status_check_period` is used.
-            pbar (Optional[ProgressReporter], optional): Can be used to show a progress when downloading file locally.
-                Defaults to None.
-            location (Optional[Location], optional): Location to which a file will be uploaded.
-                Can be Location.LOCAL or Location.CLOUD_STORAGE. Defaults to None.
-            cloud_storage_id (Optional[int], optional): ID of cloud storage to which a file should be uploaded. Defaults to None.
+            filename: A custom path to save the exported file to. For local exports, a directory
+                path can be specified. If a directory path is passed,
+                the name generated by the server is used.
+            status_check_period: Sleep interval in seconds between status checks.
+                If None, the `Config.status_check_period` is used.
+            pbar: Can be used to show a progress when downloading file locally.
+            location: Location to which a file will be uploaded.
+                Can be `Location.LOCAL` or `Location.CLOUD_STORAGE`.
+            cloud_storage_id: ID of cloud storage to which a file should be uploaded.
+            lightweight: Whether to include media or not in backups.
+                Only affects tasks with cloud storage data sources.
 
         Raises:
-            ValueError: When location is Location.CLOUD_STORAGE but no cloud_storage_id is passed
+            ValueError: If location is `Location.CLOUD_STORAGE` but no `cloud_storage_id` is passed
+
+        Returns:
+            For local downloads, output file path.
         """
 
-        self.export(
+        output_path = self.export(
             self.api.create_backup_export_endpoint,
             filename,
             pbar=pbar,
@@ -399,5 +405,8 @@ class DownloadBackupMixin(_ExportMixin):
         )
 
         self._client.logger.info(
-            f"Backup for {self.__class__.__name__.lower()} {self.id} has been downloaded to {filename}"
+            f"Backup for {self.__class__.__name__.lower()} {self.id} "
+            f"has been downloaded to {output_path or filename}"
         )
+
+        return output_path

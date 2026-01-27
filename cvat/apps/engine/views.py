@@ -6,7 +6,6 @@
 import itertools
 import os
 import os.path as osp
-import re
 import shutil
 import textwrap
 import traceback
@@ -15,9 +14,8 @@ from abc import ABCMeta, abstractmethod
 from contextlib import suppress
 from copy import copy
 from datetime import datetime
-from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import django_rq
 from attr.converters import to_bool
@@ -41,7 +39,7 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
@@ -57,16 +55,16 @@ from cvat.apps.engine.cache import (
     LockError,
     MediaCache,
 )
+from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.frame_provider import (
     DataWithMeta,
-    FrameQuality,
     IFrameProvider,
     JobFrameProvider,
     TaskFrameProvider,
 )
-from cvat.apps.engine.media_extractors import get_mime
+from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
@@ -77,6 +75,7 @@ from cvat.apps.engine.models import (
     CloudStorage,
     Comment,
     Data,
+    FrameQuality,
     Issue,
     Job,
     JobType,
@@ -93,10 +92,12 @@ from cvat.apps.engine.permissions import (
     AnnotationGuidePermission,
     CloudStoragePermission,
     CommentPermission,
+    GuideAssetPermission,
     IssuePermission,
     JobPermission,
     LabelPermission,
     ProjectPermission,
+    ServerPermission,
     TaskPermission,
     UserPermission,
     get_iam_context,
@@ -150,7 +151,7 @@ from cvat.apps.engine.view_utils import (
     tus_chunk_action,
 )
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
-from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource, PolicyEnforcer
+from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 from utils.dataset_manifest import ImageManifestManager
 
@@ -170,6 +171,7 @@ _RETRY_AFTER_TIMEOUT = 10
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
     iam_organization_field = None
+    iam_permission_class = ServerPermission
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
@@ -223,9 +225,9 @@ class ServerViewSet(viewsets.ViewSet):
         if directory_param.startswith("/"):
             directory_param = directory_param[1:]
 
-        directory = (Path(settings.SHARE_ROOT) / directory_param).absolute()
+        directory = (settings.SHARE_ROOT / directory_param).resolve()
 
-        if str(directory).startswith(settings.SHARE_ROOT) and directory.is_dir():
+        if directory.is_relative_to(settings.SHARE_ROOT) and directory.is_dir():
             data = []
             generator = directory.iterdir() if not search_param else (f for f in directory.iterdir() if f.name.startswith(search_param))
 
@@ -330,6 +332,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
+    iam_permission_class = ProjectPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -491,7 +494,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def preview(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
 
-        first_task: Optional[models.Task] = self._object.tasks.order_by('-id').first()
+        first_task: models.Task | None = self._object.tasks.order_by('-id').first()
         if not first_task:
             return HttpResponseNotFound('Project image preview not found')
 
@@ -524,7 +527,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
 class _DataGetter(metaclass=ABCMeta):
     def __init__(
-        self, data_type: str, data_num: Optional[Union[str, int]], data_quality: str
+        self, data_type: str, data_num: str | int | None, data_quality: str
     ) -> None:
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
         possible_quality_values = ('compressed', 'original')
@@ -617,7 +620,7 @@ class _TaskDataGetter(_DataGetter):
         *,
         data_type: str,
         data_quality: str,
-        data_num: Optional[Union[str, int]] = None,
+        data_num: str | int | None = None,
     ) -> None:
         super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
         self._db_task = db_task
@@ -638,8 +641,8 @@ class _JobDataGetter(_DataGetter):
         *,
         data_type: str,
         data_quality: str,
-        data_num: Optional[Union[str, int]] = None,
-        data_index: Optional[Union[str, int]] = None,
+        data_num: str | int | None = None,
+        data_index: str | int | None = None,
     ) -> None:
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
         possible_quality_values = ('compressed', 'original')
@@ -871,6 +874,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
+    iam_permission_class = TaskPermission
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -1225,7 +1229,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['GET'],
         summary='Get data of a task',
         parameters=[
-            OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
+            OpenApiParameter('type', location=OpenApiParameter.QUERY, required=True,
                 type=OpenApiTypes.STR, enum=['chunk', 'frame', 'context_image'],
                 description='Specifies the type of the requested data'),
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
@@ -1473,8 +1477,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
+            chapters = get_video_chapters(db_task.data.get_manifest_path())
         else:
             media = list(db_task.data.images.all())
+            chapters = None
 
         frame_meta = [{
             'width': item.width,
@@ -1486,6 +1492,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_data = db_task.data
         db_data.frames = frame_meta
         db_data.chunks_updated_date = db_task.get_chunks_updated_date()
+        db_data.chapters = chapters
 
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
@@ -1658,6 +1665,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     )
 
     iam_organization_field = 'segment__task__organization'
+    iam_permission_class = JobPermission
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + [
         'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id',
@@ -1707,7 +1715,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if instance.type != JobType.GROUND_TRUTH:
             raise ValidationError("Only ground truth jobs can be removed")
 
-        validation_layout: Optional[models.ValidationLayout] = getattr(
+        validation_layout: models.ValidationLayout | None = getattr(
             instance.segment.task.data, 'validation_layout', None
         )
         if (validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL):
@@ -1889,7 +1897,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(summary='Get data of a job',
         parameters=[
             OpenApiParameter('type', description='Specifies the type of the requested data',
-                location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.STR,
                 enum=['chunk', 'frame', 'context_image']),
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
@@ -1977,6 +1985,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         if hasattr(db_data, 'video'):
             media = [db_data.video]
+            chapters = get_video_chapters(
+                db_task.data.get_manifest_path(),
+                segment=(data_start_frame, data_stop_frame)
+            )
         else:
             media = [
                 # Insert placeholders if frames are skipped
@@ -1988,6 +2000,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 for f in db_data.images.all()
                 if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
             ]
+            chapters = None
 
         deleted_frames = set(db_data.deleted_frames)
         if db_job.type == models.JobType.GROUND_TRUTH:
@@ -2014,6 +2027,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         } for item in media]
 
         db_data.frames = frame_meta
+        db_data.chapters = chapters
 
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
@@ -2127,6 +2141,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).all()
 
     iam_organization_field = 'job__segment__task__organization'
+    iam_permission_class = IssuePermission
     search_fields = ('owner', 'assignee')
     filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
     simple_filters = list(search_fields) + ['job_id', 'task_id', 'resolved', 'frame_id']
@@ -2198,6 +2213,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).all()
 
     iam_organization_field = 'issue__job__segment__task__organization'
+    iam_permission_class = CommentPermission
     search_fields = ('owner',)
     filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
     simple_filters = list(search_fields) + ['issue_id', 'frame_id', 'job_id']
@@ -2282,6 +2298,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).all()
 
     iam_organization_field = ('task__organization', 'project__organization')
+    iam_permission_class = LabelPermission
 
     search_fields = ('name', 'parent')
     filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
@@ -2426,6 +2443,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
     iam_organization_field = 'memberships__organization'
+    iam_permission_class = UserPermission
 
     search_fields = ('username', 'first_name', 'last_name')
     filter_fields = list(search_fields) + ['id', 'is_active']
@@ -2450,13 +2468,11 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         user = self.request.user
         is_self = int(self.kwargs.get("pk", 0)) == user.id or \
             self.action == "self"
-        if user.is_staff:
-            return UserSerializer if not is_self else UserSerializer
+
+        if is_self or user.is_superuser:
+            return UserSerializer
         else:
-            if is_self and self.request.method in SAFE_METHODS:
-                return UserSerializer
-            else:
-                return BasicUserSerializer
+            return BasicUserSerializer
 
     @extend_schema(summary='Get details of the current user',
         responses={
@@ -2519,6 +2535,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
     iam_organization_field = 'organization'
+    iam_permission_class = CloudStoragePermission
 
     # Multipart support is necessary here, as CloudStorageWriteSerializer
     # contains a file field (key_file).
@@ -2540,7 +2557,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         provider_type = self.request.query_params.get('provider_type', None)
         if provider_type:
-            if provider_type in CloudProviderChoice.list():
+            if provider_type in CloudProviderChoice.values:
                 return queryset.filter(provider_type=provider_type)
             raise ValidationError('Unsupported type of cloud provider')
         return queryset
@@ -2602,8 +2619,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if (manifest_path := request.query_params.get('manifest_path')):
                 manifest_prefix = os.path.dirname(manifest_path)
 
-                full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
-                if not os.path.exists(full_manifest_path) or \
+                full_manifest_path = db_storage.get_storage_dirname() / manifest_path
+                if not full_manifest_path.exists() or \
                         datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
                     storage.download_file(manifest_path, full_manifest_path)
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
@@ -2684,7 +2701,13 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     @extend_schema(summary='Get the status of a cloud storage',
         responses={
-            '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)'),
+            '200': OpenApiResponse(
+                response={
+                    'type': 'string',
+                    'enum': CloudStorageStatus.values(),
+                },
+                description='Cloud Storage Status'
+            ),
         })
     @action(detail=True, methods=['GET'], url_path='status')
     def status(self, request: ExtendedRequest, pk: int):
@@ -2697,9 +2720,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
-        except Exception as ex:
-            msg = str(ex)
-            return HttpResponseBadRequest(msg)
 
     @extend_schema(summary='Get allowed actions for a cloud storage',
         responses={
@@ -2752,14 +2772,20 @@ class AssetsViewSet(
     parser_classes = [MultiPartParser]
     search_fields = ()
     ordering = "uuid"
+    iam_permission_class = GuideAssetPermission
 
     def check_object_permissions(self, request: ExtendedRequest, obj):
         super().check_object_permissions(request, obj.guide)
 
     def get_permissions(self):
+        permissions = super().get_permissions()
+
         if self.action == 'retrieve':
-            return [IsAuthenticatedOrReadPublicResource(), PolicyEnforcer()]
-        return super().get_permissions()
+            permissions = [IsAuthenticatedOrReadPublicResource()] + [
+                p for p in permissions if not isinstance(p, IsAuthenticated)
+            ]
+
+        return permissions
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -2832,18 +2858,16 @@ class AnnotationGuidesViewSet(
     search_fields = ()
     ordering = "-id"
     iam_organization_field = None
+    iam_permission_class = AnnotationGuidePermission
 
     def _update_related_assets(self, request: ExtendedRequest, guide: AnnotationGuide):
         existing_assets = list(guide.assets.all())
         new_assets = []
-
-        pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-        results = set(re.findall(pattern, guide.markdown))
-
+        asset_ids = AnnotationGuide.get_asset_ids_from_markdown(guide.markdown)
         db_assets_to_copy = {}
 
         # first check if we need to copy some assets and if user has permissions to access them
-        for asset_id in results:
+        for asset_id in asset_ids:
             with suppress(models.Asset.DoesNotExist):
                 db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
                 if db_asset.guide.id != guide.id:
@@ -2863,7 +2887,7 @@ class AnnotationGuidesViewSet(
         # then copy those assets, where user has permissions
         assets_mapping = {}
         with transaction.atomic():
-            for asset_id in results:
+            for asset_id in asset_ids:
                 db_asset = db_assets_to_copy.get(asset_id)
                 if db_asset is not None:
                     copied_asset = Asset(
@@ -2876,7 +2900,7 @@ class AnnotationGuidesViewSet(
 
         # finally apply changes on filesystem out of transaction
         try:
-            for asset_id in results:
+            for asset_id in asset_ids:
                 copied_asset = assets_mapping.get(asset_id)
                 if copied_asset is not None:
                     db_asset = db_assets_to_copy.get(asset_id)

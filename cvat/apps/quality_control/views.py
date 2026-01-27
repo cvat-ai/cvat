@@ -28,6 +28,10 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.engine.view_utils import deprecate_response, get_or_404
 from cvat.apps.quality_control import quality_reports as qc
+from cvat.apps.quality_control.export import (
+    QualityReportExportFormat,
+    prepare_report_for_downloading,
+)
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
@@ -75,6 +79,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         "report__task__organization",
         "report__project__organization",
     ]
+    iam_permission_class = AnnotationConflictPermission
 
     search_fields = []
     filter_fields = list(search_fields) + [
@@ -200,6 +205,7 @@ class QualityReportViewSet(
         "task__organization",
         "project__organization",
     ]
+    iam_permission_class = QualityReportPermission
 
     search_fields = []
     filter_fields = list(search_fields) + [
@@ -433,13 +439,26 @@ class QualityReportViewSet(
     @extend_schema(
         operation_id="quality_retrieve_report_data",
         summary="Get quality report contents",
-        responses={"200": OpenApiTypes.OBJECT},
+        parameters=[
+            OpenApiParameter(
+                "format",
+                type=OpenApiTypes.STR,
+                enum=QualityReportExportFormat.values,
+                default=QualityReportExportFormat.JSON.value,
+            ),
+        ],
+        responses={"200": OpenApiTypes.BINARY},
     )
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
-    def data(self, request, pk):
+    def data(self, request: ExtendedRequest, pk):
         report = self.get_object()  # check permissions
-        json_report = qc.prepare_report_for_downloading(report, host=get_server_url(request))
-        return HttpResponse(json_report.encode(), content_type="application/json")
+        format_name = QualityReportExportFormat(
+            request.query_params.get("format", default=QualityReportExportFormat.JSON.value)
+        )
+        report_data, content_type = prepare_report_for_downloading(
+            report, host=get_server_url(request), export_format=format_name
+        )
+        return HttpResponse(report_data, content_type=content_type)
 
 
 SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
@@ -513,6 +532,7 @@ class QualitySettingsViewSet(
     queryset = QualitySettings.objects
 
     iam_organization_field = ["task__organization", "project__organization"]
+    iam_permission_class = QualitySettingPermission
 
     search_fields = []
     filter_fields = ["id", "task_id", "project_id", "inherit", "created_date", "updated_date"]

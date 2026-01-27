@@ -5,9 +5,8 @@
 
 import json
 import os
-from collections import Counter, OrderedDict
+from collections import Counter
 from itertools import groupby
-from typing import Optional
 from unittest import mock, skip
 
 import requests
@@ -238,7 +237,7 @@ class _LambdaTestCaseBase(ApiTestBase):
         for key in expected_keys_in_response_all_functions:
             self.assertIn(key, data)
 
-    def _delete_lambda_request(self, request_id: str, user: Optional[User] = None) -> None:
+    def _delete_lambda_request(self, request_id: str, user: User | None = None) -> None:
         response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", user or self.admin)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -818,66 +817,58 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "frame0": 0,
             "frame1": 1,
             "boxes0": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11258),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 0),
-                        ("points", [137.0, 129.0, 457.0, 676.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11259),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 1),
-                        ("points", [1511.0, 224.0, 1537.0, 437.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11258,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 0,
+                    "points": [137.0, 129.0, 457.0, 676.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11259,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 1,
+                    "points": [1511.0, 224.0, 1537.0, 437.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
             ],
             "boxes1": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", None),
-                        ("id", 11260),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("points", [1076.0, 199.0, 1218.0, 593.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", None),
-                        ("id", 11261),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("points", [924.0, 177.0, 1090.0, 615.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": None,
+                    "id": 11260,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [1076.0, 199.0, 1218.0, 593.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": None,
+                    "id": 11261,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [924.0, 177.0, 1090.0, 615.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
             ],
             "threshold": 0.5,
             "max_distance": 55,
@@ -887,79 +878,68 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "frame0": 0,
             "frame1": 1,
             "boxes0": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11258),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 0),
-                        ("points", [137.0, 129.0, 457.0, 676.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11259),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 1),
-                        ("points", [1511.0, 224.0, 1537.0, 437.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11258,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 0,
+                    "points": [137.0, 129.0, 457.0, 676.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11259,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 1,
+                    "points": [1511.0, 224.0, 1537.0, 437.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
             ],
             "boxes1": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", None),
-                        ("id", 11260),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("points", [1076.0, 199.0, 1218.0, 593.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", 0),
-                        ("id", 11398),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        (
-                            "points",
-                            [
-                                184.3935546875,
-                                211.5048828125,
-                                331.64968722073354,
-                                97.27792672028772,
-                                445.87667560321825,
-                                126.17873100983161,
-                                454.13404825737416,
-                                691.8087578194827,
-                                180.26452189455085,
-                            ],
-                        ),
-                        ("source", "manual"),
-                        ("type", "polygon"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": None,
+                    "id": 11260,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [1076.0, 199.0, 1218.0, 593.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": 0,
+                    "id": 11398,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [
+                        184.3935546875,
+                        211.5048828125,
+                        331.64968722073354,
+                        97.27792672028772,
+                        445.87667560321825,
+                        126.17873100983161,
+                        454.13404825737416,
+                        691.8087578194827,
+                        180.26452189455085,
+                    ],
+                    "source": "manual",
+                    "type": "polygon",
+                    "z_order": 0,
+                },
             ],
         }
 
@@ -1709,7 +1689,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
 
         return org
 
-    def _set_task_assignee(self, task: int, assignee: Optional[int]):
+    def _set_task_assignee(self, task: int, assignee: int | None):
         response = self._patch_request(
             f"/api/tasks/{task}",
             user=self.admin,
@@ -1719,7 +1699,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
         )
         assert response.status_code == status.HTTP_200_OK
 
-    def _set_job_assignee(self, job: int, assignee: Optional[int]):
+    def _set_job_assignee(self, job: int, assignee: int | None):
         response = self._patch_request(
             f"/api/jobs/{job}",
             user=self.admin,

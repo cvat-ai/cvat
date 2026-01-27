@@ -13,15 +13,15 @@ import tempfile
 import time
 import zipfile
 import zlib
-from collections.abc import Collection, Generator, Iterator, Sequence
+from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
-from typing import Any, Callable, Optional, Union, overload
+from pathlib import Path
+from typing import Any, TypeAlias, overload
 
 import attrs
 import av
-import cv2
 import django_rq
 import PIL.Image
 import PIL.ImageOps
@@ -35,19 +35,15 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import (
-    Credentials,
-    db_storage_to_storage_instance,
-    get_cloud_storage_instance,
-)
+from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
-    FrameQuality,
     IChunkWriter,
     ImageReaderWithManifest,
     Mpeg4ChunkWriter,
     Mpeg4CompressedChunkWriter,
+    ValidateDimension,
     VideoReader,
     VideoReaderWithManifest,
     ZipChunkWriter,
@@ -67,8 +63,8 @@ from utils.dataset_manifest import ImageManifestManager
 slogger = ServerLogManager(__name__)
 
 
-DataWithMime = tuple[io.BytesIO, str]
-_CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
+DataWithMime: TypeAlias = tuple[io.BytesIO, str]
+_CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
 
 
 class CacheTooLargeDataError(Exception):
@@ -158,7 +154,7 @@ class Callback:
         validator=attrs.validators.instance_of(list),
         converter=_convert_args_for_callback,
     )
-    _kwargs: dict[str, Union[bool, int, float, str, None]] = attrs.field(
+    _kwargs: dict[str, bool | int | float | str | None] = attrs.field(
         factory=dict,
         validator=attrs.validators.deep_mapping(
             key_validator=attrs.validators.instance_of(str),
@@ -194,7 +190,7 @@ class MediaCache:
         key: str,
         create_callback: Callback,
         *,
-        cache_item_ttl: Optional[int] = None,
+        cache_item_ttl: int | None = None,
     ) -> _CacheItem:
         item = self._get_cache_item(key)
         if item:
@@ -223,8 +219,10 @@ class MediaCache:
         cls,
         key: str,
         create_callback: Callback,
-        cache_item_ttl: Optional[int] = None,
+        cache_item_ttl: int | None = None,
     ) -> DataWithMime:
+        from cvat.apps.engine.signals import cache_item_created_signal
+
         timestamp = django_tz.now()
         item_data = create_callback()
         item_data_bytes = item_data[0].getvalue()
@@ -249,6 +247,13 @@ class MediaCache:
                     )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
+                cache_item_created_signal.send(
+                    sender=cls,
+                    item_key=key,
+                    item_data_size=item_size,
+                    rq_queue=getattr(rq.get_current_job(), "origin", None),
+                )
+
         return item
 
     def _create_cache_item(
@@ -256,7 +261,7 @@ class MediaCache:
         key: str,
         create_callback: Callback,
         *,
-        cache_item_ttl: Optional[int] = None,
+        cache_item_ttl: int | None = None,
     ) -> _CacheItem:
         slogger.glob.info(f"Starting to prepare chunk: key {key}")
         if _is_run_inside_rq():
@@ -296,7 +301,7 @@ class MediaCache:
         self._cache().delete_many(keys)
         slogger.glob.info(f"Removed the cache keys {format_list(keys)}")
 
-    def _get_cache_item(self, key: str) -> Optional[_CacheItem]:
+    def _get_cache_item(self, key: str) -> _CacheItem | None:
         try:
             item = self._cache().get(key)
         except pickle.UnpicklingError:
@@ -330,7 +335,7 @@ class MediaCache:
 
     @staticmethod
     def _make_cache_key_prefix(
-        obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage],
+        obj: models.Task | models.Segment | models.Job | models.CloudStorage,
     ) -> str:
         if isinstance(obj, models.Task):
             return f"task_{obj.id}"
@@ -346,14 +351,14 @@ class MediaCache:
     @classmethod
     def _make_chunk_key(
         cls,
-        db_obj: Union[models.Task, models.Segment, models.Job],
+        db_obj: models.Task | models.Segment | models.Job,
         chunk_number: int,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
     ) -> str:
         return f"{cls._make_cache_key_prefix(db_obj)}_chunk_{chunk_number}_{quality}"
 
-    def _make_preview_key(self, db_obj: Union[models.Segment, models.CloudStorage]) -> str:
+    def _make_preview_key(self, db_obj: models.Segment | models.CloudStorage) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_preview"
 
     def _make_segment_task_chunk_key(
@@ -361,7 +366,7 @@ class MediaCache:
         db_obj: models.Segment,
         chunk_number: int,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
     ) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_task_chunk_{chunk_number}_{quality}"
 
@@ -373,12 +378,12 @@ class MediaCache:
 
     @overload
     def _to_data_with_mime(
-        self, cache_item: Optional[_CacheItem], *, allow_none: bool = False
-    ) -> Optional[DataWithMime]: ...
+        self, cache_item: _CacheItem | None, *, allow_none: bool = False
+    ) -> DataWithMime | None: ...
 
     def _to_data_with_mime(
-        self, cache_item: Optional[_CacheItem], *, allow_none: bool = False
-    ) -> Optional[DataWithMime]:
+        self, cache_item: _CacheItem | None, *, allow_none: bool = False
+    ) -> DataWithMime | None:
         if not cache_item:
             if allow_none:
                 return None
@@ -388,7 +393,7 @@ class MediaCache:
         return cache_item[:2]
 
     def get_or_set_segment_chunk(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+        self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
 
         item = self._get_or_set_cache_item(
@@ -406,8 +411,8 @@ class MediaCache:
         )
 
     def get_task_chunk(
-        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
-    ) -> Optional[DataWithMime]:
+        self, db_task: models.Task, chunk_number: int, *, quality: models.FrameQuality
+    ) -> DataWithMime | None:
         return self._to_data_with_mime(
             self._get_cache_item(
                 key=self._make_chunk_key(db_task, chunk_number, quality=quality),
@@ -421,7 +426,7 @@ class MediaCache:
         chunk_number: int,
         set_callback: Callback,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
     ) -> DataWithMime:
 
         item = self._get_or_set_cache_item(
@@ -439,8 +444,8 @@ class MediaCache:
         )
 
     def get_segment_task_chunk(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
-    ) -> Optional[DataWithMime]:
+        self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
+    ) -> DataWithMime | None:
         return self._to_data_with_mime(
             self._get_cache_item(
                 key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
@@ -453,7 +458,7 @@ class MediaCache:
         db_segment: models.Segment,
         chunk_number: int,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
         set_callback: Callback,
     ) -> DataWithMime:
 
@@ -468,7 +473,7 @@ class MediaCache:
         )
 
     def get_or_set_selective_job_chunk(
-        self, db_job: models.Job, chunk_number: int, *, quality: FrameQuality
+        self, db_job: models.Job, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         return self._to_data_with_mime(
             self._get_or_set_cache_item(
@@ -496,7 +501,7 @@ class MediaCache:
         )
 
     def remove_task_chunk(
-        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
+        self, db_task: models.Task, chunk_number: int, *, quality: models.FrameQuality
     ) -> None:
         self._delete_cache_item(
             self._make_chunk_key(db_task, chunk_number, quality=quality),
@@ -551,7 +556,7 @@ class MediaCache:
 
         self._bulk_delete_cache_items(keys_to_remove)
 
-    def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
+    def get_cloud_preview(self, db_storage: models.CloudStorage) -> DataWithMime | None:
         return self._to_data_with_mime(
             self._get_cache_item(self._make_preview_key(db_storage)), allow_none=True
         )
@@ -582,13 +587,11 @@ class MediaCache:
         )
 
     @staticmethod
-    def _read_raw_images(
-        db_task: models.Task,
-        frame_ids: Sequence[int],
-        *,
-        manifest_path: str,
-    ):
-        db_data = db_task.data
+    def read_raw_images(
+        db_task: models.Task, frame_ids: Sequence[int], *, decode: bool = True
+    ) -> Generator[tuple[PIL.Image.Image | str, str, str], None, None]:
+        db_data = db_task.require_data()
+        manifest_path = db_data.get_manifest_path()
 
         if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
             reader = ImageReaderWithManifest(manifest_path)
@@ -596,44 +599,50 @@ class MediaCache:
                 db_cloud_storage = db_data.cloud_storage
                 if not db_cloud_storage:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
-                credentials = Credentials()
-                credentials.convert_from_db(
-                    {
-                        "type": db_cloud_storage.credentials_type,
-                        "value": db_cloud_storage.credentials,
-                    }
-                )
-                details = {
-                    "resource": db_cloud_storage.resource,
-                    "credentials": credentials,
-                    "specific_attributes": db_cloud_storage.get_specific_attributes(),
-                }
-                cloud_storage_instance = get_cloud_storage_instance(
-                    cloud_provider=db_cloud_storage.provider_type, **details
-                )
+                storage_client = db_storage_to_storage_instance(db_cloud_storage)
 
                 tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
-                files_to_download = []
+                files_to_download: list[tuple[str, str]] = []  # (storage filename, output filename)
                 checksums = []
                 media = []
                 for item in reader.iterate_frames(frame_ids):
-                    file_name = f"{item['name']}{item['extension']}"
-                    fs_filename = os.path.join(tmp_dir, file_name)
+                    task_filename = f"{item['name']}{item['extension']}"
+                    storage_filename = item.get("meta", {}).get("original_name", task_filename)
+                    fs_filename = os.path.join(tmp_dir, task_filename)
+                    files_to_download.append((storage_filename, fs_filename))
 
-                    files_to_download.append(file_name)
                     checksums.append(item.get("checksum", None))
                     media.append((fs_filename, fs_filename, None))
 
-                cloud_storage_instance.bulk_download_to_dir(
-                    files=files_to_download, upload_dir=tmp_dir
-                )
+                storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
-                for checksum, media_item in zip(checksums, media):
+                for (storage_filename, _), checksum, media_item in zip(
+                    files_to_download, checksums, media
+                ):
                     if checksum and not md5_hash(media_item[1]) == checksum:
                         slogger.cloud_storage[db_cloud_storage.id].warning(
-                            "Hash sums of files {} do not match".format(file_name)
+                            "Hash sums of files {} do not match".format(media_item[1])
                         )
-                    yield load_image(media_item)
+
+                    if db_task.dimension == models.DimensionType.DIM_3D and (
+                        storage_filename.endswith(".bin")
+                    ):
+                        media_item = (
+                            ValidateDimension().convert_bin_to_pcd(
+                                media_item[0],
+                                delete_source=(
+                                    False
+                                    # one file can be used several times for honeypots
+                                ),
+                            ),
+                            *media_item[1:],
+                        )
+
+                    if db_task.dimension == models.DimensionType.DIM_2D and decode:
+                        media_item = load_image(media_item)
+
+                    yield media_item
+
         else:
             requested_frame_iter = iter(frame_ids)
             next_requested_frame_id = next(requested_frame_iter, None)
@@ -662,15 +671,104 @@ class MediaCache:
 
             assert next_requested_frame_id is None
 
-            if db_task.dimension == models.DimensionType.DIM_2D:
+            if db_task.dimension == models.DimensionType.DIM_2D and decode:
                 media = map(load_image, media)
 
             yield from media
 
+    @classmethod
+    def read_raw_context_images(
+        cls,
+        db_data: models.Data,
+        frame_ids: Sequence[int],
+        *,
+        truncate_common_filename_prefix: bool = True,  # should be done on the UI, probably
+        decode: bool = True,
+    ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str, str]], None, None]:
+        raw_data_dir = db_data.get_raw_data_dirname()
+
+        def _validate_ri_path(path: str) -> str:
+            abs_path = (raw_data_dir / path).resolve()
+
+            try:
+                return os.fspath(abs_path.relative_to(raw_data_dir))
+            except ValueError as ex:
+                raise Exception("Invalid related image path") from ex
+
+        manifest_path = db_data.get_manifest_path()
+
+        with ExitStack() as es:
+            media = []
+
+            if (
+                os.path.isfile(manifest_path)
+                and db_data.storage == models.StorageChoice.CLOUD_STORAGE
+            ):
+                reader = ImageReaderWithManifest(manifest_path)
+
+                db_cloud_storage = db_data.cloud_storage
+                if not db_cloud_storage:
+                    raise CloudStorageMissingError("Task is no longer connected to cloud storage")
+                storage_client = db_storage_to_storage_instance(db_cloud_storage)
+
+                tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
+                files_to_download = []
+                for frame_id, frame in zip(
+                    frame_ids, reader.iterate_frames(frame_ids), strict=True
+                ):
+                    frame_media = []
+
+                    for ri_filename in frame.get("meta", {}).get("related_images", []):
+                        ri_filename = _validate_ri_path(ri_filename)
+                        ri_realpath = os.path.join(tmp_dir, ri_filename)
+
+                        files_to_download.append(ri_filename)
+                        frame_media.append((ri_realpath, ri_filename, None))
+
+                    media.append((frame_id, frame_media))
+
+                storage_client.bulk_download_to_dir(files_to_download, upload_dir=tmp_dir)
+            else:
+                ThroughModel = models.RelatedFile.images.through
+
+                db_related_files = (
+                    ThroughModel.objects.filter(
+                        relatedfile__data=db_data, image__frame__in=frame_ids
+                    )
+                    .order_by("image__frame", "relatedfile__path")
+                    .values_list("image__frame", "relatedfile__path")
+                )
+
+                media = []
+                for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0]):
+                    frame_media = []
+
+                    for _, ri_path in frame_ris:
+                        ri_filename = _validate_ri_path(ri_path)
+                        ri_realpath = os.path.join(raw_data_dir, ri_filename)
+                        frame_media.append((ri_realpath, ri_filename, None))
+
+                    media.append((frame_id, frame_media))
+
+            for frame_id, frame_media in media:
+                if truncate_common_filename_prefix:
+                    # Truncate RI prefixes on the per-frame basis
+                    common_prefix = os.path.commonpath(os.path.dirname(m[1]) for m in frame_media)
+
+                    frame_media = [
+                        (m[0], os.path.relpath(m[1], common_prefix), m[2]) for m in frame_media
+                    ]
+
+                for m in frame_media:
+                    if decode:
+                        m = load_image(m)
+
+                    yield frame_id, m
+
     @staticmethod
     def _read_raw_frames(
-        db_task: Union[models.Task, int], frame_ids: Sequence[int]
-    ) -> Generator[tuple[Union[av.VideoFrame, PIL.Image.Image], str, str], None, None]:
+        db_task: models.Task | int, frame_ids: Sequence[int]
+    ) -> Generator[tuple[av.VideoFrame | PIL.Image.Image | str, str, str], None, None]:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
@@ -679,13 +777,12 @@ class MediaCache:
                 prev_frame <= cur_frame
             ), f"Requested frame ids must be sorted, got a ({prev_frame}, {cur_frame}) pair"
 
-        db_data = db_task.data
-
-        manifest_path = db_data.get_manifest_path()
+        db_data = db_task.require_data()
 
         if hasattr(db_data, "video"):
             source_path = os.path.join(db_data.get_raw_data_dirname(), db_data.video.path)
 
+            manifest_path = db_data.get_manifest_path()
             reader = VideoReaderWithManifest(
                 manifest_path=manifest_path,
                 source_path=source_path,
@@ -693,7 +790,7 @@ class MediaCache:
             )
             if not os.path.isfile(manifest_path):
                 try:
-                    reader.manifest.link(source_path, force=True)
+                    reader.manifest.link(Path(source_path), force=True)
                     reader.manifest.create()
                 except Exception as e:
                     slogger.task[db_task.id].warning(
@@ -709,10 +806,14 @@ class MediaCache:
 
                 yield from reader.iterate_frames(frame_filter=frame_ids)
         else:
-            yield from MediaCache._read_raw_images(db_task, frame_ids, manifest_path=manifest_path)
+            yield from MediaCache.read_raw_images(db_task, frame_ids)
 
     def prepare_segment_chunk(
-        self, db_segment: Union[models.Segment, int], chunk_number: int, *, quality: FrameQuality
+        self,
+        db_segment: models.Segment | int,
+        chunk_number: int,
+        *,
+        quality: models.FrameQuality,
     ) -> DataWithMime:
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)
@@ -727,10 +828,10 @@ class MediaCache:
             assert False, f"Unknown segment type {db_segment.type}"
 
     def prepare_range_segment_chunk(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+        self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         chunk_size = db_data.chunk_size
         chunk_frame_ids = list(db_segment.frame_set)[
@@ -741,16 +842,16 @@ class MediaCache:
 
     @classmethod
     def prepare_custom_range_segment_chunk(
-        cls, db_task: models.Task, frame_ids: Sequence[int], *, quality: FrameQuality
+        cls, db_task: models.Task, frame_ids: Sequence[int], *, quality: models.FrameQuality
     ) -> DataWithMime:
         with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
             return prepare_chunk(frame_iter, quality=quality, db_task=db_task)
 
     def prepare_masked_range_segment_chunk(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+        self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         chunk_size = db_data.chunk_size
         chunk_frame_ids = sorted(db_segment.frame_set)[
@@ -764,22 +865,22 @@ class MediaCache:
     @classmethod
     def prepare_custom_masked_range_segment_chunk(
         cls,
-        db_task: Union[models.Task, int],
+        db_task: models.Task | int,
         frame_ids: Collection[int],
         chunk_number: int,
         *,
-        quality: FrameQuality,
+        quality: models.FrameQuality,
         insert_placeholders: bool = False,
     ) -> DataWithMime:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         frame_step = db_data.get_frame_step()
 
-        image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
-        writer = ZipCompressedChunkWriter(image_quality, dimension=db_task.dimension)
+        image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
+        writer = ZipCompressedChunkWriter(quality=image_quality, dimension=db_task.dimension)
 
         dummy_frame = io.BytesIO()
         PIL.Image.new("RGB", (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
@@ -884,9 +985,9 @@ class MediaCache:
             )
 
         buff.seek(0)
-        return buff, get_chunk_mime_type_for_writer(writer)
+        return buff, writer.CHUNK_MIME_TYPE
 
-    def _prepare_segment_preview(self, db_segment: Union[models.Segment, int]) -> DataWithMime:
+    def _prepare_segment_preview(self, db_segment: models.Segment | int) -> DataWithMime:
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)
 
@@ -905,13 +1006,13 @@ class MediaCache:
             segment_frame_provider = make_frame_provider(db_segment)
             preview = segment_frame_provider.get_frame(
                 task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
-                quality=FrameQuality.COMPRESSED,
+                quality=models.FrameQuality.COMPRESSED,
                 out_type=FrameOutputType.PIL,
             ).data
 
         return prepare_preview_image(preview)
 
-    def _prepare_cloud_preview(self, db_storage: Union[models.CloudStorage, int]) -> DataWithMime:
+    def _prepare_cloud_preview(self, db_storage: models.CloudStorage | int) -> DataWithMime:
         if isinstance(db_storage, int):
             db_storage = models.CloudStorage.objects.get(pk=db_storage)
 
@@ -932,7 +1033,7 @@ class MediaCache:
                 storage.download_file(db_manifest.filename, full_manifest_path)
 
             manifest = ImageManifestManager(
-                os.path.join(db_storage.get_storage_dirname(), db_manifest.filename),
+                db_storage.get_storage_dirname() / db_manifest.filename,
                 db_storage.get_storage_dirname(),
             )
             # need to update index
@@ -950,35 +1051,42 @@ class MediaCache:
             slogger.cloud_storage[db_storage.pk].info(msg)
             raise NotFound(msg)
 
-        buff = storage.download_fileobj(preview_path)
-        image = PIL.Image.open(buff)
+        preview_bytes = storage.download_fileobj(preview_path)
+        image = PIL.Image.open(io.BytesIO(preview_bytes))
         return prepare_preview_image(image)
 
     def prepare_context_images_chunk(
-        self, db_data: Union[models.Data, int], frame_number: int
+        self, db_data: models.Data | int, frame_number: int
     ) -> DataWithMime:
         if isinstance(db_data, int):
             db_data = models.Data.objects.get(pk=db_data)
 
         zip_buffer = io.BytesIO()
+        mime_type = ""
 
-        related_images = db_data.related_files.filter(images__frame=frame_number).all()
-        if not related_images:
-            return zip_buffer, ""
+        with (
+            closing(self.read_raw_context_images(db_data, frame_ids=[frame_number])) as ri_iter,
+            zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file,
+        ):
+            for _, (image, path, _) in ri_iter:
+                name = os.path.splitext(path)[0]
 
-        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            common_path = os.path.commonpath([str(x.path) for x in related_images])
-            for related_image in related_images:
-                path = os.path.realpath(str(related_image.path))
-                name = os.path.relpath(str(related_image.path), common_path)
-                image = cv2.imread(path)
-                success, result = cv2.imencode(".JPEG", image)
-                if not success:
-                    raise Exception('Failed to encode image to ".jpeg" format')
-                zip_file.writestr(f"{name}.jpg", result.tobytes())
+                try:
+                    if image.mode != "RGB" and image.mode != "L":
+                        image = image.convert("RGB")
+
+                    image_file = io.BytesIO()
+                    image.save(image_file, format="JPEG", quality=100, optimize=True)
+                    image_file.seek(0)
+                except OSError as e:
+                    raise Exception('Failed to encode image to ".jpeg" format') from e
+
+                zip_file.writestr(f"{name}.jpg", image_file.getbuffer())
+
+                if not mime_type:
+                    mime_type = "application/zip"
 
         zip_buffer.seek(0)
-        mime_type = "application/zip"
         return zip_buffer, mime_type
 
 
@@ -997,21 +1105,21 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
 def prepare_chunk(
     task_chunk_frames: Iterator[tuple[Any, str, int]],
     *,
-    quality: FrameQuality,
+    quality: models.FrameQuality,
     db_task: models.Task,
     dump_unchanged: bool = False,
 ) -> DataWithMime:
     # TODO: refactor all chunk building into another class
 
-    db_data = db_task.data
+    db_data = db_task.require_data()
 
-    writer_classes: dict[FrameQuality, type[IChunkWriter]] = {
-        FrameQuality.COMPRESSED: (
+    writer_classes: dict[models.FrameQuality, type[IChunkWriter]] = {
+        models.FrameQuality.COMPRESSED: (
             Mpeg4CompressedChunkWriter
             if db_data.compressed_chunk_type == models.DataChoice.VIDEO
             else ZipCompressedChunkWriter
         ),
-        FrameQuality.ORIGINAL: (
+        models.FrameQuality.ORIGINAL: (
             Mpeg4ChunkWriter
             if db_data.original_chunk_type == models.DataChoice.VIDEO
             else ZipChunkWriter
@@ -1020,12 +1128,9 @@ def prepare_chunk(
 
     writer_class = writer_classes[quality]
 
-    image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
+    image_quality = 100 if quality == models.FrameQuality.ORIGINAL else db_data.image_quality
 
-    writer_kwargs = {}
-    if db_task.dimension == models.DimensionType.DIM_3D:
-        writer_kwargs["dimension"] = models.DimensionType.DIM_3D
-    merged_chunk_writer = writer_class(image_quality, **writer_kwargs)
+    merged_chunk_writer = writer_class(quality=image_quality, dimension=db_task.dimension)
 
     writer_kwargs = {}
     if dump_unchanged and isinstance(merged_chunk_writer, ZipCompressedChunkWriter):
@@ -1035,18 +1140,4 @@ def prepare_chunk(
     merged_chunk_writer.save_as_chunk(task_chunk_frames, buffer, **writer_kwargs)
 
     buffer.seek(0)
-    return buffer, get_chunk_mime_type_for_writer(writer_class)
-
-
-def get_chunk_mime_type_for_writer(writer: Union[IChunkWriter, type[IChunkWriter]]) -> str:
-    if isinstance(writer, IChunkWriter):
-        writer_class = type(writer)
-    else:
-        writer_class = writer
-
-    if issubclass(writer_class, ZipChunkWriter):
-        return "application/zip"
-    elif issubclass(writer_class, Mpeg4ChunkWriter):
-        return "video/mp4"
-    else:
-        assert False, f"Unknown chunk writer class {writer_class}"
+    return buffer, merged_chunk_writer.CHUNK_MIME_TYPE

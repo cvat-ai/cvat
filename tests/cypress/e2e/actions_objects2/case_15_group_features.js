@@ -61,6 +61,7 @@ context('Group features', () => {
     const trackSidebarItemArray = ['#cvat-objects-sidebar-state-item-3', '#cvat-objects-sidebar-state-item-4'];
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
@@ -235,9 +236,8 @@ context('Group features', () => {
                 cy.get(groupedShape).should('have.attr', 'stroke', `#${yellowHex}`);
             }
             for (const groupedSidebarItemShape of shapeSidebarItemArray) {
-                cy.get(groupedSidebarItemShape)
-                    .should('have.attr', 'style')
-                    .and('contain', `background-color: rgba(${yellowRgb}`);
+                cy.get(groupedSidebarItemShape).invoke('css', 'background-color')
+                    .should('contain', `rgba(${yellowRgb}`);
             }
         });
 

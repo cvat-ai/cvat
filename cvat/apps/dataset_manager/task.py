@@ -6,10 +6,10 @@
 import io
 import itertools
 from collections import OrderedDict, defaultdict
+from collections.abc import Callable
 from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
-from typing import Callable, Optional, Union
 
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
@@ -30,7 +30,7 @@ from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
 from cvat.apps.engine.plugins import plugin_decorator
-from cvat.apps.engine.utils import av_scan_paths, take_by
+from cvat.apps.engine.utils import av_scan_paths, take_by, transaction_with_repeatable_read
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
@@ -485,11 +485,11 @@ class JobAnnotation:
         if not self._data_is_empty(self.data):
             self._set_updated_date()
 
-    def _validate_input_annotations(self, data: Union[AnnotationIR, dict]) -> AnnotationIR:
+    def _validate_input_annotations(self, data: AnnotationIR | dict) -> AnnotationIR:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_job.segment.task.dimension, data)
 
-        db_data = self.db_job.segment.task.data
+        db_data = self.db_job.segment.task.require_data()
 
         if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
             # Only tags and shapes can be used in tasks with GT pool
@@ -629,8 +629,8 @@ class JobAnnotation:
         serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
-    def _init_shapes_from_db(self):
-        db_shapes = [
+    def _init_shapes_from_db(self, *, streaming: bool = False):
+        db_shapes = (
             dotdict(row)
             for row in self.db_job.labeledshape_set.values(
                 "id",
@@ -648,38 +648,63 @@ class JobAnnotation:
             )
             .order_by("frame")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
-        ]
+        )
 
         labeledshape_attributes = _receive_attributes_from_db(
             self.db_job.labeledshapeattributeval_set,
             "shape_id",
         )
 
-        shapes = {}
-        elements = {}
-        for db_shape in db_shapes:
-            db_shape.attributes = labeledshape_attributes[db_shape.id]
-            self._extend_attributes(
-                db_shape.attributes, self.db_attributes[db_shape.label_id]["all"].values()
-            )
-            if db_shape["type"] == str(models.ShapeType.SKELETON):
-                # skeletons themselves should not have points as they consist of other elements
-                # here we ensure that it was initialized correctly
-                db_shape["points"] = []
+        def yield_shapes_for_one_frame(shapes: dict, elements):
+            for shape_id, shape_elements in elements.items():
+                shapes[shape_id].elements = shape_elements
 
-            if db_shape.parent is None:
-                db_shape.elements = []
-                shapes[db_shape.id] = db_shape
-            else:
-                if db_shape.parent not in elements:
-                    elements[db_shape.parent] = []
-                elements[db_shape.parent].append(db_shape)
+            serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
+            yield from serializer.data
 
-        for shape_id, shape_elements in elements.items():
-            shapes[shape_id].elements = shape_elements
+            shapes.clear()
+            elements.clear()
 
-        serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
-        self.ir_data.shapes = serializer.data
+        def generate_shapes():
+            shapes = {}
+            elements = {}
+
+            for db_shape in db_shapes:
+                if shapes and next(iter(shapes.values())).frame != db_shape.frame:
+                    yield from yield_shapes_for_one_frame(shapes, elements)
+
+                db_shape.attributes = labeledshape_attributes[db_shape.id]
+                self._extend_attributes(
+                    db_shape.attributes, self.db_attributes[db_shape.label_id]["all"].values()
+                )
+                if db_shape["type"] == str(models.ShapeType.SKELETON):
+                    # skeletons themselves should not have points as they consist of other elements
+                    # here we ensure that it was initialized correctly
+                    db_shape["points"] = []
+
+                if db_shape.parent is None:
+                    db_shape.elements = []
+                    shapes[db_shape.id] = db_shape
+                else:
+                    if db_shape.parent not in elements:
+                        elements[db_shape.parent] = []
+                    elements[db_shape.parent].append(db_shape)
+
+            yield from yield_shapes_for_one_frame(shapes, elements)
+
+        if streaming:
+            assert transaction.get_connection().in_atomic_block
+            shapes = generate_shapes()
+            # starting generation to initialise db-side cursor
+            buffer = []
+            try:
+                buffer.append(next(shapes))
+            except StopIteration:
+                pass
+
+            self.ir_data.shapes = itertools.chain(buffer, shapes)
+        else:
+            self.ir_data.shapes = list(generate_shapes())
 
     def _init_tracks_from_db(self):
         # NOTE: do not use .prefetch_related() with .values() since it's useless:
@@ -773,9 +798,9 @@ class JobAnnotation:
     def _init_version_from_db(self):
         self.ir_data.version = 0  # FIXME: should be removed in the future
 
-    def init_from_db(self):
+    def init_from_db(self, *, streaming: bool = False):
         self._init_tags_from_db()
-        self._init_shapes_from_db()
+        self._init_shapes_from_db(streaming=streaming)
         self._init_tracks_from_db()
         self._init_version_from_db()
 
@@ -845,9 +870,11 @@ class TaskAnnotation:
         if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             requested_job_types.append(models.JobType.GROUND_TRUTH)
 
-        self.db_jobs = JobAnnotation.add_prefetch_info(
-            models.Job.objects, prefetch_images=False
-        ).filter(segment__task_id=pk, type__in=requested_job_types)
+        self.db_jobs = (
+            JobAnnotation.add_prefetch_info(models.Job.objects, prefetch_images=False)
+            .filter(segment__task_id=pk, type__in=requested_job_types)
+            .order_by("id")
+        )
 
         if not write_only:
             self.ir_data = AnnotationIR(self.db_task.dimension)
@@ -855,7 +882,7 @@ class TaskAnnotation:
     def reset(self):
         self.ir_data.reset()
 
-    def _patch_data(self, data: Union[AnnotationIR, dict], action: Optional[PatchAction]):
+    def _patch_data(self, data: AnnotationIR | dict, action: PatchAction | None):
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
 
@@ -895,7 +922,7 @@ class TaskAnnotation:
         self._patch_data(data, PatchAction.CREATE)
 
     def _preprocess_input_annotations_for_gt_pool_task(
-        self, data: Union[AnnotationIR, dict], *, action: Optional[PatchAction]
+        self, data: AnnotationIR | dict, *, action: PatchAction | None
     ) -> AnnotationIR:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
@@ -912,7 +939,7 @@ class TaskAnnotation:
         if gt_job is None:
             raise AssertionError(f"Can't find GT job in the task {self.db_task.id}")
 
-        db_data = self.db_task.data
+        db_data = self.db_task.require_data()
         frame_step = db_data.get_frame_step()
 
         def _to_rel_frame(abs_frame: int) -> int:
@@ -987,17 +1014,21 @@ class TaskAnnotation:
             for db_job in self.db_jobs:
                 delete_job_data(db_job.id, db_job=db_job)
 
-    def init_from_db(self):
+    def init_from_db(self, *, streaming: bool = False):
         self.reset()
 
-        for db_job in self.db_jobs.select_for_update():
+        db_jobs = self.db_jobs
+        if not streaming:
+            db_jobs = db_jobs.select_for_update()
+
+        for db_job in db_jobs:
             if db_job.type == models.JobType.GROUND_TRUTH and (
                 self.db_task.data.validation_mode != models.ValidationMode.GT_POOL
             ):
                 continue
 
             annotation = JobAnnotation(db_job.id, db_job=db_job)
-            annotation.init_from_db()
+            annotation.init_from_db(streaming=streaming)
             if annotation.ir_data.version > self.ir_data.version:
                 self.ir_data.version = annotation.ir_data.version
 
@@ -1059,9 +1090,9 @@ class TaskAnnotation:
 
 @silk_profile(name="GET job data")
 @transaction.atomic
-def get_job_data(pk):
+def get_job_data(pk, *, streaming: bool = False):
     annotation = JobAnnotation(pk)
-    annotation.init_from_db()
+    annotation.init_from_db(streaming=streaming)
 
     return annotation.data
 
@@ -1099,6 +1130,7 @@ def delete_job_data(pk, *, db_job: models.Job | None = None):
     annotation.delete()
 
 
+@transaction_with_repeatable_read()
 def export_job(
     job_id: int,
     dst_file: str,
@@ -1108,14 +1140,8 @@ def export_job(
     save_images=False,
     temp_dir: str | None = None,
 ):
-    # For big tasks dump function may run for a long time and
-    # we dont need to acquire lock after the task has been initialized from DB.
-    # But there is the bug with corrupted dump file in case 2 or
-    # more dump request received at the same time:
-    # https://github.com/cvat-ai/cvat/issues/217
-    with transaction.atomic():
-        job = JobAnnotation(job_id, prefetch_images=True, lock_job_in_db=True)
-        job.init_from_db()
+    job = JobAnnotation(job_id, prefetch_images=True)
+    job.init_from_db(streaming=True)
 
     exporter = make_exporter(format_name)
     with open(dst_file, "wb") as f:
@@ -1161,6 +1187,7 @@ def delete_task_data(pk):
     annotation.delete()
 
 
+@transaction_with_repeatable_read()
 def export_task(
     task_id: int,
     dst_file: str,
@@ -1170,14 +1197,8 @@ def export_task(
     save_images: bool = False,
     temp_dir: str | None = None,
 ):
-    # For big tasks dump function may run for a long time and
-    # we dont need to acquire lock after the task has been initialized from DB.
-    # But there is the bug with corrupted dump file in case 2 or
-    # more dump request received at the same time:
-    # https://github.com/cvat-ai/cvat/issues/217
-    with transaction.atomic():
-        task = TaskAnnotation(task_id)
-        task.init_from_db()
+    task = TaskAnnotation(task_id)
+    task.init_from_db(streaming=True)
 
     exporter = make_exporter(format_name)
     with open(dst_file, "wb") as f:

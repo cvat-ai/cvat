@@ -22,11 +22,10 @@ from operator import itemgetter
 from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
-from attr.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -440,6 +439,16 @@ class TestPostTasks:
                 assert task.assignee is None
                 assert task.assignee_updated_date is None
 
+    def test_can_create_without_labels(self, admin_user):
+        task_spec = {"name": "test task without labels"}
+
+        with make_api_client(admin_user) as api_client:
+            (task, _) = api_client.tasks_api.create(task_write_request=task_spec)
+
+            (labels, _) = api_client.labels_api.list(task_id=task.id)
+
+            assert labels.count == 0
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetData:
@@ -729,7 +738,7 @@ class TestGetTaskDataset:
         *,
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_task_dataset(username, save_images=True, id=task_id, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
@@ -980,6 +989,46 @@ class TestGetTaskDataset:
                     if "size" in related_image:
                         assert tuple(related_image["size"]) > (0, 0)
 
+    @pytest.mark.parametrize(
+        "get_api,get_id",
+        [
+            pytest.param(
+                lambda client: client.tasks_api,
+                lambda tasks, jobs: next(
+                    t["id"] for t in tasks if t.get("dimension") == "3d" and t.get("size")
+                ),
+                id="task",
+            ),
+            pytest.param(
+                lambda client: client.jobs_api,
+                lambda tasks, jobs: next(
+                    j["id"] for j in jobs if tasks[j["task_id"]]["dimension"] == "3d"
+                ),
+                id="job",
+            ),
+        ],
+    )
+    def test_can_export_3d_annotations_via_rest_api(self, admin_user, tasks, jobs, get_api, get_id):
+        """Export 3D annotations via REST API v2 (task/job) and verify returned archive."""
+        item_id = get_id(tasks, jobs)
+
+        with make_api_client(admin_user) as api_client:
+            api = get_api(api_client)
+            dataset_bytes = export_dataset(
+                api,
+                id=item_id,
+                save_images=False,
+                format="Datumaro 3D 1.0",
+            )
+
+        assert zipfile.is_zipfile(io.BytesIO(dataset_bytes))
+
+        with zipfile.ZipFile(io.BytesIO(dataset_bytes)) as zf:
+            names = zf.namelist()
+            assert any(
+                name.startswith("annotations/") for name in names
+            ), f"No annotations folder in export archive: {names}"
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:
@@ -1192,12 +1241,12 @@ class TestWorkWithTask:
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
-        [(1, "manifest.jsonl")],  # public bucket
+        [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
     def test_work_with_task_containing_non_stable_cloud_storage_files(
         self, cloud_storage_id, manifest, cloud_storages, request
     ):
-        image_name = "image_case_65_1.png"
+        image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
 
         task_spec = {
@@ -1290,9 +1339,37 @@ class TestTaskBackups:
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
     @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_task_with_mounted_share(self):
+        task_spec = {
+            "name": "Task with files from mounted share",
+            "labels": [{"name": "car"}],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
+            "start_frame": 1,
+            "stop_frame": 4,
+            "frame_filter": "step=2",
+        }
+        task_id, _ = create_task(self.user, task_spec, data_spec)
+
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"share_task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        with zipfile.ZipFile(filename, "r") as zf:
+            files_in_data = {
+                name.removeprefix("data/") for name in zf.namelist() if name.startswith("data/")
+            }
+
+        assert files_in_data == {"manifest.jsonl", "images/image_1.jpg", "images/image_3.jpg"}
+
+        self._test_can_restore_task_from_backup(task_id)
+
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks, lightweight_backup):
-        cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1305,7 +1382,10 @@ class TestTaskBackups:
             "image_quality": 75,
             "use_cache": False,
             "cloud_storage_id": 1,
-            "server_files": cloud_storage_content,
+            "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
+            "start_frame": 1,
+            "stop_frame": 4,
+            "frame_filter": "step=2",
         }
         task_id, _ = create_task(self.user, task_spec, data_spec)
 
@@ -1314,23 +1394,17 @@ class TestTaskBackups:
         filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
         task.download_backup(filename, lightweight=lightweight_backup)
 
-        assert filename.is_file()
-        assert filename.stat().st_size > 0
+        with zipfile.ZipFile(filename, "r") as zf:
+            files_in_data = {
+                name.split("data/", maxsplit=1)[1]
+                for name in zf.namelist()
+                if name.startswith("data/")
+            }
 
-        if lightweight_backup:
-            with zipfile.ZipFile(filename, "r") as zf:
-                files_in_data = {
-                    name.split("data/", maxsplit=1)[1]
-                    for name in zf.namelist()
-                    if name.startswith("data/")
-                }
-
-            expected_media = {"manifest.jsonl"}
-            if to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE")):
-                # FIXME: remove extra media files
-                expected_media.update(cloud_storage_content)
-
-            assert files_in_data == expected_media
+        expected_media = {"manifest.jsonl"}
+        if not lightweight_backup:
+            expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
+        assert files_in_data == expected_media
 
         self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
 
@@ -1395,13 +1469,24 @@ class TestTaskBackups:
         exclude_regex_paths = [r"root\['chunks_updated_date'\]"]  # must be different
 
         if old_meta["storage"] == "cloud_storage":
-            assert new_meta["storage"] == ("cloud_storage" if lightweight_backup else "local")
             assert new_meta["cloud_storage_id"] is None
-            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]", r"root\['storage'\]"])
-        elif old_meta["cloud_storage_id"] is not None:
-            # static cache
-            assert new_meta["cloud_storage_id"] is None
-            exclude_regex_paths.extend([r"root\['cloud_storage_id'\]"])
+            exclude_regex_paths.append(r"root\['cloud_storage_id'\]")
+
+        if (
+            old_meta["storage"] == "share"
+            or old_meta["storage"] == "cloud_storage"
+            and not lightweight_backup
+        ):
+            assert new_meta["storage"] == "local"
+            assert new_meta["start_frame"] == 0
+            assert new_meta["stop_frame"] == len(old_meta["frames"]) - 1
+            assert new_meta["frame_filter"] == ""
+            exclude_regex_paths += [
+                r"root\['storage'\]",
+                r"root\['start_frame'\]",
+                r"root\['stop_frame'\]",
+                r"root\['frame_filter'\]",
+            ]
 
         assert (
             DeepDiff(
@@ -2690,8 +2775,8 @@ class TestPatchTask:
         is_allow = is_task_owner or is_project_owner
         has_project = is_project_owner or is_project_assignee
 
-        username: Optional[str] = None
-        task_id: Optional[int] = None
+        username: str | None = None
+        task_id: int | None = None
 
         filtered_users = (
             (find_users(role="worker") + find_users(role="supervisor"))
@@ -3090,7 +3175,7 @@ class TestImportTaskAnnotations:
         ],
     )
     def test_check_import_error_on_wrong_file_structure(
-        self, tasks_with_shapes: Iterable, format_name: str, specific_info_included: Optional[bool]
+        self, tasks_with_shapes: Iterable, format_name: str, specific_info_included: bool | None
     ):
         task_id = tasks_with_shapes[0]["id"]
 
@@ -4155,7 +4240,7 @@ class TestPatchExportFrames(TestTasksBase):
         media_type: SourceDataType,
         step: int,
         frame_count: int,
-        start_frame: Optional[int],
+        start_frame: int | None,
     ) -> Generator[tuple[ITaskSpec, Task, str], None, None]:
         args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
 

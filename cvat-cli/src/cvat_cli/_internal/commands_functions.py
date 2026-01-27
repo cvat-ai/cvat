@@ -6,7 +6,7 @@ import argparse
 import json
 import textwrap
 from collections.abc import Sequence
-from typing import Any, Union
+from typing import Any
 
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
@@ -41,7 +41,7 @@ class FunctionCreateNative:
 
     @staticmethod
     def _dump_sublabel_spec(
-        sl_spec: Union[models.SublabelRequest, models.PatchedLabelRequest],
+        sl_spec: models.SublabelRequest | models.PatchedLabelRequest,
     ) -> dict:
         result = {
             "name": sl_spec.name,

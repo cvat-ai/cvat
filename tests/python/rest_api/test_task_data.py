@@ -14,8 +14,9 @@ from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, groupby, product
+from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -31,6 +32,7 @@ from rest_api._test_base import TestTasksBase
 from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
+from shared.tasks.types import ImagesTaskSpec
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import get_method, make_api_client, patch_method, post_method
 from shared.utils.helpers import (
@@ -530,33 +532,43 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "use_cache, cloud_storage_id, manifest, use_bucket_content, org",
+        "use_cache, cloud_storage_id, manifest, use_bucket_content",
         [
-            (True, 1, "manifest.jsonl", False, ""),  # public bucket
-            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
-            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
-            (True, 1, None, False, ""),
-            (True, 2, None, True, "org2"),
-            (True, 2, None, True, "org2"),
-            (False, 1, None, False, ""),
-            (False, 2, None, True, "org2"),
-            (False, 2, None, True, "org2"),
+            (True, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
+            (True, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
+            (False, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
+            (False, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
+            (True, 1, None, False),
+            (True, 2, None, True),
+            (False, 1, None, False),
+            (False, 2, None, True),
         ],
     )
     def test_create_task_with_cloud_storage_files(
         self,
         use_cache: bool,
         cloud_storage_id: int,
+        cloud_storages,
         manifest: str,
         use_bucket_content: bool,
-        org: str,
     ):
+        org_id = cloud_storages[cloud_storage_id]["organization"]
+        bucket_prefix = "sub/" if cloud_storage_id == 2 else ""
         if use_bucket_content:
             cloud_storage_content = get_cloud_storage_content(
-                self._USERNAME, cloud_storage_id, manifest
+                self._USERNAME,
+                cloud_storage_id,
+                manifest=manifest,
+                prefix=bucket_prefix,
             )
+            cloud_storage_content = [
+                p for p in cloud_storage_content if "images_with_manifest/" in p
+            ]
         else:
-            cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
+            cloud_storage_content = [
+                f"{bucket_prefix}images_with_manifest/image_case_65_1.png",
+                f"{bucket_prefix}images_with_manifest/image_case_65_2.png",
+            ]
         if manifest:
             cloud_storage_content.append(manifest)
 
@@ -576,7 +588,7 @@ class TestPostTaskData:
             "server_files": cloud_storage_content,
         }
 
-        kwargs = {"org": org} if org else {}
+        kwargs = {"org_id": org_id} if org_id else {}
         create_task(self._USERNAME, task_spec, data_spec, **kwargs)
 
     def _create_task_with_cloud_data(
@@ -589,11 +601,11 @@ class TestPostTaskData:
         sorting_method: str = "lexicographical",
         data_type: str = "image",
         video_frame_count: int = 10,
-        server_files_exclude: Optional[list[str]] = None,
+        server_files_exclude: list[str] | None = None,
         org: str = "",
-        filenames: Optional[list[str]] = None,
-        task_spec_kwargs: Optional[dict[str, Any]] = None,
-        data_spec_kwargs: Optional[dict[str, Any]] = None,
+        filenames: list[str] | None = None,
+        task_spec_kwargs: dict[str, Any] | None = None,
+        data_spec_kwargs: dict[str, Any] | None = None,
     ) -> tuple[int, Any]:
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
         if data_type == "video":
@@ -701,7 +713,7 @@ class TestPostTaskData:
         use_cache: bool,
         use_manifest: bool,
         server_files: list[str],
-        server_files_exclude: Optional[list[str]],
+        server_files_exclude: list[str] | None,
         task_size: int,
         org: str,
         cloud_storages,
@@ -770,8 +782,8 @@ class TestPostTaskData:
     @pytest.mark.parametrize(
         "storage_id, manifest",
         [
-            (1, "manifest.jsonl"),  # public bucket
-            (2, "sub/manifest.jsonl"),  # private bucket
+            (1, "images_with_manifest/manifest.jsonl"),  # public bucket
+            (2, "sub/images_with_manifest/manifest.jsonl"),  # private bucket
         ],
     )
     @pytest.mark.parametrize(
@@ -831,24 +843,24 @@ class TestPostTaskData:
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
     @pytest.mark.parametrize(
-        "manifest, filename_pattern, sub_dir, task_size",
+        "manifest, filename_pattern, sub_dir, task_size, expected_error",
         [
-            ("manifest.jsonl", "*", True, 3),  # public bucket
-            ("manifest.jsonl", "test/*", True, 3),
-            ("manifest.jsonl", "test/sub*1.jpeg", True, 1),
-            ("manifest.jsonl", "*image*.jpeg", True, 3),
-            ("manifest.jsonl", "wrong_pattern", True, 0),
-            ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2),
-            ("abc_manifest.jsonl", "[d]*.jpeg", False, 1),
-            ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0),
-            (None, "*", True, 5),
-            (None, "test/*", True, 3),
-            (None, "test/sub*1.jpeg", True, 1),
-            (None, "*image*.jpeg", True, 3),
-            (None, "wrong_pattern", True, 0),
-            (None, "[a-c]*.jpeg", False, 2),
-            (None, "[d]*.jpeg", False, 1),
-            (None, "[e-z]*.jpeg", False, 0),
+            ("manifest.jsonl", "*", True, 3, ""),  # public bucket
+            ("manifest.jsonl", "test/*", True, 3, ""),
+            ("manifest.jsonl", "test/sub*1.jpeg", True, 1, ""),
+            ("manifest.jsonl", "*image*.jpeg", True, 3, ""),
+            ("manifest.jsonl", "wrong_pattern", True, 0, "No media data found"),
+            ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2, ""),
+            ("abc_manifest.jsonl", "[d]*.jpeg", False, 1, ""),
+            ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0, "No media data found"),
+            (None, "*", True, 0, "Only one video, archive, pdf, zip"),
+            (None, "test/*", True, 3, ""),
+            (None, "test/sub*1.jpeg", True, 1, ""),
+            (None, "*image*.jpeg", True, 3, ""),
+            (None, "wrong_pattern", True, 0, "No media data found"),
+            (None, "[a-c]*.jpeg", False, 2, ""),
+            (None, "[d]*.jpeg", False, 1, ""),
+            (None, "[e-z]*.jpeg", False, 0, "No media data found"),
         ],
     )
     def test_create_task_with_file_pattern(
@@ -858,6 +870,7 @@ class TestPostTaskData:
         filename_pattern,
         sub_dir,
         task_size,
+        expected_error,
         cloud_storages,
         request,
     ):
@@ -931,7 +944,7 @@ class TestPostTaskData:
                 assert task.size == task_size
         else:
             rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
-            assert "No media data found" in rq_job_details.message
+            assert expected_error and expected_error in rq_job_details.message
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])
@@ -1043,7 +1056,7 @@ class TestPostTaskData:
             cloud_storage=cloud_storage,
             use_manifest=False,
             use_cache=False,
-            server_files=["test/video/video.avi"],
+            server_files=["test/video/video.mkv"],
             org=org,
             data_spec_kwargs=data_spec,
             data_type="video",
@@ -1767,8 +1780,10 @@ class TestPostTaskData:
 class TestTaskData(TestTasksBase):
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
+
         with make_api_client(self._USERNAME) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            (task_meta, response) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task_meta_raw = json.loads(response.data)
 
             assert task_meta.size == task_spec.size
             assert task_meta.start_frame == getattr(task_spec, "start_frame", 0)
@@ -1785,14 +1800,24 @@ class TestTaskData(TestTasksBase):
 
             if task_spec.source_data_type == SourceDataType.video:
                 assert len(task_meta.frames) == 1
+                assert (
+                    DeepDiff(
+                        task_meta_raw["chapters"],
+                        task_spec.chapters,
+                        ignore_order=True,
+                        exclude_regex_paths=[r"root\[.*\]\['id'\]"],
+                    )
+                    == {}
+                )
             else:
                 assert len(task_meta.frames) == task_meta.size
+                assert task_meta.chapters is None
 
     @pytest.mark.timeout(
         # This test has to check all the task frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -1836,7 +1861,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the task chunks availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_chunks(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
@@ -1899,6 +1924,54 @@ class TestTaskData(TestTasksBase):
                             and quality == "original"
                         ),
                     )
+
+    @pytest.mark.timeout(
+        # This test has to check all the task chunks availability, it can make many requests
+        timeout=300
+    )
+    @parametrize("task_spec, task_id", TestTasksBase._tests_with_related_files_cases)
+    def test_can_get_task_related_file_chunks(self, task_spec: ImagesTaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            if task_spec.source_data_type == SourceDataType.images:
+                assert task.data_original_chunk_type == "imageset"
+                assert task.data_compressed_chunk_type == "imageset"
+            else:
+                assert False
+
+            for task_frame_id in range(task.size):
+                expected_related_images = task_spec.get_related_files(task_frame_id)
+                assert task_meta.frames[task_frame_id].related_files == len(expected_related_images)
+
+                (_, response) = api_client.tasks_api.retrieve_data(
+                    task_id, type="context_image", number=task_frame_id, _parse_response=False
+                )
+
+                chunk_file = io.BytesIO(response.data)
+                if zipfile.is_zipfile(chunk_file):
+                    with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
+                        chunk_images = {
+                            name: Image.open(io.BytesIO(chunk_archive.read(name)))
+                            for name in chunk_archive.namelist()
+                        }
+                else:
+                    assert False
+
+                assert sorted(osp.splitext(p)[0] for p in chunk_images) == sorted(
+                    osp.splitext(p)[0] for p in expected_related_images
+                )
+
+                for ri_filename in expected_related_images:
+                    chunk_ri = chunk_images[str(Path(ri_filename).with_suffix(".jpg"))]
+                    assert chunk_ri.mode == "RGB"
+
+                    expected_ri = Image.open(io.BytesIO(expected_related_images[ri_filename]))
+                    if expected_ri.mode != "RGB":
+                        expected_ri = expected_ri.convert("RGB")
+
+                    self._compare_images(expected_ri, chunk_ri, must_be_identical=False)
 
     @pytest.mark.timeout(
         # This test has to check all the task meta availability, it can make many requests
@@ -2072,7 +2145,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_job_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -2122,7 +2195,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job chunks availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: ITaskSpec, task_id: int, indexing: str):
         _placeholder_image = Image.fromarray(np.zeros((1, 1, 3), dtype=np.uint8))

@@ -211,14 +211,14 @@ cvat:
     service:
       type: ClusterIP
       ports:
-        - port: 80
-          targetPort: 80
+        - port: 8000
+          targetPort: 8000
           protocol: TCP
           name: http
   opa:
     replicas: 1
     image: openpolicyagent/opa
-    tag: 0.63.0
+    tag: 1.12.2
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
@@ -324,10 +324,22 @@ cvat:
 #     accessModes:
 #       - ReadWriteOnce
       size: 100Gi
+      annotations: {}
+      volumeAttributesClass:
+        create: false
+#        name: "gp3-high-throughput"
+#        provider: ebs.csi.aws.com
+#        parameters:
+#          type: gp3
+#          provisioned-throughput: "250"
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
   enabled: true # false for external db
+  image:
+    registry: public.ecr.aws
+    repository: b8u7h5e8/postgresql
+    tag: 15.2.0-debian-11-r0
   external:
     # Ignored if an empty value is set
     host: ""
@@ -351,6 +363,13 @@ postgresql:
 # https://artifacthub.io/packages/helm/bitnami/redis
 redis:
   enabled: true
+  image:
+    registry: public.ecr.aws
+    repository: docker/library/redis
+    tag: 7.2.11
+  global:
+    security:
+      allowInsecureImages: true
   external:
     host: 127.0.0.1
   architecture: standalone
@@ -392,23 +411,32 @@ vector:
   dataDir: "/vector-data-dir"
   containerPorts:
     - name: http
-      containerPort: 80
+      containerPort: 8282
       protocol: TCP
   service:
     ports:
       - name: http
-        port: 80
+        port: 8282
         protocol: TCP
   image:
     tag: "0.26.0-alpine"
+  securityContext:
+    runAsNonRoot: true
+
+    # Workaround for <https://github.com/vectordotdev/vector/issues/1599>.
+    runAsUser: 1000
+    runAsGroup: 1000
 
 clickhouse:
   # Set to false in case of external db usage
   enabled: true
+  image:
+    registry: public.ecr.aws
+    repository: b8u7h5e8/clickhouse
+    tag: 23.12.2-debian-11-r0
   shards: 1
   replicaCount: 1
   extraEnvVarsSecret: cvat-analytics-secret
-  initdbScriptsSecret: cvat-clickhouse-init
   auth:
     username: user
     existingSecret: cvat-analytics-secret

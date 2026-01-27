@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import ssl
+import typing
 from urllib.parse import urlencode
 from urllib.parse import urlparse
 from urllib.request import proxy_bypass_environment
@@ -72,9 +73,19 @@ class RESTClientObject(object):
                 **addition_pool_args
             )
 
-    def request(self, method, url, query_params=None, headers=None,
-                body=None, post_params=None, *, _parse_response=True,
-                _request_timeout=None, _check_status=True) -> urllib3.HTTPResponse:
+    def request(
+        self,
+        method: str,
+        url: str,
+        query_params: typing.Optional[list[tuple[str, typing.Any]]] = None,
+        headers: typing.Optional[dict[str, typing.Any]] = None,
+        body: typing.Optional[typing.Any] = None,
+        post_params: typing.Optional[typing.Union[list[typing.Any], dict]] = None,
+        *,
+        _parse_response: bool = True,
+        _request_timeout: typing.Optional[typing.Union[float, tuple[float, float]]] = None,
+        _check_status: bool = True
+    ) -> urllib3.HTTPResponse:
         """Perform requests.
 
         :param method: http request method
@@ -93,7 +104,9 @@ class RESTClientObject(object):
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
                                  (connection, read) timeouts.
+        :param _check_status: if True, raise an error on unsuccessful response status
         """
+
         method = method.upper()
         assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
                           'PATCH', 'OPTIONS']

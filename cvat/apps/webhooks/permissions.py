@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional
-
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
@@ -16,7 +14,7 @@ from .models import Webhook, WebhookTypeChoice
 
 
 class WebhookPermission(OpenPolicyAgentPermission):
-    obj: Optional[Webhook]
+    obj: Webhook | None
 
     class Scopes(StrEnum):
         CREATE = "create"
@@ -30,22 +28,21 @@ class WebhookPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "webhook":
-            project_id = request.data.get("project_id")
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(
-                    request, view, scope, iam_context, obj, project_id=project_id
-                )
-                permissions.append(self)
+        project_id = request.data.get("project_id")
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(
+                request, view, scope, iam_context, obj, project_id=project_id
+            )
+            permissions.append(self)
 
-            owner = request.data.get("owner_id") or request.data.get("owner")
-            if owner:
-                perm = UserPermission.create_scope_view(iam_context, owner)
-                permissions.append(perm)
+        owner = request.data.get("owner_id") or request.data.get("owner")
+        if owner:
+            perm = UserPermission.create_scope_view(iam_context, owner)
+            permissions.append(perm)
 
-            if project_id:
-                perm = ProjectPermission.create_scope_view(request, project_id, iam_context)
-                permissions.append(perm)
+        if project_id:
+            perm = ProjectPermission.create_scope_view(request, project_id, iam_context)
+            permissions.append(perm)
 
         return permissions
 

@@ -16,12 +16,12 @@ import sys
 import traceback
 import urllib.parse
 from collections import defaultdict, namedtuple
-from collections.abc import Generator, Iterable, Mapping, Sequence
-from contextlib import nullcontext, suppress
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
+from contextlib import contextmanager, nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 import cv2 as cv
 from attr.converters import to_bool
@@ -29,6 +29,7 @@ from av import VideoFrame
 from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db import connection, transaction
 from django.utils.http import urlencode
 from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
@@ -173,9 +174,9 @@ def get_rq_lock_by_user(
     queue: DjangoRQ,
     user_id: int,
     *,
-    timeout: Optional[int] = 30,
-    blocking_timeout: Optional[int] = None,
-) -> Union[Lock, nullcontext]:
+    timeout: int | None = 30,
+    blocking_timeout: int | None = None,
+) -> Lock | nullcontext:
     if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
         return queue.connection.lock(
             name=f"{queue.name}-lock-{user_id}",
@@ -204,7 +205,7 @@ def reverse(
     *,
     args=None,
     kwargs=None,
-    query_params: Optional[dict[str, str]] = None,
+    query_params: dict[str, str] | None = None,
     request: ExtendedRequest | None = None,
 ) -> str:
     """
@@ -243,7 +244,7 @@ def get_list_view_name(model):
 
 
 def import_resource_with_clean_up_after(
-    func: Union[Callable[[str, int, int], int], Callable[[str, int, str, bool], None]],
+    func: Callable[[str, int, int], int] | Callable[[str, int, str, bool], None],
     filename: str,
     *args,
     **kwargs,
@@ -438,7 +439,7 @@ Controls maximum rendered list items. The remainder is appended as ' (and X more
 
 
 def format_list(
-    items: Sequence[str], *, max_items: Optional[int] = None, separator: str = ", "
+    items: Sequence[str], *, max_items: int | None = None, separator: str = ", "
 ) -> str:
     if max_items is None:
         max_items = FORMATTED_LIST_DISPLAY_THRESHOLD
@@ -483,3 +484,12 @@ def defaultdict_to_regular(d):
     if isinstance(d, defaultdict):
         d = {k: defaultdict_to_regular(v) for k, v in d.items()}
     return d
+
+
+@contextmanager
+def transaction_with_repeatable_read():
+    with transaction.atomic():
+        if connection.vendor != "sqlite":
+            connection.cursor().execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
+            connection.cursor().execute("SET TRANSACTION READ ONLY;")
+        yield

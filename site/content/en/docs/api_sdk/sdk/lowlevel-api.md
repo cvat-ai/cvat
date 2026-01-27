@@ -133,26 +133,47 @@ Typically, the first thing you do with `ApiClient` is log in.
 ## Authentication
 
 CVAT supports 3 authentication options:
+- Personal Access Token (PAT) authentication, with an access token value
 - Basic authentication, with a username and a password
 - Session authentication, with a session ID and a CSRF token
-- Token authentication, with an API key (deprecated)
+- Legacy token authentication, with an API key (deprecated)
 
-Token authentication requires an API key, which can be obtained after logging in
-via the `/api/auth/login` endpoint using the basic authentication credentials.
+Personal Access Token (PAT) authentication requires a token that can be configured
+in the user settings section in the UI. It is the recommended authentication option
+for most API clients. {{< ilink "/docs/api_sdk/access_tokens" "Read more." >}}
+
+Basic authentication requires a username and password pair. For better security it's
+recommended to use other authentication options instead.
 
 Session authentication requires a session ID and a CSRF token, which can be obtained after
 logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
+
+Legacy token authentication (deprecated) requires an API key, which can be obtained
+after logging in via the `/api/auth/login` endpoint using the basic authentication credentials.
 
 Authentication credentials for an `ApiClient` instance can be specified in a `Configuration` object:
 
 {{< tabpane text=true >}}
 
+{{%tab header="Personal Access Token (PAT) authentication" %}}
+
+```python
+configuration = Configuration(
+    access_token="<token value>",
+    ...
+)
+with ApiClient(configuration) as api_client:
+    ...
+```
+
+{{% /tab %}}
+
 {{%tab header="Basic authentication" %}}
 
 ```python
 configuration = Configuration(
-    username='YOUR_USERNAME',
-    password='YOUR_PASSWORD',
+    username="YOUR_USERNAME",
+    password="YOUR_PASSWORD",
     ...
 )
 with ApiClient(configuration) as api_client:
@@ -177,7 +198,7 @@ with ApiClient(configuration) as api_client:
 
 {{% /tab %}}
 
-{{%tab header="Token authentication (deprecated)" %}}
+{{%tab header="Legacy token authentication (deprecated)" %}}
 
 {{% alert title="Warning" color="warning" %}}
 This authentication option is deprecated and will be removed in future.
@@ -220,7 +241,7 @@ api_client.set_default_header("Origin", api_client.build_origin_header())
 ```
 {{% /tab %}}
 
-{{%tab header="Token authentication (deprecated)" %}}
+{{%tab header="Legacy token authentication (deprecated)" %}}
 
 {{% alert title="Warning" color="warning" %}}
 This authentication option is deprecated and will be removed in future.
@@ -584,6 +605,7 @@ with ApiClient(
         while (chunk := response.read(8192)):
             output_file.write(chunk)
 ```
+
 ### Different versions of API endpoints
 #### The cloudstorages/id/content REST API endpoint
 
@@ -641,3 +663,93 @@ with ApiClient(
     pprint(files) # ['sub/image_1.jpg', 'image_2.jpg']
 
 ```
+
+### Sending custom requests
+
+Sometimes you might need sending a custom request while using the `ApiClient`.
+Typically, it's desirable to make this request using the same configuration
+and authentication parameters as regular requests sent via the `ApiClient` instance.
+One particularly useful example for this is dataset export. When exporting a dataset,
+you receive a download URL from the server after the file is prepared
+(see example in [receiving data](#receiving-data)). This URL requires authentication,
+but it can't be made via the regular `ApiClient` endpoint methods.
+
+There are several options to make such a custom request via an `ApiClient` instance:
+- use `api_client.call_api()`
+- use `api_client.request()`
+
+Alternatively, it's also possible to make a request using a custom backend for requests, while
+keeping the existing authentication of the `ApiClient`.
+
+{{< tabpane text=true >}}
+
+{{% tab header="Using api_client.call_api()" %}}
+
+This option provides higher-level interface and allows better integration with other
+`ApiClient`-related interfaces, such as `Endpoint`.
+
+```python
+from urllib.parse import parse_qsl, urlparse
+
+with ApiClient(...) as api_client:
+    parsed_url = urlparse("<custom URL>")
+    query_params = parse_qsl(parsed_url.query)
+    _, response = api_client.call_api(
+        parsed_url.path,
+        method="GET",
+        query_params=query_params,
+        _parse_response=False,
+    )
+
+    # process response.data ...
+```
+
+{{% /tab %}}
+
+{{% tab header="Using api_client.request()" %}}
+
+This option provides a low-level interface and allows more customization. It can be useful
+if you need to reuse the existing connection configuration of the `ApiClient`
+instance, such as connection pool, timeouts, etc. In order to keep the existing
+authentication parameters of the `ApiClient` instance, you
+can use the functions `api_client.get_common_headers()` and `api_client.update_params_for_auth()`.
+
+```python
+with ApiClient(...) as api_client:
+    headers = api_client.get_common_headers()
+    api_client.update_params_for_auth(headers=headers, queries=[], method="GET")
+
+    response = api_client.request(
+        "GET",
+        "<custom URL>",
+        headers=headers,
+        _parse_response=False,
+    )
+
+    # process response.data ...
+```
+
+{{% /tab %}}
+
+{{% tab header="Using a custom backend" %}}
+
+It is possible make a custom request using your own backend - for example, using the `requests`
+library. In order to keep the existing authentication parameters of the `ApiClient` instance, you
+can use the functions `api_client.get_common_headers()` and `api_client.update_params_for_auth()`.
+
+```python
+import requests
+
+with ApiClient(...) as api_client:
+    headers = api_client.get_common_headers()
+    query_params = []
+    api_client.update_params_for_auth(headers=headers, queries=query_params, method="GET")
+
+    response = requests.get("<custom URL>", params=query_params, headers=headers)
+
+    # process the response ...
+```
+
+{{% /tab %}}
+
+{{< /tabpane >}}

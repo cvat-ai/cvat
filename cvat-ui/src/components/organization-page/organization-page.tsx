@@ -5,7 +5,7 @@
 
 import './styles.scss';
 import React, { useCallback, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import Empty from 'antd/lib/empty';
 import Spin from 'antd/lib/spin';
 
@@ -17,14 +17,25 @@ import MembersList from './members-list';
 
 function OrganizationPage(): JSX.Element | null {
     const dispatch = useDispatch();
-    const organization = useSelector((state: CombinedState) => state.organizations.current);
-    const fetching = useSelector((state: CombinedState) => state.organizations.fetching);
-    const updating = useSelector((state: CombinedState) => state.organizations.updating);
-    const user = useSelector((state: CombinedState) => state.auth.user);
-    const members = useSelector((state: CombinedState) => state.organizations.members);
-    const fetchingMembers = useSelector((state: CombinedState) => state.organizations.fetchingMembers);
-    const query = useSelector((state: CombinedState) => state.organizations.membersQuery);
-    const selectedIds = useSelector((state: CombinedState) => state.organizations.selectedMembers);
+    const {
+        organization,
+        fetching,
+        updating,
+        user,
+        members,
+        fetchingMembers,
+        query,
+        selectedIds,
+    } = useSelector((state: CombinedState) => ({
+        organization: state.organizations.current,
+        fetching: state.organizations.fetching,
+        updating: state.organizations.updating,
+        user: state.auth.user,
+        members: state.organizations.members,
+        fetchingMembers: state.organizations.fetchingMembers,
+        query: state.organizations.membersQuery,
+        selectedIds: state.organizations.selectedMembers,
+    }), shallowEqual);
 
     const fetchMembersCallback = useCallback(() => {
         if (organization) {

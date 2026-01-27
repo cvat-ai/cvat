@@ -6,7 +6,7 @@
 /// <reference types="cypress" />
 
 import {
-    taskName, labelName, attrName, textDefaultValue,
+    taskName, labelName, attrName,
 } from '../../support/const';
 
 context('Objects ordering feature', () => {
@@ -71,16 +71,8 @@ context('Objects ordering feature', () => {
     }
 
     before(() => {
-        cy.openTask(taskName);
-        cy.addNewLabel({ name: '0' }, [
-            {
-                name: attrName,
-                type: 'Text',
-                mutable: true,
-                values: textDefaultValue,
-            },
-        ]);
-        cy.openJob();
+        cy.prepareUserSession();
+        cy.openTaskJob(taskName);
     });
 
     describe(`Testing case "${caseId}"`, () => {

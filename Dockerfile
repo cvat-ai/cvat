@@ -21,7 +21,10 @@ RUN apt-get update && \
         libxmlsec1-dev \
         libxmlsec1-openssl \
         libhdf5-dev \
-        cargo \
+        cargo-1.85 \
+    && update-alternatives \
+        --install /usr/bin/rustc rustc /usr/bin/rustc-1.85 185 \
+        --slave /usr/bin/cargo cargo /usr/bin/cargo-1.85 \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PIP_VERSION
@@ -37,8 +40,8 @@ FROM build-image-base AS build-image-av
 ARG PREFIX=/opt/ffmpeg
 ARG PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
 
-ENV FFMPEG_VERSION=4.3.1 \
-    OPENH264_VERSION=2.1.1
+ENV FFMPEG_VERSION=8.0 \
+    OPENH264_VERSION=2.6.0
 
 WORKDIR /tmp/openh264
 RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.gz --output - | \
@@ -61,11 +64,8 @@ COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/require
 RUN grep -q '^av==' /tmp/utils/dataset_manifest/requirements.txt
 RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
 
-# Work around https://github.com/PyAV-Org/PyAV/issues/1140
-RUN pip install setuptools wheel 'cython<3'
-
 RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
-    python3 -m pip wheel --no-binary=av --no-build-isolation \
+    python3 -m pip wheel --no-binary=av \
     -r /tmp/utils/dataset_manifest/requirements.txt \
     -w /tmp/wheelhouse
 
@@ -85,7 +85,7 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.24.4 AS build-smokescreen
+FROM golang:1.25.5 AS build-smokescreen
 
 RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
 RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen
@@ -138,8 +138,7 @@ RUN apt-get update && \
         wait-for-it \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
-    rm -rf /var/lib/apt/lists/* && \
-    echo 'application/wasm wasm' >> /etc/mime.types
+    rm -rf /var/lib/apt/lists/*
 
 # Install smokescreen
 COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
@@ -147,7 +146,7 @@ COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
 # Add a non-root user
 ENV USER=${USER}
 ENV HOME /home/${USER}
-RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER}
+RUN adduser --uid=1000 --shell /bin/bash --disabled-password --gecos "" ${USER}
 
 ARG CLAM_AV="no"
 RUN if [ "$CLAM_AV" = "yes" ]; then \
@@ -164,9 +163,9 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
 # Install wheels from the build image
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
-# setuptools should be uninstalled after updating google-cloud-storage
-# https://github.com/googleapis/python-storage/issues/740
-RUN python -m pip install --upgrade setuptools
+# Prevent security scanners from finding vulnerabilities in whatever version of setuptools
+# is included in Ubuntu by default.
+RUN python -m pip uninstall -y setuptools
 ARG PIP_VERSION
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 
@@ -197,14 +196,16 @@ COPY --chown=${USER} backend_entrypoint.d/ ${HOME}/backend_entrypoint.d
 COPY --chown=${USER} manage.py rqscheduler.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
+COPY --chown=${USER} components/analytics/clickhouse/init.py ${HOME}/components/analytics/clickhouse/init.py
 
 ARG COVERAGE_PROCESS_START
 RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
         echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
     fi
 
-# RUN all commands below as 'django' user
-USER ${USER}
+# RUN all commands below as 'django' user.
+# Use numeric UID/GID so that the image is compatible with the Kubernetes runAsNonRoot setting.
+USER 1000:1000
 WORKDIR ${HOME}
 
 RUN mkdir -p data share keys logs /tmp/supervisord static

@@ -1,0 +1,3 @@
+cvat-sdk[masks]>=2.44
+scikit-image
+transformers

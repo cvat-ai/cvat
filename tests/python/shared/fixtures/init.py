@@ -10,7 +10,6 @@ from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
-from typing import Union
 
 import pytest
 import requests
@@ -22,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
+CLICKHOUSE_INIT_SCRIPT = "components/analytics/clickhouse/init.py"
 PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
@@ -30,6 +30,7 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "docker-compose.dev.yml",
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
+    "tests/docker-compose.pat_settings.yml",
     "tests/docker-compose.test_servers.yml",
 ]
 
@@ -158,20 +159,20 @@ def docker_exec(container, command, capture_output=True):
     return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
 
 
-def docker_exec_cvat(command: Union[list[str], str]):
+def docker_exec_cvat(command: list[str] | str):
     base = f"docker exec {PREFIX}_cvat_server_1"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
 
-def kube_exec_cvat(command: Union[list[str], str]):
+def kube_exec_cvat(command: list[str] | str):
     pod_name = _kube_get_server_pod_name()
     base = f"kubectl exec {pod_name} --"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
 
-def container_exec_cvat(request: pytest.FixtureRequest, command: Union[list[str], str]):
+def container_exec_cvat(request: pytest.FixtureRequest, command: list[str] | str):
     platform = request.config.getoption("--platform")
     if platform == "local":
         return docker_exec_cvat(command)
@@ -230,21 +231,21 @@ def kube_restore_db():
 
 
 def docker_restore_clickhouse_db():
-    docker_exec_clickhouse_db(
+    docker_exec_cvat(
         [
             "/bin/sh",
             "-c",
-            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /docker-entrypoint-initdb.d/init.sh',
+            f'python "{CLICKHOUSE_INIT_SCRIPT}" --clear',
         ]
     )
 
 
 def kube_restore_clickhouse_db():
-    kube_exec_clickhouse_db(
+    kube_exec_cvat(
         [
             "/bin/sh",
             "-c",
-            'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /bin/sh /docker-entrypoint-initdb.d/init.sh',
+            f'python "{CLICKHOUSE_INIT_SCRIPT}" --clear',
         ]
     )
 

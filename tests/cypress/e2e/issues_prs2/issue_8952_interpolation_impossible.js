@@ -99,11 +99,8 @@ context('Create any track, check if track works correctly after deleting some fr
 
         beforeEach(() => {
             cy.headlessRestoreAllFrames(jobID);
-
             // Get job meta updates from the server and reload page to bring changes to UI
             cy.reload();
-
-            cy.saveJob();
             cy.get('.cvat-player-first-button').click();
         });
 

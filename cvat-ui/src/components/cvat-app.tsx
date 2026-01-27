@@ -86,6 +86,7 @@ import ConsensusManagementPage from './consensus-management-page/consensus-manag
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 import SelectOrganizationModal from './select-organization-modal/select-organization-modal';
 import BulkProgress from './bulk-progress';
+import ProfilePageComponent from './profile-page/profile-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -396,6 +397,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <CVATMarkdown history={history}>{notificationState?.description}</CVATMarkdown>
                 ),
                 duration: notificationState.duration ?? null,
+                className: notificationState.className,
             });
         }
 
@@ -563,6 +565,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/invitations' component={InvitationsPage} />
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
+                                        <Route exact path='/profile' component={ProfilePageComponent} />
                                         { routesToRender }
                                         {isModelPluginActive && (
                                             <Route
