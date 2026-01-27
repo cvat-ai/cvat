@@ -115,7 +115,7 @@ def _prepare_context_list(files: Iterable[str], base_dir: str | None = None):
 def _find_related_images_2D(
     dataset_paths: Sequence[str],
     *,
-    scene_paths: Callable[[str], bool] | Collection[str] | None = None,
+    is_scene_path: Callable[[str], bool] | None = None,
 ) -> tuple[set[str], dict[str, list[str]]]:
     """
     Expected 2D format is:
@@ -135,12 +135,7 @@ def _find_related_images_2D(
         if len(parents) >= 3 and parents[1].name == "related_images":
             regular_image_path = parents[2] / ".".join(parents[0].name.rsplit("_", maxsplit=1))
             related_images.setdefault(str(regular_image_path), []).append(image_path)
-        elif (
-            scene_paths is None
-            or callable(scene_paths)
-            and scene_paths(image_path)
-            or image_path in scene_paths
-        ):
+        elif is_scene_path is None or is_scene_path(image_path):
             regular_images.add(image_path)
 
     related_images = {
@@ -157,8 +152,6 @@ def _find_related_images_2D(
 
 def _find_related_images_3D(
     dataset_paths: Sequence[str],
-    *,
-    scene_paths: Callable[[str], bool] | Collection[str] | None = None,
 ) -> tuple[set[str], dict[str, list[str]]]:
     """
     Supported 3D formats:
@@ -205,10 +198,7 @@ def _find_related_images_3D(
     # unlikely to be encountered
 
     scenes: dict[str, str] = {
-        os.path.splitext(p)[0]: p
-        for p in dataset_paths
-        if p.lower().endswith((".pcd", ".bin"))
-        if scene_paths is None or callable(scene_paths) and scene_paths(p) or p in scene_paths
+        os.path.splitext(p)[0]: p for p in dataset_paths if p.lower().endswith((".pcd", ".bin"))
     }  # { scene name -> scene path }
 
     related_images: dict[str, list[str]] = {}  # { scene_name -> [related images] }
@@ -273,15 +263,15 @@ def find_related_images(
     dataset_paths: Sequence[str],
     *,
     root_path: str | None = None,
-    scene_paths: Callable[[str], bool] | Collection[str] | None = None,
+    is_scene_path: Callable[[str], bool] | None = None,
 ) -> tuple[set[str], dict[str, list[str]]]:
     """
     Finds related images for scenes in the dataset.
 
     :param dataset_paths: a list of file paths in the dataset
     :param root_path: Optional. If specified, the resulting paths will be relative to this path
-    :param scene_paths: Optional. If specified, the results will only include scenes from this list
-        or matching this function.
+    :param is_scene_path: Optional. If specified, the results will only include scenes
+        matching this function.
 
     Returns: a 2-tuple (scene paths, related_images)
         scene_paths - a list of scene paths found;
@@ -291,18 +281,10 @@ def find_related_images(
     if root_path:
         dataset_paths = [os.path.relpath(p, root_path) for p in dataset_paths]
 
-        if scene_paths is not None and not callable(scene_paths):
-            scene_paths = (os.path.relpath(p, root_path) for p in scene_paths)
-
-    if scene_paths is not None and not isinstance(scene_paths, set) and not callable(scene_paths):
-        scene_paths = set(scene_paths)
-
     has_images = False
     has_pcd = False
     has_videos = False
-    for p in (
-        callable(scene_paths) and filter(scene_paths, dataset_paths) or scene_paths or dataset_paths
-    ):
+    for p in (filter(is_scene_path, dataset_paths) if callable(is_scene_path) else dataset_paths):
         if is_point_cloud(p):
             has_pcd |= True
         elif is_image(p):
@@ -346,21 +328,14 @@ def find_related_images(
             )
 
         # Apply the scene filter
-        if scene_paths is not None:
-            if callable(scene_paths):
-                scene_paths = set(p for p in scenes if scene_paths(p))
-            else:
-                scene_paths.intersection_update(scenes)
-
-            scenes = sorted(scene_paths)
+        if is_scene_path is not None:
+            scenes = {p for p in scenes if is_scene_path(p)}
 
             related_images = {
-                scene: scene_ris
-                for scene, scene_ris in related_images.items()
-                if scene in scene_paths
+                scene: scene_ris for scene, scene_ris in related_images.items() if scene in scenes
             }
     else:
-        scenes, related_images = _find_related_images_2D(dataset_paths, scene_paths=scene_paths)
+        scenes, related_images = _find_related_images_2D(dataset_paths, is_scene_path=is_scene_path)
 
     return scenes, related_images
 
