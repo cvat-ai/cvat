@@ -511,14 +511,14 @@ def _restore_file_order_from_manifest(
     return [input_files[fn] for fn in manifest_files]
 
 def _create_task_manifest_based_on_cloud_storage_manifest(
-    sorted_media: list[str],
+    sorted_media: Sequence[PurePath],
     cloud_storage_manifest_prefix: str,
     cloud_storage_manifest: ImageManifestManager,
     manifest: ImageManifestManager,
 ) -> None:
     if cloud_storage_manifest_prefix:
         sorted_media_without_manifest_prefix = [
-            os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
+            i.relative_to(cloud_storage_manifest_prefix) for i in sorted_media
         ]
         sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
         def _add_prefix(properties):
@@ -559,7 +559,7 @@ def _create_task_manifest_from_cloud_data(
     manifest.link(
         sources=content_generator,
         meta={
-            k: {'related_images': related_images[k] }
+            os.fspath(k): {'related_images': [ri.as_posix() for ri in related_images[k]]}
             for k in related_images
         },
         DIM_3D=(dimension == models.DimensionType.DIM_3D),
