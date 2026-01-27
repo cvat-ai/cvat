@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from django.contrib import admin
-from rest_framework_api_key.admin import APIKey, APIKeyAdmin
+from django.contrib.admin.sites import NotRegistered
+from rest_framework_api_key.admin import APIKeyAdmin
+from rest_framework_api_key.models import APIKey as APIKeyModel
 
 from .models import AccessToken
 
@@ -19,9 +21,17 @@ class AccessTokenAdmin(APIKeyAdmin):
         "last_used_date",
     ]
     list_filter = ("created", "updated_date", "last_used_date", "read_only")
-    search_fields = ("id", "name", "prefix", "owner__username")
+    # Use exact-match on id to avoid inefficient substring search on integers
+    search_fields = ("=id", "name", "prefix", "owner__username")
     autocomplete_fields = ("owner",)
 
 
-admin.site.unregister(APIKey)
+# Unregister the upstream APIKey model admin if it was registered.
+# Guard against NotRegistered to avoid import-time errors if it's absent.
+try:
+    admin.site.unregister(APIKeyModel)
+except NotRegistered:
+    # If not registered, nothing to do.
+    pass
+
 admin.site.register(AccessToken, AccessTokenAdmin)
