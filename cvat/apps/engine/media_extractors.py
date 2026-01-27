@@ -243,6 +243,14 @@ class CachingMediaIterator(RandomAccessIterator[_MediaT]):
 
 
 class IMediaReader(ABC):
+    ImageFrame: TypeAlias = tuple[str | io.BytesIO, str]
+    """
+    The first element is the contents of the image or the file system path to it.
+    The second element is always the path to the image.
+    """
+
+    VideoFrame: TypeAlias = tuple[av.VideoFrame, None]
+
     def __init__(
         self,
         *,
@@ -262,7 +270,7 @@ class IMediaReader(ABC):
         self._dimension = dimension
 
     @abstractmethod
-    def __iter__(self) -> Iterator[tuple[Any, str | None]]:
+    def __iter__(self) -> Iterator[ImageFrame] | Iterator[VideoFrame]:
         pass
 
     @abstractmethod
@@ -313,7 +321,7 @@ class ImageListReader(IMediaReader):
         self._source_paths = sort(source_paths, sorting_method)
         self._sorting_method = sorting_method
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[IMediaReader.ImageFrame]:
         for i in self.frame_range:
             yield (self.get_image(i), self.get_path(i))
 
@@ -611,7 +619,7 @@ class VideoReader(IMediaReader):
         self,
         *,
         frame_filter: bool | Iterable[int] = True,
-    ) -> Iterator[tuple[av.VideoFrame, None]]:
+    ) -> Iterator[IMediaReader.VideoFrame]:
         """
         If provided, frame_filter must be an ordered sequence in the ascending order.
         'True' means using the frames configured in the reader object.
@@ -658,7 +666,7 @@ class VideoReader(IMediaReader):
                 if next_frame_filter_frame is None:
                     return
 
-    def __iter__(self) -> Iterator[tuple[av.VideoFrame, None]]:
+    def __iter__(self) -> Iterator[IMediaReader.VideoFrame]:
         return self.iterate_frames()
 
     def _read_av_container(self) -> av.container.InputContainer:
