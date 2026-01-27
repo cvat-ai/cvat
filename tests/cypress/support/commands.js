@@ -1874,20 +1874,21 @@ Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
 });
 
 Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
-    const getJobItemMoreButton = () => cy.get('.cvat-job-item')
+    const getJobItemMoreBtn = () => cy.get('.cvat-job-item')
         .filter(':has(.cvat-tag-consensus)')
         .filter(`:contains("Job #${jobID}")`)
         .find('.cvat-job-item-more-button').first();
     cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
-    getJobItemMoreButton().scrollIntoView();
-    getJobItemMoreButton().click();
+    getJobItemMoreBtn().scrollIntoView();
+    getJobItemMoreBtn().should('be.visible').click({ force: true, scrollBehavior: false });
 
     cy.get('.cvat-job-item-menu').should('exist').and('be.visible');
-    cy.contains('li', 'Merge consensus job').should('exist').and('be.visible')
-        .click({ scrollBehavior: false });
+    cy.contains('[role="menuitem"]', /^Merge consensus job$/)
+        .should('exist').and('be.visible')
+        .click({ force: true, scrollBehavior: false });
     cy.get('.cvat-modal-confirm-consensus-merge-job')
-        .contains('button', 'Merge')
-        .click({ scrollBehavior: false });
+        .contains('button', /^Merge$/).should('exist').and('be.visible')
+        .click({ force: true, scrollBehavior: false });
 
     cy.wait('@mergeJob').its('response.statusCode').should('eq', status);
 });
