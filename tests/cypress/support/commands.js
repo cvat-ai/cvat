@@ -1887,8 +1887,9 @@ Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
         .should('exist').and('be.visible')
         .click({ force: true, scrollBehavior: false });
     cy.get('.cvat-modal-confirm-consensus-merge-job')
-        .contains('button', /^Merge$/).should('exist').and('be.visible')
-        .click({ force: true, scrollBehavior: false });
+        .contains('button', /^Merge$/)
+        .should('exist').and('be.visible')
+        .click();
 
     cy.wait('@mergeJob').its('response.statusCode').should('eq', status);
 });
