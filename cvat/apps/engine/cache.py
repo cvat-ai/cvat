@@ -221,6 +221,8 @@ class MediaCache:
         create_callback: Callback,
         cache_item_ttl: int | None = None,
     ) -> DataWithMime:
+        from cvat.apps.engine.signals import cache_item_created_signal
+
         timestamp = django_tz.now()
         item_data = create_callback()
         item_data_bytes = item_data[0].getvalue()
@@ -244,6 +246,13 @@ class MediaCache:
                         f"{settings.CVAT_CACHE_ITEM_MAX_SIZE}."
                     )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
+
+                cache_item_created_signal.send(
+                    sender=cls,
+                    item_key=key,
+                    item_data_size=item_size,
+                    rq_queue=getattr(rq.get_current_job(), "origin", None),
+                )
 
         return item
 
