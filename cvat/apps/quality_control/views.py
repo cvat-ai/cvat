@@ -25,7 +25,6 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import get_server_url
 from cvat.apps.engine.view_utils import deprecate_response, get_or_404
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.export import (
@@ -456,7 +455,7 @@ class QualityReportViewSet(
             request.query_params.get("format", default=QualityReportExportFormat.JSON.value)
         )
         report_data, content_type = prepare_report_for_downloading(
-            report, host=get_server_url(request), export_format=format_name
+            report, host=request.build_absolute_uri("/"), export_format=format_name
         )
         return HttpResponse(report_data, content_type=content_type)
 
