@@ -1725,11 +1725,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             // Calculate distance to fit the scene: distance = (size / 2) / tan(fov / 2)
             const maxDim = Math.max(width, height, depth);
             const fovRadians = camera.fov * (Math.PI / 180);
-            const distance = (maxDim / 2) / Math.tan(fovRadians / 2);
+            const cameraDistance = (maxDim / 2) / Math.tan(fovRadians / 2);
 
             // Position camera above and slightly offset from center
             const offset = 5;
-            const cameraDistance = distance * 1.2; // Add 20% margin
 
             return {
                 position: [
@@ -1762,13 +1761,20 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         );
 
         this.cameraSettings.perspective.position = position;
-        this.cameraSettings.perspective.lookAt = lookAt;
-
         this.sceneBBox = new THREE.Box3().setFromObject(points);
         this.views.perspective.scene.add(points.clone());
 
+        const origin = new THREE.Vector3(0, 0, 0);
+        const isOriginInScene = this.sceneBBox.containsPoint(origin);
         const axesHelper = new THREE.AxesHelper(5);
-        axesHelper.position.set(lookAt[0], lookAt[1], lookAt[2]);
+        if (isOriginInScene) {
+            this.cameraSettings.perspective.lookAt = [0, 0, 0];
+            axesHelper.position.set(0, 0, 0);
+        } else {
+            this.cameraSettings.perspective.lookAt = lookAt;
+            axesHelper.position.set(lookAt[0], lookAt[1], lookAt[2]);
+        }
+
         this.views.perspective.scene.add(axesHelper);
         // Setup TopView
         const canvasTopView = this.views.top.renderer.domElement;
