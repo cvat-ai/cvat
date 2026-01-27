@@ -262,7 +262,7 @@ class IMediaReader(ABC):
         self._dimension = dimension
 
     @abstractmethod
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[Any, str | None, Any]]:
         pass
 
     @abstractmethod
@@ -611,7 +611,7 @@ class VideoReader(IMediaReader):
         self,
         *,
         frame_filter: bool | Iterable[int] = True,
-    ) -> Iterator[tuple[av.VideoFrame, str, int]]:
+    ) -> Iterator[tuple[av.VideoFrame, None, int]]:
         """
         If provided, frame_filter must be an ordered sequence in the ascending order.
         'True' means using the frames configured in the reader object.
@@ -651,14 +651,14 @@ class VideoReader(IMediaReader):
                     if self._frame_size is None:
                         self._frame_size = (frame.width, frame.height)
 
-                    yield (frame, self._source_path, frame.pts)
+                    yield (frame, None, frame.pts)
 
                     next_frame_filter_frame = next(frame_filter_iter, None)
 
                 if next_frame_filter_frame is None:
                     return
 
-    def __iter__(self) -> Iterator[tuple[av.VideoFrame, str, int]]:
+    def __iter__(self) -> Iterator[tuple[av.VideoFrame, None, int]]:
         return self.iterate_frames()
 
     def _read_av_container(self) -> av.container.InputContainer:
