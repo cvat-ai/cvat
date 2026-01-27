@@ -15,26 +15,26 @@ context('Canvas 3D functionality. Grouping.', () => {
     const firstCuboidCreationParams = {
         objectType: 'Shape',
         labelName,
-        x: 400,
-        y: 200,
+        x: 360,
+        y: 320,
     };
     const secondCuboidCreationParams = {
         objectType: 'Shape',
         labelName,
-        x: 400,
-        y: 280,
+        x: 355,
+        y: 150,
     };
     const thirdCuboidCreationParams = {
         objectType: 'Shape',
         labelName,
-        x: 500,
-        y: 280,
+        x: 235,
+        y: 400,
     };
     const fourthCuboidCreationParams = {
         objectType: 'Shape',
         labelName,
-        x: 500,
-        y: 200,
+        x: 495,
+        y: 416,
     };
     const yellowHex = 'fcbe03';
     const yellowRgb = '252, 190, 3';
@@ -62,10 +62,10 @@ context('Canvas 3D functionality. Grouping.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Grouping two cuboids.', () => {
             cy.get('.cvat-group-control').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280);
-            cy.get('.cvat-canvas3d-perspective').click(400, 280);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280);
-            cy.get('.cvat-canvas3d-perspective').click(500, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 320);
+            cy.get('.cvat-canvas3d-perspective').click(360, 320);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 495, 416);
+            cy.get('.cvat-canvas3d-perspective').click(495, 416);
             cy.get('.cvat-group-control').click();
             cy.changeAppearance('Group');
             cy.get('#cvat-objects-sidebar-state-item-1').invoke('attr', 'style').then((bgColorItem1) => {
