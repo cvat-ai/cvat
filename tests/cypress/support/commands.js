@@ -1876,7 +1876,7 @@ Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
 Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
     const getJobItemMoreBtn = () => cy.get('.cvat-job-item')
         .filter(':has(.cvat-tag-consensus)')
-        .filter(`:contains("Job #${jobID}")`)
+        .filter(`:contains('a', "Job #${jobID}")`)
         .find('.cvat-job-item-more-button').first();
     cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
     getJobItemMoreBtn().scrollIntoView();
