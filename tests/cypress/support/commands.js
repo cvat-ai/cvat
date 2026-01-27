@@ -1886,7 +1886,7 @@ Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
     cy.contains('[role="menuitem"]', /^Merge consensus job$/)
         .should('exist').and('be.visible')
         .click({ force: true, scrollBehavior: false });
-    cy.get('.cvat-modal-confirm-consensus-merge-job')
+    cy.get('.cvat-modal-confirm-consensus-merge-job').should('be.visible')
         .contains('button', /^Merge$/)
         .should('exist').and('be.visible')
         .click();
