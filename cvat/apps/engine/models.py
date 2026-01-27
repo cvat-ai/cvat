@@ -670,6 +670,10 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
             return True
         return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
 
+    def require_data(self) -> Data:
+        assert self.data is not None
+        return self.data
+
     @cached_property
     def completed_jobs_count(self) -> int | None:
         # Requires this field to be defined externally,
@@ -1417,6 +1421,11 @@ class AnnotationGuide(TimestampedModel):
     @property
     def organization_id(self):
         return self.target.organization_id
+
+    @staticmethod
+    def get_asset_ids_from_markdown(markdown: str) -> set[str]:
+        pattern = r"\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)"
+        return set(re.findall(pattern, markdown))
 
 class Asset(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

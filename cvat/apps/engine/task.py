@@ -619,7 +619,7 @@ def create_thread(
         db_task, data, is_backup_restore=is_backup_restore
     )
 
-    db_data = db_task.data
+    db_data = db_task.require_data()
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
@@ -1611,7 +1611,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
 
         fs_original.result()
 
-    db_data = db_task.data
+    db_data = db_task.require_data()
 
     if db_data.compressed_chunk_type == models.DataChoice.VIDEO:
         compressed_chunk_writer_class = Mpeg4CompressedChunkWriter

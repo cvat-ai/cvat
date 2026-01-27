@@ -221,6 +221,8 @@ class MediaCache:
         create_callback: Callback,
         cache_item_ttl: int | None = None,
     ) -> DataWithMime:
+        from cvat.apps.engine.signals import cache_item_created_signal
+
         timestamp = django_tz.now()
         item_data = create_callback()
         item_data_bytes = item_data[0].getvalue()
@@ -244,6 +246,13 @@ class MediaCache:
                         f"{settings.CVAT_CACHE_ITEM_MAX_SIZE}."
                     )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
+
+                cache_item_created_signal.send(
+                    sender=cls,
+                    item_key=key,
+                    item_data_size=item_size,
+                    rq_queue=getattr(rq.get_current_job(), "origin", None),
+                )
 
         return item
 
@@ -581,7 +590,7 @@ class MediaCache:
     def read_raw_images(
         db_task: models.Task, frame_ids: Sequence[int], *, decode: bool = True
     ) -> Generator[tuple[PIL.Image.Image | str, str, str], None, None]:
-        db_data = db_task.data
+        db_data = db_task.require_data()
         manifest_path = db_data.get_manifest_path()
 
         if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
@@ -768,7 +777,7 @@ class MediaCache:
                 prev_frame <= cur_frame
             ), f"Requested frame ids must be sorted, got a ({prev_frame}, {cur_frame}) pair"
 
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         if hasattr(db_data, "video"):
             source_path = os.path.join(db_data.get_raw_data_dirname(), db_data.video.path)
@@ -822,7 +831,7 @@ class MediaCache:
         self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         chunk_size = db_data.chunk_size
         chunk_frame_ids = list(db_segment.frame_set)[
@@ -842,7 +851,7 @@ class MediaCache:
         self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
     ) -> DataWithMime:
         db_task = db_segment.task
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         chunk_size = db_data.chunk_size
         chunk_frame_ids = sorted(db_segment.frame_set)[
@@ -866,7 +875,7 @@ class MediaCache:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
-        db_data = db_task.data
+        db_data = db_task.require_data()
 
         frame_step = db_data.get_frame_step()
 
@@ -1102,7 +1111,7 @@ def prepare_chunk(
 ) -> DataWithMime:
     # TODO: refactor all chunk building into another class
 
-    db_data = db_task.data
+    db_data = db_task.require_data()
 
     writer_classes: dict[models.FrameQuality, type[IChunkWriter]] = {
         models.FrameQuality.COMPRESSED: (
