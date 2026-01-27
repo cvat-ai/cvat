@@ -30,8 +30,8 @@ export interface Props {
     cloudStorage?: CloudStorage;
 }
 
-type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'connection_string';
-type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'connectionString';
+type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'connection_string' | 'oauth_token' | 'oauth_refresh_token' | 'client_id' | 'client_secret';
+type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'connectionString' | 'oauthToken' | 'oauthRefreshToken' | 'clientId' | 'clientSecret';
 
 interface CloudStorageForm {
     credentials_type: CredentialsType;
@@ -51,6 +51,10 @@ interface CloudStorageForm {
     project_id?: string;
     manifests: string[];
     endpoint_url?: string;
+    oauth_token?: string;
+    oauth_refresh_token?: string;
+    client_id?: string;
+    client_secret?: string;
 }
 
 const { Dragger } = Upload;
@@ -86,6 +90,10 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         secretKey: 'X'.repeat(40),
         keyFile: new File([], 'fakeKey.json'),
         connectionString: 'X'.repeat(400),
+        oauthToken: 'X'.repeat(200),
+        oauthRefreshToken: 'X'.repeat(200),
+        clientId: 'X'.repeat(100),
+        clientSecret: 'X'.repeat(100),
     };
 
     const [keyVisibility, setKeyVisibility] = useState(false);
@@ -93,6 +101,10 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [sessionTokenVisibility, setSessionTokenVisibility] = useState(false);
     const [accountNameVisibility, setAccountNameVisibility] = useState(false);
     const [connectionStringVisibility, setConnectionStringVisibility] = useState(false);
+    const [oauthTokenVisibility, setOauthTokenVisibility] = useState(false);
+    const [oauthRefreshTokenVisibility, setOauthRefreshTokenVisibility] = useState(false);
+    const [clientIdVisibility, setClientIdVisibility] = useState(false);
+    const [clientSecretVisibility, setClientSecretVisibility] = useState(false);
 
     const [manifestNames, setManifestNames] = useState<string[]>([]);
 
@@ -491,6 +503,111 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
+        if (providerType === ProviderType.GOOGLE_DRIVE && credentialsType === CredentialsType.GOOGLE_DRIVE_OAUTH) {
+            return (
+                <>
+                    <Form.Item
+                        label='OAuth Token'
+                        name='oauth_token'
+                        rules={[{ required: true, message: 'Please, specify your OAuth token' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={1024}
+                            visibilityToggle={oauthTokenVisibility}
+                            onChange={() => setOauthTokenVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('oauthToken', 'oauth_token')}
+                            onBlur={() => onBlurCredentialsItem('oauthToken', 'oauth_token', setOauthTokenVisibility)}
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        label='Refresh Token'
+                        name='oauth_refresh_token'
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={1024}
+                            visibilityToggle={oauthRefreshTokenVisibility}
+                            onChange={() => setOauthRefreshTokenVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('oauthRefreshToken', 'oauth_refresh_token')}
+                            onBlur={() => onBlurCredentialsItem('oauthRefreshToken', 'oauth_refresh_token', setOauthRefreshTokenVisibility)}
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        label='Client ID'
+                        name='client_id'
+                        rules={[{ required: true, message: 'Please, specify your client ID' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={255}
+                            visibilityToggle={clientIdVisibility}
+                            onChange={() => setClientIdVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('clientId', 'client_id')}
+                            onBlur={() => onBlurCredentialsItem('clientId', 'client_id', setClientIdVisibility)}
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        label='Client Secret'
+                        name='client_secret'
+                        rules={[{ required: true, message: 'Please, specify your client secret' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={255}
+                            visibilityToggle={clientSecretVisibility}
+                            onChange={() => setClientSecretVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('clientSecret', 'client_secret')}
+                            onBlur={() => onBlurCredentialsItem('clientSecret', 'client_secret', setClientSecretVisibility)}
+                        />
+                    </Form.Item>
+                </>
+            );
+        }
+
+        if (providerType === ProviderType.GOOGLE_DRIVE && credentialsType === CredentialsType.KEY_FILE_PATH) {
+            return (
+                <Form.Item
+                    name='key_file'
+                    {...internalCommonProps}
+                    label={(
+                        <CVATTooltip title='You can upload a service account key file for Google Drive API access'>
+                            Key file
+                            <Button
+                                href='https://developers.google.com/drive/api/guides/about-auth'
+                                target='_blank'
+                                type='link'
+                                className='cvat-cloud-storage-help-button'
+                            >
+                                <QuestionCircleOutlined />
+                            </Button>
+                        </CVATTooltip>
+                    )}
+                >
+                    <Space align='start' className='cvat-cloud-storage-form-item-key-file'>
+                        <Dragger
+                            accept='.json, application/json'
+                            multiple={false}
+                            maxCount={1}
+                            fileList={
+                                uploadedKeyFile ? [{ uid: '1', name: uploadedKeyFile.name }] : []
+                            }
+                            beforeUpload={(file: RcFile): boolean => {
+                                setIsFakeKeyFileAttached(false);
+                                setUploadedKeyFile(file);
+                                return false;
+                            }}
+                        >
+                            <p className='ant-upload-drag-icon'>
+                                <UploadOutlined />
+                            </p>
+                            <p className='ant-upload-hint'>Click or drag file to this area</p>
+                        </Dragger>
+                    </Space>
+                </Form.Item>
+            );
+        }
+
         return null;
     };
 
@@ -621,6 +738,39 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         );
     };
 
+    const googleDriveConfiguration = (): JSX.Element => {
+        const internalCommonProps = {
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-1`,
+        };
+
+        return (
+            <>
+                <Form.Item
+                    label='Folder ID'
+                    name='resource'
+                    rules={[{ required: true, message: 'Please, specify a folder ID or use "root" for My Drive' }]}
+                    {...internalCommonProps}
+                >
+                    <Input disabled={!!cloudStorage} placeholder='root or folder ID' />
+                </Form.Item>
+                <Form.Item
+                    label='Authentication type'
+                    name='credentials_type'
+                    rules={[{ required: true, message: 'Please, specify credentials type' }]}
+                    {...internalCommonProps}
+                >
+                    <Select onSelect={(value: CredentialsType) => onChangeCredentialsType(value)}>
+                        <Select.Option value={CredentialsType.GOOGLE_DRIVE_OAUTH}>
+                            OAuth 2.0
+                        </Select.Option>
+                        <Select.Option value={CredentialsType.KEY_FILE_PATH}>Service account key file</Select.Option>
+                    </Select>
+                </Form.Item>
+                {credentialsBlock()}
+            </>
+        );
+    };
+
     return (
         <Form
             className='cvat-cloud-storage-form'
@@ -671,11 +821,18 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             Google Cloud Storage
                         </span>
                     </Select.Option>
+                    <Select.Option value={ProviderType.GOOGLE_DRIVE}>
+                        <span className='cvat-cloud-storage-select-provider'>
+                            <GoogleCloudProvider />
+                            Google Drive
+                        </span>
+                    </Select.Option>
                 </Select>
             </Form.Item>
             {providerType === ProviderType.AWS_S3_BUCKET && awsS3Configuration()}
             {providerType === ProviderType.AZURE_CONTAINER && azureBlobStorageConfiguration()}
             {providerType === ProviderType.GOOGLE_CLOUD_STORAGE && googleCloudStorageConfiguration()}
+            {providerType === ProviderType.GOOGLE_DRIVE && googleDriveConfiguration()}
             <Form.Item
                 label={(
                     <CVATTooltip title='Prefix is used to filter bucket content'>

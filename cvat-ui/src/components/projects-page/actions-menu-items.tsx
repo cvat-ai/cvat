@@ -112,5 +112,5 @@ export default function ProjectActionsItems(
         }),
     );
 
-    return menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
+    return menuItems.slice().sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]).map((menuItem) => menuItem[0]);
 }

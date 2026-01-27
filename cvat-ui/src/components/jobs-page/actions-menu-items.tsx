@@ -142,6 +142,6 @@ export default function JobActionsItems(
     );
 
     // Sort and return menu items
-    const sortedMenuItems = menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
+    const sortedMenuItems = menuItems.slice().sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
     return sortedMenuItems.map((menuItem) => menuItem[0]);
 }
