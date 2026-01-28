@@ -326,10 +326,9 @@ function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
         },
         set(target, prop, value) {
             if (prop === 'lock') {
-                if (value === false && !target.isGroundTruth) {
+                if (!value && !target.isGroundTruth) {
                     userUnlockedInReviewMode.add(target.clientID as number);
-                }
-                if (value === true) {
+                } else if (value === true) {
                     userUnlockedInReviewMode.delete(target.clientID as number);
                 }
             }
@@ -1224,7 +1223,9 @@ export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
         dispatch(changeWorkspace(workspace));
 
         // Re-fetch annotations to apply or remove the Proxy wrapper
-        dispatch(fetchAnnotationsAsync());
+        if (currentWorkspace === Workspace.REVIEW || workspace === Workspace.REVIEW) {
+            dispatch(fetchAnnotationsAsync());
+        }
     };
 }
 
