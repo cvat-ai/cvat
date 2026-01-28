@@ -1431,7 +1431,6 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                         chunk_real_frame, quality=quality
                     ).data,
                     os.path.basename(db_frame_path),
-                    chunk_frame,
                 )
 
         with closing(_iterate_chunk_frames()) as frame_iter:
