@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,11 +20,14 @@ import {
 } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
-import { CombinedState, StorageLocation } from 'reducers';
+import { CombinedState } from 'reducers';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
-import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
+import {
+    getCore, Job, Loader, Project, Storage, StorageData, StorageLocation,
+    Task,
+} from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
 import { createAction, ActionUnion } from 'utils/redux';
 
@@ -448,11 +451,13 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         form.resetFields();
         dispatch(reducerActions.setFile(null));
         dispatch(reducerActions.setFileName(''));
-        appDispatch(importActions.closeImportDatasetModal(instance));
+        if (instance) {
+            appDispatch(importActions.closeImportDatasetModal(instance));
+        }
     }, [form, instance]);
 
     const onUpload = (): void => {
-        if (uploadParams && uploadParams.resource) {
+        if (instance && uploadParams && uploadParams.resource) {
             appDispatch(
                 importDatasetAsync(
                     instance,
@@ -644,16 +649,16 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 }
 
 interface StateToProps {
-    importers: any;
+    importers: Loader[];
     instanceT: 'project' | 'task' | 'job' | null;
-    instance: any;
+    instance: Project | Task | Job | null;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { instanceType } = state.import;
 
     return {
-        importers: state.formats.annotationFormats.loaders,
+        importers: state.formats.annotationFormats?.loaders ?? [],
         instanceT: instanceType,
         instance: !instanceType ? null : (
             state.import[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']

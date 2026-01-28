@@ -35,7 +35,7 @@ for (const key of Object.keys(originalDraw)) {
     SVG.Element.prototype.draw[key] = originalDraw[key];
 }
 
-// Create undo for polygones and polylines
+// Create undo for polygons and polylines
 function undo(): void {
     if (this.set && this.set.length()) {
         this.set.members.splice(-1, 1)[0].remove();
@@ -59,33 +59,7 @@ SVG.Element.prototype.draw.extend(
     }),
 );
 
-// Create transform for rect, polyline and polygon
-function transform(): void {
-    this.m = this.el.node.getScreenCTM().inverse();
-    this.offset = { x: window.pageXOffset, y: window.pageYOffset };
-}
-
-SVG.Element.prototype.draw.extend(
-    'rect',
-    Object.assign({}, SVG.Element.prototype.draw.plugins.rect, {
-        transform: transform,
-    }),
-);
-
-SVG.Element.prototype.draw.extend(
-    'polyline',
-    Object.assign({}, SVG.Element.prototype.draw.plugins.polyline, {
-        transform: transform,
-    }),
-);
-
-SVG.Element.prototype.draw.extend(
-    'polygon',
-    Object.assign({}, SVG.Element.prototype.draw.plugins.polygon, {
-        transform: transform,
-    }),
-);
-
+export const CIRCLE_STROKE = '#000';
 // Fix method drawCircles
 function drawCircles(): void {
     const array = this.el.array().valueOf();
@@ -109,6 +83,7 @@ function drawCircles(): void {
                 .circle(5)
                 .stroke({
                     width: 1,
+                    color: CIRCLE_STROKE,
                 })
                 .fill('#ccc')
                 .center(p.x, p.y),

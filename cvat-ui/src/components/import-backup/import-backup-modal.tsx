@@ -1,10 +1,10 @@
-// Copyright (C) 2022 CVAT.ai Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -12,12 +12,12 @@ import Notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
 import { InboxOutlined } from '@ant-design/icons';
-import { CombinedState, StorageLocation } from 'reducers';
+import { CombinedState } from 'reducers';
 import { importActions, importBackupAsync } from 'actions/import-actions';
 import SourceStorageField from 'components/storage/source-storage-field';
 import Input from 'antd/lib/input/Input';
 
-import { Storage, StorageData } from 'cvat-core-wrapper';
+import { Storage, StorageData, StorageLocation } from 'cvat-core-wrapper';
 
 type FormValues = {
     fileName?: string | undefined;
@@ -35,13 +35,21 @@ const initialValues: FormValues = {
 function ImportBackupModal(): JSX.Element {
     const [form] = Form.useForm();
     const [file, setFile] = useState<File | null>(null);
-    const instanceType = useSelector((state: CombinedState) => state.import.instanceType);
-    const modalVisible = useSelector((state: CombinedState) => {
-        if (instanceType && ['project', 'task'].includes(instanceType)) {
-            return state.import[`${instanceType}s` as 'projects' | 'tasks'].backup.modalVisible;
+    const { instanceType, modalVisible } = useSelector((state: CombinedState) => {
+        const instanceT = state.import.instanceType;
+        let visible = false;
+
+        if (instanceT === 'project') {
+            visible = state.import.projects.backup.modalVisible;
         }
-        return false;
-    });
+
+        if (instanceT === 'task') {
+            visible = state.import.tasks.backup.modalVisible;
+        }
+
+        return { instanceType: instanceT, modalVisible: visible };
+    }, shallowEqual);
+
     const dispatch = useDispatch();
     const [selectedSourceStorage, setSelectedSourceStorage] = useState<StorageData>({
         location: StorageLocation.LOCAL,

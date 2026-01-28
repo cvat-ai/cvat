@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,6 +74,7 @@ context('Actions on polylines.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.addNewLabel({ name: newLabelName });
         cy.openJob();
@@ -96,7 +97,7 @@ context('Actions on polylines.', () => {
         });
 
         it('Change direction.', () => {
-            const firtsPointCoords = {
+            const firstPointCoords = {
                 x: 0,
                 y: 0,
             };
@@ -107,15 +108,15 @@ context('Actions on polylines.', () => {
             cy.get('#cvat_canvas_shape_4').trigger('mousemove', { scrollBehavior: false });
             cy.get('#cvat_canvas_shape_4').trigger('mouseover', { scrollBehavior: false });
             cy.get('#cvat_canvas_shape_4').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('.svg_select_points_point').first().then((firtsPoint) => {
-                firtsPointCoords.x = firtsPoint.attr('cx');
-                firtsPointCoords.y = firtsPoint.attr('cy');
+            cy.get('.svg_select_points_point').first().then((firstPoint) => {
+                firstPointCoords.x = firstPoint.attr('cx');
+                firstPointCoords.y = firstPoint.attr('cy');
                 cy.get('.svg_select_points_point').last().then((lastPoint) => {
                     lastPointCoords.x = lastPoint.attr('cx');
                     lastPointCoords.y = lastPoint.attr('cy');
                     cy.get('.cvat_canvas_first_poly_point')
-                        .should('have.attr', 'cx', firtsPointCoords.x)
-                        .and('have.attr', 'cy', firtsPointCoords.y);
+                        .should('have.attr', 'cx', firstPointCoords.x)
+                        .and('have.attr', 'cy', firstPointCoords.y);
                     cy.get('.cvat_canvas_poly_direction').click({ scrollBehavior: false });
                     cy.get('.cvat_canvas_first_poly_point')
                         .should('have.attr', 'cx', lastPointCoords.x)

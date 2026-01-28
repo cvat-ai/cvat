@@ -25,7 +25,7 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
     const directoryToArchive = imagesFolder;
 
     before(() => {
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, task.name, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -35,8 +35,8 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteTasks(authKey, [task.name, task.nameSecond]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteTasks(authHeaders, [task.name, task.nameSecond]);
         });
     });
 

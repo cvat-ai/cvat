@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,6 +39,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
         // eslint-disable-next-line cypress/no-unnecessary-waiting
@@ -67,7 +68,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: dumpTypePC,
-                archiveCustomName: 'job_export_3d_annotation_custome_name_pc_format',
+                archiveCustomName: 'job_export_3d_annotation_custom_name_pc_format',
             };
             cy.exportJob(exportAnnotationRenameArchive);
             cy.downloadExport().then((file) => {
@@ -92,8 +93,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             cy.verifyNotification();
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click();
-            cy.get('button').contains('Save').trigger('mouseout');
+            cy.clickSaveAnnotationView();
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
         });
 
@@ -114,8 +114,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             cy.openTaskJob(taskName);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click();
-            cy.get('button').contains('Save').trigger('mouseout');
+            cy.clickSaveAnnotationView();
         });
     });
 });

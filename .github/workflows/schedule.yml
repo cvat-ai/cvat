@@ -5,9 +5,8 @@ on:
   workflow_dispatch:
 
 env:
-  SERVER_IMAGE_TEST_REPO: cvat_server
-  UI_IMAGE_TEST_REPO: instrumentation_cvat_ui
   CYPRESS_VERIFY_TIMEOUT: 180000 # https://docs.cypress.io/guides/guides/command-line#cypress-verify
+  CVAT_VERSION: "local"
 
 jobs:
   check_updates:
@@ -48,62 +47,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
-
       - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
       - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
-      - name: CVAT server. Extract metadata (tags, labels) for Docker
-        id: meta-server
-        uses: docker/metadata-action@master
-        with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
-          tags:
-            type=raw,value=nightly
-
-      - name: CVAT UI. Extract metadata (tags, labels) for Docker
-        id: meta-ui
-        uses: docker/metadata-action@master
-        with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.UI_IMAGE_TEST_REPO }}
-          tags:
-            type=raw,value=nightly
-
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create artifact directories
+        run: |
+          mkdir /tmp/cvat_server
+          mkdir /tmp/cvat_ui
+          mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
-          push: true
-          tags: ${{ steps.meta-server.outputs.tags }}
-          labels: ${{ steps.meta-server.outputs.labels }}
+          tags: cvat/server:${{ env.CVAT_VERSION }}
+          outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
           file: Dockerfile.ui
-          push: true
-          tags: ${{ steps.meta-ui.outputs.tags }}
-          labels: ${{ steps.meta-ui.outputs.labels }}
+          tags: cvat/ui:${{ env.CVAT_VERSION }}
+          outputs: type=docker,dest=/tmp/cvat_ui/image.tar
+
+      - name: Upload CVAT server artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/image.tar
+
+      - name: Upload CVAT UI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/image.tar
 
   unit_testing:
     needs: build
@@ -111,45 +104,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.10'
 
-      - name: Getting CVAT UI cache from the default branch
-        uses: actions/cache@v3
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v4
         with:
-          path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
+          name: cvat_server
+          path: /tmp/cvat_server/
 
-      - name: Building CVAT UI image
-        uses: docker/build-push-action@v2
+      - name: Download CVAT UI images
+        uses: actions/download-artifact@v4
         with:
-          context: .
-          file: ./Dockerfile.ui
-          cache-from: type=local,src=/tmp/cvat_cache_ui
-          tags: cvat/ui:latest
-          load: true
+          name: cvat_ui
+          path: /tmp/cvat_ui/
 
-      - name: CVAT server. Extract metadata (tags, labels) for Docker
-        id: meta-server
-        uses: docker/metadata-action@master
-        with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
-          tags:
-            type=raw,value=nightly
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
-
-      - name: Pull CVAT server image
+      - name: Load Docker images
         run: |
-          docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:local
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:latest
-          docker tag cvat/ui:latest cvat/ui:local
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker image ls -a
 
       - name: OPA tests
         run: |
@@ -158,17 +133,31 @@ jobs:
           docker compose run --rm -v "$PWD:/mnt/src:ro" -w /mnt/src \
             cvat_opa test cvat/apps/*/rules
 
-      - name: REST API and SDK tests
+      - name: Generate SDK
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-          pip3 install -r ./tests/python/requirements.txt
-          pip3 install -e ./cvat-sdk
-          pip3 install -e ./cvat-cli
+      - name: Install test requirements
+        run: |
+          pip3 install -e ./cvat-sdk -e ./cvat-cli -r ./tests/python/requirements.txt
 
-          pytest tests/python/
+      - name: REST API and SDK tests
+        run: |
+          echo 'Run 1: without cache'
+          pytest tests/python/ --alluredir=tests/python/allure-results
           pytest tests/python/ --stop-services
+
+          echo 'Run 2: with cache'
+          CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
+          pytest tests/python/ --stop-services
+
+      - name: Upload allure results for REST API tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-rest-api
+          path: tests/python/allure-results
 
       - name: Unit tests
         env:
@@ -179,11 +168,9 @@ jobs:
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml \
+            run --env PYTHONDEVMODE=1 cvat_ci /bin/bash \
             -c 'python manage.py test cvat/apps -v 2'
-
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
 
@@ -193,46 +180,34 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'actions_projects_models', 'canvas3d_functionality',
                 'issues_prs', 'issues_prs2', 'features']
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-            node-version: '16.x'
+            node-version: '22.x'
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v4
         with:
-          username: ${{ secrets.DOCKERHUB_CI_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
+          name: cvat_server
+          path: /tmp/cvat_server/
 
-      - name: CVAT server. Extract metadata (tags, labels) for Docker
-        id: meta-server
-        uses: docker/metadata-action@master
+      - name: Download CVAT UI image
+        uses: actions/download-artifact@v4
         with:
-          images: ${{ secrets.DOCKERHUB_CI_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
-          tags:
-            type=raw,value=nightly
+          name: cvat_ui
+          path: /tmp/cvat_ui/
 
-      - name: CVAT UI. Extract metadata (tags, labels) for Docker
-        id: meta-ui
-        uses: docker/metadata-action@master
-        with:
-          images: ${{ secrets.DOCKERHUB_CI_USERNAME }}/${{ env.UI_IMAGE_TEST_REPO }}
-          tags:
-            type=raw,value=nightly
-
-      - name: Pull CVAT UI image
+      - name: Load Docker images
         run: |
-          docker pull ${{ steps.meta-server.outputs.tags }}
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
-
-          docker pull ${{ steps.meta-ui.outputs.tags }}
-          docker tag ${{ steps.meta-ui.outputs.tags }} cvat/ui:dev
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker image ls -a
 
       - name: Run CVAT instance
         run: |
@@ -284,21 +259,20 @@ jobs:
       - name: Run tests
         run: |
           cd ./tests
-          yarn --frozen-lockfile
+          corepack enable yarn
+          yarn --immutable
 
           shopt -s extglob
           if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
             npx cypress run \
               --headed \
               --browser chrome \
-              --env coverage=false \
               --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
-              --env coverage=false \
-              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+              --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
 
       - name: Creating a log file from "cvat" container logs
@@ -326,3 +300,18 @@ jobs:
         with:
           name: cvat_container_logs_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cvat.log
+      - name: Upload Allure results as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-e2e-${{ matrix.specs }}
+          path: tests/allure-results-e2e
+
+  generate_report:
+    name: Generate Allure Report and Upload to S3
+    needs: [unit_testing, e2e_testing]
+    if: always()
+
+    uses: ./.github/workflows/generate-allure-report.yml
+    secrets:
+      AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}

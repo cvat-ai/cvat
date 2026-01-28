@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,11 +20,12 @@ context('Cancel "multiple paste". UI is not locked.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Copy, paste opject. Cancel pasting.', () => {
+        it('Copy, paste object. Cancel pasting.', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('#cvat_canvas_shape_1').trigger('mouseover');

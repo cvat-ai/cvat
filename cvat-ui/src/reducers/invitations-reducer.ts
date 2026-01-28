@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,6 +15,7 @@ const defaultState: InvitationsState = {
     count: 0,
     query: {
         page: 1,
+        pageSize: 10,
     },
 };
 

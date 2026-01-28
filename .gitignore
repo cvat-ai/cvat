@@ -1,17 +1,12 @@
 # Project Specific
 /data/
-/models/
+/events/
 /share/
 /static/
 /db.sqlite3
-/.*env*
 /keys
 /logs
 /profiles
-/ssh/*
-!/ssh/README.md
-/Mask_RCNN/
-/letsencrypt-webroot/
 
 # Ignore temporary files
 docker-compose.override.yml
@@ -21,6 +16,11 @@ __pycache__
 .coverage
 .husky/
 .python-version
+/tmp*cvat/
+/temp*/
+
+# Ignore generated test files
+docker-compose.tests.yml
 
 # Ignore npm logs file
 npm-debug.log*
@@ -37,7 +37,6 @@ yarn-error.log*
 #Ignore helm-related files
 /helm-chart/Chart.lock
 /helm-chart/values.*.yaml
-/helm-chart/*.values.yaml
 /helm-chart/charts/*
 
 #Ignore website temp files
@@ -49,6 +48,9 @@ yarn-error.log*
 
 # Ignore all the installed packages
 node_modules
+/*env*/
+/.*env*
+perfkit.egg-info/
 
 # Ignore all js dists
 cvat-data/dist
@@ -57,12 +59,21 @@ cvat-canvas/dist
 cvat-canvas3d/dist
 cvat-ui/dist
 
-# produced by npm run docs in cvat-core
-cvat-core/docs
-# produced by npm run test in cvat-core
-cvat-core/reports
 # produced by prepare in the root package.json script
 .husky
 
 # produced by cvat/apps/iam/rules/tests/generate_tests.py
 /cvat/apps/*/rules/*_test.gen.rego
+
+# produced by allure report
+/**/allure-report*
+/**/allure-results*
+
+# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+**/.pnp.*
+**/.yarn/*
+**/!.yarn/patches
+**/!.yarn/plugins
+**/!.yarn/releases
+**/!.yarn/sdks
+**/!.yarn/versions

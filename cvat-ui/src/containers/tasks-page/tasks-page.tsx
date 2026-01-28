@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@ interface StateToProps {
     query: TasksQuery;
     count: number;
     importing: boolean;
+    bulkFetching: boolean;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -19,6 +20,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         fetching: state.tasks.fetching,
+        bulkFetching: state.bulkActions.fetching,
         query: tasks.gettingQuery,
         count: state.tasks.count,
         importing: state.import.tasks.backup.importing,

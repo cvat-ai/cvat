@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +24,7 @@ context('Task status updated after initial save.', () => {
 
     before(() => {
         cy.headlessLogout();
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.url().should('contain', '/tasks');
         cy.headlessCreateTask({
@@ -53,9 +53,7 @@ context('Task status updated after initial save.', () => {
 
     describe(`Testing "${labelName}"`, () => {
         it('State of the created task should be "new".', () => {
-            cy.intercept('GET', `/tasks/${taskID}`).as('visitTaskPage');
-            cy.visit(`/tasks/${taskID}`);
-            cy.wait('@visitTaskPage');
+            cy.openTaskById(taskID);
             cy.get('.cvat-job-item .cvat-job-item-state .ant-select-selection-item').invoke('text').should('equal', 'new');
         });
 

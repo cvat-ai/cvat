@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,11 +10,16 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Popover from 'antd/lib/popover';
 import Input from 'antd/lib/input';
-import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { LoadingOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { importActions } from 'actions/import-actions';
 import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers';
-import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import {
+    SortingComponent,
+    ResourceFilterHOC,
+    defaultVisibility,
+    ResourceSelectionInfo,
+} from 'components/resource-sorting-filtering';
 
 import dimensions from 'utils/dimensions';
 import {
@@ -31,12 +36,15 @@ interface Props {
     onApplySearch(search: string | null): void;
     query: ProjectsQuery;
     importing: boolean;
+    selectedCount: number;
+    onSelectAll: () => void;
 }
 
-function TopBarComponent(props: Props): JSX.Element {
+function TopBarComponent(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
     const {
         importing, query, onApplyFilter, onApplySorting, onApplySearch,
+        selectedCount, onSelectAll,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const prevImporting = usePrevious(importing);
@@ -52,15 +60,18 @@ function TopBarComponent(props: Props): JSX.Element {
         <Row className='cvat-projects-page-top-bar' justify='center' align='middle'>
             <Col {...dimensions}>
                 <div className='cvat-projects-page-filters-wrapper'>
-                    <Input.Search
-                        enterButton
-                        onSearch={(phrase: string) => {
-                            onApplySearch(phrase);
-                        }}
-                        defaultValue={query.search || ''}
-                        className='cvat-projects-page-search-bar'
-                        placeholder='Search ...'
-                    />
+                    <div>
+                        <Input.Search
+                            enterButton
+                            onSearch={(phrase: string) => {
+                                onApplySearch(phrase);
+                            }}
+                            defaultValue={query.search ?? ''}
+                            className='cvat-projects-page-search-bar'
+                            placeholder='Search ...'
+                        />
+                        <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
+                    </div>
                     <div>
                         <SortingComponent
                             visible={visibility.sorting}
@@ -109,7 +120,7 @@ function TopBarComponent(props: Props): JSX.Element {
                                     className='cvat-import-project-button'
                                     type='primary'
                                     disabled={importing}
-                                    icon={<UploadOutlined />}
+                                    icon={importing ? <LoadingOutlined /> : <UploadOutlined />}
                                     onClick={() => dispatch(importActions.openImportBackupModal('project'))}
                                 >
                                     Create from backup

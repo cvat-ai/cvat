@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,10 +11,12 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ObjectItemElementComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-element';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { ShapeType, Workspace } from 'reducers';
+import { Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
 import config from 'config';
-import { AnnotationConflict, ObjectState, QualityConflict } from 'cvat-core-wrapper';
+import {
+    AnnotationConflict, ObjectState, ShapeType, QualityConflict,
+} from 'cvat-core-wrapper';
 
 interface Props {
     readonly: boolean;

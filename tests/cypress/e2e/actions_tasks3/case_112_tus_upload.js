@@ -25,7 +25,7 @@ context('Create task with tus file', () => {
     const extension = 'bmp';
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX,
             posY, labelName, imagesCount, extension);

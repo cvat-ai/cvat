@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -30,7 +30,7 @@ context('Creating a project by inserting labels from a task.', { browser: '!fire
     const directoryToArchive = imagesFolder;
 
     before(() => {
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, task.name, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -40,9 +40,9 @@ context('Creating a project by inserting labels from a task.', { browser: '!fire
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteTasks(authKey, [task.name]);
-            cy.deleteProjects(authKey, [projectName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteTasks(authHeaders, [task.name]);
+            cy.deleteProjects(authHeaders, [projectName]);
         });
     });
 

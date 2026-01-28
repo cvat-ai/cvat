@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ import './styles.scss';
 import 'react-grid-layout/css/styles.css';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { shallowEqual, useSelector } from 'react-redux';
 import RGL, { WidthProvider } from 'react-grid-layout';
 import PropTypes from 'prop-types';
 import { isEqual } from 'lodash';
@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 
 import config from 'config';
+import { Canvas } from 'cvat-canvas-wrapper';
 import { DimensionType } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import CanvasWrapperComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-wrapper';
@@ -33,6 +34,7 @@ import CanvasWrapper3DComponent, {
 } from 'components/annotation-page/canvas/views/canvas3d/canvas-wrapper3D';
 import ContextImage from 'components/annotation-page/canvas/views/context-image/context-image';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { useUpdateEffect } from 'utils/hooks';
 import defaultLayout, { ItemLayout, ViewType } from './canvas-layout.conf';
 
 const ReactGridLayout = WidthProvider(RGL);
@@ -141,9 +143,15 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
 };
 
 function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
-    const relatedFiles = useSelector((state: CombinedState) => state.annotation.player.frame.relatedFiles);
-    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
-    const canvasBackgroundColor = useSelector((state: CombinedState) => state.settings.player.canvasBackgroundColor);
+    const {
+        relatedFiles,
+        canvasInstance,
+        canvasBackgroundColor,
+    } = useSelector((state: CombinedState) => ({
+        relatedFiles: state.annotation.player.frame.relatedFiles,
+        canvasInstance: state.annotation.canvas.instance,
+        canvasBackgroundColor: state.settings.player.canvasBackgroundColor,
+    }), shallowEqual);
 
     const computeRowHeight = (): number => {
         const container = window.document.getElementsByClassName('cvat-annotation-header')[0];
@@ -169,7 +177,8 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
     const [fullscreenKey, setFullscreenKey] = useState<string>('');
 
     const fitCanvas = useCallback(() => {
-        if (canvasInstance) {
+        if (canvasInstance instanceof Canvas) {
+            // only applicable for 2D canvas because of SVG-based nature
             canvasInstance.fitCanvas();
             canvasInstance.fit();
         }
@@ -197,7 +206,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         setRowHeight(computeRowHeight());
     }, []);
 
-    useEffect(() => {
+    useUpdateEffect(() => {
         window.dispatchEvent(new Event('resize'));
     }, [layoutConfig]);
 

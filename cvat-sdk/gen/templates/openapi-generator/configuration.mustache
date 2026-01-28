@@ -8,6 +8,7 @@ import multiprocessing
 import sys
 import typing
 import urllib3
+import urllib3.util
 
 from http import client as http_client
 from {{packageName}}.exceptions import ApiValueError
@@ -86,20 +87,34 @@ class Configuration:
 
     API Key Authentication Example.
 
-    You can authenticate with API token after doing the basic auth the following way:
+    You can authenticate with session tokens after logging in the following way:
 
     conf = {{{packageName}}}.Configuration(
         ...
         api_key={
             "sessionAuth": <sessionid cookie value>,
             "csrfAuth": <csrftoken cookie value>,
+        }
+    )
+
+    Alternatively, you can authenticate with an API access token in the following way:
+
+    conf = {{{packageName}}}.Configuration(
+        ...
+        access_token=<access token value>,
+    )
+
+    Alternatively, you can authenticate with a token after logging in the following way:
+
+    conf = {{{packageName}}}.Configuration(
+        ...
+        api_key={
             "tokenAuth": <auth key value>,
         }
     )
 
-    You need to specify all the 3 keys for this kind of auth.
-
     If your custom server uses another token prefix, use the 'api_key_prefix' parameter.
+    This authentication option is deprecated and will be removed in future.
 
 {{/hasApiKeyMethods}}
 {{#hasHttpBasicMethods}}
@@ -169,19 +184,20 @@ class Configuration:
 
     def __init__(self,
         host: typing.Optional[str] = None,
-        api_key: typing.Optional[typing.Dict[str, str]] = None,
-        api_key_prefix: typing.Optional[typing.Dict[str, str]] = None,
+        api_key: typing.Optional[dict[str, str]] = None,
+        api_key_prefix: typing.Optional[dict[str, str]] = None,
         username: typing.Optional[str] = None,
-        password: typing.Optional[str]=None,
+        password: typing.Optional[str] = None,
+        access_token: typing.Optional[str] = None,
         discard_unknown_keys: bool = False,
         disabled_client_side_validations: str = "",
 {{#hasHttpSignatureMethods}}
         signing_info=None,
 {{/hasHttpSignatureMethods}}
         server_index: typing.Optional[int] = None,
-        server_variables: typing.Optional[typing.Dict[str, str]] = None,
+        server_variables: typing.Optional[dict[str, str]] = None,
         server_operation_index: typing.Optional[int] = None,
-        server_operation_variables: typing.Optional[typing.Dict[str, str]] = None,
+        server_operation_variables: typing.Optional[dict[str, str]] = None,
         ssl_ca_cert: typing.Optional[str] = None,
         verify_ssl: typing.Optional[bool] = None,
     ) -> None:
@@ -204,7 +220,7 @@ class Configuration:
         """Temp file folder for downloading files"""
 
         # Authentication Settings
-        self.access_token = None
+        self.access_token = access_token
         """Bearer API token"""
 
         self.api_key = {}
@@ -309,7 +325,9 @@ class Configuration:
         self.safe_chars_for_path_param = ''
         """Safe chars for path_param"""
 
-        self.retries = None
+        self.retries = urllib3.util.Retry(
+            total=3, status_forcelist=(502, 503, 504), backoff_factor=0.5
+        )
         """Adding retries to override urllib3 default value 3"""
 
         # Enable client side validation
@@ -553,6 +571,16 @@ class Configuration:
             }
 {{/isOAuth}}
 {{/authMethods}}
+
+        if 'csrfAuth' in auth and 'csrfHeaderAuth' not in auth:
+            # Copy 'csrfAuth' into 'csrfHeaderAuth' by default
+            auth['csrfHeaderAuth'] = {
+                'type': 'api_key',
+                'in': 'header',
+                'key': 'X-CSRFToken',
+                'value': auth['csrfAuth']['value'],
+            }
+
         return auth
 
     def to_debug_report(self):

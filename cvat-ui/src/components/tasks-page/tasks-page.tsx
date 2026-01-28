@@ -1,21 +1,23 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import { useDispatch } from 'react-redux';
-import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { TasksQuery, Indexable } from 'reducers';
+import { TasksQuery, CombinedState, SelectedResourceType } from 'reducers';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { anySearch } from 'utils/any-search';
+import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
@@ -25,25 +27,32 @@ interface Props {
     importing: boolean;
     query: TasksQuery;
     count: number;
+    bulkFetching: boolean;
 }
 
-function TasksPageComponent(props: Props): JSX.Element {
+function TasksPageComponent(props: Readonly<Props>): JSX.Element {
     const {
-        query, fetching, importing, count,
+        query, fetching, importing, count, bulkFetching,
     } = props;
 
     const dispatch = useDispatch();
     const history = useHistory();
     const [isMounted, setIsMounted] = useState(false);
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    const { currentTasks, deletedTasks, selectedCount } = useSelector((state: CombinedState) => ({
+        currentTasks: state.tasks.current,
+        deletedTasks: state.tasks.activities.deletes,
+        selectedCount: state.tasks.selected.length,
+    }), shallowEqual);
+
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectResources(
+            currentTasks.map((t) => t.id).filter((id) => !deletedTasks[id]),
+            SelectedResourceType.TASKS,
+        ));
+    }, [currentTasks, deletedTasks]);
+
+    const updatedQuery = useResourceQuery<TasksQuery>(query);
 
     useEffect(() => {
         dispatch(getTasksAsync({ ...updatedQuery }));
@@ -63,21 +72,22 @@ function TasksPageComponent(props: Props): JSX.Element {
     const content = count ? (
         <>
             <TaskListContainer />
-            <Row justify='center' align='middle'>
+            <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-tasks-pagination'
-                        onChange={(page: number) => {
+                        onChange={(page: number, pageSize: number) => {
                             dispatch(getTasksAsync({
                                 ...query,
                                 page,
+                                pageSize,
                             }));
                         }}
-                        showSizeChanger={false}
                         total={count}
-                        pageSize={10}
+                        pageSize={query.pageSize}
                         current={query.page}
                         showQuickJumper
+                        showSizeChanger
                     />
                 </Col>
             </Row>
@@ -118,8 +128,10 @@ function TasksPageComponent(props: Props): JSX.Element {
                 }}
                 query={updatedQuery}
                 importing={importing}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <div className='cvat-empty-tasks-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>

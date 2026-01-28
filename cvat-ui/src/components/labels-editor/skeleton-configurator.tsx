@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +19,7 @@ import { PointIcon } from 'icons';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ShortcutsContext from 'components/shortcuts.context';
-import { LabelType, ShapeType } from 'cvat-core-wrapper';
+import { Label, LabelType, ShapeType } from 'cvat-core-wrapper';
 import config from 'config';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -128,10 +128,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const labels: Record<string, LabelOptColor> = {};
         if (label && label.svg) {
             const sublabels = label.sublabels as LabelOptColor[];
-            const tmpSvg = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-
-            // eslint-disable-next-line no-unsanitized/property
-            tmpSvg.innerHTML = label.svg;
+            const tmpSvg = Label.parseUntrustedSvg(`<svg>${label.svg}</svg>`);
 
             for (const element of tmpSvg.children) {
                 if (element.tagName === 'circle') {
@@ -159,7 +156,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 }
             }
 
-            this.setupSkeleton(label.svg as string, labels);
+            this.setupSkeleton(tmpSvg, labels);
         }
     }
 
@@ -220,11 +217,10 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         }
     };
 
-    private setupSkeleton = (innerHTML: string, importedLabels: Record<string, LabelOptColor>): boolean => {
+    private setupSkeleton = (svg: Element, importedLabels: Record<string, LabelOptColor>): boolean => {
         const { svgRef } = this;
         if (svgRef.current) {
-            // eslint-disable-next-line no-unsanitized/property
-            svgRef.current.innerHTML = innerHTML;
+            svgRef.current.replaceChildren(...svg.children);
             this.nodeCounter = 0;
             this.elementCounter = 0;
             for (const element of svgRef.current.children) {
@@ -319,9 +315,12 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         });
 
         circle.addEventListener('contextmenu', () => {
-            this.setState({
-                contextMenuElement: elementID,
-            });
+            const { activeTool } = this.state;
+            if (activeTool !== 'join' || !this.findNotFinishedEdge()) {
+                this.setState({
+                    contextMenuElement: elementID,
+                });
+            }
         });
 
         circle.addEventListener('mouseout', () => {
@@ -505,8 +504,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                     if (cx && cy && elementID) {
                         const label = this.labels[elementID];
                         const text = window.document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                        // eslint-disable-next-line no-unsanitized/property
-                        text.innerHTML = `${label.name}`;
+                        text.textContent = label.name;
                         text.classList.add('cvat-skeleton-configurator-text-label');
                         setAttributes(text, {
                             x: +cx + TEXT_MARGIN,
@@ -577,6 +575,16 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         return null;
     }
 
+    private cancelNotFinishedEdge(): void {
+        const { activeTool } = this.state;
+        if (activeTool === 'join') {
+            const shape = this.findNotFinishedEdge();
+            if (shape) {
+                shape.remove();
+            }
+        }
+    }
+
     public submit(): SkeletonConfiguration | null {
         try {
             return this.wrappedSubmit();
@@ -600,12 +608,13 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
     public wrappedSubmit(): SkeletonConfiguration {
         const svg = this.svgRef.current;
-
-        if (!svg) throw new Error('SVG reference is null');
+        if (!svg) {
+            throw new Error('SVG reference is null');
+        }
 
         const sublabels = Object.values(this.labels);
-
         let elements = 0;
+        this.cancelNotFinishedEdge();
         Array.from(svg.children as any as SVGElement[]).forEach((child: SVGElement) => {
             const dataType = child.getAttribute('data-type');
             if (dataType && dataType.includes('element')) {
@@ -642,7 +651,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         if (elements !== sublabels.length) {
             throw new Error(
-                `Skeleton configurator state is not consistent. Number of sublabels ${sublabels.length}` +
+                `Skeleton configurator state is not consistent. Number of sublabels ${sublabels.length} ` +
                 `differs from number of elements ${elements}`,
             );
         }
@@ -793,8 +802,8 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                     if (svgRef.current) {
                                         this.setupTextLabels(false);
                                         const copy = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                                        // eslint-disable-next-line no-unsanitized/property
-                                        copy.innerHTML = svgRef.current.innerHTML;
+                                        copy.replaceChildren(...svgRef.current.cloneNode(true).childNodes);
+
                                         copy.setAttribute('viewBox', '0 0 100 100');
                                         this.setupTextLabels();
 
@@ -837,43 +846,38 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             accept='.svg'
                             beforeUpload={(file: RcFile) => {
                                 file.text().then((result) => {
-                                    const tmpSvg = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                                    // eslint-disable-next-line no-unsanitized/property
-                                    tmpSvg.innerHTML = result;
-
-                                    if (tmpSvg.children[0]?.tagName === 'svg') {
-                                        // eslint-disable-next-line no-unsanitized/property
-                                        tmpSvg.innerHTML = tmpSvg.children[0].innerHTML;
-                                    }
-
-                                    let isSVG = true;
-                                    for (let c = tmpSvg.childNodes, i = c.length; i--;) {
-                                        isSVG = isSVG && c[i].nodeType === 1;
-                                    }
-
-                                    if (isSVG) {
-                                        let labels = {};
-                                        const desc = Array.from(tmpSvg.children)
+                                    try {
+                                        const svg = Label.parseUntrustedSvg(result);
+                                        const desc = Array.from(svg.children)
                                             .find((child: Element): boolean => (
                                                 child.tagName === 'desc' &&
                                                 child.getAttribute('data-description-type') === 'labels-specification'
                                             ));
-                                        if (desc) {
-                                            try {
-                                                labels = JSON.parse(desc.textContent || '{}');
-                                                desc.remove();
-                                            } catch (_) {
-                                                // ignore
+                                        if (!desc) {
+                                            throw Error();
+                                        }
+
+                                        const labels = JSON.parse(desc.textContent || '{}');
+
+                                        for (const child of svg.children) {
+                                            if (child.nodeType !== 1 || !['line', 'circle'].includes(child.tagName)) {
+                                                child.remove();
                                             }
                                         }
 
-                                        this.setupSkeleton(tmpSvg.innerHTML, labels as Record<string, LabelOptColor>);
-                                    } else {
+                                        if (!Array.from(svg.children).some((child) => child.tagName === 'circle')) {
+                                            throw Error();
+                                        }
+
+                                        this.labels = {};
+                                        this.setupSkeleton(svg, labels as Record<string, LabelOptColor>);
+                                    } catch (_: unknown) {
                                         notification.error({
                                             message: 'Wrong skeleton structure',
                                         });
                                     }
                                 });
+
                                 return false;
                             }}
                         >

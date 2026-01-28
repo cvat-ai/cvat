@@ -5,12 +5,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { CombinedState, ObjectType } from 'reducers';
+import { CombinedState } from 'reducers';
 import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actions';
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { getCore, Label, ObjectState } from 'cvat-core-wrapper';
+import {
+    getCore, Label, ObjectState, ObjectType,
+} from 'cvat-core-wrapper';
 
 const cvat = getCore();
 interface DispatchToProps {
@@ -154,7 +156,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             <SetupTagPopoverComponent
                 labels={this.satisfiedLabels}
                 selectedLabelID={selectedLabelID}
-                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
+                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
                 onChangeLabel={this.onChangeLabel}
                 onSetup={this.onSetup}
             />

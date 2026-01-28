@@ -1,21 +1,22 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from datetime import timedelta
-from django.conf import settings
+
 from allauth.account.adapter import get_adapter
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ImproperlyConfigured
+from django.db import models
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.core.exceptions import ImproperlyConfigured
-from django.utils import timezone
-
 from cvat.apps.engine.models import TimestampedModel
+
 
 class Organization(TimestampedModel):
     slug = models.SlugField(max_length=16, blank=False, unique=True)
@@ -23,39 +24,45 @@ class Organization(TimestampedModel):
     description = models.TextField(blank=True)
     contact = models.JSONField(blank=True, default=dict)
 
-    owner = models.ForeignKey(get_user_model(), null=True,
-        blank=True, on_delete=models.SET_NULL, related_name='+')
+    owner = models.ForeignKey(
+        get_user_model(), null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
 
     def __str__(self):
         return self.slug
+
     class Meta:
         default_permissions = ()
+
 
 class Membership(models.Model):
-    WORKER = 'worker'
-    SUPERVISOR = 'supervisor'
-    MAINTAINER = 'maintainer'
-    OWNER = 'owner'
+    WORKER = "worker"
+    SUPERVISOR = "supervisor"
+    MAINTAINER = "maintainer"
+    OWNER = "owner"
 
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE,
-        null=True, related_name='memberships')
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE,
-        related_name='members')
+    user = models.ForeignKey(
+        get_user_model(), on_delete=models.CASCADE, null=True, related_name="memberships"
+    )
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="members")
     is_active = models.BooleanField(default=False)
     joined_date = models.DateTimeField(null=True)
-    role = models.CharField(max_length=16, choices=[
-        (WORKER, 'Worker'),
-        (SUPERVISOR, 'Supervisor'),
-        (MAINTAINER, 'Maintainer'),
-        (OWNER, 'Owner'),
-    ])
+    role = models.CharField(
+        max_length=16,
+        choices=[
+            (WORKER, "Worker"),
+            (SUPERVISOR, "Supervisor"),
+            (MAINTAINER, "Maintainer"),
+            (OWNER, "Owner"),
+        ],
+    )
 
     class Meta:
         default_permissions = ()
-        unique_together = ('user', 'organization')
+        unique_together = ("user", "organization")
 
 
-# Inspried by https://github.com/bee-keeper/django-invitations
+# Inspired by https://github.com/bee-keeper/django-invitations
 class Invitation(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     created_date = models.DateTimeField(auto_now_add=True)
@@ -94,16 +101,16 @@ class Invitation(models.Model):
         site_name = current_site.name
         domain = current_site.domain
         context = {
-                'email': target_email,
-                'invitation_key': self.key,
-                'domain': domain,
-                'site_name': site_name,
-                'invitation_owner': self.owner.get_username(),
-                'organization_name': self.membership.organization.slug,
-                'protocol': 'https' if request.is_secure() else 'http',
+            "email": target_email,
+            "invitation_key": self.key,
+            "domain": domain,
+            "site_name": site_name,
+            "invitation_owner": self.owner.get_username(),
+            "organization_name": self.membership.organization.slug,
+            "protocol": "https" if request.is_secure() else "http",
         }
 
-        get_adapter(request).send_mail('invitation/invitation', target_email, context)
+        get_adapter(request).send_mail("invitation/invitation", target_email, context)
 
         self.sent_date = timezone.now()
         self.save()

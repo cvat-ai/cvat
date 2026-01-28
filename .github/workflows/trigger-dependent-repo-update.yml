@@ -1,0 +1,30 @@
+name: Trigger dependent repo update workflow
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ develop ]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate authentication token
+        id: gen-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CVAT_BOT_APP_ID }}
+          private-key: ${{ secrets.CVAT_BOT_PRIVATE_KEY }}
+          repositories: ${{ secrets.CVAT_DEPENDENT_REPO }}
+
+      - name: Trigger private repository workflow
+        env:
+          GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
+        run: |
+          gh api \
+            --method POST \
+            /repos/cvat-ai/${{ secrets.CVAT_DEPENDENT_REPO }}/dispatches \
+            -f 'event_type=upstream_updated' \
+            -F "client_payload[triggeredBy]=${{ github.repository }}" \
+            -F "client_payload[commitSha]=${{ github.sha }}" \
+            -F "client_payload[branch]=${{ github.ref }}"

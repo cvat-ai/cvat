@@ -1,13 +1,16 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
 from time import time
+
 from django.conf import settings
+
 from cvat.apps.engine.log import ServerLogManager
 
 slogger = ServerLogManager(__name__)
+
 
 def clear_import_cache(path: Path, creation_time: float) -> None:
     """
@@ -18,6 +21,9 @@ def clear_import_cache(path: Path, creation_time: float) -> None:
         path (Path): path to file
         creation_time (float): file creation time
     """
-    if path.is_file() and (time() - creation_time + 1) >= settings.IMPORT_CACHE_CLEAN_DELAY.total_seconds():
+    if (
+        path.is_file()
+        and (time() - creation_time + 1) >= settings.IMPORT_CACHE_CLEAN_DELAY.total_seconds()
+    ):
         path.unlink()
         slogger.glob.warning(f"The file {str(path)} was removed from cleaning job.")

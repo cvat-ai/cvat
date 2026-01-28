@@ -1,7 +1,9 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+
+name: cvat
 
 x-backend-env: &backend-env
   CVAT_POSTGRES_HOST: cvat_db
@@ -10,8 +12,9 @@ x-backend-env: &backend-env
   CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
   CVAT_REDIS_ONDISK_PORT: 6666
   CVAT_LOG_IMPORT_ERRORS: 'true'
+  CVAT_ALLOW_STATIC_CACHE: '${CVAT_ALLOW_STATIC_CACHE:-no}'
   DJANGO_LOG_SERVER_HOST: vector
-  DJANGO_LOG_SERVER_PORT: 80
+  DJANGO_LOG_SERVER_PORT: 8282
   no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
   SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
 
@@ -21,6 +24,8 @@ x-backend-deps: &backend-deps
   cvat_redis_ondisk:
     condition: service_started
   cvat_db:
+    condition: service_started
+  cvat_clickhouse:
     condition: service_started
 
 x-clickhouse-env: &clickhouse-env
@@ -46,7 +51,7 @@ services:
 
   cvat_redis_inmem:
     container_name: cvat_redis_inmem
-    image: redis:7.2.3-alpine
+    image: redis:7.2.11-alpine
     restart: always
     command: [
       "redis-server",
@@ -60,11 +65,8 @@ services:
 
   cvat_redis_ondisk:
     container_name: cvat_redis_ondisk
-    image: apache/kvrocks:2.7.0
+    image: apache/kvrocks:2.12.1
     restart: always
-    command: [
-      "--dir", "/var/lib/kvrocks/data"
-    ]
     # The kvrocks image a) has a healthcheck command, and b) has a root process
     # that doesn't reap children, so it's susceptible to the problem described here:
     # <https://stackoverflow.com/a/77109064>. Kvrocks also uses a tiny timeout for
@@ -72,9 +74,12 @@ services:
     # Use a separate init process as a workaround.
     init: true
     volumes:
-      - cvat_cache_db:/var/lib/kvrocks/data
+      - cvat_cache_db:/var/lib/kvrocks
     networks:
       - cvat
+    command: [
+      "--compact-cron", "0 3 * * *",
+      ]
 
   cvat_server:
     container_name: cvat_server
@@ -96,11 +101,13 @@ services:
       ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     command: init run server
     labels:
-      - traefik.enable=true
-      - traefik.http.services.cvat.loadbalancer.server.port=8080
-      - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
-        PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
-      - traefik.http.routers.cvat.entrypoints=web
+      traefik.enable: "true"
+      traefik.http.services.cvat.loadbalancer.server.port: "8080"
+      traefik.http.routers.cvat.rule:
+        Host(`${CVAT_HOST:-localhost}`) &&
+        (PathPrefix(`/api/`) || PathPrefix(`/static/`) || PathPrefix(`/admin`)
+          || PathPrefix(`/django-rq`))
+      traefik.http.routers.cvat.entrypoints: web
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -110,8 +117,8 @@ services:
         aliases:
           - cvat-server
 
-  cvat_utils:
-    container_name: cvat_utils
+  cvat_worker_utils:
+    container_name: cvat_worker_utils
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on: *backend-deps
@@ -119,7 +126,7 @@ services:
       <<: *backend-env
       CVAT_REDIS_INMEM_PASSWORD: ''
       NUMPROCS: 1
-    command: run utils
+    command: run worker notifications cleaning
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -135,7 +142,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 2
-    command: run worker.import
+    command: run worker import
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -151,7 +158,7 @@ services:
     environment:
       <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
-    command: run worker.export
+    command: run worker export
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -167,7 +174,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.annotation
+    command: run worker annotation
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -183,7 +190,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.webhooks
+    command: run worker webhooks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -199,7 +206,7 @@ services:
     environment:
       <<: *backend-env
       NUMPROCS: 1
-    command: run worker.quality_reports
+    command: run worker quality_reports
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -207,15 +214,31 @@ services:
     networks:
       - cvat
 
-  cvat_worker_analytics_reports:
-    container_name: cvat_worker_analytics_reports
+  cvat_worker_chunks:
+    container_name: cvat_worker_chunks
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on: *backend-deps
     environment:
-      <<: [*backend-env, *clickhouse-env]
+      <<: *backend-env
       NUMPROCS: 2
-    command: run worker.analytics_reports
+    command: run worker chunks
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
+  cvat_worker_consensus:
+    container_name: cvat_worker_consensus
+    image: cvat/server:${CVAT_VERSION:-dev}
+    restart: always
+    depends_on: *backend-deps
+    environment:
+      <<: *backend-env
+      NUMPROCS: 1
+    command: run worker consensus
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -230,15 +253,15 @@ services:
     depends_on:
       - cvat_server
     labels:
-      - traefik.enable=true
-      - traefik.http.services.cvat-ui.loadbalancer.server.port=80
-      - traefik.http.routers.cvat-ui.rule=Host(`${CVAT_HOST:-localhost}`)
-      - traefik.http.routers.cvat-ui.entrypoints=web
+      traefik.enable: "true"
+      traefik.http.services.cvat-ui.loadbalancer.server.port: "8000"
+      traefik.http.routers.cvat-ui.rule: Host(`${CVAT_HOST:-localhost}`)
+      traefik.http.routers.cvat-ui.entrypoints: web
     networks:
       - cvat
 
   traefik:
-    image: traefik:v2.10
+    image: traefik:v3.6
     container_name: traefik
     restart: always
     ports:
@@ -250,11 +273,19 @@ services:
       DJANGO_LOG_VIEWER_PORT: 3000
 
       TRAEFIK_ACCESSLOG_FORMAT: json
-      # We ought to restrict which fields get logged, so as to avoid redundant information,
-      # but it doesn't work when configuring with environment variables:
-      # <https://github.com/traefik/traefik/issues/9755>.
-      # And we want to use environment variables to allow individual settings to be
-      # overridden by other Compose files.
+      TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: drop
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_ClientHost: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_DownstreamContentSize: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_DownstreamStatus: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_Duration: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestHost: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestMethod: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestPath: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestPort: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RequestProtocol: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_RouterName: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_StartUTC: keep
+
       TRAEFIK_LOG_FORMAT: json
       TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
@@ -264,10 +295,10 @@ services:
     #   TRAEFIK_API_DASHBOARD: "true"
     #   TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
     # labels:
-    #   - traefik.enable=true
-    #   - traefik.http.routers.dashboard.entrypoints=dashboard
-    #   - traefik.http.routers.dashboard.service=api@internal
-    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
+    #   traefik.enable: "true"
+    #   traefik.http.routers.dashboard.entrypoints: dashboard
+    #   traefik.http.routers.dashboard.service: api@internal
+    #   traefik.http.routers.dashboard.rule: Host(`${CVAT_HOST:-localhost}`)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
@@ -281,7 +312,7 @@ services:
 
   cvat_opa:
     container_name: cvat_opa
-    image: openpolicyagent/opa:0.63.0
+    image: openpolicyagent/opa:1.12.2
     restart: always
     networks:
       cvat:
@@ -290,6 +321,7 @@ services:
     command:
       - run
       - --server
+      - --addr=:8181
       - --log-level=error
       - --set=services.cvat.url=http://cvat-server:8080
       - --set=bundles.cvat.service=cvat
@@ -300,7 +332,7 @@ services:
   cvat_clickhouse:
     container_name: cvat_clickhouse
     image: clickhouse/clickhouse-server:23.11-alpine
-    restart: always
+    restart: "always"
     environment:
       <<: *clickhouse-env
     networks:
@@ -308,12 +340,12 @@ services:
         aliases:
           - clickhouse
     volumes:
-      - ./components/analytics/clickhouse/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
       - cvat_events_db:/var/lib/clickhouse/
 
   cvat_vector:
     container_name: cvat_vector
     image: timberio/vector:0.26.0-alpine
+    user: "1000:1000" # Workaround for <https://github.com/vectordotdev/vector/issues/1599>.
     restart: always
     depends_on:
       - cvat_clickhouse
@@ -324,10 +356,16 @@ services:
         aliases:
           - vector
     volumes:
-      - ./components/analytics/vector/vector.toml:/etc/vector/vector.toml:ro
+      - type: bind
+        source: ./components/analytics/vector/vector.toml
+        target: /etc/vector/vector.toml
+        read_only: true
+      - type: tmpfs
+        target: /vector-data-dir
 
   cvat_grafana:
     image: grafana/grafana-oss:10.1.2
+    restart: always
     container_name: cvat_grafana
     environment:
       <<: *clickhouse-env
@@ -336,9 +374,8 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: true
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
       GF_AUTH_DISABLE_LOGIN_FORM: true
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-clickhouse-datasource
       GF_SERVER_ROOT_URL: http://${CVAT_HOST:-localhost}/analytics
-      GF_INSTALL_PLUGINS: https://github.com/grafana/clickhouse-datasource/releases/download/v4.0.8/grafana-clickhouse-datasource-4.0.8.linux_amd64.zip;grafana-clickhouse-datasource
+      GF_INSTALL_PLUGINS: 'grafana-clickhouse-datasource 4.8.2'
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/all_events.json
     volumes:
       - ./components/analytics/grafana/dashboards/:/var/lib/grafana/dashboards/:ro

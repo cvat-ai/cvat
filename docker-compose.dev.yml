@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 #
@@ -8,7 +8,7 @@
 services:
   cvat_db:
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
 
   cvat_server:
     build:
@@ -28,7 +28,7 @@ services:
       CVAT_DEBUG_WAIT: '${CVAT_DEBUG_WAIT_CLIENT:-no}'
       COVERAGE_PROCESS_START:
     ports:
-      - '9090:9090'
+      - '127.0.0.1:9090:9090'
 
   cvat_worker_export:
     environment:
@@ -52,7 +52,7 @@ services:
       CVAT_DEBUG_PORT: '9093'
       COVERAGE_PROCESS_START:
     ports:
-      - '9093:9093'
+      - '127.0.0.1:9093:9093'
 
   cvat_worker_quality_reports:
     environment:
@@ -64,19 +64,19 @@ services:
       CVAT_DEBUG_PORT: '9094'
       COVERAGE_PROCESS_START:
     ports:
-      - '9094:9094'
+      - '127.0.0.1:9094:9094'
 
-  cvat_worker_analytics_reports:
+  cvat_worker_consensus:
     environment:
       # For debugging, make sure to set 1 process
       # Due to the supervisord specifics, the extra processes will fail and
       # after few attempts supervisord will give up restarting, leaving only 1 process
-      NUMPROCS: 1
+      # NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
-      CVAT_DEBUG_PORT: '9095'
+      CVAT_DEBUG_PORT: '9096'
       COVERAGE_PROCESS_START:
     ports:
-      - '9095:9095'
+      - '127.0.0.1:9096:9096'
 
   cvat_worker_annotation:
     environment:
@@ -88,7 +88,7 @@ services:
       CVAT_DEBUG_PORT: '9091'
       COVERAGE_PROCESS_START:
     ports:
-      - '9091:9091'
+      - '127.0.0.1:9091:9091'
 
   cvat_ui:
     build:
@@ -102,20 +102,20 @@ services:
 
   cvat_clickhouse:
     ports:
-      - '8123:8123'
+      - '127.0.0.1:8123:8123'
 
   cvat_opa:
     ports:
-      - '8181:8181'
+      - '127.0.0.1:8181:8181'
 
   cvat_redis_inmem:
     ports:
-      - '6379:6379'
+      - '127.0.0.1:6379:6379'
 
   cvat_redis_ondisk:
     ports:
-      - '6666:6666'
+      - '127.0.0.1:6666:6666'
 
   cvat_vector:
     ports:
-      - '8282:80'
+      - '127.0.0.1:8282:8282'

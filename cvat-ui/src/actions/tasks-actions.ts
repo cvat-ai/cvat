@@ -1,16 +1,18 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
-import { TasksQuery, StorageLocation } from 'reducers';
+import { TasksQuery } from 'reducers';
 import {
-    getCore, RQStatus, Storage, Task,
+    getCore, RQStatus, Storage, StorageLocation, Task, UpdateStatusData, Request, FramesMetaData,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
+import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
+import { ResourceUpdateTypes } from 'utils/enums';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -28,13 +30,16 @@ export enum TasksActionTypes {
     GET_TASK_PREVIEW = 'GET_TASK_PREVIEW',
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
     GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
-    UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
+    UPDATE_TASK = 'UPDATE_TASK',
+    UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
+    UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
 }
 
-function getTasks(query: Partial<TasksQuery>, updateQuery: boolean): AnyAction {
+function getTasks(query: Partial<TasksQuery>, updateQuery: boolean, fetchingTimestamp: number): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS,
         payload: {
+            fetchingTimestamp,
             updateQuery,
             query,
         },
@@ -68,23 +73,30 @@ export function getTasksAsync(
     query: Partial<TasksQuery>,
     updateQuery = true,
 ): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
-        dispatch(getTasks(query, updateQuery));
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const requestedOn = Date.now();
+        const isRequestRelevant = (): boolean => (
+            getState().tasks.fetchingTimestamp === requestedOn
+        );
 
+        dispatch(getTasks(query, updateQuery, requestedOn));
         const filteredQuery = filterNull(query);
 
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
         } catch (error) {
-            dispatch(getTasksFailed(error));
+            if (isRequestRelevant()) {
+                dispatch(getTasksFailed(error));
+            }
             return;
         }
 
-        const array = Array.from(result);
-
-        dispatch(getInferenceStatusAsync());
-        dispatch(getTasksSuccess(array, result.count));
+        if (isRequestRelevant()) {
+            const array = Array.from(result);
+            dispatch(getInferenceStatusAsync());
+            dispatch(getTasksSuccess(array, result.count));
+        }
     };
 }
 
@@ -196,7 +208,7 @@ export function getTaskPreviewAsync(taskInstance: any): ThunkAction {
 
 export function updateTaskInState(task: Task): AnyAction {
     const action = {
-        type: TasksActionTypes.UPDATE_TASK_IN_STATE,
+        type: TasksActionTypes.UPDATE_TASK_SUCCESS,
         payload: { task },
     };
 
@@ -213,8 +225,8 @@ ThunkAction {
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
-            source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
-            target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
+            source_storage: new Storage(data.advanced.sourceStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
+            target_storage: new Storage(data.advanced.targetStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
         };
 
         if (data.projectId) {
@@ -251,20 +263,37 @@ ThunkAction {
             description.subset = data.subset;
         }
         if (data.cloudStorageId) {
-            description.cloud_storage_id = data.cloudStorageId;
+            description.data_cloud_storage_id = data.cloudStorageId;
+        }
+        if (data.advanced.consensusReplicas) {
+            description.consensus_replicas = +data.advanced.consensusReplicas;
+        }
+
+        const extras: Record<string, any> = {};
+
+        if (data.quality.validationMode !== ValidationMode.NONE) {
+            extras.validation_params = {
+                mode: data.quality.validationMode,
+                frame_selection_method: data.quality.frameSelectionMethod,
+                frame_share: data.quality.validationFramesPercent,
+                frames_per_job_share: data.quality.validationFramesPerJobPercent,
+            };
+        }
+
+        if (data.advanced.consensusReplicas) {
+            extras.consensus_replicas = description.consensus_replicas;
         }
 
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
-
         try {
-            const savedTask = await taskInstance.save({
-                requestStatusCallback(request) {
-                    let { message } = request;
+            const savedTask = await taskInstance.save(extras, {
+                updateStatusCallback(updateData: Request | UpdateStatusData) {
+                    let { message } = updateData;
+                    const { status, progress } = updateData;
                     let helperMessage = '';
-                    const { status, progress } = request;
                     if (!message) {
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             message = 'CVAT queued the task to import';
@@ -277,8 +306,8 @@ ThunkAction {
                             message = 'Unknown status received';
                         }
                     }
-                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
-                    if (request.id) updateRequestProgress(request, dispatch);
+                    onProgress?.(`${message}${progress ? ` ${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
+                    if (updateData instanceof Request) updateRequestProgress(updateData, dispatch);
                 },
             });
 
@@ -287,6 +316,61 @@ ThunkAction {
             return savedTask;
         } catch (error) {
             dispatch(createTaskFailed(error));
+            throw error;
+        }
+    };
+}
+
+function updateTask(taskId: number): AnyAction {
+    return {
+        type: TasksActionTypes.UPDATE_TASK,
+        payload: {
+            taskId,
+        },
+    };
+}
+
+function updateTaskFailed(taskId: number, error: any, updateType?: ResourceUpdateTypes): AnyAction {
+    return {
+        type: TasksActionTypes.UPDATE_TASK_FAILED,
+        payload: {
+            taskId,
+            error,
+            updateType,
+        },
+    };
+}
+
+export function updateTaskAsync(
+    taskInstance: Task,
+    fields: Parameters<Task['save']>[0],
+    updateType?: ResourceUpdateTypes,
+): ThunkAction<Promise<Task>> {
+    return async (dispatch: ThunkDispatch): Promise<Task> => {
+        try {
+            dispatch(updateTask(taskInstance.id));
+            const updated = await taskInstance.save(fields);
+            dispatch(updateTaskInState(updated));
+            return updated;
+        } catch (error) {
+            dispatch(updateTaskFailed(taskInstance.id, error, updateType));
+            throw error;
+        }
+    };
+}
+
+export function updateTaskMetadataAsync(
+    taskInstance: Task,
+    taskMeta: FramesMetaData,
+): ThunkAction<Promise<FramesMetaData>> {
+    return async (dispatch: ThunkDispatch): Promise<FramesMetaData> => {
+        try {
+            dispatch(updateTask(taskInstance.id));
+            const updatedMeta = await taskInstance.meta.save(taskMeta);
+            dispatch(updateTaskInState(taskInstance));
+            return updatedMeta;
+        } catch (error) {
+            dispatch(updateTaskFailed(taskInstance.id, error));
             throw error;
         }
     };

@@ -1,14 +1,16 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { projectName, labelName } from '../../support/const_project';
+import { projectDeleteSpec } from '../../support/const_project';
 
 context('Create more than one task per time when create from project.', () => {
     const issueID = 2900;
+    const projectName = projectDeleteSpec.name;
+    const labelName = projectDeleteSpec.labels[0].name;
     const taskName = {
         firstTask: `First task for ${projectName}`,
         secondTask: `Second task for ${projectName}`,
@@ -43,7 +45,12 @@ context('Create more than one task per time when create from project.', () => {
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.prepareUserSession('/projects');
         cy.openProject(projectName);
+    });
+    after(() => {
+        // restore deleted project
+        cy.headlessCreateProject(projectDeleteSpec);
     });
 
     describe(`Testing "Issue ${issueID}"`, () => {

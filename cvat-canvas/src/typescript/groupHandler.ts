@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ export class GroupHandlerImpl implements GroupHandler {
     private onSelectDone: (objects?: any[], duration?: number) => void;
     private selector: ObjectSelector;
     private initialized: boolean;
-    private statesToBeGroupped: any[];
+    private statesToBeGrouped: any[];
     private startTimestamp: number;
 
     private release(): void {
@@ -25,9 +25,9 @@ export class GroupHandlerImpl implements GroupHandler {
     }
 
     private initGrouping(selectionFilter: SelectionFilter): void {
-        this.statesToBeGroupped = [];
+        this.statesToBeGrouped = [];
         this.selector.enable((selected) => {
-            this.statesToBeGroupped = selected;
+            this.statesToBeGrouped = selected;
         }, selectionFilter);
         this.initialized = true;
         this.startTimestamp = Date.now();
@@ -35,10 +35,10 @@ export class GroupHandlerImpl implements GroupHandler {
 
     private closeGrouping(): void {
         if (this.initialized) {
-            const { statesToBeGroupped } = this;
+            const { statesToBeGrouped } = this;
             this.release();
-            if (statesToBeGroupped.length) {
-                this.onSelectDone(statesToBeGroupped, Date.now() - this.startTimestamp);
+            if (statesToBeGrouped.length) {
+                this.onSelectDone(statesToBeGrouped, Date.now() - this.startTimestamp);
             } else {
                 this.onSelectDone();
             }
@@ -51,7 +51,7 @@ export class GroupHandlerImpl implements GroupHandler {
     ) {
         this.onSelectDone = onSelectDone;
         this.selector = selector;
-        this.statesToBeGroupped = [];
+        this.statesToBeGrouped = [];
         this.initialized = false;
         this.startTimestamp = Date.now();
     }

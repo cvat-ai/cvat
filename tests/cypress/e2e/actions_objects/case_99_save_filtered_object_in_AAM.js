@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,9 +22,10 @@ context('Save filtered object in AAM.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.document().then((doc) => {
-            // Getting list of labels and create a label if neccessary
+            // Getting list of labels and create a label if necessary
             const labelsList = Array.from(doc.querySelectorAll('.cvat-constructor-viewer-item'));
             if (labelsList.length < 2) {
                 cy.addNewLabel({ name: newLabelName });
@@ -40,7 +41,7 @@ context('Save filtered object in AAM.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it(`Set filter label == “${labelName}”.`, () => {
+        it(`Set filter label == "${labelName}".`, () => {
             cy.addFiltersRule(0);
             cy.setFilter({
                 groupIndex: 0,

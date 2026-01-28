@@ -1,12 +1,12 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
 import zipfile
+from collections.abc import Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import Iterable, Sequence
 
 import PIL.Image
 
@@ -14,7 +14,13 @@ import cvat_sdk.core
 import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
 from cvat_sdk.datasets.caching import CacheManager, UpdatePolicy, make_cache_manager
-from cvat_sdk.datasets.common import FrameAnnotations, MediaElement, Sample, UnsupportedDatasetError
+from cvat_sdk.datasets.common import (
+    FrameAnnotations,
+    MediaDownloadPolicy,
+    MediaElement,
+    Sample,
+    UnsupportedDatasetError,
+)
 
 _NUM_DOWNLOAD_THREADS = 4
 
@@ -50,6 +56,7 @@ class TaskDataset:
         *,
         update_policy: UpdatePolicy = UpdatePolicy.IF_MISSING_OR_STALE,
         load_annotations: bool = True,
+        media_download_policy: MediaDownloadPolicy = MediaDownloadPolicy.PRELOAD_ALL,
     ) -> None:
         """
         Creates a dataset corresponding to the task with ID `task_id` on the
@@ -60,6 +67,11 @@ class TaskDataset:
         `load_annotations` determines whether annotations will be loaded from
         the server. If set to False, the `annotations` field in the samples will
         be set to None.
+
+        `media_download_policy` determines when media data is downloaded.
+
+        `MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND` may not be used with with `UpdatePolicy.NEVER`,
+        as it requires network access.
         """
 
         self._logger = client.logger
@@ -69,12 +81,6 @@ class TaskDataset:
 
         if not self._task.size or not self._task.data_chunk_size:
             raise UnsupportedDatasetError("The task has no data")
-
-        if self._task.data_original_chunk_type != "imageset":
-            raise UnsupportedDatasetError(
-                f"{self.__class__.__name__} only supports tasks with image chunks;"
-                f" current chunk type is {self._task.data_original_chunk_type!r}"
-            )
 
         self._logger.info("Fetching labels...")
         self._labels = tuple(self._task.get_labels())
@@ -89,23 +95,15 @@ class TaskDataset:
 
         active_frame_indexes = set(range(self._task.size)) - set(data_meta.deleted_frames)
 
-        self._logger.info("Downloading chunks...")
-
-        self._chunk_dir = cache_manager.chunk_dir(task_id)
-        self._chunk_dir.mkdir(exist_ok=True, parents=True)
-
-        needed_chunks = {index // self._task.data_chunk_size for index in active_frame_indexes}
-
-        with ThreadPoolExecutor(_NUM_DOWNLOAD_THREADS) as pool:
-
-            def ensure_chunk(chunk_index):
-                cache_manager.ensure_chunk(self._task, chunk_index)
-
-            for _ in pool.map(ensure_chunk, sorted(needed_chunks)):
-                # just need to loop through all results so that any exceptions are propagated
-                pass
-
-        self._logger.info("All chunks downloaded")
+        if media_download_policy == MediaDownloadPolicy.PRELOAD_ALL:
+            needed_chunks = {index // self._task.data_chunk_size for index in active_frame_indexes}
+            self._ensure_chunks(task_id, cache_manager, needed_chunks)
+            self._load_frame_image = self._load_frame_image_from_cache
+        elif media_download_policy == MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND:
+            assert update_policy != UpdatePolicy.NEVER
+            self._load_frame_image = self._load_frame_image_from_server
+        else:
+            assert False, "Unknown media download policy"
 
         if load_annotations:
             self._load_annotations(cache_manager, sorted(active_frame_indexes))
@@ -116,15 +114,40 @@ class TaskDataset:
 
         # TODO: tracks?
 
+        is_imageset = self._task.data_original_chunk_type == "imageset"
+
         self._samples = [
             Sample(
                 frame_index=k,
-                frame_name=data_meta.frames[k].name,
+                frame_name=data_meta.frames[k if is_imageset else 0].name,
                 annotations=v,
                 media=self._TaskMediaElement(self, k),
             )
             for k, v in self._frame_annotations.items()
         ]
+
+    def _ensure_chunks(self, task_id, cache_manager, chunk_indexes):
+        if self._task.data_original_chunk_type != "imageset":
+            raise UnsupportedDatasetError(
+                f"Preloading media data is only supported for tasks with image chunks;"
+                f" current chunk type is {self._task.data_original_chunk_type!r}"
+            )
+
+        self._logger.info("Downloading chunks...")
+
+        self._chunk_dir = cache_manager.chunk_dir(task_id)
+        self._chunk_dir.mkdir(exist_ok=True, parents=True)
+
+        with ThreadPoolExecutor(_NUM_DOWNLOAD_THREADS) as pool:
+
+            def ensure_chunk(chunk_index):
+                cache_manager.ensure_chunk(self._task, chunk_index)
+
+            for _ in pool.map(ensure_chunk, sorted(chunk_indexes)):
+                # just need to loop through all results so that any exceptions are propagated
+                pass
+
+        self._logger.info("All chunks downloaded")
 
     def _load_annotations(self, cache_manager: CacheManager, frame_indexes: Iterable[int]) -> None:
         annotations = cache_manager.ensure_task_model(
@@ -166,7 +189,7 @@ class TaskDataset:
         """
         return self._samples
 
-    def _load_frame_image(self, frame_index: int) -> PIL.Image:
+    def _load_frame_image_from_cache(self, frame_index: int) -> PIL.Image:
         assert frame_index in self._frame_annotations
 
         chunk_index = frame_index // self._task.data_chunk_size
@@ -178,3 +201,8 @@ class TaskDataset:
                 image.load()
 
         return image
+
+    def _load_frame_image_from_server(self, frame_index: int) -> PIL.Image:
+        assert frame_index in self._frame_annotations
+
+        return PIL.Image.open(self._task.get_frame(frame_index, quality="original"))

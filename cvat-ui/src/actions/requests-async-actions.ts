@@ -1,14 +1,16 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ThunkAction } from 'utils/redux';
-import { CombinedState, RequestsQuery, StorageLocation } from 'reducers';
+import { CombinedState, RequestsQuery } from 'reducers';
 import {
-    getCore, RQStatus, Request, Project, Task, Job,
+    getCore, RQStatus, Request, Project, Task, Job, StorageLocation,
 } from 'cvat-core-wrapper';
 import { listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
-import { RequestInstanceType, listen, requestsActions } from './requests-actions';
+import {
+    RequestInstanceType, listen, requestsActions,
+} from './requests-actions';
 import { listenImportBackupAsync, listenImportDatasetAsync } from './import-actions';
 
 const core = getCore();
@@ -20,7 +22,7 @@ export interface RequestParams {
     location?: StorageLocation;
 }
 
-export function getRequestsAsync(query: RequestsQuery): ThunkAction {
+export function getRequestsAsync(query: Partial<RequestsQuery> = {}): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
         dispatch(requestsActions.getRequests(query));
 
@@ -28,18 +30,21 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
 
         try {
             const requests = await core.requests.list();
+            dispatch(requestsActions.getRequestsSuccess(requests));
 
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
                 .forEach((request: Request): void => {
                     const {
                         id: rqID,
+                        status,
                         operation: {
                             type, target, format, taskID, projectID, jobID,
                         },
                     } = request;
 
-                    if (state.requests.requests[rqID]) {
+                    const isRequestFinished = [RQStatus.FINISHED, RQStatus.FAILED].includes(status);
+                    if (state.requests.requests[rqID] || isRequestFinished) {
                         return;
                     }
 
@@ -80,20 +85,19 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                         }
                     }
                 });
-            dispatch(requestsActions.getRequestsSuccess(requests));
         } catch (error) {
             dispatch(requestsActions.getRequestsFailed(error));
         }
     };
 }
 
-export function cancelRequestAsync(request: Request, onSuccess: () => void): ThunkAction {
+export function cancelRequestAsync(request: Request): ThunkAction {
     return async (dispatch): Promise<void> => {
-        dispatch(requestsActions.cancelRequest(request));
+        dispatch(requestsActions.cancelRequest());
 
         try {
             await core.requests.cancel(request.id);
-            onSuccess();
+            dispatch(requestsActions.cancelRequestSuccess(request));
         } catch (error) {
             dispatch(requestsActions.cancelRequestFailed(request, error));
         }

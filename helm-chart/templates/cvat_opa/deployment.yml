@@ -13,7 +13,7 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "cvat.labels" . | nindent 6 }}
+      {{- include "cvat.selectorLabels" . | nindent 6 }}
       app: cvat-app
       tier: opa
   template:
@@ -37,6 +37,7 @@ spec:
           args:
             - run
             - --server
+            - --addr=:8181
             - --set=decision_logs.console=true
             - --set=services.cvat.url=http://{{ .Release.Name }}-backend-service:8080
             - --set=bundles.cvat.service=cvat
@@ -52,6 +53,20 @@ spec:
           {{- with .Values.cvat.opa.additionalEnv }}
           env:
           {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- if .Values.cvat.opa.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              port: 8181
+              path: "/health?bundles"
+            {{- toYaml (omit .Values.cvat.opa.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          {{- if .Values.cvat.opa.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              port: 8181
+              path: "/health?bundles"
+            {{- toYaml (omit .Values.cvat.opa.livenessProbe "enabled") | nindent 12 }}
           {{- end }}
           {{- with .Values.cvat.opa.additionalVolumeMounts }}
           volumeMounts:

@@ -1,5 +1,4 @@
 gitpython
 inflection >= 0.5.1
-isort>=5.10.1
 packaging
 toml

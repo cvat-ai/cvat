@@ -1,14 +1,21 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import * as THREE from 'three';
-import { ViewType } from './canvas3dModel';
+import { OrientationVisibility, ViewType } from './canvas3dModel';
 import constants from './consts';
+import controlPointTexture from './controlPointTexture';
 
 export interface Indexable {
     [key: string]: any;
+}
+
+export interface ObjectArrowHelper {
+    x: THREE.ArrowHelper;
+    y: THREE.ArrowHelper;
+    z: THREE.ArrowHelper;
 }
 
 export function makeCornerPointsMatrix(x: number, y: number, z: number): number[][] {
@@ -31,6 +38,13 @@ export class CuboidModel {
     public front: THREE.Mesh;
     public wireframe: THREE.LineSegments;
 
+    public orientationArrows: Record<ViewType, ObjectArrowHelper> = {
+        [ViewType.PERSPECTIVE]: null,
+        [ViewType.TOP]: null,
+        [ViewType.SIDE]: null,
+        [ViewType.FRONT]: null,
+    };
+
     public constructor(outline: string, outlineColor: string) {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const material = new THREE.MeshBasicMaterial({
@@ -39,6 +53,7 @@ export class CuboidModel {
             transparent: true,
             opacity: 0.4,
         });
+
         this.perspective = new THREE.Mesh(geometry, material);
         const geo = new THREE.EdgesGeometry(this.perspective.geometry);
         this.wireframe = new THREE.LineSegments(
@@ -57,6 +72,13 @@ export class CuboidModel {
         this.top = new THREE.Mesh(geometry, material);
         this.side = new THREE.Mesh(geometry, material);
         this.front = new THREE.Mesh(geometry, material);
+
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
+            this.orientationArrows[view] = this.createArrows();
+            Object.values(this.orientationArrows[view]).forEach((arrow) => {
+                this[view].add(arrow);
+            });
+        });
 
         const planeTop = new THREE.Mesh(
             new THREE.PlaneGeometry(1, 1, 1, 1),
@@ -115,6 +137,37 @@ export class CuboidModel {
         this.front.add(camRotateHelper.clone());
     }
 
+    private createArrows(): ObjectArrowHelper {
+        return {
+            x: new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0.5, 0, 0), 1, 0xff0000),
+            y: new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0.5, 0), 1, 0x00ff00),
+            z: new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0.5), 1, 0x0000ff),
+        };
+    }
+
+    public getRotationHelperPosition(viewType: ViewType): THREE.Vector3 {
+        const position = viewType === ViewType.TOP ?
+            new THREE.Vector3(0, constants.ROTATION_HELPER_OFFSET, 0) :
+            new THREE.Vector3(0, 0, constants.ROTATION_HELPER_OFFSET);
+        return this[viewType].localToWorld(position);
+    }
+
+    public getResizeHelperPositions(): THREE.Vector3[] {
+        const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
+        return cornerPoints.map((point) => {
+            const localPoint = new THREE.Vector3().fromArray(point);
+            return this.perspective.localToWorld(localPoint.clone());
+        });
+    }
+
+    public setOrientationVisibility(orientationVisibility: OrientationVisibility): void {
+        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
+            Object.entries(this.orientationArrows[view]).forEach(([axis, arrow]) => {
+                arrow.visible = orientationVisibility[axis];
+            });
+        });
+    }
+
     public setPosition(x: number, y: number, z: number): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].position.set(x, y, z);
@@ -124,6 +177,18 @@ export class CuboidModel {
     public setScale(x: number, y: number, z: number): void {
         [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
             (this as Indexable)[view].scale.set(x, y, z);
+
+            // Arrow direction specifies its local Y axis, where it points to.
+            // When we change its direction to align with the X or Z axis,
+            // the arrow’s local coordinate system rotates accordingly.
+            // To maintain correct proportions, we apply the X or Z scaling of the cuboid
+            // to the arrow's Y axis (its original forward direction).
+            const xscale = 1.0 / x;
+            const yscale = 1.0 / y;
+            const zscale = 1.0 / z;
+            this.orientationArrows[view].x.scale.set(yscale, xscale, zscale);
+            this.orientationArrows[view].y.scale.set(xscale, yscale, zscale);
+            this.orientationArrows[view].z.scale.set(xscale, zscale, yscale);
         });
     }
 
@@ -192,23 +257,21 @@ export function removeCuboidEdges(instance: THREE.Mesh): void {
     instance.remove(edges);
 }
 
-export function createResizeHelper(instance: THREE.Mesh): void {
-    const sphereGeometry = new THREE.SphereGeometry(0.2);
-    const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ff0000', opacity: 1 });
-    const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
+export function createResizeHelper(cuboid: CuboidModel, viewType: ViewType): void {
+    const material = new THREE.SpriteMaterial({
+        color: '#ff0000',
+        opacity: 1,
+        map: controlPointTexture,
+    });
 
-    for (let i = 0; i < cornerPoints.length; i++) {
-        const point = new THREE.Vector3().fromArray(cornerPoints[i]);
-        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(0.1));
-        instance.add(tmpSphere);
-        tmpSphere.position.copy(point);
-        const globalPosition = tmpSphere.getWorldPosition(new THREE.Vector3());
-        instance.remove(tmpSphere);
-
-        const helper = new THREE.Mesh(sphereGeometry.clone(), sphereMaterial.clone());
-        helper.position.copy(globalPosition);
+    const positions = cuboid.getResizeHelperPositions();
+    for (let i = 0; i < positions.length; i++) {
+        const position = positions[i];
+        const helper = new THREE.Sprite(material);
+        helper.renderOrder = Number.MAX_SAFE_INTEGER;
         helper.name = `${constants.RESIZE_HELPER_NAME}_${i}`;
-        instance.parent.add(helper);
+        helper.position.copy(position);
+        cuboid[viewType].parent.add(helper);
     }
 }
 
@@ -219,26 +282,18 @@ export function removeResizeHelper(instance: THREE.Mesh): void {
         });
 }
 
-export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): void {
+export function createRotationHelper(cuboid: CuboidModel, viewType: ViewType): void {
     if ([ViewType.TOP, ViewType.SIDE, ViewType.FRONT].includes(viewType)) {
-        // Create a temporary element to get correct position
-        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(0.2));
-        instance.add(tmpSphere);
-        if (viewType === ViewType.TOP) {
-            tmpSphere.translateY(constants.ROTATION_HELPER_OFFSET);
-        } else {
-            tmpSphere.translateZ(constants.ROTATION_HELPER_OFFSET);
-        }
-        const globalPosition = tmpSphere.getWorldPosition(new THREE.Vector3());
-        instance.remove(tmpSphere);
-
-        // Create rotation helper itself first
-        const sphereGeometry = new THREE.SphereGeometry(0.2);
-        const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#33b864', opacity: 1 });
-        const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        const helperPosition = cuboid.getRotationHelperPosition(viewType);
+        const rotationHelper = new THREE.Sprite(new THREE.SpriteMaterial({
+            color: '#33b864',
+            opacity: 1,
+            map: controlPointTexture,
+        }));
+        rotationHelper.renderOrder = Number.MAX_SAFE_INTEGER;
         rotationHelper.name = constants.ROTATION_HELPER_NAME;
-        instance.parent.add(rotationHelper);
-        rotationHelper.position.copy(globalPosition);
+        rotationHelper.position.copy(helperPosition);
+        cuboid[viewType].parent.add(rotationHelper);
     }
 }
 

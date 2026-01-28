@@ -1,14 +1,15 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React from 'react';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 import Layout from 'antd/lib/layout';
 import { Col, Row } from 'antd/lib/grid';
-import { CVATLogo } from 'icons';
-import Icon from '@ant-design/icons';
 import Title from 'antd/lib/typography/Title';
+import CVATLogo from 'components/common/cvat-logo';
 import SVGSigningBackground from '../../assets/signing-background.svg';
 
 interface SignInLayoutComponentProps {
@@ -51,6 +52,8 @@ export const formSizes: FormSizes = {
 function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
     const { children } = props;
     const { Content, Header } = Layout;
+    const subtitle = useSelector((state: CombinedState) => state.about.server.subtitle);
+
     const titleSizes = {
         xs: { span: 0 },
         sm: { span: 0 },
@@ -71,9 +74,9 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
         <Layout>
             <SVGSigningBackground className='cvat-signing-background' />
             <Header className='cvat-signing-header'>
-                <Row justify='center' align='middle'>
+                <Row className='cvat-signing-header-logo-wrapper' justify='center' align='middle'>
                     <Col {...logoSizes}>
-                        <Icon className='cvat-logo-icon' component={CVATLogo} />
+                        <CVATLogo />
                     </Col>
                 </Row>
             </Header>
@@ -81,8 +84,7 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
                 <Content>
                     <Row justify='center' align='middle' style={{ height: '100%' }}>
                         <Col {...titleSizes} className='cvat-signing-title'>
-                            <Title>Open Data</Title>
-                            <Title>Annotation Platform</Title>
+                            <Title>{subtitle}</Title>
                         </Col>
                         {children}
                     </Row>

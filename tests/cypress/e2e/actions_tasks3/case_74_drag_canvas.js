@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +13,7 @@ context('Drag canvas.', () => {
     let leftBefore;
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
@@ -29,7 +30,7 @@ context('Drag canvas.', () => {
             cy.get('.cvat-canvas-container').trigger('mousemove', 500, 500);
         });
 
-        it('Top and left style perameters is changed.', () => {
+        it('Top and left style parameters is changed.', () => {
             cy.get('#cvat_canvas_background')
                 .invoke('attr', 'style')
                 .then(($style) => {
@@ -40,7 +41,7 @@ context('Drag canvas.', () => {
                 });
         });
 
-        it('Duble click on canvas. Parameters returned to their original value', () => {
+        it('Double click on canvas. Parameters returned to their original value', () => {
             cy.get('.cvat-canvas-container').dblclick();
             cy.get('#cvat_canvas_background')
                 .invoke('attr', 'style')

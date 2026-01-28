@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,14 +29,20 @@ function statusMessage(message: string, defaultMessage: string, postfix?: JSX.El
 export interface Props {
     status: RQStatus | null;
     message: string | null;
+    cancelled: boolean;
 }
 
 function StatusMessage(props: Props): JSX.Element {
+    const { cancelled } = props;
     let { status, message } = props;
     message = message || '';
     status = status || RQStatus.FINISHED;
 
     const [textType, classHelper] = ((_status: RQStatus) => {
+        if (cancelled) {
+            return [undefined, 'cancelled'];
+        }
+
         if (_status === RQStatus.FINISHED) {
             return ['success', 'success'];
         }
@@ -59,6 +65,10 @@ function StatusMessage(props: Props): JSX.Element {
             strong
         >
             {((): JSX.Element => {
+                if (cancelled) {
+                    return statusMessage(message, 'Cancelled');
+                }
+
                 if (status === RQStatus.FINISHED) {
                     return statusMessage(message, 'Finished');
                 }

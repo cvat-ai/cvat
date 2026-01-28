@@ -1,27 +1,27 @@
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useHistory } from 'react-router';
-import moment from 'moment';
+import React, { useCallback, useState } from 'react';
+import dayjs from 'dayjs';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
-import { MoreOutlined } from '@ant-design/icons';
-import Modal from 'antd/lib/modal';
 import Paragraph from 'antd/lib/typography/Paragraph';
+import { MoreOutlined } from '@ant-design/icons';
 
 import { groupEvents } from 'components/setup-webhook-pages/setup-webhook-content';
-import Menu from 'components/dropdown-menu';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { deleteWebhookAsync } from 'actions/webhooks-actions';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
+import { useContextMenuClick } from 'utils/hooks';
+import WebhookActionsMenu from './actions-menu';
 
 export interface WebhookItemProps {
     webhookInstance: any;
+    selected: boolean;
+    onClick: (event: React.MouseEvent) => boolean;
 }
 
 interface WebhookStatus {
@@ -30,13 +30,13 @@ interface WebhookStatus {
 }
 
 function setUpWebhookStatus(status: number): WebhookStatus {
-    if (status && status.toString().startsWith('2')) {
+    if (status?.toString().startsWith('2')) {
         return {
             message: `Last delivery was successful. Response: ${status}`,
             className: 'cvat-webhook-status-available',
         };
     }
-    if (status && status.toString().startsWith('5')) {
+    if (status?.toString().startsWith('5')) {
         return {
             message: `Last delivery was not successful. Response: ${status}`,
             className: 'cvat-webhook-status-failed',
@@ -48,26 +48,51 @@ function setUpWebhookStatus(status: number): WebhookStatus {
     };
 }
 
-function WebhookItem(props: WebhookItemProps): JSX.Element | null {
-    const [isRemoved, setIsRemoved] = useState<boolean>(false);
+function WebhookItem(props: Readonly<WebhookItemProps>): JSX.Element | null {
     const [pingFetching, setPingFetching] = useState<boolean>(false);
-    const history = useHistory();
-    const dispatch = useDispatch();
-    const { webhookInstance } = props;
+    const {
+        webhookInstance, selected, onClick,
+    } = props;
     const {
         id, description, updatedDate, createdDate, owner, targetURL, events,
     } = webhookInstance;
 
-    const updated = moment(updatedDate).fromNow();
-    const created = moment(createdDate).format('MMMM Do YYYY');
+    const updated = dayjs(updatedDate).fromNow();
+    const created = dayjs(createdDate).format('MMMM Do YYYY');
     const username = owner ? owner.username : null;
 
     const { lastStatus } = webhookInstance;
     const [webhookStatus, setWebhookStatus] = useState<WebhookStatus>(setUpWebhookStatus(lastStatus));
 
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
+
+    const deletes = useSelector((state: CombinedState) => state.webhooks.activities.deletes);
+    const deleted = webhookInstance.id in deletes ? deletes[webhookInstance.id] : false;
+
     const eventsList = groupEvents(events).join(', ');
-    return (
-        <Row className='cvat-webhooks-list-item' style={isRemoved ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
+
+    const onPing = useCallback((): void => {
+        setPingFetching(true);
+        webhookInstance.ping().then((deliveryInstance: any) => {
+            setWebhookStatus(setUpWebhookStatus(
+                deliveryInstance.statusCode ? deliveryInstance.statusCode : 'Timeout',
+            ));
+        }).finally(() => {
+            setPingFetching(false);
+        });
+    }, [webhookInstance]);
+
+    const rowClassName = `cvat-webhooks-list-item${selected ? ' cvat-item-selected' : ''}`;
+
+    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
+    const row = (
+        <Row
+            ref={itemRef}
+            className={rowClassName}
+            style={deleted ? { opacity: 0.5, pointerEvents: 'none' } : {}}
+            onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
+        >
             <Col span={1}>
                 {
                     webhookStatus.message ? (
@@ -131,16 +156,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                             loading={pingFetching}
                             size='large'
                             ghost
-                            onClick={(): void => {
-                                setPingFetching(true);
-                                webhookInstance.ping().then((deliveryInstance: any) => {
-                                    setWebhookStatus(setUpWebhookStatus(
-                                        deliveryInstance.statusCode ? deliveryInstance.statusCode : 'Timeout',
-                                    ));
-                                }).finally(() => {
-                                    setPingFetching(false);
-                                });
-                            }}
+                            onClick={onPing}
                         >
                             Ping
                         </Button>
@@ -148,52 +164,25 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 </Row>
                 <Row justify='end'>
                     <Col>
-                        <Dropdown
-                            trigger={['click']}
-                            destroyPopupOnHide
-                            overlay={() => (
-                                <Menu>
-                                    <Menu.Item key='edit'>
-                                        <a
-                                            href={`/webhooks/update/${id}`}
-                                            onClick={(e: React.MouseEvent) => {
-                                                e.preventDefault();
-                                                history.push(`/webhooks/update/${id}`);
-                                                return false;
-                                            }}
-                                        >
-                                            Edit
-                                        </a>
-                                    </Menu.Item>
-                                    <Menu.Item
-                                        key='delete'
-                                        onClick={() => {
-                                            Modal.confirm({
-                                                title: 'Are you sure you want to remove the hook?',
-                                                content: 'It will stop notificating the specified URL about listed events',
-                                                className: 'cvat-modal-confirm-remove-webhook',
-                                                onOk: () => {
-                                                    dispatch(deleteWebhookAsync(webhookInstance)).then(() => {
-                                                        setIsRemoved(true);
-                                                    });
-                                                },
-                                            });
-                                        }}
-                                    >
-                                        Delete
-                                    </Menu.Item>
-                                </Menu>
-                            )}
+                        <div
+                            className='cvat-webhooks-page-actions-button cvat-actions-menu-button'
+                            onClick={handleContextMenuClick}
                         >
-                            <div className='cvat-webhooks-page-actions-button'>
-                                <Text className='cvat-text-color'>Actions</Text>
-                                <MoreOutlined className='cvat-menu-icon' />
-                            </div>
-                        </Dropdown>
+                            <Text className='cvat-text-color'>Actions</Text>
+                            <MoreOutlined className='cvat-menu-icon' />
+                        </div>
                     </Col>
                 </Row>
             </Col>
         </Row>
+    );
+
+    return (
+        <WebhookActionsMenu
+            webhookInstance={webhookInstance}
+            dropdownTrigger={['contextMenu']}
+            triggerElement={row}
+        />
     );
 }
 

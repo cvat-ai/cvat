@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,6 +28,7 @@ context('Create a link for shape, frame.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
         cy.saveJob('PATCH', 200, `case${caseId}`);
@@ -61,7 +62,7 @@ context('Create a link for shape, frame.', () => {
                     cy.spy(clipboard, 'writeText').as('copyTextToClipboard');
                 });
 
-            cy.get('.cvat-player-frame-url-icon').click();
+            cy.get('.cvat-player-frame-url-icon').click({ scrollBehavior: false });
             cy.get('@copyTextToClipboard').should('be.called');
             cy.get('@copyTextToClipboard').then((stub) => {
                 const url = stub.args[0][0];

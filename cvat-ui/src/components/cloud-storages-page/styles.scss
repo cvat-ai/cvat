@@ -1,16 +1,12 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 @import 'base';
 
 .cvat-cloud-storages-page {
-    padding-top: $grid-unit-size * 2;
-    padding-bottom: $grid-unit-size;
-    height: 100%;
-    width: 100%;
-    overflow: auto;
+    @include cvat-resource-page;
 
     .ant-spin {
         position: absolute;
@@ -23,10 +19,6 @@
     font-size: $grid-unit-size * 14;
     opacity: 0.5;
     margin-bottom: $grid-unit-size * 2;
-}
-
-.cvat-cloud-storages-pagination {
-    margin-top: $grid-unit-size * 2;
 }
 
 .cvat-cloud-storages-list-top-bar {
@@ -61,8 +53,9 @@
 .cvat-cloud-storages-list {
     display: flex;
     flex-wrap: wrap;
+    overflow-y: auto;
 
-    > div {
+    .cvat-cloud-storages-list-row {
         width: 100%;
         margin-bottom: $grid-unit-size;
 

@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,9 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                 const projectData = this._updateTrigger.getUpdated(this, {
                     bugTracker: 'bug_tracker',
                     assignee: 'assignee_id',
+                    organizationId: 'organization_id',
+                    sourceStorage: 'source_storage',
+                    targetStorage: 'target_storage',
                 });
 
                 if (projectData.assignee_id) {
@@ -140,8 +143,15 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             targetStorage: Parameters<typeof ProjectClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof ProjectClass.prototype.backup>[1],
             fileName: Parameters<typeof ProjectClass.prototype.backup>[2],
+            lightweight: Parameters<typeof ProjectClass.prototype.backup>[3],
         ): ReturnType<typeof ProjectClass.prototype.backup> {
-            const rqID = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            const rqID = await serverProxy.projects.backup(
+                this.id,
+                targetStorage,
+                useDefaultSettings,
+                fileName,
+                lightweight,
+            );
             return rqID;
         },
     });

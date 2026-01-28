@@ -1,11 +1,11 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
 import 'svg.draw.js';
-import './svg.patch';
+import { CIRCLE_STROKE } from './svg.patch';
 
 import { AutoborderHandler } from './autoborderHandler';
 import {
@@ -33,7 +33,7 @@ import {
 import { cuboidFrom4Points, intersection } from './cuboid';
 
 export interface DrawHandler {
-    configurate(configuration: Configuration): void;
+    configure(configuration: Configuration): void;
     draw(drawData: DrawData, geometry: Geometry): void;
     transform(geometry: Geometry): void;
     cancel(): void;
@@ -47,16 +47,18 @@ interface FinalCoordinates {
 function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
     if (shapeType === 'rectangle') {
         const [xtl, ytl, xbr, ybr] = points;
-        return (xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD;
+        const [width, height] = [xbr - xtl, ybr - ytl];
+        return width >= consts.SIZE_THRESHOLD && height >= consts.SIZE_THRESHOLD;
     }
 
     if (shapeType === 'polygon') {
-        return (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD && points.length >= 3 * 2;
+        const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
+        return (width >= consts.SIZE_THRESHOLD || height > consts.SIZE_THRESHOLD) && points.length >= 3 * 2;
     }
 
     if (shapeType === 'polyline') {
-        return (box.xbr - box.xtl >= consts.SIZE_THRESHOLD ||
-            box.ybr - box.ytl >= consts.SIZE_THRESHOLD) && points.length >= 2 * 2;
+        const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
+        return (width >= consts.SIZE_THRESHOLD || height >= consts.SIZE_THRESHOLD) && points.length >= 2 * 2;
     }
 
     if (shapeType === 'points') {
@@ -64,18 +66,22 @@ function checkConstraint(shapeType: string, points: number[], box: Box | null = 
     }
 
     if (shapeType === 'ellipse') {
-        const [rx, ry] = [points[2] - points[0], points[1] - points[3]];
-        return rx * ry * Math.PI >= consts.AREA_THRESHOLD;
+        const [width, height] = [(points[2] - points[0]) * 2, (points[1] - points[3]) * 2];
+        return width >= consts.SIZE_THRESHOLD && height > consts.SIZE_THRESHOLD;
     }
 
     if (shapeType === 'cuboid') {
         return points.length === 4 * 2 || points.length === 8 * 2 ||
-            (points.length === 2 * 2 && (points[2] - points[0]) * (points[3] - points[1]) >= consts.AREA_THRESHOLD);
+            (points.length === 2 * 2 &&
+                (points[2] - points[0]) >= consts.SIZE_THRESHOLD &&
+                (points[3] - points[1]) >= consts.SIZE_THRESHOLD
+            );
     }
 
     if (shapeType === 'skeleton') {
         const [xtl, ytl, xbr, ybr] = points;
-        return (xbr - xtl >= 1 || ybr - ytl >= 1);
+        const [width, height] = [xbr - xtl, ybr - ytl];
+        return width >= consts.SIZE_THRESHOLD || height >= consts.SIZE_THRESHOLD;
     }
 
     return false;
@@ -104,6 +110,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private controlPointsSize: number;
     private selectedShapeOpacity: number;
     private outlinedBorders: string;
+    private isHidden: boolean;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -814,8 +821,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     transform: `translate(${x}px, ${y}px)`,
                 });
 
-                /* eslint-disable-next-line no-unsanitized/property */
-                this.pointsGroup.node.innerHTML = this.drawData.skeletonSVG;
+                this.pointsGroup.node.replaceChildren(...this.drawData.skeletonSVG.cloneNode(true).childNodes);
                 Array.from(this.pointsGroup.node.children).forEach((child: Element) => {
                     const dataType = child.getAttribute('data-type');
                     if (child.tagName === 'circle' && dataType && dataType.includes('element')) {
@@ -1276,6 +1282,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
         this.outlinedBorders = configuration.outlinedBorders || 'black';
         this.autobordersEnabled = false;
+        this.isHidden = false;
         this.startTimestamp = Date.now();
         this.onDrawDoneDefault = onDrawDone;
         this.canvas = canvas;
@@ -1301,10 +1308,28 @@ export class DrawHandlerImpl implements DrawHandler {
         });
     }
 
-    public configurate(configuration: Configuration): void {
+    private strokePoint(point: SVG.Element): void {
+        point.attr('stroke', this.isHidden ? 'none' : CIRCLE_STROKE);
+        point.fill({ opacity: this.isHidden ? 0 : 1 });
+    }
+
+    private updateHidden(value: boolean) {
+        this.isHidden = value;
+
+        if (value) {
+            this.canvas.attr('pointer-events', 'none');
+        } else {
+            this.canvas.attr('pointer-events', 'all');
+        }
+    }
+
+    public configure(configuration: Configuration): void {
         this.controlPointsSize = configuration.controlPointsSize;
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
         this.outlinedBorders = configuration.outlinedBorders || 'black';
+        if (this.isHidden !== configuration.hideEditedObject) {
+            this.updateHidden(configuration.hideEditedObject);
+        }
 
         const isFillableRect = this.drawData &&
             this.drawData.shapeType === 'rectangle' &&
@@ -1315,15 +1340,26 @@ export class DrawHandlerImpl implements DrawHandler {
         const isFilalblePolygon = this.drawData && this.drawData.shapeType === 'polygon';
 
         if (this.drawInstance && (isFillableRect || isFillableCuboid || isFilalblePolygon)) {
-            this.drawInstance.fill({ opacity: configuration.selectedShapeOpacity });
+            this.drawInstance.fill({
+                opacity: configuration.hideEditedObject ? 0 : configuration.selectedShapeOpacity,
+            });
+        }
+
+        if (this.drawInstance && isFilalblePolygon) {
+            const paintHandler = this.drawInstance.remember('_paintHandler');
+            if (paintHandler) {
+                for (const point of (paintHandler as any).set.members) {
+                    this.strokePoint(point);
+                }
+            }
         }
 
         if (this.drawInstance && this.drawInstance.attr('stroke')) {
-            this.drawInstance.attr('stroke', this.outlinedBorders);
+            this.drawInstance.attr('stroke', configuration.hideEditedObject ? 'none' : this.outlinedBorders);
         }
 
         if (this.pointsGroup && this.pointsGroup.attr('stroke')) {
-            this.pointsGroup.attr('stroke', this.outlinedBorders);
+            this.pointsGroup.attr('stroke', configuration.hideEditedObject ? 'none' : this.outlinedBorders);
         }
 
         this.autobordersEnabled = configuration.autoborders;
@@ -1361,16 +1397,17 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         if (this.drawInstance) {
-            this.drawInstance.draw('transform');
             this.drawInstance.attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
 
             const paintHandler = this.drawInstance.remember('_paintHandler');
-
-            for (const point of (paintHandler as any).set.members) {
-                point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
-                point.attr('r', `${this.controlPointsSize / geometry.scale}`);
+            if (paintHandler) {
+                for (const point of (paintHandler as any).set.members) {
+                    this.strokePoint(point);
+                    point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
+                    point.attr('r', `${this.controlPointsSize / geometry.scale}`);
+                }
             }
         }
     }

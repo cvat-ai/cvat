@@ -1,16 +1,15 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 from contextlib import ExitStack
 from logging import Logger
-from typing import List, Tuple
 
 import packaging.version as pv
 import pytest
 from cvat_sdk import Client, models
-from cvat_sdk.core.client import Config, make_client
+from cvat_sdk.core.client import AccessTokenCredentials, Config, PasswordCredentials, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
 
@@ -22,7 +21,7 @@ class TestClientUsecases:
     def setup(
         self,
         restore_db_per_function,  # force fixture call order to allow DB setup
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_client: Client,
         fxt_stdout: io.StringIO,
         admin_user: str,
@@ -35,7 +34,9 @@ class TestClientUsecases:
         yield
 
     def test_can_login_with_basic_auth(self):
-        self.client.login((self.user, USER_PASS))
+        self.client.login(PasswordCredentials(self.user, USER_PASS))
+
+        assert self.client.users.retrieve_current_user().username == self.user
 
         assert self.client.has_credentials()
 
@@ -43,8 +44,26 @@ class TestClientUsecases:
         with pytest.raises(ApiException):
             self.client.login((self.user, USER_PASS + "123"))
 
-    def test_can_logout(self):
+    def test_can_logout_after_basic_auth_login(self):
         self.client.login((self.user, USER_PASS))
+
+        self.client.logout()
+
+        assert not self.client.has_credentials()
+
+    def test_can_login_with_pat_auth(self, access_tokens_by_username):
+        user, token = next((u, t) for u, ts in access_tokens_by_username.items() for t in ts)
+
+        self.client.login(AccessTokenCredentials(token["private_key"]))
+
+        assert self.client.users.retrieve_current_user().username == user
+
+        assert self.client.has_credentials()
+
+    def test_can_logout_after_pat_login(self, access_tokens):
+        token = next(t for t in access_tokens)
+
+        self.client.login(AccessTokenCredentials(token["private_key"]))
 
         self.client.logout()
 
@@ -58,44 +77,60 @@ class TestClientUsecases:
         assert (version.major, version.minor) >= (2, 0)
 
 
-def test_can_strip_trailing_slash_in_hostname_in_make_client(admin_user: str):
-    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+class TestClientFactory:
+    def test_can_make_client_with_pat_auth(self, access_tokens_by_username):
+        user, token = next((u, t) for u, ts in access_tokens_by_username.items() for t in ts)
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
 
-    with make_client(host=host + "/", port=port, credentials=(admin_user, USER_PASS)) as client:
-        assert client.api_map.host == BASE_URL
+        with make_client(host=host, port=port, access_token=token["private_key"]) as client:
+            assert client.users.retrieve_current_user().username == user
 
+    def test_can_strip_trailing_slash_in_hostname(self, admin_user: str):
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
 
-def test_can_strip_trailing_slash_in_hostname_in_client_ctor(admin_user: str):
-    with Client(url=BASE_URL + "/") as client:
-        client.login((admin_user, USER_PASS))
-        assert client.api_map.host == BASE_URL
+        with make_client(host=host + "/", port=port, credentials=(admin_user, USER_PASS)) as client:
+            assert client.api_map.host == BASE_URL
 
+    def test_can_strip_trailing_slash_in_hostname_in_client_ctor(self, admin_user: str):
+        with Client(url=BASE_URL + "/") as client:
+            client.login((admin_user, USER_PASS))
+            assert client.api_map.host == BASE_URL
 
-def test_can_detect_server_schema_if_not_provided():
-    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
-    client = make_client(host=host, port=int(port))
-    assert client.api_map.host == "http://" + host + ":" + port
+    def test_can_detect_server_schema_if_not_provided(self):
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        client = make_client(host=host, port=int(port))
+        assert client.api_map.host == "http://" + host + ":" + port
 
+    def test_can_fail_to_detect_server_schema_if_not_provided(self):
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        with pytest.raises(InvalidHostException) as capture:
+            make_client(host=host, port=int(port) + 1)
 
-def test_can_fail_to_detect_server_schema_if_not_provided():
-    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
-    with pytest.raises(InvalidHostException) as capture:
-        make_client(host=host, port=int(port) + 1)
+        assert capture.match(r"Failed to detect host schema automatically")
 
-    assert capture.match(r"Failed to detect host schema automatically")
+    def test_can_reject_invalid_server_schema(self):
+        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        with pytest.raises(InvalidHostException) as capture:
+            make_client(host="ftp://" + host, port=int(port) + 1)
 
+        assert capture.match(r"Invalid url schema 'ftp'")
 
-def test_can_reject_invalid_server_schema():
-    host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
-    with pytest.raises(InvalidHostException) as capture:
-        make_client(host="ftp://" + host, port=int(port) + 1)
+    def test_can_use_server_url(self, admin_user):
+        with make_client(BASE_URL, credentials=(admin_user, USER_PASS)):
+            pass
 
-    assert capture.match(r"Invalid url schema 'ftp'")
+    def test_cannot_use_server_url_with_port_and_port_parameter(self):
+        with pytest.raises(ValueError, match="Please specify only one port"):
+            make_client(BASE_URL, port=1)
+
+    def test_cannot_use_both_credentials_and_access_token(self):
+        with pytest.raises(ValueError, match="'credentials' and 'access_token' cannot"):
+            make_client(BASE_URL, credentials=("name", "pass"), access_token="token")
 
 
 @pytest.mark.parametrize("raise_exception", (True, False))
 def test_can_warn_on_mismatching_server_version(
-    fxt_logger: Tuple[Logger, io.StringIO], monkeypatch, raise_exception: bool
+    fxt_logger: tuple[Logger, io.StringIO], monkeypatch, raise_exception: bool
 ):
     logger, logger_stream = fxt_logger
 
@@ -118,7 +153,7 @@ def test_can_warn_on_mismatching_server_version(
 
 @pytest.mark.parametrize("do_check", (True, False))
 def test_can_check_server_version_in_ctor(
-    fxt_logger: Tuple[Logger, io.StringIO], monkeypatch, do_check: bool
+    fxt_logger: tuple[Logger, io.StringIO], monkeypatch, do_check: bool
 ):
     logger, logger_stream = fxt_logger
 
@@ -141,7 +176,7 @@ def test_can_check_server_version_in_ctor(
     ) == do_check
 
 
-def test_can_check_server_version_in_method(fxt_logger: Tuple[Logger, io.StringIO], monkeypatch):
+def test_can_check_server_version_in_method(fxt_logger: tuple[Logger, io.StringIO], monkeypatch):
     logger, logger_stream = fxt_logger
 
     def mocked_version(_):
@@ -183,10 +218,10 @@ def test_can_check_server_version_in_method(fxt_logger: Tuple[Logger, io.StringI
     ],
 )
 def test_can_check_server_version_compatibility(
-    fxt_logger: Tuple[Logger, io.StringIO],
+    fxt_logger: tuple[Logger, io.StringIO],
     monkeypatch: pytest.MonkeyPatch,
     server_version: str,
-    supported_versions: List[str],
+    supported_versions: list[str],
     expect_supported: bool,
 ):
     logger, _ = fxt_logger

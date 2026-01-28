@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         attrValue: 'Oak',
         nameSecond: `Case ${caseID} second`,
         labelSecond: 'Car',
-        attrNameSecons: 'Color',
+        attrNameSecond: 'Color',
         attrValueSecond: 'Red',
         multiAttrParams: false,
         advancedConfigurationParams: false,
@@ -53,6 +53,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.prepareUserSession('/projects');
         cy.openProject(projectName);
         cy.createAnnotationTask(
             task.nameSecond,
@@ -83,9 +84,6 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteProjects(authKey, [projectName]);
-        });
     });
 
     describe(`Testing "Case ${caseID}"`, () => {

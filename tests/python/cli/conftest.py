@@ -1,5 +1,6 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from sdk.fixtures import fxt_client  # pylint: disable=unused-import
+# Force execution of fixture definitions
+from sdk.fixtures import *  # pylint: disable=wildcard-import

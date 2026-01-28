@@ -1,12 +1,12 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
 import operator
 from collections import defaultdict
+from collections.abc import Iterable
 from copy import deepcopy
-from typing import Iterable
 
 import pytest
 
@@ -65,13 +65,20 @@ def tasks():
 def filter_assets(resources: Iterable, **kwargs):
     filtered_resources = []
     exclude_prefix = "exclude_"
+    filter_operator = lambda arg, func: bool(func(arg))
 
     for resource in resources:
+        is_matched = True
         for key, value in kwargs.items():
+            if not is_matched:
+                break
+
             op = operator.eq
             if key.startswith(exclude_prefix):
                 key = key[len(exclude_prefix) :]
                 op = operator.ne
+            elif callable(value):
+                op = filter_operator
 
             cur_value, rest = resource, key
             while rest:
@@ -80,13 +87,17 @@ def filter_assets(resources: Iterable, **kwargs):
                     field, rest = field_and_rest
                 else:
                     field, rest = field_and_rest[0], None
-                cur_value = cur_value[field]
+                cur_value = cur_value.get(field, None)
                 # e.g. task has null target_storage
+                # or there are mutexed project_id, task_id
                 if not cur_value:
                     break
 
-            if not rest and op(cur_value, value) or rest and op == operator.ne:
-                filtered_resources.append(resource)
+            if not (not rest and op(cur_value, value) or rest and op == operator.ne):
+                is_matched = False
+
+        if is_matched:
+            filtered_resources.append(resource)
 
     return filtered_resources
 
@@ -227,12 +238,19 @@ def quality_settings():
 
 
 @pytest.fixture(scope="session")
+def consensus_settings():
+    with open(ASSETS_DIR / "consensus_settings.json") as f:
+        return Container(json.load(f)["results"])
+
+
+@pytest.fixture(scope="session")
 def users_by_name(users):
     return {user["username"]: user for user in users}
 
 
 @pytest.fixture(scope="session")
 def jobs_by_org(tasks, jobs):
+    # FUTURE-FIXME: should be based on organizations to include orgs without jobs too
     data = {}
     for job in jobs:
         data.setdefault(tasks[job["task_id"]]["organization"], []).append(job)
@@ -342,10 +360,8 @@ def is_issue_admin(issues, jobs, is_task_staff):
 def find_users(test_db):
     def find(**kwargs):
         assert len(kwargs) > 0
-        assert any(kwargs.values())
 
         data = test_db
-        kwargs = dict(filter(lambda a: a[1] is not None, kwargs.items()))
         for field, value in kwargs.items():
             if field.startswith("exclude_"):
                 field = field.split("_", maxsplit=1)[1]
@@ -362,14 +378,29 @@ def find_users(test_db):
 @pytest.fixture(scope="session")
 def test_db(users, users_by_name, memberships):
     data = []
-    fields = ["username", "id", "privilege", "role", "org", "membership_id"]
+    fields = [
+        "username",
+        "id",
+        "privilege",
+        "role",
+        "org",
+        "membership_id",
+        "is_superuser",
+        "has_analytics_access",
+    ]
 
     def add_row(**kwargs):
         data.append({field: kwargs.get(field) for field in fields})
 
     for user in users:
         for group in user["groups"]:
-            add_row(username=user["username"], id=user["id"], privilege=group)
+            add_row(
+                username=user["username"],
+                id=user["id"],
+                privilege=group,
+                has_analytics_access=user["has_analytics_access"],
+                is_superuser=user["is_superuser"],
+            )
 
     for membership in memberships:
         username = membership["user"]["username"]
@@ -381,6 +412,8 @@ def test_db(users, users_by_name, memberships):
                 id=membership["user"]["id"],
                 org=membership["organization"],
                 membership_id=membership["id"],
+                has_analytics_access=users_by_name[username]["has_analytics_access"],
+                is_superuser=users_by_name[username]["is_superuser"],
             )
 
     return data
@@ -467,6 +500,22 @@ def find_issue_staff_user(is_issue_staff, is_issue_admin):
 
 
 @pytest.fixture(scope="session")
+def filter_jobs(jobs):
+    def filter_(**kwargs):
+        return filter_assets(jobs, **kwargs)
+
+    return filter_
+
+
+@pytest.fixture(scope="session")
+def filter_labels(labels):
+    def filter_(**kwargs):
+        return filter_assets(labels, **kwargs)
+
+    return filter_
+
+
+@pytest.fixture(scope="session")
 def filter_jobs_with_shapes(annotations):
     def find(jobs):
         return list(filter(lambda j: annotations["job"].get(str(j["id"]), {}).get("shapes"), jobs))
@@ -516,3 +565,58 @@ def regular_lonely_user(users):
         if user["username"] == "lonely_user":
             return user["username"]
     raise Exception("Can't find the lonely user in the test DB")
+
+
+@pytest.fixture(scope="session")
+def job_has_annotations(annotations) -> bool:
+    def check_has_annotations(job_id: int) -> bool:
+        job_annotations = annotations["job"][str(job_id)]
+        return bool(
+            job_annotations["tags"] or job_annotations["shapes"] or job_annotations["tracks"]
+        )
+
+    return check_has_annotations
+
+
+@pytest.fixture(scope="session")
+def access_tokens(access_tokens_by_username):
+    "Private keys are available in the 'private_key' field."
+
+    return sorted(
+        (t for user_tokens in access_tokens_by_username.values() for t in user_tokens),
+        key=lambda t: t["id"],
+    )
+
+
+@pytest.fixture(scope="session")
+def raw_access_tokens_by_username():
+    with open(ASSETS_DIR / "access_tokens.json") as f:
+        return json.load(f)["user"]
+
+
+@pytest.fixture(scope="session")
+def access_tokens_by_username(raw_access_tokens_by_username):
+    "Private keys are available in the 'private_key' field."
+
+    private_keys = {
+        3: "XQRwNl8D.N5EYCzdyWdroeVVfJylkquAmBqgt9Kw2",  # nosec
+        4: "waUchCLi.wWxJTdYBt6R8auMse86bwHobMomjQvEB",  # nosec
+        5: "2HVbBoWR.ZJqJtm3TEKEkjqZwyoL7Ig71LVvKRj79",  # nosec
+        7: "gIUANJCa.W4Y101GNS8wOyFcncvxMZjTEnU7dzAUF",  # nosec
+    }
+
+    data = {}
+    for username, user_tokens in raw_access_tokens_by_username.items():
+        if not user_tokens:
+            continue
+
+        extended_user_tokens = []
+
+        for access_token in user_tokens:
+            access_token = access_token.copy()
+            access_token["private_key"] = private_keys[access_token["id"]]
+            extended_user_tokens.append(access_token)
+
+        data[username] = extended_user_tokens
+
+    return data

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ from __future__ import annotations
 import io
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -15,6 +15,7 @@ from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.model_proxy import (
     DownloadBackupMixin,
     ExportDatasetMixin,
+    ModelBatchDeleteMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -48,11 +49,12 @@ class Project(
         format_name: str,
         filename: StrPath,
         *,
-        status_check_period: Optional[int] = None,
-        pbar: Optional[ProgressReporter] = None,
+        conv_mask_to_poly: bool | None = None,
+        status_check_period: int | None = None,
+        pbar: ProgressReporter | None = None,
     ):
         """
-        Import dataset for a project in the specified format (e.g. 'YOLO ZIP 1.0').
+        Import dataset for a project in the specified format (e.g. 'YOLO 1.1').
         """
 
         filename = Path(filename)
@@ -62,6 +64,7 @@ class Project(
             filename,
             format_name,
             url_params={"id": self.id},
+            conv_mask_to_poly=conv_mask_to_poly,
             pbar=pbar,
             status_check_period=status_check_period,
         )
@@ -72,7 +75,7 @@ class Project(
         (annotations, _) = self.api.retrieve_annotations(self.id)
         return annotations
 
-    def get_tasks(self) -> List[Task]:
+    def get_tasks(self) -> list[Task]:
         return [
             Task(self._client, m)
             for m in get_paginated_collection(
@@ -80,7 +83,7 @@ class Project(
             )
         ]
 
-    def get_labels(self) -> List[models.ILabel]:
+    def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint, project_id=self.id
         )
@@ -97,6 +100,7 @@ class ProjectsRepo(
     ModelCreateMixin[Project, models.IProjectWriteRequest],
     ModelListMixin[Project],
     ModelRetrieveMixin[Project],
+    ModelBatchDeleteMixin,
 ):
     _entity_type = Project
 
@@ -107,7 +111,8 @@ class ProjectsRepo(
         dataset_path: str = "",
         dataset_format: str = "CVAT XML 1.1",
         status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
+        conv_mask_to_poly: bool | None = None,
     ) -> Project:
         """
         Create a new project with the given name and labels JSON and
@@ -124,6 +129,7 @@ class ProjectsRepo(
                 filename=dataset_path,
                 pbar=pbar,
                 status_check_period=status_check_period,
+                conv_mask_to_poly=conv_mask_to_poly,
             )
 
         project.fetch()
@@ -134,7 +140,7 @@ class ProjectsRepo(
         filename: StrPath,
         *,
         status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
     ) -> Project:
         """
         Import a project from a backup file

@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -41,7 +41,7 @@ simple_rules = read_rules(NAME)
 SCOPES = list({rule["scope"] for rule in simple_rules})
 CONTEXTS = ["sandbox", "organization"]
 OWNERSHIPS = ["none"]
-GROUPS = ["admin", "business", "user", "worker", "none"]
+GROUPS = ["admin", "user", "worker", "none"]
 ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
 
 
@@ -77,13 +77,15 @@ def get_data(scope, context, ownership, privilege, membership, resource):
         "scope": scope,
         "auth": {
             "user": {"id": random.randrange(0, 100), "privilege": privilege},
-            "organization": {
-                "id": random.randrange(100, 200),
-                "owner": {"id": random.randrange(200, 300)},
-                "user": {"role": membership},
-            }
-            if context == "organization"
-            else None,
+            "organization": (
+                {
+                    "id": random.randrange(100, 200),
+                    "owner": {"id": random.randrange(200, 300)},
+                    "user": {"role": membership},
+                }
+                if context == "organization"
+                else None
+            ),
         },
         "resource": resource,
     }
@@ -110,10 +112,8 @@ def _get_name(prefix, **kwargs):
                 name += _get_name(prefix, **v)
         else:
             name += "".join(
-                map(
-                    lambda c: c if c.isalnum() else {"@": "_IN_"}.get(c, "_"),
-                    f"{prefix}_{str(v).upper()}",
-                )
+                c if c.isalnum() else {"@": "_IN_"}.get(c, "_")
+                for c in f"{prefix}_{str(v).upper()}"
             )
 
     return name

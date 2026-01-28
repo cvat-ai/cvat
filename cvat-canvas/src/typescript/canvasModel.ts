@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -42,7 +42,6 @@ export interface Geometry {
 
 export interface FocusData {
     clientID: number;
-    padding: number;
 }
 
 export interface ActiveElement {
@@ -79,6 +78,7 @@ export enum ColorBy {
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
+    adaptiveZoom?: boolean;
     displayAllText?: boolean;
     textFontSize?: number;
     textPosition?: 'auto' | 'center';
@@ -96,6 +96,8 @@ export interface Configuration {
     controlPointsSize?: number;
     outlinedBorders?: string | false;
     resetZoom?: boolean;
+    hideEditedObject?: boolean;
+    focusedObjectPadding?: number;
 }
 
 export interface BrushTool {
@@ -112,7 +114,7 @@ export interface DrawData {
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;
-    skeletonSVG?: string;
+    skeletonSVG?: SVGSVGElement;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
@@ -260,7 +262,7 @@ export interface CanvasModel {
     mode: Mode;
     exception: Error | null;
 
-    zoom(x: number, y: number, direction: number): void;
+    zoom(x: number, y: number, deltaY: number): void;
     move(topOffset: number, leftOffset: number): void;
 
     setup(frameData: any, objectStates: any[], zLayer: number): void;
@@ -399,6 +401,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             configuration: {
                 smoothImage: true,
                 autoborders: false,
+                adaptiveZoom: true,
                 displayAllText: false,
                 showProjections: false,
                 showConflicts: false,
@@ -416,6 +419,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 textPosition: consts.DEFAULT_SHAPE_TEXT_POSITION,
                 textContent: consts.DEFAULT_SHAPE_TEXT_CONTENT,
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
+                hideEditedObject: false,
+                focusedObjectPadding: 50,
             },
             imageBitmap: false,
             image: null,
@@ -428,7 +433,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             imageIsDeleted: false,
             focusData: {
                 clientID: 0,
-                padding: 0,
             },
             gridSize: {
                 height: 100,
@@ -448,25 +452,35 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         };
     }
 
-    public zoom(x: number, y: number, direction: number): void {
+    public zoom(x: number, y: number, deltaY: number): void {
+        const basicZoomCoef = 6 / 5; // historical value
+        // less value of adjust coef, means zoomin/zoomout smoother
+        // we need a trade-off between speed and smoothness, value 1 / 10 is good enough
+        const adjustCoef = 1 / 10;
         const oldScale: number = this.data.scale;
-        const newScale: number = direction > 0 ? (oldScale * 6) / 5 : (oldScale * 5) / 6;
+        let scaleFactor = basicZoomCoef ** (-deltaY * adjustCoef);
+
+        if (!this.data.configuration.adaptiveZoom) {
+            // old alogithm, just multiplies to 6/5 or 5/6
+            scaleFactor = basicZoomCoef ** (Math.sign(-deltaY));
+        }
+        const newScale: number = oldScale * scaleFactor;
         this.data.scale = Math.min(Math.max(newScale, FrameZoom.MIN), FrameZoom.MAX);
 
         const { angle } = this.data;
 
-        const mutiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
+        const multiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
         if ((angle / 90) % 2) {
             // 90, 270, ..
             const topMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
             const leftMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
-            this.data.top += mutiplier * topMultiplier * this.data.scale;
-            this.data.left -= mutiplier * leftMultiplier * this.data.scale;
+            this.data.top += multiplier * topMultiplier * this.data.scale;
+            this.data.left -= multiplier * leftMultiplier * this.data.scale;
         } else {
             const leftMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
             const topMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
-            this.data.left += mutiplier * leftMultiplier * this.data.scale;
-            this.data.top += mutiplier * topMultiplier * this.data.scale;
+            this.data.left += multiplier * leftMultiplier * this.data.scale;
+            this.data.top += multiplier * topMultiplier * this.data.scale;
         }
 
         this.notify(UpdateReasons.IMAGE_ZOOMED);
@@ -588,7 +602,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 };
 
                 this.data.image = data;
-                this.fit();
+                this.resetScale();
 
                 // restore correct image position after switching to a new frame
                 // if corresponding option is disabled
@@ -617,7 +631,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                     if (exception instanceof Error) {
                         this.data.exception = exception;
                     } else {
-                        this.data.exception = new Error('Unknown error occured when fetching image data');
+                        this.data.exception = new Error('Unknown error occurred when fetching image data');
                     }
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
@@ -673,40 +687,50 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
     }
 
-    public focus(clientID: number, padding: number): void {
-        this.data.focusData = {
-            clientID,
-            padding,
-        };
-
+    public focus(clientID: number): void {
+        this.data.focusData = { clientID };
         this.notify(UpdateReasons.SHAPE_FOCUSED);
     }
 
-    public fit(): void {
+    private resetScale(): boolean {
         const { angle } = this.data;
 
+        let updatedScale = this.data.scale;
         if ((angle / 90) % 2) {
             // 90, 270, ..
-            this.data.scale = Math.min(
+            updatedScale = Math.min(
                 this.data.canvasSize.width / this.data.imageSize.height,
                 this.data.canvasSize.height / this.data.imageSize.width,
             );
         } else {
-            this.data.scale = Math.min(
+            updatedScale = Math.min(
                 this.data.canvasSize.width / this.data.imageSize.width,
                 this.data.canvasSize.height / this.data.imageSize.height,
             );
         }
 
-        this.data.scale = Math.min(Math.max(this.data.scale, FrameZoom.MIN), FrameZoom.MAX);
-        this.data.top = this.data.canvasSize.height / 2 - this.data.imageSize.height / 2;
-        this.data.left = this.data.canvasSize.width / 2 - this.data.imageSize.width / 2;
+        updatedScale = Math.min(Math.max(updatedScale, FrameZoom.MIN), FrameZoom.MAX);
+        const updatedTop = this.data.canvasSize.height / 2 - this.data.imageSize.height / 2;
+        const updatedLeft = this.data.canvasSize.width / 2 - this.data.imageSize.width / 2;
 
-        // scale is changed during zooming or translating
-        // so, remember fitted scale to compute fit-relative scaling
-        this.data.fittedScale = this.data.scale;
+        if (updatedScale !== this.data.scale || updatedTop !== this.data.top || updatedLeft !== this.data.left) {
+            this.data.scale = updatedScale;
+            this.data.top = updatedTop;
+            this.data.left = updatedLeft;
 
-        this.notify(UpdateReasons.IMAGE_FITTED);
+            // scale is changed during zooming or translating
+            // so, remember fitted scale to compute fit-relative scaling
+            this.data.fittedScale = this.data.scale;
+            return true;
+        }
+
+        return false;
+    }
+
+    public fit(): void {
+        if (this.resetScale()) {
+            this.notify(UpdateReasons.IMAGE_FITTED);
+        }
     }
 
     public grid(stepX: number, stepY: number): void {
@@ -931,7 +955,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.textContent === 'string') {
             const splitted = configuration.textContent.split(',').filter((entry: string) => !!entry);
-            if (splitted.every((entry: string) => ['id', 'label', 'attributes', 'source', 'descriptions'].includes(entry))) {
+            if (splitted.every((entry: string) => ['id', 'label', 'attributes', 'source', 'descriptions', 'dimensions'].includes(entry))) {
                 this.data.configuration.textContent = configuration.textContent;
             }
         }
@@ -941,6 +965,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (typeof configuration.autoborders === 'boolean') {
             this.data.configuration.autoborders = configuration.autoborders;
+        }
+        if (typeof configuration.adaptiveZoom === 'boolean') {
+            this.data.configuration.adaptiveZoom = configuration.adaptiveZoom;
         }
         if (typeof configuration.smoothImage === 'boolean') {
             this.data.configuration.smoothImage = configuration.smoothImage;
@@ -979,6 +1006,16 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.CSSImageFilter === 'string') {
             this.data.configuration.CSSImageFilter = configuration.CSSImageFilter;
+        }
+
+        if (typeof configuration.hideEditedObject === 'boolean') {
+            this.data.configuration.hideEditedObject = configuration.hideEditedObject;
+        }
+
+        if (typeof configuration.focusedObjectPadding === 'number') {
+            this.data.configuration.focusedObjectPadding = Math.max(
+                configuration.focusedObjectPadding, 0,
+            );
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);
@@ -1122,7 +1159,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public get mode(): Mode {
         return this.data.mode;
     }
-    public get exception(): Error {
+
+    public get exception(): Error | null {
         return this.data.exception;
     }
 }

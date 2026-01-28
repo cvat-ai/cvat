@@ -1,92 +1,87 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useSelector } from 'react-redux';
-import Select from 'antd/lib/select';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import dayjs from 'dayjs';
 import Text from 'antd/lib/typography/Text';
-import Dropdown from 'antd/lib/dropdown';
 import { Row, Col } from 'antd/lib/grid';
-import moment from 'moment';
-import { DeleteOutlined, MoreOutlined } from '@ant-design/icons';
-import Modal from 'antd/lib/modal';
 import { CombinedState } from 'reducers';
-import Menu, { MenuInfo } from 'components/dropdown-menu';
-
 import { Membership } from 'cvat-core-wrapper';
+import { MoreOutlined } from '@ant-design/icons';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
+import { updateOrganizationMemberAsync } from 'actions/organization-actions';
+import { useContextMenuClick } from 'utils/hooks';
+import MemberActionsMenu from './actions-menu';
+import MemberRoleSelector from './member-role-selector';
 
 export interface Props {
     membershipInstance: Membership;
-    onRemoveMembership(): void;
-    onUpdateMembershipRole(role: string): void;
-    onResendInvitation(key: string): void;
-    onDeleteInvitation(key: string): void;
+    fetchMembers: () => void;
+    selected?: boolean;
+    onClick?: (event: React.MouseEvent) => boolean;
 }
 
-enum MenuKeys {
-    RESEND_INVITATION = 'resend_invitation',
-    DELETE_INVITATION = 'delete_invitation',
-}
-
-function MemberItem(props: Props): JSX.Element {
+function MemberItem(props: Readonly<Props>): JSX.Element {
     const {
-        membershipInstance, onRemoveMembership, onUpdateMembershipRole,
-        onResendInvitation, onDeleteInvitation,
+        membershipInstance, selected, onClick, fetchMembers,
     } = props;
     const {
-        user, joinedDate, role, invitation, isActive,
+        user, joinedDate, role, invitation,
     } = membershipInstance;
     const { username, firstName, lastName } = user;
-    const { username: selfUserName } = useSelector((state: CombinedState) => state.auth.user);
 
-    const invitationActionsMenu = invitation && (
-        <Dropdown
-            destroyPopupOnHide
-            trigger={['click']}
-            overlay={(
-                <Menu onClick={(action: MenuInfo) => {
-                    if (action.key === MenuKeys.RESEND_INVITATION) {
-                        onResendInvitation(invitation.key);
-                    } else if (action.key === MenuKeys.DELETE_INVITATION) {
-                        onDeleteInvitation(invitation.key);
-                    }
-                }}
-                >
-                    <Menu.Item key={MenuKeys.RESEND_INVITATION}>Resend invitation</Menu.Item>
-                    <Menu.Divider />
-                    <Menu.Item key={MenuKeys.DELETE_INVITATION}>Remove invitation</Menu.Item>
-                </Menu>
-            )}
+    const dispatch = useDispatch();
+    const {
+        memberships,
+        organizationInstance,
+        selectedIds,
+        selfUserName,
+    } = useSelector((state: CombinedState) => ({
+        memberships: state.organizations.members,
+        organizationInstance: state.organizations.current,
+        selectedIds: state.organizations.selectedMembers,
+        selfUserName: state.auth.user?.username ?? '',
+    }), shallowEqual);
+
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
+
+    const rowClassName = `cvat-organization-member-item${selected ? ' cvat-item-selected' : ''}`;
+    const canUpdateRole = (membership: Membership): boolean => (membership.role !== 'owner');
+    const onUpdateMembershipRole = (newRole: string): void => {
+        const membershipToUpdate = selectedIds.includes(membershipInstance.id) ?
+            memberships
+                .filter((m) => selectedIds.includes(m.id))
+                .filter(canUpdateRole) :
+            [membershipInstance];
+
+        const membershipsNeedingUpdate = membershipToUpdate.filter((m) => m.role !== newRole);
+
+        if (membershipsNeedingUpdate.length === 0) {
+            return;
+        }
+
+        dispatch(makeBulkOperationAsync(
+            membershipsNeedingUpdate,
+            async (m) => {
+                await dispatch(updateOrganizationMemberAsync(organizationInstance, m, newRole));
+            },
+            (m, idx, total) => `Updating role for ${m.user.username} (${idx + 1}/${total})`,
+            fetchMembers,
+        ));
+    };
+
+    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
+    const row = (
+        <Row
+            ref={itemRef}
+            className={rowClassName}
+            justify='space-between'
+            onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
         >
-            <MoreOutlined className='cvat-organization-invitation-actions-button cvat-menu-icon' />
-        </Dropdown>
-    );
-
-    const removeMemberBlock = (role === 'owner' || selfUserName === username) ? null : (
-        <DeleteOutlined
-            onClick={() => {
-                Modal.confirm({
-                    className: 'cvat-modal-organization-member-remove',
-                    title: `You are removing "${username}" from this organization`,
-                    content: 'The person will not have access to the organization data anymore. Continue?',
-                    okText: 'Yes, remove',
-                    okButtonProps: {
-                        danger: true,
-                    },
-                    onOk: () => {
-                        onRemoveMembership();
-                    },
-                });
-            }}
-        />
-    );
-
-    const leftBlock = isActive ? removeMemberBlock : invitationActionsMenu;
-
-    return (
-        <Row className='cvat-organization-member-item' justify='space-between'>
             <Col span={5} className='cvat-organization-member-item-username'>
                 <Text strong>{username}</Text>
             </Col>
@@ -96,34 +91,39 @@ function MemberItem(props: Props): JSX.Element {
             <Col span={8} className='cvat-organization-member-item-dates'>
                 {invitation ? (
                     <Text type='secondary'>
-                        {`Invited ${moment(invitation.createdDate).fromNow()} ${invitation.owner ? `by ${invitation.owner.username}` : ''}`}
+                        {`Invited ${dayjs(invitation.createdDate).fromNow()}`}
+                        {invitation.owner && ` by ${invitation.owner.username}`}
                     </Text>
                 ) : null}
-                {joinedDate ? <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text> : <Text type='secondary'>Invitation pending</Text>}
+                {joinedDate ? <Text type='secondary'>{`Joined ${dayjs(joinedDate).fromNow()}`}</Text> : <Text type='secondary'>Invitation pending</Text>}
             </Col>
             <Col span={3} className='cvat-organization-member-item-role'>
-                <Select
-                    onChange={(_role: string) => {
-                        onUpdateMembershipRole(_role);
-                    }}
+                <MemberRoleSelector
                     value={role}
+                    onChange={onUpdateMembershipRole}
                     disabled={role === 'owner'}
-                >
-                    {role === 'owner' ? (
-                        <Select.Option value='owner'>Owner</Select.Option>
-                    ) : (
-                        <>
-                            <Select.Option value='worker'>Worker</Select.Option>
-                            <Select.Option value='supervisor'>Supervisor</Select.Option>
-                            <Select.Option value='maintainer'>Maintainer</Select.Option>
-                        </>
-                    )}
-                </Select>
+                />
             </Col>
-            <Col span={1} className='cvat-organization-member-item-remove'>
-                {leftBlock}
+            <Col span={1}>
+                <div
+                    onClick={handleContextMenuClick}
+                    className='cvat-organization-actions-button cvat-actions-menu-button cvat-menu-icon'
+                >
+                    <MoreOutlined className='cvat-menu-icon' />
+                </div>
             </Col>
         </Row>
+    );
+
+    return (
+        <MemberActionsMenu
+            membershipInstance={membershipInstance}
+            selfUserName={selfUserName}
+            dropdownTrigger={['contextMenu']}
+            fetchMembers={fetchMembers}
+            onUpdateMembershipRole={onUpdateMembershipRole}
+            triggerElement={row}
+        />
     );
 }
 

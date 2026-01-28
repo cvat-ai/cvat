@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,12 +22,14 @@ import {
     SerializedLabel, SerializedTask,
 } from './server-response-types';
 import AnnotationGuide from './guide';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import Statistics from './statistics';
 import { Request } from './request';
 import logger from './logger';
 import Issue from './issue';
 import ObjectState from './object-state';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
+import { UpdateStatusData } from './core-types';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -170,6 +172,17 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
+                async commit(added, removed, frame) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.commit,
+                        added,
+                        removed,
+                        frame,
+                    );
+                    return result;
+                },
+
                 async exportDataset(
                     format: string,
                     saveImages: boolean,
@@ -223,13 +236,18 @@ function buildDuplicatedAPI(prototype) {
                     );
                 },
                 async save() {
-                    await PluginRegistry.apiWrapper.call(
+                    const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.save,
                     );
+                    return result;
                 },
                 async cachedChunks() {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.cachedChunks);
+                    return result;
+                },
+                async frameNumbers() {
+                    const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.frameNumbers);
                     return result;
                 },
                 async preview() {
@@ -246,6 +264,14 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
+                async contextImageData(frameId) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.frames.contextImageData,
+                        frameId,
+                    );
+                    return result;
+                },
                 async contextImage(frameId) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -254,12 +280,29 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
-                async chunk(chunkNumber, quality) {
+                async chunk(chunkIndex, quality) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.chunk,
-                        chunkNumber,
+                        chunkIndex,
                         quality,
+                    );
+                    return result;
+                },
+            },
+            writable: true,
+        }),
+        meta: Object.freeze({
+            value: {
+                async get() {
+                    const result = await PluginRegistry.apiWrapper.call(this, prototype.meta.get);
+                    return result;
+                },
+                async save(meta) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.meta.save,
+                        meta,
                     );
                     return result;
                 },
@@ -325,7 +368,7 @@ export class Session {
             delTrackKeyframesOnly?: boolean;
         }) => Promise<void>;
         save: (
-            onUpdate ?: (message: string) => void,
+            onUpdate?: (message: string) => void,
         ) => Promise<void>;
         search: (
             frameFrom: number,
@@ -354,6 +397,11 @@ export class Session {
         }>;
         import: (data: Omit<SerializedCollection, 'version'>) => Promise<void>;
         export: () => Promise<Omit<SerializedCollection, 'version'>>;
+        commit: (
+            added: Omit<SerializedCollection, 'version'>,
+            removed: Omit<SerializedCollection, 'version'>,
+            frame: number,
+        ) => Promise<void>;
         statistics: () => Promise<Statistics>;
         hasUnsavedChanges: () => boolean;
         exportDataset: (
@@ -366,8 +414,8 @@ export class Session {
     };
 
     public actions: {
-        undo: (count: number) => Promise<number[]>;
-        redo: (count: number) => Promise<number[]>;
+        undo: (count?: number) => Promise<number[]>;
+        redo: (count?: number) => Promise<number[]>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
         get: () => Promise<{ undo: [HistoryActions, number][], redo: [HistoryActions, number][] }>;
@@ -377,14 +425,17 @@ export class Session {
         get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
         delete: (frame: number) => Promise<void>;
         restore: (frame: number) => Promise<void>;
-        save: () => Promise<void>;
+        save: () => Promise<FramesMetaData[]>;
         cachedChunks: () => Promise<number[]>;
+        frameNumbers: () => Promise<number[]>;
         preview: () => Promise<string>;
         contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
+        contextImageData: (frame: number) => Promise<ArrayBuffer>;
         search: (
             filters: {
                 offset?: number,
                 notDeleted: boolean,
+                chapterMark?: boolean,
             },
             frameFrom: number,
             frameTo: number,
@@ -395,8 +446,8 @@ export class Session {
     public logger: {
         log: (
             scope: Parameters<typeof logger.log>[0],
-            payload: Parameters<typeof logger.log>[1],
-            wait: Parameters<typeof logger.log>[2],
+            payload?: Parameters<typeof logger.log>[1],
+            wait?: Parameters<typeof logger.log>[2],
         ) => ReturnType<typeof logger.log>;
     };
 
@@ -423,6 +474,7 @@ export class Session {
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
+            commit: Object.getPrototypeOf(this).annotations.commit.bind(this),
             statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
             hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
             exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
@@ -442,9 +494,11 @@ export class Session {
             restore: Object.getPrototypeOf(this).frames.restore.bind(this),
             save: Object.getPrototypeOf(this).frames.save.bind(this),
             cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
+            frameNumbers: Object.getPrototypeOf(this).frames.frameNumbers.bind(this),
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
+            contextImageData: Object.getPrototypeOf(this).frames.contextImageData.bind(this),
             chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
         };
 
@@ -454,7 +508,7 @@ export class Session {
     }
 }
 
-type InitializerType = Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>;
+type InitializerType = Readonly<Partial<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>>;
 
 export class Job extends Session {
     #data: {
@@ -468,7 +522,7 @@ export class Job extends Session {
         frame_count?: number;
         project_id: number | null;
         guide_id: number | null;
-        task_id: number | null;
+        task_id: number;
         labels: Label[];
         dimension?: DimensionType;
         data_compressed_chunk_type?: ChunkType;
@@ -479,6 +533,8 @@ export class Job extends Session {
         updated_date?: string,
         source_storage: Storage,
         target_storage: Storage,
+        parent_job_id: number | null;
+        consensus_replicas: number;
     };
 
     constructor(initialData: InitializerType) {
@@ -506,6 +562,8 @@ export class Job extends Session {
             updated_date: undefined,
             source_storage: undefined,
             target_storage: undefined,
+            parent_job_id: null,
+            consensus_replicas: undefined,
         };
 
         this.#data.id = initialData.id ?? this.#data.id;
@@ -520,6 +578,8 @@ export class Job extends Session {
         this.#data.data_chunk_size = initialData.data_chunk_size ?? this.#data.data_chunk_size;
         this.#data.mode = initialData.mode ?? this.#data.mode;
         this.#data.created_date = initialData.created_date ?? this.#data.created_date;
+        this.#data.parent_job_id = initialData.parent_job_id ?? this.#data.parent_job_id;
+        this.#data.consensus_replicas = initialData.consensus_replicas ?? this.#data.consensus_replicas;
 
         if (Array.isArray(initialData.labels)) {
             this.#data.labels = initialData.labels.map((labelData) => {
@@ -615,12 +675,20 @@ export class Job extends Session {
         return this.#data.guide_id;
     }
 
-    public get taskId(): number | null {
+    public get taskId(): number {
         return this.#data.task_id;
     }
 
     public get dimension(): DimensionType {
         return this.#data.dimension;
+    }
+
+    public get parentJobId(): number | null {
+        return this.#data.parent_job_id;
+    }
+
+    public get consensusReplicas(): number {
+        return this.#data.consensus_replicas;
     }
 
     public get dataChunkType(): ChunkType {
@@ -663,7 +731,7 @@ export class Job extends Session {
         return this.#data.target_storage;
     }
 
-    async save(fields: any): Promise<Job> {
+    async save(fields: Record<string, any> = {}): Promise<Job> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, fields);
         return result;
     }
@@ -675,6 +743,11 @@ export class Job extends Session {
 
     async guide(): Promise<AnnotationGuide | null> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.guide);
+        return result;
+    }
+
+    async validationLayout(): Promise<JobValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.validationLayout);
         return result;
     }
 
@@ -692,15 +765,23 @@ export class Job extends Session {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.delete);
         return result;
     }
+
+    async mergeConsensusJobs(): Promise<string> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.mergeConsensusJobs);
+        return result;
+    }
 }
 
 export class Task extends Session {
     public name: string;
     public projectId: number | null;
+    public organizationId: number | null;
     public assignee: User | null;
     public bugTracker: string;
     public subset: string;
     public labels: Label[];
+    public sourceStorage: Storage;
+    public targetStorage: Storage;
     public readonly guideId: number | null;
     public readonly id: number;
     public readonly status: TaskStatus;
@@ -715,11 +796,14 @@ export class Task extends Session {
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
     public readonly dimension: DimensionType;
-    public readonly sourceStorage: Storage;
-    public readonly targetStorage: Storage;
-    public readonly organization: number | null;
-    public readonly progress: { count: number; completed: number };
+    public readonly progress: {
+        completedJobs: number,
+        totalJobs: number,
+        validationJobs: number,
+        annotationJobs: number,
+    };
     public readonly jobs: Job[];
+    public readonly consensusEnabled: boolean;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -727,8 +811,18 @@ export class Task extends Session {
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
     public readonly copyData: boolean;
-    public readonly cloudStorageID: number;
+    public readonly cloudStorageId: number | null;
     public readonly sortingMethod: string;
+
+    public readonly validationMode: string | null;
+    public readonly validationFramesPercent: number;
+    public readonly validationFramesPerJobPercent: number;
+    public readonly frameSelectionMethod: string;
+
+    public meta: {
+        get: () => Promise<FramesMetaData>;
+        save: (meta: FramesMetaData) => Promise<FramesMetaData>;
+    };
 
     constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
         labels?: SerializedLabel[];
@@ -742,6 +836,7 @@ export class Task extends Session {
             name: undefined,
             project_id: null,
             guide_id: undefined,
+            organization_id: undefined,
             status: undefined,
             size: undefined,
             mode: undefined,
@@ -757,10 +852,10 @@ export class Task extends Session {
             data_chunk_size: undefined,
             data_compressed_chunk_type: undefined,
             data_original_chunk_type: undefined,
+            data_cloud_storage_id: undefined,
             dimension: undefined,
             source_storage: undefined,
             target_storage: undefined,
-            organization: undefined,
             progress: undefined,
             labels: undefined,
             jobs: undefined,
@@ -771,11 +866,11 @@ export class Task extends Session {
             use_zip_chunks: undefined,
             use_cache: undefined,
             copy_data: undefined,
-            cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
+            consensus_enabled: undefined,
 
-            quality_settings: undefined,
+            validation_mode: null,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -851,6 +946,8 @@ export class Task extends Session {
                     data_chunk_size: data.data_chunk_size,
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
+                    parent_job_id: job.parent_job_id,
+                    consensus_replicas: job.consensus_replicas,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -958,6 +1055,9 @@ export class Task extends Session {
                 copyData: {
                     get: () => data.copy_data,
                 },
+                consensusEnabled: {
+                    get: () => data.consensus_enabled,
+                },
                 labels: {
                     get: () => [...data.labels],
                     set: (labels: Label[]) => {
@@ -1039,7 +1139,7 @@ export class Task extends Session {
                         for (const value of clientFiles) {
                             if (!(value instanceof File)) {
                                 throw new ArgumentError(
-                                    `Array values must be a File. But ${value.constructor.name} has been got.`,
+                                    'Array values must be a File.',
                                 );
                             }
                         }
@@ -1086,22 +1186,47 @@ export class Task extends Session {
                     get: () => data.dimension,
                 },
                 cloudStorageId: {
-                    get: () => data.cloud_storage_id,
+                    get: () => data.data_cloud_storage_id,
                 },
                 sortingMethod: {
                     get: () => data.sorting_method,
                 },
-                organization: {
-                    get: () => data.organization,
+                organizationId: {
+                    get: () => data.organization_id,
+                    set: (organizationId) => {
+                        if ((Number.isInteger(organizationId) && organizationId > 0) || organizationId === null) {
+                            updateTrigger.update('organizationId');
+                            data.organization_id = organizationId;
+                        } else {
+                            throw new ArgumentError('Value must be a positive integer or null');
+                        }
+                    },
                 },
                 sourceStorage: {
                     get: () => data.source_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('sourceStorage');
+                        data.source_storage = storage;
+                    },
                 },
                 targetStorage: {
                     get: () => data.target_storage,
+                    set: (storage) => {
+                        if (!(storage instanceof Storage)) {
+                            throw new ArgumentError('Value must be an instance of the Storage class');
+                        }
+                        updateTrigger.update('targetStorage');
+                        data.target_storage = storage;
+                    },
                 },
                 progress: {
                     get: () => data.progress,
+                },
+                validationMode: {
+                    get: () => data.validation_mode,
                 },
                 _internalData: {
                     get: () => data,
@@ -1111,6 +1236,11 @@ export class Task extends Session {
                 },
             }),
         );
+
+        this.meta = {
+            get: Object.getPrototypeOf(this).meta.get.bind(this),
+            save: Object.getPrototypeOf(this).meta.save.bind(this),
+        };
     }
 
     async close(): Promise<void> {
@@ -1118,8 +1248,11 @@ export class Task extends Session {
         return result;
     }
 
-    async save(options?: { requestStatusCallback?: (request: Request) => void }): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, options);
+    async save(
+        fields: Record<string, any> = {},
+        options?: { updateStatusCallback?: (updateData: Request | UpdateStatusData) => void },
+    ): Promise<Task> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, fields, options);
         return result;
     }
 
@@ -1136,13 +1269,24 @@ export class Task extends Session {
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string): Promise<string | void> {
+    async mergeConsensusJobs(): Promise<string> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.mergeConsensusJobs);
+        return result;
+    }
+
+    async backup(
+        targetStorage: Storage,
+        useDefaultSettings: boolean,
+        fileName?: string,
+        lightweight?: boolean,
+    ): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Task.prototype.backup,
             targetStorage,
             useDefaultSettings,
             fileName,
+            lightweight,
         );
         return result;
     }
@@ -1159,6 +1303,11 @@ export class Task extends Session {
 
     async guide(): Promise<AnnotationGuide | null> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.guide);
+        return result;
+    }
+
+    async validationLayout(): Promise<TaskValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.validationLayout);
         return result;
     }
 }

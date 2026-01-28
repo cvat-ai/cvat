@@ -1,9 +1,11 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+
+import { convertClasses } from './utils';
 
 function openOrganizationsMenu() {
     cy.get('.cvat-header-menu-user-dropdown')
@@ -43,25 +45,20 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
     return cy.wrap(idWrapper);
 });
 
-Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelete) => {
-    const authKey = authResponse.body.key;
+Cypress.Commands.add('deleteOrganizations', (authHeaders, otrganizationsToDelete) => {
     cy.request({
         url: '/api/organizations?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
+        headers: authHeaders,
     }).then((_response) => {
-        const responceResult = _response.body.results;
-        for (const organization of responceResult) {
+        const responseResult = _response.body.results;
+        for (const organization of responseResult) {
             const { id, slug } = organization;
             for (const organizationToDelete of otrganizationsToDelete) {
                 if (slug === organizationToDelete) {
                     cy.request({
                         method: 'DELETE',
                         url: `/api/organizations/${id}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
+                        headers: authHeaders,
                     });
                 }
             }
@@ -123,13 +120,13 @@ Cypress.Commands.add('checkOrganizationParams', (organizationParams) => {
 });
 
 Cypress.Commands.add('checkOrganizationMembers', (expectedMembersCount, expectedOrganizationMembers) => {
-    const orgMembersUserameText = [];
+    const orgMembersUsernameText = [];
     cy.get('.cvat-organization-member-item').should('have.length', expectedMembersCount);
     cy.get('.cvat-organization-member-item-username').each((el) => {
-        orgMembersUserameText.push(el.text());
+        orgMembersUsernameText.push(el.text());
     });
     cy.get('.cvat-organization-member-item-username').then(() => {
-        expect(orgMembersUserameText).to.include.members(expectedOrganizationMembers);
+        expect(orgMembersUsernameText).to.include.members(expectedOrganizationMembers);
     });
 });
 
@@ -163,9 +160,25 @@ Cypress.Commands.add('inviteMembersToOrganization', (members) => {
 Cypress.Commands.add('removeMemberFromOrganization', (username) => {
     cy.contains('.cvat-organization-member-item-username', username)
         .parents('.cvat-organization-member-item')
-        .find('.cvat-organization-member-item-remove')
+        .find('.cvat-organization-actions-button')
+        .click();
+    cy.get('.cvat-organization-membership-actions-menu')
+        .should('exist')
+        .and('be.visible')
+        .contains('Delete')
         .click();
     cy.get('.cvat-modal-organization-member-remove')
         .contains('button', 'Yes, remove')
         .click();
+});
+
+Cypress.Commands.add('headlessCreateOrganization', (data = {}) => cy.window().then(($win) => {
+    const organization = new $win.cvat.classes.Organization(convertClasses(data, $win));
+    return cy.wrap(organization.save());
+}));
+
+Cypress.Commands.add('headlessDeleteOrganization', (orgId) => {
+    cy.window().then(($win) => cy.wrap($win.cvat.organizations.get({
+        filter: `{"and":[{"==":[{"var":"id"},${orgId}]}]}`,
+    })).then(([organization]) => cy.wrap(organization.remove())));
 });

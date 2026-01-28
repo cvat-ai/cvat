@@ -1,5 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ import torch
 from networks.mainnetwork import Network
 from dataloaders import helpers
 
+
 class ModelHandler:
     def __init__(self):
         base_dir = os.environ.get("MODEL_PATH", "/opt/nuclio/iog")
@@ -17,10 +18,16 @@ class ModelHandler:
         self.device = torch.device("cpu")
 
         # Number of input channels (RGB + heatmap of IOG points)
-        self.net = Network(nInputChannels=5, num_classes=1, backbone='resnet101',
-            output_stride=16, sync_bn=None, freeze_bn=False)
+        self.net = Network(
+            nInputChannels=5,
+            num_classes=1,
+            backbone="resnet101",
+            output_stride=16,
+            sync_bn=None,
+            freeze_bn=False,
+        )
 
-        pretrain_dict = torch.load(model_path)
+        pretrain_dict = torch.load(model_path, weights_only=True)
         self.net.load_state_dict(pretrain_dict)
         self.net.to(self.device)
         self.net.eval()
@@ -33,11 +40,11 @@ class ModelHandler:
                 max(bbox[0][0] - crop_padding, 0),
                 max(bbox[0][1] - crop_padding, 0),
                 min(bbox[1][0] + crop_padding, image.width - 1),
-                min(bbox[1][1] + crop_padding, image.height - 1)
+                min(bbox[1][1] + crop_padding, image.height - 1),
             ]
             crop_shape = (
-                int(crop_bbox[2] - crop_bbox[0] + 1), # width
-                int(crop_bbox[3] - crop_bbox[1] + 1), # height
+                int(crop_bbox[2] - crop_bbox[0] + 1),  # width
+                int(crop_bbox[3] - crop_bbox[1] + 1),  # height
             )
 
             # try to use crop_from_bbox(img, bbox, zero_pad) here
@@ -49,9 +56,12 @@ class ModelHandler:
 
             def translate_points_to_crop(points):
                 points = [
-                    ((p[0] - crop_bbox[0]) * crop_scale[0], # x
-                     (p[1] - crop_bbox[1]) * crop_scale[1]) # y
-                    for p in points]
+                    (
+                        (p[0] - crop_bbox[0]) * crop_scale[0],  # x
+                        (p[1] - crop_bbox[1]) * crop_scale[1],  # y
+                    )
+                    for p in points
+                ]
 
                 return points
 
@@ -89,8 +99,9 @@ class ModelHandler:
 
             # Convert a mask to a polygon
             pred = np.array(pred, dtype=np.uint8)
-            pred = cv2.resize(pred, dsize=(crop_shape[0], crop_shape[1]),
-                interpolation=cv2.INTER_CUBIC)
+            pred = cv2.resize(
+                pred, dsize=(crop_shape[0], crop_shape[1]), interpolation=cv2.INTER_CUBIC
+            )
             cv2.normalize(pred, pred, 0, 255, cv2.NORM_MINMAX)
 
             mask = np.zeros((image.height, image.width), dtype=np.uint8)

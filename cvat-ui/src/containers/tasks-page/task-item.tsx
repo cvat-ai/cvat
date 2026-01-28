@@ -1,16 +1,14 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
 
 import { Task, Request } from 'cvat-core-wrapper';
-import {
-    TasksQuery, CombinedState, ActiveInference, PluginComponent,
-} from 'reducers';
+import { CombinedState, ActiveInference, PluginComponent } from 'reducers';
 import TaskItemComponent from 'components/tasks-page/task-item';
-import { getTasksAsync, updateTaskInState as updateTaskInStateAction, getTaskPreviewAsync } from 'actions/tasks-actions';
+import { updateTaskInState as updateTaskInStateAction, getTaskPreviewAsync } from 'actions/tasks-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
 
 interface StateToProps {
@@ -22,7 +20,6 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    getTasks(query: TasksQuery): void;
     updateTaskInState(task: Task): void;
     cancelAutoAnnotation(): void;
 }
@@ -53,9 +50,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
 function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     return {
-        getTasks(query: TasksQuery): void {
-            dispatch(getTasksAsync(query));
-        },
         cancelAutoAnnotation(): void {
             dispatch(cancelInferenceAsync(own.taskID));
         },

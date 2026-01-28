@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -20,13 +20,14 @@ services:
       replicas: 0
 
   cvat_server: *backend-settings
-  cvat_utils: *backend-settings
-  cvat_worker_analytics_reports: *backend-settings
+  cvat_worker_utils: *backend-settings
   cvat_worker_annotation: *backend-settings
   cvat_worker_export: *backend-settings
   cvat_worker_import: *backend-settings
   cvat_worker_quality_reports: *backend-settings
   cvat_worker_webhooks: *backend-settings
+  cvat_worker_chunks: *backend-settings
+  cvat_worker_consensus: *backend-settings
 
 secrets:
   postgres_password:

@@ -1,0 +1,30 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-analytics-page {
+    overflow: auto;
+}
+
+.cvat-analytics-page, .cvat-analytics-wrapper {
+    height: 100%;
+}
+
+.cvat-analytics-inner {
+    @include cvat-management-page-inner;
+}
+
+.cvat-analytics-inner-wrapper {
+    @include cvat-management-page-inner-wrapper;
+}
+
+.cvat-analytics-header {
+    @include cvat-management-page-header;
+}
+
+.cvat-analytics-export-button {
+    margin-left: $grid-unit-size * 2;
+    padding: 0;
+}

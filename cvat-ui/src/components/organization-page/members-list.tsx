@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,14 +7,12 @@ import React from 'react';
 import Pagination from 'antd/lib/pagination';
 import Spin from 'antd/lib/spin';
 
-import { useDispatch, useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
-import {
-    removeOrganizationMemberAsync, updateOrganizationMemberAsync,
-} from 'actions/organization-actions';
-import { resendInvitationAsync } from 'actions/invitations-actions';
+import { useSelector, shallowEqual } from 'react-redux';
+import { CombinedState, SelectedResourceType } from 'reducers';
 import { Membership } from 'cvat-core-wrapper';
+import BulkWrapper from 'components/bulk-wrapper';
 import MemberItem from './member-item';
+import EmptyListComponent from './empty-list';
 
 export interface Props {
     organizationInstance: any;
@@ -23,69 +21,54 @@ export interface Props {
     pageSize: number;
     pageNumber: number;
     members: Membership[];
-    setPageNumber: (pageNumber: number) => void;
-    setPageSize: (pageSize: number) => void;
+    onPageChange: (page: number, pageSize: number) => void;
     fetchMembers: () => void;
 }
 
-function MembersList(props: Props): JSX.Element {
+function MembersList(props: Readonly<Props>): JSX.Element {
     const {
-        organizationInstance, fetching, members, pageSize, pageNumber, fetchMembers, setPageNumber, setPageSize,
+        fetching, members, pageSize, pageNumber, fetchMembers, onPageChange,
     } = props;
-    const dispatch = useDispatch();
-    const inviting = useSelector((state: CombinedState) => state.organizations.inviting);
-    const updatingMember = useSelector((state: CombinedState) => state.organizations.updatingMember);
-    const removingMember = useSelector((state: CombinedState) => state.organizations.removingMember);
+    const {
+        inviting,
+        updatingMember,
+        removingMember,
+    } = useSelector((state: CombinedState) => ({
+        inviting: state.organizations.inviting,
+        updatingMember: state.organizations.updatingMember,
+        removingMember: state.organizations.removingMember,
+    }), shallowEqual);
 
-    return fetching || inviting || updatingMember || removingMember ? (
-        <Spin className='cvat-spinner' />
-    ) : (
+    if (fetching || inviting || updatingMember || removingMember) {
+        return <Spin className='cvat-spinner' />;
+    }
+
+    const content = members.length ? (
         <>
-            <div>
-                {members.map(
-                    (member: Membership): JSX.Element => (
-                        <MemberItem
-                            key={member.user.id}
-                            membershipInstance={member}
-                            onRemoveMembership={() => {
-                                dispatch(
-                                    removeOrganizationMemberAsync(organizationInstance, member, () => {
-                                        fetchMembers();
-                                    }),
-                                );
-                            }}
-                            onUpdateMembershipRole={(role: string) => {
-                                dispatch(
-                                    updateOrganizationMemberAsync(organizationInstance, member, role, () => {
-                                        fetchMembers();
-                                    }),
-                                );
-                            }}
-                            onResendInvitation={(key: string) => {
-                                dispatch(
-                                    resendInvitationAsync(organizationInstance, key),
-                                );
-                            }}
-                            onDeleteInvitation={() => {
-                                dispatch(
-                                    removeOrganizationMemberAsync(organizationInstance, member, () => {
-                                        fetchMembers();
-                                    }),
-                                );
-                            }}
-                        />
-                    ),
-                )}
+            <div className='cvat-organization-members-list'>
+                <BulkWrapper
+                    currentResourceIds={members.map((member) => member.id)}
+                    resourceType={SelectedResourceType.MEMBERS}
+                >
+                    {(selectProps) => (
+                        <>
+                            {members.map((member, idx) => (
+                                <MemberItem
+                                    key={member.id}
+                                    membershipInstance={member}
+                                    fetchMembers={fetchMembers}
+                                    {...selectProps(member.id, idx)}
+                                />
+                            ))}
+                        </>
+                    )}
+                </BulkWrapper>
             </div>
             <div className='cvat-organization-members-pagination-block'>
                 <Pagination
                     total={members.length ? (members as any).count : 0}
-                    onShowSizeChange={(current: number, newShowSize: number) => {
-                        setPageNumber(current);
-                        setPageSize(newShowSize);
-                    }}
-                    onChange={(current: number) => {
-                        setPageNumber(current);
+                    onChange={(current: number, newPageSize: number) => {
+                        onPageChange(current, newPageSize);
                     }}
                     current={pageNumber}
                     pageSize={pageSize}
@@ -94,7 +77,11 @@ function MembersList(props: Props): JSX.Element {
                 />
             </div>
         </>
+    ) : (
+        <EmptyListComponent />
     );
+
+    return content;
 }
 
 export default React.memo(MembersList);

@@ -1,49 +1,8 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { ColumnFilterItem } from 'antd/lib/table/interface';
-import { QualityReport } from 'cvat-core-wrapper';
-import config from 'config';
-
-export enum QualityColors {
-    GREEN = '#237804',
-    YELLOW = '#ed9c00',
-    RED = '#ff4d4f',
-    GRAY = '#8c8c8c',
-}
-
-const ratios = {
-    low: 0.82,
-    middle: 0.9,
-    high: 1,
-};
-
-export const qualityColorGenerator = (targetMetric: number) => (value?: number) => {
-    const baseValue = targetMetric * 100;
-
-    const thresholds = {
-        low: baseValue * ratios.low,
-        middle: baseValue * ratios.middle,
-        high: baseValue * ratios.high,
-    };
-
-    if (!value) {
-        return QualityColors.GRAY;
-    }
-
-    if (value >= thresholds.high) {
-        return QualityColors.GREEN;
-    }
-    if (value >= thresholds.middle) {
-        return QualityColors.YELLOW;
-    }
-    if (value >= thresholds.low) {
-        return QualityColors.RED;
-    }
-
-    return QualityColors.GRAY;
-};
+import { Task } from 'cvat-core-wrapper';
 
 export function sorter(path: string) {
     return (obj1: any, obj2: any): number => {
@@ -80,44 +39,26 @@ export function sorter(path: string) {
     };
 }
 
-export function collectAssignees(reports: QualityReport[]): ColumnFilterItem[] {
-    return Array.from<string | null>(
-        new Set(
-            reports.map((report: QualityReport) => report.assignee?.username ?? null),
-        ),
-    ).map((value: string | null) => ({ text: value ?? 'Is Empty', value: value ?? false }));
+export function tablePaginationPageSize(pageHeight: number): number {
+    if (pageHeight > 1600) {
+        return 100;
+    }
+    if (pageHeight > 1100) {
+        return 50;
+    }
+    if (pageHeight > 950) {
+        return 20;
+    }
+
+    return 10;
 }
 
-export function toRepresentation(val?: number, isPercent = true, decimals = 1): string {
-    if (!Number.isFinite(val)) {
-        return 'N/A';
+export function validationModeText(task: Task): string | null {
+    let result: string | null = null;
+    if (task.validationMode === 'gt') {
+        result = 'Ground truth';
+    } else if (task.validationMode === 'gt_pool') {
+        result = 'Honeypots';
     }
-
-    let repr = '';
-    if (!val || (isPercent && (val === 100))) {
-        repr = `${val}`; // remove noise in the fractional part
-    } else {
-        repr = `${val?.toFixed(decimals)}`;
-    }
-
-    if (isPercent) {
-        repr += `${isPercent ? '%' : ''}`;
-    }
-
-    return repr;
-}
-
-export function percent(a?: number, b?: number, decimals = 1): string | number {
-    if (typeof a !== 'undefined' && Number.isFinite(a) && b) {
-        return toRepresentation(Number(a / b) * 100, true, decimals);
-    }
-    return 'N/A';
-}
-
-export function clampValue(a?: number): string | number {
-    if (typeof a !== 'undefined' && Number.isFinite(a)) {
-        if (a <= config.NUMERIC_VALUE_CLAMP_THRESHOLD) return a;
-        return `> ${config.NUMERIC_VALUE_CLAMP_THRESHOLD}`;
-    }
-    return 'N/A';
+    return result;
 }

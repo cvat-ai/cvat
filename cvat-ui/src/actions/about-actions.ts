@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { getCore } from 'cvat-core-wrapper';
+import { AboutData, getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -15,7 +15,7 @@ export enum AboutActionTypes {
 
 const aboutActions = {
     getAbout: () => createAction(AboutActionTypes.GET_ABOUT),
-    getAboutSuccess: (server: any) => createAction(AboutActionTypes.GET_ABOUT_SUCCESS, { server }),
+    getAboutSuccess: (server: AboutData) => createAction(AboutActionTypes.GET_ABOUT_SUCCESS, { server }),
     getAboutFailed: (error: any) => createAction(AboutActionTypes.GET_ABOUT_FAILED, { error }),
 };
 

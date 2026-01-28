@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,16 +6,12 @@ import React, { useEffect } from 'react';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { PictureOutlined } from '@ant-design/icons';
+import { useInView } from 'react-intersection-observer';
 import Spin from 'antd/lib/spin';
-import { getJobPreviewAsync } from 'actions/jobs-actions';
-import { getTaskPreviewAsync } from 'actions/tasks-actions';
-import { getProjectsPreviewAsync } from 'actions/projects-actions';
-import { getCloudStoragePreviewAsync } from 'actions/cloud-storage-actions';
-import {
-    CombinedState, Job, Task, Project, CloudStorage,
-} from 'reducers';
+import { CombinedState, CloudStorage } from 'reducers';
+import { Job, Task, Project } from 'cvat-core-wrapper';
 import MLModel from 'cvat-core/src/ml-model';
-import { getModelPreviewAsync } from 'actions/models-actions';
+import { previewQueue, getRequestId } from 'utils/preview-queue';
 
 interface Props {
     job?: Job | undefined;
@@ -30,9 +26,8 @@ interface Props {
     previewClassName?: string;
 }
 
-export default function Preview(props: Props): JSX.Element {
+export default function Preview(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
-
     const {
         job,
         task,
@@ -46,40 +41,58 @@ export default function Preview(props: Props): JSX.Element {
         previewClassName,
     } = props;
 
-    const preview = useSelector((state: CombinedState) => {
+    const [hasFetched, setHasFetched] = React.useState(false);
+    const { ref, inView } = useInView({ triggerOnce: true });
+
+    const { preview, entity } = useSelector((state: CombinedState) => {
         if (job !== undefined) {
-            return state.jobs.previews[job.id];
-        } if (project !== undefined) {
-            return state.projects.previews[project.id];
-        } if (task !== undefined) {
-            return state.tasks.previews[task.id];
-        } if (cloudStorage !== undefined) {
-            return state.cloudStorages.previews[cloudStorage.id];
-        } if (model !== undefined) {
-            return state.models.previews[model.id];
+            return { preview: state.jobs.previews[job.id], entity: job };
         }
-        return '';
+        if (project !== undefined) {
+            return { preview: state.projects.previews[project.id], entity: project };
+        }
+        if (task !== undefined) {
+            return { preview: state.tasks.previews[task.id], entity: task };
+        }
+        if (cloudStorage !== undefined) {
+            return { preview: state.cloudStorages.previews[cloudStorage.id], entity: cloudStorage };
+        }
+        if (model !== undefined) {
+            return { preview: state.models.previews[model.id], entity: model };
+        }
+        return { preview: undefined, entity: null };
     });
 
     useEffect(() => {
-        if (preview === undefined) {
-            if (job !== undefined) {
-                dispatch(getJobPreviewAsync(job));
-            } else if (project !== undefined) {
-                dispatch(getProjectsPreviewAsync(project));
-            } else if (task !== undefined) {
-                dispatch(getTaskPreviewAsync(task));
-            } else if (cloudStorage !== undefined) {
-                dispatch(getCloudStoragePreviewAsync(cloudStorage));
-            } else if (model !== undefined) {
-                dispatch(getModelPreviewAsync(model));
+        if (inView && !hasFetched && preview === undefined) {
+            setHasFetched(true);
+
+            if (!entity) {
+                return;
+            }
+
+            const requestId = getRequestId(entity);
+            if (requestId) {
+                // Add request to queue
+                previewQueue.addRequest({
+                    id: requestId,
+                    entity,
+                    dispatch,
+                });
             }
         }
-    }, [preview]);
+    }, [entity, inView, hasFetched, preview]);
 
-    if (!preview || (preview && preview.fetching)) {
+    useEffect(() => () => {
+        if (entity) {
+            const requestId = getRequestId(entity);
+            previewQueue.removeRequest(requestId);
+        }
+    }, [entity]);
+
+    if (!preview || preview?.fetching) {
         return (
-            <div className={loadingClassName || ''} aria-hidden>
+            <div ref={ref} className={loadingClassName || ''} aria-hidden>
                 <Spin size='default' />
             </div>
         );

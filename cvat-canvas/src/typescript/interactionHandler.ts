@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +17,7 @@ import {
 export interface InteractionHandler {
     transform(geometry: Geometry): void;
     interact(interactData: InteractionData): void;
-    configurate(config: Configuration): void;
+    configure(config: Configuration): void;
     destroy(): void;
     cancel(): void;
 }
@@ -452,7 +452,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
     }
 
-    public configurate(configuration: Configuration): void {
+    public configure(configuration: Configuration): void {
         this.controlPointsSize = configuration.controlPointsSize;
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
 

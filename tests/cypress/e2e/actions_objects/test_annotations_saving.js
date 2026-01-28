@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,8 +37,8 @@ context('Test annotations saving works correctly', () => {
     }
 
     before(() => {
-        cy.headlessLogin();
-        cy.visit('/tasks/create');
+        cy.visit('/auth/login');
+        cy.headlessLogin({ nextURL: '/tasks/create' });
         cy.get('#name').type(taskName);
         cy.addNewLabel({ name: generalLabel.name });
         cy.addNewSkeletonLabel(skeletonLabel);
@@ -208,14 +208,11 @@ context('Test annotations saving works correctly', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((response) => {
-            const authKey = response.body.key;
+        cy.task('getAuthHeaders').then((authHeaders) => {
             cy.request({
                 method: 'DELETE',
                 url: `/api/tasks/${taskID}`,
-                headers: {
-                    Authorization: `Token ${authKey}`,
-                },
+                headers: authHeaders,
             });
         });
     });

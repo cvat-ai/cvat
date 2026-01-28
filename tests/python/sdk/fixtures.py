@@ -1,9 +1,8 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
-from typing import Tuple
 from zipfile import ZipFile
 
 import pytest
@@ -62,6 +61,42 @@ def fxt_login(admin_user: str, restore_db_per_class):
 
 
 @pytest.fixture
+def fxt_camvid_dataset(tmp_path: Path):
+    img_path = tmp_path / "img.png"
+    with img_path.open("wb") as f:
+        f.write(generate_image_file(filename=str(img_path), size=(5, 10)).getvalue())
+
+    annot_path = tmp_path / "annot.png"
+    r, g, b = (127, 0, 0)
+    annot = generate_image_file(
+        filename=str(annot_path),
+        size=(5, 10),
+        color=(r, g, b),
+    ).getvalue()
+    with annot_path.open("wb") as f:
+        f.write(annot)
+
+    label_colors_path = tmp_path / "label_colors.txt"
+    with open(label_colors_path, "w") as f:
+        f.write(f"{r} {g} {b} car\n")
+
+    dataset_img_path = "default/img.png"
+    dataset_annot_path = "default/annot.png"
+    default_txt_path = tmp_path / "default.txt"
+    with open(default_txt_path, "w") as f:
+        f.write(f"/{dataset_img_path} {dataset_annot_path}")
+
+    dataset_path = tmp_path / "camvid_dataset.zip"
+    with ZipFile(dataset_path, "x") as f:
+        f.write(img_path, arcname=dataset_img_path)
+        f.write(annot_path, arcname=dataset_annot_path)
+        f.write(default_txt_path, arcname="default.txt")
+        f.write(label_colors_path, arcname="label_colors.txt")
+
+    yield dataset_path
+
+
+@pytest.fixture
 def fxt_coco_dataset(tmp_path: Path, fxt_image_file: Path, fxt_coco_file: Path):
     dataset_path = tmp_path / "coco_dataset.zip"
     with ZipFile(dataset_path, "x") as f:
@@ -72,7 +107,7 @@ def fxt_coco_dataset(tmp_path: Path, fxt_image_file: Path, fxt_coco_file: Path):
 
 
 @pytest.fixture
-def fxt_new_task(fxt_image_file: Path, fxt_login: Tuple[Client, str]):
+def fxt_new_task(fxt_image_file: Path, fxt_login: tuple[Client, str]):
     client, _ = fxt_login
     task = client.tasks.create_from_data(
         spec={
@@ -87,7 +122,7 @@ def fxt_new_task(fxt_image_file: Path, fxt_login: Tuple[Client, str]):
 
 
 @pytest.fixture
-def fxt_new_task_with_target_storage(fxt_image_file: Path, fxt_login: Tuple[Client, str]):
+def fxt_new_task_with_target_storage(fxt_image_file: Path, fxt_login: tuple[Client, str]):
     client, _ = fxt_login
     task = client.tasks.create_from_data(
         spec={

@@ -1,12 +1,13 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
 import contextlib
-from typing import ContextManager, Iterable, Optional, TypeVar
+from collections.abc import Generator, Iterable
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -26,7 +27,7 @@ class ProgressReporter:
     """
 
     @contextlib.contextmanager
-    def task(self, **kwargs) -> ContextManager[None]:
+    def task(self, **kwargs) -> Generator[None, None, None]:
         """
         Returns a context manager that represents a long-running task
         for which progress can be reported.
@@ -42,7 +43,7 @@ class ProgressReporter:
         finally:
             self.finish()
 
-    def start(self, total: int, *, desc: Optional[str] = None) -> None:
+    def start(self, total: int, *, desc: str | None = None) -> None:
         """
         This is a compatibility method. Override start2 instead.
         """
@@ -52,7 +53,7 @@ class ProgressReporter:
         self,
         total: int,
         *,
-        desc: Optional[str] = None,
+        desc: str | None = None,
         unit: str = "it",
         unit_scale: bool = False,
         unit_divisor: int = 1000,
@@ -107,7 +108,7 @@ class BaseProgressReporter(ProgressReporter):
         self,
         total: int,
         *,
-        desc: Optional[str] = None,
+        desc: str | None = None,
         unit: str = "it",
         unit_scale: bool = False,
         unit_divisor: int = 1000,

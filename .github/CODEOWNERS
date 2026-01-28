@@ -11,7 +11,10 @@
 # the global owner(s) will be requested for a review.
 
 # Component: Server
-/cvat/           @Marishka17
+/cvat/                      @SpecLad
+/cvat/apps/dataset_manager/ @zhiltsov-max
+/cvat/apps/consensus/       @zhiltsov-max
+/cvat/apps/quality_control/ @zhiltsov-max
 
 # Component: CVAT SDK/CLI
 /cvat-sdk/       @SpecLad
@@ -19,39 +22,38 @@
 /cvat-cli/       @SpecLad
 
 # Component: Documentation
-/site/          @mdacoca
-/CHANGELOG.md   @mdacoca
-/README.md      @mdacoca
+/site/          @bsekachev
+/CHANGELOG.md   @bsekachev
+/README.md      @bsekachev
 
 # Component: CVAT UI
 /cvat-ui/       @bsekachev
-/cvat-data/     @azhavoro
+/cvat-data/     @bsekachev
 /cvat-canvas/   @bsekachev
 /cvat-canvas3d/ @bsekachev
 /cvat-core/     @bsekachev
-
-# Component: Datumaro
-/datumaro/      @zhiltsov-max
-/cvat/apps/dataset_manager/ @zhiltsov-max
 
 # Advanced components (e.g. analytics)
 /components/    @azhavoro
 
 # Component: Tests
-/tests/         @kirill-sizov
+/tests/         @bsekachev
+/tests/python/  @zhiltsov-max
 
 # Component: Serverless functions
-/serverless/    @kirill-sizov
+/serverless/    @bsekachev
 
 # Infrastructure
 Dockerfile*     @azhavoro
 docker-compose* @azhavoro
 .*              @azhavoro
+*.js             @bsekachev
 *.conf          @azhavoro
 *.sh            @azhavoro
-/cvat_proxy/    @azhavoro
-/tests/         @azhavoro
-/utils/         @azhavoro
-/LICENSE        @nmanovic
-/.github/       @kirill-sizov
+/supervisord/   @azhavoro
 /helm-chart/    @azhavoro
+/utils/         @SpecLad
+/.github/       @SpecLad
+/dev/           @SpecLad
+.regal/         @SpecLad
+/LICENSE        @nmanovic

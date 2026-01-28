@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,12 +22,18 @@ const defaultState: SettingsState = {
         showBitmap: false,
         showProjections: false,
         showGroundTruth: false,
+        orientationVisibility: {
+            x: false,
+            y: false,
+            z: false,
+        },
     },
     workspace: {
         autoSave: false,
         autoSaveInterval: 15 * 60 * 1000,
-        aamZoomMargin: 100,
+        focusedObjectPadding: 50,
         automaticBordering: false,
+        adaptiveZoom: true,
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
         intelligentPolygonCrop: true,
@@ -35,7 +41,7 @@ const defaultState: SettingsState = {
         textFontSize: 14,
         controlPointsSize: 5,
         textPosition: 'auto',
-        textContent: 'id,source,label,attributes,descriptions',
+        textContent: 'id,source,label,attributes,descriptions,dimensions',
         toolsBlockerState: {
             algorithmsLocked: false,
             buttonVisible: false,
@@ -161,6 +167,18 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 shapes: {
                     ...state.shapes,
                     showProjections: action.payload.showProjections,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHAPES_ORIENTATION_VISIBILITY: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    orientationVisibility: {
+                        ...state.shapes.orientationVisibility,
+                        ...action.payload.orientationVisibility,
+                    },
                 },
             };
         }
@@ -291,12 +309,12 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
-        case SettingsActionTypes.CHANGE_AAM_ZOOM_MARGIN: {
+        case SettingsActionTypes.CHANGE_FOCUSED_OBJECT_PADDING: {
             return {
                 ...state,
                 workspace: {
                     ...state.workspace,
-                    aamZoomMargin: action.payload.aamZoomMargin,
+                    focusedObjectPadding: action.payload.focusedObjectPadding,
                 },
             };
         }
@@ -324,6 +342,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     automaticBordering: action.payload.automaticBordering,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_ADAPTIVE_ZOOM: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    adaptiveZoom: action.payload.adaptiveZoom,
                 },
             };
         }
@@ -444,8 +471,11 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
 
             return {
                 ...state,
-
                 imageFilters: filters,
+                shapes: {
+                    ...state.shapes,
+                    showGroundTruth: false,
+                },
             };
         }
         case AnnotationActionTypes.INTERACT_WITH_CANVAS: {

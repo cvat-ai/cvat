@@ -15,6 +15,11 @@ cvat:
     affinity: {}
     tolerations: []
     additionalEnv: []
+
+    # This should only be used by supercharts;
+    # to set custom environment for a Helm release, use additionalEnv.
+    extensionEnv: {}
+
     additionalVolumes: []
     additionalVolumeMounts: []
     # -- The service account the backend pods will use to interact with the Kubernetes API
@@ -42,7 +47,21 @@ cvat:
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
+      readinessProbe:
+        enabled: true
+        periodSeconds: 15
+        initialDelaySeconds: 15
+      livenessProbe:
+        enabled: true
+        periodSeconds: 15
+        failureThreshold: 5
+        initialDelaySeconds: 60
     worker:
+      livenessProbe:
+        enabled: true
+        periodSeconds: 120
+        initialDelaySeconds: 30
+        timeoutSeconds: 10
       export:
         replicas: 2
         labels: {}
@@ -93,7 +112,17 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-      analyticsreports:
+      chunks:
+        replicas: 2
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
+      consensus:
         replicas: 1
         labels: {}
         annotations: {}
@@ -103,16 +132,17 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-    utils:
-      replicas: 1
-      labels: {}
-      annotations: {}
-      resources: {}
-      affinity: {}
-      tolerations: []
-      additionalEnv: []
-      additionalVolumes: []
-      additionalVolumeMounts: []
+      utils:
+        replicas: 1
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
+        extraArgs: []
     replicas: 1
     image: cvat/server
     tag: dev
@@ -123,8 +153,7 @@ cvat:
       paths:
         - /home/django
     service:
-      annotations:
-        traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+      annotations: {}
       spec:
         type: ClusterIP
         ports:
@@ -138,7 +167,6 @@ cvat:
 #        accessModes:
 #         - ReadWriteMany
         size: 20Gi
-    disableDistinctCachePerService: false
   frontend:
     replicas: 1
     image: cvat/ui
@@ -175,17 +203,25 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
+    readinessProbe:
+      enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
+    livenessProbe:
+      enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
     service:
       type: ClusterIP
       ports:
-        - port: 80
-          targetPort: 80
+        - port: 8000
+          targetPort: 8000
           protocol: TCP
           name: http
   opa:
     replicas: 1
     image: openpolicyagent/opa
-    tag: 0.63.0
+    tag: 1.12.2
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
@@ -219,6 +255,14 @@ cvat:
     #     name: tmp
     #     subPath: test
     composeCompatibleServiceName: true # Sets service name to opa in order to be compatible with Docker Compose. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
+    readinessProbe:
+      enabled: true
+      periodSeconds: 15
+      initialDelaySeconds: 15
+    livenessProbe:
+      enabled: true
+      periodSeconds: 15
+      initialDelaySeconds: 15
     service:
       type: ClusterIP
       ports:
@@ -237,7 +281,7 @@ cvat:
       name: cvat-kvrocks-secret
       password: cvat_kvrocks
     image: apache/kvrocks
-    tag: 2.7.0
+    tag: 2.12.1
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
@@ -269,16 +313,36 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
+    readinessProbe:
+      enabled: true
+      periodSeconds: 10
+      initialDelaySeconds: 30
+    livenessProbe:
+      enabled: true
+      periodSeconds: 10
+      initialDelaySeconds: 30
     defaultStorage:
       enabled: true
 #     storageClassName: default
 #     accessModes:
 #       - ReadWriteOnce
       size: 100Gi
+      annotations: {}
+      volumeAttributesClass:
+        create: false
+#        name: "gp3-high-throughput"
+#        provider: ebs.csi.aws.com
+#        parameters:
+#          type: gp3
+#          provisioned-throughput: "250"
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
   enabled: true # false for external db
+  image:
+    registry: public.ecr.aws
+    repository: b8u7h5e8/postgresql
+    tag: 15.2.0-debian-11-r0
   external:
     # Ignored if an empty value is set
     host: ""
@@ -302,6 +366,13 @@ postgresql:
 # https://artifacthub.io/packages/helm/bitnami/redis
 redis:
   enabled: true
+  image:
+    registry: public.ecr.aws
+    repository: docker/library/redis
+    tag: 7.2.11
+  global:
+    security:
+      allowInsecureImages: true
   external:
     host: 127.0.0.1
   architecture: standalone
@@ -316,6 +387,8 @@ redis:
 
 nuclio:
   enabled: false
+  dashboard:
+    containerBuilderKind: kaniko
 # See https://github.com/nuclio/nuclio/blob/master/hack/k8s/helm/nuclio/values.yaml for more info
 #  registry:
 #    loginUrl: someurl
@@ -341,23 +414,32 @@ vector:
   dataDir: "/vector-data-dir"
   containerPorts:
     - name: http
-      containerPort: 80
+      containerPort: 8282
       protocol: TCP
   service:
     ports:
       - name: http
-        port: 80
+        port: 8282
         protocol: TCP
   image:
     tag: "0.26.0-alpine"
+  securityContext:
+    runAsNonRoot: true
+
+    # Workaround for <https://github.com/vectordotdev/vector/issues/1599>.
+    runAsUser: 1000
+    runAsGroup: 1000
 
 clickhouse:
   # Set to false in case of external db usage
   enabled: true
+  image:
+    registry: public.ecr.aws
+    repository: b8u7h5e8/clickhouse
+    tag: 23.12.2-debian-11-r0
   shards: 1
   replicaCount: 1
   extraEnvVarsSecret: cvat-analytics-secret
-  initdbScriptsSecret: cvat-clickhouse-init
   auth:
     username: user
     existingSecret: cvat-analytics-secret
@@ -400,7 +482,7 @@ grafana:
   dashboardsConfigMaps:
     default: "cvat-grafana-dashboards"
   plugins:
-    - grafana-clickhouse-datasource
+    - grafana-clickhouse-datasource 4.8.2
   grafana.ini:
     server:
       root_url: https://cvat.local/analytics
@@ -431,7 +513,7 @@ ingress:
   ##   kubernetes.io/ingress.class: nginx
   ##
   annotations: {}
-  ## @param ingress.className IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## @param ingress.className IngressClass that will be used to implement the Ingress (Kubernetes 1.18+)
   ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
   ##

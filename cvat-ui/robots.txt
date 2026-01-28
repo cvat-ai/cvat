@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+Allow: /auth/
+Allow: /api/docs/

@@ -1,0 +1,19 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "iou_threshold": 0.4,
+      "quorum": 0.5,
+      "task_id": 30
+    },
+    {
+      "id": 2,
+      "iou_threshold": 0.4,
+      "quorum": 0.6,
+      "task_id": 31
+    }
+  ]
+}

@@ -1,54 +1,59 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-import { projectName, labelName } from '../../support/const_project';
+import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
     const caseID = 104;
+    const projectName = `Case ${caseID}`;
     const task = {
         name3d: `Case ${caseID}`,
-        label3d: labelName,
+        label3d: 'label3d',
         attrName3d: 'Kind',
         attrValue3d: 'Oak',
-        archiveName: '../../cypress/e2e/canvas3d_functionality/assets/test_canvas3d.zip',
+        archiveName: 'test_canvas3d.zip',
         advancedConfigurationParams: false,
         forProject: true,
         attachToProject: false,
         multiAttrParams: false,
     };
-    let projectID = '';
     let datasetArchiveName;
-
-    function getProjectID() {
-        cy.url().then((url) => {
-            projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
-        });
-    }
+    let projectID;
 
     before(() => {
-        cy.openProject(projectName);
-        getProjectID();
-        cy.createAnnotationTask(
-            task.name3d,
-            task.label3d,
-            task.attrName3d,
-            task.attrValue3d,
-            task.archiveName,
-            task.multiAttrParams,
-            task.advancedConfigurationParams,
-            task.forProject,
-            task.attachToProject,
-            projectName,
-        );
+        cy.prepareUserSession();
+        cy.headlessCreateProject({
+            name: projectName,
+            labels: [{
+                name: task.label3d,
+                attributes: [{
+                    mutable: false,
+                    name: task.attrName3d,
+                    values: [],
+                    default_value: task.attrValue3d,
+                    input_type: 'text',
+                }],
+            }],
+        }).then(({ projectID: pid }) => {
+            const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+                taskName: task.name3d,
+                serverFiles: [task.archiveName],
+                validationParams: task.advancedConfigurationParams,
+                projectID: pid,
+            });
+            delete taskSpec.labels;
+            cy.headlessCreateTask(taskSpec, dataSpec, extras);
+            projectID = pid;
+        });
     });
 
     after(() => {
-        cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
+        cy.headlessDeleteProject(projectID);
+        cy.logout();
     });
 
     describe(`Testing "Case ${caseID}"`, () => {

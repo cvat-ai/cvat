@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,7 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
     const dumpTypeVC = 'Kitti Raw Format';
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
         // eslint-disable-next-line cypress/no-unnecessary-waiting
@@ -60,7 +61,7 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 as: 'exportDatasetVCFormatRenameArchive',
                 type: 'dataset',
                 format: dumpTypeVC,
-                archiveCustomName: 'job_export_3d_dataset_custome_name_vc_format',
+                archiveCustomName: 'job_export_3d_dataset_custom_name_vc_format',
             };
             cy.exportJob(exportDatasetVCFormatRenameArchive);
             cy.downloadExport().then((file) => {

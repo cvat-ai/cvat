@@ -1,19 +1,22 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
+import { assignAllTo } from './utils.cy';
+import { fullMatch } from './utils';
+
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
-        if (user !== '') {
+        if (user === '') {
+            cy.get('.cvat-user-search-field').find('input').clear();
+            cy.get('.cvat-user-search-field').find('input').type('{Enter}');
+        } else {
             cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
             cy.get('.cvat-user-search-field').find('input').type(`${user}{Enter}`);
             cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
-        } else {
-            cy.get('.cvat-user-search-field').find('input').clear();
-            cy.get('.cvat-user-search-field').find('input').type('{Enter}');
         }
     });
 
@@ -21,18 +24,20 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
 });
 
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
-    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').click();
-    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').clear();
+    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input')
+        .first() // it could be a nested job
+        .click();
+    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').first().clear();
 
     cy.intercept('PATCH', `/api/jobs/${jobID}`).as('patchJobAssignee');
     if (user) {
         cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
-        cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').type(user);
+        cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').first().type(user);
         cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
         cy.get('.cvat-user-search-dropdown')
             .should('be.visible')
             .not('.ant-select-dropdown-hidden')
-            .contains(new RegExp(`^${user}$`, 'g'))
+            .contains(fullMatch(user))
             .click();
     } else {
         cy.get('body').type('{Enter}');
@@ -42,22 +47,7 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('checkJobStatus', (jobIdx, status, assignee, reviewer) => {
-    cy.getJobIDFromIdx(jobIdx).then((jobID) => {
-        cy.get('.cvat-task-jobs-table')
-            .contains('a', `Job #${jobID}`)
-            .parents('.cvat-task-jobs-table-row')
-            .within(() => {
-                cy.get('.cvat-job-item-status').should('have.text', status);
-                cy.get('.cvat-job-assignee-selector').within(() => {
-                    cy.get('input[type="search"]').should('have.value', assignee);
-                });
-                cy.get('.cvat-job-reviewer-selector').within(() => {
-                    cy.get('input[type="search"]').should('have.value', reviewer);
-                });
-            });
-    });
-});
+Cypress.Commands.add('assignAllJobsToUser', (user) => assignAllTo(user));
 
 Cypress.Commands.add('collectIssueLabel', () => {
     cy.document().then((doc) => Array.from(doc.querySelectorAll('.cvat-hidden-issue-label')));
@@ -65,12 +55,12 @@ Cypress.Commands.add('collectIssueLabel', () => {
 
 Cypress.Commands.add('checkIssueLabel', (issueDescription, status = 'unsolved') => {
     cy.collectIssueLabel().then((issueLabelList) => {
-        for (let i = 0; i < issueLabelList.length; i++) {
-            cy.get(issueLabelList[i])
+        for (const issueLabel of issueLabelList) {
+            cy.get(issueLabel)
                 .invoke('text')
                 .then((issueText) => {
                     if (issueText === issueDescription) {
-                        cy.get(issueLabelList[i])
+                        cy.get(issueLabel)
                             .should('exist')
                             .and('have.text', issueDescription)
                             .within(() => {
@@ -86,8 +76,8 @@ Cypress.Commands.add('collectIssueRegionIDs', () => {
     const issueRegionIdList = [];
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
-        for (let i = 0; i < issueRegionList.length; i++) {
-            issueRegionIdList.push(Number(issueRegionList[i].id.match(/-?\d+$/)));
+        for (const issueRegion of issueRegionList) {
+            issueRegionIdList.push(Number(issueRegion.id.match(/-?\d+$/)));
         }
         return issueRegionIdList;
     });
@@ -191,7 +181,7 @@ Cypress.Commands.add('removeIssue', (issueLabel) => {
 
 Cypress.Commands.add('submitReview', (decision, user) => {
     cy.get('.cvat-submit-review-dialog').within(() => {
-        cy.contains(new RegExp(`^${decision}$`, 'g')).click();
+        cy.contains(fullMatch(decision)).click();
         if (decision === 'Review next') {
             cy.intercept('GET', `/api/users?search=${user}&limit=10&is_active=true`).as('searchUsers');
             cy.get('.cvat-user-search-field').within(() => {

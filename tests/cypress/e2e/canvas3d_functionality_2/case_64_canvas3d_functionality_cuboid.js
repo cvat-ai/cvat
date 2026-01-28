@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,6 +19,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         // Prepare screenshots to compare
         cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_all');

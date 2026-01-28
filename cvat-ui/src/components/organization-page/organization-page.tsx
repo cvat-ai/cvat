@@ -1,52 +1,72 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useCallback, useEffect } from 'react';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import Empty from 'antd/lib/empty';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState } from 'reducers';
-import { Membership } from 'cvat-core-wrapper';
+import { CombinedState, SelectedResourceType } from 'reducers';
+import { selectionActions } from 'actions/selection-actions';
+import { getOrganizationMembersAsync } from 'actions/organization-actions';
 import TopBarComponent from './top-bar';
 import MembersList from './members-list';
 
-function fetchMembers(
-    organizationInstance: any,
-    page: number,
-    pageSize: number,
-    setMembers: (members: Membership[]) => void,
-    setFetching: (fetching: boolean) => void,
-): void {
-    setFetching(true);
-    organizationInstance
-        .members(page, pageSize)
-        .then((_members: any[]) => {
-            setMembers(_members);
-        })
-        .catch(() => {})
-        .finally(() => {
-            setFetching(false);
-        });
-}
-
 function OrganizationPage(): JSX.Element | null {
-    const organization = useSelector((state: CombinedState) => state.organizations.current);
-    const fetching = useSelector((state: CombinedState) => state.organizations.fetching);
-    const updating = useSelector((state: CombinedState) => state.organizations.updating);
-    const user = useSelector((state: CombinedState) => state.auth.user);
-    const [membersFetching, setMembersFetching] = useState<boolean>(true);
-    const [members, setMembers] = useState<Membership[]>([]);
-    const [pageNumber, setPageNumber] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(10);
+    const dispatch = useDispatch();
+    const {
+        organization,
+        fetching,
+        updating,
+        user,
+        members,
+        fetchingMembers,
+        query,
+        selectedIds,
+    } = useSelector((state: CombinedState) => ({
+        organization: state.organizations.current,
+        fetching: state.organizations.fetching,
+        updating: state.organizations.updating,
+        user: state.auth.user,
+        members: state.organizations.members,
+        fetchingMembers: state.organizations.fetchingMembers,
+        query: state.organizations.membersQuery,
+        selectedIds: state.organizations.selectedMembers,
+    }), shallowEqual);
+
+    const fetchMembersCallback = useCallback(() => {
+        if (organization) {
+            dispatch(getOrganizationMembersAsync(
+                organization,
+                query,
+            ));
+        }
+    }, [query, organization]);
+
+    const changePage = useCallback((page: number, pageSize: number) => {
+        if (organization) {
+            dispatch(getOrganizationMembersAsync(
+                organization,
+                {
+                    ...query,
+                    page,
+                    pageSize,
+                },
+            ));
+        }
+    }, [organization, query]);
+
+    const allMembeshipsIds = members.map((m) => m.id);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectResources(allMembeshipsIds, SelectedResourceType.MEMBERS));
+    }, [allMembeshipsIds]);
 
     useEffect(() => {
-        if (organization) {
-            fetchMembers(organization, pageNumber, pageSize, setMembers, setMembersFetching);
-        }
-    }, [pageSize, pageNumber, organization]);
+        fetchMembersCallback();
+    }, []);
 
     if (fetching || updating) {
         return <Spin className='cvat-spinner' />;
@@ -61,22 +81,47 @@ function OrganizationPage(): JSX.Element | null {
                     <TopBarComponent
                         organizationInstance={organization}
                         userInstance={user}
-                        fetchMembers={() => fetchMembers(
-                            organization, pageNumber, pageSize, setMembers, setMembersFetching,
-                        )}
+                        fetchMembers={fetchMembersCallback}
+                        query={query}
+                        onApplySearch={(search: string | null) => {
+                            dispatch(
+                                getOrganizationMembersAsync(organization, {
+                                    ...query,
+                                    search,
+                                    page: 1,
+                                }),
+                            );
+                        }}
+                        onApplyFilter={(filter: string | null) => {
+                            dispatch(
+                                getOrganizationMembersAsync(organization, {
+                                    ...query,
+                                    filter,
+                                    page: 1,
+                                }),
+                            );
+                        }}
+                        onApplySorting={(sort: string | null) => {
+                            dispatch(
+                                getOrganizationMembersAsync(organization, {
+                                    ...query,
+                                    sort,
+                                    page: 1,
+                                }),
+                            );
+                        }}
+                        selectedCount={selectedIds.length}
+                        onSelectAll={onSelectAll}
                     />
                     <MembersList
-                        fetching={membersFetching}
+                        fetching={fetchingMembers}
                         members={members}
                         organizationInstance={organization}
                         userInstance={user}
-                        pageSize={pageSize}
-                        pageNumber={pageNumber}
-                        setPageNumber={setPageNumber}
-                        setPageSize={setPageSize}
-                        fetchMembers={() => fetchMembers(
-                            organization, pageNumber, pageSize, setMembers, setMembersFetching,
-                        )}
+                        pageSize={query.pageSize}
+                        pageNumber={query.page}
+                        onPageChange={changePage}
+                        fetchMembers={fetchMembersCallback}
                     />
                 </>
             )}

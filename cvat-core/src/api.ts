@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,12 +16,19 @@ import Project from './project';
 import implementProject from './project-implementation';
 import { Attribute, Label } from './labels';
 import MLModel from './ml-model';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
-import BaseSingleFrameAction from './annotations-actions';
+import { BaseAction } from './annotations-actions/base-action';
+import { BaseCollectionAction } from './annotations-actions/base-collection-action';
+import { BaseShapesAction } from './annotations-actions/base-shapes-action';
+import QualityReport from './quality-report';
+import QualityConflict from './quality-conflict';
+import QualitySettings from './quality-settings';
+import ApiToken from './api-token';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 
 import * as enums from './enums';
@@ -30,9 +37,10 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
-import { mask2Rle, rle2Mask, propagateShapes } from './object-utils';
+import {
+    mask2Rle, rle2Mask, propagateShapes, validateAttributeValue,
+} from './object-utils';
 import User from './user';
-import pjson from '../package.json';
 import config from './config';
 
 import implementAPI from './api-implementation';
@@ -142,8 +150,8 @@ function build(): CVATCore {
             },
         },
         tasks: {
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter);
+            async get(filter = {}, aggregate = false) {
+                const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter, aggregate);
                 return result;
             },
         },
@@ -154,8 +162,8 @@ function build(): CVATCore {
             },
         },
         jobs: {
-            async get(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter);
+            async get(filter = {}, aggregate = false) {
+                const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter, aggregate);
                 return result;
             },
         },
@@ -168,6 +176,12 @@ function build(): CVATCore {
         users: {
             async get(filter = {}) {
                 const result = await PluginRegistry.apiWrapper(cvat.users.get, filter);
+                return result;
+            },
+        },
+        apiTokens: {
+            async get(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.apiTokens.get, filter);
                 return result;
             },
         },
@@ -186,14 +200,18 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.actions.list);
                 return result;
             },
-            async register(action: BaseSingleFrameAction) {
+            async register(action: BaseAction) {
                 const result = await PluginRegistry.apiWrapper(cvat.actions.register, action);
+                return result;
+            },
+            async unregister(action: BaseAction) {
+                const result = await PluginRegistry.apiWrapper(cvat.actions.unregister, action);
                 return result;
             },
             async run(
                 instance: Job | Task,
-                actionsChain: BaseSingleFrameAction[],
-                actionsParameters: Record<string, string>[],
+                actions: BaseAction,
+                actionsParameters: Record<string, string>,
                 frameFrom: number,
                 frameTo: number,
                 filters: string[],
@@ -206,11 +224,35 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.actions.run,
                     instance,
-                    actionsChain,
+                    actions,
                     actionsParameters,
                     frameFrom,
                     frameTo,
                     filters,
+                    onProgress,
+                    cancelled,
+                );
+                return result;
+            },
+            async call(
+                instance: Job | Task,
+                actions: BaseAction,
+                actionsParameters: Record<string, string>,
+                frame: number,
+                states: ObjectState[],
+                onProgress: (
+                    message: string,
+                    progress: number,
+                ) => void,
+                cancelled: () => boolean,
+            ) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.actions.call,
+                    instance,
+                    actions,
+                    actionsParameters,
+                    frame,
+                    states,
                     onProgress,
                     cancelled,
                 );
@@ -289,9 +331,12 @@ function build(): CVATCore {
             set requestsStatusDelay(value) {
                 config.requestsStatusDelay = value;
             },
-        },
-        client: {
-            version: `${pjson.version}`,
+            get jobMetaDataReloadPeriod() {
+                return config.jobMetaDataReloadPeriod;
+            },
+            set jobMetaDataReloadPeriod(value) {
+                config.jobMetaDataReloadPeriod = value;
+            },
         },
         enums,
         exceptions: {
@@ -345,24 +390,24 @@ function build(): CVATCore {
                 return result;
             },
         },
-        analytics: {
-            performance: {
-                async reports(filter = {}) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.performance.reports, filter);
+        consensus: {
+            settings: {
+                async get(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.consensus.settings.get, filter);
                     return result;
                 },
-                async calculate(body, onUpdate) {
-                    const result = await PluginRegistry.apiWrapper(
-                        cvat.analytics.performance.calculate,
-                        body,
-                        onUpdate,
-                    );
+            },
+        },
+        analytics: {
+            events: {
+                async export(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.events.export, filter);
                     return result;
                 },
             },
             quality: {
-                async reports(filter = {}) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
+                async reports(filter = {}, aggregate = false) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter, aggregate);
                     return result;
                 },
                 async conflicts(filter = {}) {
@@ -370,8 +415,12 @@ function build(): CVATCore {
                     return result;
                 },
                 settings: {
-                    async get(filter = {}) {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
+                    async get(filter = {}, aggregate = false) {
+                        const result = await PluginRegistry.apiWrapper(
+                            cvat.analytics.quality.settings.get,
+                            filter,
+                            aggregate,
+                        );
                         return result;
                     },
                 },
@@ -415,12 +464,22 @@ function build(): CVATCore {
             Organization,
             Webhook,
             AnnotationGuide,
-            BaseSingleFrameAction,
+            BaseShapesAction,
+            BaseCollectionAction,
+            QualitySettings,
+            QualityConflict,
+            QualityReport,
+            ApiToken,
+            Request,
+            FramesMetaData,
+            JobValidationLayout,
+            TaskValidationLayout,
         },
         utils: {
             mask2Rle,
             rle2Mask,
             propagateShapes,
+            validateAttributeValue,
         },
     };
 
@@ -435,12 +494,12 @@ function build(): CVATCore {
     cvat.lambda = Object.freeze(cvat.lambda);
     // logger: todo: logger storage implemented other way
     cvat.config = Object.freeze(cvat.config);
-    cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
     cvat.exceptions = Object.freeze(cvat.exceptions);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
     cvat.webhooks = Object.freeze(cvat.webhooks);
+    cvat.consensus = Object.freeze(cvat.consensus);
     cvat.analytics = Object.freeze(cvat.analytics);
     cvat.classes = Object.freeze(cvat.classes);
     cvat.utils = Object.freeze(cvat.utils);

@@ -72,11 +72,11 @@
       "id": 3,
       "job": 16,
       "owner": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 11,
-        "last_name": "Second",
+        "last_name": "Eighth",
         "url": "http://localhost:8080/api/users/11",
-        "username": "business2"
+        "username": "user8"
       },
       "position": [
         108.1845703125,
@@ -98,11 +98,11 @@
       "id": 2,
       "job": 9,
       "owner": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 11,
-        "last_name": "Second",
+        "last_name": "Eighth",
         "url": "http://localhost:8080/api/users/11",
-        "username": "business2"
+        "username": "user8"
       },
       "position": [
         98.48046875,

@@ -1,11 +1,12 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const_canvas3d';
+import { fullMatch } from '../../support/utils';
 
 context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
     const caseId = '63';
@@ -25,19 +26,19 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
             cy.get(button).trigger('mouseover');
             cy.get(button).click();
         } else {
-            cy.contains('button', new RegExp(`^${button}$`)).trigger('mouseover');
-            cy.contains('button', new RegExp(`^${button}$`)).click();
+            cy.contains('button', fullMatch(button)).trigger('mouseover');
+            cy.contains('button', fullMatch(button)).click();
         }
         cy.contains(expectedTooltipText).should('exist').and('be.visible'); // Check tooltip
         if (arrow) {
             cy.get(button).should('exist').click();
         } else {
-            cy.contains('button', new RegExp(`^${button}$`)).click({ force: true });
+            cy.contains('button', fullMatch(button)).click({ force: true });
         }
         if (arrow) {
             cy.get(button).trigger('mouseout');
         } else {
-            cy.contains('button', new RegExp(`^${button}$`)).trigger('mouseout');
+            cy.contains('button', fullMatch(button)).trigger('mouseout');
         }
 
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameAfter);
@@ -48,6 +49,7 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

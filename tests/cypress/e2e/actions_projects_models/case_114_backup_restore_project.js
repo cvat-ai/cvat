@@ -18,8 +18,9 @@ const project = {
     name: `Case ${caseId}`,
     label: 'Tree',
     attrName: 'Kind',
-    attrVaue: 'Oak',
+    attrValue: 'Oak',
 };
+const project3d = { ...project, name: `${project.name} 3D` };
 
 const task = {
     name: `Case ${caseId}`,
@@ -53,12 +54,12 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
     };
 
     before(() => {
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, project.label, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.goToProjectsList();
-        cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);
+        cy.createProjects(project.name, project.label, project.attrName, project.attrValue);
         cy.openProject(project.name);
         getProjectID();
         cy.createAnnotationTask(
@@ -113,8 +114,7 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
 });
 
 context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, () => {
-    const archiveName3d = '../../cypress/e2e/canvas3d_functionality/assets/test_canvas3d.zip';
-
+    const archiveName3d = 'test_canvas3d.zip';
     const cuboidCreationParams = {
         objectType: 'Shape',
         labelName: project.label,
@@ -123,10 +123,11 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
     };
 
     before(() => {
-        cy.goToProjectsList();
-        cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);
-        cy.openProject(project.name);
+        cy.prepareUserSession('/projects');
+        cy.createProjects(project3d.name, project3d.label, project3d.attrName, project3d.attrValue);
+        cy.openProject(project3d.name);
         getProjectID();
+        const fromShare = true;
         cy.createAnnotationTask(
             task.name,
             task.label,
@@ -137,9 +138,11 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
             task.advancedConfigurationParams,
             task.forProject,
             task.attachToProject,
-            project.name,
+            project3d.name,
+            'success', 'Test', null,
+            fromShare,
         );
-        cy.openProject(project.name);
+        cy.openProject(project3d.name);
         cy.openTaskJob(task.name);
         cy.create3DCuboid(cuboidCreationParams);
         cy.saveJob();
@@ -148,12 +151,12 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
 
     after(() => {
         cy.goToProjectsList();
-        cy.deleteProject(project.name, projectID);
+        cy.deleteProject(project3d.name, projectID);
     });
 
     describe(`Testing "${caseId}"`, () => {
         it('Export the project.', () => {
-            cy.backupProject(project.name);
+            cy.backupProject(project3d.name);
             cy.downloadExport().then((file) => {
                 projectBackupArchiveFullName = file;
                 cy.verifyDownload(projectBackupArchiveFullName);
@@ -162,15 +165,15 @@ context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, ()
         });
 
         it('Remove and restore the project from backup.', () => {
-            cy.deleteProject(project.name, projectID);
+            cy.deleteProject(project3d.name, projectID);
             cy.restoreProject(projectBackupArchiveFullName);
         });
 
         it('Checking the availability of a project, task, shape.', () => {
-            cy.contains('.cvat-projects-project-item-title', project.name).should('exist');
-            cy.openProject(project.name);
+            cy.contains('.cvat-projects-project-item-title', project3d.name).should('exist');
+            cy.openProject(project3d.name);
             getProjectID();
-            cy.contains('.cvat-constructor-viewer-item', project.label).should('exist');
+            cy.contains('.cvat-constructor-viewer-item', project3d.label).should('exist');
             cy.get('.cvat-tasks-list-item').should('have.length', 1);
             cy.openTaskJob(task.name, 0, false);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');

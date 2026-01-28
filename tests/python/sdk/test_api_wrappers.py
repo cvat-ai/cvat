@@ -1,7 +1,8 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import pickle
 from copy import deepcopy
 
 from cvat_sdk import models
@@ -112,3 +113,12 @@ def test_models_do_not_return_internal_collections():
     model_data2 = model.to_dict()
 
     assert DeepDiff(model_data1_original, model_data2) == {}
+
+
+def test_models_are_pickleable():
+    model = models.PatchedLabelRequest(id=5, name="person")
+    pickled_model = pickle.dumps(model)
+    unpickled_model = pickle.loads(pickled_model)
+
+    assert unpickled_model.id == model.id
+    assert unpickled_model.name == model.name

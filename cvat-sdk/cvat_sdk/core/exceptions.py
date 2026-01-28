@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,3 +13,9 @@ class InvalidHostException(CvatSdkException):
 
 class IncompatibleVersionException(CvatSdkException):
     """Indicates server and SDK version mismatch"""
+
+
+class BackgroundRequestException(CvatSdkException):
+    """
+    Exception is raised when a background request fails
+    """

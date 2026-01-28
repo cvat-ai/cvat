@@ -27,7 +27,7 @@ model = torchvision.models.resnet34(
 model.eval()
 
 # log into the CVAT server
-with make_client(host="localhost", credentials=('user', 'password')) as client:
+with make_client("http://localhost", credentials=('user', 'password')) as client:
     # get the dataset comprising all tasks for the Validation subset of project 12345
     dataset = ProjectVisionDataset(client, project_id=12345,
         include_subsets=['Validation'],
@@ -203,7 +203,7 @@ You can change this using the following constructor parameters:
     will be included.
 
 Both parameters can be set,
-in which case tasks must fulfull both criteria to be included.
+in which case tasks must fulfill both criteria to be included.
 
 ### Caching
 

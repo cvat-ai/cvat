@@ -1,60 +1,32 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import functools
 
-from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
-from rest_framework import views, serializers
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny
-from django.conf import settings
-from django.http import HttpResponse
-from django.views.decorators.http import etag as django_etag
-from rest_framework.response import Response
+from allauth.account import app_settings as allauth_settings
+from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
+from allauth.account.views import ConfirmEmailView
 from dj_rest_auth.app_settings import api_settings as dj_rest_auth_settings
 from dj_rest_auth.registration.views import RegisterView
 from dj_rest_auth.utils import jwt_encode
 from dj_rest_auth.views import LoginView
-from allauth.account import app_settings as allauth_settings
-from allauth.account.views import ConfirmEmailView
-from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
-
-from furl import furl
-
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
+from django.conf import settings
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
+from django.views.decorators.http import etag as django_etag
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
+from drf_spectacular.utils import extend_schema
+from rest_framework import views
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny
 
-from .authentication import Signer
+from cvat.apps.engine.log import ServerLogManager
+
 from .utils import get_opa_bundle
 
-@extend_schema(tags=['auth'])
-@extend_schema_view(post=extend_schema(
-    summary='This method signs URL for access to the server',
-    description='Signed URL contains a token which authenticates a user on the server.'
-                'Signed URL is valid during 30 seconds since signing.',
-    request=inline_serializer(
-        name='Signing',
-        fields={
-            'url': serializers.CharField(),
-        }
-    ),
-    responses={'200': OpenApiResponse(response=OpenApiTypes.STR, description='text URL')}))
-class SigningView(views.APIView):
+slogger = ServerLogManager(__name__)
 
-    def post(self, request):
-        url = request.data.get('url')
-        if not url:
-            raise ValidationError('Please provide `url` parameter')
-
-        signer = Signer()
-        url = self.request.build_absolute_uri(url)
-        sign = signer.sign(self.request.user, url)
-
-        url = furl(url).add({Signer.QUERY_PARAM: sign}).url
-        return Response(url)
 
 class LoginViewEx(LoginView):
     """
@@ -68,6 +40,7 @@ class LoginViewEx(LoginView):
     Accept the following POST parameters: username, email, password
     Return the REST Framework Token Object's key.
     """
+
     @extend_schema(responses=get_token_serializer_class())
     def post(self, request, *args, **kwargs):
         self.request = request
@@ -76,26 +49,30 @@ class LoginViewEx(LoginView):
             self.serializer.is_valid(raise_exception=True)
         except ValidationError:
             user = self.serializer.get_auth_user(
-                self.serializer.data.get('username'),
-                self.serializer.data.get('email'),
-                self.serializer.data.get('password')
+                self.serializer.data.get("username"),
+                self.serializer.data.get("email"),
+                self.serializer.data.get("password"),
             )
             if not user:
                 raise
 
             # Check that user's email is verified.
             # If not, send a verification email.
-            if not has_verified_email(user):
-                send_email_confirmation(request, user)
-                # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
-                # because redirect will make a POST request and we'll get a 404 code
-                # (although in the browser request method will be displayed like GET)
-                return HttpResponseBadRequest('Unverified email')
-        except Exception: # nosec
-            pass
+            if has_verified_email(user):
+                raise
+
+            send_email_confirmation(request, user)
+            # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
+            # because redirect will make a POST request and we'll get a 404 code
+            # (although in the browser request method will be displayed like GET)
+            return HttpResponseBadRequest("Unverified email")
+        # FUTURE-TODO: check why we need to handle exceptions here
+        except Exception as ex:
+            slogger.glob.warning(str(ex), exc_info=True)
 
         self.login()
         return self.get_response()
+
 
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):
@@ -117,19 +94,23 @@ class RegisterViewEx(RegisterView):
     # Link to the issue: https://github.com/iMerica/dj-rest-auth/issues/604
     def perform_create(self, serializer):
         user = serializer.save(self.request)
-        if allauth_settings.EMAIL_VERIFICATION != \
-                allauth_settings.EmailVerificationMethod.MANDATORY:
+        if (
+            allauth_settings.EMAIL_VERIFICATION
+            != allauth_settings.EmailVerificationMethod.MANDATORY
+        ):
             if dj_rest_auth_settings.USE_JWT:
                 self.access_token, self.refresh_token = jwt_encode(user)
             elif self.token_model:
                 dj_rest_auth_settings.TOKEN_CREATOR(self.token_model, user, serializer)
 
         complete_signup(
-            self.request._request, user,
+            self.request._request,
+            user,
             allauth_settings.EMAIL_VERIFICATION,
             None,
         )
         return user
+
 
 def _etag(etag_func):
     """
@@ -138,6 +119,7 @@ def _etag(etag_func):
     It calls Django's original decorator but pass correct request object to it.
     Django's original decorator doesn't work with DRF request object.
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(obj_self, request, *args, **kwargs):
@@ -150,8 +132,11 @@ def _etag(etag_func):
                 return func(obj_self, drf_request, *args, **kwargs)
 
             return patched_viewset_method(wsgi_request, *args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 class RulesView(views.APIView):
     serializer_class = None
@@ -161,10 +146,11 @@ class RulesView(views.APIView):
 
     @_etag(lambda request: get_opa_bundle()[1])
     def get(self, request):
-        return HttpResponse(get_opa_bundle()[0], content_type='application/x-tar')
+        return HttpResponse(get_opa_bundle()[0], content_type="application/x-tar")
+
 
 class ConfirmEmailViewEx(ConfirmEmailView):
-    template_name = 'account/email/email_confirmation_signup_message.html'
+    template_name = "account/email/email_confirmation_signup_message.html"
 
     def get(self, *args, **kwargs):
         try:

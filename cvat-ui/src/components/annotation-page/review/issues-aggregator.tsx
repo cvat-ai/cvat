@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +14,6 @@ import {
     AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-
 import { highlightConflict, updateActiveControl } from 'actions/annotation-actions';
 import CreateIssueDialog from './create-issue-dialog';
 import HiddenIssueLabel from './hidden-issue-label';
@@ -67,7 +66,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
 
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
-
+    const [canvasRect, setCanvasRect] = useState<DOMRect | null>(null);
     const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
         ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
 
@@ -101,6 +100,11 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         if (canvasReady) {
             const { geometry: updatedGeometry } = canvasInstance;
             setGeometry(updatedGeometry);
+
+            const canvasElement = window.document.getElementById('cvat_canvas_wrapper');
+            if (canvasElement) {
+                setCanvasRect(canvasElement.getBoundingClientRect());
+            }
 
             const geometryListener = (): void => {
                 setGeometry(canvasInstance.geometry);
@@ -228,6 +232,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     resolved={issueResolved}
                     highlight={highlight}
                     blur={blur}
+                    clientCoordinates={canvasInstance.translateFromSVG([minX, minY]) as [number, number]}
+                    canvasRect={canvasRect}
                     collapse={() => {
                         setExpandedIssue(null);
                     }}
@@ -272,7 +278,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         null;
 
     for (const conflict of conflictMapping) {
-        const isConflictHighligted = highlightedObjectsIDs?.includes(conflict.serverID) || false;
+        const isConflictHighlighted = highlightedObjectsIDs?.includes(conflict.serverID) || false;
         conflictLabels.push(
             <ConflictLabel
                 key={(Math.random() + 1).toString(36).substring(7)}
@@ -282,11 +288,11 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                 angle={-geometry.angle}
                 scale={1 / geometry.scale}
                 severity={conflict.severity}
-                darken={!isConflictHighligted}
+                darken={!isConflictHighlighted}
                 conflict={conflict.conflict}
                 onEnter={onEnter}
                 onLeave={onLeave}
-                tooltipVisible={isConflictHighligted}
+                tooltipVisible={isConflictHighlighted}
             />,
         );
     }
@@ -300,6 +306,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     angle={-geometry.angle}
                     scale={1 / geometry.scale}
                     onCreateIssue={onCreateIssue}
+                    canvasRect={canvasRect}
+                    clientCoordinates={canvasInstance.translateFromSVG([createLeft, createTop]) as [number, number]}
                 />
             ) : null}
             {issueDialogs}

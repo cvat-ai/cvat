@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,6 +16,7 @@ context('Button "Continue" in label editor.', () => {
     ];
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
     });
 
@@ -24,7 +25,7 @@ context('Button "Continue" in label editor.', () => {
             cy.addNewLabelViaContinueButton(additionalLabels);
         });
 
-        it('All labels cuccessfully added.', () => {
+        it('All labels successfully added.', () => {
             cy.collectLabelsName().then((labelNames) => {
                 expect(labelNames).to.include(additionalLabels[0]);
                 expect(labelNames).to.include(additionalLabels[1]);

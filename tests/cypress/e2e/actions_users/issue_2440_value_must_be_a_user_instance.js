@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,6 +11,7 @@ context('Value must be a user instance.', () => {
     const issueId = '2440';
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
     });
 

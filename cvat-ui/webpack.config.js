@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,6 +33,8 @@ module.exports = (env) => {
     console.log('Source maps: ', sourceMapsDisabled ? 'disabled' : 'enabled');
     console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
 
+    const host = process.env.CVAT_UI_HOST ?? 'localhost';
+    const port = process.env.CVAT_UI_PORT ?? 3000;
     return {
         target: 'web',
         mode: 'production',
@@ -47,12 +49,13 @@ module.exports = (env) => {
             publicPath: '/',
         },
         devServer: {
+            host,
+            port,
             compress: false,
-            host: process.env.CVAT_UI_HOST || 'localhost',
             client: {
                 overlay: false,
+                webSocketURL: 'ws://0.0.0.0:0/ws',
             },
-            port: 3000,
             historyApiFallback: true,
             static: {
                 directory: path.join(__dirname, 'dist'),
@@ -62,18 +65,20 @@ module.exports = (env) => {
                 // https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/
                 'Cross-Origin-Opener-Policy': 'same-origin',
                 'Cross-Origin-Embedder-Policy': 'credentialless',
+                'Service-Worker-Allowed': '/',
             },
-            proxy: [
-                {
-                    context: (param) =>
-                        param.match(
-                            /\/api\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
-                        ),
-                    target: env && env.API_URL,
-                    secure: false,
-                    changeOrigin: true,
+            proxy: [{
+                context: (param) =>
+                    param.match(
+                        /\/api\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                    ),
+                target: env && env.API_URL,
+                secure: false,
+                changeOrigin: true,
+                onProxyReq: (proxyReq) => {
+                    proxyReq.setHeader('X-FORWARDED-HOST', `${host}:${port}`);
                 },
-            ],
+            }],
         },
         resolve: {
             extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
@@ -104,6 +109,7 @@ module.exports = (env) => {
                             plugins: [
                                 '@babel/plugin-proposal-class-properties',
                                 '@babel/plugin-proposal-optional-chaining',
+                                '@babel/plugin-transform-private-methods',
                                 [
                                     'import',
                                     {
@@ -186,8 +192,16 @@ module.exports = (env) => {
                         to  : 'assets/[name][ext]',
                     },
                     {
+                        from: '../node_modules/onnxruntime-web/dist/*.mjs',
+                        to: 'assets/[name][ext]',
+                    },
+                    {
                         from: 'src/assets/opencv_4.8.0.js',
                         to  : 'assets/opencv_4.8.0.js',
+                    },
+                    {
+                        from: 'src/assets/*.png',
+                        to  : 'assets/[name][ext]',
                     },
                     {
                         from: 'plugins/**/assets/*.(onnx|js)',

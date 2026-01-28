@@ -3,29 +3,60 @@ cvat:
     defaultStorage:
       accessModes:
       - ReadWriteOnce
-    disableDistinctCachePerService: true
     server:
       additionalVolumeMounts:
       - mountPath: /home/django/share
         name: cvat-backend-data
         subPath: share
       additionalEnv:
-        - name: DJANGO_SETTINGS_MODULE
-          value: cvat.settings.testing_rest
+      - name: DJANGO_SETTINGS_MODULE
+        value: cvat.settings.testing_rest
+      - name: CVAT_ACCESS_TOKEN_STALE_PERIOD
+        value: "3153600000" # ~100 years
     worker:
+      additionalEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: cvat.settings.testing_rest
+      - name: CVAT_ACCESS_TOKEN_STALE_PERIOD
+        value: "3153600000" # ~100 years
+      annotation:
+        replicas: 0
+      chunks:
+        replicas: 0
+      consensus:
+        replicas: 0
+      export:
+        replicas: 0
       import:
+        replicas: 0
+      qualityreports:
+        replicas: 0
+      webhooks:
+        replicas: 1
+      utils:
+        replicas: 1
         additionalVolumeMounts:
         - mountPath: /home/django/share
           name: cvat-backend-data
           subPath: share
-    utils:
-      additionalEnv:
-        - name: DJANGO_SETTINGS_MODULE
-          value: cvat.settings.testing_rest
+        extraArgs:
+        - "annotation"
+        - "chunks"
+        - "consensus"
+        - "export"
+        - "import"
+        - "quality_reports"
+
     # Images are already present in the node
     imagePullPolicy: Never
   frontend:
     imagePullPolicy: Never
+
+redis:
+  master:
+    # The "flushall" command, which we use in tests, is disabled in helm by default
+    # https://artifacthub.io/packages/helm/bitnami/redis#redis-master-configuration-parameters
+    disableCommands: []
 
 keydb:
   resources:
@@ -37,4 +68,3 @@ traefik:
       level: DEBUG
     access:
       enabled: true
-

@@ -1,11 +1,14 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
 
 import requests
 from cvat_sdk.api_client import ApiClient, Configuration
+from cvat_sdk.core.client import Client, Config
 
 ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "utils")
 ASSETS_DIR = (ROOT_DIR / "assets").resolve()
@@ -67,7 +70,28 @@ def server_get(username, endpoint, **kwargs):
     return requests.get(get_server_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
 
-def make_api_client(user: str, *, password: str = None) -> ApiClient:
-    return ApiClient(
-        configuration=Configuration(host=BASE_URL, username=user, password=password or USER_PASS)
-    )
+def make_api_client(
+    user: str | None = None,
+    *,
+    password: str | None = None,
+    access_token: str | None = None,
+) -> ApiClient:
+    assert (
+        sum([bool(access_token), bool(user)]) <= 1
+    ), "Expected only one of the 'access_token' and 'user' args"
+
+    configuration = Configuration(host=BASE_URL)
+    if access_token:
+        configuration.access_token = access_token
+    else:
+        configuration.username = user
+        configuration.password = password or USER_PASS
+
+    return ApiClient(configuration=configuration)
+
+
+@contextmanager
+def make_sdk_client(user: str, *, password: str = None) -> Generator[Client, None, None]:
+    with Client(BASE_URL, config=Config(status_check_period=0.01)) as client:
+        client.login((user, password or USER_PASS))
+        yield client

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.18.0
+  version: 2.55.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -12,95 +12,6 @@ info:
     name: MIT License
     url: https://en.wikipedia.org/wiki/MIT_License
 paths:
-  /api/analytics/reports:
-    get:
-      operationId: analytics_get_reports
-      description: Receive analytics report
-      summary: Get an analytics report
-      parameters:
-      - in: query
-        name: end_date
-        schema:
-          type: string
-          format: date-time
-        description: Specify the end date for filtering report data.
-      - in: query
-        name: job_id
-        schema:
-          type: integer
-        description: Specify job ID
-      - in: query
-        name: project_id
-        schema:
-          type: integer
-        description: Specify project ID
-      - in: query
-        name: start_date
-        schema:
-          type: string
-          format: date-time
-        description: Specify a start date for filtering report data.
-      - in: query
-        name: task_id
-        schema:
-          type: integer
-        description: Specify task ID
-      tags:
-      - analytics
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AnalyticsReport'
-          description: ''
-        '404':
-          description: Not found
-    post:
-      operationId: analytics_create_report
-      summary: Create an analytics report
-      parameters:
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: |
-          The report creation request id. Can be specified to check the report
-          creation status.
-      tags:
-      - analytics
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnalyticsReportCreateRequest'
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '201':
-          description: A analytics report request has been computed
-        '202':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/RqId'
-          description: |
-            A analytics report request has been enqueued, the request id is returned.
-            The request status can be checked at this endpoint by passing the rq_id
-            as the query parameter. If the request id is specified, this response
-            means the analytics report request is queued or is being processed.
-        '400':
-          description: Invalid or failed request, check the response data for details
   /api/assets:
     post:
       operationId: assets_create
@@ -111,16 +22,14 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
+              $ref: '#/components/schemas/AssetWriteRequest'
+        required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -144,10 +53,11 @@ paths:
       tags:
       - assets
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -166,14 +76,206 @@ paths:
       tags:
       - assets
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
           description: The asset has been deleted
+  /api/auth/access_tokens:
+    get:
+      operationId: auth_list_access_tokens
+      summary: List tokens
+      parameters:
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['name', 'id', 'created_date', 'updated_date', 'expiry_date', 'last_used_date', 'read_only'].
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: A simple equality filter for the name field
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: (''name'',)'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''name'', ''id'', ''created_date'', ''updated_date'', ''expiry_date'',
+          ''last_used_date'', ''read_only'']'
+        schema:
+          type: string
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAccessTokenReadList'
+          description: ''
+    post:
+      operationId: auth_create_access_tokens
+      summary: Create a token
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessTokenWriteRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenRead'
+          description: ''
+  /api/auth/access_tokens/{id}:
+    get:
+      operationId: auth_retrieve_access_tokens
+      summary: Get token details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this API Access Token.
+        required: true
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenRead'
+          description: ''
+    patch:
+      operationId: auth_partial_update_access_tokens
+      summary: Update a token
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this API Access Token.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAccessTokenWriteRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenRead'
+          description: ''
+    delete:
+      operationId: auth_destroy_access_tokens
+      summary: Revoke token
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this API Access Token.
+        required: true
+      tags:
+      - auth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The token was successfully revoked
+  /api/auth/access_tokens/self:
+    get:
+      operationId: auth_retrieve_access_tokens_self
+      description: |
+        Get details of the token used for the current request.
+        This endpoint is only allowed if the request is performed using an access token.
+      summary: Get current token details
+      tags:
+      - auth
+      security:
+      - accessTokenAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenRead'
+          description: ''
   /api/auth/login:
     post:
       operationId: auth_create_login
@@ -196,10 +298,11 @@ paths:
               $ref: '#/components/schemas/LoginSerializerExRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -220,10 +323,11 @@ paths:
       tags:
       - auth
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -250,10 +354,10 @@ paths:
               $ref: '#/components/schemas/PasswordChangeRequest'
         required: true
       security:
+      - tokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -279,10 +383,11 @@ paths:
               $ref: '#/components/schemas/PasswordResetSerializerExRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -311,10 +416,11 @@ paths:
               $ref: '#/components/schemas/PasswordResetConfirmRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -336,10 +442,11 @@ paths:
               $ref: '#/components/schemas/RegisterSerializerExRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       - {}
       responses:
@@ -359,33 +466,6 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/auth/signing:
-    post:
-      operationId: auth_create_signing
-      description: Signed URL contains a token which authenticates a user on the server.Signed
-        URL is valid during 30 seconds since signing.
-      summary: This method signs URL for access to the server
-      tags:
-      - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SigningRequest'
-        required: true
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-          description: text URL
   /api/cloudstorages:
     get:
       operationId: cloudstorages_list
@@ -463,7 +543,6 @@ paths:
           enum:
           - AWS_S3_BUCKET
           - AZURE_CONTAINER
-          - GOOGLE_DRIVE
           - GOOGLE_CLOUD_STORAGE
       - name: resource
         in: query
@@ -488,10 +567,11 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -527,7 +607,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CloudStorageWriteRequest'
             examples:
-              CreateAWSS3CloudStorageWithCredentials:
+              CreateAmazonS3CloudStorageWithCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -539,8 +619,8 @@ paths:
                   description: Some description
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage with credentials
-              CreateAWSS3CloudStorageWithoutCredentials:
+                summary: Create Amazon S3 cloud storage with credentials
+              CreateAmazonS3CloudStorageWithoutCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -548,7 +628,7 @@ paths:
                   credentials_type: ANONYMOUS_ACCESS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage without credentials
+                summary: Create Amazon S3 cloud storage without credentials
               CreateAzureCloudStorage:
                 value:
                   provider_type: AZURE_CONTAINER
@@ -575,10 +655,11 @@ paths:
               $ref: '#/components/schemas/CloudStorageWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -601,10 +682,11 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -631,7 +713,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
             examples:
-              CreateAWSS3CloudStorageWithCredentials:
+              CreateAmazonS3CloudStorageWithCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -643,8 +725,8 @@ paths:
                   description: Some description
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage with credentials
-              CreateAWSS3CloudStorageWithoutCredentials:
+                summary: Create Amazon S3 cloud storage with credentials
+              CreateAmazonS3CloudStorageWithoutCredentials:
                 value:
                   provider_type: AWS_S3_BUCKET
                   resource: somebucket
@@ -652,7 +734,7 @@ paths:
                   credentials_type: ANONYMOUS_ACCESS
                   manifests:
                   - manifest.jsonl
-                summary: Create AWS S3 cloud storage without credentials
+                summary: Create Amazon S3 cloud storage without credentials
               CreateAzureCloudStorage:
                 value:
                   provider_type: AZURE_CONTAINER
@@ -678,10 +760,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCloudStorageWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -703,10 +786,11 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -727,10 +811,11 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -772,10 +857,11 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -798,10 +884,11 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -824,10 +911,11 @@ paths:
       tags:
       - cloudstorages
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -835,7 +923,11 @@ paths:
             application/vnd.cvat+json:
               schema:
                 type: string
-          description: Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)
+                enum:
+                - AVAILABLE
+                - NOT_FOUND
+                - FORBIDDEN
+          description: Cloud Storage Status
   /api/comments:
     get:
       operationId: comments_list
@@ -920,10 +1012,11 @@ paths:
       tags:
       - comments
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -960,10 +1053,11 @@ paths:
               $ref: '#/components/schemas/CommentWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -986,10 +1080,11 @@ paths:
       tags:
       - comments
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1016,10 +1111,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCommentWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1041,14 +1137,178 @@ paths:
       tags:
       - comments
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
           description: The comment has been deleted
+  /api/consensus/merges:
+    post:
+      operationId: consensus_create_merge
+      summary: Create a consensus merge
+      tags:
+      - consensus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsensusMergeCreateRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: |
+            A consensus merge request has been enqueued, the request id is returned.
+            The request status can be checked by using common requests API: GET /api/requests/<rq_id>
+        '400':
+          description: Invalid or failed request, check the response data for details
+  /api/consensus/settings:
+    get:
+      operationId: consensus_list_settings
+      summary: List consensus settings instances
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'task_id'].
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'']'
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
+      tags:
+      - consensus
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsensusSettingsList'
+          description: ''
+  /api/consensus/settings/{id}:
+    get:
+      operationId: consensus_retrieve_settings
+      summary: Get consensus settings instance details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a consensus settings instance
+        required: true
+      tags:
+      - consensus
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusSettings'
+          description: ''
+    patch:
+      operationId: consensus_partial_update_settings
+      summary: Update a consensus settings instance
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a consensus settings instance
+        required: true
+      tags:
+      - consensus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsensusSettingsRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusSettings'
+          description: ''
   /api/events:
     get:
       operationId: events_list
@@ -1073,8 +1333,8 @@ paths:
         schema:
           type: string
           format: date-time
-        description: Filter events after the datetime. If no 'from' or 'to' parameters
-          are passed, the last 30 days will be set.
+        description: UTC start date for events filtration. Default is the minimal
+          time.
       - in: query
         name: job_id
         schema:
@@ -1105,8 +1365,7 @@ paths:
         schema:
           type: string
           format: date-time
-        description: Filter events before the datetime. If no 'from' or 'to' parameters
-          are passed, the last 30 days will be set.
+        description: UTC end date for events filtration. Default is the current time.
       - in: query
         name: user_id
         schema:
@@ -1115,11 +1374,13 @@ paths:
       tags:
       - events
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
         '200':
           description: Download of file started
@@ -1156,10 +1417,11 @@ paths:
               $ref: '#/components/schemas/ClientEventsRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1167,6 +1429,83 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/ClientEvents'
+          description: ''
+  /api/events/export:
+    post:
+      operationId: events_create_export
+      summary: Initiate a process to export events
+      parameters:
+      - in: query
+        name: cloud_storage_id
+        schema:
+          type: integer
+        description: Storage id
+      - in: query
+        name: filename
+        schema:
+          type: string
+        description: Desired output file name
+      - in: query
+        name: from
+        schema:
+          type: string
+          format: date-time
+        description: UTC start date for events filtration. Default is the minimal
+          time.
+      - in: query
+        name: job_id
+        schema:
+          type: integer
+        description: Filter events by job ID
+      - in: query
+        name: location
+        schema:
+          type: string
+          enum:
+          - cloud_storage
+          - local
+        description: Where need to save events file
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Filter events by organization ID
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: Filter events by project ID
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: Filter events by task ID
+      - in: query
+        name: to
+        schema:
+          type: string
+          format: date-time
+        description: UTC end date for events filtration. Default is the current time.
+      - in: query
+        name: user_id
+        schema:
+          type: integer
+        description: Filter events by user ID
+      tags:
+      - events
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: ''
   /api/guides:
     post:
@@ -1182,10 +1521,11 @@ paths:
             schema:
               $ref: '#/components/schemas/AnnotationGuideWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1208,10 +1548,11 @@ paths:
       tags:
       - guides
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1238,10 +1579,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedAnnotationGuideWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1264,10 +1606,11 @@ paths:
       tags:
       - guides
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1341,10 +1684,11 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1381,10 +1725,11 @@ paths:
               $ref: '#/components/schemas/InvitationWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1407,10 +1752,11 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1437,10 +1783,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedInvitationWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1462,10 +1809,11 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1484,10 +1832,11 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1512,10 +1861,11 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1534,10 +1884,11 @@ paths:
       tags:
       - invitations
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1639,10 +1990,11 @@ paths:
       tags:
       - issues
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1679,10 +2031,11 @@ paths:
               $ref: '#/components/schemas/IssueWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1705,10 +2058,11 @@ paths:
       tags:
       - issues
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1735,10 +2089,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedIssueWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1760,10 +2115,11 @@ paths:
       tags:
       - issues
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -1804,7 +2160,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type'].
+           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id'].
         schema:
           type: string
       - name: org
@@ -1829,6 +2185,11 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - name: parent_job_id
+        in: query
+        description: A simple equality filter for the parent_job_id field
+        schema:
+          type: integer
       - name: project_id
         in: query
         description: A simple equality filter for the project_id field
@@ -1851,7 +2212,8 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''task_name'', ''project_name'', ''assignee'', ''state'', ''stage'', ''id'',
-          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'']'
+          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'',
+          ''parent_job_id'']'
         schema:
           type: string
       - name: stage
@@ -1891,13 +2253,15 @@ paths:
           enum:
           - annotation
           - ground_truth
+          - consensus_replica
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1916,12 +2280,57 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/JobWriteRequest'
+            examples:
+              CreateGtJobWithRandom10Frames:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_uniform
+                  frame_count: 10
+                  random_seed: 1
+                summary: create gt job with random 10 frames
+              CreateGtJobWithRandom15%Frames:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_uniform
+                  frame_share: 0.15
+                  random_seed: 1
+                summary: create gt job with random 15% frames
+              CreateGtJobWith3RandomFramesInEachJob:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_per_job
+                  frames_per_job_count: 3
+                  random_seed: 1
+                summary: create gt job with 3 random frames in each job
+              CreateGtJobWith20%RandomFramesInEachJob:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_per_job
+                  frames_per_job_share: 0.2
+                  random_seed: 1
+                summary: create gt job with 20% random frames in each job
+              CreateGtJobWithManualFrameSelection:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: manual
+                  frames:
+                  - 1
+                  - 5
+                  - 10
+                  - 18
+                summary: create gt job with manual frame selection
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -1944,10 +2353,11 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -1974,10 +2384,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedJobWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2004,10 +2415,11 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2016,47 +2428,43 @@ paths:
     get:
       operationId: jobs_retrieve_annotations
       description: |
-        If format is specified, a ZIP archive will be returned. Otherwise,
-        the annotations will be returned as a JSON document.
-
         Deprecation warning:
 
-        Utilizing this endpoint to export annotations as a dataset in
-        a specific format will be deprecated in one of the next releases.
+        Utilizing this endpoint to export job dataset in a specific format
+        is no longer possible.
 
         Consider using new API:
-        - POST /api/jobs/<job_id>/dataset/export?save_images=False to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Get job annotations or export job annotations as a dataset in a specific
-        format
+        - `POST /api/jobs/<job_id>/dataset/export?save_images=True` to initiate export process
+        - `GET /api/requests/<rq_id>` to check process status,
+            where `rq_id` is request id returned on initializing request
+        - `GET result_url` to download a prepared file,
+            where `result_url` can be found in the response on checking status request
+      summary: Get job annotations
       parameters:
       - in: query
         name: action
         schema:
           type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
-        description: Storage id
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
-        description: Desired output file name
+        description: This parameter is no longer supported
+        deprecated: true
       - in: query
         name: format
         schema:
           type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
+        description: This parameter is no longer supported
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -2070,42 +2478,33 @@ paths:
           enum:
           - cloud_storage
           - local
-        description: Where need to save downloaded annotation
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export annotation
+        description: This parameter is no longer supported
         deprecated: true
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/AnnotationsRead'
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '405':
-          description: Format is not available
+                $ref: '#/components/schemas/LabeledData'
+          description: ''
+        '410':
+          description: API endpoint no longer handles dataset exporting process
     post:
       operationId: jobs_create_annotations
       description: |2
 
-        The request POST /api/jobs/id/annotations will initiate the import and will create
-        the rq job on the server in which the import will be carried out.
-        Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+        The request POST /api/jobs/id/annotations initiates a background process to import annotations into a job.
+        Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+        The `rq_id` parameter can be found in the response on initiating request.
       summary: Import annotations into a job
       parameters:
       - in: query
@@ -2158,10 +2557,11 @@ paths:
             schema:
               $ref: '#/components/schemas/AnnotationFileRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -2176,82 +2576,34 @@ paths:
           description: Format is not available
     put:
       operationId: jobs_update_annotations
-      description: |2
-
-        To check the status of an import request:
-
-        After initiating the annotation import, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent
-        PUT /api/jobs/id/annotations requests to track the status of the import.
-      summary: Replace job annotations / Get annotation import status
+      summary: Replace job annotations
       parameters:
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Annotation file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Input format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: where to import the annotation from
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: rq id
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to import annotation
-        deprecated: true
       tags:
       - jobs
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
+              $ref: '#/components/schemas/LabeledDataRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobAnnotationsUpdateRequest'
+              $ref: '#/components/schemas/LabeledDataRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: Import has finished
-        '202':
-          description: Import is in progress
-        '405':
-          description: Format is not available
+        '200':
+          description: Annotations have been replaced
     patch:
       operationId: jobs_partial_update_annotations
       summary: Update job annotations
@@ -2282,10 +2634,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2303,10 +2656,11 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2323,10 +2677,17 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: index
+        schema:
+          type: integer
+        description: A unique number value identifying chunk, starts from 0 for each
+          job
+      - in: query
         name: number
         schema:
           type: integer
-        description: A unique number value identifying chunk or frame
+        description: A unique number value identifying chunk or frame. The numbers
+          are the same as for the task. Deprecated for chunks in favor of 'index'
       - in: query
         name: quality
         schema:
@@ -2344,13 +2705,15 @@ paths:
           - context_image
           - frame
         description: Specifies the type of the requested data
+        required: true
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2374,10 +2737,11 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2397,17 +2761,18 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       tags:
-      - tasks
+      - jobs
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
+              $ref: '#/components/schemas/PatchedJobDataMetaWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2416,88 +2781,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DataMetaRead'
           description: ''
-  /api/jobs/{id}/dataset:
-    get:
-      operationId: jobs_retrieve_dataset
-      description: |
-        Deprecation warning:
-            This endpoint will be deprecated in one of the next releases.
-            Consider using new API:
-            - POST /api/jobs/<job_id>/dataset/export?save_images=True to initiate export process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request
-      summary: Export job as a dataset in a specific format
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export dataset
-        deprecated: true
-      tags:
-      - jobs
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-                format: binary
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '405':
-          description: Format is not available
   /api/jobs/{id}/dataset/export:
     post:
       operationId: jobs_create_dataset_export
@@ -2549,10 +2832,11 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -2564,6 +2848,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/jobs/{id}/preview:
     get:
@@ -2579,14 +2867,91 @@ paths:
       tags:
       - jobs
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
           description: Job image preview
+  /api/jobs/{id}/validation_layout:
+    get:
+      operationId: jobs_retrieve_validation_layout
+      summary: Allows getting current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobValidationLayoutRead'
+          description: ''
+    patch:
+      operationId: jobs_partial_update_validation_layout
+      description: |2
+
+        WARNING: this operation is not protected from race conditions.
+        It's up to the user to ensure no parallel calls to this operation happen.
+        It affects image access, including exports with images, backups, chunk downloading etc.
+      summary: Allows updating current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJobValidationLayoutWriteRequest'
+            examples:
+              SetHoneypotsToRandomValidationFrames:
+                value:
+                  frame_selection_method: random_uniform
+                summary: set honeypots to random validation frames
+              SetHoneypotsManually:
+                value:
+                  frame_selection_method: manual
+                  honeypot_real_frames:
+                  - 10
+                  - 20
+                  - 22
+                summary: set honeypots manually
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobValidationLayoutRead'
+          description: ''
   /api/labels:
     get:
       operationId: labels_list
@@ -2689,23 +3054,24 @@ paths:
         schema:
           type: string
           enum:
-          - bbox
+          - any
+          - cuboid
           - ellipse
+          - mask
+          - points
           - polygon
           - polyline
-          - points
-          - cuboid
-          - cuboid_3d
+          - rectangle
           - skeleton
           - tag
-          - any
       tags:
       - labels
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2728,10 +3094,11 @@ paths:
       tags:
       - labels
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2760,10 +3127,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedLabelRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2787,10 +3155,11 @@ paths:
       tags:
       - labels
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -2802,10 +3171,11 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2824,10 +3194,11 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2861,10 +3232,11 @@ paths:
             schema:
               $ref: '#/components/schemas/OnlineFunctionCallRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2876,10 +3248,11 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2918,10 +3291,11 @@ paths:
               $ref: '#/components/schemas/FunctionCallRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2944,10 +3318,11 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -2969,10 +3344,11 @@ paths:
       tags:
       - lambda
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3056,10 +3432,11 @@ paths:
       tags:
       - memberships
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3082,10 +3459,11 @@ paths:
       tags:
       - memberships
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3112,10 +3490,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedMembershipWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3137,10 +3516,11 @@ paths:
       tags:
       - memberships
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3210,10 +3590,11 @@ paths:
       tags:
       - organizations
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3234,10 +3615,11 @@ paths:
               $ref: '#/components/schemas/OrganizationWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -3260,10 +3642,11 @@ paths:
       tags:
       - organizations
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3290,10 +3673,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedOrganizationWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3315,10 +3699,11 @@ paths:
       tags:
       - organizations
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -3412,10 +3797,11 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3452,10 +3838,11 @@ paths:
               $ref: '#/components/schemas/ProjectWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -3478,10 +3865,11 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3508,10 +3896,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedProjectWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -3533,165 +3922,15 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
           description: The project has been deleted
-  /api/projects/{id}/annotations:
-    get:
-      operationId: projects_retrieve_annotations
-      description: |
-        Deprecation warning:
-
-        Using this endpoint to initiate export of annotations as a dataset or to check export status is deprecated.
-        Consider using new API:
-        - POST /api/projects/<project_id>/dataset/export?save_images=False to initiate exporting process
-        - GET /api/requests/<rq_id> to check export status,
-            where rq_id is request id returned on initializing request'
-      summary: Export project annotations as a dataset
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in project to export annotation
-        deprecated: true
-      tags:
-      - projects
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AnnotationsRead'
-          description: Download of file started
-        '201':
-          description: Annotations file is ready to download
-        '202':
-          description: Dump of annotations has been started
-        '401':
-          description: Format is not specified
-        '405':
-          description: Format is not available
-  /api/projects/{id}/backup:
-    get:
-      operationId: projects_retrieve_backup
-      description: |
-        Deprecation warning:
-
-        This endpoint will be deprecated in one of the next releases.
-        Consider using new API:
-        - POST /api/projects/<project_id>/backup/export to initiate backup process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Back up a project
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process after backup file had been
-          created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Backup file name
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded backup
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in project to export backup
-        deprecated: true
-      tags:
-      - projects
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          description: Download of file started
-        '201':
-          description: Output backup file is ready for downloading
-        '202':
-          description: Creating a backup file has been started
   /api/projects/{id}/backup/export:
     post:
       operationId: projects_create_backup_export
@@ -3718,6 +3957,13 @@ paths:
         description: A unique integer value identifying this project.
         required: true
       - in: query
+        name: lightweight
+        schema:
+          type: boolean
+          default: true
+        description: Makes a lightweight backup (without media files) for tasks whose
+          media is located in cloud storage
+      - in: query
         name: location
         schema:
           type: string
@@ -3728,10 +3974,11 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -3743,111 +3990,20 @@ paths:
         '400':
           description: Wrong query parameters were passed
         '409':
-          description: The backup process has already been initiated and is not yet
-            finished
-  /api/projects/{id}/dataset/:
-    get:
-      operationId: projects_retrieve_dataset
-      description: |2
-
-        To check the status of the process of importing a project dataset from a file:
-
-        After initiating the dataset upload, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent
-        GET /api/projects/id/dataset requests to track the status of the dataset import.
-        Also you should specify action parameter: action=import_status.
-
-        Deprecation warning:
-        Utilizing this endpoint to export project dataset in
-        a specific format will be deprecated in one of the next releases.
-        Consider using new API:
-        - POST /api/projects/<project_id>/dataset/export/?save_images=True to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Export a project as a dataset / Check dataset import status
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-          - import_status
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this project.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: rq id
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in project to import dataset
-        deprecated: true
-      tags:
-      - projects
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
           content:
             application/vnd.cvat+json:
               schema:
-                type: string
-                format: binary
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '405':
-          description: Format is not available
+                $ref: '#/components/schemas/RqId'
+          description: The backup process has already been initiated and is not yet
+            finished
+  /api/projects/{id}/dataset/:
     post:
       operationId: projects_create_dataset
       description: |2
 
-        The request POST /api/projects/id/dataset will initiate file upload and will create
-        the rq job on the server in which the process of dataset import from a file
-        will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+        The request POST /api/projects/id/dataset initiates a background process to import dataset into a project.
+        Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+        The `rq_id` parameter can be found in the response on initiating request.
       summary: Import a dataset into a project
       parameters:
       - in: query
@@ -3882,29 +4038,22 @@ paths:
           - cloud_storage
           - local
         description: Where to import the dataset from
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the project to import
-          annotations
-        deprecated: true
       tags:
       - projects
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
+              $ref: '#/components/schemas/DatasetFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/DatasetWriteRequest'
+              $ref: '#/components/schemas/DatasetFileRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -3968,10 +4117,11 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -3983,6 +4133,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/projects/{id}/preview:
     get:
@@ -3998,10 +4152,11 @@ paths:
       tags:
       - projects
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4015,14 +4170,14 @@ paths:
 
         The backup import process is as follows:
 
-        The first request POST /api/projects/backup will initiate file upload and will create
-        the rq job on the server in which the process of a project creating from an uploaded backup
-        will be carried out.
+        The first request POST /api/projects/backup schedules a background job on the server
+        in which the process of creating a project from the uploaded backup is carried out.
 
-        After initiating the backup upload, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent requests
-        to track the status of the project creation.
-        Once the project has been successfully created, the server will return the id of the newly created project.
+        To check the status of the import process, use GET /api/requests/rq_id,
+        where rq_id is the request ID obtained from the response to the previous request.
+
+        Once the import completes successfully, the response will contain the ID
+        of the newly created project in the result_id field.
       summary: Recreate a project from a backup
       parameters:
       - in: header
@@ -4059,36 +4214,30 @@ paths:
         schema:
           type: integer
         description: Organization identifier
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: rq id
       tags:
       - projects
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
+              $ref: '#/components/schemas/ProjectFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BackupWriteRequest'
+              $ref: '#/components/schemas/ProjectFileRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: The project has been imported
         '202':
           content:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqId'
-          description: Importing a backup file has been started
+          description: Import of the backup file has started
   /api/quality/conflicts:
     get:
       operationId: quality_list_conflicts
@@ -4112,7 +4261,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'severity'].
+           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'project_id', 'severity'].
         schema:
           type: string
       - name: frame
@@ -4147,6 +4296,11 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - name: project_id
+        in: query
+        description: A simple equality filter for the project_id field
+        schema:
+          type: integer
       - in: query
         name: report_id
         schema:
@@ -4164,7 +4318,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''severity'']'
+          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''project_id'', ''severity'']'
         schema:
           type: string
       - name: task_id
@@ -4189,10 +4343,11 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4204,7 +4359,21 @@ paths:
   /api/quality/reports:
     get:
       operationId: quality_list_reports
-      summary: List quality reports
+      description: |
+        Please note that children reports are included by default
+        if the "task_id", "project_id" filters are used.
+        If you want to restrict the list of results to a specific report type,
+        use the "target" parameter.
+
+        The "parent_id" filter includes all the nested reports recursively.
+        For instance, if the "parent_id" is a project report,
+        all the related task and job reports will be returned.
+
+        Please note that a report can be reused in several parent reports,
+        but the "parent_id" field in responses will include only the first parent report id.
+        The "parent_id" filter still returns all the relevant nested reports,
+        even though the response "parent_id" values may be different from the requested one.
+      summary: Method returns a paginated list of quality reports.
       parameters:
       - name: X-Organization
         in: header
@@ -4224,7 +4393,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'job_id', 'created_date', 'gt_last_updated', 'target_last_updated', 'parent_id'].
+           Available filter_fields: ['id', 'job_id', 'task_id', 'project_id', 'created_date', 'gt_last_updated', 'target_last_updated'].
         schema:
           type: string
       - name: job_id
@@ -4254,23 +4423,32 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: parent_id
-        in: query
-        description: A simple equality filter for the parent_id field
+      - in: query
+        name: parent_id
         schema:
           type: integer
+        description: A simple equality filter for parent id
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: A simple equality filter for project id
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''job_id'', ''created_date'', ''gt_last_updated'', ''target_last_updated'',
-          ''parent_id'']'
+          [''id'', ''job_id'', ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
+          ''target_last_updated'']'
         schema:
           type: string
       - in: query
         name: target
         schema:
           type: string
+          enum:
+          - job
+          - project
+          - task
         description: A simple equality filter for target
       - in: query
         name: task_id
@@ -4280,10 +4458,11 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4294,6 +4473,9 @@ paths:
           description: ''
     post:
       operationId: quality_create_report
+      description: |
+        Deprecation warning: Utilizing this endpoint to check the computation status is no longer possible.
+        Consider using common requests API: GET /api/requests/<rq_id>
       summary: Create a quality report
       parameters:
       - in: query
@@ -4303,6 +4485,7 @@ paths:
         description: |
           The report creation request id. Can be specified to check the report
           creation status.
+        deprecated: true
       tags:
       - quality
       requestBody:
@@ -4311,10 +4494,11 @@ paths:
             schema:
               $ref: '#/components/schemas/QualityReportCreateRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -4349,10 +4533,11 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4366,6 +4551,14 @@ paths:
       operationId: quality_retrieve_report_data
       summary: Get quality report contents
       parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+          default: json
       - in: path
         name: id
         schema:
@@ -4375,21 +4568,27 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
           content:
             application/vnd.cvat+json:
               schema:
-                type: object
+                type: string
+                format: binary
           description: ''
   /api/quality/settings:
     get:
       operationId: quality_list_settings
+      description: |
+        Please note that child task settings are included by default
+        if the "project_id" filter is used.
+        If you want to restrict results only to a specific parent type, use the "parent_type" parameter.
       summary: List quality settings instances
       parameters:
       - name: X-Organization
@@ -4410,9 +4609,14 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'task_id'].
+           Available filter_fields: ['id', 'task_id', 'project_id', 'inherit', 'created_date', 'updated_date'].
         schema:
           type: string
+      - name: inherit
+        in: query
+        description: A simple equality filter for the inherit field
+        schema:
+          type: boolean
       - name: org
         in: query
         description: Organization unique slug
@@ -4435,11 +4639,24 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - in: query
+        name: parent_type
+        schema:
+          type: string
+          enum:
+          - project
+          - task
+        description: A simple equality filter for parent instance type
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: A simple equality filter for project id
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'']'
+          [''id'', ''task_id'', ''project_id'', ''inherit'', ''created_date'', ''updated_date'']'
         schema:
           type: string
       - name: task_id
@@ -4450,10 +4667,11 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4476,10 +4694,11 @@ paths:
       tags:
       - quality
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4506,10 +4725,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedQualitySettingsRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4528,11 +4748,6 @@ paths:
         description: A simple equality filter for the action field
         schema:
           type: string
-          enum:
-          - autoannotate
-          - create
-          - import
-          - export
       - name: filter
         required: false
         in: query
@@ -4599,19 +4814,11 @@ paths:
         description: A simple equality filter for the subresource field
         schema:
           type: string
-          enum:
-          - annotations
-          - dataset
-          - backup
       - name: target
         in: query
         description: A simple equality filter for the target field
         schema:
           type: string
-          enum:
-          - project
-          - task
-          - job
       - name: task_id
         in: query
         description: A simple equality filter for the task_id field
@@ -4620,10 +4827,11 @@ paths:
       tags:
       - requests
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4645,10 +4853,11 @@ paths:
       tags:
       - requests
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4670,10 +4879,11 @@ paths:
       tags:
       - requests
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4800,10 +5010,11 @@ paths:
       tags:
       - schema
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4828,10 +5039,11 @@ paths:
       tags:
       - server
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4847,10 +5059,11 @@ paths:
       tags:
       - server
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4866,10 +5079,11 @@ paths:
       tags:
       - server
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4896,10 +5110,11 @@ paths:
       tags:
       - server
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -4946,7 +5161,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date'].
 
           There are few examples for complex filtering tasks:
 
@@ -5008,7 +5223,7 @@ paths:
         in: query
         description: 'A search term. Available search_fields: (''project_name'', ''name'',
           ''owner'', ''status'', ''assignee'', ''subset'', ''mode'', ''dimension'',
-          ''tracker_link'')'
+          ''tracker_link'', ''validation_mode'')'
         schema:
           type: string
       - name: sort
@@ -5016,7 +5231,8 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''project_name'', ''name'', ''owner'', ''status'', ''assignee'', ''subset'',
-          ''mode'', ''dimension'', ''tracker_link'', ''id'', ''project_id'', ''updated_date'']'
+          ''mode'', ''dimension'', ''tracker_link'', ''validation_mode'', ''id'',
+          ''project_id'', ''updated_date'']'
         schema:
           type: string
       - name: status
@@ -5038,13 +5254,22 @@ paths:
         description: A simple equality filter for the tracker_link field
         schema:
           type: string
+      - name: validation_mode
+        in: query
+        description: A simple equality filter for the validation_mode field
+        schema:
+          type: string
+          enum:
+          - gt
+          - gt_pool
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5084,10 +5309,11 @@ paths:
               $ref: '#/components/schemas/TaskWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -5110,10 +5336,11 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5139,11 +5366,66 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedTaskWriteRequest'
+            examples:
+              UpdateTaskProperties:
+                value:
+                  name: string
+                  owner_id: 0
+                  assignee_id: 0
+                  bug_tracker: string
+                  subset: string
+                  target_storage:
+                    location: cloud_storage
+                    cloud_storage_id: 0
+                  source_storage:
+                    location: cloud_storage
+                    cloud_storage_id: 0
+                summary: Update task properties
+              UpdateTaskLabels:
+                value:
+                  labels:
+                  - name: string
+                    color: string
+                    attributes: []
+                    deleted: false
+                    type: any
+                    svg: string
+                    sublabels:
+                    - name: string
+                      color: string
+                      attributes: []
+                      type: any
+                      has_parent: true
+                summary: Update task labels
+              MoveTaskToAProject:
+                value:
+                  project_id: 0
+                summary: Move task to a project
+              TransferTaskToPersonalSandbox:
+                value:
+                  organization_id: null
+                summary: Transfer task to personal sandbox
+              TransferTaskToOrganization:
+                value:
+                  organization_id: 1
+                summary: Transfer task to organization
+              TransferAStorageLinkedTaskToAnOrganizationAndDetachStorages:
+                value:
+                  organization_id: 1
+                  source_storage:
+                    location: local
+                    cloud_storage_id: null
+                  target_storage:
+                    location: local
+                    cloud_storage_id: null
+                summary: Transfer a storage linked task to an organization and detach
+                  storages
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5166,10 +5448,11 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -5177,95 +5460,41 @@ paths:
   /api/tasks/{id}/annotations/:
     get:
       operationId: tasks_retrieve_annotations
-      description: |
-        Deprecation warning:
-
-        Utilizing this endpoint ot export annotations as a dataset in
-        a specific format will be deprecated in one of the next releases.
-
-        Consider using new API:
-        - POST /api/tasks/<task_id>/dataset/export?save_images=False to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Get task annotations or export them as a dataset in a specific format
+      summary: Get task annotations
       parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export annotation
-        deprecated: true
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/AnnotationsRead'
-          description: Download of file started
-        '201':
-          description: Annotations file is ready to download
-        '202':
-          description: Dump of annotations has been started
+                $ref: '#/components/schemas/LabeledData'
+          description: ''
         '400':
           description: Exporting without data is not allowed
-        '405':
-          description: Format is not available
+        '410':
+          description: API endpoint no longer handles exporting process
     post:
       operationId: tasks_create_annotations
       description: |2
 
-        The request POST /api/tasks/id/annotations will initiate the import and will create
-        the rq job on the server in which the import will be carried out.
-        Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
+        The request POST /api/tasks/id/annotations initiates a background process to import annotations into a task.
+        Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+        The `rq_id` parameter can be found in the response on initiating request.
       summary: Import annotations into a task
       parameters:
       - in: query
@@ -5313,15 +5542,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsWriteRequest'
+              $ref: '#/components/schemas/AnnotationFileRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -5336,57 +5566,34 @@ paths:
           description: Format is not available
     put:
       operationId: tasks_update_annotations
-      description: |2
-
-        To check the status of an import request:
-
-        After initiating the annotation import, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent
-        PUT /api/tasks/id/annotations requests to track the status of the import.
-      summary: Replace task annotations / Get annotation import status
+      summary: Replace task annotations
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Input format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: rq id
       tags:
       - tasks
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
+              $ref: '#/components/schemas/LabeledDataRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TaskAnnotationsUpdateRequest'
+              $ref: '#/components/schemas/LabeledDataRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: Import has finished
-        '202':
-          description: Import is in progress
-        '405':
-          description: Format is not available
+        '200':
+          description: Annotations have been replaced
     patch:
       operationId: tasks_partial_update_annotations
       summary: Update task annotations
@@ -5417,10 +5624,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedLabeledDataRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5442,82 +5650,15 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
           description: The annotation has been deleted
-  /api/tasks/{id}/backup:
-    get:
-      operationId: tasks_retrieve_backup
-      description: |
-        Deprecation warning:
-            This endpoint will be deprecated in one of the next releases.
-            Consider using new API:
-            - POST /api/tasks/<task_id>/backup/export to initiate backup process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request'
-      summary: Back up a task
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process after backup file had been
-          created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Backup file name
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded backup
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export backup
-        deprecated: true
-      tags:
-      - tasks
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          description: Download of file started
-        '201':
-          description: Output backup file is ready for downloading
-        '202':
-          description: Creating a backup file has been started
-        '400':
-          description: Backup of a task without data is not allowed
   /api/tasks/{id}/backup/export:
     post:
       operationId: tasks_create_backup_export
@@ -5544,6 +5685,13 @@ paths:
         description: A unique integer value identifying this task.
         required: true
       - in: query
+        name: lightweight
+        schema:
+          type: boolean
+          default: true
+        description: Makes a lightweight backup (without media files) for tasks whose
+          media is located in cloud storage
+      - in: query
         name: location
         schema:
           type: string
@@ -5554,10 +5702,11 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5569,6 +5718,10 @@ paths:
         '400':
           description: Wrong query parameters were passed
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: The backup process has already been initiated and is not yet
             finished
   /api/tasks/{id}/data/:
@@ -5604,16 +5757,28 @@ paths:
           - context_image
           - frame
         description: Specifies the type of the requested data
+        required: true
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
           description: Data of a specific type
     post:
       operationId: tasks_create_data
@@ -5706,10 +5871,11 @@ paths:
             schema:
               $ref: '#/components/schemas/DataRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5732,10 +5898,11 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5762,10 +5929,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5774,93 +5942,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DataMetaRead'
           description: ''
-  /api/tasks/{id}/dataset:
-    get:
-      operationId: tasks_retrieve_dataset
-      description: |
-        Deprecation warning:
-
-        Utilizing this endpoint to export task dataset in
-        a specific format will be deprecated in one of the next releases.
-
-        Consider using new API:
-        - POST /api/tasks/<task_id>/dataset/export?save_images=True to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Export task as a dataset in a specific format
-      parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        required: true
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in task to export annotations
-        deprecated: true
-      tags:
-      - tasks
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-                format: binary
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '400':
-          description: Exporting without data is not allowed
-        '405':
-          description: Format is not available
   /api/tasks/{id}/dataset/export:
     post:
       operationId: tasks_create_dataset_export
@@ -5912,10 +5993,11 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '202':
@@ -5927,6 +6009,10 @@ paths:
         '405':
           description: Format is not available
         '409':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
           description: Exporting is already in progress
   /api/tasks/{id}/preview:
     get:
@@ -5942,10 +6028,11 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -5969,10 +6056,11 @@ paths:
       tags:
       - tasks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       deprecated: true
       responses:
@@ -5982,6 +6070,93 @@ paths:
               schema:
                 $ref: '#/components/schemas/RqStatus'
           description: ''
+  /api/tasks/{id}/validation_layout:
+    get:
+      operationId: tasks_retrieve_validation_layout
+      summary: Allows getting current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskValidationLayoutRead'
+          description: ''
+    patch:
+      operationId: tasks_partial_update_validation_layout
+      description: |2
+
+        WARNING: this operation is not protected from race conditions.
+        It's up to the user to ensure no parallel calls to this operation happen.
+        It affects image access, including exports with images, backups, chunk downloading etc.
+      summary: Allows updating current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskValidationLayoutWriteRequest'
+            examples:
+              SetHoneypotsToRandomValidationFrames:
+                value:
+                  frame_selection_method: random_uniform
+                summary: set honeypots to random validation frames
+              SetHoneypotsManually:
+                value:
+                  frame_selection_method: manual
+                  honeypot_real_frames:
+                  - 10
+                  - 20
+                  - 22
+                summary: set honeypots manually
+              DisableValidationFrames:
+                value:
+                  disabled_frames:
+                  - 4
+                  - 5
+                  - 8
+                summary: disable validation frames
+              RestoreAllValidationFrames:
+                value:
+                  disabled_frames: []
+                summary: restore all validation frames
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskValidationLayoutRead'
+          description: ''
   /api/tasks/backup/:
     post:
       operationId: tasks_create_backup
@@ -5989,14 +6164,14 @@ paths:
 
         The backup import process is as follows:
 
-        The first request POST /api/tasks/backup will initiate file upload and will create
-        the rq job on the server in which the process of a task creating from an uploaded backup
-        will be carried out.
+        The first request POST /api/tasks/backup creates a background job on the server
+        in which the process of a task creating from an uploaded backup is carried out.
 
-        After initiating the backup upload, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent requests
-        to track the status of the task creation.
-        Once the task has been successfully created, the server will return the id of the newly created task.
+        To check the status of the import process, use GET /api/requests/rq_id,
+        where rq_id is the request ID obtained from the response to the previous request.
+
+        Once the import completes successfully, the response will contain the ID
+        of the newly created task in the result_id field.
       summary: Recreate a task from a backup
       parameters:
       - in: header
@@ -6033,11 +6208,6 @@ paths:
         schema:
           type: integer
         description: Organization identifier
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: rq id
       tags:
       - tasks
       requestBody:
@@ -6049,20 +6219,19 @@ paths:
             schema:
               $ref: '#/components/schemas/TaskFileRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
-        '201':
-          description: The task has been imported
         '202':
           content:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqId'
-          description: Importing a backup file has been started
+          description: Import of the backup file has started
   /api/users:
     get:
       operationId: users_list
@@ -6148,10 +6317,11 @@ paths:
       tags:
       - users
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6174,10 +6344,11 @@ paths:
       tags:
       - users
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6204,10 +6375,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUserRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6229,10 +6401,11 @@ paths:
       tags:
       - users
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -6245,10 +6418,11 @@ paths:
       tags:
       - users
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6346,10 +6520,11 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6386,10 +6561,11 @@ paths:
               $ref: '#/components/schemas/WebhookWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '201':
@@ -6412,10 +6588,11 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6443,10 +6620,11 @@ paths:
               $ref: '#/components/schemas/WebhookWriteRequest'
         required: true
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6473,10 +6651,11 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedWebhookWriteRequest'
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6498,10 +6677,11 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '204':
@@ -6532,10 +6712,11 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6564,10 +6745,11 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6596,10 +6778,11 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6618,10 +6801,11 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6643,10 +6827,11 @@ paths:
       tags:
       - webhooks
       security:
+      - tokenAuth: []
+      - accessTokenAuth: []
       - sessionAuth: []
         csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
+        csrfHeaderAuth: []
       - basicAuth: []
       responses:
         '200':
@@ -6669,9 +6854,16 @@ components:
         version:
           type: string
           maxLength: 64
+        logo_url:
+          type: string
+        subtitle:
+          type: string
+          maxLength: 1024
       required:
       - description
+      - logo_url
       - name
+      - subtitle
       - version
     AcceptInvitationRead:
       type: object
@@ -6680,47 +6872,68 @@ components:
           type: string
       required:
       - organization_slug
-    AnalyticsReport:
+    AccessTokenRead:
       type: object
       properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          description: A free-form name for the token.
         created_date:
           type: string
           format: date-time
-        target:
-          $ref: '#/components/schemas/AnalyticsReportTargetEnum'
-        job_id:
-          type: integer
-        task_id:
-          type: integer
-        project_id:
-          type: integer
-        statistics:
-          type: array
-          items:
-            $ref: '#/components/schemas/Metric'
-      required:
-      - created_date
-      - statistics
-      - target
-    AnalyticsReportCreateRequest:
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+        expiry_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Expires
+          description: Once the token expires, clients cannot use it anymore.
+        last_used_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: |
+            The last use date of the token. This field is NOT updated after each
+            user request. The minimum expected resolution should be 1 day.
+        read_only:
+          type: boolean
+          readOnly: true
+        owner:
+          $ref: '#/components/schemas/BasicUser'
+        value:
+          type: string
+          description: The raw value of the token. Must be saved by the user, returned
+            only once
+    AccessTokenWriteRequest:
       type: object
       properties:
-        job_id:
-          type: integer
-        task_id:
-          type: integer
-        project_id:
-          type: integer
-    AnalyticsReportTargetEnum:
-      enum:
-      - job
-      - task
-      - project
-      type: string
-      description: |-
-        * `job` - JOB
-        * `task` - TASK
-        * `project` - PROJECT
+        name:
+          type: string
+          minLength: 1
+          description: A free-form name for the token. Doesn't have to be unique
+          maxLength: 50
+        expiry_date:
+          type: string
+          format: date-time
+          nullable: true
+          title: Expires
+          description: |
+            Once the token expires, clients cannot use it anymore.
+            If not set, the token will not expire.
+        read_only:
+          type: boolean
+      required:
+      - name
     AnnotationConflict:
       type: object
       properties:
@@ -6732,7 +6945,7 @@ components:
           readOnly: true
         type:
           allOf:
-          - $ref: '#/components/schemas/AnnotationConflictTypeEnum'
+          - $ref: '#/components/schemas/AnnotationConflictType'
           readOnly: true
         annotation_ids:
           type: array
@@ -6743,11 +6956,29 @@ components:
           readOnly: true
         severity:
           allOf:
-          - $ref: '#/components/schemas/SeverityEnum'
+          - $ref: '#/components/schemas/AnnotationConflictSeverity'
           readOnly: true
       required:
       - annotation_ids
-    AnnotationConflictTypeEnum:
+    AnnotationConflictAnnotationType:
+      enum:
+      - tag
+      - shape
+      - track
+      type: string
+      description: |-
+        * `tag` - TAG
+        * `shape` - SHAPE
+        * `track` - TRACK
+    AnnotationConflictSeverity:
+      enum:
+      - warning
+      - error
+      type: string
+      description: |-
+        * `warning` - WARNING
+        * `error` - ERROR
+    AnnotationConflictType:
       enum:
       - missing_annotation
       - extra_annotation
@@ -6822,7 +7053,7 @@ components:
           readOnly: true
         type:
           allOf:
-          - $ref: '#/components/schemas/AnnotationIdTypeEnum'
+          - $ref: '#/components/schemas/AnnotationConflictAnnotationType'
           readOnly: true
         shape_type:
           readOnly: true
@@ -6830,21 +7061,6 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ShapeType'
           - $ref: '#/components/schemas/NullEnum'
-    AnnotationIdTypeEnum:
-      enum:
-      - tag
-      - shape
-      - track
-      type: string
-      description: |-
-        * `tag` - TAG
-        * `shape` - SHAPE
-        * `track` - TRACK
-    AnnotationsRead:
-      oneOf:
-      - $ref: '#/components/schemas/LabeledData'
-      - type: string
-        format: binary
     AssetRead:
       type: object
       properties:
@@ -6866,6 +7082,18 @@ components:
           readOnly: true
       required:
       - filename
+    AssetWriteRequest:
+      type: object
+      properties:
+        guide_id:
+          type: integer
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+      required:
+      - file
+      - guide_id
     Attribute:
       type: object
       properties:
@@ -6939,10 +7167,6 @@ components:
       required:
       - spec_id
       - value
-    BackupWriteRequest:
-      oneOf:
-      - $ref: '#/components/schemas/ProjectFileRequest'
-      nullable: true
     BasicOrganization:
       type: object
       properties:
@@ -6995,23 +7219,27 @@ components:
           maxLength: 150
       required:
       - username
-    BinaryOperation:
+    Chapter:
       type: object
       properties:
-        left:
-          type: string
-          nullable: true
-          description: The name of the data series used as the left (first) operand
-            of the binary operation.
-        operator:
-          $ref: '#/components/schemas/OperatorEnum'
-        right:
-          type: string
-          nullable: true
-          description: The name of the data series used as the right (second) operand
-            of the binary operation.
+        id:
+          type: integer
+        start:
+          type: integer
+        stop:
+          type: integer
+        metadata:
+          $ref: '#/components/schemas/ChapterMetadata'
       required:
-      - operator
+      - id
+      - metadata
+      - start
+      - stop
+    ChapterMetadata:
+      type: object
+      properties:
+        title:
+          type: string
     ChunkType:
       enum:
       - video
@@ -7210,6 +7438,37 @@ components:
           type: string
           format: uri
           readOnly: true
+    ConsensusMergeCreateRequest:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          writeOnly: true
+        job_id:
+          type: integer
+          writeOnly: true
+    ConsensusSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        task_id:
+          type: integer
+          readOnly: true
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Pairwise annotation matching IoU threshold
+        quorum:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimum required share of sources having an annotation for it to be accepted
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -7224,21 +7483,17 @@ components:
         * `KEY_FILE_PATH` - KEY_FILE_PATH
         * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
         * `CONNECTION_STRING` - CONNECTION_STRING
-    DataFrame:
-      type: object
-      properties:
-        value:
-          type: number
-          format: double
-        date:
-          type: string
-          format: date
-      required:
-      - date
-      - value
     DataMetaRead:
       type: object
       properties:
+        chapters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chapter'
+          nullable: true
+        chunks_updated_date:
+          type: string
+          format: date-time
         chunk_size:
           type: integer
           readOnly: true
@@ -7279,7 +7534,16 @@ components:
           nullable: true
           description: |
             A list of valid frame ids. The None value means all frames are included.
+        storage:
+          allOf:
+          - $ref: '#/components/schemas/StorageType'
+          readOnly: true
+        cloud_storage_id:
+          type: integer
+          nullable: true
+          readOnly: true
       required:
+      - chunks_updated_date
       - deleted_frames
       - frames
       - image_quality
@@ -7287,7 +7551,7 @@ components:
       type: object
       description: |-
         Read more about parameters here:
-        https://docs.cvat.ai/docs/manual/basics/create_an_annotation_task/#advanced-configuration
+        https://docs.cvat.ai/docs/manual/basics/create-annotation-task/#advanced-configuration
       properties:
         chunk_size:
           type: integer
@@ -7397,8 +7661,6 @@ components:
             the file share availability
         storage_method:
           $ref: '#/components/schemas/StorageMethod'
-        storage:
-          $ref: '#/components/schemas/StorageType'
         sorting_method:
           $ref: '#/components/schemas/SortingMethod'
         filename_pattern:
@@ -7453,6 +7715,10 @@ components:
             If you want to send files in an arbitrary order
             and reorder them afterwards on the server,
             pass the list of file names in the required order.
+        validation_params:
+          allOf:
+          - $ref: '#/components/schemas/ValidationParamsRequest'
+          nullable: true
       required:
       - image_quality
     DataResponse:
@@ -7505,18 +7771,6 @@ components:
       required:
       - exporters
       - importers
-    DatasetWriteRequest:
-      oneOf:
-      - $ref: '#/components/schemas/DatasetFileRequest'
-      nullable: true
-    DefaultViewEnum:
-      enum:
-      - numeric
-      - histogram
-      type: string
-      description: |-
-        * `numeric` - NUMERIC
-        * `histogram` - HISTOGRAM
     Event:
       type: object
       properties:
@@ -7740,13 +7994,15 @@ components:
       - name
       - related_files
       - width
-    FrameSelectionMethodEnum:
+    FrameSelectionMethod:
       enum:
       - random_uniform
+      - random_per_job
       - manual
       type: string
       description: |-
         * `random_uniform` - RANDOM_UNIFORM
+        * `random_per_job` - RANDOM_PER_JOB
         * `manual` - MANUAL
     FunctionCall:
       type: object
@@ -7820,15 +8076,6 @@ components:
         job:
           type: integer
           description: The id of the job to be annotated
-        quality:
-          allOf:
-          - $ref: '#/components/schemas/QualityEnum'
-          default: original
-          description: |-
-            The quality of the images to use in the model run
-
-            * `compressed` - compressed
-            * `original` - original
         max_distance:
           type: integer
         threshold:
@@ -7840,7 +8087,11 @@ components:
           description: Whether existing annotations should be removed
         convMaskToPoly:
           type: boolean
-          default: false
+          writeOnly: true
+          description: Deprecated; use conv_mask_to_poly instead
+        conv_mask_to_poly:
+          type: boolean
+          description: Convert mask shapes to polygons
         mapping:
           type: object
           additionalProperties:
@@ -7849,16 +8100,6 @@ components:
       required:
       - function
       - task
-    GranularityEnum:
-      enum:
-      - day
-      - week
-      - month
-      type: string
-      description: |-
-        * `day` - DAY
-        * `week` - WEEK
-        * `month` - MONTH
     InputTypeEnum:
       enum:
       - checkbox
@@ -7997,10 +8238,6 @@ components:
         count:
           type: integer
           readOnly: true
-    JobAnnotationsUpdateRequest:
-      oneOf:
-      - $ref: '#/components/schemas/LabeledDataRequest'
-      - $ref: '#/components/schemas/AnnotationFileRequest'
     JobRead:
       type: object
       properties:
@@ -8074,6 +8311,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
+        data_original_chunk_type:
+          allOf:
+          - $ref: '#/components/schemas/ChunkType'
+          readOnly: true
         created_date:
           type: string
           format: date-time
@@ -8092,8 +8333,8 @@ components:
           readOnly: true
         organization:
           type: integer
-          readOnly: true
           nullable: true
+          readOnly: true
         target_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'
@@ -8107,6 +8348,13 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        parent_job_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        consensus_replicas:
+          type: integer
+          readOnly: true
       required:
       - issues
       - labels
@@ -8134,10 +8382,32 @@ components:
       enum:
       - annotation
       - ground_truth
+      - consensus_replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
+        * `consensus_replica` - CONSENSUS_REPLICA
+    JobValidationLayoutRead:
+      type: object
+      properties:
+        honeypot_count:
+          type: integer
+          minimum: 0
+        honeypot_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids for honeypots in the job
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of real (validation) frame ids for honeypots in the job
     JobWriteRequest:
       type: object
       properties:
@@ -8153,20 +8423,38 @@ components:
         task_id:
           type: integer
         frame_selection_method:
-          $ref: '#/components/schemas/FrameSelectionMethodEnum'
+          $ref: '#/components/schemas/FrameSelectionMethod'
         frame_count:
           type: integer
-          minimum: 0
+          minimum: 1
           description: |
-            The number of frames included in the job.
-            Applicable only to the random frame selection
-        seed:
+            The number of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        random_seed:
           type: integer
           minimum: 0
           description: |
             The seed value for the random number generator.
             The same value will produce the same frame sets.
-            Applicable only to the random frame selection.
+            Applicable only to random frame selection methods.
             By default, a random value is used.
         frames:
           type: array
@@ -8174,7 +8462,7 @@ components:
             type: integer
             minimum: 0
           description: |
-            The list of frame ids. Applicable only to the manual frame selection
+            The list of frame ids. Applicable only to the "manual" frame selection method
       required:
       - task_id
       - type
@@ -8217,8 +8505,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -8261,6 +8562,30 @@ components:
             a parent label
       required:
       - name
+    LabelType:
+      enum:
+      - any
+      - cuboid
+      - ellipse
+      - mask
+      - points
+      - polygon
+      - polyline
+      - rectangle
+      - skeleton
+      - tag
+      type: string
+      description: |-
+        * `any` - ANY
+        * `cuboid` - CUBOID
+        * `ellipse` - ELLIPSE
+        * `mask` - MASK
+        * `points` - POINTS
+        * `polygon` - POLYGON
+        * `polyline` - POLYLINE
+        * `rectangle` - RECTANGLE
+        * `skeleton` - SKELETON
+        * `tag` - TAG
     LabeledData:
       type: object
       properties:
@@ -8601,39 +8926,6 @@ components:
       anyOf:
       - $ref: '#/components/schemas/User'
       - $ref: '#/components/schemas/BasicUser'
-    Metric:
-      type: object
-      properties:
-        name:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        granularity:
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/GranularityEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        default_view:
-          $ref: '#/components/schemas/DefaultViewEnum'
-        data_series:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              $ref: '#/components/schemas/DataFrame'
-        transformations:
-          type: array
-          items:
-            $ref: '#/components/schemas/Transformation'
-      required:
-      - data_series
-      - default_view
-      - description
-      - name
-      - title
-      - transformations
     NullEnum:
       enum:
       - null
@@ -8656,18 +8948,6 @@ components:
         * `in progress` - IN_PROGRESS
         * `completed` - COMPLETED
         * `rejected` - REJECTED
-    OperatorEnum:
-      enum:
-      - +
-      - '-'
-      - '*'
-      - /
-      type: string
-      description: |-
-        * `+` - ADDITION
-        * `-` - SUBTRACTION
-        * `*` - MULTIPLICATION
-        * `/` - DIVISION
     OrganizationRead:
       type: object
       properties:
@@ -8718,8 +8998,34 @@ components:
           type: object
       required:
       - slug
+    PaginatedAccessTokenReadList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessTokenRead'
     PaginatedAnnotationConflictList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8740,6 +9046,9 @@ components:
             $ref: '#/components/schemas/AnnotationConflict'
     PaginatedCloudStorageReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8760,6 +9069,9 @@ components:
             $ref: '#/components/schemas/CloudStorageRead'
     PaginatedCommentReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8778,8 +9090,34 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CommentRead'
+    PaginatedConsensusSettingsList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsensusSettings'
     PaginatedInvitationReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8800,6 +9138,9 @@ components:
             $ref: '#/components/schemas/InvitationRead'
     PaginatedIssueReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8820,6 +9161,9 @@ components:
             $ref: '#/components/schemas/IssueRead'
     PaginatedJobReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8840,6 +9184,9 @@ components:
             $ref: '#/components/schemas/JobRead'
     PaginatedLabelList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8860,6 +9207,9 @@ components:
             $ref: '#/components/schemas/Label'
     PaginatedMembershipReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8880,6 +9230,9 @@ components:
             $ref: '#/components/schemas/MembershipRead'
     PaginatedMetaUserList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8900,6 +9253,9 @@ components:
             $ref: '#/components/schemas/MetaUser'
     PaginatedOrganizationReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8920,6 +9276,9 @@ components:
             $ref: '#/components/schemas/OrganizationRead'
     PaginatedProjectReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8940,6 +9299,9 @@ components:
             $ref: '#/components/schemas/ProjectRead'
     PaginatedQualityReportList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8960,6 +9322,9 @@ components:
             $ref: '#/components/schemas/QualityReport'
     PaginatedQualitySettingsList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -8980,6 +9345,9 @@ components:
             $ref: '#/components/schemas/QualitySettings'
     PaginatedRequestList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9000,6 +9368,9 @@ components:
             $ref: '#/components/schemas/Request'
     PaginatedTaskReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9020,6 +9391,9 @@ components:
             $ref: '#/components/schemas/TaskRead'
     PaginatedWebhookDeliveryReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9040,6 +9414,9 @@ components:
             $ref: '#/components/schemas/WebhookDeliveryRead'
     PaginatedWebhookReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9110,6 +9487,24 @@ components:
           minLength: 1
       required:
       - email
+    PatchedAccessTokenWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: A free-form name for the token. Doesn't have to be unique
+          maxLength: 50
+        expiry_date:
+          type: string
+          format: date-time
+          nullable: true
+          title: Expires
+          description: |
+            Once the token expires, clients cannot use it anymore.
+            If not set, the token will not expire.
+        read_only:
+          type: boolean
     PatchedAnnotationGuideWriteRequest:
       type: object
       properties:
@@ -9174,6 +9569,22 @@ components:
         message:
           type: string
           minLength: 1
+    PatchedConsensusSettingsRequest:
+      type: object
+      properties:
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Pairwise annotation matching IoU threshold
+        quorum:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimum required share of sources having an annotation for it to be accepted
     PatchedDataMetaWriteRequest:
       type: object
       properties:
@@ -9182,6 +9593,9 @@ components:
           items:
             type: integer
             minimum: 0
+        cloud_storage_id:
+          type: integer
+          nullable: true
     PatchedInvitationWriteRequest:
       type: object
       properties:
@@ -9204,6 +9618,34 @@ components:
           nullable: true
         resolved:
           type: boolean
+    PatchedJobDataMetaWriteRequest:
+      type: object
+      properties:
+        deleted_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+    PatchedJobValidationLayoutWriteRequest:
+      type: object
+      properties:
+        frame_selection_method:
+          allOf:
+          - $ref: '#/components/schemas/FrameSelectionMethod'
+          description: |-
+            The method to use for frame selection of new real frames for honeypots in the job
+
+
+            * `random_uniform` - RANDOM_UNIFORM
+            * `random_per_job` - RANDOM_PER_JOB
+            * `manual` - MANUAL
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
     PatchedJobWriteRequest:
       type: object
       properties:
@@ -9240,8 +9682,21 @@ components:
           description: Delete the label. Only applicable in the PATCH methods of a
             project or a task.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -9321,18 +9776,27 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
-        task_subsets:
-          type: array
-          items:
-            type: string
-            minLength: 1
+        organization_id:
+          type: integer
           writeOnly: true
+          nullable: true
     PatchedQualitySettingsRequest:
       type: object
       properties:
+        job_filter:
+          type: string
+          description: |
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+          maxLength: 1024
+        inherit:
+          type: boolean
+          description: |
+            Allow using project settings when computing task quality.
+            Only applicable to task quality settings inside projects
         target_metric:
           allOf:
-          - $ref: '#/components/schemas/TargetMetricEnum'
+          - $ref: '#/components/schemas/QualityTargetMetric'
           description: |-
             The primary metric used for quality estimation
 
@@ -9342,6 +9806,8 @@ components:
         target_metric_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
@@ -9355,18 +9821,47 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.4
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.09
           description: |
             Like IoU threshold, but for points.
-            The percent of the bbox area, used as the radius of the circle around the GT point,
-            where the checked point is expected to be.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
             Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          allOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          default: group_bbox_size
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the OKS sigma parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
         line_thickness:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.01
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -9374,45 +9869,97 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
           type: boolean
+          default: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.1
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
+          default: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.5
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          default: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.05
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          default: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
+          default: true
           description: Enables or disables annotation attribute comparison
+        empty_is_annotated:
+          type: boolean
+          default: false
+          description: |
+            Consider empty frames annotated as "empty". This affects target metrics like
+            accuracy in cases there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+            This will also add virtual annotations to empty frames in the comparison results.
+    PatchedTaskValidationLayoutWriteRequest:
+      type: object
+      properties:
+        disabled_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids to be excluded from validation
+        frame_selection_method:
+          allOf:
+          - $ref: '#/components/schemas/FrameSelectionMethod'
+          description: |-
+            The method to use for frame selection of new real frames for honeypots in the task
+
+
+            * `random_uniform` - RANDOM_UNIFORM
+            * `random_per_job` - RANDOM_PER_JOB
+            * `manual` - MANUAL
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
     PatchedTaskWriteRequest:
       type: object
       properties:
@@ -9442,12 +9989,12 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
+          $ref: '#/components/schemas/StorageRequest'
+        organization_id:
+          type: integer
+          writeOnly: true
           nullable: true
     PatchedUserRequest:
       type: object
@@ -9593,6 +10140,11 @@ components:
           type: integer
           readOnly: true
           nullable: true
+          deprecated: true
+        organization_id:
+          type: integer
+          readOnly: true
+          nullable: true
         target_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'
@@ -9647,34 +10199,26 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
-        task_subsets:
-          type: array
-          items:
-            type: string
-            minLength: 1
-          writeOnly: true
       required:
       - name
     ProviderTypeEnum:
       enum:
       - AWS_S3_BUCKET
       - AZURE_CONTAINER
-      - GOOGLE_DRIVE
       - GOOGLE_CLOUD_STORAGE
       type: string
       description: |-
-        * `AWS_S3_BUCKET` - AWS_S3
-        * `AZURE_CONTAINER` - AZURE_CONTAINER
-        * `GOOGLE_DRIVE` - GOOGLE_DRIVE
-        * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
-    QualityEnum:
+        * `AWS_S3_BUCKET` - Amazon S3
+        * `AZURE_CONTAINER` - Azure Blob Storage
+        * `GOOGLE_CLOUD_STORAGE` - Google Cloud Storage
+    QualityPointSizeBase:
       enum:
-      - compressed
-      - original
+      - image_size
+      - group_bbox_size
       type: string
       description: |-
-        * `compressed` - compressed
-        * `original` - original
+        * `image_size` - IMAGE_SIZE
+        * `group_bbox_size` - GROUP_BBOX_SIZE
     QualityReport:
       type: object
       properties:
@@ -9687,12 +10231,16 @@ components:
           readOnly: true
         task_id:
           type: integer
-          nullable: true
           readOnly: true
+          nullable: true
+        project_id:
+          type: integer
+          readOnly: true
+          nullable: true
         parent_id:
           type: integer
-          nullable: true
           readOnly: true
+          nullable: true
         target:
           $ref: '#/components/schemas/QualityReportTarget'
         summary:
@@ -9709,6 +10257,7 @@ components:
           type: string
           format: date-time
           readOnly: true
+          nullable: true
         assignee:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -9723,14 +10272,44 @@ components:
         task_id:
           type: integer
           writeOnly: true
+        project_id:
+          type: integer
+          writeOnly: true
+    QualityReportJobsSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Non-GT jobs in included tasks
+        excluded:
+          type: integer
+          description: Jobs excluded by filters
+        not_checkable:
+          type: integer
+          description: Included jobs without validation frames
+        included:
+          type: integer
+          description: Included job count = total - excluded
       required:
-      - task_id
+      - excluded
+      - included
+      - not_checkable
+      - total
     QualityReportSummary:
       type: object
       properties:
+        total_frames:
+          type: integer
         frame_count:
           type: integer
+          description: Deprecated. Use 'validation_frames' instead
+        validation_frames:
+          type: integer
         frame_share:
+          type: number
+          format: double
+          description: Deprecated. Use 'validation_frame_share' instead
+        validation_frame_share:
           type: number
           format: double
         conflict_count:
@@ -9760,28 +10339,63 @@ components:
         recall:
           type: number
           format: double
+        tasks:
+          allOf:
+          - $ref: '#/components/schemas/QualityReportTasksSummary'
+          description: Included only in project reports
+        jobs:
+          allOf:
+          - $ref: '#/components/schemas/QualityReportJobsSummary'
+          description: Included only in task and project reports
       required:
       - accuracy
       - conflict_count
       - conflicts_by_type
       - ds_count
       - error_count
-      - frame_count
-      - frame_share
       - gt_count
       - precision
       - recall
       - total_count
+      - total_frames
       - valid_count
+      - validation_frame_share
+      - validation_frames
       - warning_count
     QualityReportTarget:
       enum:
       - job
       - task
+      - project
       type: string
       description: |-
         * `job` - JOB
         * `task` - TASK
+        * `project` - PROJECT
+    QualityReportTasksSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total task count
+        custom:
+          type: integer
+          description: Tasks with individual settings
+        not_configured:
+          type: integer
+          description: Tasks with validation not configured
+        excluded:
+          type: integer
+          description: Tasks excluded by filters
+        included:
+          type: integer
+          description: Included task count = total - custom - non_configured - excluded
+      required:
+      - custom
+      - excluded
+      - included
+      - not_configured
+      - total
     QualitySettings:
       type: object
       properties:
@@ -9790,10 +10404,24 @@ components:
           readOnly: true
         task_id:
           type: integer
-          readOnly: true
+          nullable: true
+        project_id:
+          type: integer
+          nullable: true
+        job_filter:
+          type: string
+          description: |
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+          maxLength: 1024
+        inherit:
+          type: boolean
+          description: |
+            Allow using project settings when computing task quality.
+            Only applicable to task quality settings inside projects
         target_metric:
           allOf:
-          - $ref: '#/components/schemas/TargetMetricEnum'
+          - $ref: '#/components/schemas/QualityTargetMetric'
           description: |-
             The primary metric used for quality estimation
 
@@ -9803,6 +10431,8 @@ components:
         target_metric_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
@@ -9816,18 +10446,47 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.4
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.09
           description: |
             Like IoU threshold, but for points.
-            The percent of the bbox area, used as the radius of the circle around the GT point,
-            where the checked point is expected to be.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
             Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          allOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          default: group_bbox_size
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the OKS sigma parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
         line_thickness:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.01
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -9835,45 +10494,88 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
           type: boolean
+          default: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.1
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
+          default: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.5
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          default: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
+          default: 0.05
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          default: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
+          default: true
           description: Enables or disables annotation attribute comparison
+        empty_is_annotated:
+          type: boolean
+          default: false
+          description: |
+            Consider empty frames annotated as "empty". This affects target metrics like
+            accuracy in cases there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+            This will also add virtual annotations to empty frames in the comparison results.
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+    QualityTargetMetric:
+      enum:
+      - accuracy
+      - precision
+      - recall
+      type: string
+      description: |-
+        * `accuracy` - ACCURACY
+        * `precision` - PRECISION
+        * `recall` - RECALL
     RegisterSerializerEx:
       type: object
       properties:
@@ -9884,10 +10586,13 @@ components:
         email:
           type: string
           format: email
+          maxLength: 254
         first_name:
           type: string
+          maxLength: 150
         last_name:
           type: string
+          maxLength: 150
         email_verification_required:
           type: boolean
           readOnly: true
@@ -9908,6 +10613,7 @@ components:
           type: string
           format: email
           minLength: 1
+          maxLength: 254
         password1:
           type: string
           writeOnly: true
@@ -9919,9 +10625,11 @@ components:
         first_name:
           type: string
           minLength: 1
+          maxLength: 150
         last_name:
           type: string
           minLength: 1
+          maxLength: 150
       required:
       - password1
       - password2
@@ -9983,7 +10691,7 @@ components:
         type:
           type: string
         target:
-          $ref: '#/components/schemas/RequestDataOperationTargetEnum'
+          type: string
         project_id:
           type: integer
           nullable: true
@@ -9999,19 +10707,12 @@ components:
         function_id:
           type: string
           nullable: true
+        lightweight:
+          type: boolean
+          nullable: true
       required:
       - target
       - type
-    RequestDataOperationTargetEnum:
-      enum:
-      - project
-      - task
-      - job
-      type: string
-      description: |-
-        * `project` - Project
-        * `task` - Task
-        * `job` - Job
     RequestStatus:
       enum:
       - queued
@@ -10077,14 +10778,6 @@ components:
         * `Started` - Started
         * `Finished` - Finished
         * `Failed` - Failed
-    SeverityEnum:
-      enum:
-      - warning
-      - error
-      type: string
-      description: |-
-        * `warning` - WARNING
-        * `error` - ERROR
     ShapeType:
       enum:
       - rectangle
@@ -10105,14 +10798,6 @@ components:
         * `cuboid` - CUBOID
         * `mask` - MASK
         * `skeleton` - SKELETON
-    SigningRequest:
-      type: object
-      properties:
-        url:
-          type: string
-          minLength: 1
-      required:
-      - url
     SortingMethod:
       enum:
       - lexicographical
@@ -10348,8 +11033,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:
@@ -10388,31 +11086,25 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:
       - name
-    TargetMetricEnum:
-      enum:
-      - accuracy
-      - precision
-      - recall
-      type: string
-      description: |-
-        * `accuracy` - ACCURACY
-        * `precision` - PRECISION
-        * `recall` - RECALL
-    TaskAnnotationsUpdateRequest:
-      oneOf:
-      - $ref: '#/components/schemas/LabeledDataRequest'
-      - $ref: '#/components/schemas/AnnotationFileRequest'
-      nullable: true
-    TaskAnnotationsWriteRequest:
-      oneOf:
-      - $ref: '#/components/schemas/AnnotationFileRequest'
-      nullable: true
     TaskFileRequest:
       type: object
       properties:
@@ -10476,17 +11168,21 @@ components:
           minimum: 0
           nullable: true
           readOnly: true
-        data_compressed_chunk_type:
-          allOf:
-          - $ref: '#/components/schemas/ChunkType'
-          readOnly: true
-        guide_id:
-          type: integer
-          nullable: true
         data_original_chunk_type:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
+        data_compressed_chunk_type:
+          allOf:
+          - $ref: '#/components/schemas/ChunkType'
+          readOnly: true
+        data_cloud_storage_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        guide_id:
+          type: integer
+          nullable: true
         size:
           type: integer
           maximum: 2147483647
@@ -10505,10 +11201,15 @@ components:
         subset:
           type: string
           readOnly: true
+        organization_id:
+          type: integer
+          readOnly: true
+          nullable: true
         organization:
           type: integer
           readOnly: true
           nullable: true
+          deprecated: true
         target_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'
@@ -10526,9 +11227,61 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        validation_mode:
+          type: string
+          nullable: true
+          description: Describes how the task validation is performed. Configured
+            at task creation
+        consensus_enabled:
+          type: boolean
+          readOnly: true
       required:
       - jobs
       - labels
+    TaskValidationLayoutRead:
+      type: object
+      properties:
+        mode:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ValidationMode'
+          - $ref: '#/components/schemas/NullEnum'
+        frames_per_job_count:
+          type: integer
+          readOnly: true
+          nullable: true
+        validation_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids to be used for validation
+        disabled_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids excluded from validation
+        honeypot_count:
+          type: integer
+          minimum: 0
+        honeypot_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids for all honeypots in the task
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of real (validation) frame ids for all honeypots in the task
     TaskWriteRequest:
       type: object
       properties:
@@ -10567,13 +11320,16 @@ components:
           type: string
           maxLength: 64
         target_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
         source_storage:
-          allOf:
-          - $ref: '#/components/schemas/StorageRequest'
-          nullable: true
+          $ref: '#/components/schemas/StorageRequest'
+        consensus_replicas:
+          type: integer
+          minimum: 0
+          default: 0
+          description: |
+            The number of consensus replica jobs for each annotation job.
+            Configured at task creation
       required:
       - name
     TasksSummary:
@@ -10673,17 +11429,6 @@ components:
       required:
       - frame
       - type
-    Transformation:
-      type: object
-      properties:
-        name:
-          type: string
-        binary:
-          allOf:
-          - $ref: '#/components/schemas/BinaryOperation'
-          nullable: true
-      required:
-      - name
     User:
       type: object
       properties:
@@ -10738,6 +11483,9 @@ components:
           type: string
           format: date-time
           readOnly: true
+        has_analytics_access:
+          type: boolean
+          readOnly: true
       required:
       - groups
       - username
@@ -10755,6 +11503,67 @@ components:
           maxLength: 150
       required:
       - username
+    ValidationMode:
+      enum:
+      - gt
+      - gt_pool
+      type: string
+      description: |-
+        * `gt` - GT
+        * `gt_pool` - GT_POOL
+    ValidationParamsRequest:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ValidationMode'
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethod'
+        random_seed:
+          type: integer
+          minimum: 0
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to random frame selection methods.
+            By default, a random value is used.
+        frames:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          writeOnly: true
+          description: |
+            The list of file names to be included in the validation set.
+            Applicable only to the "manual" frame selection method.
+            Can only be used for images.
+        frame_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames to be included in the validation set.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          description: |
+            The share of frames to be included in the validation set.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames to be included in the validation set from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          description: |
+            The share of frames to be included in the validation set from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+      required:
+      - frame_selection_method
+      - mode
     WebhookContentType:
       enum:
       - application/json
@@ -10902,6 +11711,15 @@ components:
       - target_url
       - type
   securitySchemes:
+    accessTokenAuth:
+      type: http
+      scheme: bearer
+      description: |
+        To authenticate using an API Access token, you need to include
+        the 'Authentication' header with the 'Bearer ' prefix
+
+        An API Access token has to be issued in the user profile section of the UI or
+        via the /auth/access_tokens API before this authentication method can be used.
     basicAuth:
       type: http
       scheme: basic
@@ -10909,29 +11727,31 @@ components:
       type: apiKey
       in: cookie
       name: csrftoken
-      description: Can be sent as a cookie or as the X-CSRFTOKEN header
+      description: |
+        A CSRF protection token. Can be received in the 'csrftoken' cookie in the
+        server response on the /api/auth/login endpoint. The 'Origin' header
+        must also be specified in the request.
+    csrfHeaderAuth:
+      type: apiKey
+      in: header
+      name: X-CSRFToken
+      description: |
+        A CSRF protection token. Can be received in the 'csrftoken' cookie in the
+        server response on the /api/auth/login endpoint. The 'Origin' header
+        must also be specified in the request.
     sessionAuth:
       type: apiKey
       in: cookie
       name: sessionid
-    signatureAuth:
-      type: apiKey
-      in: query
-      name: sign
-      description: Can be used to share URLs to private links
     tokenAuth:
       type: apiKey
       in: header
       name: Authorization
-      description: |2
-
-        To authenticate using a token (or API key), you need to have 3 components in a request:
-        - the 'sessionid' cookie
-        - the 'csrftoken' cookie or 'X-CSRFTOKEN' header
-        - the 'Authentication' header with the 'Token ' prefix
+      description: |
+        Deprecated.
 
         You can obtain an API key (the token) from the server response on
-        the basic auth request.
+        the /api/auth/login/ endpoint.
       x-token-prefix: Token
 externalDocs:
   description: CVAT documentation

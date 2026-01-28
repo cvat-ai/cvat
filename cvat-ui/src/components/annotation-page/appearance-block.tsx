@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,8 @@ import Button from 'antd/lib/button';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ColorizeIcon } from 'icons';
 import { ColorBy, CombinedState, Workspace } from 'reducers';
-import { DimensionType } from 'cvat-core-wrapper';
+import { DimensionType, Job } from 'cvat-core-wrapper';
+import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import { collapseAppearance as collapseAppearanceAction } from 'actions/annotation-actions';
 import {
     changeShapesColorBy as changeShapesColorByAction,
@@ -25,7 +26,23 @@ import {
     changeShapesOutlinedBorders as changeShapesOutlinedBordersAction,
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
+    changeOrientationVisibility as changeOrientationVisibilityAction,
 } from 'actions/settings-actions';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
+
+const componentShortcuts = {
+    SWITCH_COLOR_BY_APPEARANCE: {
+        name: 'Switch objects appearance setting "Color by"',
+        description: 'Objects color mode may be by object, label, or group',
+        sequences: [],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 interface StateToProps {
     appearanceCollapsed: boolean;
@@ -36,18 +53,21 @@ interface StateToProps {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
+    orientationVisibility: OrientationVisibility;
     workspace: Workspace;
-    jobInstance: any;
+    jobInstance: Job;
+    keyMap: KeyMap;
 }
 
 interface DispatchToProps {
     collapseAppearance(): void;
-    changeShapesColorBy(event: RadioChangeEvent): void;
+    changeShapesColorBy(colorBy: ColorBy): void;
     changeShapesOpacity(value: number): void;
     changeSelectedShapesOpacity(value: number): void;
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
+    changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -60,8 +80,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings: {
             shapes: {
                 colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+                orientationVisibility,
             },
         },
+        shortcuts: { keyMap },
     } = state;
 
     return {
@@ -74,7 +96,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showBitmap,
         showProjections,
         workspace,
-        jobInstance,
+        orientationVisibility,
+        jobInstance: jobInstance as Job,
+        keyMap,
     };
 }
 
@@ -83,8 +107,8 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         collapseAppearance(): void {
             dispatch(collapseAppearanceAction());
         },
-        changeShapesColorBy(event: RadioChangeEvent): void {
-            dispatch(changeShapesColorByAction(event.target.value));
+        changeShapesColorBy(colorBy: ColorBy): void {
+            dispatch(changeShapesColorByAction(colorBy));
         },
         changeShapesOpacity(value: number): void {
             dispatch(changeShapesOpacityAction(value));
@@ -101,6 +125,9 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeShowProjections(event: CheckboxChangeEvent): void {
             dispatch(changeShowProjectionsAction(event.target.checked));
         },
+        changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): void {
+            dispatch(changeOrientationVisibilityAction(orientationVisibility));
+        },
     };
 }
 
@@ -116,6 +143,7 @@ function AppearanceBlock(props: Props): JSX.Element {
         outlineColor,
         showBitmap,
         showProjections,
+        orientationVisibility,
         collapseAppearance,
         changeShapesColorBy,
         changeShapesOpacity,
@@ -123,10 +151,25 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShapesOutlinedBorders,
         changeShowBitmap,
         changeShowProjections,
+        changeOrientationVisibility,
         jobInstance,
+        keyMap,
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
+    const is3D = jobInstance.dimension === DimensionType.DIMENSION_3D;
+    const nextColorBy = {
+        [ColorBy.LABEL]: ColorBy.INSTANCE,
+        [ColorBy.INSTANCE]: ColorBy.GROUP,
+        [ColorBy.GROUP]: ColorBy.LABEL,
+    };
+
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        SWITCH_COLOR_BY_APPEARANCE: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            changeShapesColorBy(nextColorBy[colorBy]);
+        },
+    };
 
     return (
         <Collapse
@@ -136,21 +179,22 @@ function AppearanceBlock(props: Props): JSX.Element {
             items={[{
                 label: (
                     <Text strong className='cvat-objects-appearance-collapse-header'>
-                        Appearance
+                            Appearance
                     </Text>
                 ),
                 key: 'appearance',
                 children: (
-                    <div className='cvat-objects-appearance-content'>
+                    <div className='cvat-objects-appearance-content cvat-appearance-block'>
+                        <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                         <Text type='secondary'>Color by</Text>
                         <Radio.Group
                             className='cvat-appearance-color-by-radio-group'
                             value={colorBy}
-                            onChange={changeShapesColorBy}
+                            onChange={(event: RadioChangeEvent) => changeShapesColorBy(event.target.value)}
                         >
-                            <Radio.Button value={ColorBy.LABEL}>{ColorBy.LABEL}</Radio.Button>
-                            <Radio.Button value={ColorBy.INSTANCE}>{ColorBy.INSTANCE}</Radio.Button>
-                            <Radio.Button value={ColorBy.GROUP}>{ColorBy.GROUP}</Radio.Button>
+                            {Object.keys(nextColorBy).map((val) => (
+                                <Radio.Button value={val} key={val}>{val}</Radio.Button>
+                            ))}
                         </Radio.Group>
                         <Text type='secondary'>Opacity</Text>
                         <Slider
@@ -187,6 +231,22 @@ function AppearanceBlock(props: Props): JSX.Element {
                                 </Button>
                             </ColorPicker>
                         </Checkbox>
+                        {is3D && (
+                            <div className='cvat-appearance-cuboid-orientation-checkboxes'>
+                                <Checkbox
+                                    checked={orientationVisibility.x}
+                                    onChange={(event: CheckboxChangeEvent) => {
+                                        changeOrientationVisibility({
+                                            x: event.target.checked,
+                                            y: event.target.checked,
+                                            z: event.target.checked,
+                                        });
+                                    }}
+                                >
+                                    Cuboid orientation
+                                </Checkbox>
+                            </div>
+                        )}
                         {is2D && (
                             <Checkbox
                                 className='cvat-appearance-bitmap-checkbox'

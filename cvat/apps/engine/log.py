@@ -1,20 +1,24 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import logging
 import sys
-import os.path as osp
 from contextlib import contextmanager
-from cvat.apps.engine.utils import directory_tree
+from pathlib import Path
+
 from django.conf import settings
+
+from cvat.apps.engine.utils import directory_tree
+
 
 class _LoggerAdapter(logging.LoggerAdapter):
     def process(self, msg: str, kwargs):
         if msg_prefix := self.extra.get("msg_prefix"):
             msg = msg_prefix + msg
         return msg, kwargs
+
 
 class _LoggerAdapterMapping:
     def __init__(self, logger: logging.Logger, object_type: str) -> None:
@@ -24,6 +28,7 @@ class _LoggerAdapterMapping:
     def __getitem__(self, id_: int) -> logging.LoggerAdapter:
         return _LoggerAdapter(self._logger, {"msg_prefix": f"[{self._object_type}.id={id_}] "})
 
+
 class ServerLogManager:
     def __init__(self, logger_name: str) -> None:
         self.glob = logging.getLogger(logger_name)
@@ -31,6 +36,7 @@ class ServerLogManager:
         self.task = _LoggerAdapterMapping(self.glob, "Task")
         self.job = _LoggerAdapterMapping(self.glob, "Job")
         self.cloud_storage = _LoggerAdapterMapping(self.glob, "CloudStorage")
+
 
 class DatasetLogManager:
     def __init__(self, directory_depth=5) -> None:
@@ -46,37 +52,48 @@ class DatasetLogManager:
         log_error = f"{base_info} \nDirectory tree:\n{dir_tree}"
         self.glob.error(log_error)
 
+
 def get_logger(logger_name, log_file):
     logger = logging.getLogger(name=logger_name)
     logger.setLevel(logging.INFO)
     file_handler = logging.FileHandler(log_file)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.addHandler(logging.StreamHandler(sys.stderr))
     return logger
 
-vlogger = logging.getLogger('vector')
+
+vlogger = logging.getLogger("vector")
+
+
+def get_migration_log_dir() -> Path:
+    return settings.MIGRATIONS_LOGS_ROOT
+
+
+def get_migration_log_file_path(migration_name: str) -> Path:
+    return get_migration_log_dir() / f"{migration_name}.log"
+
 
 @contextmanager
 def get_migration_logger(migration_name):
-    migration_log_file = '{}.log'.format(migration_name)
+    migration_log_file_path = get_migration_log_file_path(migration_name)
     stdout = sys.stdout
     stderr = sys.stderr
+
     # redirect all stdout to the file
-    log_file_object = open(osp.join(settings.MIGRATIONS_LOGS_ROOT, migration_log_file), 'w')
-    sys.stdout = log_file_object
-    sys.stderr = log_file_object
+    with open(migration_log_file_path, "w") as log_file_object:
+        sys.stdout = log_file_object
+        sys.stderr = log_file_object
 
-    log = logging.getLogger(migration_name)
-    log.addHandler(logging.StreamHandler(stdout))
-    log.addHandler(logging.StreamHandler(log_file_object))
-    log.setLevel(logging.INFO)
+        log = logging.getLogger(migration_name)
+        log.addHandler(logging.StreamHandler(stdout))
+        log.addHandler(logging.StreamHandler(log_file_object))
+        log.setLevel(logging.INFO)
 
-    try:
-        yield log
-    finally:
-        log_file_object.close()
-        sys.stdout = stdout
-        sys.stderr = stderr
+        try:
+            yield log
+        finally:
+            sys.stdout = stdout
+            sys.stderr = stderr

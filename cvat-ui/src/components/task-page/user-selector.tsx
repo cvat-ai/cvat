@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,8 +9,10 @@ import Autocomplete from 'antd/lib/auto-complete';
 import Input from 'antd/lib/input';
 import debounce from 'lodash/debounce';
 
-import { User, getCore } from 'cvat-core-wrapper';
+import { User, getCore, ServerError } from 'cvat-core-wrapper';
 import { getCVATStore } from 'cvat-store';
+import { handleDropdownKeyDown } from 'utils/dropdown-utils';
+import { useUpdateEffect } from 'utils/hooks';
 
 const core = getCore();
 
@@ -28,10 +30,15 @@ const searchUsers = debounce(
                 search: searchValue,
                 limit: 10,
                 is_active: true,
-            })
-            .then((result: User[]) => {
+            }).then((result: User[]) => {
                 if (result) {
                     setUsers(result);
+                }
+            }).catch((error: unknown) => {
+                // user may get logged out while debouncing
+                // it is normal situation
+                if (!(error instanceof ServerError && error.code === 401)) {
+                    throw error;
                 }
             });
     }, 500,
@@ -69,7 +76,7 @@ const initialUsersStorage: {
     },
 };
 
-export default function UserSelector(props: Props): JSX.Element {
+export default function UserSelector(props: Readonly<Props>): JSX.Element {
     const {
         value, className, username, onSelect,
     } = props;
@@ -118,24 +125,33 @@ export default function UserSelector(props: Props): JSX.Element {
     };
 
     const handleSelect = (_value: SelectValue): void => {
-        const user = _value ? users.filter((_user) => _user.id === +_value)[0] : null;
-        if ((user?.id || null) !== (value?.id || null)) {
-            onSelect(user);
+        if (_value === 'RESET_ASSIGNEE') {
+            onSelect(null);
+            setSearchPhrase('');
+        } else {
+            const user = _value ? users.filter((_user) => _user.id === +_value)[0] : null;
+            if ((user?.id || null) !== (value?.id || null)) {
+                onSelect(user);
+            }
         }
     };
 
+    useUpdateEffect(() => {
+        if (value && !users.filter((user) => user.id === value.id).length) {
+            core.users.get({ id: value.id }).then((result: User[]) => {
+                const [user] = result;
+                if (user) {
+                    setUsers([...users, user]);
+                }
+            });
+        }
+    }, [value]);
+
     useEffect(() => {
         if (value) {
-            if (!users.filter((user) => user.id === value.id).length) {
-                core.users.get({ id: value.id }).then((result: User[]) => {
-                    const [user] = result;
-                    if (user) {
-                        setUsers([...users, user]);
-                    }
-                });
-            }
-
             setSearchPhrase(value.username);
+        } else {
+            setSearchPhrase('');
         }
     }, [value]);
 
@@ -148,12 +164,19 @@ export default function UserSelector(props: Props): JSX.Element {
             onSearch={setSearchPhrase}
             onSelect={handleSelect}
             onBlur={onBlur}
+            onKeyDown={handleDropdownKeyDown}
             className={combinedClassName}
             popupClassName='cvat-user-search-dropdown'
-            options={users.map((user) => ({
-                value: user.id.toString(),
-                label: user.username,
-            }))}
+            options={[
+                ...(!searchPhrase || 'reset assignee'.includes(searchPhrase.toLowerCase()) ? [{
+                    value: 'RESET_ASSIGNEE',
+                    label: 'Reset assignee',
+                }] : []),
+                ...users.map((user) => ({
+                    value: user.id.toString(),
+                    label: user.username,
+                })),
+            ]}
         >
             <Input onPressEnter={() => autocompleteRef.current?.blur()} />
         </Autocomplete>

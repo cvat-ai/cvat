@@ -1,10 +1,9 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 import warnings
-from typing import Optional
 
 import tqdm
 from cvat_sdk.core.helpers import DeferredTqdmProgressReporter, TqdmProgressReporter
@@ -57,7 +56,7 @@ def test_deferred_tqdm_reporter():
 
 class _LegacyProgressReporter(ProgressReporter):
     # overriding start instead of start2
-    def start(self, total: int, *, desc: Optional[str] = None) -> None:
+    def start(self, total: int, *, desc: str | None = None) -> None:
         self.total = total
         self.desc = desc
         self.progress = 0

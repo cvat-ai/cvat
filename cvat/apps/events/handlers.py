@@ -1,10 +1,9 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import datetime
 import traceback
-from typing import Optional, Union
+from typing import Any
 
 import rq
 from crum import get_current_request, get_current_user
@@ -12,23 +11,44 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
-from cvat.apps.engine.models import (CloudStorage, Comment, Issue, Job, Label,
-                                     Project, ShapeType, Task, User)
-from cvat.apps.engine.serializers import (BasicUserSerializer,
-                                          CloudStorageReadSerializer,
-                                          CommentReadSerializer,
-                                          IssueReadSerializer,
-                                          JobReadSerializer, LabelSerializer,
-                                          ProjectReadSerializer,
-                                          TaskReadSerializer)
+from cvat.apps.access_tokens.models import AccessToken
+from cvat.apps.access_tokens.serializers import AccessTokenReadSerializer
+from cvat.apps.dataset_manager.tracks_counter import TracksCounter
+from cvat.apps.engine.models import (
+    CloudStorage,
+    Comment,
+    Issue,
+    Job,
+    Label,
+    Project,
+    ShapeType,
+    Task,
+    User,
+)
+from cvat.apps.engine.rq import BaseRQMeta
+from cvat.apps.engine.serializers import (
+    BasicUserSerializer,
+    CloudStorageReadSerializer,
+    CommentReadSerializer,
+    IssueReadSerializer,
+    JobReadSerializer,
+    LabelSerializer,
+    ProjectReadSerializer,
+    TaskReadSerializer,
+)
 from cvat.apps.organizations.models import Invitation, Membership, Organization
-from cvat.apps.organizations.serializers import (InvitationReadSerializer,
-                                                 MembershipReadSerializer,
-                                                 OrganizationReadSerializer)
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.organizations.serializers import (
+    InvitationReadSerializer,
+    MembershipReadSerializer,
+    OrganizationReadSerializer,
+)
+from cvat.apps.webhooks.models import Webhook
+from cvat.apps.webhooks.serializers import WebhookReadSerializer
 
 from .cache import get_cache
+from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
 from .event import event_scope, record_server_event
+from .utils import compute_working_time_per_ids
 
 
 def project_id(instance):
@@ -66,6 +86,7 @@ def task_id(instance):
     except Exception:
         return None
 
+
 def job_id(instance):
     if isinstance(instance, Job):
         return instance.id
@@ -78,7 +99,13 @@ def job_id(instance):
     except Exception:
         return None
 
-def get_user(instance=None):
+
+def get_user(instance=None) -> User | dict | None:
+    def _get_user_from_rq_job(rq_job: rq.job.Job) -> dict | None:
+        if user := BaseRQMeta.for_job(rq_job).user:
+            return user.to_dict()
+        return None
+
     # Try to get current user from request
     user = get_current_user()
     if user is not None:
@@ -86,30 +113,37 @@ def get_user(instance=None):
 
     # Try to get user from rq_job
     if isinstance(instance, rq.job.Job):
-        return instance.meta.get(RQJobMetaField.USER, None)
+        return _get_user_from_rq_job(instance)
     else:
         rq_job = rq.get_current_job()
         if rq_job:
-            return rq_job.meta.get(RQJobMetaField.USER, None)
+            return _get_user_from_rq_job(rq_job)
 
     if isinstance(instance, User):
         return instance
 
     return None
 
+
 def get_request(instance=None):
+    def _get_request_from_rq_job(rq_job: rq.job.Job) -> dict | None:
+        if request := BaseRQMeta.for_job(rq_job).request:
+            return request.to_dict()
+        return None
+
     request = get_current_request()
     if request is not None:
         return request
 
     if isinstance(instance, rq.job.Job):
-        return instance.meta.get(RQJobMetaField.REQUEST, None)
+        return _get_request_from_rq_job(instance)
     else:
         rq_job = rq.get_current_job()
         if rq_job:
-            return rq_job.meta.get(RQJobMetaField.REQUEST, None)
+            return _get_request_from_rq_job(rq_job)
 
     return None
+
 
 def _get_value(obj, key):
     if obj is not None:
@@ -119,21 +153,37 @@ def _get_value(obj, key):
 
     return None
 
-def request_id(instance=None):
+
+def request_info(instance=None):
     request = get_request(instance)
-    return _get_value(request, "uuid")
+    request_headers = _get_value(request, "headers")
+
+    data = {
+        "id": _get_value(request, "uuid"),
+        "user_agent": request_headers.get("User-Agent") if request_headers is not None else None,
+    }
+
+    access_token = getattr(request, "auth", None)
+    if isinstance(access_token, AccessToken):
+        data["access_token_id"] = access_token.id
+
+    return data
+
 
 def user_id(instance=None):
     current_user = get_user(instance)
     return _get_value(current_user, "id")
 
+
 def user_name(instance=None):
     current_user = get_user(instance)
     return _get_value(current_user, "username")
 
+
 def user_email(instance=None):
     current_user = get_user(instance)
     return _get_value(current_user, "email") or None
+
 
 def organization_slug(instance):
     if isinstance(instance, Organization):
@@ -147,10 +197,9 @@ def organization_slug(instance):
     except Exception:
         return None
 
+
 def get_instance_diff(old_data, data):
-    ignore_related_fields = (
-        "labels",
-    )
+    ignore_related_fields = ("labels",)
     diff = {}
     for prop, value in data.items():
         if prop in ignore_related_fields:
@@ -164,8 +213,9 @@ def get_instance_diff(old_data, data):
 
     return diff
 
-def _cleanup_fields(obj):
-    fields=(
+
+def _cleanup_fields(obj: dict[str, Any]) -> dict[str, Any]:
+    fields = (
         "slug",
         "id",
         "name",
@@ -183,10 +233,9 @@ def _cleanup_fields(obj):
         "url",
         "issues",
         "attributes",
+        "key",
     )
-    subfields=(
-        "url",
-    )
+    subfields = ("url",)
 
     data = {}
     for k, v in obj.items():
@@ -198,12 +247,15 @@ def _cleanup_fields(obj):
             data[k] = v
     return data
 
+
 def _get_object_name(instance):
-    if isinstance(instance, Organization) or \
-        isinstance(instance, Project) or \
-        isinstance(instance, Task) or \
-        isinstance(instance, Job) or \
-        isinstance(instance, Label):
+    if (
+        isinstance(instance, Organization)
+        or isinstance(instance, Project)
+        or isinstance(instance, Task)
+        or isinstance(instance, Job)
+        or isinstance(instance, Label)
+    ):
         return getattr(instance, "name", None)
 
     if isinstance(instance, User):
@@ -217,42 +269,46 @@ def _get_object_name(instance):
 
     return None
 
+
+SERIALIZERS = [
+    (AccessToken, AccessTokenReadSerializer),
+    (Organization, OrganizationReadSerializer),
+    (Project, ProjectReadSerializer),
+    (Task, TaskReadSerializer),
+    (Job, JobReadSerializer),
+    (User, BasicUserSerializer),
+    (CloudStorage, CloudStorageReadSerializer),
+    (Issue, IssueReadSerializer),
+    (Comment, CommentReadSerializer),
+    (Label, LabelSerializer),
+    (Membership, MembershipReadSerializer),
+    (Invitation, InvitationReadSerializer),
+    (Webhook, WebhookReadSerializer),
+]
+
+
 def get_serializer(instance):
-    context = {
-        "request": get_current_request()
-    }
+    context = {"request": get_current_request()}
 
     serializer = None
-    if isinstance(instance, Organization):
-        serializer = OrganizationReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Project):
-        serializer = ProjectReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Task):
-        serializer = TaskReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Job):
-        serializer = JobReadSerializer(instance=instance, context=context)
-    if isinstance(instance, User):
-        serializer = BasicUserSerializer(instance=instance, context=context)
-    if isinstance(instance, CloudStorage):
-        serializer = CloudStorageReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Issue):
-        serializer = IssueReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Comment):
-        serializer = CommentReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Label):
-        serializer = LabelSerializer(instance=instance, context=context)
-    if isinstance(instance, Membership):
-        serializer = MembershipReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Invitation):
-        serializer = InvitationReadSerializer(instance=instance, context=context)
+    for model, serializer_class in SERIALIZERS:
+        if isinstance(instance, model):
+            serializer = serializer_class(instance=instance, context=context)
 
     return serializer
+
 
 def get_serializer_without_url(instance):
     serializer = get_serializer(instance)
     if serializer:
         serializer.fields.pop("url", None)
     return serializer
+
+
+from cvat.apps.engine.log import ServerLogManager
+
+slogger = ServerLogManager(__name__)
+
 
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
@@ -273,9 +329,9 @@ def handle_create(scope, instance, **kwargs):
     payload = _cleanup_fields(obj=payload)
     record_server_event(
         scope=scope,
-        request_id=request_id(),
+        request_info=request_info(),
         on_commit=True,
-        obj_id=getattr(instance, 'id', None),
+        obj_id=getattr(instance, "id", None),
         obj_name=_get_object_name(instance),
         org_id=oid,
         org_slug=oslug,
@@ -287,6 +343,7 @@ def handle_create(scope, instance, **kwargs):
         user_email=uemail,
         payload=payload,
     )
+
 
 def handle_update(scope, instance, old_instance, **kwargs):
     oid = organization_id(instance)
@@ -306,10 +363,10 @@ def handle_update(scope, instance, old_instance, **kwargs):
         change = _cleanup_fields(change)
         record_server_event(
             scope=scope,
-            request_id=request_id(),
+            request_info=request_info(),
             on_commit=True,
             obj_name=prop,
-            obj_id=getattr(instance, f'{prop}_id', None),
+            obj_id=getattr(instance, f"{prop}_id", None),
             obj_val=str(change["new_value"]),
             org_id=oid,
             org_slug=oslug,
@@ -322,12 +379,14 @@ def handle_update(scope, instance, old_instance, **kwargs):
             payload={"old_value": change["old_value"]},
         )
 
+
 def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     deletion_cache = get_cache()
+    instance_id = getattr(instance, "id", None)
     if store_in_deletion_cache:
         deletion_cache.set(
             instance.__class__,
-            instance.id,
+            instance_id,
             {
                 "oid": organization_id(instance),
                 "oslug": organization_slug(instance),
@@ -338,7 +397,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         )
         return
 
-    instance_meta_info = deletion_cache.pop(instance.__class__, instance.id)
+    instance_meta_info = deletion_cache.pop(instance.__class__, instance_id)
     if instance_meta_info:
         oid = instance_meta_info["oid"]
         oslug = instance_meta_info["oslug"]
@@ -358,9 +417,9 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
 
     record_server_event(
         scope=scope,
-        request_id=request_id(),
+        request_info=request_info(),
         on_commit=True,
-        obj_id=getattr(instance, 'id', None),
+        obj_id=instance_id,
         obj_name=_get_object_name(instance),
         org_id=oid,
         org_slug=oslug,
@@ -372,20 +431,47 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         user_email=uemail,
     )
 
-def handle_annotations_change(instance, annotations, action, **kwargs):
-    def filter_data(data):
-        filtered_data = {
-            "id": data["id"],
-            "frame": data["frame"],
-            "attributes": data["attributes"],
-        }
-        if label_id := data.get("label_id"):
-            filtered_data["label_id"] = label_id
 
-        return filtered_data
+def handle_annotations_change(instance: Job, annotations, action, **kwargs):
+    def filter_data(data):
+        return {
+            "id": data["id"],
+        }
+
+    in_mem_counter = TracksCounter()
+    in_mem_counter.load_tracks_from_job(instance.id, annotations.get("tracks", []))
+
+    in_db_counter = TracksCounter()
+    if action == "update" and annotations.get("tracks", []):
+        in_db_counter.load_tracks_from_db(
+            parent_labeledtrack_qs_filter=lambda x: x.filter(
+                pk__in=(track["id"] for track in annotations["tracks"])
+            ),
+            child_labeledtrack_qs_filter=lambda x: x.filter(
+                parent_id__in=(track["id"] for track in annotations["tracks"])
+            ),
+        )
 
     def filter_track(track):
+        job_id = instance.id
+        track_id = track["id"]
+
+        in_mem_shapes = in_mem_counter.count_track_shapes(job_id, track_id)
+        in_mem_visible_shapes = in_mem_shapes["manual"] + in_mem_shapes["interpolated"]
         filtered_data = filter_data(track)
+
+        if action == "create":
+            filtered_data["visible_shapes_count_diff"] = in_mem_visible_shapes
+        elif action == "delete":
+            filtered_data["visible_shapes_count_diff"] = -in_mem_visible_shapes
+        elif action == "update":
+            # when track is just updated, it may lead to both new or deleted visible shapes
+            in_db_shapes = in_db_counter.count_track_shapes(job_id, track_id)
+            in_db_visible_shapes = in_db_shapes["manual"] + in_db_shapes["interpolated"]
+            filtered_data["visible_shapes_count_diff"] = (
+                in_db_visible_shapes - in_mem_visible_shapes
+            )
+
         filtered_data["shapes"] = [filter_data(s) for s in track["shapes"]]
         return filtered_data
 
@@ -397,12 +483,13 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
     uid = user_id(instance)
     uname = user_name(instance)
     uemail = user_email(instance)
+    request_info_ = request_info()
 
     tags = [filter_data(tag) for tag in annotations.get("tags", [])]
     if tags:
         record_server_event(
             scope=event_scope(action, "tags"),
-            request_id=request_id(),
+            request_info=request_info_,
             on_commit=True,
             count=len(tags),
             org_id=oid,
@@ -425,7 +512,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
         if shapes:
             record_server_event(
                 scope=scope,
-                request_id=request_id(),
+                request_info=request_info_,
                 on_commit=True,
                 obj_name=shape_type,
                 count=len(shapes),
@@ -450,7 +537,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
         if tracks:
             record_server_event(
                 scope=scope,
-                request_id=request_id(),
+                request_info=request_info_,
                 on_commit=True,
                 obj_name=track_type,
                 count=len(tracks),
@@ -465,22 +552,23 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
                 payload={"tracks": tracks},
             )
 
+
 def handle_dataset_io(
-    instance: Union[Project, Task, Job],
+    instance: Project | Task | Job,
     action: str,
     *,
     format_name: str,
-    cloud_storage_id: Optional[int],
+    cloud_storage_id: int | None,
     **payload_fields,
 ) -> None:
-    payload={"format": format_name, **payload_fields}
+    payload = {"format": format_name, **payload_fields}
 
     if cloud_storage_id:
         payload["cloud_storage"] = {"id": cloud_storage_id}
 
     record_server_event(
         scope=event_scope(action, "dataset"),
-        request_id=request_id(),
+        request_info=request_info(),
         org_id=organization_id(instance),
         org_slug=organization_slug(instance),
         project_id=project_id(instance),
@@ -492,30 +580,62 @@ def handle_dataset_io(
         payload=payload,
     )
 
+
 def handle_dataset_export(
-    instance: Union[Project, Task, Job],
+    instance: Project | Task | Job,
     *,
     format_name: str,
-    cloud_storage_id: Optional[int],
+    cloud_storage_id: int | None,
     save_images: bool,
 ) -> None:
-    handle_dataset_io(instance, "export",
-        format_name=format_name, cloud_storage_id=cloud_storage_id, save_images=save_images)
+    handle_dataset_io(
+        instance,
+        "export",
+        format_name=format_name,
+        cloud_storage_id=cloud_storage_id,
+        save_images=save_images,
+    )
+
 
 def handle_dataset_import(
-    instance: Union[Project, Task, Job],
+    instance: Project | Task | Job,
     *,
     format_name: str,
-    cloud_storage_id: Optional[int],
+    cloud_storage_id: int | None,
 ) -> None:
-    handle_dataset_io(instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id)
+    handle_dataset_io(
+        instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id
+    )
+
+
+def handle_function_call(
+    function_id: str,
+    target: Task | Job,
+    **payload_fields,
+) -> None:
+    record_server_event(
+        scope=event_scope("call", "function"),
+        request_info=request_info(),
+        project_id=project_id(target),
+        task_id=task_id(target),
+        job_id=job_id(target),
+        user_id=user_id(),
+        user_name=user_name(),
+        user_email=user_email(),
+        payload={
+            "function": {"id": function_id},
+            **payload_fields,
+        },
+    )
+
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
-    oid = rq_job.meta.get(RQJobMetaField.ORG_ID, None)
-    oslug = rq_job.meta.get(RQJobMetaField.ORG_SLUG, None)
-    pid = rq_job.meta.get(RQJobMetaField.PROJECT_ID, None)
-    tid = rq_job.meta.get(RQJobMetaField.TASK_ID, None)
-    jid = rq_job.meta.get(RQJobMetaField.JOB_ID, None)
+    rq_job_meta = BaseRQMeta.for_job(rq_job)
+    oid = rq_job_meta.org_id
+    oslug = rq_job_meta.org_slug
+    pid = rq_job_meta.project_id
+    tid = rq_job_meta.task_id
+    jid = rq_job_meta.job_id
     uid = user_id(rq_job)
     uname = user_name(rq_job)
     uemail = user_email(rq_job)
@@ -523,12 +643,12 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
     payload = {
         "message": tb_strings[-1].rstrip("\n"),
-        "stack": ''.join(tb_strings),
+        "stack": "".join(tb_strings),
     }
 
     record_server_event(
         scope="send:exception",
-        request_id=request_id(instance=rq_job),
+        request_info=request_info(instance=rq_job),
         count=1,
         org_id=oid,
         org_slug=oslug,
@@ -543,10 +663,11 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
     return False
 
+
 def handle_viewset_exception(exc, context):
     response = exception_handler(exc, context)
 
-    IGNORED_EXCEPTION_CLASSES = (NotAuthenticated, )
+    IGNORED_EXCEPTION_CLASSES = (NotAuthenticated,)
     if isinstance(exc, IGNORED_EXCEPTION_CLASSES):
         return response
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
@@ -569,13 +690,13 @@ def handle_viewset_exception(exc, context):
             "method": request.method,
         },
         "message": tb_strings[-1].rstrip("\n"),
-        "stack": ''.join(tb_strings),
+        "stack": "".join(tb_strings),
         "status_code": status_code,
     }
 
     record_server_event(
         scope="send:exception",
-        request_id=request_id(),
+        request_info=request_info(),
         count=1,
         user_id=getattr(request.user, "id", None),
         user_name=getattr(request.user, "username", None),
@@ -585,53 +706,11 @@ def handle_viewset_exception(exc, context):
 
     return response
 
+
 def handle_client_events_push(request, data: dict):
-    TIME_THRESHOLD = datetime.timedelta(seconds=100)
-    WORKING_TIME_SCOPE = 'send:working_time'
-    WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
-    COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
     org = request.iam_context["organization"]
 
-    def read_ids(event: dict) -> tuple[int | None, int | None, int | None]:
-        return event.get("job_id"), event.get("task_id"), event.get("project_id")
-
-    def get_end_timestamp(event: dict) -> datetime.datetime:
-        if event["scope"] in COLLAPSED_EVENT_SCOPES:
-            return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
-        return event["timestamp"]
-
-    if previous_event := data["previous_event"]:
-        previous_end_timestamp = get_end_timestamp(previous_event)
-        previous_ids = read_ids(previous_event)
-    elif data["events"]:
-        previous_end_timestamp = data["events"][0]["timestamp"]
-        previous_ids = read_ids(data["events"][0])
-
-    working_time_per_ids = {}
-    for event in data["events"]:
-        working_time = datetime.timedelta()
-        timestamp = event["timestamp"]
-
-        if timestamp > previous_end_timestamp:
-            t_diff = timestamp - previous_end_timestamp
-            if t_diff < TIME_THRESHOLD:
-                working_time += t_diff
-
-            previous_end_timestamp = timestamp
-
-        end_timestamp = get_end_timestamp(event)
-        if end_timestamp > previous_end_timestamp:
-            working_time += end_timestamp - previous_end_timestamp
-            previous_end_timestamp = end_timestamp
-
-        if previous_ids not in working_time_per_ids:
-            working_time_per_ids[previous_ids] = {
-                "value": datetime.timedelta(),
-                "timestamp": timestamp,
-            }
-
-        working_time_per_ids[previous_ids]["value"] += working_time
-        previous_ids = read_ids(event)
+    working_time_per_ids = compute_working_time_per_ids(data)
 
     if data["events"]:
         common = {
@@ -648,7 +727,7 @@ def handle_client_events_push(request, data: dict):
                 value = working_time["value"] // WORKING_TIME_RESOLUTION
                 record_server_event(
                     scope=WORKING_TIME_SCOPE,
-                    request_id=request_id(),
+                    request_info=request_info(),
                     # keep it in payload for backward compatibility
                     # but in the future it is much better to use a "duration" field
                     # because parsing JSON in SQL query is very slow
@@ -661,3 +740,32 @@ def handle_client_events_push(request, data: dict):
                     count=1,
                     **common,
                 )
+
+
+def handle_cache_item_create(
+    item_type: str,
+    target: str | None = None,
+    target_id: int | None = None,
+    size: int = 0,
+    number: int | None = None,
+    quality: int | None = None,
+    **payload_fields,
+) -> None:
+    record_server_event(
+        scope=event_scope("create", "cache_item"),
+        request_info=request_info(),
+        user_id=user_id(),
+        user_name=user_name(),
+        user_email=user_email(),
+        payload={
+            "cache_item": {
+                "type": item_type,
+                "target": target,
+                "target_id": target_id,
+                "number": number,
+                "size": size,
+                "quality": quality,
+            },
+            **payload_fields,
+        },
+    )

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,7 +20,7 @@ interface Props {
     angle: number;
     scale: number;
     resolved: boolean;
-    onClick: () => void;
+    onClick: (event: React.MouseEvent) => void;
     highlight: () => void;
     blur: () => void;
 }

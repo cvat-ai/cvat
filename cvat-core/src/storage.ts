@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,6 +36,17 @@ export class Storage {
             }),
         );
     }
+
+    isCloudLinked(): boolean {
+        return this.location === StorageLocation.CLOUD_STORAGE;
+    }
+
+    static buildLocalStorage(): Storage {
+        return new Storage({
+            location: StorageLocation.LOCAL,
+        });
+    }
+
     toJSON(): StorageJsonData {
         return {
             location: this.location,

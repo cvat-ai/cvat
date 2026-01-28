@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import json
 from copy import deepcopy
 from http import HTTPStatus
 from types import SimpleNamespace
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import pytest
 from cvat_sdk import exceptions, models
@@ -60,7 +60,7 @@ class _TestLabelsPermissionsBase:
         """
 
     @staticmethod
-    def _labels_by_source(labels: List[Dict], *, source_key: str) -> Dict[int, List[Dict]]:
+    def _labels_by_source(labels: list[dict], *, source_key: str) -> dict[int, list[dict]]:
         labels_by_source = {}
         for label in labels:
             label_source = label.get(source_key)
@@ -69,7 +69,7 @@ class _TestLabelsPermissionsBase:
 
         return labels_by_source
 
-    def _get_source_info(self, source: str, *, org_id: Optional[int] = None):
+    def _get_source_info(self, source: str, *, org_id: int | None = None):
         if source == "task":
             sources = self.tasks_by_org
             is_source_staff = self.is_task_staff
@@ -216,7 +216,7 @@ class TestLabelsListFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.labels_api.list_endpoint
 
-    def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
+    def _get_field_samples(self, field: str) -> tuple[Any, list[dict[str, Any]]]:
         if field == "parent":
             parent_id, gt_objects = self._get_field_samples("parent_id")
             parent_name = self._get_field(
@@ -584,8 +584,8 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         return response
 
     def _get_patch_data(
-        self, original_data: Dict[str, Any], **overrides
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        self, original_data: dict[str, Any], **overrides
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         result = deepcopy(original_data)
         result.update(overrides)
 
@@ -644,16 +644,16 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                     "color": ["#2000c0"],
                     "name": ["modified"],
                     "type": [
-                        "bbox",
+                        "any",
+                        "cuboid",
                         "ellipse",
+                        "mask",
+                        "points",
                         "polygon",
                         "polyline",
-                        "points",
-                        "cuboid",
-                        "cuboid_3d",
+                        "rectangle",
                         "skeleton",
                         "tag",
-                        "any",
                     ],
                 }.items()
             )
@@ -680,11 +680,9 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
     def test_can_patch_attribute_name(self, source: str, admin_user: str):
         source_key = self._get_source_info(source).label_source_key
         label = next(
-            (
-                l
-                for l in self.labels
-                if l.get(source_key) and not l["has_parent"] and l.get("attributes")
-            )
+            l
+            for l in self.labels
+            if l.get(source_key) and not l["has_parent"] and l.get("attributes")
         )
 
         attributes = deepcopy(label["attributes"])
@@ -928,7 +926,11 @@ class TestLabelUpdates:
     ):
         # Checks for regressions against the issue https://github.com/cvat-ai/cvat/issues/6871
 
-        task = next(t for t in tasks_wlc if t["jobs"]["count"] and t["labels"]["count"])
+        task = next(
+            t
+            for t in tasks_wlc
+            if t["jobs"]["count"] and t["labels"]["count"] and not t["project_id"]
+        )
         task_labels = [l for l in labels if l.get("task_id") == task["id"]]
         nested_jobs = [j for j in jobs if j["task_id"] == task["id"]]
 

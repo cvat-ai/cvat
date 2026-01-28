@@ -1,37 +1,41 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 
-import io
-import os
+import copy
+import itertools
 import os.path as osp
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
 from glob import glob
-from io import BytesIO
-import copy
 from shutil import copyfile
-import itertools
 
 from django.contrib.auth.models import Group, User
 from rest_framework import status
 
-from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.dataset_manager.task import TaskAnnotation
-from datumaro.util.test_utils import TestDir
+from cvat.apps.dataset_manager.tests.utils import TestDir
+from cvat.apps.engine.media_extractors import ValidateDimension
+from cvat.apps.engine.tests.utils import (
+    ASSETS_DIR,
+    ExportApiTestBase,
+    ForceLogin,
+    ImportApiTestBase,
+    get_paginated_collection,
+)
 
-from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
+from .utils import check_annotation_response
 
 CREATE_ACTION = "create"
 UPDATE_ACTION = "update"
 DELETE_ACTION = "delete"
 
 
-class _DbTestBase(ApiTestBase):
+class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     @classmethod
     def setUpTestData(cls):
         cls.create_db_users()
@@ -41,8 +45,7 @@ class _DbTestBase(ApiTestBase):
         (group_admin, _) = Group.objects.get_or_create(name="admin")
         (group_user, _) = Group.objects.get_or_create(name="user")
 
-        user_admin = User.objects.create_superuser(username="admin", email="",
-            password="admin")
+        user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
         user_admin.groups.add(group_admin)
         user_dummy = User.objects.create_user(username="user", password="user")
         user_dummy.groups.add(group_user)
@@ -52,50 +55,54 @@ class _DbTestBase(ApiTestBase):
 
     def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/tasks/%s/annotations" % tid,
-                                       data=data, format="json")
+            response = self.client.put("/api/tasks/%s/annotations" % tid, data=data, format="json")
 
         return response
 
     def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/jobs/%s/annotations" % jid,
-                                       data=data, format="json")
+            response = self.client.put("/api/jobs/%s/annotations" % jid, data=data, format="json")
 
         return response
 
     def _patch_api_v2_task_id_annotations(self, tid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/tasks/{}/annotations?action={}".format(tid, action),
-                data=data, format="json")
+                "/api/tasks/{}/annotations?action={}".format(tid, action), data=data, format="json"
+            )
 
         return response
 
     def _patch_api_v2_job_id_annotations(self, jid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/jobs/{}/annotations?action={}".format(jid, action),
-                data=data, format="json")
+                "/api/jobs/{}/annotations?action={}".format(jid, action), data=data, format="json"
+            )
 
         return response
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/tasks', data=data, format="json")
+            response = self.client.post("/api/tasks", data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid,
-                data=image_data)
+            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            rq_id = response.json()["rq_id"]
+
+            response = self.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
 
             response = self.client.get("/api/tasks/%s" % tid)
 
             if 200 <= response.status_code < 400:
-                labels_response = list(get_paginated_collection(
-                    lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
-                ))
+                labels_response = list(
+                    get_paginated_collection(
+                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                    )
+                )
                 response.data["labels"] = labels_response
 
             task = response.data
@@ -116,83 +123,40 @@ class _DbTestBase(ApiTestBase):
                         value = attribute["default_value"]
 
                         if item == "tracks" and attribute["mutable"]:
-                            for index_shape, _ in enumerate(tmp_annotations[item][index_elem]["shapes"]):
-                                tmp_annotations[item][index_elem]["shapes"][index_shape]["attributes"].append({
+                            for index_shape, _ in enumerate(
+                                tmp_annotations[item][index_elem]["shapes"]
+                            ):
+                                tmp_annotations[item][index_elem]["shapes"][index_shape][
+                                    "attributes"
+                                ].append(
+                                    {
+                                        "spec_id": spec_id,
+                                        "value": value,
+                                    }
+                                )
+                        else:
+                            tmp_annotations[item][index_elem]["attributes"].append(
+                                {
                                     "spec_id": spec_id,
                                     "value": value,
-                                })
-                        else:
-                            tmp_annotations[item][index_elem]["attributes"].append({
-                                "spec_id": spec_id,
-                                "value": value,
-                            })
+                                }
+                            )
         return tmp_annotations
 
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
-            values = get_paginated_collection(lambda page:
-                self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+            values = get_paginated_collection(
+                lambda page: self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
             )
         return values
-
-    def _get_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path)
-        return response
-
-    def _get_request_with_data(self, path, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path, data)
-        return response
-
-    def _delete_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.delete(path)
-        return response
-
-    def _download_file(self, url, data, user, file_name):
-        response = self._get_request_with_data(url, data, user)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._get_request_with_data(url, {**data, "action": "download"}, user)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        content = BytesIO(b"".join(response.streaming_content))
-        with open(file_name, "wb") as f:
-            f.write(content.getvalue())
-
-    def _upload_file(self, url, data, user):
-        response = self._put_request_with_data(url, {"annotation_file": data}, user)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._put_request_with_data(url, {}, user)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def _generate_url_dump_tasks_annotations(self, task_id):
-        return f"/api/tasks/{task_id}/annotations"
-
-    def _generate_url_upload_tasks_annotations(self, task_id, upload_format_name):
-        return f"/api/tasks/{task_id}/annotations?format={upload_format_name}"
-
-    def _generate_url_dump_job_annotations(self, job_id):
-        return f"/api/jobs/{job_id}/annotations"
-
-    def _generate_url_upload_job_annotations(self, job_id, upload_format_name):
-        return f"/api/jobs/{job_id}/annotations?format={upload_format_name}"
-
-    def _generate_url_dump_dataset(self, task_id):
-        return f"/api/tasks/{task_id}/dataset"
 
     def _remove_annotations(self, tid):
         response = self._delete_request(f"/api/tasks/{tid}/annotations", self.admin)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
-    def _put_request_with_data(self, url, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.put(url, data)
-        return response
-
     def _delete_task(self, tid):
-        response = self._delete_request('/api/tasks/{}'.format(tid), self.admin)
+        response = self._delete_request("/api/tasks/{}".format(tid), self.admin)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
@@ -205,23 +169,22 @@ class _DbTestBase(ApiTestBase):
                 for dc in map(etree_to_dict, children):
                     for k, v in dc.items():
                         dd[k].append(v)
-                d = {t.tag: {k: v[0] if len(v) == 1 else v
-                             for k, v in dd.items()}}
+                d = {t.tag: {k: v[0] if len(v) == 1 else v for k, v in dd.items()}}
             if t.attrib:
-                d[t.tag].update(('@' + k, v)
-                                for k, v in t.attrib.items())
+                d[t.tag].update(("@" + k, v) for k, v in t.attrib.items())
             if t.text:
                 text = t.text.strip()
                 if children or t.attrib:
                     if text:
-                        d[t.tag]['#text'] = text
+                        d[t.tag]["#text"] = text
                 else:
                     d[t.tag] = text
             return d
+
         if format_name == "Kitti Raw Format 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:
                 zipfile.ZipFile(content).extractall(tmp_dir)
-                xmls = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
+                xmls = glob(osp.join(tmp_dir, "**", "*.xml"), recursive=True)
                 self.assertTrue(xmls)
                 for xml in xmls:
                     xmlroot = ET.parse(xml).getroot()
@@ -230,17 +193,41 @@ class _DbTestBase(ApiTestBase):
                     self.assertEqual(len(items), len(task_data["shapes"]))
         elif format_name == "Sly Point Cloud Format 1.0":
             with tempfile.TemporaryDirectory() as tmp_dir:
-                checking_files = [osp.join(tmp_dir, "key_id_map.json"),
-                                  osp.join(tmp_dir, "meta.json"),
-                                  osp.join(tmp_dir, "ds0", "ann", "000001.pcd.json"),
-                                  osp.join(tmp_dir, "ds0", "ann", "000002.pcd.json"),
-                                  osp.join(tmp_dir, "ds0", "ann","000003.pcd.json")]
+                checking_files = [
+                    osp.join(tmp_dir, "key_id_map.json"),
+                    osp.join(tmp_dir, "meta.json"),
+                    osp.join(tmp_dir, "ds0", "ann", "000001.pcd.json"),
+                    osp.join(tmp_dir, "ds0", "ann", "000002.pcd.json"),
+                    osp.join(tmp_dir, "ds0", "ann", "000003.pcd.json"),
+                ]
                 if related_files:
-                    checking_files.extend([osp.join(tmp_dir, "ds0", "related_images", "000001.pcd_pcd", "000001.png.json"),
-                                  osp.join(tmp_dir, "ds0", "related_images", "000002.pcd_pcd", "000002.png.json"),
-                                  osp.join(tmp_dir, "ds0", "related_images", "000003.pcd_pcd", "000003.png.json")])
+                    checking_files.extend(
+                        [
+                            osp.join(
+                                tmp_dir,
+                                "ds0",
+                                "related_images",
+                                "000001.pcd_pcd",
+                                "000001.png.json",
+                            ),
+                            osp.join(
+                                tmp_dir,
+                                "ds0",
+                                "related_images",
+                                "000002.pcd_pcd",
+                                "000002.png.json",
+                            ),
+                            osp.join(
+                                tmp_dir,
+                                "ds0",
+                                "related_images",
+                                "000003.pcd_pcd",
+                                "000003.png.json",
+                            ),
+                        ]
+                    )
                 zipfile.ZipFile(content).extractall(tmp_dir)
-                jsons = glob(osp.join(tmp_dir, '**', '*.json'), recursive=True)
+                jsons = glob(osp.join(tmp_dir, "**", "*.json"), recursive=True)
                 self.assertTrue(jsons)
                 self.assertTrue(set(checking_files).issubset(set(jsons)))
 
@@ -252,14 +239,15 @@ class Task3DTest(_DbTestBase):
         cls.format_names = ["Sly Point Cloud Format 1.0", "Kitti Raw Format 1.0"]
         cls._image_sizes = {}
         cls.pointcloud_pcd_filename = "test_canvas3d.zip"
-        cls.pointcloud_pcd_path = osp.join(os.path.dirname(__file__), 'assets', cls.pointcloud_pcd_filename)
+        cls.pointcloud_pcd_path = ASSETS_DIR / cls.pointcloud_pcd_filename
+
         image_sizes = []
-        zip_file = zipfile.ZipFile(cls.pointcloud_pcd_path )
+        zip_file = zipfile.ZipFile(cls.pointcloud_pcd_path)
         for info in zip_file.namelist():
-            if info.rsplit(".", maxsplit=1)[-1] == "pcd":
-                with zip_file.open(info, "r") as file:
-                    data = ValidateDimension.get_pcd_properties(file)
-                    image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+            if info.endswith(".pcd"):
+                data = ValidateDimension.get_pcd_properties(zipfile.Path(zip_file, info))
+                image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
+
         cls.task = {
             "name": "main task",
             "owner_id": 2,
@@ -269,7 +257,7 @@ class Task3DTest(_DbTestBase):
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
-            ]
+            ],
         }
         cls.task_with_attributes = {
             "name": "task with attributes",
@@ -278,44 +266,42 @@ class Task3DTest(_DbTestBase):
             "overlap": 0,
             "segment_size": 100,
             "labels": [
-                {"name": "car",
-                 "color": "#2080c0",
-                 "attributes": [
-                     {
-                         "name": "radio_name",
-                         "mutable": False,
-                         "input_type": "radio",
-                         "default_value": "x1",
-                         "values": ["x1", "x2", "x3"]
-                     },
-                     {
-                         "name": "check_name",
-                         "mutable": True,
-                         "input_type": "checkbox",
-                         "default_value": "false",
-                         "values": ["false"]
-                     },
-                     {
-                         "name": "text_name",
-                         "mutable": False,
-                         "input_type": "text",
-                         "default_value": "qwerty",
-                         "values": ["qwerty"]
-                     },
-                     {
-                         "name": "number_name",
-                         "mutable": False,
-                         "input_type": "number",
-                         "default_value": "-4.0",
-                         "values": ["-4", "4", "1"]
-                     }
-                 ]
-                 },
-                {"name": "person",
-                 "color": "#c06060",
-                 "attributes": []
-                 },
-            ]
+                {
+                    "name": "car",
+                    "color": "#2080c0",
+                    "attributes": [
+                        {
+                            "name": "radio_name",
+                            "mutable": False,
+                            "input_type": "radio",
+                            "default_value": "x1",
+                            "values": ["x1", "x2", "x3"],
+                        },
+                        {
+                            "name": "check_name",
+                            "mutable": True,
+                            "input_type": "checkbox",
+                            "default_value": "false",
+                            "values": ["false"],
+                        },
+                        {
+                            "name": "text_name",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "qwerty",
+                            "values": ["qwerty"],
+                        },
+                        {
+                            "name": "number_name",
+                            "mutable": False,
+                            "input_type": "number",
+                            "default_value": "-4.0",
+                            "values": ["-4", "4", "1"],
+                        },
+                    ],
+                },
+                {"name": "person", "color": "#c06060", "attributes": []},
+            ],
         }
         cls.task_many_jobs = {
             "name": "task several jobs",
@@ -323,14 +309,7 @@ class Task3DTest(_DbTestBase):
             "assignee_id": 2,
             "overlap": 3,
             "segment_size": 1,
-            "labels": [
-                {
-                    "name": "car",
-                    "color": "#c06060",
-                    "id": 1,
-                    "attributes": []
-                }
-            ]
+            "labels": [{"name": "car", "color": "#c06060", "id": 1, "attributes": []}],
         }
         cls.cuboid_example = {
             "version": 0,
@@ -341,38 +320,56 @@ class Task3DTest(_DbTestBase):
                     "occluded": False,
                     "outside": False,
                     "z_order": 0,
-                    "points": [0.16, 0.20, -0.26, 0, -0.14, 0, 4.84, 4.48, 4.12, 0, 0, 0, 0, 0, 0, 0],
+                    "points": [
+                        0.16,
+                        0.20,
+                        -0.26,
+                        0,
+                        -0.14,
+                        0,
+                        4.84,
+                        4.48,
+                        4.12,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                    ],
                     "rotation": 0,
                     "frame": 0,
                     "label_id": None,
                     "group": 0,
                     "source": "manual",
                     "elements": [],
-                    "attributes": []
+                    "attributes": [],
                 },
             ],
-            "tracks": []
+            "tracks": [],
         }
         cls._image_sizes[cls.pointcloud_pcd_filename] = image_sizes
         cls.expected_action = {
-            cls.admin: {'name': 'admin', 'code': status.HTTP_200_OK, 'annotation_changed': True},
-            cls.user: {'name': 'user', 'code': status.HTTP_200_OK, 'annotation_changed': True},
-            None: {'name': 'none', 'code': status.HTTP_401_UNAUTHORIZED, 'annotation_changed': False},
+            cls.admin: {"name": "admin", "code": status.HTTP_200_OK, "annotation_changed": True},
+            cls.user: {"name": "user", "code": status.HTTP_200_OK, "annotation_changed": True},
+            None: {
+                "name": "none",
+                "code": status.HTTP_401_UNAUTHORIZED,
+                "annotation_changed": False,
+            },
         }
         cls.expected_dump_upload = {
-            cls.admin: {'name': 'admin', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
-                         'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True, 'annotation_loaded': True},
-            cls.user: {'name': 'user', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
-                        'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True, 'annotation_loaded': True},
-            None: {'name': 'none', 'code': status.HTTP_401_UNAUTHORIZED, 'create code': status.HTTP_401_UNAUTHORIZED,
-                   'accept code': status.HTTP_401_UNAUTHORIZED, 'file_exists': False, 'annotation_loaded': False},
+            cls.admin: {"name": "admin", "file_exists": True, "annotation_loaded": True},
+            cls.user: {"name": "user", "file_exists": True, "annotation_loaded": True},
+            None: {"name": "none", "file_exists": False, "annotation_loaded": False},
         }
 
     def copy_pcd_file_and_get_task_data(self, test_dir):
         tmp_file = osp.join(test_dir, self.pointcloud_pcd_filename)
         copyfile(self.pointcloud_pcd_path, tmp_file)
         task_data = {
-            "client_files[0]": open(tmp_file, 'rb'),
+            "client_files[0]": open(tmp_file, "rb"),
             "image_quality": 100,
         }
         return task_data
@@ -385,7 +382,9 @@ class Task3DTest(_DbTestBase):
             annotation = self._get_tmp_annotation(task, self.cuboid_example)
             for user, edata in list(self.expected_action.items()):
                 with self.subTest(format=edata["name"]):
-                    response = self._patch_api_v2_task_id_annotations(task_id, annotation, CREATE_ACTION, user)
+                    response = self._patch_api_v2_task_id_annotations(
+                        task_id, annotation, CREATE_ACTION, user
+                    )
                     self.assertEqual(response.status_code, edata["code"])
                     if edata["annotation_changed"]:
                         task_ann = TaskAnnotation(task_id)
@@ -408,9 +407,13 @@ class Task3DTest(_DbTestBase):
                 with self.subTest(format=edata["name"]):
                     task_ann_prev = TaskAnnotation(task_id)
                     task_ann_prev.init_from_db()
-                    annotation["shapes"][0]["points"] = [x + 0.1 for x in annotation["shapes"][0]["points"]]
+                    annotation["shapes"][0]["points"] = [
+                        x + 0.1 for x in annotation["shapes"][0]["points"]
+                    ]
                     annotation["shapes"][0]["id"] = task_ann_prev.data["shapes"][0]["id"]
-                    response = self._patch_api_v2_task_id_annotations(task_id, annotation, UPDATE_ACTION, user)
+                    response = self._patch_api_v2_task_id_annotations(
+                        task_id, annotation, UPDATE_ACTION, user
+                    )
                     self.assertEqual(response.status_code, edata["code"], task_id)
 
                     if edata["annotation_changed"]:
@@ -423,17 +426,22 @@ class Task3DTest(_DbTestBase):
             task_data = self.copy_pcd_file_and_get_task_data(test_dir)
             task = self._create_task(self.task, task_data)
             task_id = task["id"]
-            annotation = self._get_tmp_annotation(task, self.cuboid_example)
 
             for user, edata in list(self.expected_action.items()):
                 with self.subTest(format=edata["name"]):
-                    response = self._patch_api_v2_task_id_annotations(task_id, annotation, CREATE_ACTION, self.admin)
+                    annotation = self._get_tmp_annotation(task, self.cuboid_example)
+
+                    response = self._patch_api_v2_task_id_annotations(
+                        task_id, annotation, CREATE_ACTION, self.admin
+                    )
                     self.assertEqual(response.status_code, status.HTTP_200_OK)
                     task_ann_prev = TaskAnnotation(task_id)
                     task_ann_prev.init_from_db()
                     annotation["shapes"][0]["id"] = task_ann_prev.data["shapes"][0]["id"]
 
-                    response = self._patch_api_v2_task_id_annotations(task_id, annotation, DELETE_ACTION, user)
+                    response = self._patch_api_v2_task_id_annotations(
+                        task_id, annotation, DELETE_ACTION, user
+                    )
                     self.assertEqual(response.status_code, edata["code"])
 
                     if edata["annotation_changed"]:
@@ -450,7 +458,9 @@ class Task3DTest(_DbTestBase):
             jobs = self._get_jobs(task_id)
             for user, edata in list(self.expected_action.items()):
                 with self.subTest(format=edata["name"]):
-                    response = self._patch_api_v2_job_id_annotations(jobs[0]["id"], annotation, CREATE_ACTION, user)
+                    response = self._patch_api_v2_job_id_annotations(
+                        jobs[0]["id"], annotation, CREATE_ACTION, user
+                    )
                     self.assertEqual(response.status_code, edata["code"])
 
                     task_ann = TaskAnnotation(task_id)
@@ -477,10 +487,14 @@ class Task3DTest(_DbTestBase):
                     task_ann_prev = TaskAnnotation(task_id)
                     task_ann_prev.init_from_db()
 
-                    annotation["shapes"][0]["points"] = [x + 0.1 for x in annotation["shapes"][0]["points"]]
+                    annotation["shapes"][0]["points"] = [
+                        x + 0.1 for x in annotation["shapes"][0]["points"]
+                    ]
                     annotation["shapes"][0]["id"] = task_ann_prev.data["shapes"][0]["id"]
 
-                    response = self._patch_api_v2_job_id_annotations(jobs[0]["id"], annotation, UPDATE_ACTION, user)
+                    response = self._patch_api_v2_job_id_annotations(
+                        jobs[0]["id"], annotation, UPDATE_ACTION, user
+                    )
                     self.assertEqual(response.status_code, edata["code"])
 
                     if edata["annotation_changed"]:
@@ -494,17 +508,22 @@ class Task3DTest(_DbTestBase):
             task = self._create_task(self.task, task_data)
             task_id = task["id"]
             jobs = self._get_jobs(task_id)
-            annotation = self._get_tmp_annotation(task, self.cuboid_example)
 
             for user, edata in list(self.expected_action.items()):
                 with self.subTest(format=edata["name"]):
-                    response = self._patch_api_v2_job_id_annotations(jobs[0]["id"], annotation, CREATE_ACTION, self.admin)
+                    annotation = self._get_tmp_annotation(task, self.cuboid_example)
+
+                    response = self._patch_api_v2_job_id_annotations(
+                        jobs[0]["id"], annotation, CREATE_ACTION, self.admin
+                    )
                     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
                     task_ann_prev = TaskAnnotation(task_id)
                     task_ann_prev.init_from_db()
                     annotation["shapes"][0]["id"] = task_ann_prev.data["shapes"][0]["id"]
-                    response = self._patch_api_v2_job_id_annotations(jobs[0]["id"], annotation, DELETE_ACTION, user)
+                    response = self._patch_api_v2_job_id_annotations(
+                        jobs[0]["id"], annotation, DELETE_ACTION, user
+                    )
                     self.assertEqual(response.status_code, edata["code"])
 
                     if edata["annotation_changed"]:
@@ -527,45 +546,43 @@ class Task3DTest(_DbTestBase):
 
                 for user, edata in list(self.expected_dump_upload.items()):
                     with self.subTest(format=f"{format_name}_{edata['name']}_dump"):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
-
-                        url = self._generate_url_dump_tasks_annotations(task_id)
+                        self._clear_temp_data()  # clean up from previous tests and iterations
                         file_name = osp.join(test_dir, f"{format_name}_{edata['name']}.zip")
+                        expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
+                        self._export_task_annotations(
+                            user,
+                            task_id,
+                            query_params={"format": format_name},
+                            expected_4xx_status_code=expected_4xx_status_code,
+                            file_path=file_name,
+                        )
 
-                        data = {
-                            "format": format_name,
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['create code'])
-                        data = {
-                            "format": format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['code'])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = io.BytesIO(b"".join(response.streaming_content))
-                            with open(file_name, "wb") as f:
-                                f.write(content.getvalue())
-                            self._check_dump_content(content, task_ann_prev.data, format_name, related_files=False)
-                        self.assertEqual(osp.exists(file_name), edata['file_exists'])
+                        if bool(user):
+                            with open(file_name, "rb") as f:
+                                self._check_dump_content(
+                                    f, task_ann_prev.data, format_name, related_files=False
+                                )
+                        self.assertEqual(osp.exists(file_name), edata["file_exists"])
 
                 self._remove_annotations(task_id)
                 with self.subTest(format=f"{format_name}_upload"):
                     file_name = osp.join(test_dir, f"{format_name}_admin.zip")
-                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
 
-                    with open(file_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                    with open(file_name, "rb") as binary_file:
+                        self._import_task_annotations(
+                            self.admin,
+                            task["id"],
+                            binary_file,
+                            query_params={"format": format_name},
+                        )
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    check_annotation_response(
+                        self, task_ann, task_ann_prev.data, expected_values={"source": "file"}
+                    )
 
     def test_api_v2_rewrite_annotation(self):
         with TestDir() as test_dir:
@@ -579,12 +596,13 @@ class Task3DTest(_DbTestBase):
                     self.assertEqual(response.status_code, status.HTTP_200_OK)
                     task_ann_prev = TaskAnnotation(task_id)
                     task_ann_prev.init_from_db()
-                    url = self._generate_url_dump_tasks_annotations(task_id)
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    data = {
-                        "format": format_name,
-                    }
-                    self._download_file(url, data, self.admin, file_name)
+                    self._export_task_annotations(
+                        self.admin,
+                        task_id,
+                        query_params={"format": format_name},
+                        file_path=file_name,
+                    )
                     self.assertTrue(osp.exists(file_name))
 
                     self._remove_annotations(task_id)
@@ -595,17 +613,21 @@ class Task3DTest(_DbTestBase):
                     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
-
-                    with open(file_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                    with open(file_name, "rb") as binary_file:
+                        self._import_task_annotations(
+                            self.admin,
+                            task["id"],
+                            binary_file,
+                            query_params={"format": format_name},
+                        )
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.assertEqual(len(task_ann_prev.data["shapes"]), len(task_ann.data["shapes"]))
-                    self.assertEqual(task_ann_prev.data["shapes"], task_ann.data["shapes"])
+                    check_annotation_response(
+                        self, task_ann, task_ann_prev.data, expected_values={"source": "file"}
+                    )
 
     def test_api_v2_dump_and_upload_empty_annotation(self):
         with TestDir() as test_dir:
@@ -617,19 +639,21 @@ class Task3DTest(_DbTestBase):
 
             for format_name in self.format_names:
                 with self.subTest(format=f"{format_name}"):
-                    url = self._generate_url_dump_tasks_annotations(task_id)
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    data = {
-                        "format": format_name,
-                    }
-                    self._download_file(url, data, self.admin, file_name)
+                    self._export_task_annotations(
+                        self.admin,
+                        task_id,
+                        query_params={"format": format_name},
+                        file_path=file_name,
+                    )
                     self.assertTrue(osp.exists(file_name))
 
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
 
-                    with open(file_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                    with open(file_name, "rb") as binary_file:
+                        self._import_task_annotations(
+                            self.admin, task_id, binary_file, query_params={"format": format_name}
+                        )
 
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
@@ -657,13 +681,13 @@ class Task3DTest(_DbTestBase):
                         self.assertEqual(response.status_code, status.HTTP_200_OK)
                     task_ann_prev = TaskAnnotation(task_id)
                     task_ann_prev.init_from_db()
-                    url = self._generate_url_dump_tasks_annotations(task_id)
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    data = {
-                        "format": format_name,
-                    }
-                    self._download_file(url, data, self.admin, file_name)
-
+                    self._export_task_annotations(
+                        self.admin,
+                        task_id,
+                        query_params={"format": format_name},
+                        file_path=file_name,
+                    )
                     self._remove_annotations(task_id)
 
     def test_api_v2_upload_annotation_with_attributes(self):
@@ -680,28 +704,33 @@ class Task3DTest(_DbTestBase):
                 task_ann_prev.init_from_db()
 
                 with self.subTest(format=f"{format_name}_dump"):
-                    url = self._generate_url_dump_tasks_annotations(task_id)
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    data = {
-                        "format": format_name,
-                    }
-                    self._download_file(url, data, self.admin, file_name)
+
+                    self._export_task_annotations(
+                        self.admin,
+                        task_id,
+                        query_params={"format": format_name},
+                        file_path=file_name,
+                    )
                     self.assertTrue(osp.exists(file_name))
 
                 self._remove_annotations(task_id)
                 with self.subTest(format=f"{format_name}_upload"):
                     file_name = osp.join(test_dir, f"{format_name}.zip")
-                    url = self._generate_url_upload_tasks_annotations(task_id, format_name)
 
-                    with open(file_name, 'rb') as binary_file:
-                        self._upload_file(url, binary_file, self.admin)
+                    with open(file_name, "rb") as binary_file:
+                        self._import_task_annotations(
+                            self.admin, task_id, binary_file, query_params={"format": format_name}
+                        )
                     task_ann = TaskAnnotation(task_id)
                     task_ann.init_from_db()
 
                     task_ann_prev.data["shapes"][0].pop("id")
                     task_ann.data["shapes"][0].pop("id")
-                    self.assertEqual(task_ann_prev.data["shapes"][0]["attributes"],
-                                     task_ann.data["shapes"][0]["attributes"])
+                    self.assertEqual(
+                        task_ann_prev.data["shapes"][0]["attributes"],
+                        task_ann.data["shapes"][0]["attributes"],
+                    )
 
     def test_api_v2_export_dataset(self):
         with TestDir() as test_dir:
@@ -718,28 +747,21 @@ class Task3DTest(_DbTestBase):
 
                 for user, edata in list(self.expected_dump_upload.items()):
                     with self.subTest(format=f"{format_name}_{edata['name']}_export"):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data()  # clean up from previous tests and iterations
 
-                        url = self._generate_url_dump_dataset(task_id)
                         file_name = osp.join(test_dir, f"{format_name}_{edata['name']}.zip")
+                        expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
+                        self._export_task_dataset(
+                            user,
+                            task_id,
+                            query_params={"format": format_name},
+                            expected_4xx_status_code=expected_4xx_status_code,
+                            file_path=file_name,
+                        )
 
-                        data = {
-                            "format": format_name,
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['accept code'])
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['create code'])
-                        data = {
-                            "format": format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata['code'])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = io.BytesIO(b"".join(response.streaming_content))
-                            with open(file_name, "wb") as f:
-                                f.write(content.getvalue())
-                        self.assertEqual(osp.exists(file_name), edata['file_exists'])
-                        self._check_dump_content(content, task_ann_prev.data, format_name,related_files=False)
-
+                        if bool(user):
+                            with open(file_name, "rb") as f:
+                                self._check_dump_content(
+                                    f, task_ann_prev.data, format_name, related_files=False
+                                )
+                        self.assertEqual(osp.exists(file_name), edata["file_exists"])

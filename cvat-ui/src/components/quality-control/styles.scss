@@ -1,0 +1,184 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-quality-control-inner {
+    @include cvat-management-page-inner;
+}
+
+.cvat-quality-settings-title {
+    margin-bottom: $grid-unit-size * 2;
+    align-items: center;
+}
+
+.cvat-quality-control-settings-tab {
+    @extend .cvat-scrollbar;
+
+    display: block;
+    height: 100%;
+    position: relative;
+
+    .cvat-quality-settings-save-btn {
+        position: sticky;
+        z-index: 1;
+        top: $grid-unit-size;
+        height: 0;
+    }
+
+    .ant-divider-horizontal {
+        margin: $grid-unit-size 0;
+    }
+
+    .cvat-resource-page-filters {
+        position: relative;
+        width: 70%;
+
+        .cvat-switch-filters-constructor-button {
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+
+    .cvat-quality-control-settings-header {
+        display: flex;
+        align-items: center;
+        min-height: $grid-unit-size * 4;
+        margin-bottom: $grid-unit-size * 2;
+
+        button[role='switch'] {
+            margin-right: $grid-unit-size;
+        }
+
+        .ant-alert-warning {
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+        }
+    }
+
+    .cvat-quality-settings-form-disabled {
+        label, span {
+            opacity: 0.5;
+        }
+    }
+
+    .cvat-quality-settings-form {
+        display: block;
+        position: relative;
+        height: calc(100vh - $grid-unit-size * 30);
+    }
+}
+
+
+$excluded-background: #d9d9d973;
+
+.cvat-allocation-frame-row-excluded:not(.ant-table-row-selected) {
+    background-color: $excluded-background;
+
+
+   .ant-table-cell-row-hover {
+        background-color: $excluded-background !important;
+    }
+}
+
+.cvat-allocation-summary {
+    span {
+        font-size: 13px !important;
+    }
+}
+
+.cvat-clamped-text {
+    text-align: left;
+
+    span {
+        display: block;
+        word-wrap: break-word;
+        word-break: break-word;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        direction: rtl;
+    }
+}
+
+.cvat-open-frame-button {
+    @extend .cvat-clamped-text;
+}
+
+.cvat-quality-control-page, .cvat-quality-control-wrapper {
+    height: 100%;
+}
+
+.cvat-quality-control-page {
+    overflow: auto;
+}
+
+.cvat-quality-control-wrapper  {
+    .cvat-quality-control-inner-wrapper {
+        @include cvat-management-page-inner-wrapper;
+    }
+}
+
+.cvat-quality-control-loading, .cvat-quality-control-page-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.cvat-annotations-quality-allocation-table-summary {
+    margin-bottom: $grid-unit-size * 2;
+
+    .ant-statistic {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .ant-card-body {
+        padding: $grid-unit-size * 2 $grid-unit-size * 3;
+    }
+}
+
+.cvat-table-wrapper:has(.cvat-frame-allocation-table) {
+    @include cvat-table-dynamic-size;
+
+    margin-bottom: $grid-unit-size;
+
+    .ant-table-tbody .ant-table-cell {
+        padding: $grid-unit-size * 0.5 $grid-unit-size !important;
+    }
+}
+
+.cvat-quality-control-page-tabs {
+    @include cvat-management-page-tabs;
+}
+
+.cvat-quality-control-management-tab-summary {
+    margin-left: - $grid-unit-size;
+    margin-right: - $grid-unit-size;
+
+    > .ant-col {
+        padding: 0 $grid-unit-size;
+    }
+}
+
+.cvat-quality-control-management-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.cvat-quality-page-header {
+    @include cvat-management-page-header;
+}
+
+.cvat-quality-download-report-button {
+    padding-left: $grid-unit-size * 2;
+    padding-right: 0;
+}

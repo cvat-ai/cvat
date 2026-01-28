@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,11 +18,12 @@ import {
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
-    SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedRequest,
+    SerializedQualityReportData, APIQualityReportsFilter, APIAnalyticsEventsFilter, APIConsensusSettingsFilter,
+    SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
+    SerializedApiToken, APIApiTokensFilter,
 } from './server-response-types';
-import { PaginatedResource } from './core-types';
-import { Request } from './request';
+import { APIApiTokenModifiableFields } from './server-request-types';
+import { PaginatedResource, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
@@ -57,63 +58,45 @@ function configureStorage(storage: Storage, useDefaultLocation = false): Partial
     };
 }
 
-function fetchAll(url, filter = {}): Promise<any> {
+function fetchAll<T extends { id: number | string }>(url, filter = {}): Promise<{ count: number; results: T[] }> {
     const pageSize = 500;
     const result = {
         count: 0,
-        results: [],
+        results: new Map<T['id'], T>(),
     };
-    return new Promise((resolve, reject) => {
-        Axios.get(url, {
-            params: {
-                ...filter,
-                page_size: pageSize,
-                page: 1,
-            },
-        }).then((initialData) => {
-            const { count, results } = initialData.data;
-            result.results = result.results.concat(results);
-            result.count = result.results.length;
 
-            if (count <= pageSize) {
-                resolve(result);
-                return;
+    function appendToResult(data: { count: number; results: T[] }): { hasMore: boolean; } {
+        result.count = data.count;
+        data.results.forEach((obj: T) => {
+            if (!result.results.has(obj.id)) {
+                result.results.set(obj.id, obj);
             }
+        });
+        return { hasMore: result.count > result.results.size };
+    }
 
-            const pages = Math.ceil(count / pageSize);
-            const promises = Array(pages).fill(0).map((_: number, i: number) => {
-                if (i) {
-                    return Axios.get(url, {
-                        params: {
-                            ...filter,
-                            page_size: pageSize,
-                            page: i + 1,
-                        },
+    return new Promise((resolve, reject) => {
+        const fetchPage = (page: number) => {
+            Axios.get(url, {
+                params: {
+                    ...filter,
+                    page_size: pageSize,
+                    page,
+                },
+            }).then((response) => {
+                const { hasMore } = appendToResult(response.data);
+                if (hasMore) {
+                    fetchPage(page + 1);
+                } else {
+                    resolve({
+                        count: result.count,
+                        results: [...result.results.values()],
                     });
                 }
-
-                return Promise.resolve(null);
-            });
-
-            Promise.all(promises).then((responses: AxiosResponse<any, any>[]) => {
-                responses.forEach((resp) => {
-                    if (resp) {
-                        result.results = result.results.concat(resp.data.results);
-                    }
-                });
-
-                // removing possible dublicates
-                const obj = result.results.reduce((acc: Record<string, any>, item: any) => {
-                    acc[item.id] = item;
-                    return acc;
-                }, {});
-
-                result.results = Object.values(obj);
-                result.count = result.results.length;
-
-                resolve(result);
             }).catch((error) => reject(error));
-        }).catch((error) => reject(error));
+        };
+
+        fetchPage(1);
     });
 }
 
@@ -140,8 +123,8 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
 
                     // do not retry if (code >= 400 && code < 500) is default tus behaviour
                     // retry if code === 409 or 423 is default tus behaviour
-                    // additionally handle codes 429 and 0
-                    return !(code >= 400 && code < 500) || [409, 423, 429, 0].includes(code);
+                    // additionally handle code 0
+                    return !(code >= 400 && code < 500) || [409, 423, 0].includes(code);
                 }
 
                 return false;
@@ -204,6 +187,13 @@ function generateError(errorData: AxiosError): ServerError {
             }
 
             if (typeof errorData.response.data === 'object') {
+                if ('rq_id' in errorData.response.data) {
+                    return new ServerError(
+                        `A request with this identifier is already being processed (${errorData.response.data.rq_id})`,
+                        errorData.response.status,
+                    );
+                }
+
                 const generalFields = ['non_field_errors', 'detail', 'message'];
                 const generalFieldsHelpers = {
                     'Invalid token.': 'Not authenticated request, try to login again',
@@ -346,7 +336,7 @@ Axios.interceptors.request.use((reqConfig) => {
 });
 
 Axios.interceptors.response.use((response) => {
-    if (isResourceURL(response.config.url) &&
+    if (isResourceURL(response.config.url) && response.config.method === 'get' &&
         'organization' in (response.data || {})
     ) {
         const newOrgId: number | null = response.data.organization;
@@ -568,6 +558,63 @@ async function authenticated(): Promise<boolean> {
     return true;
 }
 
+async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedRequest>> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.get(`${backendAPI}/auth/access_tokens`, {
+            params: {
+                ...filter,
+            },
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    response.data.results.count = response.data.count;
+    return response.data.results;
+}
+
+async function createApiToken(tokenData: SerializedApiToken): Promise<SerializedApiToken> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.post(`${backendAPI}/auth/access_tokens`, tokenData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
+async function updateApiToken(
+    id: number,
+    tokenData: APIApiTokenModifiableFields,
+): Promise<SerializedApiToken> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.patch(`${backendAPI}/auth/access_tokens/${id}`, tokenData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
+async function revokeApiToken(id: number): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/auth/access_tokens/${id}`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function healthCheck(
     maxRetries: number,
     checkPeriod: number,
@@ -593,7 +640,7 @@ async function healthCheck(
         } catch (error) {
             lastError = error;
             if (attempt < adjustedMaxRetries) {
-                await new Promise((resolve) => setTimeout(resolve, adjustedCheckPeriod));
+                await new Promise((resolve) => { setTimeout(resolve, adjustedCheckPeriod); });
             }
         }
     }
@@ -605,11 +652,61 @@ export interface ServerRequestConfig {
     fetchAll: boolean,
 }
 
-export const sleep = (time: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, time));
+export const sleep = (time: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, time); });
 
 const defaultRequestConfig = {
     fetchAll: false,
 };
+
+async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
+    const { backendAPI } = config;
+    const params = enableOrganization();
+
+    try {
+        const response = await fetchAll<SerializedRequest>(`${backendAPI}/requests`, params);
+        return Object.assign(response.results, { count: response.count });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+// Temporary solution for server availability problems
+const retryTimeouts = [5000, 10000, 15000];
+async function getRequestStatus(rqID: string): Promise<SerializedRequest> {
+    const { backendAPI } = config;
+    let retryCount = 0;
+    let lastError = null;
+
+    while (retryCount < 3) {
+        try {
+            const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
+
+            return response.data;
+        } catch (errorData) {
+            lastError = generateError(errorData);
+            const { response } = errorData;
+            if (response && [502, 503, 504].includes(response.status)) {
+                const timeout = retryTimeouts[retryCount];
+                await new Promise((resolve) => { setTimeout(resolve, timeout); });
+                retryCount++;
+            } else {
+                throw generateError(errorData);
+            }
+        }
+    }
+
+    throw lastError;
+}
+
+async function cancelRequest(requestID): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.post(`${backendAPI}/requests/${requestID}/cancel`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
 
 async function serverRequest(
     url: string, data: object,
@@ -667,7 +764,6 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
         response = await Axios.get(`${backendAPI}/projects`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
     } catch (errorData) {
@@ -712,26 +808,36 @@ async function createProject(projectSpec: SerializedProject): Promise<Serialized
     }
 }
 
-async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { count: number }> {
+async function getTasks(
+    filter: TasksFilter = {},
+    aggregate?: boolean,
+): Promise<PaginatedResource<SerializedTask>> {
     const { backendAPI } = config;
     let response = null;
     try {
-        if ('id' in filter) {
+        if (aggregate) {
+            response = {
+                data: await fetchAll<SerializedTask>(`${backendAPI}/tasks`, {
+                    ...filter,
+                    ...enableOrganization(),
+                }),
+            };
+        } else if ('id' in filter) {
             response = await Axios.get(`${backendAPI}/tasks/${filter.id}`);
             const results = [response.data];
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
 
-            return results as SerializedTask[] & { count: number };
+            return results as PaginatedResource<SerializedTask>;
+        } else {
+            response = await Axios.get(`${backendAPI}/tasks`, {
+                params: {
+                    ...filter,
+                    page_size: filter.page_size ?? 10,
+                },
+            });
         }
-
-        response = await Axios.get(`${backendAPI}/tasks`, {
-            params: {
-                ...filter,
-                page_size: 10,
-            },
-        });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -767,13 +873,37 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
     }
 }
 
+async function mergeConsensusJobs(id: number, instanceType: string): Promise<string> {
+    const { backendAPI } = config;
+    const url = `${backendAPI}/consensus/merges`;
+    const requestBody = (instanceType === 'task') ? { task_id: id } : { job_id: id };
+
+    return new Promise<string>((resolve, reject) => {
+        async function request() {
+            try {
+                const response = await Axios.post(url, requestBody);
+                const rqID = response.data.rq_id;
+                const { status } = response;
+                if (status === 202) {
+                    resolve(rqID);
+                } else {
+                    reject(generateError(response));
+                }
+            } catch (errorData) {
+                reject(generateError(errorData));
+            }
+        }
+        setTimeout(request);
+    });
+}
+
 async function getLabels(filter: {
     job_id?: number,
     task_id?: number,
     project_id?: number,
 }): Promise<{ results: SerializedLabel[] }> {
     const { backendAPI } = config;
-    return fetchAll(`${backendAPI}/labels`, {
+    return fetchAll<SerializedLabel & { id: number }>(`${backendAPI}/labels`, {
         ...filter,
         ...enableOrganization(),
     });
@@ -865,7 +995,8 @@ async function importDataset(
     try {
         if (isCloudStorage) {
             const response = await Axios.post(url,
-                new FormData(), {
+                new FormData(),
+                {
                     params,
                 });
             return response.data.rq_id;
@@ -880,14 +1011,16 @@ async function importDataset(
             },
         };
         await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Start': true },
             });
-        await chunkUpload(file as File, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
-            new FormData(), {
-                params,
+            new FormData(),
+            {
+                params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
         return response.data.rq_id;
@@ -901,12 +1034,14 @@ async function backupTask(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
+    lightweight?: boolean,
 ): Promise<string | void> {
     const { backendAPI } = config;
     const params: Params = {
         ...enableOrganization(),
         ...configureStorage(targetStorage, useDefaultSettings),
         ...(fileName ? { filename: fileName } : {}),
+        ...(typeof lightweight === 'boolean' ? { lightweight } : {}),
     };
     const url = `${backendAPI}/tasks/${id}/backup/export`;
 
@@ -945,7 +1080,8 @@ async function restoreTask(storage: Storage, file: File | string): Promise<strin
         if (isCloudStorage) {
             params.filename = file as string;
             response = await Axios.post(url,
-                new FormData(), {
+                new FormData(),
+                {
                     params,
                 });
             return response.data.rq_id;
@@ -957,13 +1093,15 @@ async function restoreTask(storage: Storage, file: File | string): Promise<strin
             totalSize: (file as File).size,
         };
         await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Start': true },
             });
         const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
@@ -978,6 +1116,7 @@ async function backupProject(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
+    lightweight?: boolean,
 ): Promise<string | void> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
@@ -985,6 +1124,7 @@ async function backupProject(
         ...enableOrganization(),
         ...configureStorage(targetStorage, useDefaultSettings),
         ...(fileName ? { filename: fileName } : {}),
+        ...(typeof lightweight === 'boolean' ? { lightweight } : {}),
     };
 
     const url = `${backendAPI}/projects/${id}/backup/export`;
@@ -1024,7 +1164,8 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
         if (isCloudStorage) {
             params.filename = file;
             response = await Axios.post(url,
-                new FormData(), {
+                new FormData(),
+                {
                     params,
                 });
             return response.data.rq_id;
@@ -1036,13 +1177,15 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
             totalSize: (file as File).size,
         };
         await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Start': true },
             });
         const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
@@ -1052,15 +1195,10 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
     }
 }
 
-type LongProcessListener<R> = Record<number, {
-    promise: Promise<R>;
-    onUpdate: ((state: string, progress: number, message: string) => void)[];
-}>;
-
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
-    onUpdate: (request: Request) => void,
+    onUpdate: (updateData: UpdateStatusData) => void,
 ): Promise<{ taskID: number, rqID: string }> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
@@ -1088,18 +1226,18 @@ async function createTask(
             value.forEach((element, idx) => {
                 taskData.append(`${key}[${idx}]`, element);
             });
-        } else {
+        } else if (typeof value !== 'object') {
             taskData.set(key, value);
         }
     }
 
     let response = null;
 
-    onUpdate(new Request({
+    onUpdate({
         status: RQStatus.UNKNOWN,
         progress: 0,
         message: 'CVAT is creating your task',
-    }));
+    });
 
     try {
         response = await Axios.post(`${backendAPI}/tasks`, taskSpec, {
@@ -1109,11 +1247,11 @@ async function createTask(
         throw generateError(errorData);
     }
 
-    onUpdate(new Request({
+    onUpdate({
         status: RQStatus.UNKNOWN,
         progress: 0,
         message: 'CVAT is uploading task data to the server',
-    }));
+    });
 
     async function bulkUpload(taskId, files) {
         const fileBulks = files.reduce((fileGroups, file) => {
@@ -1133,11 +1271,11 @@ async function createTask(
                 taskData.append(`client_files[${idx}]`, element);
             }
             const percentage = totalSentSize / totalSize;
-            onUpdate(new Request({
+            onUpdate({
                 status: RQStatus.UNKNOWN,
                 progress: percentage,
                 message: 'CVAT is uploading task data to the server',
-            }));
+            });
             await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
                 ...params,
                 headers: { 'Upload-Multiple': true },
@@ -1153,18 +1291,19 @@ async function createTask(
     let rqID = null;
     try {
         await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
-            taskData, {
+            {},
+            {
                 ...params,
                 headers: { 'Upload-Start': true },
             });
         const uploadConfig = {
             endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
             onUpdate: (percentage) => {
-                onUpdate(new Request({
+                onUpdate({
                     status: RQStatus.UNKNOWN,
                     progress: percentage,
                     message: 'CVAT is uploading task data to the server',
-                }));
+                });
             },
             chunkSize,
             totalSize,
@@ -1178,7 +1317,8 @@ async function createTask(
             await bulkUpload(response.data.id, bulkFiles);
         }
         const dataResponse = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
-            taskData, {
+            taskDataSpec,
+            {
                 ...params,
                 headers: { 'Upload-Finish': true },
             });
@@ -1211,7 +1351,7 @@ async function getJobs(
 
         if (aggregate) {
             response = {
-                data: await fetchAll(`${backendAPI}/jobs`, {
+                data: await fetchAll<SerializedJob>(`${backendAPI}/jobs`, {
                     ...filter,
                     ...enableOrganization(),
                 }),
@@ -1220,7 +1360,6 @@ async function getJobs(
             response = await Axios.get(`${backendAPI}/jobs`, {
                 params: {
                     ...filter,
-                    page_size: 12,
                 },
             });
         }
@@ -1371,6 +1510,24 @@ async function deleteJob(jobID: number): Promise<void> {
     }
 }
 
+const validationLayout = (instance: 'tasks' | 'jobs') => async (
+    id: number,
+): Promise<SerializedJobValidationLayout | SerializedTaskValidationLayout> => {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/${instance}/${id}/validation_layout`, {
+            params: {
+                ...enableOrganization(),
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+};
+
 async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
@@ -1386,6 +1543,19 @@ async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]
     }
 
     return response.data.results;
+}
+
+async function updateUser(id: number, userData: Partial<SerializedUser>): Promise<SerializedUser> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.patch(`${backendAPI}/users/${id}`, userData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
 }
 
 function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
@@ -1438,7 +1608,7 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
                 ...enableOrganization(),
                 quality,
                 type: 'chunk',
-                number: chunk,
+                index: chunk,
             },
             responseType: 'arraybuffer',
         });
@@ -1568,7 +1738,8 @@ async function uploadAnnotations(
     try {
         if (isCloudStorage) {
             const response = await Axios.post(url,
-                new FormData(), {
+                new FormData(),
+                {
                     params,
                 });
             return response.data.rq_id;
@@ -1579,14 +1750,16 @@ async function uploadAnnotations(
             endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,
         };
         await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Start': true },
             });
-        await chunkUpload(file as File, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
-            new FormData(), {
-                params,
+            new FormData(),
+            {
+                params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
         return response.data.rq_id;
@@ -1607,6 +1780,53 @@ async function saveEvents(events: {
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+const eventsExportRequests: Record<string, { promise: Promise<string> }> = {};
+function exportEvents(params: APIAnalyticsEventsFilter): Promise<string> {
+    const { backendAPI } = config;
+    const key = JSON.stringify(params, Object.keys(params).sort());
+    const existingRequest = eventsExportRequests[key];
+
+    if (existingRequest) {
+        return existingRequest.promise;
+    }
+
+    const promise = new Promise<string>((resolve, reject) => {
+        Axios.get(`${backendAPI}/events`, { params }).then((response) => {
+            const paramsWithQuery = {
+                ...params,
+                query_id: response.data.query_id,
+            };
+
+            const checkCallback = () => {
+                Axios.get(`${backendAPI}/events`, { params: paramsWithQuery }).then((checkResponse) => {
+                    if (checkResponse.status === 202) {
+                        setTimeout(checkCallback, 10000);
+                    } else if (checkResponse.status === 201) {
+                        const paramsObject = new URLSearchParams(paramsWithQuery as any);
+                        paramsObject.set('action', 'download');
+                        resolve(`${backendAPI}/events?${paramsObject.toString()}`);
+                    } else {
+                        reject(new Error(`Unexpected API code received: ${checkResponse.status}`));
+                    }
+                }).catch((error: unknown) => {
+                    reject(error);
+                });
+            };
+
+            setTimeout(checkCallback, 2000);
+        }).catch((error: unknown) => {
+            reject(error);
+        });
+    });
+
+    eventsExportRequests[key] = { promise };
+    promise.finally(() => {
+        delete eventsExportRequests[key];
+    });
+
+    return promise;
 }
 
 async function getLambdaFunctions() {
@@ -1736,7 +1956,6 @@ async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] &
         response = await Axios.get(`${backendAPI}/cloudstorages`, {
             params: {
                 ...filter,
-                page_size: 12,
             },
         });
         return Object.assign(response.data.results, { count: response.data.count });
@@ -1798,13 +2017,14 @@ async function getOrganizations(filter) {
         response = await Axios.get(`${backendAPI}/organizations`, {
             params: {
                 ...filter,
+                page_size: filter.page_size || 10,
+                sort: filter.sort || 'slug',
             },
         });
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    return response.data.results;
+    return response.data;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
@@ -1847,18 +2067,13 @@ async function deleteOrganization(id: number): Promise<void> {
     }
 }
 
-async function getOrganizationMembers(orgSlug, page, pageSize, filters = {}) {
+async function getOrganizationMembers(params = {}) {
     const { backendAPI } = config;
 
     let response = null;
     try {
         response = await Axios.get(`${backendAPI}/memberships`, {
-            params: {
-                ...filters,
-                org: orgSlug,
-                page,
-                page_size: pageSize,
-            },
+            params,
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -1914,7 +2129,7 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
 }
 
 async function getMembershipInvitations(
-    filter: { page?: number, filter?: string, key?: string },
+    filter: { page?: number, page_size?: number, filter?: string, key?: string },
 ): Promise<{ results: SerializedInvitationData[], count: number }> {
     const { backendAPI } = config;
 
@@ -1933,7 +2148,6 @@ async function getMembershipInvitations(
         response = await Axios.get(`${backendAPI}/invitations`, {
             params: {
                 ...filter,
-                page_size: 11,
             },
         });
         return response.data;
@@ -1956,7 +2170,7 @@ async function getWebhookDelivery(webhookID: number, deliveryID: number): Promis
     }
 }
 
-async function getWebhooks(filter, pageSize = 10): Promise<any> {
+async function getWebhooks(filter): Promise<any> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -1965,7 +2179,6 @@ async function getWebhooks(filter, pageSize = 10): Promise<any> {
             params: {
                 ...params,
                 ...filter,
-                page_size: pageSize,
             },
         });
 
@@ -2116,20 +2329,34 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
 
 async function getQualitySettings(
     filter: APIQualitySettingsFilter,
-): Promise<SerializedQualitySettingsData> {
+    aggregate?: boolean,
+): Promise<PaginatedResource<SerializedQualitySettingsData>> {
     const { backendAPI } = config;
 
+    let response = null;
     try {
-        const response = await Axios.get(`${backendAPI}/quality/settings`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        return response.data.results[0];
+        if (aggregate) {
+            response = {
+                data: await fetchAll<SerializedQualitySettingsData & { id: number }>(
+                    `${backendAPI}/quality/settings`, {
+                        ...filter,
+                        ...enableOrganization(),
+                    },
+                ),
+            };
+        } else {
+            response = await Axios.get(`${backendAPI}/quality/settings`, {
+                params: {
+                    ...filter,
+                },
+            });
+        }
     } catch (errorData) {
         throw generateError(errorData);
     }
+
+    response.data.results.count = response.data.count;
+    return response.data.results;
 }
 
 async function updateQualitySettings(
@@ -2150,6 +2377,42 @@ async function updateQualitySettings(
     }
 }
 
+async function getConsensusSettings(
+    filter: APIConsensusSettingsFilter,
+): Promise<SerializedConsensusSettingsData> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/consensus/settings`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data.results[0];
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateConsensusSettings(
+    settingsID: number,
+    settingsData: SerializedConsensusSettingsData,
+): Promise<SerializedConsensusSettingsData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/consensus/settings/${settingsID}`, settingsData, {
+            params,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function getQualityConflicts(
     filter: APIQualityConflictsFilter,
 ): Promise<SerializedQualityConflictData[]> {
@@ -2157,10 +2420,12 @@ async function getQualityConflicts(
     const { backendAPI } = config;
 
     try {
-        const response = await fetchAll(`${backendAPI}/quality/conflicts`, {
-            ...params,
-            ...filter,
-        });
+        const response = await fetchAll<SerializedQualityConflictData & { id: number }>(
+            `${backendAPI}/quality/conflicts`, {
+                ...params,
+                ...filter,
+            },
+        );
 
         return response.results;
     } catch (errorData) {
@@ -2170,154 +2435,34 @@ async function getQualityConflicts(
 
 async function getQualityReports(
     filter: APIQualityReportsFilter,
+    aggregate?: boolean,
 ): Promise<PaginatedResource<SerializedQualityReportData>> {
     const { backendAPI } = config;
 
+    let response = null;
     try {
-        const response = await Axios.get(`${backendAPI}/quality/reports`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        response.data.results.count = response.data.count;
-        return response.data.results;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getAnalyticsReports(
-    filter: APIAnalyticsReportFilter,
-): Promise<SerializedAnalyticsReport> {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/analytics/reports`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
-    const { backendAPI } = config;
-    const params = enableOrganization();
-
-    try {
-        const response = await fetchAll(`${backendAPI}/requests`, params);
-
-        return response.results;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getRequestStatus(rqID: string): Promise<SerializedRequest> {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
-
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function cancelRequest(requestID): Promise<void> {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.post(`${backendAPI}/requests/${requestID}/cancel`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-const listenToCreateAnalyticsReportCallbacks: {
-    job: LongProcessListener<void>;
-    task: LongProcessListener<void>;
-    project: LongProcessListener<void>;
-} = {
-    job: {},
-    task: {},
-    project: {},
-};
-
-async function calculateAnalyticsReport(
-    body: {
-        job_id?: number;
-        task_id?: number;
-        project_id?: number;
-    },
-    onUpdate: (state: string, progress: number, message: string) => void,
-): Promise<void> {
-    const id = body.job_id || body.task_id || body.project_id;
-    const { backendAPI } = config;
-    const params = enableOrganization();
-    let listenerStorage: LongProcessListener<void> = null;
-
-    if (Number.isInteger(body.job_id)) {
-        listenerStorage = listenToCreateAnalyticsReportCallbacks.job;
-    } else if (Number.isInteger(body.task_id)) {
-        listenerStorage = listenToCreateAnalyticsReportCallbacks.task;
-    } else if (Number.isInteger(body.project_id)) {
-        listenerStorage = listenToCreateAnalyticsReportCallbacks.project;
-    }
-
-    if (listenerStorage[id]) {
-        listenerStorage[id].onUpdate.push(onUpdate);
-        return listenerStorage[id].promise;
-    }
-
-    const promise = new Promise<void>((resolve, reject) => {
-        Axios.post(`${backendAPI}/analytics/reports`, {
-            ...body,
-            ...params,
-        }).then(({ data: { rq_id: rqID } }) => {
-            listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report request sent'));
-            const checkStatus = (): void => {
-                Axios.post(`${backendAPI}/analytics/reports`, {
-                    ...body,
-                    ...params,
-                }, { params: { rq_id: rqID } }).then((response) => {
-                    // TODO: rewrite server logic, now it returns 202, 201 codes, but we need RQ statuses and details
-                    // after this patch is merged https://github.com/cvat-ai/cvat/pull/7537
-                    if (response.status === 201) {
-                        listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.FINISHED, 0, 'Done'));
-                        resolve();
-                        return;
-                    }
-
-                    listenerStorage[id].onUpdate.forEach((_onUpdate) => _onUpdate(RQStatus.QUEUED, 0, 'Analytics report calculation is in progress'));
-                    setTimeout(checkStatus, 10000);
-                }).catch((errorData) => {
-                    reject(generateError(errorData));
-                });
+        if (aggregate) {
+            response = {
+                data: await fetchAll<SerializedQualityReportData & { id: number }>(
+                    `${backendAPI}/quality/reports`, {
+                        ...filter,
+                        ...enableOrganization(),
+                    },
+                ),
             };
+        } else {
+            response = await Axios.get(`${backendAPI}/quality/reports`, {
+                params: {
+                    ...filter,
+                },
+            });
+        }
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 
-            setTimeout(checkStatus, 2500);
-        }).catch((errorData) => {
-            reject(generateError(errorData));
-        });
-    });
-
-    listenerStorage[id] = {
-        promise,
-        onUpdate: [onUpdate],
-    };
-
-    promise.finally(() => {
-        delete listenerStorage[id];
-    });
-
-    return promise;
+    response.data.results.count = response.data.count;
+    return response.data.results;
 }
 
 export default Object.freeze({
@@ -2362,6 +2507,8 @@ export default Object.freeze({
         getPreview: getPreview('tasks'),
         backup: backupTask,
         restore: restoreTask,
+        validationLayout: validationLayout('tasks'),
+        mergeConsensusJobs,
     }),
 
     labels: Object.freeze({
@@ -2377,11 +2524,21 @@ export default Object.freeze({
         create: createJob,
         delete: deleteJob,
         exportDataset: exportDataset('jobs'),
+        validationLayout: validationLayout('jobs'),
+        mergeConsensusJobs,
     }),
 
     users: Object.freeze({
         get: getUsers,
         self: getSelf,
+        update: updateUser,
+    }),
+
+    apiTokens: Object.freeze({
+        get: getApiTokens,
+        create: createApiToken,
+        update: updateApiToken,
+        revoke: revokeApiToken,
     }),
 
     frames: Object.freeze({
@@ -2400,6 +2557,7 @@ export default Object.freeze({
 
     events: Object.freeze({
         save: saveEvents,
+        export: exportEvents,
     }),
 
     lambda: Object.freeze({
@@ -2467,10 +2625,6 @@ export default Object.freeze({
     }),
 
     analytics: Object.freeze({
-        performance: Object.freeze({
-            reports: getAnalyticsReports,
-            calculate: calculateAnalyticsReport,
-        }),
         quality: Object.freeze({
             reports: getQualityReports,
             conflicts: getQualityConflicts,
@@ -2478,6 +2632,13 @@ export default Object.freeze({
                 get: getQualitySettings,
                 update: updateQualitySettings,
             }),
+        }),
+    }),
+
+    consensus: Object.freeze({
+        settings: Object.freeze({
+            get: getConsensusSettings,
+            update: updateConsensusSettings,
         }),
     }),
 

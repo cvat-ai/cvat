@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,20 +7,26 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from abc import ABCMeta
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
+from typing import Any, TypeVar
+from urllib.parse import urlsplit
 
 import attrs
 import packaging.specifiers as specifiers
 import packaging.version as pv
 import platformdirs
 import urllib3
-import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
-from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
+from cvat_sdk.core.exceptions import (
+    BackgroundRequestException,
+    IncompatibleVersionException,
+    InvalidHostException,
+)
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
 from cvat_sdk.core.proxies.model_proxy import Repo
@@ -47,11 +53,38 @@ class Config:
     allow_unsupported_server: bool = True
     """Allow to use SDK with an unsupported server version. If disabled, raise an exception"""
 
-    verify_ssl: Optional[bool] = None
+    verify_ssl: bool | None = None
     """Whether to verify host SSL certificate or not"""
 
     cache_dir: Path = attrs.field(converter=Path, default=_DEFAULT_CACHE_DIR)
     """Directory in which to store cached server data"""
+
+
+class Credentials(metaclass=ABCMeta):
+    pass
+
+
+@attrs.define
+class PasswordCredentials(Credentials):
+    """
+    Represents password authentication credentials.
+    """
+
+    user: str
+    """Username for authentication"""
+
+    password: str
+    """Password for authentication"""
+
+
+@attrs.define
+class AccessTokenCredentials(Credentials):
+    """
+    Represents API access token authentication credentials.
+    """
+
+    token: str
+    """API access token for authentication"""
 
 
 _VERSION_OBJ = pv.Version(VERSION)
@@ -72,14 +105,14 @@ class Client:
         self,
         url: str,
         *,
-        logger: Optional[logging.Logger] = None,
-        config: Optional[Config] = None,
+        logger: logging.Logger | None = None,
+        config: Config | None = None,
         check_server_version: bool = True,
     ) -> None:
-        url = self._validate_and_prepare_url(url)
-
         self.logger = logger or logging.getLogger(__name__)
         """The root logger"""
+
+        url = self._validate_and_prepare_url(url)
 
         self.config = config or Config()
         """Configuration for this object"""
@@ -95,13 +128,13 @@ class Client:
         if check_server_version:
             self.check_server_version()
 
-        self._repos: Dict[str, Repo] = {}
+        self._repos: dict[str, Repo] = {}
         """A cache for created Repository instances"""
 
     _ORG_SLUG_HEADER = "X-Organization"
 
     @property
-    def organization_slug(self) -> Optional[str]:
+    def organization_slug(self) -> str | None:
         """
         If this is set to a slug for an organization,
         all requests will be made in the context of that organization.
@@ -114,14 +147,14 @@ class Client:
         return self.api_client.default_headers.get(self._ORG_SLUG_HEADER)
 
     @organization_slug.setter
-    def organization_slug(self, org_slug: Optional[str]):
+    def organization_slug(self, org_slug: str | None):
         if org_slug is None:
             self.api_client.default_headers.pop(self._ORG_SLUG_HEADER, None)
         else:
             self.api_client.default_headers[self._ORG_SLUG_HEADER] = org_slug
 
     @contextmanager
-    def organization_context(self, slug: str) -> Iterator[None]:
+    def organization_context(self, slug: str) -> Generator[None, None, None]:
         prev_slug = self.organization_slug
         self.organization_slug = slug
         try:
@@ -131,8 +164,7 @@ class Client:
 
     ALLOWED_SCHEMAS = ("https", "http")
 
-    @classmethod
-    def _validate_and_prepare_url(cls, url: str) -> str:
+    def _validate_and_prepare_url(self, url: str) -> str:
         url_parts = url.split("://", maxsplit=1)
         if len(url_parts) == 2:
             schema, base_url = url_parts
@@ -142,21 +174,20 @@ class Client:
 
         base_url = base_url.rstrip("/")
 
-        if schema and schema not in cls.ALLOWED_SCHEMAS:
+        if schema and schema not in self.ALLOWED_SCHEMAS:
             raise InvalidHostException(
                 f"Invalid url schema '{schema}', expected "
-                f"one of <none>, {', '.join(cls.ALLOWED_SCHEMAS)}"
+                f"one of <none>, {', '.join(self.ALLOWED_SCHEMAS)}"
             )
 
         if not schema:
-            schema = cls._detect_schema(base_url)
+            schema = self._detect_schema(base_url)
             url = f"{schema}://{base_url}"
 
         return url
 
-    @classmethod
-    def _detect_schema(cls, base_url: str) -> str:
-        for schema in cls.ALLOWED_SCHEMAS:
+    def _detect_schema(self, base_url: str) -> str:
+        def attempt(schema: str) -> bool:
             with ApiClient(Configuration(host=f"{schema}://{base_url}")) as api_client:
                 with suppress(urllib3.exceptions.RequestError):
                     (_, response) = api_client.server_api.retrieve_about(
@@ -166,7 +197,22 @@ class Client:
                     if response.status in [200, 401]:
                         # Server versions prior to 2.3.0 respond with unauthorized
                         # 2.3.0 allows unauthorized access
-                        return schema
+                        return True
+            return False
+
+        if attempt("https"):
+            return "https"
+
+        self.logger.warning(
+            "Failed to connect to the server using HTTPS; will attempt HTTP instead"
+        )
+        self.logger.warning(
+            "This fallback will be removed in a future version of the SDK;"
+            " to avoid breakage, explicitly add 'https://' or 'http://' to the URL"
+        )
+
+        if attempt("http"):
+            return "http"
 
         raise InvalidHostException(
             "Failed to detect host schema automatically, please check "
@@ -183,53 +229,80 @@ class Client:
     def close(self) -> None:
         return self.__exit__(None, None, None)
 
-    def login(self, credentials: Tuple[str, str]) -> None:
-        (auth, _) = self.api_client.auth_api.create_login(
+    def login(self, credentials: Credentials | tuple[str, str]) -> None:
+        if self.has_credentials():
+            self.logout()
+
+        if isinstance(credentials, PasswordCredentials):
+            credentials = (credentials.user, credentials.password)
+        elif isinstance(credentials, AccessTokenCredentials):
+            self.api_client.configuration.access_token = credentials.token
+            return
+        elif not isinstance(credentials, tuple) or len(credentials) != 2:
+            raise TypeError(f"Invalid credentials format")
+
+        self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
-
         assert "sessionid" in self.api_client.cookies
         assert "csrftoken" in self.api_client.cookies
-        self.api_client.set_default_header("Authorization", "Token " + auth.key)
+        self.api_client.configuration.api_key["csrfHeaderAuth"] = self.api_client.cookies[
+            "csrftoken"
+        ].value
 
     def has_credentials(self) -> bool:
         return (
             ("sessionid" in self.api_client.cookies)
             or ("csrftoken" in self.api_client.cookies)
-            or bool(self.api_client.get_common_headers().get("Authorization", ""))
+            or self.api_client.configuration.access_token
         )
 
+    def _clear_credentials(self):
+        self.api_client.cookies.pop("sessionid", None)
+        self.api_client.cookies.pop("csrftoken", None)
+        self.api_client.configuration.api_key.pop("csrfHeaderAuth", None)
+        self.api_client.configuration.access_token = None
+
     def logout(self) -> None:
-        if self.has_credentials():
+        if not self.has_credentials():
+            return
+
+        if "sessionid" in self.api_client.cookies or "csrftoken" in self.api_client.cookies:
             self.api_client.auth_api.create_logout()
-            self.api_client.cookies.pop("sessionid", None)
-            self.api_client.cookies.pop("csrftoken", None)
-            self.api_client.default_headers.pop("Authorization", None)
+
+        self._clear_credentials()
 
     def wait_for_completion(
         self: Client,
         rq_id: str,
         *,
-        status_check_period: Optional[int] = None,
-    ) -> Tuple[models.Request, urllib3.HTTPResponse]:
+        status_check_period: int | None = None,
+        log_prefix: str | None = None,
+    ) -> tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
 
         while True:
-            sleep(status_check_period)
-
             request, response = self.api_client.requests_api.retrieve(rq_id)
+            status, message = request.status, request.message
 
-            if request.status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
+            log_prefix = log_prefix or f"{request.operation.type} operation"
+            self.logger.info(
+                "%s status: %s (message=%s)",
+                log_prefix,
+                status,
+                message,
+            )
+            if status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
                 break
-            elif request.status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
-                raise exceptions.ApiException(
-                    status=request.status, reason=request.message, http_resp=response
-                )
+            elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
+                raise BackgroundRequestException(message)
+
+            sleep(status_check_period)
 
         return request, response
 
-    def check_server_version(self, fail_if_unsupported: Optional[bool] = None) -> None:
+    def check_server_version(self, fail_if_unsupported: bool | None = None) -> None:
         if fail_if_unsupported is None:
             fail_if_unsupported = not self.config.allow_unsupported_server
 
@@ -318,9 +391,9 @@ class CVAT_API_V2:
         self,
         path: str,
         *,
-        psub: Optional[Sequence[Any]] = None,
-        kwsub: Optional[Dict[str, Any]] = None,
-        query_params: Optional[Dict[str, Any]] = None,
+        psub: Sequence[Any] | None = None,
+        kwsub: dict[str, Any] | None = None,
+        query_params: dict[str, Any] | None = None,
     ) -> str:
         url = self.host + path
         if psub or kwsub:
@@ -331,13 +404,51 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[str, str]] = None
+    host: str,
+    *,
+    port: int | None = None,
+    credentials: Credentials | tuple[str, str] | None = None,
+    access_token: str | None = None,
 ) -> Client:
+    """
+    Create a Client object with the specified parameters.
+
+    Passing 'credentials' or 'access_token' allows to authenticate the client immediately.
+    These parameters cannot be used together.
+
+    Parameters:
+    :param host: allows to specify the server url. Can include scheme and port.
+    :param port: allows to specify the server port. Cannot be used together with a host
+      that contains a port component (e.g. localhost:80).
+    :param credentials: will automatically log in the client with the specified credentials.
+    :param access_token: a Personal Access Token (PAT) to be used for authentication.
+
+    Returns: a new Client object
+    """
+
+    if credentials is not None and access_token is not None:
+        raise ValueError(
+            "'credentials' and 'access_token' cannot be used together. Please use only one."
+        )
+
     url = host.rstrip("/")
+
     if port:
+        parsed_url = urlsplit(("https://" if "://" not in url else "") + host)
+        if parsed_url.port:
+            raise ValueError(
+                "The 'host' with a port and the 'port' argument cannot be used together. "
+                "Please specify only one port."
+            )
+
         url = f"{url}:{port}"
 
     client = Client(url=url)
+
+    if access_token is not None:
+        credentials = AccessTokenCredentials(access_token)
+
     if credentials is not None:
         client.login(credentials)
+
     return client

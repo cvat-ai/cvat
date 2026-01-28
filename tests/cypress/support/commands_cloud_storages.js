@@ -1,5 +1,5 @@
-// Copyright (C) 2022 CVAT.ai Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ Cypress.Commands.add('attachS3Bucket', (data) => {
     cy.get('#display_name').type(data.displayName);
     cy.get('#display_name').should('have.attr', 'value', data.displayName);
     cy.get('#provider_type').click();
-    cy.contains('.cvat-cloud-storage-select-provider', 'AWS').click();
+    cy.contains('.cvat-cloud-storage-select-provider', 'Amazon').click();
     cy.get('#resource').should('exist').type(data.resource);
     cy.get('#resource').should('have.attr', 'value', data.resource);
     cy.get('#credentials_type').should('exist').click();
@@ -34,10 +34,17 @@ Cypress.Commands.add('attachS3Bucket', (data) => {
     cy.get('.cvat-cloud-storage-form').within(() => {
         cy.contains('button', 'Submit').click();
     });
-    cy.wait('@createCloudStorage').then((interseption) => {
-        expect(interseption.response.statusCode).to.be.equal(201);
-        createdCloudStorageId = interseption.response.body.id;
+    cy.wait('@createCloudStorage').then((interception) => {
+        expect(interception.response.statusCode).to.be.equal(201);
+        createdCloudStorageId = interception.response.body.id;
     });
     cy.verifyNotification();
     return createdCloudStorageId;
+});
+
+Cypress.Commands.add('headlessAttachCloudStorage', (spec) => {
+    cy.window().its('cvat').should('not.be.undefined').then(async (cvat) => {
+        const res = await cvat.server.request('/api/cloudstorages', { method: 'POST', data: spec });
+        return cy.wrap(res);
+    });
 });

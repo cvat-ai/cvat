@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,9 +9,10 @@ import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 
-import { ObjectType, ShapeType, ColorBy } from 'reducers';
+import { ColorBy } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import LabelSelector from 'components/label-selector/label-selector';
+import { ObjectType, ShapeType } from 'cvat-core-wrapper';
 import ItemMenu from './object-item-menu';
 import ColorPicker from './color-picker';
 
@@ -37,6 +38,7 @@ interface Props {
     toForegroundShortcut: string;
     removeShortcut: string;
     sliceShortcut: string;
+    runAnnotationsActionShortcut: string;
     changeColor(color: string): void;
     changeLabel(label: any): void;
     copy(): void;
@@ -47,6 +49,7 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     resetCuboidPerspective(): void;
+    runAnnotationAction(): void;
     edit(): void;
     slice(): void;
 }
@@ -72,6 +75,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toForegroundShortcut,
         removeShortcut,
         sliceShortcut,
+        runAnnotationsActionShortcut,
         isGroundTruth,
         changeColor,
         changeLabel,
@@ -83,6 +87,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
+        runAnnotationAction,
         edit,
         slice,
         jobInstance,
@@ -107,7 +112,7 @@ function ItemTopComponent(props: Props): JSX.Element {
             <Col span={12}>
                 <CVATTooltip title='Change current label'>
                     <LabelSelector
-                        disabled={readonly || shapeType === ShapeType.SKELETON}
+                        disabled={locked || readonly || shapeType === ShapeType.SKELETON}
                         size='small'
                         labels={labels}
                         value={labelID}
@@ -139,8 +144,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                         menu={ItemMenu({
                             jobInstance,
                             readonly,
-                            serverID,
                             locked,
+                            serverID,
                             shapeType,
                             objectType,
                             color,
@@ -154,6 +159,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             toForegroundShortcut,
                             removeShortcut,
                             sliceShortcut,
+                            runAnnotationsActionShortcut,
                             changeColor,
                             copy,
                             remove,
@@ -166,6 +172,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             setColorPickerVisible,
                             edit,
                             slice,
+                            runAnnotationAction,
                         })}
                     >
                         <Col span={2}>

@@ -2,201 +2,369 @@
 #
 # SPDX-License-Identifier: MIT
 
+import hashlib
+import io
+import mimetypes
 import os
 import re
-import hashlib
-import mimetypes
-import cv2 as cv
-from av import VideoFrame
+import struct
+from collections.abc import Callable, Collection, Iterable, Sequence
 from enum import Enum
-from natsort import os_sorted
+from pathlib import Path
 from random import shuffle
+from typing import IO, Literal, Protocol
+
+import cv2 as cv
+import numpy as np
+from av import VideoFrame
+from natsort import os_sorted
+from PIL import Image
+
+from .errors import InvalidPcdError
+
+
+class Openable(Protocol):
+    # The mode is required so that Path can be used as an Openable.
+    def open(self, mode: Literal["rb"]) -> IO[bytes]: ...
+
+
+class NamedOpenable(Openable, Protocol):
+    def __fspath__(self) -> str: ...  # Must return the path that should be used for sorting.
+
+
+class MemOpenable:
+    def __init__(self, contents: bytes) -> None:
+        self._contents = contents
+
+    def open(self, mode: str) -> IO[bytes]:
+        assert mode == "rb"
+        return io.BytesIO(self._contents)
+
+
+class MemNamedOpenable(MemOpenable):
+    def __init__(self, contents: bytes, path: str) -> None:
+        super().__init__(contents)
+        self._path = path
+
+    def __fspath__(self) -> str:
+        return self._path
+
 
 def rotate_image(image, angle):
     height, width = image.shape[:2]
-    image_center = (width/2, height/2)
-    matrix = cv.getRotationMatrix2D(image_center, angle, 1.)
-    abs_cos = abs(matrix[0,0])
-    abs_sin = abs(matrix[0,1])
+    image_center = (width / 2, height / 2)
+    matrix = cv.getRotationMatrix2D(image_center, angle, 1.0)
+    abs_cos = abs(matrix[0, 0])
+    abs_sin = abs(matrix[0, 1])
     bound_w = int(height * abs_sin + width * abs_cos)
     bound_h = int(height * abs_cos + width * abs_sin)
-    matrix[0, 2] += bound_w/2 - image_center[0]
-    matrix[1, 2] += bound_h/2 - image_center[1]
+    matrix[0, 2] += bound_w / 2 - image_center[0]
+    matrix[1, 2] += bound_h / 2 - image_center[1]
     matrix = cv.warpAffine(image, matrix, (bound_w, bound_h))
     return matrix
 
-def md5_hash(frame):
-    if isinstance(frame, VideoFrame):
-        frame = frame.to_image()
-    return hashlib.md5(frame.tobytes()).hexdigest() # nosec
 
-def _define_data_type(media):
-    return mimetypes.guess_type(media)[0]
+def md5_hash(frame: str | Image.Image | VideoFrame | IO[bytes]) -> str:
+    buffer = frame
 
-def is_video(media_file):
+    if isinstance(buffer, str):
+        buffer = Path(buffer).read_bytes()
+
+    if hasattr(buffer, "read"):
+        buffer = buffer.read()
+
+    if isinstance(buffer, VideoFrame):
+        buffer = buffer.to_image()
+
+    if isinstance(buffer, Image.Image):
+        buffer = buffer.tobytes()
+
+    return hashlib.md5(buffer).hexdigest()  # nosec
+
+
+def _define_data_type(path: str) -> str:
+    return mimetypes.guess_type(path)[0]
+
+
+def is_video(media_file: str) -> bool:
     data_type = _define_data_type(media_file)
-    return data_type is not None and data_type.startswith('video')
+    return data_type is not None and data_type.startswith("video")
 
-def is_image(media_file):
+
+def is_image(media_file: str) -> bool:
     data_type = _define_data_type(media_file)
-    return data_type is not None and data_type.startswith('image') and \
-        not data_type.startswith('image/svg')
+    return (
+        data_type is not None
+        and data_type.startswith("image")
+        and not data_type.startswith(
+            ("image/svg", "image/x.point-cloud-data", "image/x.kitti-velodyne")
+        )
+    )
 
 
-def _list_and_join(root):
-    files = os.listdir(root)
-    for f in files:
-        yield os.path.join(root, f)
+def is_point_cloud(media_file: str) -> bool:
+    return os.path.splitext(media_file)[1].lower() in (".pcd", ".bin")
 
-def _prepare_context_list(files, base_dir):
-    return sorted(map(lambda x: os.path.relpath(x, base_dir), filter(is_image, files)))
 
-# Expected 2D format is:
-# data/
-#   00001.png
-#   related_images/
-#     00001_png/
-#       context_image_1.jpeg
-#       context_image_2.png
-def _detect_related_images_2D(image_paths, root_path):
+def _prepare_context_list(files: Iterable[str], base_dir: str | None = None):
+    return sorted(
+        os.path.relpath(x, base_dir) if base_dir is not None else x for x in filter(is_image, files)
+    )
+
+
+def _find_related_images_2D(
+    dataset_paths: Sequence[str],
+    *,
+    is_scene_path: Callable[[str], bool] | None = None,
+) -> tuple[set[str], dict[str, list[str]]]:
+    """
+    Expected 2D format is:
+
+    data/
+      00001.png
+      related_images/
+        00001_png/
+          context_image_1.jpeg
+          context_image_2.png
+    """
+
+    regular_images = set()
     related_images = {}
-    latest_dirname = ''
-    related_images_exist = False
+    for image_path in dataset_paths:
+        parents = Path(image_path).parents
+        if len(parents) >= 3 and parents[1].name == "related_images":
+            regular_image_path = parents[2] / ".".join(parents[0].name.rsplit("_", maxsplit=1))
+            related_images.setdefault(str(regular_image_path), []).append(image_path)
+        elif is_scene_path is None or is_scene_path(image_path):
+            regular_images.add(image_path)
 
-    for image_path in sorted(image_paths):
-        rel_image_path = os.path.relpath(image_path, root_path)
-        dirname = os.path.dirname(image_path)
-        related_images_dirname = os.path.join(dirname, 'related_images')
-        related_images[rel_image_path] = []
+    related_images = {
+        image_path: _prepare_context_list(image_related)
+        for image_path, image_related in related_images.items()
+        if image_related
+        if image_path in regular_images
+    }
 
-        if latest_dirname == dirname and not related_images_exist:
+    # TODO: maybe add logging for unmatched related images
+
+    return regular_images, related_images
+
+
+def _find_related_images_3D(
+    dataset_paths: Sequence[str],
+) -> tuple[set[str], dict[str, list[str]]]:
+    """
+    Supported 3D formats:
+
+    1. KITTI RAW
+    Homepage: https://www.cvlibs.net/datasets/kitti/raw_data.php
+    Example: https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/kitti_dataset/kitti_raw
+
+    Layout:
+    dataset/
+        velodyne_points/
+            data/
+                <scene name>.bin
+        IMAGE_00/ # any number (00 - 03 originally)
+            data/
+                <scene name>.<image ext>
+
+    2. Supervisely Point Cloud
+    Homepage: https://docs.supervisely.com/customization-and-integration/00_ann_format_navi
+    Example: https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/sly_pointcloud_dataset/ds0
+
+    Layout:
+    dataset/
+        pointcloud/
+            <pcd name>.pcd
+        related_images/
+            <pcd name>_pcd/
+                <any image name>.<image ext>
+
+    3. Custom 1
+    Layout:
+    dataset/
+        <scene name>.pcd
+        <scene name>.<image ext>
+
+    4. Custom 2
+    Layout:
+    dataset/
+       <pcd name>/
+           <pcd name>.pcd
+           <any image name>.<image ext>
+    """
+    # There's no point in disallowing multiple layouts simultaneously, but mixing is
+    # unlikely to be encountered
+
+    scenes: dict[str, str] = {
+        os.path.splitext(p)[0]: p for p in dataset_paths if p.lower().endswith((".pcd", ".bin"))
+    }  # { scene name -> scene path }
+
+    related_images: dict[str, list[str]] = {}  # { scene_name -> [related images] }
+    for image_path in dataset_paths:
+        image_name, image_ext = os.path.splitext(image_path)
+        if image_ext.lower() in (".pcd", ".bin"):
             continue
-        elif latest_dirname != dirname:
-            # Update some data applicable for a subset of paths (within the current dirname)
-            latest_dirname = dirname
-            related_images_exist = os.path.isdir(related_images_dirname)
 
-        if related_images_exist:
-            related_images_dirname = os.path.join(
-                related_images_dirname, '_'.join(os.path.basename(image_path).rsplit('.', 1))
+        if image_name in scenes:
+            # Custom 1
+            related_images.setdefault(scenes[image_name], []).append(image_path)
+            continue
+
+        parsed_path = Path(image_path)
+        parents = parsed_path.parents
+        if not parents:
+            # TODO: maybe add logging
+            continue
+
+        scene_name = str(parents[0] / parents[0].name)
+        if parents and scene_name in scenes:
+            # Custom 2
+            related_images.setdefault(scenes[scene_name], []).append(image_path)
+            continue
+
+        scene_stem = parents[0].name.rsplit("_", maxsplit=1)[0]
+        if (
+            len(parents) >= 2
+            and parents[1].name == "related_images"
+            and (scene_name := str(parents[1].parent / "pointcloud" / scene_stem))
+            and scene_name in scenes
+        ):
+            # Supervisely Point Cloud
+            related_images.setdefault(scenes[scene_name], []).append(image_path)
+            continue
+
+        if (
+            len(parents) >= 2
+            and parents[0].name == "data"
+            and (re.match(r"image_\d+", parents[1].name, re.IGNORECASE))
+            and (
+                scene_name := str(parents[1].parent / "velodyne_points" / "data" / parsed_path.stem)
+            )
+            and scene_name in scenes
+        ):
+            # KITTI RAW
+            related_images.setdefault(scenes[scene_name], []).append(image_path)
+            continue
+
+        # TODO: maybe add logging for unmatched related images
+
+    related_images = {
+        scene_path: _prepare_context_list(scene_related)
+        for scene_path, scene_related in related_images.items()
+        if scene_related
+    }
+
+    return set(scenes.values()), related_images
+
+
+def find_related_images(
+    dataset_paths: Sequence[str],
+    *,
+    root_path: str | None = None,
+    is_scene_path: Callable[[str], bool] | None = None,
+) -> tuple[set[str], dict[str, list[str]]]:
+    """
+    Finds related images for scenes in the dataset.
+
+    :param dataset_paths: a list of file paths in the dataset
+    :param root_path: Optional. If specified, the resulting paths will be relative to this path
+    :param is_scene_path: Optional. If specified, the results will only include scenes
+        matching this function.
+
+    Returns: a 2-tuple (scene paths, related_images)
+        scene_paths - a list of scene paths found;
+        related_images - a dict {scene path -> [related image paths]}
+    """
+
+    if root_path:
+        dataset_paths = [os.path.relpath(p, root_path) for p in dataset_paths]
+
+    has_images = False
+    has_pcd = False
+    has_videos = False
+    for p in (filter(is_scene_path, dataset_paths) if callable(is_scene_path) else dataset_paths):
+        if is_point_cloud(p):
+            has_pcd |= True
+        elif is_image(p):
+            has_images |= True
+        elif is_video(p):
+            has_videos |= True
+
+    if has_videos and (has_pcd or has_images):
+        raise ValueError(
+            "Combined media types are not supported, found: {}".format(
+                ", ".join(
+                    (["video"] if has_videos else [])
+                    + (["images"] if has_images else [])
+                    + (["3d point clouds"] if has_pcd else [])
+                )
+            )
+        )
+
+    if has_pcd:
+        # get all found scenes and RIs to avoid complaining about excluded scenes
+        scenes, related_images = _find_related_images_3D(dataset_paths)
+
+        unknown_files = set(dataset_paths)
+        unknown_files.difference_update(scenes)
+        unknown_files.difference_update(ri for ris in related_images.values() for ri in ris)
+
+        if any(is_image(f) for f in unknown_files):
+            has_images = True
+            raise ValueError(
+                "Combined media types are not supported, found: {}. "
+                "Scenes: {}. Unknown files: {}".format(
+                    ", ".join(
+                        (["video"] if has_videos else [])
+                        + (["images"] if has_images else [])
+                        + (["3d point clouds"] if has_pcd else [])
+                    ),
+                    ", ".join(sorted(scenes)[:5]) + ("..." if len(scenes) > 5 else ""),
+                    ", ".join(sorted(unknown_files)[:5])
+                    + ("..." if len(unknown_files) > 5 else ""),
+                )
             )
 
-            if os.path.isdir(related_images_dirname):
-                related_images[rel_image_path] = _prepare_context_list(_list_and_join(related_images_dirname), root_path)
-    return related_images
+        # Apply the scene filter
+        if is_scene_path is not None:
+            scenes = {p for p in scenes if is_scene_path(p)}
 
-# Possible 3D formats are:
-# velodyne_points/
-#     data/
-#         image_01.bin
-# IMAGE_00 # any number?
-#     data/
-#         image_01.png
+            related_images = {
+                scene: scene_ris for scene, scene_ris in related_images.items() if scene in scenes
+            }
+    else:
+        scenes, related_images = _find_related_images_2D(dataset_paths, is_scene_path=is_scene_path)
 
-# pointcloud/
-#     00001.pcd
-# related_images/
-#     00001_pcd/
-#         image_01.png # or other image
+    return scenes, related_images
 
-# Default formats
-# Option 1
-# data/
-#     image.pcd
-#     image.png
 
-# Option 2
-# data/
-#    image_1/
-#        image_1.pcd
-#        context_1.png
-#        context_2.jpg
-def _detect_related_images_3D(image_paths, root_path):
-    related_images = {}
-    latest_dirname = ''
-    dirname_files = []
-    related_images_exist = False
-    velodyne_context_images_dirs = []
+class MediaDimension(str, Enum):
+    dim_2d = "2d"
+    dim_3d = "3d"
 
-    for image_path in sorted(image_paths):
-        rel_image_path = os.path.relpath(image_path, root_path)
-        name = os.path.splitext(os.path.basename(image_path))[0]
-        dirname = os.path.dirname(image_path)
-        related_images_dirname = os.path.normpath(os.path.join(dirname, '..', 'related_images'))
-        related_images[rel_image_path] = []
+    def __str__(self):
+        return self.value
 
-        if latest_dirname != dirname:
-            # Update some data applicable for a subset of paths (within the current dirname)
-            latest_dirname = dirname
-            related_images_exist = os.path.isdir(related_images_dirname)
-            dirname_files = list(_list_and_join(dirname))
-            velodyne_context_images_dirs = [directory for directory
-                in _list_and_join(os.path.normpath(os.path.join(dirname, '..', '..')))
-                if os.path.isdir(os.path.join(directory, 'data')) and re.search(r'image_\d.*', directory, re.IGNORECASE)
-            ]
 
-        filtered_dirname_files = list(filter(lambda x: x != image_path, dirname_files))
-        if len(filtered_dirname_files) and os.path.basename(dirname) == name:
-            # default format (option 2)
-            related_images[rel_image_path].extend(_prepare_context_list(filtered_dirname_files, root_path))
-        else:
-            filtered_dirname_files = list(
-                filter(lambda x: os.path.splitext(os.path.basename(x))[0] == name, filtered_dirname_files)
-            )
-            if len(filtered_dirname_files):
-                # default format (option 1)
-                related_images[rel_image_path].extend(_prepare_context_list(filtered_dirname_files, root_path))
+def detect_media_dimension(dataset_paths: Sequence[str]) -> Collection[MediaDimension]:
+    detected_dimensions = set()
 
-        if related_images_exist:
-            related_images_dirname = os.path.join(
-                related_images_dirname, '_'.join(os.path.basename(image_path).rsplit('.', 1))
-            )
-            if os.path.isdir(related_images_dirname):
-                related_images[rel_image_path].extend(
-                    _prepare_context_list(_list_and_join(related_images_dirname), root_path)
-                )
+    for path in dataset_paths:
+        if is_image(path) or is_video(path):
+            detected_dimensions.add(MediaDimension.dim_2d)
+        elif is_point_cloud(path):
+            detected_dimensions.add(MediaDimension.dim_3d)
 
-        if dirname.endswith(os.path.join('velodyne_points', 'data')):
-            # velodynepoints format
-            for context_images_dir in velodyne_context_images_dirs:
-                context_files = _list_and_join(os.path.join(context_images_dir, 'data'))
-                context_files = list(
-                    filter(lambda x: os.path.splitext(os.path.basename(x))[0] == name, context_files)
-                )
-                related_images[rel_image_path].extend(
-                    _prepare_context_list(context_files, root_path)
-                )
+    return detected_dimensions
 
-        related_images[rel_image_path].sort()
-    return related_images
-
-# This function is expected to be called only for images tasks
-# image_path is expected to be a list of absolute path to images
-# root_path is expected to be a string (dataset root)
-def detect_related_images(image_paths, root_path):
-    data_are_2d = False
-    data_are_3d = False
-
-    # First of all need to define data type we are working with
-    for image_path in image_paths:
-        # .bin files are expected to be converted to .pcd before this code
-        if os.path.splitext(image_path)[1].lower() == '.pcd':
-            data_are_3d = True
-        else:
-            data_are_2d = True
-    assert not (data_are_3d and data_are_2d), 'Combined data types 2D and 3D are not supported'
-
-    if data_are_2d:
-        return _detect_related_images_2D(image_paths, root_path)
-    elif data_are_3d:
-        return _detect_related_images_3D(image_paths, root_path)
-    return {}
 
 class SortingMethod(str, Enum):
-    LEXICOGRAPHICAL = 'lexicographical'
-    NATURAL = 'natural'
-    PREDEFINED = 'predefined'
-    RANDOM = 'random'
+    LEXICOGRAPHICAL = "lexicographical"
+    NATURAL = "natural"
+    PREDEFINED = "predefined"
+    RANDOM = "random"
 
     @classmethod
     def choices(cls):
@@ -204,6 +372,7 @@ class SortingMethod(str, Enum):
 
     def __str__(self):
         return self.value
+
 
 def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     if sorting_method == SortingMethod.LEXICOGRAPHICAL:
@@ -217,3 +386,132 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
         return images
     else:
         raise NotImplementedError()
+
+
+class PcdReader:
+    ALLOWED_VERSIONS = (
+        "0.7",
+        "0.6",
+        "0.5",
+        "0.4",
+        "0.3",
+        "0.2",
+        "0.1",
+        ".7",
+        ".6",
+        ".5",
+        ".4",
+        ".3",
+        ".2",
+        ".1",
+    )
+
+    @classmethod
+    def parse_pcd_header(cls, pcd: Openable, *, verify_version: bool = False) -> dict[str, str]:
+        properties = {}
+
+        with pcd.open("rb") as fp:
+            for line_number, line in enumerate(fp):
+                try:
+                    line = line.decode("utf-8")
+                except UnicodeDecodeError as e:
+                    raise InvalidPcdError(f"line {line_number}: failed to parse pcd header") from e
+
+                if line.startswith("#"):
+                    continue
+
+                line_parts = line.split(" ", maxsplit=1)
+                if len(line_parts) != 2:
+                    raise InvalidPcdError(f"line {line_number}: invalid line format")
+
+                k, v = line_parts
+                properties[k.upper()] = v.strip()
+                if "DATA" in line:
+                    break
+
+        if verify_version:
+            version = properties.get("VERSION", None)
+            if version not in cls.ALLOWED_VERSIONS:
+                raise InvalidPcdError("Unsupported pcd version{}".format(f" {version}" or ""))
+
+        return properties
+
+    @classmethod
+    def parse_bin_header(cls, pcd: Openable) -> dict[str, float]:
+        size_float = 4
+        line_size = 4 * size_float
+
+        with pcd.open("rb") as fp:
+            buffer = fp.read(line_size)
+
+        if not buffer or len(buffer) != line_size:
+            raise InvalidPcdError("failed to parse bin pcd header")
+
+        try:
+            x, y, z, intensity = struct.unpack("ffff", buffer)
+        except struct.error as e:
+            raise InvalidPcdError("failed to parse bin pcd header") from e
+
+        properties = {}
+        properties["x"] = x
+        properties["y"] = y
+        properties["z"] = z
+        properties["intensity"] = intensity
+
+        return properties
+
+    @classmethod
+    def convert_bin_to_pcd(cls, path: str, *, delete_source: bool = True) -> str:
+        pcd_filename = os.path.splitext(path)[0] + ".pcd"
+        with open(pcd_filename, "wb") as f:
+            cls.convert_bin_to_pcd_file(Path(path), output_file=f)
+
+        if delete_source:
+            os.remove(path)
+
+        return pcd_filename
+
+    @classmethod
+    def convert_bin_to_pcd_buffer(cls, bin_: Openable) -> bytes:
+        output_file = io.BytesIO()
+        cls.convert_bin_to_pcd_file(bin_, output_file=output_file)
+        return output_file.getvalue()
+
+    @classmethod
+    def convert_bin_to_pcd_file(cls, bin_: Openable, *, output_file: IO[bytes]) -> None:
+        def write_header(file_obj: io.TextIOBase, width: int, height: int):
+            file_obj.writelines(
+                f"{line}\n"
+                for line in [
+                    "VERSION 0.7",
+                    "FIELDS x y z intensity",
+                    "SIZE 4 4 4 4",
+                    "TYPE F F F F",
+                    "COUNT 1 1 1 1",
+                    f"WIDTH {width}",
+                    f"HEIGHT {height}",
+                    "VIEWPOINT 0 0 0 1 0 0 0",
+                    f"POINTS {width * height}",
+                    "DATA binary",
+                ]
+            )
+
+        list_pcd = []
+        size_float = 4
+        line_size = 4 * size_float
+
+        with bin_.open("rb") as fp:
+            while buffer := fp.read(line_size):
+                if len(buffer) != line_size:
+                    raise InvalidPcdError(f"failed to parse bin pcd point at pos {fp.tell()}")
+
+                x, y, z, intensity = struct.unpack("ffff", buffer)
+                list_pcd.append([x, y, z, intensity])
+
+        np_pcd = np.asarray(list_pcd)
+
+        output_file_as_text = io.TextIOWrapper(output_file, newline="\n")
+        write_header(output_file_as_text, np_pcd.shape[0], 1)
+        output_file_as_text.detach()
+
+        output_file.write(np_pcd.astype("float32").tobytes())

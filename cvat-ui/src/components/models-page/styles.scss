@@ -1,16 +1,12 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 @import 'base';
 
 .cvat-models-page {
-    padding-top: $grid-unit-size * 2;
-    padding-bottom: $grid-unit-size;
-    overflow: auto;
-    height: 100%;
-    width: 100%;
+    @include cvat-resource-page;
 
     .cvat-models-page-top-bar {
         padding-bottom: $grid-unit-size;
@@ -29,8 +25,9 @@
 .cvat-models-list {
     display: flex;
     flex-wrap: wrap;
+    overflow-y: auto;
 
-    > div {
+    .cvat-models-list-row {
         width: 100%;
         margin-bottom: $grid-unit-size;
 
@@ -88,12 +85,9 @@
 }
 
 .cvat-models-item-card {
-    height: $grid-unit-size * 28;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-
-    .ant-card-meta-title {
-        margin-bottom: 0 !important;
-    }
 
     &:nth-child(4n) {
         border-right: 0;
@@ -103,20 +97,33 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        height: $grid-unit-size * 18;
+        height: 100%;
+        width: 100%;
         overflow: hidden;
 
         &:hover {
             cursor: pointer;
         }
     }
+
+    .ant-card-cover {
+        flex-grow: 1;
+        height: 0;
+
+        > div {
+            display: flex;
+        }
+    }
+
+    .cvat-model-item-loading-preview,
+    .cvat-model-item-empty-preview {
+        max-height: $grid-unit-size * 18;
+    }
 }
 
 .cvat-model-item-loading-preview,
 .cvat-model-item-empty-preview {
     @extend .cvat-base-preview;
-
-    height: $grid-unit-size * 18;
 
     &:hover {
         cursor: pointer;
@@ -149,7 +156,6 @@
     button {
         position: relative;
         color: black;
-        margin-top: -$grid-unit-size * 2;
         margin-right: -$grid-unit-size;
     }
 
@@ -174,6 +180,11 @@
 
     h3 {
         margin-top: $grid-unit-size * 2;
+    }
+
+    .cvat-model-item-loading-preview,
+    .cvat-model-item-empty-preview {
+        height: $grid-unit-size * 18;
     }
 }
 
@@ -202,6 +213,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    max-height: $grid-unit-size * 3;
+    max-height: $grid-unit-size * 6;
     display: inline;
 }

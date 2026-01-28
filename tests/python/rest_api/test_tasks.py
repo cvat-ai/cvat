@@ -1,71 +1,77 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 import itertools
 import json
+import operator
 import os
 import os.path as osp
+import re
 import zipfile
+from collections.abc import Generator, Iterable, Sequence
 from copy import deepcopy
+from datetime import datetime
 from functools import partial
 from http import HTTPStatus
-from itertools import chain, product
+from itertools import product
 from math import ceil
 from operator import itemgetter
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
+import numpy as np
 import pytest
-from cvat_sdk import Client, Config, exceptions
+from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
-from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.exceptions import ForbiddenException
+from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
 from PIL import Image
+from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
+from rest_api._test_base import TestTasksBase
+from rest_api.utils import (
+    DATUMARO_FORMAT_FOR_DIMENSION,
+    CollectionSimpleFilterTestBase,
+    calc_end_frame,
+    compare_annotations,
+    create_task,
+    export_dataset,
+    export_task_dataset,
+)
+from shared.fixtures.init import container_exec_cvat
+from shared.tasks.interface import ITaskSpec
+from shared.tasks.types import SourceDataType
+from shared.tasks.utils import parse_frame_step, to_rel_frames
 from shared.utils.config import (
-    BASE_URL,
-    USER_PASS,
     delete_method,
     get_method,
     make_api_client,
+    make_sdk_client,
     patch_method,
-    post_method,
     put_method,
 )
-from shared.utils.helpers import (
-    generate_image_file,
-    generate_image_files,
-    generate_manifest,
-    generate_video_file,
-)
-
-from .utils import (
-    CollectionSimpleFilterTestBase,
-    compare_annotations,
-    create_task,
-    export_task_backup,
-    export_task_dataset,
-    wait_until_task_is_created,
-)
+from shared.utils.helpers import generate_image_files
 
 
-def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
-    with make_api_client(username) as api_client:
-        kwargs = {"manifest_path": manifest} if manifest else {}
+def count_frame_uses(data: Sequence[int], *, included_frames: Sequence[int]) -> dict[int, int]:
+    use_counts = {f: 0 for f in included_frames}
+    for f in data:
+        if f in included_frames:
+            use_counts[f] += 1
 
-        (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
-        return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
+    return use_counts
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -115,7 +121,6 @@ class TestGetTasks:
         "groups, is_staff, is_allow",
         [
             ("admin", False, True),
-            ("business", False, False),
         ],
     )
     def test_project_tasks_visibility(
@@ -264,15 +269,16 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
     @pytest.mark.parametrize(
         "field",
         (
+            "assignee",
+            "dimension",
+            "mode",
             "name",
             "owner",
-            "status",
-            "assignee",
-            "subset",
-            "mode",
-            "dimension",
             "project_id",
+            "status",
+            "subset",
             "tracker_link",
+            "validation_mode",
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
@@ -323,7 +329,6 @@ class TestPostTasks:
         "groups, is_staff, is_allow",
         [
             ("admin", False, True),
-            ("business", False, False),
             ("user", True, True),
         ],
     )
@@ -434,6 +439,16 @@ class TestPostTasks:
                 assert task.assignee is None
                 assert task.assignee_updated_date is None
 
+    def test_can_create_without_labels(self, admin_user):
+        task_spec = {"name": "test task without labels"}
+
+        with make_api_client(admin_user) as api_client:
+            (task, _) = api_client.tasks_api.create(task_write_request=task_spec)
+
+            (labels, _) = api_client.labels_api.list(task_id=task.id)
+
+            assert labels.count == 0
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetData:
@@ -469,10 +484,14 @@ class TestPatchTaskAnnotations:
     def request_data(self, annotations):
         def get_data(tid):
             data = deepcopy(annotations["task"][str(tid)])
-            if data["shapes"][0]["type"] == "skeleton":
-                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
-            else:
-                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+
+            def mutate(shape):
+                shape["points"] = [p + 1.0 for p in shape["points"]]
+
+            mutate(data["shapes"][0])
+            if elements := data["shapes"][0]["elements"]:
+                mutate(elements[0])
+
             data["version"] += 1
             return data
 
@@ -484,8 +503,6 @@ class TestPatchTaskAnnotations:
         [
             ("admin", True, True),
             ("admin", False, True),
-            ("business", True, True),
-            ("business", False, False),
             ("worker", True, True),
             ("worker", False, False),
             ("user", True, True),
@@ -543,11 +560,16 @@ class TestPatchTaskAnnotations:
         is_allow,
         find_task_staff_user,
         find_users,
-        tasks_by_org,
         request_data,
+        tasks_with_shapes,
     ):
         users = find_users(role=role, org=org)
-        tasks = tasks_by_org[org]
+        tasks = (
+            t
+            for t in tasks_with_shapes
+            if t["organization"] == org
+            if t["validation_mode"] != "gt_pool"
+        )
         username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
@@ -562,6 +584,57 @@ class TestPatchTaskAnnotations:
 
         self._test_check_response(is_allow, response, data)
 
+    def test_cannot_update_validation_frames_in_honeypot_task(
+        self,
+        admin_user,
+        tasks,
+        request_data,
+    ):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool" and t["size"] > 0)[
+            "id"
+        ]
+
+        data = request_data(task_id)
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update_annotations(
+                id=task_id,
+                action="update",
+                patched_labeled_data_request=deepcopy(data),
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        assert response.status == HTTPStatus.BAD_REQUEST
+        assert b"can only be edited via task import or the GT job" in response.data
+
+    def test_can_update_honeypot_frames_in_honeypot_task(
+        self,
+        admin_user,
+        tasks,
+        jobs,
+        request_data,
+    ):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool" and t["size"] > 0)[
+            "id"
+        ]
+        gt_job = next(j for j in jobs if j["task_id"] == task_id and j["type"] == "ground_truth")
+
+        validation_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+        data = request_data(task_id)
+        data["tags"] = [a for a in data["tags"] if a["frame"] not in validation_frames]
+        data["shapes"] = [a for a in data["shapes"] if a["frame"] not in validation_frames]
+        data["tracks"] = []  # tracks cannot be used in honeypot tasks
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update_annotations(
+                id=task_id,
+                action="update",
+                patched_labeled_data_request=deepcopy(data),
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        self._test_check_response(True, response, data)
+
     def test_remove_first_keyframe(self):
         endpoint = "tasks/8/annotations"
         shapes0 = [
@@ -574,7 +647,7 @@ class TestPatchTaskAnnotations:
         response = patch_method("admin1", endpoint, annotations, action="create")
         assert response.status_code == HTTPStatus.OK, response.content
 
-        annotations["tracks"][0]["shapes"] = shapes0[1:]
+        annotations["tracks"][0]["shapes"] = response.json()["shapes"][1:]
         response = patch_method("admin1", endpoint, annotations, action="update")
         assert response.status_code == HTTPStatus.OK
 
@@ -655,6 +728,7 @@ class TestPatchTaskAnnotations:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestGetTaskDataset:
 
     @staticmethod
@@ -662,11 +736,10 @@ class TestGetTaskDataset:
         username: str,
         task_id: int,
         *,
-        api_version: Union[int, Tuple[int]],
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
-        dataset = export_task_dataset(username, api_version, save_images=True, id=task_id, **kwargs)
+    ) -> bytes | None:
+        dataset = export_task_dataset(username, save_images=True, id=task_id, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
         else:
@@ -674,50 +747,28 @@ class TestGetTaskDataset:
 
         return dataset
 
-    @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
-    @pytest.mark.parametrize(
-        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
-    )
-    def test_can_export_task_dataset_locally_and_to_cloud_with_both_api_versions(
-        self,
-        admin_user,
-        tasks_with_shapes,
-        filter_tasks,
-        api_version: Tuple[int],
-        local_download: bool,
-    ):
-        filter_ = "target_storage__location"
-        if local_download:
-            filter_ = "exclude_" + filter_
-        filtered_ids = {t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})}
-
-        task_id = next(iter(filtered_ids & {t["id"] for t in tasks_with_shapes}))
-        self._test_can_export_dataset(
-            admin_user,
-            task_id,
-            api_version=api_version,
-            local_download=local_download,
-        )
-
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [21])
     @pytest.mark.parametrize(
         "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
     )
     def test_can_export_task_with_several_jobs(
-        self, admin_user, tid, format_name, api_version: int
+        self,
+        admin_user,
+        tid,
+        format_name,
     ):
         self._test_can_export_dataset(
             admin_user,
             tid,
             format=format_name,
-            api_version=api_version,
         )
 
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("tid", [8])
-    def test_can_export_task_to_coco_format(self, admin_user: str, tid: int, api_version: int):
+    def test_can_export_task_to_coco_format(
+        self,
+        admin_user: str,
+        tid: int,
+    ):
         # these annotations contains incorrect frame numbers
         # in order to check that server handle such cases
         annotations = {
@@ -796,9 +847,7 @@ class TestGetTaskDataset:
                 }
             ],
         }
-        response = patch_method(
-            admin_user, f"tasks/{tid}/annotations", annotations, action="update"
-        )
+        response = put_method(admin_user, f"tasks/{tid}/annotations", annotations)
         assert response.status_code == HTTPStatus.OK
 
         # check that we can export task dataset
@@ -806,7 +855,6 @@ class TestGetTaskDataset:
             admin_user,
             tid,
             format="COCO Keypoints 1.0",
-            api_version=api_version,
         )
 
         # check that server saved track annotations correctly
@@ -818,9 +866,12 @@ class TestGetTaskDataset:
         assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
         assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_download_task_with_special_chars_in_name(self, admin_user: str, api_version: int):
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+    def test_can_download_task_with_special_chars_in_name(
+        self,
+        admin_user: str,
+    ):
         # Control characters in filenames may conflict with the Content-Disposition header
         # value restrictions, as it needs to include the downloaded file name.
 
@@ -836,13 +887,14 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        dataset = self._test_can_export_dataset(admin_user, task_id, api_version=api_version)
+        dataset = self._test_can_export_dataset(admin_user, task_id)
         assert zipfile.is_zipfile(io.BytesIO(dataset))
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("api_version", (1, 2))
     def test_export_dataset_after_deleting_related_cloud_storage(
-        self, admin_user: str, tasks, api_version: int
+        self,
+        admin_user: str,
+        tasks,
     ):
         related_field = "target_storage"
 
@@ -859,17 +911,16 @@ class TestGetTaskDataset:
             result, response = api_client.tasks_api.retrieve(task_id)
             assert not result[related_field]
 
-            self._test_can_export_dataset(admin_user, task["id"], api_version=api_version)
+            self._test_can_export_dataset(admin_user, task["id"])
 
     @pytest.mark.parametrize(
         "export_format, default_subset_name, subset_path_template",
         [
             ("Datumaro 1.0", "", "images/{subset}"),
             ("YOLO 1.1", "train", "obj_{subset}_data"),
-            ("YOLOv8 Detection 1.0", "train", "images/{subset}"),
+            ("Ultralytics YOLO Detection 1.0", "train", "images/{subset}"),
         ],
     )
-    @pytest.mark.parametrize("api_version", (1, 2))
     def test_uses_subset_name(
         self,
         admin_user,
@@ -877,7 +928,6 @@ class TestGetTaskDataset:
         export_format,
         default_subset_name,
         subset_path_template,
-        api_version: int,
     ):
         tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
         group_key_func = itemgetter("subset")
@@ -892,7 +942,6 @@ class TestGetTaskDataset:
             dataset = self._test_can_export_dataset(
                 admin_user,
                 task["id"],
-                api_version=api_version,
                 format=export_format,
             )
             with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
@@ -901,1136 +950,89 @@ class TestGetTaskDataset:
                     subset_path in path for path in zip_file.namelist()
                 ), f"No {subset_path} in {zip_file.namelist()}"
 
-
-@pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
-class TestPostTaskData:
-    _USERNAME = "admin1"
-
-    def _test_cannot_create_task(self, username, spec, data, **kwargs):
-        with make_api_client(username) as api_client:
-            (task, response) = api_client.tasks_api.create(spec, **kwargs)
-            assert response.status == HTTPStatus.CREATED
-
-            (result, response) = api_client.tasks_api.create_data(
-                task.id, data_request=deepcopy(data), _content_type="application/json", **kwargs
-            )
-            assert response.status == HTTPStatus.ACCEPTED
-
-            request_details = wait_until_task_is_created(api_client.requests_api, result.rq_id)
-            assert request_details.status.value == "failed"
-
-        return request_details
-
-    def test_can_create_task_with_defined_start_and_stop_frames(self):
-        task_spec = {
-            "name": f"test {self._USERNAME} to create a task with defined start and stop frames",
-            "labels": [
-                {
-                    "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [
-                        {
-                            "name": "a",
-                            "mutable": True,
-                            "input_type": "number",
-                            "default_value": "5",
-                            "values": ["4", "5", "6"],
-                        }
-                    ],
-                }
-            ],
-        }
-
-        task_data = {
-            "image_quality": 75,
-            "start_frame": 2,
-            "stop_frame": 5,
-            "client_files": generate_image_files(7),
-        }
-
-        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
-
-        # check task size
-        with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(task_id)
-            assert task.size == 4
-
-    def test_default_overlap_for_small_segment_size(self):
-        task_spec = {
-            "name": f"test {self._USERNAME} with default overlap and small segment_size",
-            "labels": [{"name": "car"}],
-            "segment_size": 5,
-        }
-
-        task_data = {
-            "image_quality": 75,
-            "client_files": [generate_video_file(8)],
-        }
-
-        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
-
-        # check task size
-        with make_api_client(self._USERNAME) as api_client:
-            paginated_job_list, _ = api_client.jobs_api.list(task_id=task_id)
-
-            jobs = paginated_job_list.results
-            jobs.sort(key=lambda job: job.start_frame)
-
-            assert len(jobs) == 2
-            # overlap should be 2 frames (frames 3 & 4)
-            assert jobs[0].start_frame == 0
-            assert jobs[0].stop_frame == 4
-            assert jobs[1].start_frame == 3
-            assert jobs[1].stop_frame == 7
-
     @pytest.mark.parametrize(
-        "size,expected_segments",
-        [
-            (2, [(0, 1)]),
-            (3, [(0, 2)]),
-            (4, [(0, 2), (2, 3)]),
-            (5, [(0, 2), (2, 4)]),
-            (6, [(0, 2), (2, 4), (4, 5)]),
-        ],
+        "dimension, mode", [("2d", "annotation"), ("2d", "interpolation"), ("3d", "annotation")]
     )
-    def test_task_segmentation(self, size, expected_segments):
-        task_spec = {
-            "name": f"test {self._USERNAME} to check segmentation into jobs",
-            "labels": [{"name": "car"}],
-            "segment_size": 3,
-            "overlap": 1,
-        }
-
-        task_data = {
-            "image_quality": 75,
-            "client_files": generate_image_files(size),
-        }
-
-        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
-
-        # check task size
-        with make_api_client(self._USERNAME) as api_client:
-            paginated_job_list, _ = api_client.jobs_api.list(task_id=task_id)
-
-            jobs = paginated_job_list.results
-            jobs.sort(key=lambda job: job.start_frame)
-
-            assert [(j.start_frame, j.stop_frame) for j in jobs] == expected_segments
-
-    def test_can_create_task_with_exif_rotated_images(self):
-        task_spec = {
-            "name": f"test {self._USERNAME} to create a task with exif rotated images",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
-        }
-
-        image_files = ["images/exif_rotated/left.jpg", "images/exif_rotated/right.jpg"]
-        task_data = {
-            "server_files": image_files,
-            "image_quality": 70,
-            "segment_size": 500,
-            "use_cache": True,
-            "sorting_method": "natural",
-        }
-
-        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
-
-        # check that the frames have correct width and height
-        for chunk_quality in ["original", "compressed"]:
-            with make_api_client(self._USERNAME) as api_client:
-                _, response = api_client.tasks_api.retrieve_data(
-                    task_id, number=0, type="chunk", quality=chunk_quality
-                )
-                data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
-
-                with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                    for name, frame_meta in zip(zip_file.namelist(), data_meta.frames):
-                        with zip_file.open(name) as zipped_img:
-                            im = Image.open(zipped_img)
-                            # original is 480x640 with 90/-90 degrees rotation
-                            assert frame_meta.height == 640 and frame_meta.width == 480
-                            assert im.height == 640 and im.width == 480
-                            assert im.getexif().get(274, 1) == 1
-
-    def test_can_create_task_with_big_images(self):
-        # Checks for regressions about the issue
-        # https://github.com/cvat-ai/cvat/issues/6878
-        # In the case of big files (>2.5 MB by default),
-        # uploaded files could be write-appended twice,
-        # leading to bigger raw file sizes than expected.
-
-        task_spec = {
-            "name": f"test {self._USERNAME} to create a task with big images",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
-        }
-
-        # We need a big file to reproduce the problem
-        image_file = generate_image_file("big_image.bmp", size=(4000, 4000), color=(100, 200, 30))
-        image_bytes = image_file.getvalue()
-        file_size = len(image_bytes)
-        assert 10 * 2**20 < file_size
-
-        task_data = {
-            "client_files": [image_file],
-            "image_quality": 70,
-            "use_cache": False,
-            "use_zip_chunks": True,
-        }
-
-        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
-
-        # check that the original chunk image have the original size
-        # this is less accurate than checking the uploaded file directly, but faster
-        with make_api_client(self._USERNAME) as api_client:
-            _, response = api_client.tasks_api.retrieve_data(
-                task_id, number=0, quality="original", type="chunk", _parse_response=False
-            )
-            chunk_file = io.BytesIO(response.data)
-
-        with zipfile.ZipFile(chunk_file) as chunk_zip:
-            infos = chunk_zip.infolist()
-            assert len(infos) == 1
-            assert infos[0].file_size == file_size
-
-            chunk_image = chunk_zip.read(infos[0])
-            assert chunk_image == image_bytes
-
-    def test_can_create_task_with_exif_rotated_tif_image(self):
-        task_spec = {
-            "name": f"test {self._USERNAME} to create a task with exif rotated tif image",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
-        }
-
-        image_files = ["images/exif_rotated/tif_left.tif"]
-        task_data = {
-            "server_files": image_files,
-            "image_quality": 70,
-            "segment_size": 500,
-            "use_cache": False,
-            "sorting_method": "natural",
-        }
-
-        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
-
-        for chunk_quality in ["original", "compressed"]:
-            # check that the frame has correct width and height
-            with make_api_client(self._USERNAME) as api_client:
-                _, response = api_client.tasks_api.retrieve_data(
-                    task_id, number=0, type="chunk", quality=chunk_quality
-                )
-
-                with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                    assert len(zip_file.namelist()) == 1
-                    name = zip_file.namelist()[0]
-                    assert name == "000000.tif" if chunk_quality == "original" else "000000.jpeg"
-                    with zip_file.open(name) as zipped_img:
-                        im = Image.open(zipped_img)
-                        # raw image is horizontal 100x150 with -90 degrees rotation
-                        assert im.height == 150 and im.width == 100
-                        assert im.getexif().get(274, 1) == 1
-
-    def test_can_create_task_with_sorting_method_natural(self):
-        task_spec = {
-            "name": f"test {self._USERNAME} to create a task with a custom sorting method",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
-        }
-
-        image_files = generate_image_files(15)
-
-        task_data = {
-            "client_files": image_files[5:] + image_files[:5],  # perturb the order
-            "image_quality": 70,
-            "sorting_method": "natural",
-        }
-
-        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
-
-        # check that the frames were sorted again
-        with make_api_client(self._USERNAME) as api_client:
-            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
-
-            # generate_image_files produces files that are already naturally sorted
-            for image_file, frame in zip(image_files, data_meta.frames):
-                assert image_file.name == frame.name
-
-    def test_can_create_task_with_video_without_keyframes(self):
-        task_spec = {
-            "name": f"test {self._USERNAME} to create a task with a video without keyframes",
-            "labels": [
-                {
-                    "name": "label1",
-                }
-            ],
-        }
-
-        task_data = {
-            "server_files": [osp.join("videos", "video_without_valid_keyframes.mp4")],
-            "image_quality": 70,
-        }
-
-        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
-
-        with make_api_client(self._USERNAME) as api_client:
-            (_, response) = api_client.tasks_api.retrieve(task_id)
-            assert response.status == HTTPStatus.OK
-
-    @pytest.mark.parametrize("data_source", ["client_files", "server_files"])
-    def test_can_create_task_with_sorting_method_predefined(self, data_source):
-        task_spec = {
-            "name": f"test {self._USERNAME} to create a task with a custom sorting method",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
-        }
-
-        if data_source == "client_files":
-            image_files = generate_image_files(15)
-
-            # shuffle to check for occasional sorting, e.g. in the DB
-            image_files = image_files[7:] + image_files[5:7] + image_files[:5]
-        elif data_source == "server_files":
-            # Files from the test file share
-            image_files = ["images/image_3.jpg", "images/image_1.jpg", "images/image_2.jpg"]
-        else:
-            assert False
-
-        task_data = {
-            data_source: image_files,
-            "image_quality": 70,
-            "sorting_method": "predefined",
-        }
-
-        (task_id, _) = create_task(self._USERNAME, task_spec, task_data)
-
-        # check that the frames were sorted again
-        with make_api_client(self._USERNAME) as api_client:
-            (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-
-            for image_file, frame in zip(image_files, data_meta.frames):
-                if isinstance(image_file, str):
-                    image_name = image_file
-                else:
-                    image_name = image_file.name
-
-                assert image_name == frame.name
-
-    def test_can_get_annotations_from_new_task_with_skeletons(self):
-        spec = {
-            "name": f"test admin1 to create a task with skeleton",
-            "labels": [
-                {
-                    "name": "s1",
-                    "color": "#5c5eba",
-                    "attributes": [],
-                    "type": "skeleton",
-                    "sublabels": [
-                        {"name": "1", "color": "#d12345", "attributes": [], "type": "points"},
-                        {"name": "2", "color": "#350dea", "attributes": [], "type": "points"},
-                    ],
-                    "svg": '<line x1="19.464284896850586" y1="21.922269821166992" x2="54.08613586425781" y2="43.60293960571289" '
-                    'stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="2"></line>'
-                    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="19.464284896850586" cy="21.922269821166992" '
-                    'stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-id="103"></circle>'
-                    '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="54.08613586425781" cy="43.60293960571289" '
-                    'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-id="104"></circle>',
-                }
-            ],
-        }
-
-        task_data = {
-            "image_quality": 75,
-            "client_files": generate_image_files(3),
-        }
-
-        task_id, _ = create_task(self._USERNAME, spec, task_data)
-
-        response = get_method(self._USERNAME, "labels", task_id=f"{task_id}")
-        label_ids = {}
-        for root_label in response.json()["results"]:
-            for label in [root_label] + root_label["sublabels"]:
-                label_ids.setdefault(label["type"], []).append(label["id"])
-
-        response = get_method(self._USERNAME, "jobs", task_id=f"{task_id}")
-        job_id = response.json()["results"][0]["id"]
-        patch_data = {
-            "shapes": [
-                {
-                    "type": "skeleton",
-                    "occluded": False,
-                    "outside": False,
-                    "z_order": 0,
-                    "rotation": 0,
-                    "points": [],
-                    "frame": 0,
-                    "label_id": label_ids["skeleton"][0],
-                    "group": 0,
-                    "source": "manual",
-                    "attributes": [],
-                    "elements": [
-                        {
-                            "type": "points",
-                            "occluded": False,
-                            "outside": False,
-                            "z_order": 0,
-                            "rotation": 0,
-                            "points": [131.63947368421032, 165.0868421052637],
-                            "frame": 0,
-                            "label_id": label_ids["points"][0],
-                            "group": 0,
-                            "source": "manual",
-                            "attributes": [],
-                        },
-                        {
-                            "type": "points",
-                            "occluded": False,
-                            "outside": False,
-                            "z_order": 0,
-                            "rotation": 0,
-                            "points": [354.98157894736823, 304.2710526315795],
-                            "frame": 0,
-                            "label_id": label_ids["points"][1],
-                            "group": 0,
-                            "source": "manual",
-                            "attributes": [],
-                        },
-                    ],
-                }
-            ],
-            "tracks": [
-                {
-                    "frame": 0,
-                    "label_id": label_ids["skeleton"][0],
-                    "group": 0,
-                    "source": "manual",
-                    "shapes": [
-                        {
-                            "type": "skeleton",
-                            "occluded": False,
-                            "outside": False,
-                            "z_order": 0,
-                            "rotation": 0,
-                            "points": [],
-                            "frame": 0,
-                            "attributes": [],
-                        }
-                    ],
-                    "attributes": [],
-                    "elements": [
-                        {
-                            "frame": 0,
-                            "label_id": label_ids["points"][0],
-                            "group": 0,
-                            "source": "manual",
-                            "shapes": [
-                                {
-                                    "type": "points",
-                                    "occluded": False,
-                                    "outside": False,
-                                    "z_order": 0,
-                                    "rotation": 0,
-                                    "points": [295.6394736842103, 472.5868421052637],
-                                    "frame": 0,
-                                    "attributes": [],
-                                }
-                            ],
-                            "attributes": [],
-                        },
-                        {
-                            "frame": 0,
-                            "label_id": label_ids["points"][1],
-                            "group": 0,
-                            "source": "manual",
-                            "shapes": [
-                                {
-                                    "type": "points",
-                                    "occluded": False,
-                                    "outside": False,
-                                    "z_order": 0,
-                                    "rotation": 0,
-                                    "points": [619.3236842105262, 846.9815789473689],
-                                    "frame": 0,
-                                    "attributes": [],
-                                }
-                            ],
-                            "attributes": [],
-                        },
-                    ],
-                }
-            ],
-            "tags": [],
-            "version": 0,
-        }
-
-        response = patch_method(
-            self._USERNAME, f"jobs/{job_id}/annotations", patch_data, action="create"
-        )
-        response = get_method(self._USERNAME, f"jobs/{job_id}/annotations")
-        assert response.status_code == HTTPStatus.OK
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize(
-        "use_cache, cloud_storage_id, manifest, use_bucket_content, org",
-        [
-            (True, 1, "manifest.jsonl", False, ""),  # public bucket
-            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
-            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
-            (True, 1, None, False, ""),
-            (True, 2, None, True, "org2"),
-            (True, 2, None, True, "org2"),
-            (False, 1, None, False, ""),
-            (False, 2, None, True, "org2"),
-            (False, 2, None, True, "org2"),
-        ],
-    )
-    def test_create_task_with_cloud_storage_files(
-        self,
-        use_cache: bool,
-        cloud_storage_id: int,
-        manifest: str,
-        use_bucket_content: bool,
-        org: str,
+    def test_datumaro_export_without_annotations_includes_image_info(
+        self, admin_user, tasks, mode, dimension
     ):
-        if use_bucket_content:
-            cloud_storage_content = get_cloud_storage_content(
-                self._USERNAME, cloud_storage_id, manifest
-            )
-        else:
-            cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
-        if manifest:
-            cloud_storage_content.append(manifest)
+        task = next(
+            t for t in tasks if t.get("size") if t["mode"] == mode if t["dimension"] == dimension
+        )
 
-        task_spec = {
-            "name": f"Task with files from cloud storage {cloud_storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
-        }
-
-        data_spec = {
-            "image_quality": 75,
-            "use_cache": use_cache,
-            "cloud_storage_id": cloud_storage_id,
-            "server_files": cloud_storage_content,
-        }
-
-        kwargs = {"org": org} if org else {}
-        create_task(self._USERNAME, task_spec, data_spec, **kwargs)
-
-    def _create_task_with_cloud_data(
-        self,
-        request,
-        cloud_storage: Any,
-        use_manifest: bool,
-        server_files: List[str],
-        use_cache: bool = True,
-        sorting_method: str = "lexicographical",
-        spec: Optional[Dict[str, Any]] = None,
-        data_type: str = "image",
-        video_frame_count: int = 10,
-        server_files_exclude: Optional[List[str]] = None,
-        org: Optional[str] = None,
-        filenames: Optional[List[str]] = None,
-    ) -> Tuple[int, Any]:
-        s3_client = s3.make_client(bucket=cloud_storage["resource"])
-        if data_type == "video":
-            video = generate_video_file(video_frame_count)
-            s3_client.create_file(
-                data=video,
-                filename=f"test/video/{video.name}",
-            )
-            request.addfinalizer(
-                partial(
-                    s3_client.remove_file,
-                    filename=f"test/video/{video.name}",
+        with make_api_client(admin_user) as api_client:
+            dataset_file = io.BytesIO(
+                export_dataset(
+                    api_client.tasks_api,
+                    id=task["id"],
+                    format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    save_images=False,
                 )
             )
-        else:
-            images = generate_image_files(
-                3, **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames})
-            )
 
-            for image in images:
-                for i in range(2):
-                    image.seek(0)
-                    s3_client.create_file(
-                        data=image,
-                        filename=f"test/sub_{i}/{image.name}",
-                    )
-                    request.addfinalizer(
-                        partial(
-                            s3_client.remove_file,
-                            filename=f"test/sub_{i}/{image.name}",
-                        )
-                    )
+        with zipfile.ZipFile(dataset_file) as zip_file:
+            annotations = json.loads(zip_file.read("annotations/default.json"))
 
-        if use_manifest:
-            with TemporaryDirectory() as tmp_dir:
-                manifest_root_path = f"{tmp_dir}/test/"
-                for i in range(2):
-                    path_with_sub_folders = f"{tmp_dir}/test/sub_{i}/"
-                    os.makedirs(path_with_sub_folders)
-                    for image in images:
-                        with open(osp.join(path_with_sub_folders, image.name), "wb") as f:
-                            f.write(image.getvalue())
+        assert annotations["items"]
+        for item in annotations["items"]:
+            assert "media" not in item
 
-                generate_manifest(manifest_root_path)
+            if dimension == "2d":
+                assert osp.splitext(item["image"]["path"])[0] == item["id"]
+                assert not Path(item["image"]["path"]).is_absolute()
+                assert tuple(item["image"]["size"]) > (0, 0)
+            elif dimension == "3d":
+                assert osp.splitext(osp.basename(item["point_cloud"]["path"]))[0] == item["id"]
+                assert not Path(item["point_cloud"]["path"]).is_absolute()
+                for related_image in item["related_images"]:
+                    assert not Path(related_image["path"]).is_absolute()
+                    if "size" in related_image:
+                        assert tuple(related_image["size"]) > (0, 0)
 
-                with open(osp.join(manifest_root_path, "manifest.jsonl"), mode="rb") as m_file:
-                    s3_client.create_file(
-                        data=m_file.read(),
-                        filename="test/manifest.jsonl",
-                    )
-                    request.addfinalizer(
-                        partial(
-                            s3_client.remove_file,
-                            filename="test/manifest.jsonl",
-                        )
-                    )
-        task_spec = {
-            "name": f"Task created from directories from cloud storage {cloud_storage['id']}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
-        }
-
-        data_spec = {
-            "image_quality": 75,
-            "use_cache": use_cache,
-            "cloud_storage_id": cloud_storage["id"],
-            "server_files": (
-                server_files if not use_manifest else server_files + ["test/manifest.jsonl"]
+    @pytest.mark.parametrize(
+        "get_api,get_id",
+        [
+            pytest.param(
+                lambda client: client.tasks_api,
+                lambda tasks, jobs: next(
+                    t["id"] for t in tasks if t.get("dimension") == "3d" and t.get("size")
+                ),
+                id="task",
             ),
-            "sorting_method": sorting_method,
-        }
-        if spec is not None:
-            data_spec.update(spec)
-
-        if server_files_exclude:
-            data_spec["server_files_exclude"] = server_files_exclude
-
-        return create_task(self._USERNAME, task_spec, data_spec, org=org)
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize("cloud_storage_id", [2])
-    @pytest.mark.parametrize(
-        "use_cache, use_manifest, server_files, server_files_exclude, task_size",
-        [
-            (True, False, ["test/"], None, 6),
-            (True, False, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (True, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-            (True, True, ["test/"], None, 6),
-            (True, True, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (True, True, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-            (False, False, ["test/"], None, 6),
-            (False, False, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (False, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-        ],
-    )
-    @pytest.mark.parametrize("org", [""])
-    def test_create_task_with_cloud_storage_directories_and_excluded_files(
-        self,
-        cloud_storage_id: int,
-        use_cache: bool,
-        use_manifest: bool,
-        server_files: List[str],
-        server_files_exclude: Optional[List[str]],
-        task_size: int,
-        org: str,
-        cloud_storages,
-        request,
-    ):
-        cloud_storage = cloud_storages[cloud_storage_id]
-        task_id, _ = self._create_task_with_cloud_data(
-            request,
-            cloud_storage,
-            use_manifest,
-            server_files,
-            use_cache=use_cache,
-            server_files_exclude=server_files_exclude,
-            org=org,
-        )
-
-        with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.retrieve(task_id)
-            assert response.status == HTTPStatus.OK
-            assert task.size == task_size
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize("cloud_storage_id", [2])
-    @pytest.mark.parametrize("use_manifest", [True, False])
-    @pytest.mark.parametrize(
-        "server_files, expected_result",
-        [
-            (
-                ["test/sub_1/", "test/sub_0/"],
-                [
-                    "test/sub_1/img_0.jpeg",
-                    "test/sub_1/img_1.jpeg",
-                    "test/sub_1/img_2.jpeg",
-                    "test/sub_0/img_0.jpeg",
-                    "test/sub_0/img_1.jpeg",
-                    "test/sub_0/img_2.jpeg",
-                ],
-            )
-        ],
-    )
-    @pytest.mark.parametrize("org", [""])
-    def test_create_task_with_cloud_storage_directories_and_predefined_sorting(
-        self,
-        cloud_storage_id: int,
-        use_manifest: bool,
-        server_files: List[str],
-        expected_result: List[str],
-        org: str,
-        cloud_storages,
-        request,
-    ):
-        cloud_storage = cloud_storages[cloud_storage_id]
-        task_id, _ = self._create_task_with_cloud_data(
-            request, cloud_storage, use_manifest, server_files, sorting_method="predefined", org=org
-        )
-
-        with make_api_client(self._USERNAME) as api_client:
-            (_, response) = api_client.tasks_api.retrieve(task_id)
-            assert response.status == HTTPStatus.OK
-
-            # check sequence of frames
-            (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            assert expected_result == list(map(lambda x: x.name, data_meta.frames))
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize(
-        "storage_id, manifest",
-        [
-            (1, "manifest.jsonl"),  # public bucket
-            (2, "sub/manifest.jsonl"),  # private bucket
-        ],
-    )
-    @pytest.mark.parametrize(
-        "spec, field",
-        [
-            ("spec", "source_storage"),
-            ("spec", "target_storage"),
-            ("data", "cloud_storage_id"),
-        ],
-    )
-    def test_user_cannot_create_task_with_cloud_storage_without_access(
-        self, storage_id, spec, field, manifest, regular_lonely_user
-    ):
-        user = regular_lonely_user
-
-        task_spec = {
-            "name": f"Task with files from foreign cloud storage {storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
-        }
-
-        data_spec = {
-            "image_quality": 75,
-            "use_cache": True,
-        }
-
-        if spec == "spec":
-            task_spec.update(
-                {
-                    field: {
-                        "location": "cloud_storage",
-                        "cloud_storage_id": storage_id,
-                    }
-                }
-            )
-            data_spec["server_files"] = ["images/image_1.jpg"]
-
-        elif spec == "data":
-            data_spec.update(
-                {
-                    field: storage_id,
-                    "filename_pattern": "*",
-                    "server_files": [manifest],
-                }
-            )
-        else:
-            assert False
-
-        with pytest.raises(exceptions.ApiException) as capture:
-            create_task(user, task_spec, data_spec)
-
-        assert capture.value.status == HTTPStatus.FORBIDDEN
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize("cloud_storage_id", [1])
-    @pytest.mark.parametrize(
-        "manifest, filename_pattern, sub_dir, task_size",
-        [
-            ("manifest.jsonl", "*", True, 3),  # public bucket
-            ("manifest.jsonl", "test/*", True, 3),
-            ("manifest.jsonl", "test/sub*1.jpeg", True, 1),
-            ("manifest.jsonl", "*image*.jpeg", True, 3),
-            ("manifest.jsonl", "wrong_pattern", True, 0),
-            ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2),
-            ("abc_manifest.jsonl", "[d]*.jpeg", False, 1),
-            ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0),
-            (None, "*", True, 5),
-            (None, "test/*", True, 3),
-            (None, "test/sub*1.jpeg", True, 1),
-            (None, "*image*.jpeg", True, 3),
-            (None, "wrong_pattern", True, 0),
-            (None, "[a-c]*.jpeg", False, 2),
-            (None, "[d]*.jpeg", False, 1),
-            (None, "[e-z]*.jpeg", False, 0),
-        ],
-    )
-    def test_create_task_with_file_pattern(
-        self,
-        cloud_storage_id,
-        manifest,
-        filename_pattern,
-        sub_dir,
-        task_size,
-        cloud_storages,
-        request,
-    ):
-        # prepare dataset on the bucket
-        prefixes = ("test_image_",) * 3 if sub_dir else ("a_", "b_", "d_")
-        images = generate_image_files(3, prefixes=prefixes)
-        s3_client = s3.make_client()
-
-        cloud_storage = cloud_storages[cloud_storage_id]
-
-        for image in images:
-            s3_client.create_file(
-                data=image,
-                bucket=cloud_storage["resource"],
-                filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
-            )
-            request.addfinalizer(
-                partial(
-                    s3_client.remove_file,
-                    bucket=cloud_storage["resource"],
-                    filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
-                )
-            )
-
-        if manifest:
-            with TemporaryDirectory() as tmp_dir:
-                for image in images:
-                    with open(osp.join(tmp_dir, image.name), "wb") as f:
-                        f.write(image.getvalue())
-
-                generate_manifest(tmp_dir)
-
-                with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
-                    s3_client.create_file(
-                        data=m_file.read(),
-                        bucket=cloud_storage["resource"],
-                        filename=f"test/sub/{manifest}" if sub_dir else manifest,
-                    )
-                    request.addfinalizer(
-                        partial(
-                            s3_client.remove_file,
-                            bucket=cloud_storage["resource"],
-                            filename=f"test/sub/{manifest}" if sub_dir else manifest,
-                        )
-                    )
-
-        task_spec = {
-            "name": f"Task with files from cloud storage {cloud_storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
-        }
-
-        data_spec = {
-            "image_quality": 75,
-            "use_cache": True,
-            "cloud_storage_id": cloud_storage_id,
-            "filename_pattern": filename_pattern,
-        }
-        if manifest:
-            data_spec["server_files"] = [f"test/sub/{manifest}" if sub_dir else manifest]
-
-        if task_size:
-            task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
-
-            with make_api_client(self._USERNAME) as api_client:
-                (task, response) = api_client.tasks_api.retrieve(task_id)
-                assert response.status == HTTPStatus.OK
-                assert task.size == task_size
-        else:
-            rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
-            assert "No media data found" in rq_job_details.message
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize("use_manifest", [True, False])
-    @pytest.mark.parametrize("use_cache", [True, False])
-    @pytest.mark.parametrize(
-        "sorting_method", ["natural", "predefined", "lexicographical", "random"]
-    )
-    @pytest.mark.parametrize(
-        "cloud_storage_id, org",
-        [
-            (1, ""),
-        ],
-    )
-    def test_create_task_with_cloud_storage_and_retrieve_data(
-        self,
-        use_manifest: bool,
-        use_cache: bool,
-        sorting_method: str,
-        cloud_storage_id: int,
-        org: str,
-        cloud_storages,
-        request,
-    ):
-        cloud_storage = cloud_storages[cloud_storage_id]
-        task_id, _ = self._create_task_with_cloud_data(
-            request=request,
-            cloud_storage=cloud_storage,
-            # manifest file should not be uploaded if random sorting is used or if cache is not used
-            use_manifest=use_manifest and use_cache and (sorting_method != "random"),
-            use_cache=use_cache,
-            server_files=[f"test/sub_{i}/img_{j}.jpeg" for i in range(2) for j in range(3)],
-            org=org,
-            sorting_method=sorting_method,
-        )
-
-        with make_api_client(self._USERNAME) as api_client:
-            (_, response) = api_client.tasks_api.retrieve_data(
-                task_id, type="chunk", quality="compressed", number=0
-            )
-            assert response.status == HTTPStatus.OK
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize(
-        "filenames, sorting_method",
-        [
-            (["img_1.jpeg", "img_2.jpeg", "img_10.jpeg"], "natural"),
-            (["img_10.jpeg", "img_1.jpeg", "img_2.jpeg"], "predefined"),
-            (["img_1.jpeg", "img_10.jpeg", "img_2.jpeg"], "lexicographical"),
-        ],
-    )
-    @pytest.mark.parametrize(
-        "cloud_storage_id, org",
-        [
-            (1, ""),
-        ],
-    )
-    def test_create_task_with_cloud_storage_and_check_data_sorting(
-        self,
-        filenames: List[str],
-        sorting_method: str,
-        cloud_storage_id: int,
-        org: str,
-        cloud_storages,
-        request,
-    ):
-        cloud_storage = cloud_storages[cloud_storage_id]
-
-        task_id, _ = self._create_task_with_cloud_data(
-            request=request,
-            cloud_storage=cloud_storage,
-            use_manifest=False,
-            use_cache=True,
-            server_files=["test/sub_0/" + f for f in filenames],
-            org=org,
-            sorting_method=sorting_method,
-            filenames=filenames,
-        )
-
-        with make_api_client(self._USERNAME) as api_client:
-            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
-
-            for image_name, frame in zip(filenames, data_meta.frames):
-                assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize(
-        "cloud_storage_id, org",
-        [
-            (1, ""),
-        ],
-    )
-    def test_create_task_with_cloud_storage_and_check_retrieve_data_meta(
-        self,
-        cloud_storage_id: int,
-        org: str,
-        cloud_storages,
-        request,
-    ):
-        cloud_storage = cloud_storages[cloud_storage_id]
-
-        data_spec = {
-            "start_frame": 2,
-            "stop_frame": 6,
-            "frame_filter": "step=2",
-        }
-
-        task_id, _ = self._create_task_with_cloud_data(
-            request=request,
-            cloud_storage=cloud_storage,
-            use_manifest=False,
-            use_cache=False,
-            server_files=["test/video/video.avi"],
-            org=org,
-            spec=data_spec,
-            data_type="video",
-        )
-
-        with make_api_client(self._USERNAME) as api_client:
-            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
-
-        assert data_meta.start_frame == 2
-        assert data_meta.stop_frame == 6
-        assert data_meta.size == 3
-
-    def test_can_specify_file_job_mapping(self):
-        task_spec = {
-            "name": f"test file-job mapping",
-            "labels": [{"name": "car"}],
-        }
-
-        files = generate_image_files(7)
-        filenames = [osp.basename(f.name) for f in files]
-        expected_segments = [
-            filenames[0:1],
-            filenames[1:5][::-1],  # a reversed fragment
-            filenames[5:7],
-        ]
-
-        data_spec = {
-            "image_quality": 75,
-            "client_files": files,
-            "job_file_mapping": expected_segments,
-        }
-
-        task_id, _ = create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json"
-        )
-
-        with make_api_client(self._USERNAME) as api_client:
-            jobs: List[models.JobRead] = get_paginated_collection(
-                api_client.jobs_api.list_endpoint, task_id=task_id, sort="id"
-            )
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
-
-            assert [f.name for f in task_meta.frames] == list(
-                chain.from_iterable(expected_segments)
-            )
-
-            start_frame = 0
-            for i, job in enumerate(jobs):
-                expected_size = len(expected_segments[i])
-                stop_frame = start_frame + expected_size - 1
-                assert job.start_frame == start_frame
-                assert job.stop_frame == stop_frame
-
-                start_frame = stop_frame + 1
-
-    def test_cannot_create_task_with_same_labels(self):
-        task_spec = {
-            "name": "test cannot create task with same labels",
-            "labels": [{"name": "l1"}, {"name": "l1"}],
-        }
-        response = post_method(self._USERNAME, "tasks", task_spec)
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-
-        response = get_method(self._USERNAME, "tasks")
-        assert response.status_code == HTTPStatus.OK
-
-    def test_cannot_create_task_with_same_skeleton_sublabels(self):
-        task_spec = {
-            "name": "test cannot create task with same skeleton sublabels",
-            "labels": [
-                {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
-            ],
-        }
-        response = post_method(self._USERNAME, "tasks", task_spec)
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-
-        response = get_method(self._USERNAME, "tasks")
-        assert response.status_code == HTTPStatus.OK
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize("cloud_storage_id", [2])
-    @pytest.mark.parametrize("use_manifest", [True, False])
-    @pytest.mark.parametrize("server_files", [["test/"]])
-    @pytest.mark.parametrize(
-        "default_prefix, expected_task_size",
-        [
-            (
-                "test/sub_1/img_0",
-                1,
-            ),
-            (
-                "test/sub_1/",
-                3,
+            pytest.param(
+                lambda client: client.jobs_api,
+                lambda tasks, jobs: next(
+                    j["id"] for j in jobs if tasks[j["task_id"]]["dimension"] == "3d"
+                ),
+                id="job",
             ),
         ],
     )
-    @pytest.mark.parametrize("org", [""])
-    def test_create_task_with_cloud_storage_directories_and_default_bucket_prefix(
-        self,
-        cloud_storage_id: int,
-        use_manifest: bool,
-        server_files: List[str],
-        default_prefix: str,
-        expected_task_size: int,
-        org: str,
-        cloud_storages,
-        request,
-    ):
-        cloud_storage = cloud_storages[cloud_storage_id]
+    def test_can_export_3d_annotations_via_rest_api(self, admin_user, tasks, jobs, get_api, get_id):
+        """Export 3D annotations via REST API v2 (task/job) and verify returned archive."""
+        item_id = get_id(tasks, jobs)
 
-        with make_api_client(self._USERNAME) as api_client:
-            (_, response) = api_client.cloudstorages_api.partial_update(
-                cloud_storage_id,
-                patched_cloud_storage_write_request={
-                    "specific_attributes": f'{cloud_storage["specific_attributes"]}&prefix={default_prefix}'
-                },
+        with make_api_client(admin_user) as api_client:
+            api = get_api(api_client)
+            dataset_bytes = export_dataset(
+                api,
+                id=item_id,
+                save_images=False,
+                format="Datumaro 3D 1.0",
             )
-            assert response.status == HTTPStatus.OK
 
-        task_id, _ = self._create_task_with_cloud_data(
-            request, cloud_storage, use_manifest, server_files, org=org
-        )
+        assert zipfile.is_zipfile(io.BytesIO(dataset_bytes))
 
-        with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.retrieve(task_id)
-            assert response.status == HTTPStatus.OK
-            assert task.size == expected_task_size
+        with zipfile.ZipFile(io.BytesIO(dataset_bytes)) as zf:
+            names = zf.namelist()
+            assert any(
+                name.startswith("annotations/") for name in names
+            ), f"No annotations folder in export archive: {names}"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:
-    def _get_task_labels(self, pid, user, **kwargs) -> List[models.Label]:
+    def _get_task_labels(self, pid, user, **kwargs) -> list[models.Label]:
         kwargs.setdefault("return_json", True)
         with make_api_client(user) as api_client:
             return get_paginated_collection(
@@ -2136,7 +1138,8 @@ class TestPatchTaskLabel:
             for user, task in product(users, tasks)
             if not is_task_staff(user["id"], task["id"])
             and task["organization"]
-            and is_org_member(user["id"], task["organization"] and task["project_id"] is None)
+            and is_org_member(user["id"], task["organization"])
+            and task["project_id"] is None
         )
 
         new_label = {"name": "new name"}
@@ -2229,20 +1232,21 @@ class TestPatchTaskLabel:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
-        [(1, "manifest.jsonl")],  # public bucket
+        [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
     def test_work_with_task_containing_non_stable_cloud_storage_files(
         self, cloud_storage_id, manifest, cloud_storages, request
     ):
-        image_name = "image_case_65_1.png"
+        image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
 
         task_spec = {
@@ -2281,40 +1285,25 @@ class TestWorkWithTask:
 
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestTaskBackups:
-    def _make_client(self) -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_function, restore_cvat_data, tmp_path: Path, admin_user: str):
+    def setup(
+        self,
+        restore_db_per_function,
+        restore_cvat_data_per_function,
+        tmp_path: Path,
+        admin_user: str,
+    ):
         self.tmp_dir = tmp_path
 
-        self.client = self._make_client()
         self.user = admin_user
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+        with make_sdk_client(self.user) as client:
+            self.client = client
 
-    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
-    @pytest.mark.parametrize(
-        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
-    )
-    def test_can_export_backup_with_both_api_versions(
-        self, filter_tasks, api_version: Tuple[int], local_download: bool
-    ):
-        task = filter_tasks(
-            **{("exclude_" if local_download else "") + "target_storage__location": "cloud_storage"}
-        )[0]
-        backup = export_task_backup(self.user, api_version, id=task["id"])
-
-        if local_download:
-            assert zipfile.is_zipfile(io.BytesIO(backup))
-        else:
-            assert backup is None
-
-    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
-    def test_can_export_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode)["id"]
+    def _test_can_export_backup(self, task_id: int):
         task = self.client.tasks.retrieve(task_id)
 
         filename = self.tmp_dir / f"task_{task.id}_backup.zip"
@@ -2323,57 +1312,214 @@ class TestTaskBackups:
         assert filename.is_file()
         assert filename.stat().st_size > 0
 
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_export_backup(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
+        self._test_can_export_backup(task_id)
+
+    def test_can_export_backup_for_consensus_task(self, tasks):
+        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        self._test_can_export_backup(task_id)
+
+    def test_can_export_backup_for_honeypot_task(self, tasks):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        self._test_can_export_backup(task_id)
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_export_backup_for_simple_gt_job_task(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode and t["validation_mode"] == "gt")["id"]
+        self._test_can_export_backup(task_id)
+
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            self._test_can_export_backup(task_id)
+
+        assert "Backup of a task without data is not allowed" in str(capture.value.body)
+
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_task_with_mounted_share(self):
+        task_spec = {
+            "name": "Task with files from mounted share",
+            "labels": [{"name": "car"}],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
+            "start_frame": 1,
+            "stop_frame": 4,
+            "frame_filter": "step=2",
+        }
+        task_id, _ = create_task(self.user, task_spec, data_spec)
+
         task = self.client.tasks.retrieve(task_id)
 
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        filename = self.tmp_dir / f"share_task_{task.id}_backup.zip"
+        task.download_backup(filename)
 
-        with pytest.raises(ApiException) as exc:
-            task.download_backup(filename)
+        with zipfile.ZipFile(filename, "r") as zf:
+            files_in_data = {
+                name.removeprefix("data/") for name in zf.namelist() if name.startswith("data/")
+            }
 
-            assert exc.status == HTTPStatus.BAD_REQUEST
-            assert "Backup of a task without data is not allowed" == exc.body.encode()
+        assert files_in_data == {"manifest.jsonl", "images/image_1.jpg", "images/image_3.jpg"}
+
+        self._test_can_restore_task_from_backup(task_id)
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("lightweight_backup", [True, False])
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
+        task_spec = {
+            "name": "Task with files from cloud storage",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": False,
+            "cloud_storage_id": 1,
+            "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
+            "start_frame": 1,
+            "stop_frame": 4,
+            "frame_filter": "step=2",
+        }
+        task_id, _ = create_task(self.user, task_spec, data_spec)
+
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
+        task.download_backup(filename, lightweight=lightweight_backup)
+
+        with zipfile.ZipFile(filename, "r") as zf:
+            files_in_data = {
+                name.split("data/", maxsplit=1)[1]
+                for name in zf.namelist()
+                if name.startswith("data/")
+            }
+
+        expected_media = {"manifest.jsonl"}
+        if not lightweight_backup:
+            expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
+        assert files_in_data == expected_media
+
+        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
-        task_json = next(t for t in tasks if t["mode"] == mode)
-        self._test_can_restore_backup_task(task_json["id"])
+        task_id = next(t for t in tasks if t["mode"] == mode if not t["validation_mode"])["id"]
+        self._test_can_restore_task_from_backup(task_id)
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_import_backup_with_simple_gt_job_task(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode if t["validation_mode"] == "gt")["id"]
+        self._test_can_restore_task_from_backup(task_id)
+
+    def test_can_import_backup_with_honeypot_task(self, tasks):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        self._test_can_restore_task_from_backup(task_id)
+
+    def test_can_import_backup_with_consensus_task(self, tasks):
+        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
         # Reproduces the problem with empty 'mode' in a restored task,
         # described in the reproduction steps https://github.com/cvat-ai/cvat/issues/5668
 
-        task_json = next(t for t in tasks if t["mode"] == mode and t["jobs"]["count"])
+        task_json = next(t for t in tasks if t["mode"] == mode if t["jobs"]["count"])
 
         task = self.client.tasks.retrieve(task_json["id"])
         jobs = task.get_jobs()
         for j in jobs:
             j.update({"stage": "validation"})
 
-        self._test_can_restore_backup_task(task_json["id"])
+        self._test_can_restore_task_from_backup(task_json["id"])
 
-    def _test_can_restore_backup_task(self, task_id: int):
-        task = self.client.tasks.retrieve(task_id)
+    def test_can_import_backup_with_gt_job(self, tasks, jobs, job_has_annotations):
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            if job_has_annotations(j["id"])
+            if tasks[j["task_id"]]["validation_mode"] == "gt"
+            if tasks[j["task_id"]]["size"]
+        )
+        task = tasks[gt_job["task_id"]]
+
+        self._test_can_restore_task_from_backup(task["id"])
+
+    def _test_can_restore_task_from_backup(self, task_id: int, lightweight_backup: bool = False):
+        old_task = self.client.tasks.retrieve(task_id)
         (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
         task_json = json.loads(response.data)
 
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
-        task.download_backup(filename)
+        filename = self.tmp_dir / f"task_{old_task.id}_backup.zip"
+        old_task.download_backup(filename, lightweight=lightweight_backup)
 
-        restored_task = self.client.tasks.create_from_backup(filename)
+        new_task = self.client.tasks.create_from_backup(filename)
 
-        old_jobs = task.get_jobs()
-        new_jobs = restored_task.get_jobs()
+        old_meta = json.loads(old_task.api.retrieve_data_meta(old_task.id)[1].data)
+        new_meta = json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data)
+
+        exclude_regex_paths = [r"root\['chunks_updated_date'\]"]  # must be different
+
+        if old_meta["storage"] == "cloud_storage":
+            assert new_meta["cloud_storage_id"] is None
+            exclude_regex_paths.append(r"root\['cloud_storage_id'\]")
+
+        if (
+            old_meta["storage"] == "share"
+            or old_meta["storage"] == "cloud_storage"
+            and not lightweight_backup
+        ):
+            assert new_meta["storage"] == "local"
+            assert new_meta["start_frame"] == 0
+            assert new_meta["stop_frame"] == len(old_meta["frames"]) - 1
+            assert new_meta["frame_filter"] == ""
+            exclude_regex_paths += [
+                r"root\['storage'\]",
+                r"root\['start_frame'\]",
+                r"root\['stop_frame'\]",
+                r"root\['frame_filter'\]",
+            ]
+
+        assert (
+            DeepDiff(
+                old_meta,
+                new_meta,
+                ignore_order=True,
+                exclude_regex_paths=exclude_regex_paths,
+            )
+            == {}
+        )
+
+        old_jobs = sorted(old_task.get_jobs(), key=lambda j: (j.start_frame, j.type))
+        new_jobs = sorted(new_task.get_jobs(), key=lambda j: (j.start_frame, j.type))
         assert len(old_jobs) == len(new_jobs)
 
         for old_job, new_job in zip(old_jobs, new_jobs):
-            assert old_job.status == new_job.status
-            assert old_job.start_frame == new_job.start_frame
-            assert old_job.stop_frame == new_job.stop_frame
+            old_job_meta = json.loads(old_job.api.retrieve_data_meta(old_job.id)[1].data)
+            new_job_meta = json.loads(new_job.api.retrieve_data_meta(new_job.id)[1].data)
+            assert (
+                DeepDiff(
+                    old_job_meta,
+                    new_job_meta,
+                    ignore_order=True,
+                    exclude_regex_paths=exclude_regex_paths,
+                )
+                == {}
+            )
 
-        (_, response) = self.client.api_client.tasks_api.retrieve(restored_task.id)
+            old_job_annotations = json.loads(old_job.api.retrieve_annotations(old_job.id)[1].data)
+            new_job_annotations = json.loads(new_job.api.retrieve_annotations(new_job.id)[1].data)
+            assert compare_annotations(old_job_annotations, new_job_annotations) == {}
+
+        (_, response) = self.client.api_client.tasks_api.retrieve(new_task.id)
         restored_task_json = json.loads(response.data)
 
         assert restored_task_json["assignee"] is None
@@ -2404,14 +1550,17 @@ class TestTaskBackups:
                     r"root\['assignee'\]",  # id, depends on the situation
                     r"root\['owner'\]",  # id, depends on the situation
                     r"root\['data'\]",  # id, must be different
-                    r"root\['organization'\]",  # depends on the task setup
+                    r"root\['organization'\]",  # depends on the task setup, deprecated field
+                    r"root\['organization_id'\]",  # depends on the task setup
                     r"root\['project_id'\]",  # should be dropped
+                    r"root\['data_cloud_storage_id'\]",  # should be dropped
                     r"root(\['.*'\])*\['url'\]",  # depends on the task id
                     r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
                     r"root\['source_storage'\]",  # should be dropped
                     r"root\['target_storage'\]",  # should be dropped
                     r"root\['jobs'\]\['completed'\]",  # job statuses should be renewed
                     r"root\['jobs'\]\['validation'\]",  # job statuses should be renewed
+                    r"root\['status'\]",  # task status should be renewed
                     # depends on the actual job configuration,
                     # unlike to what is obtained from the regular task creation,
                     # where the requested number is recorded
@@ -2421,30 +1570,59 @@ class TestTaskBackups:
             == {}
         )
 
+        old_task_annotations = json.loads(old_task.api.retrieve_annotations(old_task.id)[1].data)
+        new_task_annotations = json.loads(new_task.api.retrieve_annotations(new_task.id)[1].data)
+        assert compare_annotations(old_task_annotations, new_task_annotations) == {}
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestWorkWithGtJobs:
-    def test_normal_and_gt_job_annotations_are_not_merged(
-        self, tmp_path, admin_user, tasks, jobs, annotations
-    ):
-        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
-        task = tasks[gt_job["task_id"]]
-        task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
-
-        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
-        assert (
-            gt_job_source_annotations["tags"]
-            or gt_job_source_annotations["shapes"]
-            or gt_job_source_annotations["tracks"]
+class TestWorkWithSimpleGtJobTasks:
+    @fixture
+    def fxt_task_with_gt_job(
+        self, tasks, jobs, job_has_annotations
+    ) -> Generator[dict[str, Any], None, None]:
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            if job_has_annotations(j["id"])
+            if tasks[j["task_id"]]["validation_mode"] == "gt"
+            if tasks[j["task_id"]]["size"]
         )
 
-        with Client(BASE_URL) as client:
-            client.config.status_check_period = 0.01
-            client.login((admin_user, USER_PASS))
+        task = tasks[gt_job["task_id"]]
 
-            for j in task_jobs:
-                if j["type"] != "ground_truth":
-                    client.jobs.retrieve(j["id"]).remove_annotations()
+        annotation_jobs = sorted(
+            [j for j in jobs if j["task_id"] == task["id"] if j["id"] != gt_job["id"]],
+            key=lambda j: j["start_frame"],
+        )
+
+        yield task, gt_job, annotation_jobs
+
+    @fixture
+    def fxt_task_with_gt_job_and_frame_step(
+        self, tasks, jobs
+    ) -> Generator[dict[str, Any], None, None]:
+        task_id = 34
+
+        gt_job = next(j for j in jobs if j["type"] == "ground_truth" if j["task_id"] == task_id)
+
+        task = tasks[gt_job["task_id"]]
+
+        annotation_jobs = sorted(
+            [j for j in jobs if j["task_id"] == task["id"] if j["id"] != gt_job["id"]],
+            key=lambda j: j["start_frame"],
+        )
+
+        yield task, gt_job, annotation_jobs
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
+    def test_gt_job_annotations_are_not_present_in_task_annotation_export(
+        self, tmp_path, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_sdk_client(admin_user) as client:
+            for j in annotation_jobs:
+                client.jobs.retrieve(j["id"]).remove_annotations()
 
             task_obj = client.tasks.retrieve(task["id"])
             task_raw_annotations = task_obj.get_annotations()
@@ -2471,56 +1649,780 @@ class TestWorkWithGtJobs:
             assert not annotation_source.shapes
             assert not annotation_source.tracks
 
-    def test_can_backup_task_with_gt_jobs(self, tmp_path, admin_user, tasks, jobs, annotations):
+    @parametrize(
+        "task, gt_job, annotation_jobs",
+        [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
+    )
+    def test_deleted_frames_in_jobs_contain_only_job_frames(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            frame_step = parse_frame_step(task_meta.frame_filter)
+
+            api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(range(task["size"]))
+                ),
+            )
+
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            assert gt_job_meta.deleted_frames == sorted(
+                to_rel_frames(
+                    gt_job_meta.included_frames,
+                    frame_step=frame_step,
+                    task_start_frame=task_meta.start_frame,
+                )
+            )
+
+            for j in annotation_jobs:
+                updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
+                assert updated_job_meta.deleted_frames == list(
+                    range(j["start_frame"], j["stop_frame"] + 1)
+                )
+
+    @parametrize(
+        "task, gt_job, annotation_jobs",
+        [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
+    )
+    def test_deleting_frames_in_gt_job_does_not_affect_task_or_annotation_job_deleted_frames(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            frame_step = parse_frame_step(task_meta.frame_filter)
+
+            api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(range(task["size"]))
+                ),
+            )
+
+            # Changing deleted frames in the GT job will modify the validation pool of the task,
+            # but will not change deleted frames of the task or other jobs.
+            # Deleted frames in the GT job are computed as union of task deleted frames and
+            # validation layout disabled frames.
+            gt_job_deleted_frames = []
+            gt_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
+                gt_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=gt_job_deleted_frames
+                ),
+            )
+            assert gt_job_meta.deleted_frames == sorted(
+                to_rel_frames(
+                    gt_job_meta.included_frames,
+                    frame_step=frame_step,
+                    task_start_frame=task_meta.start_frame,
+                )
+            )
+
+            task_validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task["id"])
+            assert task_validation_layout.disabled_frames == gt_job_deleted_frames
+
+            for j in annotation_jobs:
+                updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
+                assert updated_job_meta.deleted_frames == list(
+                    range(j["start_frame"], j["stop_frame"] + 1)
+                )
+
+    @parametrize(
+        "task, gt_job, annotation_jobs",
+        [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
+    )
+    def test_can_exclude_and_restore_gt_frames_via_gt_job_meta(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(range(0, task["size"], 2))
+                ),
+            )
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            frame_step = parse_frame_step(task_meta.frame_filter)
+
+            gt_frames = to_rel_frames(
+                gt_job_meta.included_frames,
+                frame_step=frame_step,
+                task_start_frame=task_meta.start_frame,
+            )
+
+            for deleted_gt_frames in [[f] for f in gt_frames] + [[]]:
+                updated_gt_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
+                    gt_job["id"],
+                    patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                        deleted_frames=deleted_gt_frames
+                    ),
+                )
+
+                # The excluded GT frames must be excluded only from the GT job
+                assert updated_gt_job_meta.deleted_frames == sorted(
+                    set(deleted_gt_frames + task_meta.deleted_frames).intersection(gt_frames)
+                )
+
+                updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+                assert updated_task_meta.deleted_frames == task_meta.deleted_frames
+
+                for j in annotation_jobs:
+                    updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
+                    assert updated_job_meta.deleted_frames == [
+                        f
+                        for f in task_meta.deleted_frames
+                        if j["start_frame"] <= f <= j["stop_frame"]
+                    ]
+
+    @parametrize(
+        "task, gt_job, annotation_jobs",
+        [fixture_ref(fxt_task_with_gt_job), fixture_ref(fxt_task_with_gt_job_and_frame_step)],
+    )
+    def test_deleting_frames_in_annotation_jobs_deletes_gt_job_frames(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=list(range(0, task["size"], 2))
+                ),
+            )
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            frame_step = parse_frame_step(task_meta.frame_filter)
+
+            gt_frames = to_rel_frames(
+                gt_job_meta.included_frames,
+                frame_step=frame_step,
+                task_start_frame=task_meta.start_frame,
+            )
+            deleted_gt_frame = gt_frames[0]
+
+            annotation_job = next(
+                j
+                for j in annotation_jobs
+                if j["start_frame"] <= deleted_gt_frame <= j["stop_frame"]
+            )
+            updated_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
+                annotation_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[deleted_gt_frame]
+                ),
+            )
+            assert updated_job_meta.deleted_frames == [deleted_gt_frame]
+
+            updated_task_deleted_frames = sorted(
+                [deleted_gt_frame]
+                + [
+                    f
+                    for f in task_meta.deleted_frames
+                    if not (annotation_job["start_frame"] <= f <= annotation_job["stop_frame"])
+                ]
+            )
+
+            # in this case deleted frames are deleted both in the task and in the GT job
+            updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            assert updated_task_meta.deleted_frames == updated_task_deleted_frames
+
+            updated_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            assert updated_gt_job_meta.deleted_frames == [
+                f for f in updated_task_deleted_frames if f in gt_frames
+            ]
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWorkWithHoneypotTasks:
+    @fixture
+    def fxt_task_with_honeypots(
+        self, tasks, jobs, job_has_annotations
+    ) -> Generator[dict[str, Any], None, None]:
         gt_job = next(
             j
             for j in jobs
-            if j["type"] == "ground_truth" and tasks[j["task_id"]]["jobs"]["count"] == 2
+            if j["type"] == "ground_truth"
+            if j["frame_count"] >= 4
+            if job_has_annotations(j["id"])
+            if tasks[j["task_id"]]["validation_mode"] == "gt_pool"
+            if tasks[j["task_id"]]["size"]
         )
+
         task = tasks[gt_job["task_id"]]
-        annotation_job = next(
-            j for j in jobs if j["task_id"] == task["id"] and j["type"] == "annotation"
+
+        annotation_jobs = sorted(
+            [j for j in jobs if j["task_id"] == task["id"] if j["id"] != gt_job["id"]],
+            key=lambda j: j["start_frame"],
         )
 
-        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
-        assert (
-            gt_job_source_annotations["tags"]
-            or gt_job_source_annotations["shapes"]
-            or gt_job_source_annotations["tracks"]
-        )
+        yield task, gt_job, annotation_jobs
 
-        annotation_job_source_annotations = annotations["job"][str(annotation_job["id"])]
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    def test_gt_job_annotations_are_present_in_task_annotation_export(
+        self, tmp_path, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_sdk_client(admin_user) as client:
+            for j in annotation_jobs:
+                client.jobs.retrieve(j["id"]).remove_annotations()
 
-        with Client(BASE_URL) as client:
-            client.config.status_check_period = 0.01
-            client.login((admin_user, USER_PASS))
+            task_obj = client.tasks.retrieve(task["id"])
+            task_raw_annotations = json.loads(task_obj.api.retrieve_annotations(task["id"])[1].data)
 
-            backup_file: Path = tmp_path / "dataset.zip"
-            client.tasks.retrieve(task["id"]).download_backup(backup_file)
+            # It's quite hard to parse the dataset files, just import the data back instead
+            dataset_format = "CVAT for images 1.1"
 
-            new_task = client.tasks.create_from_backup(backup_file)
-            updated_job_annotations = {
-                j.type: json.loads(j.api.retrieve_annotations(j.id)[1].data)
-                for j in new_task.get_jobs()
-            }
+            dataset_file = tmp_path / "dataset.zip"
+            task_obj.export_dataset(dataset_format, dataset_file, include_images=True)
+            task_obj.import_annotations("CVAT 1.1", dataset_file)
+            task_dataset_file_annotations = json.loads(
+                task_obj.api.retrieve_annotations(task["id"])[1].data
+            )
 
-        for job_type, source_annotations in {
-            gt_job["type"]: gt_job_source_annotations,
-            annotation_job["type"]: annotation_job_source_annotations,
-        }.items():
+            annotations_file = tmp_path / "annotations.zip"
+            task_obj.export_dataset(dataset_format, annotations_file, include_images=False)
+            task_obj.import_annotations("CVAT 1.1", annotations_file)
+            task_annotations_file_annotations = json.loads(
+                task_obj.api.retrieve_annotations(task["id"])[1].data
+            )
+
+        # there will be other annotations after uploading into a honeypot task,
+        # we need to compare only the validation frames in this test
+        validation_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+        for anns in [
+            task_raw_annotations,
+            task_dataset_file_annotations,
+            task_annotations_file_annotations,
+        ]:
+            anns["tags"] = [t for t in anns["tags"] if t["frame"] in validation_frames]
+            anns["shapes"] = [t for t in anns["shapes"] if t["frame"] in validation_frames]
+
+        assert task_raw_annotations["tags"] or task_raw_annotations["shapes"]
+        assert not task_raw_annotations["tracks"]  # tracks are prohibited in such tasks
+        assert compare_annotations(task_raw_annotations, task_dataset_file_annotations) == {}
+        assert compare_annotations(task_raw_annotations, task_annotations_file_annotations) == {}
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    @pytest.mark.parametrize("dataset_format", ["CVAT for images 1.1", "Datumaro 1.0"])
+    def test_placeholder_frames_are_not_present_in_task_annotation_export(
+        self, tmp_path, admin_user, task, gt_job, annotation_jobs, dataset_format
+    ):
+        with make_sdk_client(admin_user) as client:
+            for j in annotation_jobs:
+                client.jobs.retrieve(j["id"]).remove_annotations()
+
+            task_obj = client.tasks.retrieve(task["id"])
+
+            dataset_file = tmp_path / "dataset.zip"
+            task_obj.export_dataset(dataset_format, dataset_file, include_images=True)
+
+            task_meta = task_obj.get_meta()
+
+        task_frame_names = [frame.name for frame in task_meta.frames]
+        gt_frame_ids = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+        gt_frame_names = [task_frame_names[i] for i in gt_frame_ids]
+
+        frame_step = parse_frame_step(task_meta.frame_filter)
+        expected_frames = [
+            (task_meta.start_frame + frame * frame_step, name)
+            for frame, name in enumerate(task_frame_names)
+            if frame in gt_frame_ids or name not in gt_frame_names
+        ]
+
+        with zipfile.ZipFile(dataset_file, "r") as archive:
+            if dataset_format == "CVAT for images 1.1":
+                annotations = archive.read("annotations.xml").decode()
+                matches = re.findall(r'<image id="(\d+)" name="([^"]+)"', annotations, re.MULTILINE)
+                assert sorted((int(match[0]), match[1]) for match in matches) == sorted(
+                    expected_frames
+                )
+            elif dataset_format == "Datumaro 1.0":
+                with archive.open("annotations/default.json", "r") as annotation_file:
+                    annotations = json.load(annotation_file)
+
+                assert sorted(
+                    (int(item["attr"]["frame"]), item["id"]) for item in annotations["items"]
+                ) == sorted((frame, os.path.splitext(name)[0]) for frame, name in expected_frames)
+            else:
+                assert False
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    @parametrize("method", ["gt_job_meta", "task_validation_layout"])
+    def test_can_exclude_and_restore_gt_frames(
+        self, admin_user, task, gt_job, annotation_jobs, method: str
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            task_frames = [f.name for f in task_meta.frames]
+
+            for deleted_gt_frames in [
+                [v] for v in range(gt_job["start_frame"], gt_job["stop_frame"] + 1)[:2]
+            ] + [[]]:
+                if method == "gt_job_meta":
+                    api_client.jobs_api.partial_update_data_meta(
+                        gt_job["id"],
+                        patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                            deleted_frames=deleted_gt_frames
+                        ),
+                    )
+                elif method == "task_validation_layout":
+                    api_client.tasks_api.partial_update_validation_layout(
+                        task["id"],
+                        patched_task_validation_layout_write_request=(
+                            models.PatchedTaskValidationLayoutWriteRequest(
+                                disabled_frames=deleted_gt_frames
+                            )
+                        ),
+                    )
+                else:
+                    assert False
+
+                updated_validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(
+                    task["id"]
+                )
+                assert updated_validation_layout.disabled_frames == deleted_gt_frames
+
+                updated_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+                assert updated_gt_job_meta.deleted_frames == deleted_gt_frames
+
+                # the excluded GT frames must be excluded from all the jobs with the same frame
+                deleted_frame_names = [task_frames[i] for i in deleted_gt_frames]
+                updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+                assert (
+                    sorted(i for i, f in enumerate(task_frames) if f in deleted_frame_names)
+                    == updated_task_meta.deleted_frames
+                )
+
+                for j in annotation_jobs:
+                    deleted_job_frames = [
+                        i
+                        for i in updated_task_meta.deleted_frames
+                        if j["start_frame"] <= i <= j["stop_frame"]
+                    ]
+
+                    updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
+                    assert deleted_job_frames == updated_job_meta.deleted_frames
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    def test_can_delete_honeypot_frames_by_changing_job_meta_in_annotation_job(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+
+            task_frame_names = [frame.name for frame in task_meta.frames]
+            gt_frame_ids = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+            gt_frame_names = [task_frame_names[i] for i in gt_frame_ids]
+
+            honeypot_frame_ids = [
+                i for i, f in enumerate(task_meta.frames) if f.name in gt_frame_names
+            ]
+            deleted_honeypot_frame = honeypot_frame_ids[0]
+
+            annotation_job_with_honeypot = next(
+                j
+                for j in annotation_jobs
+                if j["start_frame"] <= deleted_honeypot_frame <= j["stop_frame"]
+            )
+            api_client.jobs_api.partial_update_data_meta(
+                annotation_job_with_honeypot["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[deleted_honeypot_frame]
+                ),
+            )
+
+            updated_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            assert updated_gt_job_meta.deleted_frames == []  # must not be affected
+
+            updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            assert updated_task_meta.deleted_frames == [deleted_honeypot_frame]  # must be affected
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    def test_can_restore_gt_frames_via_task_meta_only_if_all_frames_are_restored(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        assert gt_job["stop_frame"] - gt_job["start_frame"] + 1 >= 2
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update_data_meta(
+                gt_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[gt_job["start_frame"]]
+                ),
+            )
+
+            _, response = api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=[gt_job["start_frame"], gt_job["start_frame"] + 1]
+                ),
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert b"GT frames can only be deleted" in response.data
+
+            updated_task_meta, _ = api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=[]
+                ),
+            )
+            assert updated_task_meta.deleted_frames == []
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    @parametrize("frame_selection_method", ["manual", "random_uniform"])
+    def test_can_change_honeypot_frames_in_task(
+        self, admin_user, task, gt_job, annotation_jobs, frame_selection_method: str
+    ):
+        assert gt_job["stop_frame"] - gt_job["start_frame"] + 1 >= 2
+
+        with make_api_client(admin_user) as api_client:
+            gt_frame_set = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+            old_validation_layout = json.loads(
+                api_client.tasks_api.retrieve_validation_layout(task["id"])[1].data
+            )
+
+            api_client.tasks_api.partial_update_validation_layout(
+                task["id"],
+                patched_task_validation_layout_write_request=models.PatchedTaskValidationLayoutWriteRequest(
+                    frame_selection_method="manual",
+                    honeypot_real_frames=old_validation_layout["honeypot_count"]
+                    * [gt_frame_set[0]],
+                ),
+            )
+
+            params = {"frame_selection_method": frame_selection_method}
+
+            if frame_selection_method == "manual":
+                requested_honeypot_real_frames = [
+                    gt_frame_set[(old_real_frame + 1) % len(gt_frame_set)]
+                    for old_real_frame in old_validation_layout["honeypot_real_frames"]
+                ]
+
+                params["honeypot_real_frames"] = requested_honeypot_real_frames
+
+            new_validation_layout = json.loads(
+                api_client.tasks_api.partial_update_validation_layout(
+                    task["id"],
+                    patched_task_validation_layout_write_request=(
+                        models.PatchedTaskValidationLayoutWriteRequest(**params)
+                    ),
+                )[1].data
+            )
+
+            new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
+
+            assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
+            assert all(f in gt_frame_set for f in new_honeypot_real_frames)
+
+            if frame_selection_method == "manual":
+                assert new_honeypot_real_frames == requested_honeypot_real_frames
+            elif frame_selection_method == "random_uniform":
+                # Test distribution
+                validation_frame_counts = count_frame_uses(
+                    new_honeypot_real_frames,
+                    included_frames=new_validation_layout["validation_frames"],
+                )
+                assert max(validation_frame_counts.values()) <= 1 + min(
+                    validation_frame_counts.values()
+                )
+
             assert (
                 DeepDiff(
-                    source_annotations,
-                    updated_job_annotations[job_type],
-                    ignore_order=True,
-                    exclude_regex_paths=[
-                        r"root(\['\w+'\]\[\d+\])+\['id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                    ],
+                    old_validation_layout,
+                    new_validation_layout,
+                    exclude_regex_paths=[r"root\['honeypot_real_frames'\]\[\d+\]"],
                 )
                 == {}
             )
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    @parametrize("frame_selection_method", ["manual", "random_uniform"])
+    def test_can_change_honeypot_frames_in_task_can_only_select_from_active_validation_frames(
+        self, admin_user, task, gt_job, annotation_jobs, frame_selection_method: str
+    ):
+        assert gt_job["stop_frame"] - gt_job["start_frame"] + 1 >= 2
+
+        with make_api_client(admin_user) as api_client:
+            old_validation_layout = json.loads(
+                api_client.tasks_api.retrieve_validation_layout(task["id"])[1].data
+            )
+
+            honeypots_per_job = old_validation_layout["frames_per_job_count"]
+
+            gt_frame_set = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+            active_gt_set = gt_frame_set[:honeypots_per_job]
+
+            api_client.tasks_api.partial_update_validation_layout(
+                task["id"],
+                patched_task_validation_layout_write_request=models.PatchedTaskValidationLayoutWriteRequest(
+                    disabled_frames=[f for f in gt_frame_set if f not in active_gt_set],
+                    frame_selection_method="manual",
+                    honeypot_real_frames=old_validation_layout["honeypot_count"]
+                    * [active_gt_set[0]],
+                ),
+            )
+
+            params = {"frame_selection_method": frame_selection_method}
+
+            if frame_selection_method == "manual":
+                requested_honeypot_real_frames = [
+                    active_gt_set[(old_real_frame + 1) % len(active_gt_set)]
+                    for old_real_frame in old_validation_layout["honeypot_real_frames"]
+                ]
+
+                params["honeypot_real_frames"] = requested_honeypot_real_frames
+
+                _, response = api_client.tasks_api.partial_update_validation_layout(
+                    task["id"],
+                    patched_task_validation_layout_write_request=(
+                        models.PatchedTaskValidationLayoutWriteRequest(
+                            frame_selection_method="manual",
+                            honeypot_real_frames=[
+                                next(f for f in gt_frame_set if f not in active_gt_set)
+                            ]
+                            * old_validation_layout["honeypot_count"],
+                        )
+                    ),
+                    _parse_response=False,
+                    _check_status=False,
+                )
+                assert response.status == HTTPStatus.BAD_REQUEST
+                assert b"are disabled. Restore them" in response.data
+
+            new_validation_layout = json.loads(
+                api_client.tasks_api.partial_update_validation_layout(
+                    task["id"],
+                    patched_task_validation_layout_write_request=(
+                        models.PatchedTaskValidationLayoutWriteRequest(**params)
+                    ),
+                )[1].data
+            )
+
+            new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
+
+            assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
+            assert all([f in active_gt_set for f in new_honeypot_real_frames])
+
+            if frame_selection_method == "manual":
+                assert new_honeypot_real_frames == requested_honeypot_real_frames
+            else:
+                assert all(
+                    [
+                        honeypots_per_job
+                        == len(
+                            set(
+                                new_honeypot_real_frames[
+                                    j * honeypots_per_job : (j + 1) * honeypots_per_job
+                                ]
+                            )
+                        )
+                        for j in range(len(annotation_jobs))
+                    ]
+                ), new_honeypot_real_frames
+
+                # Test distribution
+                validation_frame_counts = count_frame_uses(
+                    new_honeypot_real_frames, included_frames=active_gt_set
+                )
+                assert max(validation_frame_counts.values()) <= 1 + min(
+                    validation_frame_counts.values()
+                )
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    @parametrize("frame_selection_method", ["manual", "random_uniform"])
+    def test_can_restore_and_change_honeypot_frames_in_task_in_the_same_request(
+        self, admin_user, task, gt_job, annotation_jobs, frame_selection_method: str
+    ):
+        assert gt_job["stop_frame"] - gt_job["start_frame"] + 1 >= 2
+
+        with make_api_client(admin_user) as api_client:
+            old_validation_layout = json.loads(
+                api_client.tasks_api.retrieve_validation_layout(task["id"])[1].data
+            )
+
+            honeypots_per_job = old_validation_layout["frames_per_job_count"]
+
+            gt_frame_set = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+            active_gt_set = gt_frame_set[:honeypots_per_job]
+
+            api_client.tasks_api.partial_update_validation_layout(
+                task["id"],
+                patched_task_validation_layout_write_request=models.PatchedTaskValidationLayoutWriteRequest(
+                    disabled_frames=[f for f in gt_frame_set if f not in active_gt_set],
+                    frame_selection_method="manual",
+                    honeypot_real_frames=old_validation_layout["honeypot_count"]
+                    * [active_gt_set[0]],
+                ),
+            )
+
+            active_gt_set = gt_frame_set
+
+            params = {
+                "frame_selection_method": frame_selection_method,
+                "disabled_frames": [],  # restore all validation frames
+            }
+
+            if frame_selection_method == "manual":
+                requested_honeypot_real_frames = [
+                    active_gt_set[(old_real_frame + 1) % len(active_gt_set)]
+                    for old_real_frame in old_validation_layout["honeypot_real_frames"]
+                ]
+
+                params["honeypot_real_frames"] = requested_honeypot_real_frames
+
+            new_validation_layout = json.loads(
+                api_client.tasks_api.partial_update_validation_layout(
+                    task["id"],
+                    patched_task_validation_layout_write_request=(
+                        models.PatchedTaskValidationLayoutWriteRequest(**params)
+                    ),
+                )[1].data
+            )
+
+            new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
+
+            assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
+            assert sorted(new_validation_layout["disabled_frames"]) == sorted(
+                params["disabled_frames"]
+            )
+
+            if frame_selection_method == "manual":
+                assert new_honeypot_real_frames == requested_honeypot_real_frames
+            else:
+                assert all(
+                    [
+                        honeypots_per_job
+                        == len(
+                            set(
+                                new_honeypot_real_frames[
+                                    j * honeypots_per_job : (j + 1) * honeypots_per_job
+                                ]
+                            )
+                        )
+                    ]
+                    for j in range(len(annotation_jobs))
+                ), new_honeypot_real_frames
+
+                # Test distribution
+                validation_frame_counts = count_frame_uses(
+                    new_honeypot_real_frames, included_frames=active_gt_set
+                )
+                assert max(validation_frame_counts.values()) <= 1 + min(
+                    validation_frame_counts.values()
+                )
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    @parametrize("frame_selection_method", ["manual", "random_uniform"])
+    def test_can_change_honeypot_frames_in_annotation_jobs(
+        self, admin_user, task, gt_job, annotation_jobs, frame_selection_method: str
+    ):
+        _MAX_RANDOM_ATTEMPTS = 20  # This test can have random outcomes, it's expected
+
+        assert gt_job["stop_frame"] - gt_job["start_frame"] + 1 >= 2
+
+        with make_api_client(admin_user) as api_client:
+            gt_frame_set = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+
+            for annotation_job in annotation_jobs:
+                old_validation_layout = json.loads(
+                    api_client.jobs_api.retrieve_validation_layout(annotation_job["id"])[1].data
+                )
+                old_job_meta, _ = api_client.jobs_api.retrieve_data_meta(annotation_job["id"])
+
+                params = {"frame_selection_method": frame_selection_method}
+
+                if frame_selection_method == "manual":
+                    requested_honeypot_real_frames = [
+                        gt_frame_set[(gt_frame_set.index(old_real_frame) + 1) % len(gt_frame_set)]
+                        for old_real_frame in old_validation_layout["honeypot_real_frames"]
+                    ]
+
+                    params["honeypot_real_frames"] = requested_honeypot_real_frames
+
+                attempt = 0
+                while attempt < _MAX_RANDOM_ATTEMPTS:
+                    new_validation_layout = json.loads(
+                        api_client.jobs_api.partial_update_validation_layout(
+                            annotation_job["id"],
+                            patched_job_validation_layout_write_request=(
+                                models.PatchedJobValidationLayoutWriteRequest(**params)
+                            ),
+                        )[1].data
+                    )
+
+                    new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
+
+                    if (
+                        frame_selection_method == "random_uniform"
+                        and new_honeypot_real_frames
+                        == old_validation_layout["honeypot_real_frames"]
+                    ):
+                        attempt += 1
+                        # The test is fully random, it's possible to get no changes in the updated
+                        # honeypots. Passing a random seed has little sense in this endpoint,
+                        # so we retry several times in such a case instead.
+                    else:
+                        break
+
+                if attempt >= _MAX_RANDOM_ATTEMPTS and frame_selection_method == "random_uniform":
+                    # The situation is unlikely if everything works, so we consider it a fail
+                    pytest.fail(f"too many attempts ({attempt}) with random honeypot updating")
+
+                assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
+                assert all(f in gt_frame_set for f in new_honeypot_real_frames)
+
+                if frame_selection_method == "manual":
+                    assert new_honeypot_real_frames == requested_honeypot_real_frames
+
+                assert (
+                    DeepDiff(
+                        old_validation_layout,
+                        new_validation_layout,
+                        exclude_regex_paths=[r"root\['honeypot_real_frames'\]\[\d+\]"],
+                    )
+                    == {}
+                )
+
+                new_job_meta, _ = api_client.jobs_api.retrieve_data_meta(annotation_job["id"])
+                assert new_job_meta.chunks_updated_date > old_job_meta.chunks_updated_date
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWorkWithConsensusTasks:
+    @pytest.mark.parametrize("task_id", [30])
+    def test_replica_annotations_are_not_present_in_task_annotations(
+        self, admin_user, jobs, annotations, task_id: int
+    ):
+        task_jobs = [j for j in jobs if j["task_id"] == task_id]
+        consensus_jobs = [j for j in task_jobs if j["type"] == "consensus_replica"]
+
+        # Ensure there are annotations in replicas
+        assert any(
+            len(annotations["job"][str(j["id"])]["tags"])
+            + len(annotations["job"][str(j["id"])]["shapes"])
+            + len(annotations["job"][str(j["id"])]["tracks"])
+            for j in consensus_jobs
+        )
+
+        with make_api_client(admin_user) as api_client:
+            for annotation_job in task_jobs:
+                if annotation_job["type"] != "consensus_replica":
+                    api_client.jobs_api.destroy_annotations(annotation_job["id"])
+
+            updated_task_annotations, _ = api_client.tasks_api.retrieve_annotations(task_id)
+            assert not updated_task_annotations.tags
+            assert not updated_task_annotations.shapes
+            assert not updated_task_annotations.tracks
+
+            for consensus_job in consensus_jobs:
+                job_annotations = annotations["job"][str(consensus_job["id"])]
+                updated_job_annotations, _ = api_client.jobs_api.retrieve_annotations(
+                    consensus_job["id"]
+                )
+
+                assert len(job_annotations["tags"]) == len(updated_job_annotations.tags)
+                assert len(job_annotations["shapes"]) == len(updated_job_annotations.shapes)
+                assert len(job_annotations["tracks"]) == len(updated_job_annotations.tracks)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -2587,19 +2489,17 @@ class TestGetTaskPreview:
         self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
 
 
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestUnequalJobs:
-    def _make_client(self) -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
         self.tmp_dir = tmp_path
 
-        self.client = self._make_client()
         self.user = admin_user
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+        with make_sdk_client(self.user) as client:
+            self.client = client
 
     @pytest.fixture
     def fxt_task_with_unequal_jobs(self):
@@ -2624,7 +2524,7 @@ class TestUnequalJobs:
             "job_file_mapping": expected_segments,
         }
 
-        return self.client.tasks.create_from_data(
+        yield self.client.tasks.create_from_data(
             spec=task_spec,
             resource_type=ResourceType.LOCAL,
             resources=[self.tmp_dir / fn for fn in filenames],
@@ -2720,18 +2620,7 @@ class TestPatchTask:
 
         response = get_method(user, f"tasks/{task_id}/annotations")
         assert response.status_code == HTTPStatus.OK
-        assert (
-            DeepDiff(
-                annotations,
-                response.json(),
-                ignore_order=True,
-                exclude_regex_paths=[
-                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
-                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
-                ],
-            )
-            == {}
-        )
+        assert compare_annotations(annotations, response.json()) == {}
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
@@ -2778,6 +2667,15 @@ class TestPatchTask:
             )
         assert response.status == HTTPStatus.FORBIDDEN
 
+    def test_malefactor_cannot_obtain_task_details_via_empty_partial_update_request(
+        self, regular_lonely_user, tasks
+    ):
+        task = next(iter(tasks))
+
+        with make_api_client(regular_lonely_user) as api_client:
+            with pytest.raises(ForbiddenException):
+                api_client.tasks_api.partial_update(task["id"])
+
     @pytest.mark.parametrize("has_old_assignee", [False, True])
     @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
     def test_can_update_assignee_updated_date_on_assignee_updates(
@@ -2798,15 +2696,251 @@ class TestPatchTask:
                 task["id"], patched_task_write_request={"assignee_id": new_assignee_id}
             )
 
-            if new_assignee_id == old_assignee_id:
-                assert updated_task.assignee_updated_date == task["assignee_updated_date"]
-            else:
-                assert updated_task.assignee_updated_date != task["assignee_updated_date"]
+            op = operator.eq if new_assignee_id == old_assignee_id else operator.ne
 
-            if new_assignee_id:
-                assert updated_task.assignee.id == new_assignee_id
+            if isinstance(updated_task.assignee_updated_date, datetime):
+                assert op(
+                    str(updated_task.assignee_updated_date.isoformat()).replace("+00:00", "Z"),
+                    task["assignee_updated_date"],
+                )
             else:
-                assert updated_task.assignee is None
+                assert op(updated_task.assignee_updated_date, task["assignee_updated_date"])
+
+    @staticmethod
+    def _test_patch_linked_storage(
+        user: str, task_id: int, *, expected_status: HTTPStatus = HTTPStatus.OK
+    ) -> None:
+        with make_api_client(user) as api_client:
+            for associated_storage in ("source_storage", "target_storage"):
+                patch_data = {
+                    associated_storage: {
+                        "location": "local",
+                    }
+                }
+                (_, response) = api_client.tasks_api.partial_update(
+                    task_id,
+                    patched_task_write_request=patch_data,
+                    _check_status=False,
+                    _parse_response=False,
+                )
+                assert response.status == expected_status, response.status
+
+    @pytest.mark.parametrize(
+        "role, is_allow",
+        [
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
+        ],
+    )
+    def test_update_task_linked_storage_by_org_roles(
+        self,
+        role: str,
+        is_allow: bool,
+        tasks,
+        find_users,
+    ):
+        username, task_id = next(
+            (user["username"], task["id"])
+            for user in find_users(role=role, exclude_privilege="admin")
+            for task in tasks
+            if task["organization"] == user["org"]
+            and not task["project_id"]
+            and task["owner"]["id"] != user["id"]
+        )
+
+        self._test_patch_linked_storage(
+            username,
+            task_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )
+
+    @pytest.mark.parametrize("org", (True, False))
+    @pytest.mark.parametrize(
+        "is_task_owner, is_task_assignee, is_project_owner, is_project_assignee",
+        [tuple(i == j for j in range(4)) for i in range(5)],
+    )
+    def test_update_task_linked_storage_by_assignee_or_owner(
+        self,
+        org: bool,
+        is_task_owner: bool,
+        is_task_assignee: bool,
+        is_project_owner: bool,
+        is_project_assignee: bool,
+        tasks,
+        find_users,
+        projects,
+    ):
+        is_allow = is_task_owner or is_project_owner
+        has_project = is_project_owner or is_project_assignee
+
+        username: str | None = None
+        task_id: int | None = None
+
+        filtered_users = (
+            (find_users(role="worker") + find_users(role="supervisor"))
+            if org
+            else find_users(org=None)
+        )
+
+        for task in tasks:
+            if task_id is not None:
+                break
+
+            if (
+                org
+                and not task["organization"]
+                or not org
+                and task["organization"]
+                or has_project
+                and task["project_id"] is None
+                or not has_project
+                and task["project_id"]
+            ):
+                continue
+
+            for user in filtered_users:
+                if org and task["organization"] != user["org"]:
+                    continue
+
+                is_user_task_owner = task["owner"]["id"] == user["id"]
+                is_user_task_assignee = (task["assignee"] or {}).get("id") == user["id"]
+                project = projects[task["project_id"]] if task["project_id"] else None
+                is_user_project_owner = (project or {}).get("owner", {}).get("id") == user["id"]
+                is_user_project_assignee = ((project or {}).get("assignee") or {}).get(
+                    "id"
+                ) == user["id"]
+
+                if (
+                    is_task_owner
+                    and is_user_task_owner
+                    or is_task_assignee
+                    and is_user_task_assignee
+                    or is_project_owner
+                    and is_user_project_owner
+                    or is_project_assignee
+                    and is_user_project_assignee
+                    or (
+                        not any(
+                            [
+                                is_task_owner,
+                                is_task_assignee,
+                                is_project_owner,
+                                is_project_assignee,
+                                is_user_task_owner,
+                                is_user_task_assignee,
+                                is_user_project_owner,
+                                is_project_assignee,
+                            ]
+                        )
+                    )
+                ):
+                    task_id = task["id"]
+                    username = user["username"]
+                    break
+
+        assert task_id is not None
+
+        self._test_patch_linked_storage(
+            username,
+            task_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )
+
+    # TODO: Test assignee reset
+    # TODO: Test owner update
+    # TODO: Test source/target/data storage reset
+    @pytest.mark.parametrize(
+        "from_org, to_org",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+        ],
+    )
+    def test_task_can_be_transferred_to_different_workspace(
+        self,
+        from_org: bool,
+        to_org: bool,
+        organizations,
+        find_users,
+    ):
+        src_org, dst_org, user = None, None, None
+        org_owners = {o["owner"]["username"] for o in organizations}
+        regular_users = {u["username"] for u in find_users(privilege="user")}
+
+        for u in regular_users & org_owners:
+            src_org, dst_org = None, None
+            for org in organizations:
+                if from_org and not src_org and u == org["owner"]["username"]:
+                    src_org = org
+                    continue
+                if to_org and not dst_org and u == org["owner"]["username"]:
+                    dst_org = org
+                    break
+            if (from_org and src_org or not from_org) and (to_org and dst_org or not to_org):
+                user = u
+                break
+
+        assert user, "Could not find a user matching the filters"
+        assert (
+            from_org and src_org or not from_org and not src_org
+        ), "Could not find a source org matching the filters"
+        assert (
+            to_org and dst_org or not to_org and not dst_org
+        ), "Could not find a destination org matching the filters"
+
+        src_org_id = src_org["id"] if src_org else src_org
+        dst_org_id = dst_org["id"] if dst_org else dst_org
+
+        task_spec = {
+            "name": "Task to be transferred to another workspace",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "server_files": ["images/image_1.jpg"],
+        }
+        (task_id, _) = create_task(
+            user, task_spec, data_spec, **({"org_id": src_org_id} if src_org_id else {})
+        )
+
+        with make_api_client(user) as api_client:
+            task_details, _ = api_client.tasks_api.partial_update(
+                task_id, patched_task_write_request={"organization_id": dst_org_id}
+            )
+            assert task_details.organization_id == dst_org_id
+
+    def test_cannot_transfer_task_from_project_to_different_workspace(
+        self,
+        filter_tasks,
+        find_users,
+    ):
+        task, user = None, None
+
+        filtered_users = {u["username"] for u in find_users(privilege="user")}
+        for t in filter_tasks(exclude_project_id=None):
+            user = t["owner"]["username"]
+            if user in filtered_users:
+                task = t
+                break
+
+        assert task and user
+
+        with make_api_client(user) as api_client:
+            _, response = api_client.tasks_api.partial_update(
+                task["id"],
+                patched_task_write_request={"organization_id": None},
+                _check_status=False,
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.BAD_REQUEST
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -2830,19 +2964,15 @@ def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user
 
 
 class TestImportTaskAnnotations:
-    def _make_client(self) -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
         self.tmp_dir = tmp_path
-        self.client = self._make_client()
         self.user = admin_user
         self.export_format = "CVAT for images 1.1"
         self.import_format = "CVAT 1.1"
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+        with make_sdk_client(self.user) as client:
+            self.client = client
 
     def _check_annotations(self, task_id):
         with make_api_client(self.user) as api_client:
@@ -2935,12 +3065,9 @@ class TestImportTaskAnnotations:
         number_of_files = 1
         sleep(30)  # wait when the cleaning job from rq worker will be started
         command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        platform = request.config.getoption("--platform")
-        assert platform in ("kube", "local")
-        func = docker_exec_cvat if platform == "local" else kube_exec_cvat
         for _ in range(12):
             sleep(2)
-            result, _ = func(command)
+            result, _ = container_exec_cvat(request, command)
             number_of_files = int(result)
             if not number_of_files:
                 break
@@ -2978,36 +3105,78 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.import_format, file_path)
         self._check_annotations(task_id)
 
-    @pytest.mark.parametrize(
-        "format_name",
+    @pytest.mark.parametrize("dimension", ["2d", "3d"])
+    def test_can_import_datumaro_json(self, admin_user, tasks, dimension):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["dimension"] == dimension and t.get("validation_mode") != "gt_pool"
+        )
+
+        with make_api_client(admin_user) as api_client:
+            original_annotations = json.loads(
+                api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+            )
+
+            dataset_archive = io.BytesIO(
+                export_dataset(
+                    api_client.tasks_api,
+                    id=task["id"],
+                    format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    save_images=False,
+                )
+            )
+
+        with zipfile.ZipFile(dataset_archive) as zip_file:
+            annotations = zip_file.read("annotations/default.json")
+
+        with TemporaryDirectory() as tempdir:
+            annotations_path = Path(tempdir) / "annotations.json"
+            annotations_path.write_bytes(annotations)
+            self.client.tasks.retrieve(task["id"]).import_annotations(
+                DATUMARO_FORMAT_FOR_DIMENSION[dimension], annotations_path
+            )
+
+        with make_api_client(admin_user) as api_client:
+            updated_annotations = json.loads(
+                api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+            )
+
+        assert compare_annotations(original_annotations, updated_annotations) == {}
+
+    @parametrize(
+        "format_name, specific_info_included",
         [
-            "COCO 1.0",
-            "COCO Keypoints 1.0",
-            "CVAT 1.1",
-            "LabelMe 3.0",
-            "MOT 1.1",
-            "MOTS PNG 1.0",
-            "PASCAL VOC 1.1",
-            "Segmentation mask 1.1",
-            "YOLO 1.1",
-            "WiderFace 1.0",
-            "VGGFace2 1.0",
-            "Market-1501 1.0",
-            "Kitti Raw Format 1.0",
-            "Sly Point Cloud Format 1.0",
-            "KITTI 1.0",
-            "LFW 1.0",
-            "Cityscapes 1.0",
-            "Open Images V6 1.0",
-            "Datumaro 1.0",
-            "Datumaro 3D 1.0",
-            "YOLOv8 Oriented Bounding Boxes 1.0",
-            "YOLOv8 Detection 1.0",
-            "YOLOv8 Pose 1.0",
-            "YOLOv8 Segmentation 1.0",
+            ("COCO 1.0", None),
+            ("COCO Keypoints 1.0", None),
+            ("CVAT 1.1", True),
+            ("LabelMe 3.0", True),
+            ("MOT 1.1", True),
+            ("MOTS PNG 1.0", False),
+            pytest.param("PASCAL VOC 1.1", None, marks=pytest.mark.xfail),
+            ("Segmentation mask 1.1", True),
+            ("YOLO 1.1", True),
+            ("WiderFace 1.0", True),
+            ("VGGFace2 1.0", True),
+            ("Market-1501 1.0", False),
+            ("Kitti Raw Format 1.0", True),
+            ("Sly Point Cloud Format 1.0", False),
+            ("KITTI 1.0", False),
+            ("LFW 1.0", True),
+            ("Cityscapes 1.0", True),
+            ("Open Images V6 1.0", True),
+            ("Datumaro 1.0", True),
+            ("Datumaro 3D 1.0", True),
+            ("Ultralytics YOLO Oriented Bounding Boxes 1.0", True),
+            ("Ultralytics YOLO Detection 1.0", True),
+            ("Ultralytics YOLO Pose 1.0", True),
+            ("Ultralytics YOLO Segmentation 1.0", True),
         ],
     )
-    def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):
+    def test_check_import_error_on_wrong_file_structure(
+        self, tasks_with_shapes: Iterable, format_name: str, specific_info_included: bool | None
+    ):
         task_id = tasks_with_shapes[0]["id"]
 
         source_archive_path = self.tmp_dir / "incorrect_archive.zip"
@@ -3017,23 +3186,32 @@ class TestImportTaskAnnotations:
             with open(self.tmp_dir / file, "w") as f:
                 f.write("Some text")
 
-        zip_file = zipfile.ZipFile(source_archive_path, mode="a")
-        for path in incorrect_files:
-            zip_file.write(self.tmp_dir / path, path)
+        with zipfile.ZipFile(source_archive_path, mode="a") as zip_file:
+            for path in incorrect_files:
+                zip_file.write(self.tmp_dir / path, path)
+
         task = self.client.tasks.retrieve(task_id)
 
-        with pytest.raises(exceptions.ApiException) as capture:
+        with pytest.raises(BackgroundRequestException) as capture:
             task.import_annotations(format_name, source_archive_path)
 
-            assert b"Check [format docs]" in capture.value.body
-            assert b"Dataset must contain a file:" in capture.value.body
+        error_message = str(capture.value)
+
+        if specific_info_included is None:
+            assert "Failed to find dataset" in error_message
+            return
+
+        assert "Check [format docs]" in error_message
+        expected_msg = (
+            "Dataset must contain a file:"
+            if specific_info_included
+            else "specific requirement information unavailable"
+        )
+        assert expected_msg in error_message
 
 
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestImportWithComplexFilenames:
-    @staticmethod
-    def _make_client() -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(
         autouse=True,
         scope="class",
@@ -3046,17 +3224,16 @@ class TestImportWithComplexFilenames:
         cls, restore_db_per_class, tmp_path_factory: pytest.TempPathFactory, admin_user: str
     ):
         cls.tmp_dir = tmp_path_factory.mktemp(cls.__class__.__name__)
-        cls.client = cls._make_client()
         cls.user = admin_user
         cls.format_name = "PASCAL VOC 1.1"
 
-        with cls.client:
-            cls.client.login((cls.user, USER_PASS))
+        with make_sdk_client(cls.user) as client:
+            cls.client = client
 
         cls._init_tasks()
 
     @classmethod
-    def _create_task_with_annotations(cls, filenames: List[str]):
+    def _create_task_with_annotations(cls, filenames: list[str]):
         images = generate_image_files(len(filenames), filenames=filenames)
 
         source_archive_path = cls.tmp_dir / "source_data.zip"
@@ -3175,10 +3352,10 @@ class TestImportWithComplexFilenames:
                 range(len(self.flat_filenames))
             )
         else:
-            with pytest.raises(exceptions.ApiException) as capture:
+            with pytest.raises(BackgroundRequestException) as capture:
                 task.import_annotations(self.format_name, dataset_file)
 
-            assert b"Could not match item id" in capture.value.body
+            assert "Could not match item id" in str(capture.value)
 
     def delete_annotation_and_import_annotations(
         self, task_id, annotations, format_name, dataset_file
@@ -3221,19 +3398,7 @@ class TestImportWithComplexFilenames:
         return original_annotations, imported_annotations
 
     def compare_original_and_import_annotations(self, original_annotations, imported_annotations):
-        assert (
-            DeepDiff(
-                original_annotations,
-                imported_annotations,
-                ignore_order=True,
-                exclude_regex_paths=[
-                    r"root(\['\w+'\]\[\d+\])+\['id'\]",
-                    r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-                    r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                ],
-            )
-            == {}
-        )
+        assert compare_annotations(original_annotations, imported_annotations) == {}
 
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_outside_true(self, format_name):
@@ -4057,3 +4222,68 @@ class TestImportWithComplexFilenames:
         check_element_outside_count(1, 0, 1)
         check_element_outside_count(1, 1, 2)
         check_element_outside_count(1, 2, 2)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+class TestPatchExportFrames(TestTasksBase):
+    @fixture(scope="class")
+    @parametrize("media_type", [SourceDataType.images, SourceDataType.video])
+    @parametrize("step", [5])
+    @parametrize("frame_count", [20])
+    @parametrize("start_frame", [None, 3])
+    def fxt_uploaded_media_task(
+        self,
+        request: pytest.FixtureRequest,
+        media_type: SourceDataType,
+        step: int,
+        frame_count: int,
+        start_frame: int | None,
+    ) -> Generator[tuple[ITaskSpec, Task, str], None, None]:
+        args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
+
+        if media_type == SourceDataType.images:
+            (spec, task_id) = next(self._image_task_fxt_base(**args))
+        else:
+            (spec, task_id) = next(self._uploaded_video_task_fxt_base(**args))
+
+        with make_sdk_client(self._USERNAME) as client:
+            task = client.tasks.retrieve(task_id)
+
+            yield (spec, task, f"CVAT for {media_type.value} 1.1")
+
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+    @parametrize("spec, task, format_name", [fixture_ref(fxt_uploaded_media_task)])
+    def test_export_with_non_default_frame_step(
+        self, tmp_path: Path, spec: ITaskSpec, task: Task, format_name: str
+    ):
+
+        dataset_file = tmp_path / "dataset.zip"
+        task.export_dataset(format_name, dataset_file, include_images=True)
+
+        def get_img_index(zinfo: zipfile.ZipInfo) -> int:
+            name = PurePosixPath(zinfo.filename)
+            if name.suffix.lower() not in (".png", ".jpg", ".jpeg"):
+                return -1
+            return int(name.stem.rsplit("_", maxsplit=1)[-1])
+
+        # get frames and sort them
+        with zipfile.ZipFile(dataset_file) as dataset:
+            frames = np.array(
+                [png_idx for png_idx in map(get_img_index, dataset.filelist) if png_idx != -1]
+            )
+            frames.sort()
+
+        task_meta = task.get_meta()
+        (src_start_frame, src_stop_frame, src_frame_step) = (
+            task_meta["start_frame"],
+            task_meta["stop_frame"],
+            spec.frame_step,
+        )
+        src_end_frame = calc_end_frame(src_start_frame, src_stop_frame, src_frame_step)
+        assert len(frames) == spec.size == task_meta["size"], "Some frames were lost"
+        assert np.all(
+            frames == np.arange(src_start_frame, src_end_frame, src_frame_step)
+        ), "Some frames are wrong"

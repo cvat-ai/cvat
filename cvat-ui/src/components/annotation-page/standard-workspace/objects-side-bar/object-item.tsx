@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,8 @@ import Collapse from 'antd/lib/collapse';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { ObjectType, ShapeType, ColorBy } from 'reducers';
+import { ColorBy, Workspace } from 'reducers';
+import { ObjectType, ShapeType } from 'cvat-core-wrapper';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
@@ -30,6 +31,7 @@ interface Props {
     labels: any[];
     attributes: any[];
     jobInstance: any;
+    workspace: Workspace;
     activate(activeElementID?: number): void;
     copy(): void;
     propagate(): void;
@@ -41,6 +43,7 @@ interface Props {
     changeLabel(label: any): void;
     changeColor(color: string): void;
     resetCuboidPerspective(): void;
+    runAnnotationAction(): void;
     edit(): void;
     slice(): void;
 }
@@ -73,9 +76,11 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeLabel,
         changeColor,
         resetCuboidPerspective,
+        runAnnotationAction,
         edit,
         slice,
         jobInstance,
+        workspace,
     } = props;
 
     const type =
@@ -91,13 +96,15 @@ function ObjectItemComponent(props: Props): JSX.Element {
         activate();
     }, []);
 
+    const sizeControlsVisible = shapeType === ShapeType.CUBOID && workspace === Workspace.STANDARD3D;
+
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div
                 onMouseEnter={activateState}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
                 className={className}
-                style={{ backgroundColor: `${color}88` }}
+                style={{ '--state-item-background': `${color}` } as React.CSSProperties}
             >
                 <ItemBasics
                     jobInstance={jobInstance}
@@ -118,9 +125,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}
                     toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
-                    removeShortcut={normalizedKeyMap.DELETE_OBJECT}
+                    removeShortcut={normalizedKeyMap.DELETE_OBJECT_STANDARD_WORKSPACE}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}
+                    runAnnotationsActionShortcut={normalizedKeyMap.RUN_ANNOTATIONS_ACTION}
                     changeLabel={changeLabel}
                     changeColor={changeColor}
                     copy={copy}
@@ -133,11 +141,12 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
                     slice={slice}
+                    runAnnotationAction={runAnnotationAction}
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
-                {!!attributes.length && (
+                {(!!attributes.length || sizeControlsVisible) && (
                     <ItemDetailsContainer
-                        readonly={readonly}
+                        readonly={readonly || locked}
                         clientID={clientID}
                         parentID={null}
                     />

@@ -1,9 +1,11 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedLabel, SerializedAttribute } from 'cvat-core-wrapper';
+import {
+    SerializedLabel, SerializedAttribute, getCore, LabelType,
+} from 'cvat-core-wrapper';
 
 export interface SkeletonConfiguration {
     type: 'skeleton';
@@ -13,70 +15,131 @@ export interface SkeletonConfiguration {
 
 export type LabelOptColor = SerializedLabel;
 
+const core = getCore();
 let id = 0;
 
 function validateParsedAttribute(attr: SerializedAttribute): void {
+    if (typeof attr !== 'object' || attr === null) {
+        throw new Error('Attribute must be a JSON object');
+    }
+
     if (typeof attr.name !== 'string') {
-        throw new Error(`Type of attribute name must be a string. Got value ${attr.name}`);
+        throw new Error('Attribute name must be a string');
     }
 
-    if (!['number', 'undefined'].includes(typeof attr.id)) {
-        throw new Error(
-            `Attribute: "${attr.name}". Type of attribute id must be a number or undefined. Got value ${attr.id}`,
-        );
+    if (attr.name.trim().length === 0) {
+        throw new Error('Attribute name must not be empty');
     }
 
-    if (!['checkbox', 'number', 'text', 'radio', 'select'].includes((attr.input_type || '').toLowerCase())) {
-        throw new Error(`Attribute: "${attr.name}". Unknown input type: ${attr.input_type}`);
+    if (typeof attr.id !== 'undefined' && !Number.isInteger(attr.id)) {
+        throw new Error(`Attribute: "${attr.name}": id must be an integer or undefined`);
+    }
+
+    if (!['checkbox', 'number', 'text', 'radio', 'select'].includes((attr.input_type ?? '').toLowerCase())) {
+        throw new Error(`Attribute: "${attr.name}": unknown input type: ${attr.input_type}`);
     }
 
     if (typeof attr.mutable !== 'boolean') {
-        throw new Error(`Attribute: "${attr.name}". Mutable flag must be a boolean value. Got value ${attr.mutable}`);
+        throw new Error(`Attribute: "${attr.name}": mutable property must be a boolean`);
     }
 
-    if (!Array.isArray(attr.values)) {
-        throw new Error(`Attribute: "${attr.name}". Attribute values must be an array. Got type ${typeof attr.values}`);
-    }
-
-    if (!attr.values.length) {
-        throw new Error(`Attribute: "${attr.name}". Attribute values array mustn't be empty`);
+    if (!Array.isArray(attr.values) || !attr.values.length) {
+        throw new Error(`Attribute: "${attr.name}": attribute values must be a non-empty array`);
     }
 
     for (const value of attr.values) {
         if (typeof value !== 'string') {
-            throw new Error(`Attribute: "${attr.name}". Each value must be a string. Got value ${value}`);
+            throw new Error(`Attribute: "${attr.name}": each attribute value must be a string`);
+        }
+    }
+
+    const attrValues = attr.values.map((value: string) => value.trim());
+    if (new Set(attrValues).size !== attrValues.length) {
+        throw new Error(`Attribute: "${attr.name}": attribute values must be unique`);
+    }
+
+    if (attr.default_value) {
+        if (!core.utils.validateAttributeValue(attr.default_value, new core.classes.Attribute(attr))) {
+            throw new Error(
+                `Attribute: "${attr.name}": invalid default value "${attr.default_value}"`,
+            );
         }
     }
 }
 
 export function validateParsedLabel(label: SerializedLabel): void {
-    if (typeof label.name !== 'string') {
-        throw new Error(`Type of label name must be a string. Got value ${label.name}`);
+    if (typeof label !== 'object' || label === null) {
+        throw new Error('Label must be a JSON object');
     }
 
-    if (!['number', 'undefined'].includes(typeof label.id)) {
-        throw new Error(
-            `Label "${label.name}". Type of label id must be only a number or undefined. Got value ${label.id}`,
-        );
+    if (typeof label.name !== 'string') {
+        throw new Error('Label name must be a string');
+    }
+
+    if (label.name.trim().length === 0) {
+        throw new Error('Label name must not be empty');
+    }
+
+    if (typeof label.id !== 'undefined' && !Number.isInteger(label.id)) {
+        throw new Error(`Label "${label.name}": id must be an integer or undefined`);
     }
 
     if (label.color && typeof label.color !== 'string') {
-        throw new Error(`Label "${label.name}". Label color must be a string. Got ${typeof label.color}`);
+        throw new Error(`Label "${label.name}": color must be a string`);
     }
 
     if (label.color && !label.color.match(/^#[0-9a-fA-F]{6}$|^$/)) {
-        throw new Error(
-            `Label "${label.name}". ` +
-                `Type of label color must be only a valid color string. Got value ${label.color}`,
-        );
+        throw new Error(`Label "${label.name}": color value is invalid`);
     }
 
     if (!Array.isArray(label.attributes)) {
-        throw new Error(`Label "${label.name}". Attributes must be an array. Got type ${typeof label.attributes}`);
+        throw new Error(`Label "${label.name}": attributes must be an array`);
     }
 
     for (const attr of label.attributes) {
         validateParsedAttribute(attr);
+    }
+
+    const attrNames = label.attributes.map((attr: SerializedAttribute) => attr.name.trim());
+    if (new Set(attrNames).size !== attrNames.length) {
+        throw new Error(`Label "${label.name}": attributes names must be unique`);
+    }
+
+    if (!Object.values(LabelType).includes(label.type)) {
+        throw new Error(`Label "${label.name}": unknown label type "${label.type}"`);
+    }
+
+    if (label.type === LabelType.SKELETON) {
+        if (!Array.isArray(label.sublabels) || label.sublabels.length === 0) {
+            throw new Error(`Label "${label.name}": skeletons must provide non-empty sublabels array`);
+        }
+
+        for (const sublabel of label.sublabels) {
+            validateParsedLabel(sublabel);
+        }
+
+        const sublabelsNames = label.sublabels.map((sublabel: SerializedLabel) => sublabel.name.trim());
+        if (new Set(sublabelsNames).size !== sublabelsNames.length) {
+            throw new Error(`Label "${label.name}": sublabels names must be unique`);
+        }
+
+        if (typeof label.svg !== 'string') {
+            throw new Error(`Label "${label.name}": skeletons must provide a correct SVG template`);
+        }
+
+        const sublabelIds = label.sublabels
+            .map((sublabel: SerializedLabel) => sublabel.id)
+            .filter((sublabelId: number | undefined) => sublabelId !== undefined);
+        const matches = label.svg.matchAll(/data-label-id="([\d]+)"/g);
+        for (const match of matches) {
+            const refersToId = +match[1];
+            if (!sublabelIds.includes(refersToId)) {
+                throw new Error(
+                    `Label "${label.name}": skeletons SVG refers to sublabel with id ${refersToId}, ` +
+                    'which is not present in the sublabels array',
+                );
+            }
+        }
     }
 }
 

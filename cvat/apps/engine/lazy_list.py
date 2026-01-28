@@ -1,10 +1,11 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Callable, Iterator
 from functools import wraps
 from itertools import islice
-from typing import Any, Callable, Iterator, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 import attrs
 from attr import field
@@ -179,6 +180,18 @@ class LazyList(list[T], metaclass=LazyListMeta):
         if self._parsed:
             return
 
+        if index == -1:
+            # _iter_unparsed is inefficient when we want to parse the whole list
+            element_strs = self._string.split(self._separator)
+            if len(element_strs):
+                element_strs[0] = element_strs[0].removeprefix("[")
+                element_strs[-1] = element_strs[-1].removesuffix("]")
+
+            list.clear(self)
+            list.extend(self, [self._converter(str_item) for str_item in element_strs if str_item])
+            self._mark_parsed()
+            return
+
         if index < 0:
             index += self._compute_max_length(self._string)
 
@@ -267,3 +280,19 @@ class LazyList(list[T], metaclass=LazyListMeta):
         self._parsed = state["parsed"]
         if self._parsed:
             self.extend(state["parsed_elements"])
+
+    def lazy_copy(self) -> list[T]:
+        """
+        Makes a copy without parsing elements.
+        Only works if elements have not been parsed yet.
+        """
+        assert not self._parsed
+        return LazyList(
+            string=self._string,
+            separator=self._separator,
+            converter=self._converter,
+        )
+
+    @property
+    def is_parsed(self):
+        return self._parsed

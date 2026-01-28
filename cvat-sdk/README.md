@@ -8,7 +8,9 @@ The SDK API includes several layers:
 - Server API wrappers (`ApiClient`). Located in at `cvat_sdk.api_client`.
 - High-level tools (`Core`). Located at `cvat_sdk.core`.
 - PyTorch adapter. Located at `cvat_sdk.pytorch`.
-* Auto-annotation support. Located at `cvat_sdk.auto_annotation`.
+- Auto-annotation support. Located at `cvat_sdk.auto_annotation`.
+- Miscellaneous utilities, grouped by topic.
+  Located at `cvat_sdk.attributes` and `cvat_sdk.masks`.
 
 Package documentation is available [here](https://docs.cvat.ai/docs/api_sdk/sdk).
 
@@ -20,7 +22,14 @@ To install a prebuilt package, run the following command in the terminal:
 pip install cvat-sdk
 ```
 
-To use the PyTorch adapter, request the `pytorch` extra:
+To use the `cvat_sdk.masks` module, request the `masks` extra:
+
+```bash
+pip install "cvat-sdk[masks]"
+```
+
+To use the PyTorch adapter or the built-in PyTorch-based auto-annotation functions,
+request the `pytorch` extra:
 
 ```bash
 pip install "cvat-sdk[pytorch]"

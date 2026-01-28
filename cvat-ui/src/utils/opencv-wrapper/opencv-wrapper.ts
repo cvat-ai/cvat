@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ import HistogramEqualizationImplementation, { HistogramEqualization } from './hi
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
+import TrackerMILAction from './annotations-actions/tracker-mil';
 
 const core = getCore();
 
@@ -139,10 +140,10 @@ export class OpenCVWrapper {
     }
 
     public get mat(): MatSpace {
-        this.checkInitialization();
         const { cv } = this;
         return {
             fromData: (width: number, height: number, type: MatType, data: number[]) => {
+                this.checkInitialization();
                 const typeToCVType = {
                     [MatType.CV_8UC1]: cv.CV_8UC1,
                     [MatType.CV_8UC3]: cv.CV_8UC3,
@@ -156,18 +157,21 @@ export class OpenCVWrapper {
     }
 
     public get matVector(): MatVectorSpace {
-        this.checkInitialization();
         const { cv } = this;
         return {
-            empty: () => new cv.MatVector(),
+            empty: () => {
+                this.checkInitialization();
+                return new cv.MatVector();
+            },
         };
     }
 
     public get contours(): Contours {
-        this.checkInitialization();
         const { cv } = this;
         return {
             convexHull: (contours: number[][]): number[] => {
+                this.checkInitialization();
+
                 const points = contours.flat();
                 const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
                 const output = new cv.Mat();
@@ -180,6 +184,8 @@ export class OpenCVWrapper {
                 }
             },
             findContours: (src: any, findLongest: boolean): number[][] => {
+                this.checkInitialization();
+
                 const contours = this.matVector.empty();
                 const hierarchy = new cv.Mat();
                 const expanded = new cv.Mat();
@@ -201,7 +207,7 @@ export class OpenCVWrapper {
                     cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
                     for (let i = 0; i < contours.size(); i++) {
                         const contour = contours.get(i);
-                        // substract offset we created when copied source image
+                        // subtract offset we created when copied source image
                         jsContours.push(Array.from(contour.data32S as number[]).map((el) => el - 1));
                         contour.delete();
                     }
@@ -219,6 +225,8 @@ export class OpenCVWrapper {
                 return jsContours;
             },
             approxPoly: (points: number[] | number[][], threshold: number, closed = true): number[][] => {
+                this.checkInitialization();
+
                 const isArrayOfArrays = Array.isArray(points[0]);
                 if (points.length < 3) {
                     // one pair of coordinates [x, y], approximation not possible
@@ -289,30 +297,38 @@ export class OpenCVWrapper {
     };
 
     public get segmentation(): Segmentation {
-        this.checkInitialization();
         return {
-            intelligentScissorsFactory: () => new IntelligentScissorsImplementation(this.cv),
+            intelligentScissorsFactory: () => {
+                this.checkInitialization();
+                return new IntelligentScissorsImplementation(this.cv);
+            },
         };
     }
 
     public get imgproc(): ImgProc {
-        this.checkInitialization();
         return {
-            hist: () => new HistogramEqualizationImplementation(this.cv),
+            hist: () => {
+                this.checkInitialization();
+                return new HistogramEqualizationImplementation(this.cv);
+            },
         };
     }
 
     public get tracking(): Tracking {
-        this.checkInitialization();
         return {
             trackerMIL: {
-                model: () => new TrackerMImplementation(this.cv),
+                model: () => {
+                    this.checkInitialization();
+                    return new TrackerMImplementation(this.cv);
+                },
                 name: 'TrackerMIL',
-                description: 'Light client-side model useful to track simple objects',
+                description: 'Lightweight client-side algorithm, useful to track simple objects',
                 kind: 'opencv_tracker_mil',
             },
         };
     }
 }
 
-export default new OpenCVWrapper();
+const openCVWrapper = new OpenCVWrapper();
+await core.actions.register(new TrackerMILAction(openCVWrapper));
+export default openCVWrapper;

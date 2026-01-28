@@ -1,8 +1,11 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from enum import Enum
+from functools import cached_property
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -53,12 +56,12 @@ class Webhook(TimestampedModel):
     owner = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
-    project = models.ForeignKey(
-        Project, null=True, on_delete=models.CASCADE, related_name="+"
-    )
+    project = models.ForeignKey(Project, null=True, on_delete=models.CASCADE, related_name="+")
     organization = models.ForeignKey(
         Organization, null=True, on_delete=models.CASCADE, related_name="+"
     )
+
+    deliveries: models.manager.RelatedManager[WebhookDelivery]
 
     class Meta:
         default_permissions = ()
@@ -66,9 +69,7 @@ class Webhook(TimestampedModel):
             models.CheckConstraint(
                 name="webhooks_project_or_organization",
                 check=(
-                    models.Q(
-                        type=WebhookTypeChoice.PROJECT.value, project_id__isnull=False
-                    )
+                    models.Q(type=WebhookTypeChoice.PROJECT.value, project_id__isnull=False)
                     | models.Q(
                         type=WebhookTypeChoice.ORGANIZATION.value,
                         project_id__isnull=True,
@@ -78,11 +79,13 @@ class Webhook(TimestampedModel):
             )
         ]
 
+    @cached_property
+    def last_delivery(self) -> WebhookDelivery:
+        return self.deliveries.last
+
 
 class WebhookDelivery(TimestampedModel):
-    webhook = models.ForeignKey(
-        Webhook, on_delete=models.CASCADE, related_name="deliveries"
-    )
+    webhook = models.ForeignKey(Webhook, on_delete=models.CASCADE, related_name="deliveries")
     event = models.CharField(max_length=64)
 
     status_code = models.PositiveIntegerField(null=True, default=None)

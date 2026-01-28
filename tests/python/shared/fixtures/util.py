@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -28,3 +28,12 @@ def fxt_logger():
     logger.propagate = False
     logger.addHandler(logging.StreamHandler(logger_stream))
     yield logger, logger_stream
+
+
+@pytest.fixture
+def fxt_test_name(request: pytest.FixtureRequest):
+    name = request.node.name
+    if request.fixturename:
+        name += f"[{request.fixturename}]"
+
+    yield name

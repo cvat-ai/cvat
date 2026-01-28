@@ -23,10 +23,7 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "cvat.labels" . | nindent 6 }}
-      {{- with merge $localValues.labels .Values.cvat.backend.labels }}
-      {{- toYaml . | nindent 6 }}
-      {{- end }}
+      {{- include "cvat.selectorLabels" . | nindent 6 }}
       app: cvat-app
       tier: backend
       component: server
@@ -54,22 +51,33 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["run", "server"]
+          args:
+          - "run"
+          - "server"
           env:
           - name: ALLOWED_HOSTS
             value: {{ $localValues.envs.ALLOWED_HOSTS | squote}}
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
-          {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
           ports:
           - containerPort: 8080
-          volumeMounts:
-          {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
-          - mountPath: /home/django/data/cache
-            name: cvat-backend-per-service-cache
+          {{- if $localValues.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /api/server/about
+              port: 8080
+            {{- toYaml (omit $localValues.readinessProbe "enabled") | nindent 12 }}
           {{- end }}
+          {{- if $localValues.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /api/server/about
+              port: 8080
+            {{- toYaml (omit $localValues.livenessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          volumeMounts:
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -79,12 +87,11 @@ spec:
           - mountPath: /home/django/logs
             name: cvat-backend-data
             subPath: logs
-          - mountPath: /home/django/models
-            name: cvat-backend-data
-            subPath: models
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          securityContext:
+            runAsNonRoot: true
       initContainers:
         {{- include "cvat.backend.initContainers" . | nindent 8 }}
       {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
@@ -100,10 +107,6 @@ spec:
         - name: cvat-backend-data
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-backend-data"
-        {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
-        - name: cvat-backend-per-service-cache
-          emptyDir: {}
-        {{- end }}
         {{- end }}
         {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
         {{- toYaml . | nindent 8 }}

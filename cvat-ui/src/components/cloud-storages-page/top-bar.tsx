@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,12 @@ import { PlusOutlined } from '@ant-design/icons';
 
 import { CloudStoragesQuery } from 'reducers';
 import Input from 'antd/lib/input';
-import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import {
+    SortingComponent,
+    ResourceFilterHOC,
+    defaultVisibility,
+    ResourceSelectionInfo,
+} from 'components/resource-sorting-filtering';
 
 import dimensions from 'utils/dimensions';
 
@@ -29,11 +34,13 @@ interface Props {
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
     query: CloudStoragesQuery;
+    selectedCount: number;
+    onSelectAll: () => void;
 }
 
-export default function StoragesTopBar(props: Props): JSX.Element {
+export default function StoragesTopBar(props: Readonly<Props>): JSX.Element {
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch,
+        query, onApplyFilter, onApplySorting, onApplySearch, selectedCount, onSelectAll,
     } = props;
     const history = useHistory();
     const [visibility, setVisibility] = useState(defaultVisibility);
@@ -42,18 +49,21 @@ export default function StoragesTopBar(props: Props): JSX.Element {
         <Row justify='center' align='middle' className='cvat-cloud-storages-list-top-bar'>
             <Col {...dimensions}>
                 <div className='cvat-cloudstorages-page-filters-wrapper'>
-                    <Input.Search
-                        enterButton
-                        onSearch={(phrase: string) => {
-                            onApplySearch(phrase);
-                        }}
-                        defaultValue={query.search || ''}
-                        className='cvat-cloudstorages-page-tasks-search-bar'
-                        placeholder='Search ...'
-                    />
+                    <div>
+                        <Input.Search
+                            enterButton
+                            onSearch={(phrase: string) => {
+                                onApplySearch(phrase);
+                            }}
+                            defaultValue={query.search ?? ''}
+                            className='cvat-cloudstorages-page-tasks-search-bar'
+                            placeholder='Search ...'
+                        />
+                        <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
+                    </div>
                     <div>
                         <SortingComponent
-                            open={visibility.sorting}
+                            visible={visibility.sorting}
                             onVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}

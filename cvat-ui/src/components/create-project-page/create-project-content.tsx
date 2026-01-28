@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,9 +15,8 @@ import Collapse from 'antd/lib/collapse';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
-import { StorageLocation } from 'reducers';
 import { createProjectAsync } from 'actions/projects-actions';
-import { Storage, StorageData } from 'cvat-core-wrapper';
+import { Storage, StorageData, StorageLocation } from 'cvat-core-wrapper';
 import patterns from 'utils/validation-patterns';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import SourceStorageField from 'components/storage/source-storage-field';

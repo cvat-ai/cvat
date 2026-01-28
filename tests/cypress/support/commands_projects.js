@@ -1,9 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+
+import { fullMatch } from './utils';
 
 Cypress.Commands.add('goToProjectsList', () => {
     cy.get('[value="projects"]').click();
@@ -47,25 +49,20 @@ Cypress.Commands.add(
     },
 );
 
-Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
-    const authKey = authResponse.body.key;
+Cypress.Commands.add('deleteProjects', (authHeaders, projectsToDelete) => {
     cy.request({
         url: '/api/projects?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
+        headers: authHeaders,
     }).then((_response) => {
-        const responceResult = _response.body.results;
-        for (const project of responceResult) {
+        const responseResult = _response.body.results;
+        for (const project of responseResult) {
             const { id, name } = project;
             for (const projectToDelete of projectsToDelete) {
                 if (name === projectToDelete) {
                     cy.request({
                         method: 'DELETE',
                         url: `/api/projects/${id}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
+                        headers: authHeaders,
                     });
                 }
             }
@@ -74,12 +71,20 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
 });
 
 Cypress.Commands.add('openProject', (projectName) => {
-    cy.contains(projectName).click({ force: true });
+    cy.intercept('GET', '/api/projects/**').as('getProject');
+    cy.contains(fullMatch(projectName)).click({ force: true });
     cy.get('.cvat-project-details').should('exist');
+    cy.wait('@getProject');
+});
+
+Cypress.Commands.add('openProjectById', (projectId) => {
+    cy.visit(`/projects/${projectId}`);
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-project-details').should('exist').and('be.visible');
 });
 
 Cypress.Commands.add('openProjectActions', (projectName) => {
-    cy.contains('.cvat-projects-project-item-title', projectName)
+    cy.contains('.cvat-projects-project-item-title', fullMatch(projectName))
         .parents('.cvat-projects-project-item-card')
         .within(() => {
             cy.get('.cvat-projects-project-item-description').within(() => {
@@ -112,8 +117,8 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
             cy.contains('button', 'Delete').click();
         });
     if (expectedResult === 'success') {
-        cy.wait(`@${interceptorName}`).then((interseption) => {
-            expect(interseption.response.statusCode).to.be.equal(204);
+        cy.wait(`@${interceptorName}`).then((interception) => {
+            expect(interception.response.statusCode).to.be.equal(204);
         });
         cy.get('.cvat-projects-project-item-card').should('have.css', 'opacity', '0.5');
     } else if (expectedResult === 'fail') {
@@ -254,6 +259,8 @@ Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
 
 Cypress.Commands.add('assignProjectToUser', (user) => {
     cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
+    cy.intercept('GET', '/api/labels?**').as('getLabels');
+    cy.intercept('PATCH', '/api/projects/**').as('patchProject');
     cy.get('.cvat-project-details').within(() => {
         cy.get('.cvat-user-search-field').click();
         cy.get('.cvat-user-search-field').type(user);
@@ -264,11 +271,7 @@ Cypress.Commands.add('assignProjectToUser', (user) => {
         .within(() => {
             cy.get(`.ant-select-item-option[title="${user}"]`).click();
         });
-});
-
-Cypress.Commands.add('closeNotification', (className) => {
-    cy.get(className).find('span[aria-label="close"]').click();
-    cy.get(className).should('not.exist');
+    cy.wait(['@patchProject', '@getLabels']);
 });
 
 Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTaskPage) => {

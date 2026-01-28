@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ $hover-menu-color: rgba(24, 144, 255, 5%);
 $completed-progress-color: #61c200;
 $validation-progress-color: #1890ff;
 $annotation-progress-color: #c1c1c1;
-$border-color-1: #f0f0f0;;
+$border-color-1: #f0f0f0;
 $border-color-hover: #40a9ff;
 $background-color-1: white;
 $background-color-2: #f1f1f1;
@@ -37,6 +37,7 @@ $box-shadow-base: 0 1px 2px -2px rgba(0, 0, 0, 16%), 0 3px 6px 0 rgba(0, 0, 0, 1
 $box-shadow-transition: 0.2s;
 $monospaced-fonts-stack: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono,
     Courier New, monospace;
+$scroll-breakpoint: 1300px;
 
 .cvat-base-preview {
     .ant-spin {
@@ -61,5 +62,136 @@ $monospaced-fonts-stack: Consolas, Monaco, Lucida Console, Liberation Mono, Deja
         display: flex;
         justify-content: center;
         align-items: center;
+    }
+}
+
+.cvat-scrollbar {
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+        background-color: #fff;
+        width: $grid-unit-size * 2;
+    }
+
+    &::-webkit-scrollbar-track {
+        background-color: #fff;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: #babac0;
+        border-radius: $border-radius-base * 2;
+        border: 6px solid #fff;
+    }
+}
+
+@mixin cvat-management-page-header {
+    flex-shrink: 0;
+    height: $grid-unit-size * 3;
+    margin: $grid-unit-size * 2 0;
+
+    h4 {
+        margin: 0;
+    }
+}
+
+@mixin cvat-management-page-inner {
+    min-height: inherit;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: $grid-unit-size;
+    padding: 0 $grid-unit-size * 4;
+
+    @media screen and (min-width: $scroll-breakpoint) {
+        height: 100%;
+        min-height: auto;
+    }
+}
+
+@mixin cvat-management-page-inner-wrapper {
+    min-height: 90%;
+
+    @media screen and (min-width: $scroll-breakpoint) {
+        height: 90%;
+        min-height: auto;
+    }
+}
+
+@mixin cvat-management-page-tabs {
+    overflow: hidden;
+    flex-grow: 1;
+    margin-left: -$grid-unit-size;
+    margin-right: -$grid-unit-size;
+
+    .ant-table-pagination.ant-pagination {
+        margin-bottom: 0;
+    }
+
+    .ant-tag {
+        margin-inline-end: 0;
+    }
+
+    .ant-tabs-content, .ant-tabs-tabpane {
+        height: 100%;
+    }
+}
+
+@mixin cvat-table-dynamic-size {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+
+    .ant-table-wrapper {
+        flex-grow: 1;
+        overflow: hidden;
+
+        .ant-spin-nested-loading {
+            height: 100%;
+            width: 100%;
+
+            .ant-spin-container {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+
+                &:has(.ant-pagination) {
+                    .ant-table {
+                        flex-grow: 1;
+                        height: calc(100% - $grid-unit-size);
+                    }
+                }
+
+                .ant-table {
+                    height: 100%;
+                    overflow: auto;
+
+                    &:has(.ant-table-placeholder) {
+                        .ant-table-container, .ant-table-content, table {
+                            height: 100%;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@mixin cvat-resource-page {
+    padding-top: $grid-unit-size * 2;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    > .cvat-resource-list-wrapper {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-top: $grid-unit-size;
+        align-items: start;
+    }
+
+    > .cvat-resource-pagination-wrapper {
+        padding-top: $grid-unit-size;
+        padding-bottom: $grid-unit-size;
     }
 }

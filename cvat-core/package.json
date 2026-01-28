@@ -1,39 +1,34 @@
 {
   "name": "cvat-core",
-  "version": "15.1.3",
+  "version": "15.3.1",
   "type": "module",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "src/api.ts",
   "scripts": {
     "build": "webpack",
-    "test": "jest --config=jest.config.cjs --coverage",
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check --watch"
   },
   "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
-    "Chrome >= 63",
-    "Firefox > 102",
+    "Chrome >= 99",
+    "Firefox >= 110",
     "not IE 11",
     "> 2%"
   ],
   "devDependencies": {
     "@babel/preset-typescript": "^7.23.3",
-    "babel-jest": "^29.7.0",
-    "babel-plugin-transform-import-meta": "^2.2.1",
-    "jest": "^29.5.0",
-    "jest-config": "^29.5.0",
-    "jest-environment-jsdom": "^29.5.0",
-    "jest-junit": "^6.4.0"
+    "babel-plugin-transform-import-meta": "^2.2.1"
   },
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "^1.12.0",
     "axios-retry": "^4.0.0",
     "cvat-data": "link:./../cvat-data",
     "detect-browser": "^5.2.1",
+    "dompurify": "^3.3.1",
     "error-stack-parser": "^2.0.2",
-    "form-data": "^4.0.0",
+    "form-data": "^4.0.4",
     "js-cookie": "^3.0.1",
     "json-logic-js": "^2.0.1",
     "platform": "^1.3.5",

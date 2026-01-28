@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,10 +6,10 @@ import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Select from 'antd/lib/select';
 import Form from 'antd/lib/form';
-import { CloudStorage, StorageLocation } from 'reducers';
+import { CloudStorage } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 
-import { StorageData } from 'cvat-core-wrapper';
+import { StorageData, StorageLocation } from 'cvat-core-wrapper';
 
 const { Option } = Select;
 

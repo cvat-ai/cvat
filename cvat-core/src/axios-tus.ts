@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,10 @@ class AxiosHttpRequest implements tus.HttpRequest {
             url,
             headers: {},
             signal: this.#abortController.signal,
-            validateStatus: () => true,
+            // TUS has its own error handing mechanism, except throttle cases
+            // Accept all statuses except 429, which should trigger axios-retry
+            // and handle value from `Retry-After` header
+            validateStatus: (status) => status !== 429,
         };
     }
 

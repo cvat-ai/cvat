@@ -1,13 +1,20 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { AnyAction } from 'redux';
+import { ThunkAction } from 'utils/redux';
 import {
     GridColor, ColorBy, SettingsState, ToolsBlockerState,
+    CombinedState,
 } from 'reducers';
-import { ImageFilter, ImageFilterAlias } from 'utils/image-processing';
+import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
+import { ImageFilter, ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
+import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correction';
+import { resolveConflicts } from 'utils/conflict-detector';
+import { shortcutsActions } from './shortcuts-actions';
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
@@ -35,9 +42,10 @@ export enum SettingsActionTypes {
     CHANGE_SATURATION_LEVEL = 'CHANGE_SATURATION_LEVEL',
     SWITCH_AUTO_SAVE = 'SWITCH_AUTO_SAVE',
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
-    CHANGE_AAM_ZOOM_MARGIN = 'CHANGE_AAM_ZOOM_MARGIN',
+    CHANGE_FOCUSED_OBJECT_PADDING = 'CHANGE_FOCUSED_OBJECT_PADDING',
     CHANGE_DEFAULT_APPROX_POLY_THRESHOLD = 'CHANGE_DEFAULT_APPROX_POLY_THRESHOLD',
     SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
+    SWITCH_ADAPTIVE_ZOOM = 'SWITCH_ADAPTIVE_ZOOM',
     SWITCH_INTELLIGENT_POLYGON_CROP = 'SWITCH_INTELLIGENT_POLYGON_CROP',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
     SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS = 'SWITCH_SHOWING_OBJECTS_TEXT_ALWAYS',
@@ -50,6 +58,7 @@ export enum SettingsActionTypes {
     ENABLE_IMAGE_FILTER = 'ENABLE_IMAGE_FILTER',
     DISABLE_IMAGE_FILTER = 'DISABLE_IMAGE_FILTER',
     RESET_IMAGE_FILTERS = 'RESET_IMAGE_FILTERS',
+    CHANGE_SHAPES_ORIENTATION_VISIBILITY = 'CHANGE_SHAPES_ORIENTATION_VISIBILITY',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -112,6 +121,15 @@ export function changeShowProjections(showProjections: boolean): AnyAction {
         type: SettingsActionTypes.CHANGE_SHAPES_SHOW_PROJECTIONS,
         payload: {
             showProjections,
+        },
+    };
+}
+
+export function changeOrientationVisibility(orientationVisibility: Partial<OrientationVisibility>): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_SHAPES_ORIENTATION_VISIBILITY,
+        payload: {
+            orientationVisibility,
         },
     };
 }
@@ -278,11 +296,11 @@ export function changeAutoSaveInterval(autoSaveInterval: number): AnyAction {
     };
 }
 
-export function changeAAMZoomMargin(aamZoomMargin: number): AnyAction {
+export function changeFocusedObjectPadding(focusedObjectPadding: number): AnyAction {
     return {
-        type: SettingsActionTypes.CHANGE_AAM_ZOOM_MARGIN,
+        type: SettingsActionTypes.CHANGE_FOCUSED_OBJECT_PADDING,
         payload: {
-            aamZoomMargin,
+            focusedObjectPadding,
         },
     };
 }
@@ -310,6 +328,15 @@ export function switchAutomaticBordering(automaticBordering: boolean): AnyAction
         type: SettingsActionTypes.SWITCH_AUTOMATIC_BORDERING,
         payload: {
             automaticBordering,
+        },
+    };
+}
+
+export function switchAdaptiveZoom(adaptiveZoom: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_ADAPTIVE_ZOOM,
+        payload: {
+            adaptiveZoom,
         },
     };
 }
@@ -408,4 +435,80 @@ export function resetImageFilters(): AnyAction {
         type: SettingsActionTypes.RESET_IMAGE_FILTERS,
         payload: {},
     };
+}
+
+export function restoreSettingsAsync(): ThunkAction {
+    return async (dispatch, getState): Promise<void> => {
+        const state: CombinedState = getState();
+        const { settings, shortcuts } = state;
+
+        dispatch(shortcutsActions.setDefaultShortcuts(structuredClone(shortcuts.keyMap)));
+
+        const settingsString = localStorage.getItem('clientSettings') as string;
+        if (!settingsString) return;
+
+        const loadedSettings = JSON.parse(settingsString);
+        const newSettings = {
+            player: settings.player,
+            workspace: settings.workspace,
+            imageFilters: [],
+        } as Pick<SettingsState, 'player' | 'workspace' | 'imageFilters'>;
+
+        Object.entries(_.pick(newSettings, ['player', 'workspace'])).forEach(([sectionKey, section]) => {
+            Object.keys(section).forEach((key) => {
+                const setValue = loadedSettings[sectionKey]?.[key];
+                if (setValue !== undefined) {
+                    Object.defineProperty(newSettings[sectionKey as 'player' | 'workspace'], key, { value: setValue });
+                }
+            });
+        });
+
+        if ('imageFilters' in loadedSettings) {
+            loadedSettings.imageFilters.forEach((filter: SerializedImageFilter) => {
+                if (filter.alias === ImageFilterAlias.GAMMA_CORRECTION) {
+                    newSettings.imageFilters.push({
+                        modifier: new GammaCorrection(filter.params as GammaFilterOptions),
+                        alias: ImageFilterAlias.GAMMA_CORRECTION,
+                    });
+                }
+            });
+        }
+
+        dispatch(setSettings(newSettings));
+
+        if ('shortcuts' in loadedSettings) {
+            const updateKeyMap = structuredClone(shortcuts.keyMap);
+
+            Object.entries(loadedSettings.shortcuts.keyMap).forEach(([key, value]) => {
+                if (key in updateKeyMap) {
+                    updateKeyMap[key].sequences = (value as { sequences: string[] }).sequences;
+                }
+            });
+
+            const resolvedKeyMap = resolveConflicts(updateKeyMap, shortcuts.keyMap);
+
+            dispatch(shortcutsActions.registerShortcuts(resolvedKeyMap));
+        }
+    };
+}
+
+export function updateCachedSettings(settings: CombinedState['settings'], shortcuts: CombinedState['shortcuts']): void {
+    const supportedImageFilters = [ImageFilterAlias.GAMMA_CORRECTION];
+    const settingsForSaving = {
+        player: settings.player,
+        workspace: settings.workspace,
+        shortcuts: {
+            keyMap: Object.entries(shortcuts.keyMap).reduce<Record<string, { sequences: string[] }>>(
+                (acc, [key, value]) => {
+                    if (key in shortcuts.defaultState) {
+                        acc[key] = { sequences: value.sequences };
+                    }
+                    return acc;
+                }, {}),
+        },
+        imageFilters: settings.imageFilters.filter((imageFilter) => supportedImageFilters.includes(imageFilter.alias))
+            .map((imageFilter) => imageFilter.modifier.toJSON()),
+    };
+
+    localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
 }

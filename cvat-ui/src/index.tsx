@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,6 +7,15 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { connect, Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
+import dayjs from 'dayjs';
+import advancedFormat from 'dayjs/plugin/advancedFormat';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import localeData from 'dayjs/plugin/localeData';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import weekday from 'dayjs/plugin/weekday';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+import weekYear from 'dayjs/plugin/weekYear';
+import duration from 'dayjs/plugin/duration';
 
 import { getAboutAsync } from 'actions/about-actions';
 import { authenticatedAsync } from 'actions/auth-actions';
@@ -17,7 +26,7 @@ import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
-import logger, { EventScope } from 'cvat-logger';
+import { logError } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import createRootReducer from 'reducers/root-reducer';
 import { activateOrganizationAsync } from 'actions/organization-actions';
@@ -27,10 +36,20 @@ import { getRequestsAsync } from 'actions/requests-async-actions';
 import { getServerAPISchemaAsync } from 'actions/server-actions';
 import { navigationActions } from 'actions/navigation-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
+import './utils/dayjs-wrapper';
 
 createCVATStore(createRootReducer);
 
 const cvatStore = getCVATStore();
+
+dayjs.extend(customParseFormat);
+dayjs.extend(advancedFormat);
+dayjs.extend(relativeTime);
+dayjs.extend(weekday);
+dayjs.extend(localeData);
+dayjs.extend(weekOfYear);
+dayjs.extend(weekYear);
+dayjs.extend(duration);
 
 interface StateToProps {
     pluginsInitialized: boolean;
@@ -123,8 +142,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
-        initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
-        initRequests: (): void => dispatch(getRequestsAsync({ page: 1 })),
+        initInvitations: (): void => dispatch(getInvitationsAsync({}, true)),
+        initRequests: (): void => dispatch(getRequestsAsync()),
         loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
         onChangeLocation: (from: string, to: string): void => dispatch(navigationActions.changeLocation(from, to)),
     };
@@ -143,42 +162,10 @@ root.render((
     </Provider>
 ));
 
-window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
-    const {
-        filename, lineno, colno, error,
-    } = errorEvent;
+window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    logError(event.reason, false, { type: 'unhandledrejection' });
+});
 
-    if (
-        filename && typeof lineno === 'number' &&
-        typeof colno === 'number' && error
-    ) {
-        // weird react behaviour
-        // it also gets event only in development environment, caught and handled in componentDidCatch
-        // discussion is here https://github.com/facebook/react/issues/10474
-        // and workaround is:
-        if (error.stack && error.stack.indexOf('invokeGuardedCallbackDev') >= 0) {
-            return true;
-        }
-
-        const logPayload = {
-            filename: errorEvent.filename,
-            line: errorEvent.lineno,
-            message: errorEvent.error.message,
-            column: errorEvent.colno,
-            stack: errorEvent.error.stack,
-        };
-
-        const store = getCVATStore();
-        const state: CombinedState = store.getState();
-        const { pathname } = window.location;
-        const re = /\/tasks\/[0-9]+\/jobs\/[0-9]+$/;
-        const { instance: job } = state.annotation.job;
-        if (re.test(pathname) && job) {
-            job.logger.log(EventScope.exception, logPayload);
-        } else {
-            logger.log(EventScope.exception, logPayload);
-        }
-    }
-
-    return false;
+window.addEventListener('error', (errorEvent: ErrorEvent) => {
+    logError(errorEvent.error, false, { type: 'error' });
 });

@@ -1,23 +1,23 @@
 import functools
 import json
-from abc import ABC, abstractstaticmethod
+from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from http import HTTPStatus
 from time import sleep
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, TypeVar
 
 import pytest
 
 T = TypeVar("T")
 
-from shared.utils.config import get_method, post_method, put_method
+from shared.utils.config import get_method, post_method
 
 FILENAME_TEMPLATE = "cvat/{}/{}.zip"
 EXPORT_FORMAT = "CVAT for images 1.1"
 IMPORT_FORMAT = "CVAT 1.1"
 
 
-def _make_custom_resource_params(resource: str, obj: str, cloud_storage_id: int) -> Dict[str, Any]:
+def _make_custom_resource_params(resource: str, obj: str, cloud_storage_id: int) -> dict[str, Any]:
     return {
         "filename": FILENAME_TEMPLATE.format(obj, resource),
         "location": "cloud_storage",
@@ -25,7 +25,7 @@ def _make_custom_resource_params(resource: str, obj: str, cloud_storage_id: int)
     }
 
 
-def _make_default_resource_params(resource: str, obj: str) -> Dict[str, Any]:
+def _make_default_resource_params(resource: str, obj: str) -> dict[str, Any]:
     return {
         "filename": FILENAME_TEMPLATE.format(obj, resource),
     }
@@ -33,17 +33,19 @@ def _make_default_resource_params(resource: str, obj: str) -> Dict[str, Any]:
 
 def _make_export_resource_params(
     resource: str, is_default: bool = True, **kwargs
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     func = _make_default_resource_params if is_default else _make_custom_resource_params
     params = func(resource, **kwargs)
     if resource != "backup":
         params["format"] = EXPORT_FORMAT
+        params["save_images"] = resource == "dataset"
+
     return params
 
 
 def _make_import_resource_params(
     resource: str, is_default: bool = True, **kwargs
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     func = _make_default_resource_params if is_default else _make_custom_resource_params
     params = func(resource, **kwargs)
     if resource != "backup":
@@ -51,8 +53,29 @@ def _make_import_resource_params(
     return params
 
 
+# FUTURE-TODO: reuse common logic from rest_api/utils
+def _wait_request(
+    user: str,
+    request_id: str,
+    *,
+    sleep_interval: float = 0.1,
+    number_of_checks: int = 100,
+):
+    for _ in range(number_of_checks):
+        sleep(sleep_interval)
+        response = get_method(user, f"requests/{request_id}")
+        assert response.status_code == HTTPStatus.OK
+
+        request_details = json.loads(response.content)
+        status = request_details["status"]
+        assert status in {"started", "queued", "finished", "failed"}
+        if status in {"finished", "failed"}:
+            return
+
+
 class _CloudStorageResourceTest(ABC):
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def _make_client():
         pass
 
@@ -64,7 +87,7 @@ class _CloudStorageResourceTest(ABC):
         with self.exit_stack:
             yield
 
-    def _ensure_file_created(self, func: T, storage: Dict[str, Any]) -> T:
+    def _ensure_file_created(self, func: T, storage: dict[str, Any]) -> T:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             filename = kwargs["filename"]
@@ -87,16 +110,17 @@ class _CloudStorageResourceTest(ABC):
         resource: str,
         *,
         user: str,
-        _expect_status: Optional[int] = None,
+        _expect_status: HTTPStatus = HTTPStatus.ACCEPTED,
         **kwargs,
     ):
-        _expect_status = _expect_status or HTTPStatus.ACCEPTED
-
-        sleep_interval = 0.1
-        number_of_checks = 100
 
         # initialize the export process
-        response = get_method(user, f"{obj}/{obj_id}/{resource}", **kwargs)
+        response = post_method(
+            user,
+            f"{obj}/{obj_id}/{resource if resource != 'annotations' else 'dataset'}/export",
+            data=None,
+            **kwargs,
+        )
         assert response.status_code == _expect_status
 
         if _expect_status == HTTPStatus.FORBIDDEN:
@@ -105,47 +129,22 @@ class _CloudStorageResourceTest(ABC):
         rq_id = json.loads(response.content).get("rq_id")
         assert rq_id, "The rq_id was not found in server request"
 
-        for _ in range(number_of_checks):
-            sleep(sleep_interval)
-            # use new requests API for checking the status of the operation
-            response = get_method(user, f"requests/{rq_id}")
-            assert response.status_code == HTTPStatus.OK
-
-            request_details = json.loads(response.content)
-            status = request_details["status"]
-            assert status in {"started", "queued", "finished", "failed"}
-            if status in {"finished", "failed"}:
-                break
+        _wait_request(user, rq_id)
 
     def _import_resource_from_cloud_storage(
-        self, url: str, *, user: str, _expect_status: Optional[int] = None, **kwargs
+        self, url: str, *, user: str, _expect_status: HTTPStatus = HTTPStatus.ACCEPTED, **kwargs
     ) -> None:
-        _expect_status = _expect_status or HTTPStatus.ACCEPTED
-
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
 
-        assert status == _expect_status
+        assert status == _expect_status, status
         if status == HTTPStatus.FORBIDDEN:
             return
 
         rq_id = response.json().get("rq_id")
         assert rq_id, "The rq_id parameter was not found in the server response"
 
-        number_of_checks = 100
-        sleep_interval = 0.1
-
-        for _ in range(number_of_checks):
-            sleep(sleep_interval)
-            # use new requests API for checking the status of the operation
-            response = get_method(user, f"requests/{rq_id}")
-            assert response.status_code == HTTPStatus.OK
-
-            request_details = json.loads(response.content)
-            status = request_details["status"]
-            assert status in {"started", "queued", "finished", "failed"}
-            if status in {"finished", "failed"}:
-                break
+        _wait_request(user, rq_id)
 
     def _import_annotations_from_cloud_storage(
         self,
@@ -153,27 +152,17 @@ class _CloudStorageResourceTest(ABC):
         obj,
         *,
         user,
-        _expect_status: Optional[int] = None,
+        _expect_status: HTTPStatus = HTTPStatus.ACCEPTED,
         _check_uploaded: bool = True,
         **kwargs,
     ):
-        _expect_status = _expect_status or HTTPStatus.CREATED
-
         url = f"{obj}/{obj_id}/annotations"
-        response = post_method(user, url, data=None, **kwargs)
-        status = response.status_code
+        self._import_resource_from_cloud_storage(
+            url, user=user, _expect_status=_expect_status, **kwargs
+        )
 
-        # Only the first POST request contains rq_id in response.
-        # Exclude cases with 403 expected status.
-        rq_id = None
-        if status == HTTPStatus.ACCEPTED:
-            rq_id = response.json().get("rq_id")
-            assert rq_id, "The rq_id was not found in the response"
-
-        while status != _expect_status:
-            assert status == HTTPStatus.ACCEPTED
-            response = put_method(user, url, data=None, rq_id=rq_id, **kwargs)
-            status = response.status_code
+        if _expect_status == HTTPStatus.FORBIDDEN:
+            return
 
         if _check_uploaded:
             response = get_method(user, url)
@@ -184,42 +173,20 @@ class _CloudStorageResourceTest(ABC):
             assert len(annotations["shapes"])
 
     def _import_backup_from_cloud_storage(
-        self, obj_id, obj, *, user, _expect_status: Optional[int] = None, **kwargs
+        self, obj, *, user, _expect_status: HTTPStatus = HTTPStatus.ACCEPTED, **kwargs
     ):
-        _expect_status = _expect_status or HTTPStatus.CREATED
-
-        url = f"{obj}/backup"
-        response = post_method(user, url, data=None, **kwargs)
-        status = response.status_code
-
-        while status != _expect_status:
-            assert status == HTTPStatus.ACCEPTED
-            data = json.loads(response.content.decode("utf8"))
-            response = post_method(user, url, data=data, **kwargs)
-            status = response.status_code
+        self._import_resource_from_cloud_storage(
+            f"{obj}/backup", user=user, _expect_status=_expect_status, **kwargs
+        )
 
     def _import_dataset_from_cloud_storage(
-        self, obj_id, obj, *, user, _expect_status: Optional[int] = None, **kwargs
+        self, obj_id, obj, *, user, _expect_status: HTTPStatus = HTTPStatus.ACCEPTED, **kwargs
     ):
-        _expect_status = _expect_status or HTTPStatus.CREATED
+        self._import_resource_from_cloud_storage(
+            f"{obj}/{obj_id}/dataset", user=user, _expect_status=_expect_status, **kwargs
+        )
 
-        url = f"{obj}/{obj_id}/dataset"
-        response = post_method(user, url, data=None, **kwargs)
-        status = response.status_code
-
-        # Only the first POST request contains rq_id in response.
-        # Exclude cases with 403 expected status.
-        rq_id = None
-        if status == HTTPStatus.ACCEPTED:
-            rq_id = response.json().get("rq_id")
-            assert rq_id, "The rq_id was not found in the response"
-
-        while status != _expect_status:
-            assert status == HTTPStatus.ACCEPTED
-            response = get_method(user, url, action="import_status", rq_id=rq_id)
-            status = response.status_code
-
-    def _import_resource(self, cloud_storage: Dict[str, Any], resource_type: str, *args, **kwargs):
+    def _import_resource(self, cloud_storage: dict[str, Any], resource_type: str, *args, **kwargs):
         methods = {
             "annotations": self._import_annotations_from_cloud_storage,
             "dataset": self._import_dataset_from_cloud_storage,
@@ -234,7 +201,7 @@ class _CloudStorageResourceTest(ABC):
 
         return methods[resource_type](*args, **kwargs)
 
-    def _export_resource(self, cloud_storage: Dict[str, Any], *args, **kwargs):
+    def _export_resource(self, cloud_storage: dict[str, Any], *args, **kwargs):
         org_id = cloud_storage["organization"]
         if org_id:
             kwargs.setdefault("org_id", org_id)

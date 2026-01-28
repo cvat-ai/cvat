@@ -8,7 +8,7 @@ context('Models page.', () => {
     const caseId = '51';
 
     before(() => {
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
     });
 

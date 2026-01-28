@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dataset_repo', '0004_rename'),
+        ("dataset_repo", "0004_rename"),
     ]
 
     operations = [
         migrations.AlterModelTable(
-            name='gitdata',
+            name="gitdata",
             table=None,
         ),
     ]

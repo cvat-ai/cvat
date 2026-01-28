@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,11 +7,12 @@ from __future__ import annotations
 import io
 import json
 import mimetypes
+import os
 import shutil
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from time import sleep
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any
 
 from PIL import Image
 
@@ -23,6 +24,7 @@ from cvat_sdk.core.proxies.jobs import Job
 from cvat_sdk.core.proxies.model_proxy import (
     DownloadBackupMixin,
     ExportDatasetMixin,
+    ModelBatchDeleteMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -64,17 +66,16 @@ class Task(
     DownloadBackupMixin,
 ):
     _model_partial_update_arg = "patched_task_write_request"
-    _put_annotations_data_param = "task_annotations_update_request"
 
     def upload_data(
         self,
         resources: Sequence[StrPath],
         *,
         resource_type: ResourceType = ResourceType.LOCAL,
-        pbar: Optional[ProgressReporter] = None,
-        params: Optional[Dict[str, Any]] = None,
+        pbar: ProgressReporter | None = None,
+        params: dict[str, Any] | None = None,
         wait_for_completion: bool = True,
-        status_check_period: Optional[int] = None,
+        status_check_period: int | None = None,
     ) -> None:
         """
         Add local, remote, or shared files to an existing task.
@@ -99,6 +100,7 @@ class Task(
                     "filename_pattern",
                     "cloud_storage_id",
                     "server_files_exclude",
+                    "validation_params",
                 ],
             )
         )
@@ -106,14 +108,13 @@ class Task(
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            for resource in resources:
-                if not isinstance(resource, str):
-                    raise TypeError(f"resources: expected instances of str, got {type(resource)}")
+
+            str_resources = list(map(os.fspath, resources))
 
             if resource_type is ResourceType.REMOTE:
-                data["remote_files"] = resources
+                data["remote_files"] = str_resources
             elif resource_type is ResourceType.SHARE:
-                data["server_files"] = resources
+                data["server_files"] = str_resources
 
             result, _ = self.api.create_data(
                 self.id,
@@ -137,23 +138,11 @@ class Task(
                 status_check_period = self._client.config.status_check_period
 
             self._client.logger.info("Awaiting for task %s creation...", self.id)
-            while True:
-                sleep(status_check_period)
-                request_details, response = self._client.api_client.requests_api.retrieve(rq_id)
-                status, message = request_details.status, request_details.message
-
-                self._client.logger.info(
-                    "Task %s creation status: %s (message=%s)",
-                    self.id,
-                    status,
-                    message,
-                )
-
-                if status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
-                    break
-
-                elif status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
-                    raise exceptions.ApiException(status=status, reason=message, http_resp=response)
+            self._client.wait_for_completion(
+                rq_id,
+                status_check_period=status_check_period,
+                log_prefix=f"Task {self.id} creation",
+            )
 
             self.fetch()
 
@@ -162,11 +151,12 @@ class Task(
         format_name: str,
         filename: StrPath,
         *,
-        status_check_period: Optional[int] = None,
-        pbar: Optional[ProgressReporter] = None,
+        conv_mask_to_poly: bool | None = None,
+        status_check_period: int | None = None,
+        pbar: ProgressReporter | None = None,
     ):
         """
-        Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
+        Upload annotations for a task in the specified format (e.g. 'YOLO 1.1').
         """
 
         filename = Path(filename)
@@ -176,6 +166,7 @@ class Task(
             filename,
             format_name,
             url_params={"id": self.id},
+            conv_mask_to_poly=conv_mask_to_poly,
             pbar=pbar,
             status_check_period=status_check_period,
         )
@@ -186,7 +177,7 @@ class Task(
         self,
         frame_id: int,
         *,
-        quality: Optional[str] = None,
+        quality: str | None = None,
     ) -> io.RawIOBase:
         params = {}
         if quality:
@@ -205,7 +196,7 @@ class Task(
         chunk_id: int,
         output_file: SupportsWrite[bytes],
         *,
-        quality: Optional[str] = None,
+        quality: str | None = None,
     ) -> None:
         params = {}
         if quality:
@@ -221,11 +212,11 @@ class Task(
         self,
         frame_ids: Sequence[int],
         *,
-        image_extension: Optional[str] = None,
+        image_extension: str | None = None,
         outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
-    ) -> Optional[List[Image.Image]]:
+    ) -> list[Image.Image] | None:
         """
         Download the requested frame numbers for a task and save images as outdir/filename_pattern
         """
@@ -252,7 +243,7 @@ class Task(
             outfile = filename_pattern.format(frame_id=frame_id, frame_ext=im_ext)
             im.save(outdir / outfile)
 
-    def get_jobs(self) -> List[Job]:
+    def get_jobs(self) -> list[Job]:
         return [
             Job(self._client, model=m)
             for m in get_paginated_collection(
@@ -264,12 +255,12 @@ class Task(
         (meta, _) = self.api.retrieve_data_meta(self.id)
         return meta
 
-    def get_labels(self) -> List[models.ILabel]:
+    def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint, task_id=self.id
         )
 
-    def get_frames_info(self) -> List[models.IFrameMeta]:
+    def get_frames_info(self) -> list[models.IFrameMeta]:
         return self.get_meta().frames
 
     def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
@@ -284,7 +275,7 @@ class TasksRepo(
     ModelCreateMixin[Task, models.ITaskWriteRequest],
     ModelRetrieveMixin[Task],
     ModelListMixin[Task],
-    ModelDeleteMixin,
+    ModelBatchDeleteMixin,
 ):
     _entity_type = Task
 
@@ -294,11 +285,11 @@ class TasksRepo(
         resources: Sequence[StrPath],
         *,
         resource_type: ResourceType = ResourceType.LOCAL,
-        data_params: Optional[Dict[str, Any]] = None,
+        data_params: dict[str, Any] | None = None,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
         status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
     ) -> Task:
         """
         Create a new task with the given name and labels JSON and
@@ -332,30 +323,22 @@ class TasksRepo(
 
         return task
 
+    # This is a backwards compatibility wrapper to support calls which pass
+    # the task_ids parameter by keyword (the base class implementation is generic,
+    # so it doesn't support this).
     def remove_by_ids(self, task_ids: Sequence[int]) -> None:
         """
         Delete a list of tasks, ignoring those which don't exist.
         """
 
-        for task_id in task_ids:
-            (_, response) = self.api.destroy(task_id, _check_status=False)
-
-            if 200 <= response.status <= 299:
-                self._client.logger.info(f"Task ID {task_id} deleted")
-            elif response.status == 404:
-                self._client.logger.info(f"Task ID {task_id} not found")
-            else:
-                self._client.logger.warning(
-                    f"Failed to delete task ID {task_id}: "
-                    f"{response.msg} (status {response.status})"
-                )
+        super().remove_by_ids(task_ids)
 
     def create_from_backup(
         self,
         filename: StrPath,
         *,
         status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
     ) -> Task:
         """
         Import a task from a backup file

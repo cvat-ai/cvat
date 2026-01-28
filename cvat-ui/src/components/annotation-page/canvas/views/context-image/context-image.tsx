@@ -1,10 +1,10 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React, { useEffect, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { shallowEqual, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
@@ -25,8 +25,15 @@ function ContextImage(props: Props): JSX.Element {
     const defaultContextImageOffset = (offset[1] || 0);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const job = useSelector((state: CombinedState) => state.annotation.job.instance);
-    const { number: frame, relatedFiles } = useSelector((state: CombinedState) => state.annotation.player.frame);
+    const {
+        job,
+        frame,
+        relatedFiles,
+    } = useSelector((state: CombinedState) => ({
+        job: state.annotation.job.instance!,
+        frame: state.annotation.player.frame.number,
+        relatedFiles: state.annotation.player.frame.relatedFiles,
+    }), shallowEqual);
     const frameIndex = frame + defaultFrameOffset;
 
     const [contextImageData, setContextImageData] = useState<Record<string, ImageBitmap>>({});

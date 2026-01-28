@@ -1,11 +1,10 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 from logging import Logger
 from pathlib import Path
-from typing import Optional, Tuple
 
 import pytest
 from cvat_sdk import Client
@@ -26,9 +25,10 @@ class TestJobUsecases(TestDatasetExport):
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_login: tuple[Client, str],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_stdout: io.StringIO,
+        restore_redis_ondisk_per_function,
     ):
         self.tmp_path = tmp_path
         logger, self.logger_stream = fxt_logger
@@ -132,7 +132,7 @@ class TestJobUsecases(TestDatasetExport):
         format_name: str,
         include_images: bool,
         task: Task,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):
@@ -185,6 +185,29 @@ class TestJobUsecases(TestDatasetExport):
 
         assert (self.tmp_path / f"frame-0.{expected_frame_ext}").is_file()
         assert self.stdout.getvalue() == ""
+
+    @pytest.mark.parametrize("convert", [True, False])
+    def test_can_convert_annotations_polygons_to_masks_param(
+        self, fxt_new_task: Task, fxt_camvid_dataset: Path, convert: bool
+    ):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        fxt_new_task.get_jobs()[0].import_annotations(
+            format_name="CamVid 1.0",
+            filename=fxt_camvid_dataset,
+            pbar=pbar,
+            conv_mask_to_poly=convert,
+        )
+
+        assert "uploaded" in self.logger_stream.getvalue()
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+        imported_annotations = fxt_new_task.get_jobs()[0].get_annotations()
+        assert all(
+            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+        )
 
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
         pbar_out = io.StringIO()

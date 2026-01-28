@@ -1,12 +1,11 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import abc
-from typing import List, Optional
+from enum import Enum, auto
 
 import attrs
-import attrs.validators
 import PIL.Image
 
 import cvat_sdk.core
@@ -24,8 +23,8 @@ class FrameAnnotations:
     Contains annotations that pertain to a single frame.
     """
 
-    tags: List[models.LabeledImage] = attrs.Factory(list)
-    shapes: List[models.LabeledShape] = attrs.Factory(list)
+    tags: list[models.LabeledImage] = attrs.Factory(list)
+    shapes: list[models.LabeledShape] = attrs.Factory(list)
 
 
 class MediaElement(metaclass=abc.ABCMeta):
@@ -53,7 +52,7 @@ class Sample:
     frame_name: str
     """File name of the frame in its task."""
 
-    annotations: Optional[FrameAnnotations]
+    annotations: FrameAnnotations | None
     """
     Annotations belonging to the frame.
 
@@ -62,3 +61,13 @@ class Sample:
 
     media: MediaElement
     """Media data of the frame."""
+
+
+class MediaDownloadPolicy(Enum):
+    """Defines policies controlling when media data is downloaded."""
+
+    PRELOAD_ALL = auto()
+    """Download and cache all media data when the dataset object is created."""
+
+    FETCH_FRAMES_ON_DEMAND = auto()
+    """Download the media element for each frame whenever MediaElement.load_* is invoked."""

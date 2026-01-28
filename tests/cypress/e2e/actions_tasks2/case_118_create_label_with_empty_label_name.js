@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ context('Creating a label with an empty name.', () => {
     const caseId = '118';
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
     });
 

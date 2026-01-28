@@ -26,11 +26,6 @@ If you're unsure about any of these, don't hesitate to ask. We're here to help! 
 - [ ] I have added tests to cover my changes
 - [ ] I have linked related issues (see [GitHub docs](
   https://help.github.com/en/github/managing-your-work-on-github/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword))
-- [ ] I have increased versions of npm packages if it is necessary
-  ([cvat-canvas](https://github.com/cvat-ai/cvat/tree/develop/cvat-canvas#versioning),
-  [cvat-core](https://github.com/cvat-ai/cvat/tree/develop/cvat-core#versioning),
-  [cvat-data](https://github.com/cvat-ai/cvat/tree/develop/cvat-data#versioning) and
-  [cvat-ui](https://github.com/cvat-ai/cvat/tree/develop/cvat-ui#versioning))
 
 ### License
 

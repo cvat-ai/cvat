@@ -1,8 +1,8 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { isEqual } from 'lodash';
+import { isEqual, cloneDeep } from 'lodash';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { KeyMap, KeyMapItem } from './mousetrap-react';
 import { ShortcutScope } from './enums';
@@ -103,7 +103,8 @@ function updatedFlatKeyMap(scope: string, flatKeyMap: FlatKeyMap): FlatKeyMapIte
 
 export function conflictDetector(
     shortcuts: Record<string, KeyMapItem>,
-    keyMap: KeyMap): Record<string, KeyMapItem> | null {
+    keyMap: KeyMap,
+): Record<string, KeyMapItem> | null {
     const flatKeyMap: FlatKeyMap = initializeFlatKeyMap(keyMap);
     const conflictingItems: Record<string, KeyMapItem> = {};
 
@@ -159,4 +160,37 @@ export function unsetExistingShortcuts(
         }
     }
     registerComponentShortcuts(updatedShortcuts);
+}
+
+function removeConflictingSequences(
+    sequences: string[],
+    conflictingSequences: string[],
+): string[] {
+    const isConflict = (sequence: string) => (conflictingSequence: string) => conflict(sequence, conflictingSequence);
+    const nonConflictingSequence = (sequence: string): boolean => (
+        !conflictingSequences.some(isConflict(sequence))
+    );
+
+    return sequences.filter(nonConflictingSequence);
+}
+
+export function resolveConflicts(
+    updateKeyMap: KeyMap,
+    shortcutsKeyMap: KeyMap,
+): KeyMap {
+    const resultMap = cloneDeep(updateKeyMap);
+
+    Object.entries(resultMap).forEach(([key, currValue]) => {
+        const conflicts = conflictDetector({ [key]: currValue }, shortcutsKeyMap);
+        if (!conflicts) return;
+
+        Object.keys(conflicts).forEach((conflictingKey) => {
+            resultMap[conflictingKey].sequences = removeConflictingSequences(
+                resultMap[conflictingKey].sequences,
+                conflicts[conflictingKey].sequences,
+            );
+        });
+    });
+
+    return resultMap;
 }

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,10 +26,12 @@ function transformSkeletonSVG(value: string): string {
     // the function guarantees successful result only if all labels configuration is passed
     // or if the whole configuration for one label is passed (with sublabels, etc)
 
-    let data = value;
+    let data = value.trim();
+    data = data.startsWith('[') ? data : `[${data}]`;
+
     const idNameMapping: Record<string, string> = {};
     try {
-        const parsed = JSON.parse(data.trim().startsWith('[') ? data : `[${data}]`);
+        const parsed = JSON.parse(replaceTrailingCommas(data));
         for (const label of parsed) {
             for (const sublabel of (label.sublabels || [])) {
                 idNameMapping[sublabel.id] = sublabel.name;
@@ -40,11 +42,11 @@ function transformSkeletonSVG(value: string): string {
         return value;
     }
 
-    const matches = data.matchAll(/data-label-id=&quot;([\d]+)&quot;/g);
+    const matches = data.matchAll(/data-label-id=\\"([\d]+)\\"/g);
     for (const match of matches) {
         if (idNameMapping[match[1]]) {
             data = data.replace(
-                match[0], `data-label-name=&quot;${idNameMapping[match[1]]}&quot;`,
+                match[0], `data-label-name=\\"${idNameMapping[match[1]]}\\"`,
             );
         }
     }
@@ -58,10 +60,6 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
         if (!Array.isArray(parsed)) {
             return Promise.reject(new Error('Field is expected to be a JSON array'));
         }
-        const labelNames = parsed.map((label: SerializedLabel) => label.name);
-        if (new Set(labelNames).size !== labelNames.length) {
-            return Promise.reject(new Error('Label names must be unique for the task'));
-        }
 
         for (const label of parsed) {
             try {
@@ -69,6 +67,11 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
             } catch (error) {
                 return Promise.reject(error);
             }
+        }
+
+        const labelNames = parsed.map((label: SerializedLabel) => label.name.trim());
+        if (new Set(labelNames).size !== labelNames.length) {
+            return Promise.reject(new Error('Label name must be unique'));
         }
     } catch (error) {
         return Promise.reject(error);
@@ -87,7 +90,6 @@ function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
         (label: LabelOptColor): LabelOptColor => ({
             ...label,
             id: (label.id as number) < 0 ? undefined : label.id,
-            svg: label.svg ? label.svg.replaceAll('"', '&quot;') : undefined,
             attributes: label.attributes.map(
                 (attribute: any): SerializedAttribute => ({
                     ...attribute,
@@ -121,35 +123,32 @@ export default class RawViewer extends React.PureComponent<Props> {
             replaceTrailingCommas(values.labels),
         ) as SerializedLabel[];
 
-        const labelIDs: number[] = [];
-        const attrIDs: number[] = [];
+        const labelIds: number[] = [];
+        const attrIds: number[] = [];
         for (const label of parsed) {
-            if (label.svg) {
-                label.svg = label.svg.replaceAll('&quot;', '"');
-            }
             label.id = label.id || idGenerator();
             if (label.id >= 0) {
-                labelIDs.push(label.id);
+                labelIds.push(label.id);
             }
             for (const attr of label.attributes) {
                 attr.id = attr.id || idGenerator();
                 if (attr.id >= 0) {
-                    attrIDs.push(attr.id);
+                    attrIds.push(attr.id);
                 }
             }
         }
 
         const deletedLabels = labels
             .filter((_label: LabelOptColor) => {
-                const labelID = _label.id as number;
-                return labelID >= 0 && !labelIDs.includes(labelID);
+                const labelId = _label.id as number;
+                return labelId >= 0 && !labelIds.includes(labelId);
             });
 
         const deletedAttributes = labels
             .reduce((acc: SerializedAttribute[], _label) => [...acc, ..._label.attributes], [])
             .filter((_attr: SerializedAttribute) => {
-                const attrID = _attr.id as number;
-                return attrID >= 0 && !attrIDs.includes(attrID);
+                const attrId = _attr.id as number;
+                return attrId >= 0 && !attrIds.includes(attrId);
             });
 
         if (deletedLabels.length || deletedAttributes.length) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +17,7 @@ import { ObjectSelector } from './objectSelector';
 export interface SliceHandler {
     slice(sliceData: any): void;
     transform(geometry: Geometry): void;
-    configurate(config: Configuration): void;
+    configure(config: Configuration): void;
     cancel(): void;
 }
 
@@ -554,8 +554,10 @@ export class SliceHandlerImpl implements SliceHandler {
             }], 'slice');
 
             this.objectSelector.enable(([state]) => {
-                this.objectSelector.disable();
-                initializeWithContour(state);
+                if (state) {
+                    this.objectSelector.disable();
+                    initializeWithContour(state);
+                }
             }, { maxCount: 1, shapeType: ['polygon', 'mask'], objectType: ['shape'] });
         } else if (this.enabled && !sliceData.enabled) {
             this.release();
@@ -584,7 +586,7 @@ export class SliceHandlerImpl implements SliceHandler {
         });
     }
 
-    public configurate(config: Configuration): void {
+    public configure(config: Configuration): void {
         this.controlPointSize = config.controlPointsSize || consts.BASE_POINT_SIZE;
         this.outlinedBorders = config.outlinedBorders || 'black';
         if (this.slicingLine) this.slicingLine.attr('stroke', this.outlinedBorders);

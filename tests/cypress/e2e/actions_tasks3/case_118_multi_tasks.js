@@ -1,11 +1,11 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-context('Create mutli tasks.', () => {
+context('Create multi tasks.', () => {
     const caseId = '118';
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
@@ -44,7 +44,7 @@ context('Create mutli tasks.', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 
@@ -129,8 +129,8 @@ context('Create mutli tasks.', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteTasks(authKey, videoFiles.videos);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteTasks(authHeaders, videoFiles.videos);
         });
     });
 });

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,12 +29,11 @@ function WrappedSkeletonElementLabelForm(props: ContextMenuProps & { hideConfigu
 
     return (
         <Modal
-            visible
+            open
             width={700}
-            cancelButtonProps={{ hidden: true }}
-            okButtonProps={{ hidden: true }}
             closable={false}
             destroyOnClose
+            footer={null}
         >
             <LabelForm
                 label={elementLabel}

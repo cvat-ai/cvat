@@ -1,20 +1,20 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import {
     Canvas3d,
-    Canvas3dVersion,
     MouseInteraction,
     ViewType,
     CameraAction,
     ViewsDOM,
     CanvasMode,
 } from 'cvat-canvas3d/src/typescript/canvas3d';
+import { OrientationVisibility } from 'cvat-canvas3d/src/typescript/canvas3dModel';
 
 export {
-    Canvas3d, Canvas3dVersion, MouseInteraction, ViewType, CameraAction, CanvasMode,
+    Canvas3d, MouseInteraction, ViewType, CameraAction, CanvasMode,
 };
 
-export type { ViewsDOM };
+export type { ViewsDOM, OrientationVisibility };

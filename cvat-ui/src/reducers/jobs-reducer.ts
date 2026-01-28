@@ -3,30 +3,36 @@
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
-import { JobsActions, JobsActionTypes } from 'actions/jobs-actions';
-import { JobsState } from '.';
+import { AnyAction } from 'redux';
+import { JobsActionTypes } from 'actions/jobs-actions';
+import { SelectionActionsTypes } from 'actions/selection-actions';
+import { JobsState, SelectedResourceType } from '.';
 
 const defaultState: JobsState = {
+    fetchingTimestamp: Date.now(),
     fetching: false,
     count: 0,
     query: {
         page: 1,
+        pageSize: 12,
         filter: null,
         sort: null,
         search: null,
     },
     current: [],
+    selected: [],
     previews: {},
     activities: {
         deletes: {},
     },
 };
 
-export default (state: JobsState = defaultState, action: JobsActions): JobsState => {
+export default (state: JobsState = defaultState, action: AnyAction): JobsState => {
     switch (action.type) {
         case JobsActionTypes.GET_JOBS: {
             return {
                 ...state,
+                fetchingTimestamp: action.payload.fetchingTimestamp,
                 fetching: true,
                 query: {
                     ...defaultState.query,
@@ -160,6 +166,27 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
                 ...state,
                 fetching: false,
             };
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.JOBS) {
+                return {
+                    ...state,
+                    selected: state.selected.filter((id: number) => !action.payload.resourceIds.includes(id)),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.JOBS) {
+                return {
+                    ...state,
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selected: [] };
         }
         default: {
             return state;

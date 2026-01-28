@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -95,6 +95,19 @@ export const config: Partial<Config> = {
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
+        },
+        type: {
+            label: 'Job Type',
+            type: 'select',
+            operators: ['select_equals'],
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'annotation', title: 'Annotation' },
+                    { value: 'ground_truth', title: 'Ground truth' },
+                    { value: 'consensus_replica', title: 'Consensus replica' },
+                ],
+            },
         },
     },
 };

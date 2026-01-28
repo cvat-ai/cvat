@@ -1,71 +1,99 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import sysconfig
-import tempfile
-import shutil
-import zipfile
+from __future__ import annotations
+
 import io
 import itertools
-import struct
-from enum import IntEnum
+import os
+import shutil
+import sysconfig
+import tempfile
+import zipfile
 from abc import ABC, abstractmethod
-from contextlib import closing
-from typing import Iterable
+from bisect import bisect
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from contextlib import ExitStack, closing
+from dataclasses import dataclass
+from enum import IntEnum
+from fractions import Fraction
+from pathlib import Path
+from random import shuffle
+from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
 
 import av
+import av.codec
+import av.container
+import av.video.stream
 import numpy as np
 from natsort import os_sorted
-from pyunpack import Archive
 from PIL import Image, ImageFile, ImageOps
-from random import shuffle
-from cvat.apps.engine.utils import rotate_image
-from cvat.apps.engine.models import DimensionType, SortingMethod
+from pyunpack import Archive
 from rest_framework.exceptions import ValidationError
+
+from cvat.apps.engine.models import DimensionType, SortingMethod
+from cvat.apps.engine.utils import rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
-from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+from utils.dataset_manifest.errors import InvalidPcdError
+from utils.dataset_manifest.utils import MediaDimension as _MediaDimension
+from utils.dataset_manifest.utils import Openable, PcdReader, detect_media_dimension
 
 ORIENTATION_EXIF_TAG = 274
 
+
+class Chapter(TypedDict):
+    id: int
+    metadata: dict[str, str]
+    start: int
+    stop: int
+
+
 class ORIENTATION(IntEnum):
-    NORMAL_HORIZONTAL=1
-    MIRROR_HORIZONTAL=2
-    NORMAL_180_ROTATED=3
-    MIRROR_VERTICAL=4
-    MIRROR_HORIZONTAL_270_ROTATED=5
-    NORMAL_90_ROTATED=6
-    MIRROR_HORIZONTAL_90_ROTATED=7
-    NORMAL_270_ROTATED=8
+    NORMAL_HORIZONTAL = 1
+    MIRROR_HORIZONTAL = 2
+    NORMAL_180_ROTATED = 3
+    MIRROR_VERTICAL = 4
+    MIRROR_HORIZONTAL_270_ROTATED = 5
+    NORMAL_90_ROTATED = 6
+    MIRROR_HORIZONTAL_90_ROTATED = 7
+    NORMAL_270_ROTATED = 8
+
 
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
-        if type_def['has_mime_type'](name):
+        if type_def["has_mime_type"](name):
             return type_name
 
-    return 'unknown'
+    return "unknown"
+
 
 def create_tmp_dir():
-    return tempfile.mkdtemp(prefix='cvat-', suffix='.data')
+    return tempfile.mkdtemp(prefix="cvat-", suffix=".data")
+
 
 def delete_tmp_dir(tmp_dir):
     if tmp_dir:
         shutil.rmtree(tmp_dir)
 
+
 def files_to_ignore(directory):
-    ignore_files = ('__MSOSX', '._.DS_Store', '__MACOSX', '.DS_Store')
+    ignore_files = ("__MSOSX", "._.DS_Store", "__MACOSX", ".DS_Store")
     if not any(ignore_file in directory for ignore_file in ignore_files):
         return True
     return False
 
-def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
+
+def sort(
+    images: list[_T], sorting_method: SortingMethod, func: Callable[[_T], str] | None = None
+) -> list[_T]:
     if sorting_method == SortingMethod.LEXICOGRAPHICAL:
         return sorted(images, key=func)
     elif sorting_method == SortingMethod.NATURAL:
@@ -73,182 +101,302 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     elif sorting_method == SortingMethod.PREDEFINED:
         return images
     elif sorting_method == SortingMethod.RANDOM:
-        shuffle(images)
+        shuffle(images)  # TODO: support seed to create reproducible results
         return images
     else:
         raise NotImplementedError()
 
-def image_size_within_orientation(img: Image):
+
+def image_size_within_orientation(img: Image.Image) -> tuple[int, int]:
     orientation = img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL)
     if orientation > 4:
         return img.height, img.width
     return img.width, img.height
 
-def has_exif_rotation(img: Image):
-    return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
+
+def has_exif_rotation(img: Image.Image) -> bool:
+    return (
+        img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL)
+        != ORIENTATION.NORMAL_HORIZONTAL
+    )
+
+
+def load_image(image: tuple[str, str]) -> tuple[Image.Image, str]:
+    with Image.open(image[0]) as pil_img:
+        pil_img.load()
+        return pil_img, image[1]
+
+
+def get_video_chapters(
+    manifest_path: Path, segment: tuple[int, int] | None = None
+) -> list[Chapter]:
+    if not manifest_path.is_file():
+        # Some videos can have no manifest. Typically, because there are issues with keyframes.
+        # In this case we don't have a quick and reliable source of information about chapters,
+        # so we don't return them.
+        return []
+
+    manifest = VideoManifestManager(manifest_path)
+
+    chapters = manifest.chapters
+
+    if segment:
+        chapters = [
+            chapter for chapter in manifest.chapters if segment[0] <= chapter["start"] <= segment[1]
+        ]
+    return chapters
+
+
+_T = TypeVar("_T")
+
+
+class RandomAccessIterator(Iterator[_T]):
+    def __init__(self, iterable: Iterable[_T]):
+        self.iterable: Iterable[_T] = iterable
+        self.iterator: Iterator[_T] | None = None
+        self.pos: int = -1
+
+    def __next__(self) -> _T:
+        return self[self.pos + 1]
+
+    def __getitem__(self, idx: int) -> _T:
+        assert 0 <= idx
+        if self.iterator is None or idx <= self.pos:
+            self.reset()
+
+        while True:
+            # NOTE: don't keep the last item in self, it can be expensive
+            v = next(self.iterator)
+            self.pos += 1
+
+            if self.pos == idx:
+                return v
+
+    def reset(self) -> None:
+        self.close()
+        self.iterator = iter(self.iterable)
+
+    def close(self) -> None:
+        if self.iterator is not None:
+            if close := getattr(self.iterator, "close", None):
+                close()
+        self.iterator = None
+        self.pos = -1
+
+
+class Sized(Protocol):
+    def get_size(self) -> int: ...
+
+
+_MediaT = TypeVar("_MediaT", bound=Sized)
+
+
+class CachingMediaIterator(RandomAccessIterator[_MediaT]):
+    @dataclass
+    class _CacheItem:
+        value: _MediaT
+        size: int
+
+    def __init__(
+        self,
+        iterable: Iterable,
+        *,
+        max_cache_memory: int,
+        max_cache_entries: int,
+        object_size_callback: Callable[[_MediaT], int] | None = None,
+    ):
+        super().__init__(iterable)
+        self.max_cache_entries = max_cache_entries
+        self.max_cache_memory = max_cache_memory
+        self._get_object_size_callback = object_size_callback
+        self.used_cache_memory = 0
+        self._cache: dict[int, self._CacheItem] = {}
+
+    def _get_object_size(self, obj: _MediaT) -> int:
+        if self._get_object_size_callback:
+            return self._get_object_size_callback(obj)
+
+        return obj.get_size()
+
+    def _can_put_item_in_cache(self, value_size: int) -> bool:
+        return (
+            len(self._cache) + 1 <= self.max_cache_entries
+            and self.used_cache_memory + value_size <= self.max_cache_memory
+        )
+
+    def __getitem__(self, idx: int):
+        cache_item = self._cache.get(idx)
+        if cache_item:
+            return cache_item.value
+
+        value = super().__getitem__(idx)
+        value_size = self._get_object_size(value)
+
+        while len(self._cache) > 0 and not self._can_put_item_in_cache(value_size):
+            min_key = min(self._cache.keys())
+            self._cache.pop(min_key)
+
+        if self._can_put_item_in_cache(value_size):
+            self._cache[idx] = self._CacheItem(value, value_size)
+
+        return value
+
 
 class IMediaReader(ABC):
-    def __init__(self, source_path, step, start, stop, dimension):
-        self._source_path = source_path
+    ImageFrame: TypeAlias = tuple[str | io.BytesIO, str]
+    """
+    The first element is the contents of the image or the file system path to it.
+    The second element is always the path to the image.
+    """
+
+    VideoFrame: TypeAlias = tuple[av.VideoFrame, None]
+
+    def __init__(
+        self,
+        *,
+        start: int = 0,
+        stop: int | None = None,
+        step: int = 1,
+        dimension: DimensionType = DimensionType.DIM_2D,
+    ):
         self._step = step
+
         self._start = start
+        "The first included index"
+
         self._stop = stop
+        "The last included index"
+
         self._dimension = dimension
 
     @abstractmethod
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ImageFrame] | Iterator[VideoFrame]:
         pass
 
     @abstractmethod
-    def get_preview(self, frame):
+    def get_image_size(self, i) -> tuple[int, int]:
         pass
 
-    @abstractmethod
-    def get_progress(self, pos):
-        pass
+    @property
+    def start(self) -> int:
+        return self._start
 
-    @staticmethod
-    def _get_preview(obj):
-        PREVIEW_SIZE = (256, 256)
+    @property
+    def stop(self) -> int | None:
+        return self._stop
 
-        if isinstance(obj, io.IOBase):
-            preview = Image.open(obj)
+    @property
+    def step(self) -> int:
+        return self._step
+
+
+class ImageListReader(IMediaReader):
+    def __init__(
+        self,
+        source_paths,
+        step: int = 1,
+        start: int = 0,
+        stop: int | None = None,
+        dimension: DimensionType = DimensionType.DIM_2D,
+        sorting_method: SortingMethod = SortingMethod.LEXICOGRAPHICAL,
+    ):
+        if not source_paths:
+            raise Exception("No image found")
+
+        if not stop:
+            stop = len(source_paths) - 1
         else:
-            preview = obj
-        preview = ImageOps.exif_transpose(preview)
-        # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
-        # Summary:
-        # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
-        # Simple Conversion from I;16 to I/RGB/L doesn't work as well.
-        #   Including any Intermediate Conversions doesn't work either. (eg. I;16 to I to L)
-        # Seems like an internal Bug of PIL
-        #     See Issue for further details: https://github.com/python-pillow/Pillow/issues/3011
-        #     Issue was opened 2018, so don't expect any changes soon and work with manual conversions.
-        mode: str = preview.mode
-        if mode == "I;16":
-            preview = np.array(preview, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
-            image = image - image.min()                  # In case the used range lies in [a, 2^16] with a > 0
-            preview = preview / preview.max() * 255      # Downscale into real numbers of range [0, 255]
-            preview = preview.astype(np.uint8)           # Floor to integers of range [0, 255]
-            preview = Image.fromarray(preview, mode="L") # 'L' := Unsigned Integer 8, Grayscale
-            preview = ImageOps.equalize(preview)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
-        preview.thumbnail(PREVIEW_SIZE)
+            stop = min(len(source_paths) - 1, stop)
 
-        return preview
+        step = max(step, 1)
+        assert stop >= start
 
-    @abstractmethod
-    def get_image_size(self, i):
-        pass
+        super().__init__(
+            step=step,
+            start=start,
+            stop=stop,
+            dimension=dimension,
+        )
+
+        self._source_paths = sort(source_paths, sorting_method)
+        self._sorting_method = sorting_method
+
+    def __iter__(self) -> Iterator[IMediaReader.ImageFrame]:
+        for i in self.frame_range:
+            yield (self.get_image(i), self.get_path(i))
+
+    def __contains__(self, media_file):
+        return media_file in self._source_paths
+
+    def filter(self, callback):
+        source_paths = list(filter(callback, self._source_paths))
+        ImageListReader.__init__(
+            self,
+            source_paths,
+            step=self._step,
+            start=self._start,
+            stop=self._stop,
+            dimension=self._dimension,
+            sorting_method=self._sorting_method,
+        )
+
+    def get_path(self, i):
+        return self._source_paths[i]
+
+    def get_image(self, i):
+        return self._source_paths[i]
+
+    def get_image_size(self, i) -> tuple[int, int]:
+        if self._dimension == DimensionType.DIM_3D:
+            properties = ValidateDimension.get_pcd_properties(Path(self.get_path(i)))
+            return int(properties["WIDTH"]), int(properties["HEIGHT"])
+        with Image.open(self._source_paths[i]) as img:
+            return image_size_within_orientation(img)
+
+    def reconcile(
+        self, source_paths, step=1, start=0, stop=None, dimension=None, sorting_method=None
+    ):
+        # FIXME
+        ImageListReader.__init__(
+            self,
+            source_paths=source_paths,
+            step=step,
+            start=start,
+            stop=stop,
+            sorting_method=sorting_method if sorting_method else self._sorting_method,
+            dimension=dimension if dimension else self._dimension,
+        )
+
+    @property
+    def absolute_source_paths(self):
+        return [self.get_path(idx) for idx, _ in enumerate(self._source_paths)]
 
     def __len__(self):
         return len(self.frame_range)
 
     @property
     def frame_range(self):
-        return range(self._start, self._stop, self._step)
+        return range(self._start, self._stop + 1, self._step)
 
-class ImageListReader(IMediaReader):
-    def __init__(self,
-                source_path,
-                step=1,
-                start=0,
-                stop=None,
-                dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethod.LEXICOGRAPHICAL):
-        if not source_path:
-            raise Exception('No image found')
-
-        if not stop:
-            stop = len(source_path)
-        else:
-            stop = min(len(source_path), stop + 1)
-        step = max(step, 1)
-        assert stop > start
-
-        super().__init__(
-            source_path=sort(source_path, sorting_method),
-            step=step,
-            start=start,
-            stop=stop,
-            dimension=dimension
-        )
-
-        self._sorting_method = sorting_method
-
-    def __iter__(self):
-        for i in range(self._start, self._stop, self._step):
-            yield (self.get_image(i), self.get_path(i), i)
-
-    def __contains__(self, media_file):
-        return media_file in self._source_path
-
-    def filter(self, callback):
-        source_path = list(filter(callback, self._source_path))
-        ImageListReader.__init__(
-            self,
-            source_path,
-            step=self._step,
-            start=self._start,
-            stop=self._stop - 1,
-            dimension=self._dimension,
-            sorting_method=self._sorting_method
-        )
-
-    def get_path(self, i):
-        return self._source_path[i]
-
-    def get_image(self, i):
-        return self._source_path[i]
-
-    def get_progress(self, pos):
-        return (pos - self._start + 1) / (self._stop - self._start)
-
-    def get_preview(self, frame):
-        if self._dimension == DimensionType.DIM_3D:
-            fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
-        else:
-            fp = open(self._source_path[frame], "rb")
-        return self._get_preview(fp)
-
-    def get_image_size(self, i):
-        if self._dimension == DimensionType.DIM_3D:
-            with open(self.get_path(i), 'rb') as f:
-                properties = ValidateDimension.get_pcd_properties(f)
-                return int(properties["WIDTH"]),  int(properties["HEIGHT"])
-        with Image.open(self._source_path[i]) as img:
-            return image_size_within_orientation(img)
-
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
-        # FIXME
-        ImageListReader.__init__(self,
-            source_path=source_files,
-            step=step,
-            start=start,
-            stop=stop,
-            sorting_method=sorting_method if sorting_method else self._sorting_method,
-        )
-        self._dimension = dimension
-
-    @property
-    def absolute_source_paths(self):
-        return [self.get_path(idx) for idx, _ in enumerate(self._source_path)]
 
 class DirectoryReader(ImageListReader):
-    def __init__(self,
-                source_path,
-                step=1,
-                start=0,
-                stop=None,
-                dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethod.LEXICOGRAPHICAL):
+    def __init__(
+        self,
+        source_paths,
+        step=1,
+        start=0,
+        stop=None,
+        dimension=DimensionType.DIM_2D,
+        sorting_method=SortingMethod.LEXICOGRAPHICAL,
+    ):
         image_paths = []
-        for source in source_path:
+        for source in source_paths:
             for root, _, files in os.walk(source):
                 paths = [os.path.join(root, f) for f in files]
-                paths = filter(lambda x: get_mime(x) == 'image', paths)
+                paths = filter(lambda x: get_mime(x) == "image", paths)
                 image_paths.extend(paths)
         super().__init__(
-            source_path=image_paths,
+            source_paths=image_paths,
             step=step,
             start=start,
             stop=stop,
@@ -256,24 +404,26 @@ class DirectoryReader(ImageListReader):
             sorting_method=sorting_method,
         )
 
-class ArchiveReader(DirectoryReader):
-    def __init__(self,
-                source_path,
-                step=1,
-                start=0,
-                stop=None,
-                dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethod.LEXICOGRAPHICAL,
-                extract_dir=None):
 
-        self._archive_source = source_path[0]
-        tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
-        patool_path = os.path.join(sysconfig.get_path('scripts'), 'patool')
+class ArchiveReader(DirectoryReader):
+    def __init__(
+        self,
+        source_paths,
+        step=1,
+        start=0,
+        stop=None,
+        dimension=DimensionType.DIM_2D,
+        sorting_method=SortingMethod.LEXICOGRAPHICAL,
+        extract_dir=None,
+    ):
+        (self._archive_source,) = source_paths
+        tmp_dir = extract_dir if extract_dir else os.path.dirname(self._archive_source)
+        patool_path = os.path.join(sysconfig.get_path("scripts"), "patool")
         Archive(self._archive_source).extractall(tmp_dir, False, patool_path)
         if not extract_dir:
             os.remove(self._archive_source)
         super().__init__(
-            source_path=[tmp_dir],
+            source_paths=[tmp_dir],
             step=step,
             start=start,
             stop=stop,
@@ -281,40 +431,47 @@ class ArchiveReader(DirectoryReader):
             sorting_method=sorting_method,
         )
 
-class PdfReader(ImageListReader):
-    def __init__(self,
-                source_path,
-                step=1,
-                start=0,
-                stop=None,
-                dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethod.LEXICOGRAPHICAL,
-                extract_dir=None):
-        if not source_path:
-            raise Exception('No PDF found')
 
-        self._pdf_source = source_path[0]
+class PdfReader(ImageListReader):
+    def __init__(
+        self,
+        source_paths,
+        step=1,
+        start=0,
+        stop=None,
+        dimension=DimensionType.DIM_2D,
+        sorting_method=SortingMethod.LEXICOGRAPHICAL,
+        extract_dir=None,
+    ):
+        (self._pdf_source,) = source_paths
 
         _basename = os.path.splitext(os.path.basename(self._pdf_source))[0]
         _counter = itertools.count()
+
         def _make_name():
             for page_num in _counter:
-                yield '{}{:09d}.jpeg'.format(_basename, page_num)
+                yield "{}{:09d}.jpeg".format(_basename, page_num)
 
         from pdf2image import convert_from_path
-        self._tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
+
+        self._tmp_dir = extract_dir if extract_dir else os.path.dirname(self._pdf_source)
         os.makedirs(self._tmp_dir, exist_ok=True)
 
         # Avoid OOM: https://github.com/openvinotoolkit/cvat/issues/940
-        paths = convert_from_path(self._pdf_source,
-            last_page=stop, paths_only=True,
-            output_folder=self._tmp_dir, fmt="jpeg", output_file=_make_name())
+        paths = convert_from_path(
+            self._pdf_source,
+            last_page=stop,
+            paths_only=True,
+            output_folder=self._tmp_dir,
+            fmt="jpeg",
+            output_file=_make_name(),
+        )
 
         if not extract_dir:
-            os.remove(source_path[0])
+            os.remove(self._pdf_source)
 
         super().__init__(
-            source_path=paths,
+            source_paths=paths,
             step=step,
             start=start,
             stop=stop,
@@ -322,80 +479,103 @@ class PdfReader(ImageListReader):
             sorting_method=sorting_method,
         )
 
+
 class ZipReader(ImageListReader):
-    def __init__(self,
-                source_path,
-                step=1,
-                start=0,
-                stop=None,
-                dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethod.LEXICOGRAPHICAL,
-                extract_dir=None):
-        self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
+    def __init__(
+        self,
+        source_paths,
+        step=1,
+        start=0,
+        stop=None,
+        dimension=DimensionType.DIM_2D,
+        sorting_method=SortingMethod.LEXICOGRAPHICAL,
+        extract_dir=None,
+    ):
+        (zip_path,) = source_paths
+        self._zip_source = zipfile.ZipFile(zip_path, mode="r")
         self.extract_dir = extract_dir
-        file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
-        super().__init__(file_list,
-                        step=step,
-                        start=start,
-                        stop=stop,
-                        dimension=dimension,
-                        sorting_method=sorting_method)
+        file_list = [
+            f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == "image"
+        ]
+        super().__init__(
+            file_list,
+            step=step,
+            start=start,
+            stop=stop,
+            dimension=dimension,
+            sorting_method=sorting_method,
+        )
 
     def __del__(self):
         self._zip_source.close()
 
-    def get_preview(self, frame):
+    def get_image_size(self, i) -> tuple[int, int]:
         if self._dimension == DimensionType.DIM_3D:
-            # TODO
-            fp = open(os.path.join(os.path.dirname(__file__), 'assets/3d_preview.jpeg'), "rb")
-            return self._get_preview(fp)
-
-        io_image = io.BytesIO(self._zip_source.read(self._source_path[frame]))
-        return self._get_preview(io_image)
-
-    def get_image_size(self, i):
-        if self._dimension == DimensionType.DIM_3D:
-            with open(self.get_path(i), 'rb') as f:
-                properties = ValidateDimension.get_pcd_properties(f)
-                return int(properties["WIDTH"]),  int(properties["HEIGHT"])
-        with Image.open(io.BytesIO(self._zip_source.read(self._source_path[i]))) as img:
+            properties = PcdReader.parse_pcd_header(Path(self.get_path(i)))
+            return int(properties["WIDTH"]), int(properties["HEIGHT"])
+        with Image.open(io.BytesIO(self._zip_source.read(self._source_paths[i]))) as img:
             return image_size_within_orientation(img)
 
     def get_image(self, i):
         if self._dimension == DimensionType.DIM_3D:
             return self.get_path(i)
-        return io.BytesIO(self._zip_source.read(self._source_path[i]))
+        return io.BytesIO(self._zip_source.read(self._source_paths[i]))
 
     def get_zip_filename(self):
         return self._zip_source.filename
 
     def get_path(self, i):
-        if self._zip_source.filename:
-            prefix = self._get_extract_prefix()
-            return os.path.join(prefix, self._source_path[i])
-        else: # necessary for mime_type definition
-            return self._source_path[i]
+        path = self._source_paths[i]
+
+        prefix = self._get_extract_prefix()
+        if prefix is not None:
+            path = os.path.join(prefix, path)
+
+        return path
 
     def __contains__(self, media_file):
-        return super().__contains__(os.path.relpath(media_file, self._get_extract_prefix()))
+        path = media_file
 
-    def _get_extract_prefix(self):
-        return self.extract_dir or os.path.dirname(self._zip_source.filename)
+        prefix = self._get_extract_prefix()
+        if prefix is not None:
+            path = os.path.relpath(media_file, prefix)
 
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
-        if source_files:
+        return super().__contains__(path)
+
+    def _get_extract_prefix(self) -> str | None:
+        if self.extract_dir is not None:
+            return self.extract_dir
+
+        if self._zip_source.filename is not None:
+            return os.path.dirname(self._zip_source.filename)
+
+        return None
+
+    def filter(self, callback):
+        prefix = self._get_extract_prefix()
+        if prefix is not None:
+            updated_callback = lambda p: callback(os.path.join(prefix, p))
+        else:
+            updated_callback = callback
+
+        return super().filter(updated_callback)
+
+    def reconcile(
+        self, source_paths, step=1, start=0, stop=None, dimension=None, sorting_method=None
+    ):
+        prefix = self._get_extract_prefix()
+        if source_paths and prefix is not None:
             # file list is expected to be a processed output of self.get_path()
             # which returns files with the output directory prefix
-            prefix = self._get_extract_prefix()
-            source_files = [os.path.relpath(fn, prefix) for fn in source_files]
+            source_paths = [os.path.relpath(fn, prefix) for fn in source_paths]
 
         super().reconcile(
-            source_files=source_files,
+            source_paths=source_paths,
             step=step,
             start=start,
             stop=stop,
             dimension=dimension,
-            sorting_method=sorting_method
+            sorting_method=sorting_method,
         )
 
     def extract(self):
@@ -403,57 +583,99 @@ class ZipReader(ImageListReader):
         if not self.extract_dir:
             os.remove(self._zip_source.filename)
 
+
+class _AvVideoReading:
+    def read_av_container(self, source: str | io.BytesIO) -> av.container.InputContainer:
+        if isinstance(source, io.BytesIO):
+            source.seek(0)  # required for re-reading
+
+        return av.open(source)
+
+
 class VideoReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def __init__(
+        self,
+        source_paths: list[str] | list[io.BytesIO],
+        step: int = 1,
+        start: int = 0,
+        stop: int | None = None,
+        dimension: DimensionType = DimensionType.DIM_2D,
+        *,
+        allow_threading: bool = False,
+    ):
         super().__init__(
-            source_path=source_path,
             step=step,
             start=start,
-            stop=stop + 1 if stop is not None else stop,
+            stop=stop,
             dimension=dimension,
         )
 
-    def _has_frame(self, i):
-        if i >= self._start:
-            if (i - self._start) % self._step == 0:
-                if self._stop is None or i < self._stop:
-                    return True
+        (self._source_path,) = source_paths
+        self.allow_threading = allow_threading
+        self._frame_count: int | None = None
+        self._frame_size: tuple[int, int] | None = None  # (w, h)
 
-        return False
+    def iterate_frames(
+        self,
+        *,
+        frame_filter: bool | Iterable[int] = True,
+    ) -> Iterator[IMediaReader.VideoFrame]:
+        """
+        If provided, frame_filter must be an ordered sequence in the ascending order.
+        'True' means using the frames configured in the reader object.
+        'False' or 'None' means returning all the video frames.
+        """
 
-    def __iter__(self):
-        with self._get_av_container() as container:
-            stream = container.streams.video[0]
-            stream.thread_type = 'AUTO'
-            frame_num = 0
-            for packet in container.demux(stream):
-                for image in packet.decode():
-                    frame_num += 1
-                    if self._has_frame(frame_num - 1):
-                        if packet.stream.metadata.get('rotate'):
-                            pts = image.pts
-                            image = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    image.to_ndarray(format='bgr24'),
-                                    360 - int(stream.metadata.get('rotate'))
-                                ),
-                                format ='bgr24'
-                            )
-                            image.pts = pts
-                        yield (image, self._source_path[0], image.pts)
+        if frame_filter is True:
+            frame_filter = itertools.count(self._start, self._step)
+            if self._stop:
+                frame_filter = itertools.takewhile(lambda x: x <= self._stop, frame_filter)
+        elif not frame_filter:
+            frame_filter = itertools.count()
 
-    def get_progress(self, pos):
-        duration = self._get_duration()
-        return pos / duration if duration else None
+        frame_filter_iter = iter(frame_filter)
+        next_frame_filter_frame = next(frame_filter_iter, None)
+        if next_frame_filter_frame is None:
+            return
 
-    def _get_av_container(self):
-        if isinstance(self._source_path[0], io.BytesIO):
-            self._source_path[0].seek(0) # required for re-reading
-        return av.open(self._source_path[0])
+        with self._read_av_container() as container:
+            video_stream = container.streams.video[0]
+
+            if self.allow_threading:
+                video_stream.thread_type = "AUTO"
+            else:
+                video_stream.thread_type = "NONE"
+
+            for frame_number, frame in enumerate(container.decode(video_stream)):
+                if frame_number == next_frame_filter_frame:
+                    if frame.rotation:
+                        pts = frame.pts
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
+                            format="bgr24",
+                        )
+                        frame.pts = pts
+
+                    if self._frame_size is None:
+                        self._frame_size = (frame.width, frame.height)
+
+                    yield (frame, None)
+
+                    next_frame_filter_frame = next(frame_filter_iter, None)
+
+                if next_frame_filter_frame is None:
+                    return
+
+    def __iter__(self) -> Iterator[IMediaReader.VideoFrame]:
+        return self.iterate_frames()
+
+    def _read_av_container(self) -> av.container.InputContainer:
+        return _AvVideoReading().read_av_container(self._source_path)
 
     def _get_duration(self):
-        with self._get_av_container() as container:
+        with self._read_av_container() as container:
             stream = container.streams.video[0]
+
             duration = None
             if stream.duration:
                 duration = stream.duration
@@ -462,147 +684,152 @@ class VideoReader(IMediaReader):
                 duration_str = stream.metadata.get("DURATION", None)
                 tb_denominator = stream.time_base.denominator
                 if duration_str and tb_denominator:
-                    _hour, _min, _sec = duration_str.split(':')
-                    duration_sec = 60*60*float(_hour) + 60*float(_min) + float(_sec)
+                    _hour, _min, _sec = duration_str.split(":")
+                    duration_sec = 60 * 60 * float(_hour) + 60 * float(_min) + float(_sec)
                     duration = duration_sec * tb_denominator
             return duration
 
-    def get_preview(self, frame):
-        with self._get_av_container() as container:
-            stream = container.streams.video[0]
-            tb_denominator = stream.time_base.denominator
-            needed_time = int((frame / stream.guessed_rate) * tb_denominator)
-            container.seek(offset=needed_time, stream=stream)
-            for packet in container.demux(stream):
-                for frame in packet.decode():
-                    return self._get_preview(frame.to_image() if not stream.metadata.get('rotate') \
-                        else av.VideoFrame().from_ndarray(
-                            rotate_image(
-                                frame.to_ndarray(format='bgr24'),
-                                360 - int(container.streams.video[0].metadata.get('rotate'))
-                            ),
-                            format ='bgr24'
-                        ).to_image()
-                    )
+    def get_image_size(self, i) -> tuple[int, int]:
+        if self._frame_size is not None:
+            return self._frame_size
 
-    def get_image_size(self, i):
-        image = (next(iter(self)))[0]
-        return image.width, image.height
+        with closing(iter(self)) as frame_iter:
+            frame = next(frame_iter)[0]
+            self._frame_size = (frame.width, frame.height)
 
-class FragmentMediaReader:
-    def __init__(self, chunk_number, chunk_size, start, stop, step=1):
-        self._start = start
-        self._stop = stop + 1 # up to the last inclusive
-        self._step = step
-        self._chunk_number = chunk_number
-        self._chunk_size = chunk_size
-        self._start_chunk_frame_number = \
-            self._start + self._chunk_number * self._chunk_size * self._step
-        self._end_chunk_frame_number = min(self._start_chunk_frame_number \
-            + (self._chunk_size - 1) * self._step + 1, self._stop)
-        self._frame_range = self._get_frame_range()
+        return self._frame_size
 
-    @property
-    def frame_range(self):
-        return self._frame_range
+    def get_frame_count(self) -> int:
+        """
+        Returns total frame count in the video
 
-    def _get_frame_range(self):
-        frame_range = []
-        for idx in range(self._start, self._stop, self._step):
-            if idx < self._start_chunk_frame_number:
-                continue
-            elif idx < self._end_chunk_frame_number and \
-                    not (idx - self._start_chunk_frame_number) % self._step:
-                frame_range.append(idx)
-            elif (idx - self._start_chunk_frame_number) % self._step:
-                continue
-            else:
-                break
-        return frame_range
+        Note that not all videos provide length / duration metainfo, so the
+        result may require full video decoding.
 
-class ImageDatasetManifestReader(FragmentMediaReader):
-    def __init__(self, manifest_path, **kwargs):
-        super().__init__(**kwargs)
+        The total count is NOT affected by the frame filtering options of the object,
+        i.e. start frame, end frame and frame step.
+        """
+        # It's possible to retrieve frame count from the stream.frames,
+        # but the number may be incorrect.
+        # https://superuser.com/questions/1512575/why-total-frame-count-is-different-in-ffmpeg-than-ffprobe
+        if self._frame_count is not None:
+            return self._frame_count
+
+        frame_count = 0
+        for _ in self.iterate_frames(frame_filter=False):
+            frame_count += 1
+
+        self._frame_count = frame_count
+
+        return frame_count
+
+
+class ImageReaderWithManifest:
+    def __init__(self, manifest_path: Path):
         self._manifest = ImageManifestManager(manifest_path)
         self._manifest.init_index()
 
-    def __iter__(self):
-        for idx in self._frame_range:
+    def iterate_frames(self, frame_ids: Iterable[int]):
+        for idx in frame_ids:
             yield self._manifest[idx]
 
-class VideoDatasetManifestReader(FragmentMediaReader):
-    def __init__(self, manifest_path, **kwargs):
-        self.source_path = kwargs.pop('source_path')
-        super().__init__(**kwargs)
-        self._manifest = VideoManifestManager(manifest_path)
-        self._manifest.init_index()
 
-    def _get_nearest_left_key_frame(self):
-        if self._start_chunk_frame_number >= \
-                self._manifest[len(self._manifest) - 1].get('number'):
-            left_border = len(self._manifest) - 1
+class VideoReaderWithManifest:
+    # TODO: merge this class with VideoReader
+
+    def __init__(self, manifest_path: Path, source_path: str, *, allow_threading: bool = False):
+        self.source_path = source_path
+        self.manifest = VideoManifestManager(manifest_path)
+        if self.manifest.exists:
+            self.manifest.init_index()
+
+        self.allow_threading = allow_threading
+
+    def _read_av_container(self) -> av.container.InputContainer:
+        return _AvVideoReading().read_av_container(self.source_path)
+
+    def _get_nearest_left_key_frame(self, frame_id: int) -> tuple[int, int]:
+        nearest_left_keyframe_pos = bisect(
+            self.manifest, frame_id, key=lambda entry: entry.get("number")
+        )
+        if nearest_left_keyframe_pos:
+            frame_number = self.manifest[nearest_left_keyframe_pos - 1].get("number")
+            timestamp = self.manifest[nearest_left_keyframe_pos - 1].get("pts")
         else:
-            left_border = 0
-            delta = len(self._manifest)
-            while delta:
-                step = delta // 2
-                cur_position = left_border + step
-                if self._manifest[cur_position].get('number') < self._start_chunk_frame_number:
-                    cur_position += 1
-                    left_border = cur_position
-                    delta -= step + 1
-                else:
-                    delta = step
-            if self._manifest[cur_position].get('number') > self._start_chunk_frame_number:
-                left_border -= 1
-        frame_number = self._manifest[left_border].get('number')
-        timestamp = self._manifest[left_border].get('pts')
+            frame_number = 0
+            timestamp = 0
         return frame_number, timestamp
 
-    def __iter__(self):
-        start_decode_frame_number, start_decode_timestamp = self._get_nearest_left_key_frame()
-        with closing(av.open(self.source_path, mode='r')) as container:
-            video_stream = next(stream for stream in container.streams if stream.type == 'video')
-            video_stream.thread_type = 'AUTO'
+    def iterate_frames(self, *, frame_filter: Iterable[int]) -> Iterable[av.VideoFrame]:
+        "frame_ids must be an ordered sequence in the ascending order"
+
+        frame_filter_iter = iter(frame_filter)
+        next_frame_filter_frame = next(frame_filter_iter, None)
+        if next_frame_filter_frame is None:
+            return
+
+        start_decode_frame_number, start_decode_timestamp = self._get_nearest_left_key_frame(
+            next_frame_filter_frame
+        )
+
+        with self._read_av_container() as container:
+            video_stream = container.streams.video[0]
+            if self.allow_threading:
+                video_stream.thread_type = "AUTO"
+            else:
+                video_stream.thread_type = "NONE"
 
             container.seek(offset=start_decode_timestamp, stream=video_stream)
 
-            frame_number = start_decode_frame_number - 1
-            for packet in container.demux(video_stream):
-                for frame in packet.decode():
+            frame_number = None
+            for frame in container.decode(video_stream):
+                if frame.pts < start_decode_timestamp:
+                    # for some reason seek stopped earlier than expected
+                    continue
+
+                if frame_number is None:
+                    frame_number = start_decode_frame_number
+                else:
                     frame_number += 1
-                    if frame_number in self._frame_range:
-                        if video_stream.metadata.get('rotate'):
-                            frame = av.VideoFrame().from_ndarray(
-                                rotate_image(
-                                    frame.to_ndarray(format='bgr24'),
-                                    360 - int(container.streams.video[0].metadata.get('rotate'))
-                                ),
-                                format ='bgr24'
-                            )
-                        yield frame
-                    elif frame_number < self._frame_range[-1]:
-                        continue
-                    else:
-                        return
+
+                if frame_number == next_frame_filter_frame:
+                    if frame.rotation:
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(frame.to_ndarray(format="bgr24"), frame.rotation),
+                            format="bgr24",
+                        )
+
+                    yield frame
+
+                    next_frame_filter_frame = next(frame_filter_iter, None)
+
+                if next_frame_filter_frame is None:
+                    return
+
 
 class IChunkWriter(ABC):
-    def __init__(self, quality, dimension=DimensionType.DIM_2D):
+    CHUNK_MIME_TYPE: ClassVar[str]
+
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
         self._image_quality = quality
         self._dimension = dimension
 
     @staticmethod
-    def _compress_image(source_image: av.VideoFrame | io.IOBase | Image.Image, quality: int) -> tuple[int, int, io.BytesIO]:
+    def _compress_image(
+        source_image: av.VideoFrame | io.IOBase | Image.Image, quality: int
+    ) -> io.BytesIO:
         image = None
         if isinstance(source_image, av.VideoFrame):
             image = source_image.to_image()
         elif isinstance(source_image, io.IOBase):
-            with Image.open(source_image) as _img:
-                image = ImageOps.exif_transpose(_img)
+            image, _ = load_image((source_image, None))
         elif isinstance(source_image, Image.Image):
-            image = ImageOps.exif_transpose(source_image)
+            image = source_image
 
         assert image is not None
+
+        if has_exif_rotation(image):
+            image = ImageOps.exif_transpose(image)
 
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
@@ -621,137 +848,166 @@ class IChunkWriter(ABC):
         #     See Issue for further details: https://github.com/python-pillow/Pillow/issues/3011
         #     Issue was opened 2018, so don't expect any changes soon and work with manual conversions.
         if image.mode == "I;16":
+            # fmt: off
             image = np.array(image, dtype=np.uint16) # 'I;16' := Unsigned Integer 16, Grayscale
             image = image - image.min()              # In case the used range lies in [a, 2^16] with a > 0
             image = image / image.max() * 255        # Downscale into real numbers of range [0, 255]
             image = image.astype(np.uint8)           # Floor to integers of range [0, 255]
             image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
             image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
+            # fmt: on
 
-        converted_image = image.convert('RGB')
+        if image.mode != "RGB" and image.mode != "L":
+            image = image.convert("RGB")
 
-        try:
-            buf = io.BytesIO()
-            converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
-            buf.seek(0)
-            width, height = converted_image.size
-            return width, height, buf
-        finally:
-            converted_image.close()
+        buf = io.BytesIO()
+        image.save(buf, format="JPEG", quality=quality, optimize=True)
+        buf.seek(0)
+
+        return buf
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):
         pass
 
+
 class ZipChunkWriter(IChunkWriter):
-    IMAGE_EXT = 'jpeg'
-    POINT_CLOUD_EXT = 'pcd'
+    CHUNK_MIME_TYPE = "application/zip"
+    IMAGE_EXT = "jpeg"
+    POINT_CLOUD_EXT = "pcd"
 
-    def _write_pcd_file(self, image: str|io.BytesIO) -> tuple[io.BytesIO, str, int, int]:
-        image_buf = open(image, "rb") if isinstance(image, str) else image
-        try:
-            properties = ValidateDimension.get_pcd_properties(image_buf)
-            w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
-            image_buf.seek(0, 0)
-            return io.BytesIO(image_buf.read()), self.POINT_CLOUD_EXT, w, h
-        finally:
+    def _write_pcd_file(self, image: str | io.BytesIO) -> tuple[io.BytesIO, str]:
+        with ExitStack() as es:
             if isinstance(image, str):
-                image_buf.close()
+                image_buf = es.enter_context(open(image, "rb"))
+            else:
+                image_buf = image
 
-    def save_as_chunk(self, images: Iterable[tuple[Image.Image|io.IOBase|str, str, str]], chunk_path: str):
-        with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
-            for idx, (image, path, _) in enumerate(images):
-                ext = os.path.splitext(path)[1].replace('.', '')
-                output = io.BytesIO()
+            image_buf.seek(0, 0)
+            return io.BytesIO(image_buf.read()), self.POINT_CLOUD_EXT
+
+    def save_as_chunk(
+        self,
+        images: Iterator[tuple[Image.Image | io.IOBase | str, str]],
+        chunk_path: str | io.IOBase,
+    ) -> None:
+        with zipfile.ZipFile(chunk_path, "x") as zip_chunk:
+            for idx, (image, path) in enumerate(images):
+                ext = os.path.splitext(path)[1].replace(".", "")
+
                 if self._dimension == DimensionType.DIM_2D:
                     # current version of Pillow applies exif rotation immediately when TIFF image opened
                     # and it removes rotation tag after that
                     # so, has_exif_rotation(image) will return False for TIFF images even if they were actually rotated
                     # and original files will be added to the archive (without applied rotation)
                     # that is why we need the second part of the condition
-                    if has_exif_rotation(image) or image.format == 'TIFF':
+                    if isinstance(image, Image.Image) and (
+                        has_exif_rotation(image) or image.format == "TIFF"
+                    ):
+                        output = io.BytesIO()
                         rot_image = ImageOps.exif_transpose(image)
                         try:
-                            if image.format == 'TIFF':
+                            if image.format == "TIFF":
                                 # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
-                                # use loseless lzw compression for tiff images
-                                rot_image.save(output, format='TIFF', compression='tiff_lzw')
+                                # use lossless lzw compression for tiff images
+                                rot_image.save(output, format="TIFF", compression="tiff_lzw")
                             else:
                                 rot_image.save(
                                     output,
                                     # use format from original image, https://github.com/python-pillow/Pillow/issues/5527
                                     format=image.format if image.format else self.IMAGE_EXT,
                                     quality=100,
-                                    subsampling=0
+                                    subsampling=0,
                                 )
                         finally:
                             rot_image.close()
+                    elif isinstance(image, io.IOBase):
+                        output = image
                     else:
                         output = path
                 else:
-                    output, ext = self._write_pcd_file(path)[0:2]
-                arcname = '{:06d}.{}'.format(idx, ext)
+                    if isinstance(image, io.BytesIO):
+                        output, ext = self._write_pcd_file(image)
+                    else:
+                        output, ext = self._write_pcd_file(path)
 
+                arcname = "{:06d}.{}".format(idx, ext)
                 if isinstance(output, io.BytesIO):
                     zip_chunk.writestr(arcname, output.getvalue())
                 else:
                     zip_chunk.write(filename=output, arcname=arcname)
-        # return empty list because ZipChunkWriter write files as is
-        # and does not decode it to know img size.
-        return []
+
 
 class ZipCompressedChunkWriter(ZipChunkWriter):
     def save_as_chunk(
         self,
-        images: Iterable[tuple[Image.Image|io.IOBase|str, str, str]],
-        chunk_path: str, *, compress_frames: bool = True, zip_compress_level: int = 0
-    ):
-        image_sizes = []
-        with zipfile.ZipFile(chunk_path, 'x', compresslevel=zip_compress_level) as zip_chunk:
-            for idx, (image, path, _) in enumerate(images):
+        images: Iterator[tuple[Image.Image | io.IOBase | str, str | None]],
+        chunk_path: str | io.IOBase,
+        *,
+        compress_frames: bool = True,
+        zip_compress_level: int = 0,
+    ) -> None:
+        with zipfile.ZipFile(chunk_path, "x", compresslevel=zip_compress_level) as zip_chunk:
+            for idx, (image, path) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
-                        w, h, image_buf = self._compress_image(image, self._image_quality)
+                        try:
+                            image_buf = self._compress_image(image, self._image_quality)
+                        except Exception as ex:
+                            if path is None:
+                                raise
+
+                            raise RuntimeError(
+                                f"Exception occurred during compression of image {os.path.basename(path)!r}"
+                            ) from ex
                     else:
                         assert isinstance(image, io.IOBase)
                         image_buf = io.BytesIO(image.read())
-                        with Image.open(image_buf) as img:
-                            w, h = img.size
                     extension = self.IMAGE_EXT
                 else:
-                    image_buf, extension, w, h = self._write_pcd_file(path)
-                image_sizes.append((w, h))
-                arcname = '{:06d}.{}'.format(idx, extension)
+                    if isinstance(image, io.BytesIO):
+                        image_buf, extension = self._write_pcd_file(image)
+                    else:
+                        assert path is not None
+                        image_buf, extension = self._write_pcd_file(path)
+
+                arcname = "{:06d}.{}".format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
-        return image_sizes
+
 
 class Mpeg4ChunkWriter(IChunkWriter):
-    FORMAT = 'mp4'
+    CHUNK_MIME_TYPE = "video/mp4"
+    FORMAT = "mp4"
     MAX_MBS_PER_FRAME = 36864
 
-    def __init__(self, quality=67):
+    def __init__(self, *, quality: int, dimension: DimensionType) -> None:
         # translate inversed range [1:100] to [0:51]
         quality = round(51 * (100 - quality) / 99)
-        super().__init__(quality)
+        super().__init__(quality=quality, dimension=dimension)
+
+        assert self._dimension == DimensionType.DIM_2D
+
         self._output_fps = 25
         try:
-            codec = av.codec.Codec('libopenh264', 'w')
+            codec = av.codec.Codec("libopenh264", "w")
             self._codec_name = codec.name
             self._codec_opts = {
-                'profile': 'constrained_baseline',
-                'qmin': str(self._image_quality),
-                'qmax': str(self._image_quality),
-                'rc_mode': 'buffer',
+                "profile": "constrained_baseline",
+                "qmin": str(self._image_quality),
+                "qmax": str(self._image_quality),
+                "rc_mode": "buffer",
             }
         except av.codec.codec.UnknownCodecError:
-            codec = av.codec.Codec('libx264', 'w')
+            codec = av.codec.Codec("libx264", "w")
             self._codec_name = codec.name
             self._codec_opts = {
                 "crf": str(self._image_quality),
                 "preset": "ultrafast",
             }
 
-    def _add_video_stream(self, container, w, h, rate, options):
+    def _add_video_stream(
+        self, container: av.container.OutputContainer, w, h, rate, options
+    ) -> av.video.stream.VideoStream:
         # x264 requires width and height must be divisible by 2 for yuv420p
         if h % 2:
             h += 1
@@ -761,25 +1017,47 @@ class Mpeg4ChunkWriter(IChunkWriter):
         # libopenh264 has 4K limitations, https://github.com/cvat-ai/cvat/issues/7425
         if h * w > (self.MAX_MBS_PER_FRAME << 8):
             raise ValidationError(
-                'The video codec being used does not support such high video resolution, refer https://github.com/cvat-ai/cvat/issues/7425'
+                "The video codec being used does not support such high video resolution, refer https://github.com/cvat-ai/cvat/issues/7425"
             )
 
         video_stream = container.add_stream(self._codec_name, rate=rate)
         video_stream.pix_fmt = "yuv420p"
         video_stream.width = w
         video_stream.height = h
+
+        if "profile" in options:
+            video_stream.profile = options["profile"]
+        if "qmin" in options:
+            video_stream.codec_context.qmin = int(options["qmin"])
+            video_stream.codec_context.qmax = int(options["qmax"])
+        options = {k: options[k] for k in options if k not in ("profile", "qmin", "qmax")}
+
         video_stream.options = options
 
         return video_stream
 
-    def save_as_chunk(self, images, chunk_path):
-        if not images:
-            raise Exception('no images to save')
+    FrameDescriptor: TypeAlias = tuple[av.VideoFrame, Any]
 
-        input_w = images[0][0].width
-        input_h = images[0][0].height
+    def _peek_first_frame(
+        self, frame_iter: Iterator[FrameDescriptor]
+    ) -> tuple[FrameDescriptor | None, Iterator[FrameDescriptor]]:
+        "Gets the first frame and returns the same full iterator"
 
-        with av.open(chunk_path, 'w', format=self.FORMAT) as output_container:
+        if not hasattr(frame_iter, "__next__"):
+            frame_iter = iter(frame_iter)
+
+        first_frame = next(frame_iter, None)
+        return first_frame, itertools.chain((first_frame,), frame_iter)
+
+    def save_as_chunk(self, images: Iterator[FrameDescriptor], chunk_path: str) -> None:
+        first_frame, images = self._peek_first_frame(images)
+        if not first_frame:
+            raise Exception("no images to save")
+
+        input_w = first_frame[0].width
+        input_h = first_frame[0].height
+
+        with av.open(chunk_path, "w", format=self.FORMAT) as output_container:
             output_v_stream = self._add_video_stream(
                 container=output_container,
                 w=input_w,
@@ -789,14 +1067,15 @@ class Mpeg4ChunkWriter(IChunkWriter):
             )
 
             self._encode_images(images, output_container, output_v_stream)
-        return [(input_w, input_h)]
 
     @staticmethod
-    def _encode_images(images, container, stream):
-        for frame, _, _ in images:
+    def _encode_images(
+        images, container: av.container.OutputContainer, stream: av.video.stream.VideoStream
+    ):
+        for frame, _ in images:
             # let libav set the correct pts and time_base
             frame.pts = None
-            frame.time_base = None
+            frame.time_base = Fraction(0, 1)
 
             for packet in stream.encode(frame):
                 container.mux(packet)
@@ -805,24 +1084,26 @@ class Mpeg4ChunkWriter(IChunkWriter):
         for packet in stream.encode():
             container.mux(packet)
 
+
 class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
-    def __init__(self, quality):
-        super().__init__(quality)
-        if self._codec_name == 'libx264':
+    def __init__(self, *, quality, dimension):
+        super().__init__(quality=quality, dimension=dimension)
+        if self._codec_name == "libx264":
             self._codec_opts = {
-                'profile': 'baseline',
-                'coder': '0',
-                'crf': str(self._image_quality),
-                'wpredp': '0',
-                'flags': '-loop',
+                "profile": "baseline",
+                "coder": "0",
+                "crf": str(self._image_quality),
+                "wpredp": "0",
+                "flags": "-loop",
             }
 
     def save_as_chunk(self, images, chunk_path):
-        if not images:
-            raise Exception('no images to save')
+        first_frame, images = self._peek_first_frame(images)
+        if not first_frame:
+            raise Exception("no images to save")
 
-        input_w = images[0][0].width
-        input_h = images[0][0].height
+        input_w = first_frame[0].width
+        input_h = first_frame[0].height
 
         downscale_factor = 1
         while input_h / downscale_factor >= 1080:
@@ -831,7 +1112,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
         output_h = input_h // downscale_factor
         output_w = input_w // downscale_factor
 
-        with av.open(chunk_path, 'w', format=self.FORMAT) as output_container:
+        with av.open(chunk_path, "w", format=self.FORMAT) as output_container:
             output_v_stream = self._add_video_stream(
                 container=output_container,
                 w=output_w,
@@ -841,40 +1122,52 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
             )
 
             self._encode_images(images, output_container, output_v_stream)
-        return [(input_w, input_h)]
+
 
 def _is_archive(path):
     mime = mimetypes.guess_type(path)
     mime_type = mime[0]
     encoding = mime[1]
-    supportedArchives = ['application/x-rar-compressed',
-        'application/x-tar', 'application/x-7z-compressed', 'application/x-cpio',
-        'application/gzip', 'application/x-bzip']
+    supportedArchives = [
+        "application/x-rar-compressed",
+        "application/x-tar",
+        "application/x-7z-compressed",
+        "application/x-cpio",
+        "application/gzip",
+        "application/x-bzip",
+    ]
     return mime_type in supportedArchives or encoding in supportedArchives
+
 
 def _is_video(path):
     mime = mimetypes.guess_type(path)
-    return mime[0] is not None and mime[0].startswith('video')
+    return mime[0] is not None and mime[0].startswith("video")
+
 
 def _is_image(path):
     mime = mimetypes.guess_type(path)
     # Exclude vector graphic images because Pillow cannot work with them
-    return mime[0] is not None and mime[0].startswith('image') and \
-        not mime[0].startswith('image/svg')
+    return (
+        mime[0] is not None and mime[0].startswith("image") and not mime[0].startswith("image/svg")
+    )
+
 
 def _is_dir(path):
     return os.path.isdir(path)
 
+
 def _is_pdf(path):
     mime = mimetypes.guess_type(path)
-    return mime[0] == 'application/pdf'
+    return mime[0] == "application/pdf"
+
 
 def _is_zip(path):
     mime = mimetypes.guess_type(path)
     mime_type = mime[0]
     encoding = mime[1]
-    supportedArchives = ['application/zip']
+    supportedArchives = ["application/zip"]
     return mime_type in supportedArchives or encoding in supportedArchives
+
 
 # 'has_mime_type': function receives 1 argument - path to file.
 #                  Should return True if file has specified media type.
@@ -885,160 +1178,130 @@ def _is_zip(path):
 #           False - this media types can be combined with other which have unique is False
 
 MEDIA_TYPES = {
-    'image': {
-        'has_mime_type': _is_image,
-        'extractor': ImageListReader,
-        'mode': 'annotation',
-        'unique': False,
+    "image": {
+        "has_mime_type": _is_image,
+        "extractor": ImageListReader,
+        "mode": "annotation",
+        "unique": False,
     },
-    'video': {
-        'has_mime_type': _is_video,
-        'extractor': VideoReader,
-        'mode': 'interpolation',
-        'unique': True,
+    "video": {
+        "has_mime_type": _is_video,
+        "extractor": VideoReader,
+        "mode": "interpolation",
+        "unique": True,
     },
-    'archive': {
-        'has_mime_type': _is_archive,
-        'extractor': ArchiveReader,
-        'mode': 'annotation',
-        'unique': True,
+    "archive": {
+        "has_mime_type": _is_archive,
+        "extractor": ArchiveReader,
+        "mode": "annotation",
+        "unique": True,
     },
-    'directory': {
-        'has_mime_type': _is_dir,
-        'extractor': DirectoryReader,
-        'mode': 'annotation',
-        'unique': False,
+    "directory": {
+        "has_mime_type": _is_dir,
+        "extractor": DirectoryReader,
+        "mode": "annotation",
+        "unique": False,
     },
-    'pdf': {
-        'has_mime_type': _is_pdf,
-        'extractor': PdfReader,
-        'mode': 'annotation',
-        'unique': True,
+    "pdf": {
+        "has_mime_type": _is_pdf,
+        "extractor": PdfReader,
+        "mode": "annotation",
+        "unique": True,
     },
-    'zip': {
-        'has_mime_type': _is_zip,
-        'extractor': ZipReader,
-        'mode': 'annotation',
-        'unique': True,
-    }
+    "zip": {
+        "has_mime_type": _is_zip,
+        "extractor": ZipReader,
+        "mode": "annotation",
+        "unique": True,
+    },
 }
 
-class ValidateDimension:
 
-    def __init__(self, path=None):
+class ValidateDimension:
+    def __init__(self):
         self.dimension = DimensionType.DIM_2D
-        self.path = path
-        self.related_files = {}
-        self.image_files = {}
+        self.pcd_files = []
+        self.image_files = []
         self.converted_files = []
 
     @staticmethod
-    def get_pcd_properties(fp, verify_version=False):
-        kv = {}
-        pcd_version = ["0.7", "0.6", "0.5", "0.4", "0.3", "0.2", "0.1",
-                       ".7", ".6", ".5", ".4", ".3", ".2", ".1"]
-        try:
-            for line in fp:
-                line = line.decode("utf-8")
-                if line.startswith("#"):
-                    continue
-                k, v = line.split(" ", maxsplit=1)
-                kv[k] = v.strip()
-                if "DATA" in line:
-                    break
-            if verify_version:
-                if "VERSION" in kv and kv["VERSION"] in pcd_version:
-                    return True
-                return None
-            return kv
-        except AttributeError:
-            return None
+    def get_pcd_properties(pcd: Openable, *, verify_version: bool = False) -> dict[str, str]:
+        return PcdReader.parse_pcd_header(pcd, verify_version=verify_version)
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
-        def write_header(fileObj, width, height):
-            fileObj.writelines(f'{line}\n' for line in [
-                'VERSION 0.7',
-                'FIELDS x y z intensity',
-                'SIZE 4 4 4 4',
-                'TYPE F F F F',
-                'COUNT 1 1 1 1',
-                f'WIDTH {width}',
-                f'HEIGHT {height}',
-                'VIEWPOINT 0 0 0 1 0 0 0',
-                f'POINTS {width * height}',
-                'DATA binary',
-            ])
+        return PcdReader.convert_bin_to_pcd(path, delete_source=delete_source)
 
+    def bin_operation(self, file_path: str, dataset_root: str) -> str:
+        try:
+            pcd_path = self.convert_bin_to_pcd(file_path)
+            self.converted_files.append(pcd_path)
+            return os.path.relpath(pcd_path, dataset_root)
+        except InvalidPcdError as e:
+            raise ValidationError(f"Could not read pcd file '{os.path.basename(file_path)}': {e}")
 
-        list_pcd = []
-        with open(path, "rb") as f:
-            size_float = 4
-            byte = f.read(size_float * 4)
-            while byte:
-                x, y, z, intensity = struct.unpack("ffff", byte)
-                list_pcd.append([x, y, z, intensity])
-                byte = f.read(size_float * 4)
-        np_pcd = np.asarray(list_pcd)
-        pcd_filename = path.replace(".bin", ".pcd")
-        with open(pcd_filename, "w") as f:
-            write_header(f, np_pcd.shape[0], 1)
-        with open(pcd_filename, "ab") as f:
-            f.write(np_pcd.astype('float32').tobytes())
-        if delete_source:
-            os.remove(path)
-        return pcd_filename
+    def pcd_operation(self, file_path: str, dataset_root: str) -> str | None:
+        try:
+            self.get_pcd_properties(Path(file_path), verify_version=True)
+            return os.path.relpath(file_path, dataset_root)
+        except InvalidPcdError as e:
+            raise ValidationError(f"Could not read pcd file '{os.path.basename(file_path)}': {e}")
 
-    def set_path(self, path):
-        self.path = path
+    def _process_files(self, current_dir: str, dataset_root: str, filenames: Sequence[str]):
+        for filename in filenames:
+            ext = os.path.splitext(filename)[1].lower()
 
-    def bin_operation(self, file_path, actual_path):
-        pcd_path = ValidateDimension.convert_bin_to_pcd(file_path)
-        self.converted_files.append(pcd_path)
-        return pcd_path.split(actual_path)[-1][1:]
+            file_path = os.path.abspath(os.path.join(current_dir, filename))
 
-    @staticmethod
-    def pcd_operation(file_path, actual_path):
-        with open(file_path, "rb") as file:
-            is_pcd = ValidateDimension.get_pcd_properties(file, verify_version=True)
-        return file_path.split(actual_path)[-1][1:] if is_pcd else file_path
-
-    def process_files(self, root, actual_path, files):
-        pcd_files = {}
-
-        for file in files:
-            file_name, file_extension = os.path.splitext(file)
-            file_path = os.path.abspath(os.path.join(root, file))
-
-            if file_extension == ".bin":
-                path = self.bin_operation(file_path, actual_path)
-                pcd_files[file_name] = path
-                self.related_files[path] = []
-
-            elif file_extension == ".pcd":
-                path = ValidateDimension.pcd_operation(file_path, actual_path)
-                if path == file_path:
-                    self.image_files[file_name] = file_path
-                else:
-                    pcd_files[file_name] = path
-                    self.related_files[path] = []
+            if ext == ".bin":
+                path = self.bin_operation(file_path, dataset_root)
+                self.pcd_files.append(path)
+            elif ext == ".pcd":
+                path = self.pcd_operation(file_path, dataset_root)
+                self.pcd_files.append(path)
             else:
                 if _is_image(file_path):
-                    self.image_files[file_name] = file_path
-        return pcd_files
+                    self.image_files.append(file_path)
 
-    def validate(self):
-        """
-            Validate the directory structure for kitty and point cloud format.
-        """
-        if not self.path:
-            return
-        actual_path = self.path
-        for root, _, files in os.walk(actual_path):
-            if not files_to_ignore(root):
+    def validate(self, path: str):
+        "Detect media dimension and convert all point clouds into the .pcd format"
+
+        root = path
+        for dirpath, _, filenames in os.walk(root):
+            if not files_to_ignore(dirpath):
                 continue
 
-            self.process_files(root, actual_path, files)
+            self._process_files(dirpath, root, filenames)
 
-        if len(self.related_files.keys()):
+        if self.pcd_files:
             self.dimension = DimensionType.DIM_3D
+
+    def detect_dimension_for_paths(self, paths: Sequence[str]) -> DimensionType:
+        detected_dimensions = detect_media_dimension(paths)
+        if (
+            _MediaDimension.dim_2d in detected_dimensions
+            and _MediaDimension.dim_3d in detected_dimensions
+        ):
+            # Point clouds can have related images
+            detected_dimensions.remove(_MediaDimension.dim_2d)
+
+        result = []
+        for dim in detected_dimensions:
+            if dim == _MediaDimension.dim_2d:
+                result.append(DimensionType.DIM_2D)
+            elif dim == _MediaDimension.dim_3d:
+                result.append(DimensionType.DIM_3D)
+            else:
+                assert False, f"Unknown dimension {dim}"
+
+        if len(result) > 1:
+            raise ValidationError(
+                "Input data must have only one dimension, found {}".format(
+                    ", ".join(str(d) for d in result)
+                )
+            )
+
+        assert len(result) == 1
+        self.dimension = next(iter(result))
+
+        return self.dimension

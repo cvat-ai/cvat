@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,10 +7,10 @@ import itertools
 import os
 from logging import Logger
 from pathlib import Path
-from typing import Tuple
 
 import pytest
 from cvat_sdk import Client, models
+from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 try:
@@ -34,8 +34,10 @@ from .util import restrict_api_requests
 @pytest.fixture(autouse=True)
 def _common_setup(
     tmp_path: Path,
-    fxt_login: Tuple[Client, str],
-    fxt_logger: Tuple[Logger, io.StringIO],
+    fxt_login: tuple[Client, str],
+    fxt_logger: tuple[Logger, io.StringIO],
+    restore_redis_ondisk_per_function,
+    restore_redis_inmem_per_function,
 ):
     logger = fxt_logger[0]
     client = fxt_login[0]
@@ -53,7 +55,7 @@ class TestTaskVisionDataset:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
         self.images = generate_image_files(10)
@@ -104,7 +106,8 @@ class TestTaskVisionDataset:
                         points=[1.1, 2.1, 3.1, 4.1],
                     ),
                 ],
-            )
+            ),
+            action=AnnotationUpdateAction.CREATE,
         )
 
     def test_basic(self):
@@ -182,7 +185,7 @@ class TestTaskVisionDataset:
             # multiple tags
             _ = dataset[8]
 
-        # make sure the samples can be batched with the default collater
+        # make sure the samples can be batched with the default collator
         loader = DataLoader(dataset, batch_size=2, sampler=[5, 6])
 
         batch = next(iter(loader))
@@ -297,7 +300,7 @@ class TestProjectVisionDataset:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
 

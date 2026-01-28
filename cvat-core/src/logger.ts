@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,6 +33,19 @@ interface IgnoreRule {
     update: (previousEvent: Event, currentPayload: JSONEventPayload) => JSONEventPayload;
 }
 
+function clientIdGen(): string {
+    let val = null;
+    try {
+        // try to use 32bit integer with high entropy if available
+        [val] = crypto.getRandomValues(new Uint32Array(1));
+    } catch (error: unknown) {
+        // fallback as a less secure option
+        val = Math.floor(Math.random() * 2 ** 32);
+    }
+
+    return val.toString().padStart(10, '0');
+}
+
 class Logger {
     public clientID: string;
     public collection: Array<Event>;
@@ -43,7 +56,13 @@ class Logger {
     public compressedScopes: Array<EventScope>;
 
     constructor() {
-        this.clientID = Date.now().toString().substr(-6);
+        try {
+            this.clientID = localStorage.getItem('clientID') ?? clientIdGen();
+            localStorage.setItem('clientID', this.clientID);
+        } catch (error: unknown) {
+            this.clientID = clientIdGen();
+        }
+
         this.collection = [];
         this.lastSentEvent = null;
         this.isActiveChecker = () => true;

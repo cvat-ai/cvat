@@ -6,32 +6,32 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0067_alter_cloudstorage_credentials_type'),
+        ("engine", "0067_alter_cloudstorage_credentials_type"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='clientfile',
-            options={'default_permissions': (), 'ordering': ('id',)},
+            name="clientfile",
+            options={"default_permissions": (), "ordering": ("id",)},
         ),
         migrations.AlterModelOptions(
-            name='relatedfile',
-            options={'default_permissions': (), 'ordering': ('id',)},
+            name="relatedfile",
+            options={"default_permissions": (), "ordering": ("id",)},
         ),
         migrations.AlterModelOptions(
-            name='remotefile',
-            options={'default_permissions': (), 'ordering': ('id',)},
+            name="remotefile",
+            options={"default_permissions": (), "ordering": ("id",)},
         ),
         migrations.AlterModelOptions(
-            name='serverfile',
-            options={'default_permissions': (), 'ordering': ('id',)},
+            name="serverfile",
+            options={"default_permissions": (), "ordering": ("id",)},
         ),
         migrations.AlterUniqueTogether(
-            name='remotefile',
-            unique_together={('data', 'file')},
+            name="remotefile",
+            unique_together={("data", "file")},
         ),
         migrations.AlterUniqueTogether(
-            name='serverfile',
-            unique_together={('data', 'file')},
+            name="serverfile",
+            unique_together={("data", "file")},
         ),
     ]

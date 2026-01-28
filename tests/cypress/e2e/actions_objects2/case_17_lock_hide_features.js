@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -95,9 +95,11 @@ context('Lock/hide features.', () => {
     let shapeWidth = 0;
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         [newLabelName1, newLabelName2, newLabelName3, newLabelName4].forEach((name) => {
             cy.addNewLabel({ name });
+            // TODO: probably can be done headlessly?
         });
         cy.openJob();
     });
@@ -179,7 +181,7 @@ context('Lock/hide features.', () => {
                 cy.get('.cvat-object-item-button-pinned').click();
             });
             cy.get('#cvat_canvas_shape_6').should('not.have.class', 'cvat_canvas_shape_draggable');
-            // Get cuttent values for "width" parameter.
+            // Get current values for "width" parameter.
             cy.get('#cvat_canvas_shape_6')
                 .should('have.attr', 'width')
                 .then(($shapeWidth) => {
@@ -218,7 +220,7 @@ context('Lock/hide features.', () => {
                 cy.contains('Labels').click();
             });
         });
-        it('Repeat hide/lock for one of the labels. Objects with other labels weren’t affected.', () => {
+        it("Repeat hide/lock for one of the labels. Objects with other labels weren't affected.", () => {
             const objectsSameLabel = ['cvat_canvas_shape_1', 'cvat_canvas_shape_2', 'cvat_canvas_shape_3'];
             cy.get('.cvat-objects-sidebar-labels-list').within(() => {
                 // Hide and lock all object with "Main task" label (#cvat_canvas_shape_1-3).

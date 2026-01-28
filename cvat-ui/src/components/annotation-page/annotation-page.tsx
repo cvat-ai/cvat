@@ -1,11 +1,10 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect } from 'react';
 import Layout from 'antd/lib/layout';
-import Result from 'antd/lib/result';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
@@ -19,6 +18,7 @@ import StandardWorkspaceComponent from 'components/annotation-page/standard-work
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
+import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import { Workspace } from 'reducers';
@@ -26,6 +26,7 @@ import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 import { EventScope } from 'cvat-core/src/enums';
+import SearchFramesModal from './top-bar/search-modal';
 
 interface Props {
     job: Job | null | undefined;
@@ -114,7 +115,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                         <span>
                             {`${job.projectId ? 'Project' : 'Task'} ${
                                 job.projectId || job.taskId
-                            } does not contain any label. `}
+                            } does not contain any labels. `}
                             <a href={`/${job.projectId ? 'projects' : 'tasks'}/${job.projectId || job.taskId}/`}>
                                 Add
                             </a>
@@ -139,14 +140,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     }
 
     if (typeof job === 'undefined') {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title='Sorry, but this job was not found'
-                subTitle='Please, be sure information you tried to get exist and you have access'
-            />
-        );
+        return <JobNotFoundComponent />;
     }
 
     return (
@@ -164,6 +158,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             </Layout.Content>
             <FiltersModalComponent />
             <StatisticsModalComponent />
+            <SearchFramesModal />
         </Layout>
     );
 }

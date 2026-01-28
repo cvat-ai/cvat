@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +32,7 @@
     .cvat-single-shape-annotation-sidebar-label-select,
     .cvat-single-shape-annotation-sidebar-points-count-input,
     .cvat-single-shape-annotation-sidebar-navigate-empty-checkbox,
-    .cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox,
+    .cvat-single-shape-annotation-sidebar-predefined-points-count-checkbox,
     .cvat-single-shape-annotation-sidebar-auto-save-checkbox {
         margin-top: $grid-unit-size;
     }
@@ -44,7 +44,7 @@
     .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox,
     .cvat-single-shape-annotation-sidebar-auto-save-checkbox,
     .cvat-single-shape-annotation-sidebar-navigate-empty-checkbox,
-    .cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox {
+    .cvat-single-shape-annotation-sidebar-predefined-points-count-checkbox {
         user-select: none;
     }
 

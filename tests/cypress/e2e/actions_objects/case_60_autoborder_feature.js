@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -55,16 +55,17 @@ context('Autoborder feature.', () => {
         }
     }
 
-    function testAutoborderPointsCount(expextedCount) {
+    function testAutoborderPointsCount(expectedCount) {
         cy.get('.cvat_canvas_autoborder_point')
             .should('exist')
             .and('be.visible')
             .then(($autoborderPoints) => {
-                expect($autoborderPoints.length).to.be.equal(expextedCount);
+                expect($autoborderPoints.length).to.be.equal(expectedCount);
             });
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
         cy.createRectangle(createRectangleShape2PointsSec);
@@ -76,7 +77,7 @@ context('Autoborder feature.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Drawning a polygon with autoborder.', () => {
+        it('Drawing a polygon with autoborder.', () => {
             // Collect the rectagle points coordinates
             testCollectCoord('rect', '#cvat_canvas_shape_1', rectanglePoints);
 

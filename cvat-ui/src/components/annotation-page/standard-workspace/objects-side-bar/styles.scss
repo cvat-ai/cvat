@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -207,6 +207,11 @@
     background-color: $background-color-2;
     height: calc(100% - $grid-unit-size * 9);
     overflow-y: auto;
+
+    .cvat-objects-sidebar-state-item {
+        // opacity 0.53 in sidebar to keep the same look as before on sidebar
+        background-color: rgba(var(--state-item-background), 0.53);
+    }
 }
 
 .cvat-objects-sidebar-z-layer-mark {
@@ -220,8 +225,9 @@
 
 .cvat-objects-sidebar-state-item {
     width: 100%;
+    background-color: rgba(var(--state-item-background), 1);
     transition: box-shadow $box-shadow-transition;
-    border: 1px solid $border-color-1;
+    border: 1px solid rgba($color: white, $alpha: 0%);
     padding: $grid-unit-size * 0.5;
     margin-left: $grid-unit-size * 0.25;
     margin-right: $grid-unit-size * 0.25;
@@ -375,36 +381,8 @@
     border-radius: $border-radius-base;
 }
 
-.cvat-label-item-setup-shortcut-button {
-    border-color: $objects-bar-icons-color;
-}
-
-.cvat-label-item-setup-shortcut-popover {
-    margin-top: -$grid-unit-size;
-    margin-bottom: -$grid-unit-size;
-
-    > div {
-        padding-top: $grid-unit-size;
-        padding-bottom: $grid-unit-size;
-
-        > div {
-            display: flex;
-            justify-content: center;
-
-            > button {
-                width: $grid-unit-size * 15;
-                overflow-x: hidden;
-
-                span:first-child {
-                    margin-right: $grid-unit-size;
-                }
-            }
-        }
-    }
-}
-
 .cvat-objects-appearance-content {
-    > div {
+    > div:not(.cvat-appearance-cuboid-orientation-checkboxes) {
         width: 100%;
 
         > label {
@@ -430,7 +408,10 @@
     }
 
     button {
-        color: $text-color;
+        &:not(:disabled) {
+            color: $text-color;
+        }
+
         width: 100%;
         height: 100%;
         text-align: left;
@@ -489,5 +470,20 @@
 .cvat-objects-sidebar-show-ground-truth-active {
     path {
         fill: #1890ff;
+    }
+}
+
+.cvat-objects-sidebar-size-params {
+    .ant-typography {
+        font-size: 10px;
+    }
+
+    .ant-input-number-input-wrap {
+        font-size: 12px;
+    }
+
+    .ant-input-number {
+        margin-left: $grid-unit-size * 0.5;
+        width: $grid-unit-size * 9;
     }
 }

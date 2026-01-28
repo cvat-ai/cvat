@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,12 +11,12 @@ import Checkbox from 'antd/lib/checkbox';
 import { Link } from 'react-router-dom';
 import { BackArrowIcon } from 'icons';
 
-import patterns from 'utils/validation-patterns';
-
 import { UserAgreement } from 'reducers';
 import { Row, Col } from 'antd/lib/grid';
 import CVATSigningInput, { CVATInputType } from 'components/signing-common/cvat-signing-input';
 import { useAuthQuery } from 'utils/hooks';
+import patterns from 'utils/validation-patterns';
+import validationRules from 'utils/validation-rules';
 
 export interface UserConfirmation {
     name: string;
@@ -38,18 +38,6 @@ interface Props {
     predefinedEmail?: string;
     hideLoginLink?: boolean;
     onSubmit(registerData: RegisterData): void;
-}
-
-function validateUsername(_: RuleObject, value: string): Promise<void> {
-    if (!patterns.validateUsernameLength.pattern.test(value)) {
-        return Promise.reject(new Error(patterns.validateUsernameLength.message));
-    }
-
-    if (!patterns.validateUsernameCharacters.pattern.test(value)) {
-        return Promise.reject(new Error(patterns.validateUsernameCharacters.message));
-    }
-
-    return Promise.resolve();
 }
 
 export const validatePassword: RuleRender = (): RuleObject => ({
@@ -154,13 +142,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         <Form.Item
                             className='cvat-credentials-form-item'
                             name='firstName'
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Please specify a first name',
-                                    pattern: patterns.validateName.pattern,
-                                },
-                            ]}
+                            rules={validationRules.firstName}
                         >
                             <CVATSigningInput
                                 id='firstName'
@@ -174,13 +156,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         <Form.Item
                             className='cvat-credentials-form-item'
                             name='lastName'
-                            rules={[
-                                {
-                                    required: true,
-                                    message: 'Please specify a last name',
-                                    pattern: patterns.validateName.pattern,
-                                },
-                            ]}
+                            rules={validationRules.lastName}
                         >
                             <CVATSigningInput
                                 id='lastName'
@@ -194,16 +170,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                 <Form.Item
                     className='cvat-credentials-form-item'
                     name='email'
-                    rules={[
-                        {
-                            type: 'email',
-                            message: 'The input is not valid E-mail!',
-                        },
-                        {
-                            required: true,
-                            message: 'Please specify an email address',
-                        },
-                    ]}
+                    rules={validationRules.email}
                 >
                     <CVATSigningInput
                         id='email'
@@ -224,15 +191,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                 <Form.Item
                     className='cvat-credentials-form-item'
                     name='username'
-                    rules={[
-                        {
-                            required: true,
-                            message: 'Please specify a username',
-                        },
-                        {
-                            validator: validateUsername,
-                        },
-                    ]}
+                    rules={validationRules.userName}
                 >
                     <CVATSigningInput
                         id='username'

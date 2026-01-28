@@ -5,7 +5,6 @@
 import {
     Canvas,
     CanvasMode,
-    CanvasVersion,
     RectDrawingMethod,
     CuboidDrawingMethod,
     CanvasHint as _CanvasHint,
@@ -36,5 +35,5 @@ export type HighlightSeverity = _HighlightSeverity;
 export type CanvasHint = _CanvasHint;
 
 export {
-    Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod,
+    Canvas, CanvasMode, RectDrawingMethod, CuboidDrawingMethod,
 };

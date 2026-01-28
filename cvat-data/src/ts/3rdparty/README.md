@@ -10,8 +10,8 @@ These files are from the [Broadway.js](https://github.com/mbebenita/Broadway) re
 Authors don't provide an npm package, so we need to store these components in our repository.
 We use this dependency to decode video chunks from a server and split them to frames on client side.
 
-We need to run this package in node environent (for example for debug, or for running unit tests).
-But there aren't any ways to do that (even with syntetic environment, provided for example by the package ``browser-env``).
+We need to run this package in node environment (for example for debug, or for running unit tests).
+But there aren't any ways to do that (even with synthetic environment, provided for example by the package ``browser-env``).
 For example there are issues with canvas using (webpack doesn't work with binary canvas package for node-js) and others.
 So, we have solved to write patch file for this library.
 It modifies source code a little to support our scenario of using.

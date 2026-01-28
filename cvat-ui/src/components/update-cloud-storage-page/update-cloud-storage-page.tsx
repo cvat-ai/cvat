@@ -8,12 +8,12 @@ import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
-import Result from 'antd/lib/result';
 import Text from 'antd/lib/typography/Text';
 
 import { CombinedState } from 'reducers';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import CreateCloudStorageForm from 'components/create-cloud-storage-page/cloud-storage-form';
+import { CloudStorageNotFoundComponent } from 'components/common/not-found';
 
 interface ParamType {
     id: string;
@@ -45,14 +45,7 @@ export default function UpdateCloudStoragePageComponent(): JSX.Element {
     }
 
     if (!cloudStorage) {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title='Sorry, but the requested cloud storage was not found'
-                subTitle='Please, be sure id you requested exists and you have appropriate permissions'
-            />
-        );
+        return <CloudStorageNotFoundComponent />;
     }
 
     return (

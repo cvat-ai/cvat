@@ -1,8 +1,70 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+
+function tableContains(target) {
+    return cy
+        .get('.cvat-shortcuts-modal-window-table')
+        .then(($table) => $table.text().includes(target));
+}
+
+function assertTargetVisible(target) {
+    cy
+        .contains('.cvat-shortcuts-modal-window-table', target)
+        .should('be.visible');
+}
+
+function goToNextPageOrFail(target) {
+    return cy
+        .get('.cvat-shortcuts-modal-window-table .ant-pagination-next button')
+        .then(($btn) => {
+            const disabled =
+                $btn.is(':disabled') ||
+                $btn.hasClass('ant-pagination-disabled');
+
+            if (disabled) {
+                throw new Error(`"${target}" not mounted.`);
+            }
+
+            return cy.wrap($btn).click();
+        });
+}
+
+function waitForPageChange(oldPage) {
+    cy.get('.ant-pagination-item-active')
+        .invoke('text')
+        .should('eq', String(oldPage + 1));
+}
+
+function getCurrentPage() {
+    return cy
+        .get('.ant-pagination-item-active')
+        .invoke('text')
+        .then(Number);
+}
+
+function searchAcrossPages(target) {
+    cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+
+    const waitAndContinueSearching = (t, oldPage) => {
+        goToNextPageOrFail(t).then(() => {
+            waitForPageChange(oldPage);
+            searchAcrossPages(t);
+        });
+    };
+
+    tableContains(target).then((found) => {
+        if (found) {
+            assertTargetVisible(target);
+        } else {
+            getCurrentPage().then((oldPage) => {
+                waitAndContinueSearching(target, oldPage);
+            });
+        }
+    });
+}
 
 context('Customizable Shortcuts', () => {
     const taskName = 'A task with markdown';
@@ -57,7 +119,7 @@ context('Customizable Shortcuts', () => {
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
         cy.url().should('contain', '/tasks');
@@ -71,7 +133,7 @@ context('Customizable Shortcuts', () => {
         const searchShortcuts = [
             {
                 title: 'Save the job',
-                description: 'Send all changes of annotations to the server',
+                description: 'Submit unsaved changes of annotations to the server',
             },
             {
                 title: 'Switch automatic bordering',
@@ -95,8 +157,9 @@ context('Customizable Shortcuts', () => {
 
     function checkShortcutsMounted(label) {
         cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
+
         for (let i = 1; i < 3; i++) {
-            cy.get('.cvat-shortcuts-modal-window-table').contains(label(i));
+            searchAcrossPages(label(i));
         }
     }
 
@@ -150,13 +213,6 @@ context('Customizable Shortcuts', () => {
             cy.openSettings();
             registerF2(false);
             registerF2(true);
-        });
-    });
-
-    describe('Saving, Clearing and Restoring to Default', () => {
-        it('Saving shortcuts and checking if they persist', () => {
-            cy.openSettings();
-            cy.saveSettings();
             cy.reload();
             cy.openSettings();
             cy.contains('Shortcuts').click();
@@ -166,6 +222,9 @@ context('Customizable Shortcuts', () => {
                 cy.get('.ant-select-selection-overflow-item').contains('ctrl+space').should('exist');
             });
         });
+    });
+
+    describe('Saving, Clearing and Restoring to Default', () => {
         it('Cleaning Shortcuts', () => {
             cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().click();
             cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-item-remove').first().click();
@@ -176,14 +235,6 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').first().within(() => {
                 cy.get('.ant-select-selection-overflow-item').should('not.have.text');
             });
-        });
-        it('Restoring Defaults', () => {
-            cy.get('.cvat-shortcuts-settings-restore').click();
-            cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
-            cy.get(
-                '.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f1');
-            cy.saveSettings();
         });
         it('Modifying a shortcut via local storage and testing if its conflict is resolved', () => {
             cy.window().then((window) => {
@@ -197,10 +248,24 @@ context('Customizable Shortcuts', () => {
             cy.contains('Shortcuts').click();
             cy.get('.cvat-shortcuts-settings-collapse').should('exist').and('be.visible');
             cy.get('.cvat-shortcuts-settings-label').first().click();
-            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f2');
-            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').eq(1).should('not.have.text');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select')
+                .first().find('span.ant-select-selection-item').should('have.text', 'f2');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select')
+                .eq(1).find('span.ant-select-selection-item').should('not.exist');
             cy.get('.cvat-shortcuts-settings-restore').click();
             cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
+        });
+        it('Restoring Defaults', () => {
+            cy.get('.cvat-shortcuts-settings-restore').click();
+            cy.get('.cvat-shortcuts-settings-restore-modal .ant-btn-primary').click();
+            cy.get(
+                '.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().should('exist').and('be.visible');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f1');
+            cy.closeSettings();
+            cy.window().then((window) => {
+                const { localStorage } = window;
+                cy.wrap(localStorage.getItem('clientSettings')).should('exist').and('not.be.null');
+            });
         });
     });
 
@@ -213,7 +278,7 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-canvas-container').click();
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-2').click();
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-1').click();
             checkShortcutsMounted((i) => `Create a new tag "label ${i}"`);
             cy.realPress(['F1']);
         });
@@ -222,7 +287,7 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-canvas-container').click();
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-3').click();
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-2').click();
             cy.get('.cvat-shortcuts-modal-window-table').should('exist').and('be.visible');
             cy.get('.cvat-shortcuts-modal-window-table').contains('Assign attribute value false');
             cy.get('.cvat-shortcuts-modal-window-table').contains('Assign attribute value true');
@@ -233,9 +298,15 @@ context('Customizable Shortcuts', () => {
             cy.get('.cvat-canvas-container').click();
             cy.realPress(['F1']);
             cy.get('.cvat-shortcuts-modal-window').should('exist').and('be.visible');
-            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-5').click();
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-options-size-changer').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .within(() => {
+                    cy.contains('100 / page').click();
+                });
+            cy.get('.cvat-shortcuts-modal-window .ant-pagination-item-1').click();
             checkShortcutsMounted((i) => `Switch label to label ${i}`);
-            cy.realPress(['F1']);
+            cy.contains('.cvat-shortcuts-modal-window [type="button"]', 'OK').click();
         });
     });
 });

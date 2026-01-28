@@ -1,11 +1,10 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 
-import SVGCVATLogo from './assets/cvat-logo.svg';
 import SVGCVATIcon from './assets/cvat-icon.svg';
 import SVGCursorIcon from './assets/cursor-icon.svg';
 import SVGMoveIcon from './assets/move-icon.svg';
@@ -26,15 +25,18 @@ import SVGSaveIcon from './assets/save-icon.svg';
 import SVGUndoIcon from './assets/undo-icon.svg';
 import SVGRedoIcon from './assets/redo-icon.svg';
 import SVGFirstIcon from './assets/first-icon.svg';
+import SVGChapterMenuIcon from './assets/chapter-menu.svg';
 import SVGBackJumpIcon from './assets/back-jump-icon.svg';
 import SVGPreviousIcon from './assets/previous-icon.svg';
 import SVGPreviousFilteredIcon from './assets/previous-filtered-icon.svg';
 import SVGPreviousEmptyIcon from './assets/previous-empty-icon.svg';
+import SVGPreviousChapterIcon from './assets/previous_chapter_icon.svg';
 import SVGPlayIcon from './assets/play-icon.svg';
 import SVGPauseIcon from './assets/pause-icon.svg';
 import SVGNextIcon from './assets/next-icon.svg';
 import SVGNextFilteredIcon from './assets/next-filtered-icon.svg';
 import SVGNextEmptyIcon from './assets/next-empty-icon.svg';
+import SVGNextChapterIcon from './assets/next_chapter_icon.svg';
 import SVGForwardJumpIcon from './assets/forward-jump-icon.svg';
 import SVGLastIcon from './assets/last-icon.svg';
 import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
@@ -72,7 +74,6 @@ import SVGShowGroundTruthIcon from './assets/show-gt-icon.svg';
 import SVGJoinIcon from './assets/join-icon.svg';
 import SVGSliceIcon from './assets/slice-icon.svg';
 
-export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CVATIcon = React.memo((): JSX.Element => <SVGCVATIcon />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
 export const MoveIcon = React.memo((): JSX.Element => <SVGMoveIcon />);
@@ -93,15 +94,18 @@ export const SaveIcon = React.memo((): JSX.Element => <SVGSaveIcon />);
 export const UndoIcon = React.memo((): JSX.Element => <SVGUndoIcon />);
 export const RedoIcon = React.memo((): JSX.Element => <SVGRedoIcon />);
 export const FirstIcon = React.memo((): JSX.Element => <SVGFirstIcon />);
+export const ChapterMenuIcon = React.memo((): JSX.Element => <SVGChapterMenuIcon />);
 export const BackJumpIcon = React.memo((): JSX.Element => <SVGBackJumpIcon />);
 export const PreviousIcon = React.memo((): JSX.Element => <SVGPreviousIcon />);
 export const PreviousFilteredIcon = React.memo((): JSX.Element => <SVGPreviousFilteredIcon />);
 export const PreviousEmptyIcon = React.memo((): JSX.Element => <SVGPreviousEmptyIcon />);
+export const PreviousChapterIcon = React.memo((): JSX.Element => <SVGPreviousChapterIcon />);
 export const PauseIcon = React.memo((): JSX.Element => <SVGPauseIcon />);
 export const PlayIcon = React.memo((): JSX.Element => <SVGPlayIcon />);
 export const NextIcon = React.memo((): JSX.Element => <SVGNextIcon />);
 export const NextFilteredIcon = React.memo((): JSX.Element => <SVGNextFilteredIcon />);
 export const NextEmptyIcon = React.memo((): JSX.Element => <SVGNextEmptyIcon />);
+export const NextChapterIcon = React.memo((): JSX.Element => <SVGNextChapterIcon />);
 export const ForwardJumpIcon = React.memo((): JSX.Element => <SVGForwardJumpIcon />);
 export const LastIcon = React.memo((): JSX.Element => <SVGLastIcon />);
 export const FullscreenIcon = React.memo((): JSX.Element => <SVGFullscreenIcon />);

@@ -1,11 +1,11 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useRef } from 'react';
-import { connect, useSelector } from 'react-redux';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { connect, shallowEqual, useSelector } from 'react-redux';
 import {
     ArrowDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, ArrowUpOutlined,
 } from '@ant-design/icons';
@@ -23,16 +23,22 @@ import {
     updateActiveControl as updateActiveControlAction,
     updateAnnotationsAsync,
     updateCanvasContextMenu,
+    getDataFailed,
+    canvasErrorOccurred,
 } from 'actions/annotation-actions';
 import {
     ActiveControl,
-    ColorBy, CombinedState, ContextMenuType, ObjectType, Workspace,
+    ColorBy, CombinedState, ContextMenuType, Workspace,
 } from 'reducers';
-import { CameraAction, Canvas3d, ViewsDOM } from 'cvat-canvas3d-wrapper';
+import {
+    OrientationVisibility, CameraAction, Canvas3d, ViewsDOM,
+} from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { EventScope } from 'cvat-logger';
-import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
+import {
+    getCore, ObjectState, ObjectType, Job,
+} from 'cvat-core-wrapper';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -111,6 +117,9 @@ interface StateToProps {
     outlined: boolean;
     outlineColor: string;
     colorBy: ColorBy;
+    orientationVisibility: OrientationVisibility;
+    controlPointsSize: number;
+    focusedObjectPadding: number;
     frameFetching: boolean;
     canvasInstance: Canvas3d;
     jobInstance: Job;
@@ -136,6 +145,8 @@ interface DispatchToProps {
     onActivateObject: (activatedStateID: number | null) => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
+    onGetDataFailed(error: Error): void;
+    onCanvasErrorOccurred(error: Error): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -160,15 +171,19 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 resetZoom,
             },
+            workspace: {
+                controlPointsSize,
+                focusedObjectPadding,
+            },
             shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor,
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, orientationVisibility,
             },
         },
     } = state;
 
     return {
         canvasInstance: canvasInstance as Canvas3d,
-        jobInstance,
+        jobInstance: jobInstance as Job,
         frameData,
         contextMenuVisibility,
         annotations,
@@ -179,6 +194,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         selectedOpacity,
         outlined,
         outlineColor,
+        orientationVisibility,
+        controlPointsSize,
+        focusedObjectPadding,
         activeLabelID,
         activatedStateID,
         activeObjectType,
@@ -229,6 +247,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateActiveControl(activeControl: ActiveControl): void {
             dispatch(updateActiveControlAction(activeControl));
         },
+        onGetDataFailed(error: Error): void {
+            dispatch(getDataFailed(error));
+        },
+        onCanvasErrorOccurred(error: Error): void {
+            dispatch(canvasErrorOccurred(error));
+        },
     };
 }
 
@@ -243,9 +267,17 @@ const Spinner = React.memo(() => (
 export const PerspectiveViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
-        const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
+        const {
+            canvas,
+            canvasIsReady,
+            keyMap,
+            normalizedKeyMap,
+        } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+            keyMap: state.shortcuts.keyMap,
+            normalizedKeyMap: state.shortcuts.normalizedKeyMap,
+        }), shallowEqual);
 
         const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
             canvas.keyControls(new KeyboardEvent('keydown', { code, altKey, shiftKey }));
@@ -397,8 +429,10 @@ export const PerspectiveViewComponent = React.memo(
 export const TopViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+        const { canvas, canvasIsReady } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+        }), shallowEqual);
 
         useEffect(() => {
             if (ref.current) {
@@ -422,8 +456,10 @@ export const TopViewComponent = React.memo(
 export const SideViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+        const { canvas, canvasIsReady } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+        }), shallowEqual);
 
         useEffect(() => {
             if (ref.current) {
@@ -447,8 +483,10 @@ export const SideViewComponent = React.memo(
 export const FrontViewComponent = React.memo(
     (): JSX.Element => {
         const ref = useRef<HTMLDivElement>(null);
-        const canvas = useSelector((state: CombinedState) => state.annotation.canvas.instance as Canvas3d);
-        const canvasIsReady = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+        const { canvas, canvasIsReady } = useSelector((state: CombinedState) => ({
+            canvas: state.annotation.canvas.instance as Canvas3d,
+            canvasIsReady: state.annotation.canvas.ready,
+        }), shallowEqual);
 
         useEffect(() => {
             if (ref.current) {
@@ -476,6 +514,9 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         opacity,
         outlined,
         outlineColor,
+        orientationVisibility,
+        controlPointsSize,
+        focusedObjectPadding,
         selectedOpacity,
         colorBy,
         contextMenuVisibility,
@@ -494,6 +535,8 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         onMergeAnnotations,
         onSplitAnnotations,
         onGroupAnnotations,
+        onGetDataFailed,
+        onCanvasErrorOccurred,
     } = props;
 
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
@@ -509,6 +552,15 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     const onCanvasDragDone = (): void => {
         updateActiveControl(ActiveControl.CURSOR);
     };
+
+    const onCanvasErrorOccurrence = useCallback((event: any): void => {
+        const { exception, domain } = event.detail;
+        if (domain === 'data fetching') {
+            onGetDataFailed(exception);
+        } else {
+            onCanvasErrorOccurred(exception);
+        }
+    }, [onGetDataFailed, onCanvasErrorOccurred]);
 
     const animateCanvas = (): void => {
         canvasInstance.render();
@@ -614,6 +666,15 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     }, []);
 
     useEffect(() => {
+        const canvasInstanceDOM = canvasInstance.html();
+        canvasInstanceDOM.perspective.addEventListener('canvas.error', onCanvasErrorOccurrence);
+
+        return () => {
+            canvasInstanceDOM.perspective.removeEventListener('canvas.error', onCanvasErrorOccurrence);
+        };
+    }, [onCanvasErrorOccurrence, canvasInstance]);
+
+    useEffect(() => {
         canvasInstance.activate(activatedStateID);
     }, [activatedStateID]);
 
@@ -631,16 +692,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         };
     }, [resetZoom]);
 
-    const updateShapesView = (): void => {
-        (canvasInstance as Canvas3d).configureShapes({
-            opacity,
-            outlined,
-            outlineColor,
-            selectedOpacity,
-            colorBy,
-        });
-    };
-
     const onContextMenu = (event: any): void => {
         const { onUpdateContextMenu, onActivateObject } = props;
         onActivateObject(event.detail.clientID);
@@ -652,7 +703,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         );
     };
 
-    const onCanvasObjectsGroupped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
+    const onCanvasObjectsGrouped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
         const { states } = event.detail;
         updateActiveControl(ActiveControl.CURSOR);
         onGroupAnnotations(states);
@@ -669,8 +720,21 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
     };
 
     useEffect(() => {
-        updateShapesView();
-    }, [opacity, outlined, outlineColor, selectedOpacity, colorBy]);
+        canvasInstance.configure({
+            colorBy,
+            shapeOpacity: opacity,
+            selectedShapeOpacity: selectedOpacity,
+            orientationVisibility,
+            outlinedBorders: outlined ? outlineColor : false,
+            controlPointsSize,
+            focusedObjectPadding,
+        });
+    }, [
+        opacity, outlined, outlineColor,
+        selectedOpacity, colorBy, focusedObjectPadding,
+        orientationVisibility, controlPointsSize,
+
+    ]);
 
     useEffect(() => {
         const canvasInstanceDOM = canvasInstance.html() as ViewsDOM;
@@ -680,7 +744,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
         canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
-        canvasInstanceDOM.perspective.addEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+        canvasInstanceDOM.perspective.addEventListener('canvas.grouped', onCanvasObjectsGrouped as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
 
@@ -690,7 +754,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
             canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);
-            canvasInstanceDOM.perspective.removeEventListener('canvas.groupped', onCanvasObjectsGroupped as EventListener);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.grouped', onCanvasObjectsGrouped as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.merged', onCanvasObjectsMerged as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
         };

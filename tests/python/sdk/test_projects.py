@@ -1,11 +1,10 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 from logging import Logger
 from pathlib import Path
-from typing import Optional, Tuple
 
 import pytest
 from cvat_sdk import Client, models
@@ -29,9 +28,10 @@ class TestProjectUsecases(TestDatasetExport):
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_login: tuple[Client, str],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_stdout: io.StringIO,
+        restore_redis_ondisk_per_function,
     ):
         self.tmp_path = tmp_path
         logger, self.logger_stream = fxt_logger
@@ -161,6 +161,30 @@ class TestProjectUsecases(TestDatasetExport):
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.parametrize("convert", [True, False])
+    def test_can_create_project_from_dataset_with_polygons_to_masks_param(
+        self, fxt_camvid_dataset: Path, convert: bool
+    ):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+        project = self.client.projects.create_from_dataset(
+            spec=models.ProjectWriteRequest(name="project with data"),
+            dataset_path=fxt_camvid_dataset,
+            dataset_format="CamVid 1.0",
+            conv_mask_to_poly=convert,
+            pbar=pbar,
+        )
+
+        assert project.get_tasks()[0].size == 1
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+        task = project.get_tasks()[0]
+        imported_annotations = task.get_annotations()
+        assert all(
+            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+        )
+
     def test_can_retrieve_project(self, fxt_new_project: Project):
         project_id = fxt_new_project.id
 
@@ -263,7 +287,7 @@ class TestProjectUsecases(TestDatasetExport):
         format_name: str,
         include_images: bool,
         project: Project,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):

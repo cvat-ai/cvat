@@ -6,13 +6,32 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"create"|"view"|"list"|"update:state"|"update:stage"|"update:assignee""delete"|
-#         "view:annotations"|"update:annotations"|"delete:annotations"|"view:data"|
-#         "export:annotations" | "export:dataset" |> or null,
+#     "scope": <
+#              "create"|
+#              "delete"|
+#              "delete:annotations"|
+#              "download:exported_file"|
+#              "export:annotations"|
+#              "export:dataset"|
+#              "import:annotations"|
+#              "list"|
+#              "update"|
+#              "update:annotations"|
+#              "update:assignee"|
+#              "update:metadata"|
+#              "update:stage"|
+#              "update:state"|
+#              "update:validation_layout"|
+#              "view"|
+#              "view:annotations"|
+#              "view:data"|
+#              "view:metadata"|
+#              "view:validation_layout"
+#          > or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         },
 #         "organization": {
 #             "id": <num>,
@@ -35,7 +54,9 @@ import data.organizations
 #         "task": {
 #             "owner": { "id": <num> },
 #             "assignee": { "id": <num> }
-#         } or null
+#         } or null,
+#         "rq_job": { "owner": { "id": <num> } } or null,
+#         "destination": <"local" | "cloud_storage"> or undefined,
 #     }
 # }
 
@@ -252,4 +273,29 @@ allow if {
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     is_task_staff
+}
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    utils.is_sandbox
+    is_task_staff
+}
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    is_task_staff
+}
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.MAINTAINER)
+    utils.has_perm(utils.USER)
+}
+
+allow if {
+    input.scope == utils.DOWNLOAD_EXPORTED_FILE
+    input.auth.user.id == input.resource.rq_job.owner.id
 }

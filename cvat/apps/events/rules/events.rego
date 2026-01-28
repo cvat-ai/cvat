@@ -6,11 +6,11 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"send:events","dump:events"> or null,
+#     "scope": <"send:events","dump:events","download:exported_file"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         },
 #         "organization": {
 #             "id": <num>,
@@ -22,6 +22,9 @@ import data.organizations
 #             }
 #         } or null,
 #     }
+#     "resource": {
+#         "rq_job": { "owner": { "id": <num> } } or null,
+#     } or null,
 # }
 
 default allow := false
@@ -45,6 +48,12 @@ allow if {
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
 }
+
+allow if {
+    input.scope == utils.DOWNLOAD_EXPORTED_FILE
+    input.auth.user.id == input.resource.rq_job.owner.id
+}
+
 
 filter := [] if {
     utils.is_admin

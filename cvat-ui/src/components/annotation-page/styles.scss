@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -156,6 +156,33 @@
         height: $grid-unit-size;
         background-color: $player-slider-color;
     }
+
+    > .ant-slider-mark {
+        z-index: 2;
+        top: -16px;
+
+        > .ant-slider-mark-text {
+            > .ant-slider-mark-chapter {
+                display: inline-block;
+                width: 2px;
+                height: 10px;
+                background-color: #ccc;
+                border-radius: 2px;
+                transition: all 0.1s ease;
+                transform-origin: center center;
+                transform: scaleX(1);
+            }
+
+            > .ant-slider-mark-chapter.active {
+                transform: scaleX(1.5);
+                background-color: #ff4136;
+            }
+        }
+    }
+
+    > .ant-slider-step > .ant-slider-dot {
+        z-index: 2;
+    }
 }
 
 .cvat-player-slider-progress {
@@ -177,6 +204,9 @@
     line-height: $grid-unit-size * 3;
 
     > span {
+        display: inline-block;
+        width: 100%;
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         user-select: none;
@@ -186,7 +216,9 @@
 
 .cvat-player-frame-url-icon,
 .cvat-player-delete-frame,
-.cvat-player-restore-frame {
+.cvat-player-restore-frame,
+.cvat-player-copy-frame-name-icon,
+.cvat-player-search-frame-name-icon {
     opacity: 0.7;
     color: $objects-bar-icons-color;
 
@@ -199,15 +231,31 @@
     }
 }
 
-.cvat-player-delete-frame,
-.cvat-player-restore-frame {
-    margin-left: $grid-unit-size * 2;
+.cvat-player-frame-actions {
+    span:not(:first-child) {
+        margin-left: $grid-unit-size;
+    }
 }
 
 .cvat-player-frame-selector {
-    width: 5em;
+    width: unset;
     padding-right: 5px;
     margin-left: 5px;
+
+    .ant-input-number-input-wrap {
+        width: unset;
+    }
+
+    .ant-input-number-input {
+        box-sizing: content-box;
+        width: var(--frame-input-width, 6ch);
+        min-width: 6ch;
+        max-width: 10ch;
+    }
+}
+
+.cvat-player-actions {
+    margin-left: $grid-unit-size;
 }
 
 .cvat-annotation-header-right-group {
@@ -294,7 +342,7 @@
 
 // TODO: Move canvas from standard workspace and create its own .scss
 .cvat-canvas-context-menu {
-    opacity: 0.6;
+    opacity: 0.8;
     position: fixed;
     width: 300px;
     z-index: 10;
@@ -436,6 +484,28 @@
     }
 }
 
+.cvat-player-chapter-menu-wrapper {
+    max-height: 37 * $grid-unit-size;
+    max-width: 22 * $grid-unit-size;
+    overflow: auto;
+}
+
+.cvat-player-chapter-menu-list {
+    .cvat-player-chapter-menu-list-item {
+        margin-right: 2px;
+
+        &:hover {
+            transform: translateX(2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,10%);
+            background-color: #f5f5f5;
+        }
+    }
+}
+
+.cvat-player-chapters-menu-button svg {
+    transform: scale(0.8);
+}
+
 .cvat-annotations-filters-input.ant-select {
     > .ant-select-selector {
         height: 32px;
@@ -452,7 +522,9 @@
 .cvat-player-previous-filtered-inlined-button,
 .cvat-player-next-filtered-inlined-button,
 .cvat-player-previous-empty-inlined-button,
-.cvat-player-next-empty-inlined-button {
+.cvat-player-next-empty-inlined-button,
+.cvat-player-previous-chapter-inlined-button,
+.cvat-player-next-chapter-inlined-button {
     color: $player-buttons-color;
 
     &:not(:first-child) {
@@ -526,4 +598,28 @@
     .ant-modal-footer {
         margin: 0;
     }
+}
+
+.cvat-frame-search-selector {
+    width: 100%;
+}
+
+.cvat-frame-search-item {
+    display: flex;
+    justify-content: start;
+    overflow: hidden;
+    width: 100%;
+}
+
+.cvat-frame-search-item-number {
+    margin-right: $grid-unit-size;
+    white-space: nowrap;
+}
+
+.cvat-frame-search-item-name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    direction: rtl;
+    unicode-bidi: plaintext;
 }

@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,23 +8,22 @@ const MOVEMENT_FACTOR = 200;
 const DOLLY_FACTOR = 5;
 const MAX_DISTANCE = 100;
 const MIN_DISTANCE = 0.3;
-const ZOOM_FACTOR = 7;
+const ORTHO_FRUSTUM_HEIGHT = 1;
 const ROTATION_HELPER_OFFSET = 0.75;
 const CAMERA_REFERENCE = 'camRef';
 const CUBOID_EDGE_NAME = 'edges';
 const ROTATION_HELPER_NAME = '2DRotationHelper';
 const PLANE_ROTATION_HELPER = 'planeRotationHelper';
 const RESIZE_HELPER_NAME = '2DResizeHelper';
-const ROTATION_SPEED = 80;
 const FOV_DEFAULT = 1;
-const FOV_MAX = 2;
-const FOV_MIN = 0;
-const FOV_INC = 0.08;
+const SIDE_VIEWS_MAX_ZOOM = 20;
+const SIDE_VIEWS_MIN_ZOOM = 0.01;
 const DEFAULT_GROUP_COLOR = '#e0e0e0';
 const DEFAULT_OUTLINE_COLOR = '#000000';
 const GROUPING_COLOR = '#8b008b';
 const MERGING_COLOR = '#0000ff';
 const SPLITTING_COLOR = '#1e90ff';
+const BASE_POINT_SIZE = 4;
 
 export default {
     BASE_GRID_WIDTH,
@@ -32,21 +31,20 @@ export default {
     DOLLY_FACTOR,
     MAX_DISTANCE,
     MIN_DISTANCE,
-    ZOOM_FACTOR,
+    ORTHO_FRUSTUM_HEIGHT,
     ROTATION_HELPER_OFFSET,
     CAMERA_REFERENCE,
     CUBOID_EDGE_NAME,
     ROTATION_HELPER_NAME,
     PLANE_ROTATION_HELPER,
     RESIZE_HELPER_NAME,
-    ROTATION_SPEED,
     FOV_DEFAULT,
-    FOV_MAX,
-    FOV_MIN,
-    FOV_INC,
+    SIDE_VIEWS_MAX_ZOOM,
+    SIDE_VIEWS_MIN_ZOOM,
     DEFAULT_GROUP_COLOR,
     DEFAULT_OUTLINE_COLOR,
     GROUPING_COLOR,
     MERGING_COLOR,
     SPLITTING_COLOR,
+    BASE_POINT_SIZE,
 };

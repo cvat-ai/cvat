@@ -1,12 +1,15 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import {
+    OrganizationMembersFilter,
     SerializedInvitationData, SerializedOrganization, SerializedOrganizationContact, SerializedUser,
 } from './server-response-types';
-import { checkObjectType, isEnum } from './common';
+import {
+    checkFilter, checkObjectType, fieldsToSnakeCase, isEnum, isInteger, isString,
+} from './common';
 import config from './config';
 import { MembershipRole } from './enums';
 import { ArgumentError, DataError } from './exceptions';
@@ -23,15 +26,30 @@ interface SerializedMembershipData {
     invitation: SerializedInvitationData | null;
 }
 
+function validateName(name: unknown): void {
+    checkObjectType('organization name', name, 'string');
+}
+
+function validateDescription(description: unknown): void {
+    checkObjectType('organization description', description, 'string');
+}
+
+function validateContact(contact: unknown): void {
+    checkObjectType('contact', contact, null, { cls: Object, name: 'Object' });
+    for (const prop of Object.keys(contact)) {
+        checkObjectType('organization contact', contact[prop], 'string');
+    }
+}
+
 export default class Organization {
     public readonly id: number;
     public readonly slug: string;
     public readonly createdDate: string;
     public readonly updatedDate: string;
     public readonly owner: User;
-    public contact: SerializedOrganizationContact;
-    public name: string;
-    public description: string;
+    public readonly contact: SerializedOrganizationContact;
+    public readonly name: string;
+    public readonly description: string;
 
     constructor(initialData: SerializedOrganization) {
         const data: SerializedOrganization = {
@@ -55,11 +73,11 @@ export default class Organization {
 
         checkObjectType('slug', data.slug, 'string');
         if (typeof data.name !== 'undefined') {
-            checkObjectType('name', data.name, 'string');
+            validateName(data.name);
         }
 
         if (typeof data.description !== 'undefined') {
-            checkObjectType('description', data.description, 'string');
+            validateDescription(data.description);
         }
 
         if (typeof data.id !== 'undefined') {
@@ -67,18 +85,11 @@ export default class Organization {
         }
 
         if (typeof data.contact !== 'undefined') {
-            checkObjectType('contact', data.contact, 'object');
-            for (const prop in data.contact) {
-                if (typeof data.contact[prop] !== 'string') {
-                    throw new ArgumentError(
-                        `Contact fields must be strings,tried to set ${typeof data.contact[prop]}`,
-                    );
-                }
-            }
+            validateContact(data.contact);
         }
 
         if (typeof data.owner !== 'undefined' && data.owner !== null) {
-            checkObjectType('owner', data.owner, null, User);
+            checkObjectType('owner', data.owner, null, { cls: User, name: 'User' });
         }
 
         Object.defineProperties(this, {
@@ -90,39 +101,12 @@ export default class Organization {
             },
             name: {
                 get: () => data.name,
-                set: (name) => {
-                    if (typeof name !== 'string') {
-                        throw new ArgumentError(`Name property must be a string, tried to set ${typeof name}`);
-                    }
-                    data.name = name;
-                },
             },
             description: {
                 get: () => data.description,
-                set: (description) => {
-                    if (typeof description !== 'string') {
-                        throw new ArgumentError(
-                            `Description property must be a string, tried to set ${typeof description}`,
-                        );
-                    }
-                    data.description = description;
-                },
             },
             contact: {
-                get: () => ({ ...data.contact }),
-                set: (contact) => {
-                    if (typeof contact !== 'object') {
-                        throw new ArgumentError(`Contact property must be an object, tried to set ${typeof contact}`);
-                    }
-                    for (const prop in contact) {
-                        if (typeof contact[prop] !== 'string') {
-                            throw new ArgumentError(
-                                `Contact fields must be strings, tried to set ${typeof contact[prop]}`,
-                            );
-                        }
-                    }
-                    data.contact = { ...contact };
-                },
+                get: () => ({ ...data.contact ?? {} }),
             },
             owner: {
                 get: () => data.owner,
@@ -137,19 +121,22 @@ export default class Organization {
     }
 
     // Method updates organization data if it was created before, or creates a new organization
-    public async save(): Promise<Organization> {
-        const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.save);
+    public async save(
+        fields: Partial<Pick<SerializedOrganization, 'name' | 'description' | 'contact'>> = {},
+    ): Promise<Organization> {
+        const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.save, fields);
         return result;
     }
 
     // Method returns paginatable list of organization members
-    public async members(page = 1, page_size = 10): Promise<Membership[]> {
+    public async members(filter: OrganizationMembersFilter = { page: 1, pageSize: 10 }): Promise<Membership[]> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Organization.prototype.members,
-            this.slug,
-            page,
-            page_size,
+            {
+                ...filter,
+                org: this.slug,
+            },
         );
         return result;
     }
@@ -289,13 +276,30 @@ Object.defineProperties(Organization.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation() {
+        value: async function implementation(
+            fields: Parameters<typeof Organization.prototype.save>[0],
+        ) {
             if (typeof this.id === 'number') {
                 const organizationData = {
-                    name: this.name || this.slug,
-                    description: this.description,
-                    contact: this.contact,
+                    ...('name' in fields ? { name: fields.name } : {}),
+                    ...('description' in fields ? { description: fields.description } : {}),
+                    ...('contact' in fields ? { contact: fields.contact } : {}),
                 };
+
+                if (Object.hasOwn(organizationData, 'name') && typeof organizationData.name !== 'string') {
+                    validateName(organizationData.name);
+                }
+
+                if (
+                    Object.hasOwn(organizationData, 'description') &&
+                    typeof organizationData.description !== 'string'
+                ) {
+                    validateDescription(organizationData.description);
+                }
+
+                if (Object.hasOwn(organizationData, 'contact')) {
+                    validateContact(organizationData.contact);
+                }
 
                 const result = await serverProxy.organizations.update(this.id, organizationData);
                 return new Organization(result);
@@ -318,12 +322,21 @@ Object.defineProperties(Organization.prototype.members, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(orgSlug: string, page: number, pageSize: number) {
-            checkObjectType('orgSlug', orgSlug, 'string');
-            checkObjectType('page', page, 'number');
-            checkObjectType('pageSize', pageSize, 'number');
+        value: async function implementation(
+            filter: Parameters<typeof Organization.prototype.members>[0],
+        ) {
+            checkFilter(filter, {
+                org: isString,
+                page: isInteger,
+                pageSize: isInteger,
+                search: isString,
+                filter: isString,
+                sort: isString,
+            });
 
-            const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
+            const params = fieldsToSnakeCase(filter);
+            const result = await serverProxy.organizations.members(params);
+
             const memberships = await Promise.all(result.results.map(async (rawMembership) => {
                 const { invitation } = rawMembership;
                 let rawInvitation = null;
@@ -334,13 +347,14 @@ Object.defineProperties(Organization.prototype.members, {
                     // eslint-disable-next-line no-empty
                     } catch (e) {}
                 }
+
                 return new Membership({
                     ...rawMembership,
                     invitation: rawInvitation,
                 });
             }));
-            memberships.count = result.count;
-            return memberships;
+
+            return Object.assign(memberships, { count: result.count });
         },
     },
 });
@@ -413,9 +427,12 @@ Object.defineProperties(Organization.prototype.leave, {
         writable: false,
         enumerable: false,
         value: async function implementation(user: User) {
-            checkObjectType('user', user, null, User);
+            checkObjectType('user', user, null, { cls: User, name: 'User' });
             if (typeof this.id === 'number') {
-                const result = await serverProxy.organizations.members(this.slug, 1, 10, {
+                const result = await serverProxy.organizations.members({
+                    page: 1,
+                    pageSize: 10,
+                    org: this.slug,
                     filter: JSON.stringify({
                         and: [{
                             '==': [{ var: 'user' }, user.username],

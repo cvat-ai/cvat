@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,12 +7,7 @@ import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
 import { RQStatus, ShapeType } from './enums';
-
-export interface ModelProvider {
-    name: string;
-    icon: string;
-    attributes: Record<string, string>;
-}
+import { SerializedCollection } from './server-response-types';
 
 export interface InteractorResults {
     mask: number[][];
@@ -20,20 +15,14 @@ export interface InteractorResults {
     bounds?: [number, number, number, number]
 }
 
-export interface DetectedShape {
-    type: ShapeType | 'tag';
-    rotation?: number;
-    attributes: { name: string; value: string }[];
-    label: string;
-    outside?: boolean;
-    points?: number[];
-    mask?: number[];
-    elements: DetectedShape[];
+export interface MinimalShape {
+    type: ShapeType;
+    points: number[];
 }
 
 export interface TrackerResults {
     states: any[];
-    shapes: number[][];
+    shapes: MinimalShape[];
 }
 
 class LambdaManager {
@@ -90,7 +79,7 @@ class LambdaManager {
         return result.id;
     }
 
-    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | DetectedShape[]> {
+    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | SerializedCollection> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }

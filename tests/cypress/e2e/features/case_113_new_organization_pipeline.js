@@ -1,9 +1,11 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+
+import { defaultTaskSpec } from '../../support/default-specs';
 
 context('New organization pipeline.', () => {
     const caseId = '113';
@@ -13,24 +15,24 @@ context('New organization pipeline.', () => {
     const thirdUserName = 'Thirduser';
     const users = {
         thirdUser: {
-            name: thirdUserName,
+            username: thirdUserName,
             firstName: `${thirdUserName} fitstname`,
             lastName: `${thirdUserName} lastname`,
-            emailAddr: `${thirdUserName.toLowerCase()}@local.local`,
+            email: `${thirdUserName.toLowerCase()}@local.local`,
             password: 'Fv5Df3#f55g',
         },
         secondUser: {
-            name: secondUserName,
+            username: secondUserName,
             firstName: `${secondUserName} fitstname`,
             lastName: `${secondUserName} lastname`,
-            emailAddr: `${secondUserName.toLowerCase()}@local.local`,
+            email: `${secondUserName.toLowerCase()}@local.local`,
             password: 'UfdU21!dds',
         },
         firstUser: {
-            name: firstUserName,
+            username: firstUserName,
             firstName: `${firstUserName} fitstname`,
             lastName: `${firstUserName} lastname`,
-            emailAddr: `${firstUserName.toLowerCase()}@local.local`,
+            email: `${firstUserName.toLowerCase()}@local.local`,
             password: 'UfdU21!dds',
         },
     };
@@ -48,28 +50,16 @@ context('New organization pipeline.', () => {
         name: `Project case ${caseId}`,
         label: 'car',
         attrName: 'color',
-        attrVaue: 'red',
+        attrValue: 'red',
         multiAttrParams: false,
     };
 
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
     const newTaskName = labelName;
-    const attrName = `Attr for ${labelName}`;
-    const textDefaultValue = 'Some default value for type Text';
-    const imagesCount = 1;
-    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const width = 800;
-    const height = 800;
-    const posX = 10;
-    const posY = 10;
-    const color = 'gray';
-    const archiveName = `${imageFileName}.zip`;
-    const archivePath = `cypress/fixtures/${archiveName}`;
-    const imagesFolder = `cypress/fixtures/${imageFileName}`;
-    const directoryToArchive = imagesFolder;
-    let taskID;
-    let jobID;
+    const serverFiles = ['archive.zip'];
+    let taskID = null;
+    let jobID = null;
 
     const createCuboidShape2Points = {
         points: 'From rectangle',
@@ -82,37 +72,35 @@ context('New organization pipeline.', () => {
     };
 
     function capitalizeEmail(email) {
-        return email.split('@').map((part) => `${part.toUpperCase()[0]}${part.slice(1)}`).join('@');
+        return email.split('@').map(Cypress._.capitalize).join('@');
+    }
+    function tearDown() {
+        cy.headlessLogout().then(() => {
+            cy.task('getAuthHeaders').then((authHeaders) => {
+                cy.deleteUsers(authHeaders, [firstUserName, secondUserName, thirdUserName]);
+                cy.deleteTasks(authHeaders, [newTaskName]);
+                cy.deleteProjects(authHeaders, [project.name]);
+                cy.deleteOrganizations(authHeaders, [organizationParams.shortName]);
+                cy.headlessLogout();
+            });
+        });
+    }
+    function makeLoginUser(user) {
+        return {
+            username: user.username,
+            password: user.password,
+            nextURL: '/tasks',
+        };
     }
 
     before(() => {
-        cy.visit('/');
-        cy.login();
-        cy.imageGenerator(
-            imagesFolder,
-            imageFileName,
-            width,
-            height,
-            color,
-            posX,
-            posY,
-            project.label,
-            imagesCount,
-        );
-        cy.createZipArchive(directoryToArchive, archivePath);
-        cy.logout();
-
+        cy.visit('/auth/login');
+        cy.window().its('cvat').should('not.be.undefined');
+        tearDown();
         for (const user of Object.values(users)) {
-            cy.goToRegisterPage();
-            cy.userRegistration(
-                user.firstName,
-                user.lastName,
-                user.name,
-                user.emailAddr,
-                user.password,
-            );
-            if (user.name !== firstUserName) cy.logout(user.name);
+            cy.headlessCreateUser(user);
         }
+        cy.headlessLogin(makeLoginUser(firstUser));
     });
 
     beforeEach(() => {
@@ -120,13 +108,7 @@ context('New organization pipeline.', () => {
     });
 
     after(() => {
-        cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [thirdUserName]);
-            cy.deleteTasks(authKey, [newTaskName]);
-            cy.deleteProjects(authKey, [project.name]);
-            cy.deleteOrganizations(authKey, [organizationParams.shortName]);
-        });
+        tearDown();
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -140,29 +122,87 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(1, [firstUserName]);
             const membersToInvite = [
                 {
-                    email: capitalizeEmail(secondUser.emailAddr),
+                    email: capitalizeEmail(secondUser.email),
                     role: 'Worker',
                 },
                 {
-                    email: thirdUser.emailAddr,
+                    email: thirdUser.email,
                     role: 'Worker',
                 },
             ];
             cy.inviteMembersToOrganization(membersToInvite);
+            cy.then(() => {
+                cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
+            });
+        });
+
+        it('Search within organizations: All members should be queryable', () => {
+            const searchBar = 'searchBar';
+            const searchBarRef = `@${searchBar}`;
+            function search(string = '') {
+                cy.get(searchBarRef).clear();
+                cy.get(searchBarRef).type(`${string}{enter}`);
+            }
+            cy.get('.cvat-organization-page-search-bar').should('be.visible')
+                .find('input')
+                .as(searchBar);
+
+            search(firstUserName);
+            cy.checkOrganizationMembers(1, [firstUserName]);
+
+            const commonSubstring = 'user';
+            search(commonSubstring);
+            cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
+
+            const badSearch = 'abc';
+            search(badSearch);
+            cy.get('.cvat-empty-members-list').should('exist');
+
+            // Empty search bar outputs all members
+            search();
             cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
         });
 
+        it('Search within organizations: Filters work correctly', () => {
+            cy.get('.cvat-quick-filters-button').click();
+            cy.get('.cvat-resource-page-predefined-filters-list')
+                .should('be.visible')
+                .within(() => {
+                    cy.contains('Workers').click();
+                });
+            cy.get('.cvat-quick-filters-button').click();
+            cy.get('.cvat-resource-page-predefined-filters-list').should('not.exist');
+            cy.checkOrganizationMembers(2, [secondUserName, thirdUserName]);
+        });
+
         it('Create a project, create a task. Deactivate organization.', () => {
+            cy.headlessCreateProject({
+                name: project.name,
+                labels: [{
+                    name: labelName,
+                    attributes: [{
+                        name: project.attrName,
+                        mutable: false,
+                        input_type: 'text',
+                        default_value: project.attrValue,
+                        values: [project.attrValue],
+                    }],
+                }],
+            }).then(({ projectID }) => {
+                const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+                    labelName, taskName, serverFiles,
+                });
+                delete taskSpec.labels;
+                taskSpec.project_id = projectID;
+                cy.headlessCreateTask(
+                    taskSpec, dataSpec, extras,
+                ).then((taskResponse) => {
+                    taskID = taskResponse.taskID;
+                });
+            });
             cy.goToProjectsList();
-            cy.createProjects(
-                project.name,
-                project.label,
-                project.attrName,
-                project.attrVaue,
-                project.multiAttrParams,
-            );
             cy.goToTaskList();
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
+
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
             cy.deactivateOrganization();
@@ -175,8 +215,7 @@ context('New organization pipeline.', () => {
         });
 
         it('Admin tries to leave from organization (not successfully because he is not a member of it).', () => {
-            cy.logout();
-            cy.login();
+            cy.headlessLogin();
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.contains('button', 'Leave organization').should('be.visible').click();
@@ -191,8 +230,7 @@ context('New organization pipeline.', () => {
         });
 
         it("The second user login. The user is able to see the organization, can't see the task.", () => {
-            cy.logout();
-            cy.login(secondUserName, secondUser.password);
+            cy.headlessLogin(makeLoginUser(secondUser));
             cy.checkOrganizationExists(organizationParams.shortName);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
         });
@@ -203,9 +241,8 @@ context('New organization pipeline.', () => {
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
         });
 
-        it('The first user login. Assigne the project to the second user.', () => {
-            cy.logout();
-            cy.login(firstUserName, firstUser.password);
+        it('The first user login. Assign the project to the second user.', () => {
+            cy.headlessLogin(makeLoginUser(firstUser));
             cy.activateOrganization(organizationParams.shortName);
             cy.goToProjectsList();
             cy.openProject(project.name);
@@ -213,8 +250,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The second user login. Now he sees the project and can open it.', () => {
-            cy.logout();
-            cy.login(secondUserName, secondUser.password);
+            cy.headlessLogin(makeLoginUser(secondUser));
             cy.activateOrganization(organizationParams.shortName);
             cy.goToProjectsList();
             cy.openProject(project.name);
@@ -228,15 +264,10 @@ context('New organization pipeline.', () => {
                 cy.assignJobToUser(_jobID, thirdUserName);
             });
             cy.renameTask(taskName, newTaskName);
-            cy.url().then((url) => {
-                const [link] = url.split('?');
-                taskID = Number(link.split('/').slice(-1)[0]);
-            });
         });
 
         it('Logout, the third user login. The user does not see the project, the task.', () => {
-            cy.logout();
-            cy.login(thirdUserName, thirdUser.password);
+            cy.headlessLogin(makeLoginUser(thirdUser));
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
@@ -248,11 +279,12 @@ context('New organization pipeline.', () => {
             cy.get('.cvat-header-menu-user-dropdown-organization').should('have.text', organizationParams.shortName);
             cy.createCuboid(createCuboidShape2Points);
             cy.saveJob();
+            cy.get('.cvat-spinner').should('not.exist');
         });
 
         it('The owner of the organization removes the second user from it.', () => {
-            cy.logout();
-            cy.login(firstUserName, firstUser.password);
+            cy.headlessLogin(makeLoginUser(firstUser));
+            cy.contains(firstUser.username).should('exist').and('be.visible');
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.removeMemberFromOrganization(secondUserName);
@@ -260,8 +292,7 @@ context('New organization pipeline.', () => {
         });
 
         it('The organization, project, task is no longer available to the second user.', () => {
-            cy.logout();
-            cy.login(secondUserName, secondUser.password);
+            cy.headlessLogin(makeLoginUser(secondUser));
             cy.checkOrganizationExists(organizationParams.shortName, false);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
@@ -269,14 +300,14 @@ context('New organization pipeline.', () => {
         });
 
         it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
-            cy.logout();
-            cy.getAuthKey().then((authKey) => {
-                cy.deleteUsers(authKey, [firstUserName, secondUserName]);
+            cy.headlessLogout();
+            cy.task('getAuthHeaders').then((authHeaders) => {
+                cy.deleteUsers(authHeaders, [firstUserName, secondUserName]);
             });
         });
 
         it('Login as the third user. The organization page can be opened. The job can be opened.', () => {
-            cy.login(thirdUserName, thirdUser.password);
+            cy.headlessLogin(makeLoginUser(thirdUser));
             cy.activateOrganization(organizationParams.shortName);
             cy.visit('/organization');
             cy.checkOrganizationParams(organizationParams);

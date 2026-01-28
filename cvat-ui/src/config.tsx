@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +32,7 @@ const CANVAS_WORKSPACE_MARGIN = 8;
 const CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT = 4;
 const CANVAS_WORKSPACE_PADDING = CANVAS_WORKSPACE_MARGIN / 2;
 const OUTSIDE_PIC_URL = 'https://docs.cvat.ai/images/image019.jpg';
-const DEFAULT_AWS_S3_REGIONS: string[][] = [
+const DEFAULT_AWS_REGIONS: string[][] = [
     ['us-east-1', 'US East (N. Virginia)'],
     ['us-east-2', 'US East (Ohio)'],
     ['us-west-1', 'US West (N. California)'],
@@ -108,11 +108,13 @@ const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
     ['NAM4', 'US-CENTRAL1 and US-EAST1'],
 ];
 
+const MAXIMUM_NOTIFICATION_MESSAGE_LENGTH = 600; // all above will be sent to console
 const HEALTH_CHECK_RETRIES = 10;
 const HEALTH_CHECK_PERIOD = 3000; // ms
 const HEALTH_CHECK_REQUEST_TIMEOUT = 15000; // ms
 
 const CONTROLS_LOGS_INTERVAL = 90000; // 1.5 min in ms
+const ACTIVITY_EVENTS_INTERVAL_MS = 60000;
 
 const RESET_NOTIFICATIONS_PATHS = {
     from: [
@@ -138,6 +140,22 @@ const BLACKLISTED_GO_BACK_PATHS = [
     /\/auth.+/,
 ];
 
+const PAID_PLACEHOLDER_CONFIG = {
+    url: 'https://www.cvat.ai/pricing/cloud',
+    features: {
+        qualityControl:
+        'The Quality Control feature enables effortless evaluation of annotation quality by creating' +
+        ' a Ground Truth job that works as benchmark. CVAT automatically compares all task-related jobs' +
+        ' to this benchmark, calculating annotation precision to ensure high-quality results.',
+        analyticsReport:
+        'The Analytics Report feature provides comprehensive insights into your resource, including key metrics like' +
+        ' object statistics, working time, and annotation speed. It allows you to filter data by time period,' +
+        ' subresource, or user, offering a clear view of performance trends. Additionally, it presents historical' +
+        ' job data within the resource, along with detailed charts to visualize the information.' +
+        ' This feature is perfect for those seeking in-depth analysis and better resource management.',
+    },
+};
+
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
     NO_BREAK_SPACE,
@@ -157,7 +175,7 @@ export default {
     QUICK_ISSUE_INCORRECT_POSITION_TEXT,
     QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
     DEFAULT_PROJECT_SUBSETS,
-    DEFAULT_AWS_S3_REGIONS,
+    DEFAULT_AWS_REGIONS,
     DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS,
     OUTSIDE_PIC_URL,
     DATASET_MANIFEST_GUIDE_URL,
@@ -171,6 +189,7 @@ export default {
     CANVAS_WORKSPACE_PADDING,
     CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT,
     CONTROLS_LOGS_INTERVAL,
+    ACTIVITY_EVENTS_INTERVAL_MS,
     RESET_NOTIFICATIONS_PATHS,
     BUCKET_CONTENT_KEY,
     NUMERIC_VALUE_CLAMP_THRESHOLD,
@@ -179,4 +198,6 @@ export default {
     LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT,
     REQUEST_SUCCESS_NOTIFICATION_DURATION,
     BLACKLISTED_GO_BACK_PATHS,
+    PAID_PLACEHOLDER_CONFIG,
+    MAXIMUM_NOTIFICATION_MESSAGE_LENGTH,
 };

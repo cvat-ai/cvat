@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,13 +12,14 @@ import {
     Alert,
 } from 'antd/lib';
 import Search from 'antd/lib/input/Search';
+import Empty from 'antd/lib/empty';
+import Modal from 'antd/lib/modal';
 import React, {
     useState, useMemo,
     useCallback,
 } from 'react';
 import { ShortcutScope } from 'utils/enums';
 import { KeyMap } from 'utils/mousetrap-react';
-import { Empty, Modal } from 'antd';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
@@ -73,7 +74,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
         const scopeItems = Object.values(ShortcutScope).map((scope: string) => {
             const viewFilteredItems = filteredKeyMap.filter(
                 ([, item]) => item.scope === scope,
-            );
+            ).sort(([, item1], [, item2]) => (item1.displayWeight ?? 0) - (item2.displayWeight ?? 0));
             if (viewFilteredItems.length === 0) {
                 return null;
             }

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ const project = {
     name: 'A & B',
     label: 'Tree',
     attrName: 'Kind',
-    attrVaue: 'Oak',
+    attrValue: 'Oak',
 };
 
 context('The filter in the URL is correctly escaped', () => {
@@ -26,11 +26,11 @@ context('The filter in the URL is correctly escaped', () => {
     }
 
     before(() => {
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
 
         cy.goToProjectsList();
-        cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);
+        cy.createProjects(project.name, project.label, project.attrName, project.attrValue);
         cy.openProject(project.name);
         getProjectID();
         cy.goToProjectsList();

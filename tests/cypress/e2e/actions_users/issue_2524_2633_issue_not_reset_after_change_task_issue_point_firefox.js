@@ -43,7 +43,7 @@ context('Some parts of the Redux state (issues) is not reset after changing a ta
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
         cy.createAnnotationTask(taskName.firstTaskName, labelName, attrName, textDefaultValue, archiveName);
         cy.goToTaskList();
@@ -52,8 +52,8 @@ context('Some parts of the Redux state (issues) is not reset after changing a ta
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteTasks(authKey, [taskName.firstTaskName, taskName.secondTaskName]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteTasks(authHeaders, [taskName.firstTaskName, taskName.secondTaskName]);
         });
     });
 

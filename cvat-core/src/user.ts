@@ -1,9 +1,13 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { SerializedUser } from './server-response-types';
+import { UserModifiableFields } from './server-request-types';
+import PluginRegistry from './plugins';
+import { fieldsToSnakeCase } from './common';
+import serverProxy from './server-proxy';
 
 export default class User {
     public readonly id: number;
@@ -11,13 +15,14 @@ export default class User {
     public readonly email: string;
     public readonly firstName: string;
     public readonly lastName: string;
-    public readonly groups: ('user' | 'business' | 'admin')[];
+    public readonly groups: ('user' | 'admin')[];
     public readonly lastLogin: string;
     public readonly dateJoined: string;
     public readonly isStaff: boolean;
     public readonly isSuperuser: boolean;
     public readonly isActive: boolean;
     public readonly isVerified: boolean;
+    public readonly hasAnalyticsAccess: boolean;
 
     constructor(initialData: SerializedUser) {
         const data = {
@@ -33,6 +38,7 @@ export default class User {
             is_superuser: null,
             is_active: null,
             email_verification_required: null,
+            has_analytics_access: null,
         };
 
         for (const property in data) {
@@ -80,6 +86,9 @@ export default class User {
                 isVerified: {
                     get: () => !data.email_verification_required,
                 },
+                hasAnalyticsAccess: {
+                    get: () => data.has_analytics_access,
+                },
             }),
         );
     }
@@ -98,6 +107,27 @@ export default class User {
             is_superuser: this.isSuperuser,
             is_active: this.isActive,
             email_verification_required: this.isVerified,
+            has_analytics_access: this.hasAnalyticsAccess,
         };
     }
+
+    public async save(fields: UserModifiableFields = {}): Promise<User> {
+        const result = await PluginRegistry.apiWrapper.call(this, User.prototype.save, fields);
+        return result;
+    }
 }
+
+Object.defineProperties(User.prototype.save, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(
+            fields: Parameters<typeof User.prototype.save>[0],
+        ): Promise<User> {
+            const data = fieldsToSnakeCase(fields);
+
+            const result = await serverProxy.users.update(this.id, data);
+            return new User(result);
+        },
+    },
+});

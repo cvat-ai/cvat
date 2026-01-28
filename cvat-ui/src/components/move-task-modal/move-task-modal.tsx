@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import './styles.scss';
 import React, {
     useState, useEffect, useCallback, useRef,
 } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
@@ -27,11 +27,13 @@ const core = getCore();
 function MoveTaskModal({
     onUpdateTask,
 }: {
-    onUpdateTask?: (task: Task) => Promise<void>,
+    onUpdateTask?: (task: Task) => Promise<Task>;
 }): JSX.Element {
     const dispatch = useDispatch();
-    const visible = useSelector((state: CombinedState) => state.tasks.moveTask.modalVisible);
-    const taskId = useSelector((state: CombinedState) => state.tasks.moveTask.taskId);
+    const { visible, taskId } = useSelector((state: CombinedState) => ({
+        visible: state.tasks.moveTask.modalVisible,
+        taskId: state.tasks.moveTask.taskId,
+    }), shallowEqual);
     const mounted = useRef(false);
 
     const [taskFetching, setTaskFetching] = useState(false);

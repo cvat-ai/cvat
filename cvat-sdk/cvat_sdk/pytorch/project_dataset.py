@@ -1,16 +1,15 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import os
-from typing import Callable, Container, Mapping, Optional
+from collections.abc import Callable, Container, Mapping
 
 import torch
 import torch.utils.data
 import torchvision.datasets
 
 import cvat_sdk.core
-import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
 from cvat_sdk.datasets.caching import UpdatePolicy, make_cache_manager
 from cvat_sdk.pytorch.task_dataset import TaskVisionDataset
@@ -22,7 +21,7 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
 
     The dataset contains one sample for each frame of each task in the project
     (except for tasks that are filtered out - see the description of `task_filter`
-    in the constructor). The sequence of samples is formed by concatening sequences
+    in the constructor). The sequence of samples is formed by concatenating sequences
     of samples from all included tasks in an arbitrary order that's consistent
     between executions. Each task's sequence of samples corresponds to the sequence
     of frames on the server.
@@ -36,12 +35,12 @@ class ProjectVisionDataset(torchvision.datasets.VisionDataset):
         client: cvat_sdk.core.Client,
         project_id: int,
         *,
-        transforms: Optional[Callable] = None,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+        transforms: Callable | None = None,
+        transform: Callable | None = None,
+        target_transform: Callable | None = None,
         label_name_to_index: Mapping[str, int] = None,
-        task_filter: Optional[Callable[[models.ITaskRead], bool]] = None,
-        include_subsets: Optional[Container[str]] = None,
+        task_filter: Callable[[models.ITaskRead], bool] | None = None,
+        include_subsets: Container[str] | None = None,
         update_policy: UpdatePolicy = UpdatePolicy.IF_MISSING_OR_STALE,
     ) -> None:
         """

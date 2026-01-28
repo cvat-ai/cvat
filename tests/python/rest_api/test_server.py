@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ from http import HTTPStatus
 
 import pytest
 
-from shared.utils.config import make_api_client
+from shared.utils.config import make_api_client, put_method
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -26,6 +26,10 @@ class TestGetServer:
             assert response.status == HTTPStatus.OK
             assert len(data.importers) != 0
             assert len(data.exporters) != 0
+
+    def test_method_not_allowed_for_existing_route(self, admin_user: str):
+        response = put_method(admin_user, "server/annotation/formats", data=None)
+        assert response.status_code == HTTPStatus.METHOD_NOT_ALLOWED
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

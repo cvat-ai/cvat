@@ -1,19 +1,15 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from django.db import models
 from rest_framework import serializers
 
 from cvat.apps.engine.models import Project
 from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
-from .event_type import EventTypeChoice, ProjectEvents, OrganizationEvents
-from .models import (
-    Webhook,
-    WebhookContentTypeChoice,
-    WebhookTypeChoice,
-    WebhookDelivery,
-)
+from .event_type import EventTypeChoice, OrganizationEvents, ProjectEvents
+from .models import Webhook, WebhookContentTypeChoice, WebhookDelivery, WebhookTypeChoice
 
 
 class EventTypeValidator:
@@ -35,9 +31,7 @@ class EventTypeValidator:
                 webhook_type == WebhookTypeChoice.ORGANIZATION
                 and not events.issubset(set(OrganizationEvents.events))
             ):
-                raise serializers.ValidationError(
-                    f"Invalid events list for {webhook_type} webhook"
-                )
+                raise serializers.ValidationError(f"Invalid events list for {webhook_type} webhook")
 
 
 class EventTypesSerializer(serializers.MultipleChoiceField):
@@ -58,6 +52,35 @@ class EventsSerializer(serializers.Serializer):
     events = EventTypesSerializer()
 
 
+class WebhookReadListSerializer(serializers.ListSerializer):
+    def to_representation(self, data):
+        if isinstance(data, list) and data:
+            # Optimized prefetch only for the current page
+            page: list[Webhook] = data
+
+            # Annotate page objects
+            # We do it explicitly here and not in the LIST queryset to avoid
+            # doing the same DB computations twice - one time for the page retrieval
+            # and another one for the COUNT(*) request to get the total count
+            last_delivery_ids = (
+                Webhook.objects.filter(id__in=[webhook.id for webhook in page])
+                .annotate(
+                    last_delivery_id=models.aggregates.Max("deliveries__id"),
+                )
+                .values_list("last_delivery_id", flat=True)
+            )
+            last_deliveries = WebhookDelivery.objects.filter(id__in=last_delivery_ids).defer(
+                "request", "response"  # potentially heavy fields
+            )
+            last_deliveries_by_webhook = {
+                delivery.webhook_id: delivery for delivery in last_deliveries
+            }
+            for webhook in page:
+                webhook.last_delivery = last_deliveries_by_webhook.get(webhook.id)
+
+        return super().to_representation(data)
+
+
 class WebhookReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(read_only=True, required=False, allow_null=True)
 
@@ -67,12 +90,10 @@ class WebhookReadSerializer(serializers.ModelSerializer):
     type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
     content_type = serializers.ChoiceField(choices=WebhookContentTypeChoice.choices())
 
-    last_status = serializers.IntegerField(
-        source="deliveries.last.status_code", read_only=True
-    )
+    last_status = serializers.IntegerField(source="last_delivery.status_code", read_only=True)
 
     last_delivery_date = serializers.DateTimeField(
-        source="deliveries.last.updated_date", read_only=True
+        source="last_delivery.updated_date", read_only=True
     )
 
     class Meta:
@@ -99,14 +120,13 @@ class WebhookReadSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "organization": {"allow_null": True},
         }
+        list_serializer_class = WebhookReadListSerializer
 
 
 class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     events = EventTypesSerializer(write_only=True)
 
-    project_id = serializers.IntegerField(
-        write_only=True, allow_null=True, required=False
-    )
+    project_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     def to_representation(self, instance):
         serializer = WebhookReadSerializer(instance, context=self.context)
@@ -129,8 +149,8 @@ class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         validators = [EventTypeValidator()]
 
     def create(self, validated_data):
-        if (project_id := validated_data.get('project_id')) is not None:
-            validated_data['organization'] = Project.objects.get(pk=project_id).organization
+        if (project_id := validated_data.get("project_id")) is not None:
+            validated_data["organization"] = Project.objects.get(pk=project_id).organization
 
         db_webhook = Webhook.objects.create(**validated_data)
         return db_webhook

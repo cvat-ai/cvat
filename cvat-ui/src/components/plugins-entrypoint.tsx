@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,20 +9,35 @@ import { useDispatch } from 'react-redux';
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
 import { getCore, CVATCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 import { modelsActions } from 'actions/models-actions';
-import { changeFrameAsync, updateCurrentJobAsync } from 'actions/annotation-actions';
+import { changeFrameAsync, updateCachedChunksAsync } from 'actions/annotation-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 import { getCVATStore } from 'cvat-store';
+import { makeBulkOperationAsync } from 'actions/bulk-actions';
 
 const core = getCore();
 
 export type PluginActionCreators = {
     getModelsSuccess: typeof modelsActions['getModelsSuccess'],
     changeFrameAsync: typeof changeFrameAsync,
+    updateCachedChunksAsync: typeof updateCachedChunksAsync,
     addUIComponent: typeof pluginActions['addUIComponent'],
     removeUIComponent: typeof pluginActions['removeUIComponent'],
+    updateUIComponent: typeof pluginActions['updateUIComponent'],
+    revokeUIComponent: typeof pluginActions['revokeUIComponent'],
     addUICallback: typeof pluginActions['addUICallback'],
     removeUICallback: typeof pluginActions['removeUICallback'],
-    updateCurrentJobAsync: typeof updateCurrentJobAsync,
+    updateJobAsync: typeof updateJobAsync,
+    makeBulkOperationAsync: typeof makeBulkOperationAsync,
 };
+
+export interface ComponentBuilderArgs {
+    dispatch: Dispatch<AnyAction>;
+    REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT;
+    REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT;
+    actionCreators: PluginActionCreators;
+    core: CVATCore;
+    store: ReturnType<typeof getCVATStore>;
+}
 
 export type ComponentBuilder = ({
     dispatch,
@@ -31,20 +46,7 @@ export type ComponentBuilder = ({
     actionCreators,
     core,
     store,
-}: {
-    dispatch: Dispatch<AnyAction>,
-    /**
-     * @deprecated Please, use actionCreators.addUIComponent instead
-    */
-    REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
-    /**
-     * @deprecated Please, use actionCreators.removeUIComponent instead
-    */
-    REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
-    actionCreators: PluginActionCreators,
-    core: CVATCore,
-    store: ReturnType<typeof getCVATStore>
-}) => {
+}: ComponentBuilderArgs) => {
     name: string;
     destructor: CallableFunction;
     globalStateDidUpdate?: CallableFunction;
@@ -68,18 +70,26 @@ function PluginEntrypoint(): null {
                         REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
                         actionCreators: {
                             changeFrameAsync,
-                            updateCurrentJobAsync,
+                            updateCachedChunksAsync,
+                            updateJobAsync,
+                            makeBulkOperationAsync,
                             getModelsSuccess: modelsActions.getModelsSuccess,
                             addUICallback: pluginActions.addUICallback,
                             removeUICallback: pluginActions.removeUICallback,
                             addUIComponent: pluginActions.addUIComponent,
                             removeUIComponent: pluginActions.removeUIComponent,
+                            updateUIComponent: pluginActions.updateUIComponent,
+                            revokeUIComponent: pluginActions.revokeUIComponent,
                         },
                         core,
                         store: getCVATStore(),
                     });
 
                     dispatch(pluginActions.addPlugin(name, destructor, globalStateDidUpdate));
+                    window.document.dispatchEvent(new CustomEvent('plugins.registered', {
+                        detail: { name },
+                        bubbles: true,
+                    }));
                 },
             }),
         });

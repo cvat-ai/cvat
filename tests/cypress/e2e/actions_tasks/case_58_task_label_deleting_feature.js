@@ -23,7 +23,7 @@ context('Delete a label from a task.', () => {
     const directoryToArchive = imagesFolder;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -44,7 +44,7 @@ context('Delete a label from a task.', () => {
         it('Try to open a job with no labels. Successful.', () => {
             cy.openJob();
             cy.get('.cvat-disabled-canvas-control').should('exist');
-            cy.contains('.cvat-notification-no-labels', 'does not contain any label').should('exist').and('be.visible');
+            cy.contains('.cvat-notification-no-labels', 'does not contain any labels').should('exist').and('be.visible');
         });
     });
 });

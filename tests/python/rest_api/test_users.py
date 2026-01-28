@@ -1,11 +1,11 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
-import typing
 from http import HTTPStatus
+from typing import Literal
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -23,7 +23,7 @@ class TestGetUsers:
         self,
         user,
         data,
-        id_: typing.Union[typing.Literal["self"], int, None] = None,
+        id_: Literal["self"] | int | None = None,
         *,
         exclude_paths="",
         **kwargs,
@@ -45,9 +45,7 @@ class TestGetUsers:
 
         assert DeepDiff(data, response_data, ignore_order=True, exclude_paths=exclude_paths) == {}
 
-    def _test_cannot_see(
-        self, user, id_: typing.Union[typing.Literal["self"], int, None] = None, **kwargs
-    ):
+    def _test_cannot_see(self, user, id_: Literal["self"] | int | None = None, **kwargs):
         with make_api_client(user) as api_client:
             # TODO: refactor into several functions
             if id_ == "self":

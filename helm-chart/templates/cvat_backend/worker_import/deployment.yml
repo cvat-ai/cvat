@@ -23,10 +23,7 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "cvat.labels" . | nindent 6 }}
-      {{- with merge $localValues.labels .Values.cvat.backend.labels }}
-      {{- toYaml . | nindent 6 }}
-      {{- end }}
+      {{- include "cvat.selectorLabels" . | nindent 6 }}
       app: cvat-app
       tier: backend
       component: worker-import
@@ -54,17 +51,19 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["run", "worker.import"]
+          args:
+          - "run"
+          - "worker"
+          - "import"
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          {{- $probeArgs := list "import" -}}
+          {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
+          {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
           volumeMounts:
-          {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
-          - mountPath: /home/django/data/cache
-            name: cvat-backend-per-service-cache
-          {{- end }}
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -74,15 +73,14 @@ spec:
           - mountPath: /home/django/logs
             name: cvat-backend-data
             subPath: logs
-          - mountPath: /home/django/models
-            name: cvat-backend-data
-            subPath: models
           - mountPath: /home/django/tmp_storage
             name: cvat-backend-data
             subPath: tmp_storage
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          securityContext:
+            runAsNonRoot: true
       initContainers:
         {{- include "cvat.backend.initContainers" . | nindent 8 }}
       {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
@@ -98,10 +96,6 @@ spec:
         - name: cvat-backend-data
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-backend-data"
-        {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
-        - name: cvat-backend-per-service-cache
-          emptyDir: {}
-        {{- end }}
         {{- end }}
         {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
         {{- toYaml . | nindent 8 }}

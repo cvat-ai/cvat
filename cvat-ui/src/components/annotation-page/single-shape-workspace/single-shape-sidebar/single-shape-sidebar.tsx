@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,19 +18,26 @@ import Alert from 'antd/lib/alert';
 import Button from 'antd/lib/button';
 import message from 'antd/lib/message';
 
-import { CombinedState, NavigationType, ObjectType } from 'reducers';
+import {
+    ActiveControl, CombinedState, NavigationType,
+} from 'reducers';
+import { labelShapeType } from 'reducers/annotation-reducer';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { Job, Label, LabelType } from 'cvat-core-wrapper';
+import {
+    Job, Label, LabelType, ObjectType, ShapeType,
+} from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import {
     rememberObject, changeFrameAsync, setNavigationType,
     removeObjectAsync, finishCurrentJobAsync,
+    changeHideActiveObjectAsync, updateActiveControl, ShapeTypeToControl,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { finishDraw, finishDrawAvailable } from 'utils/drawing';
 
 enum ReducerActionType {
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
@@ -185,6 +192,12 @@ const componentShortcuts = {
         sequences: ['del', 'shift+del'],
         scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
     },
+    HIDE_MASK_SINGLE_SHAPE: {
+        name: 'Hide mask',
+        description: 'Hide currently edited mask',
+        sequences: ['h'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -203,6 +216,9 @@ function SingleShapeSidebar(): JSX.Element {
         navigationType,
         annotations,
         activatedStateID,
+        editedState,
+        activeControl,
+        activeObjectHidden,
     } = useSelector((_state: CombinedState) => ({
         isCanvasReady: _state.annotation.canvas.ready,
         jobInstance: _state.annotation.job.instance as Job,
@@ -214,14 +230,17 @@ function SingleShapeSidebar(): JSX.Element {
         navigationType: _state.annotation.player.navigationType,
         annotations: _state.annotation.annotations.states,
         activatedStateID: _state.annotation.annotations.activatedStateID,
+        editedState: _state.annotation.editing.objectState,
+        activeControl: _state.annotation.canvas.activeControl,
+        activeObjectHidden: _state.annotation.canvas.activeObjectHidden,
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
         autoNextFrame: true,
         nextFrame: null,
         saveOnFinish: true,
-        pointsCountIsPredefined: true,
-        pointsCount: defaultPointsCount || 1,
+        pointsCountIsPredefined: defaultPointsCount !== null,
+        pointsCount: defaultPointsCount ?? 1,
         labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG && label.type !== LabelType.SKELETON),
         label: null,
         labelType: LabelType.ANY,
@@ -234,11 +253,15 @@ function SingleShapeSidebar(): JSX.Element {
     canvasInitializerRef.current = (): void => {
         const canvas = store.getState().annotation.canvas.instance as Canvas;
         if (isCanvasReady && canvas.mode() !== CanvasMode.DRAW && state.label && state.labelType !== LabelType.ANY) {
+            appDispatch(updateActiveControl(
+                ShapeTypeToControl[state.labelType],
+            ));
             // we remember active object type and active label
             // to assign these values in default drawdone event listener
             appDispatch(rememberObject({
                 activeObjectType: ObjectType.SHAPE,
                 activeLabelID: state.label.id,
+                activeShapeType: labelShapeType(state.labelType),
             }));
 
             canvas.draw({
@@ -273,22 +296,28 @@ function SingleShapeSidebar(): JSX.Element {
         if (typeof state.nextFrame === 'number') {
             appDispatch(changeFrameAsync(state.nextFrame));
         } else if ((forceSave || state.saveOnFinish) && !savingRef.current) {
+            const finishDrawing = finishDrawAvailable(activeControl);
+            if (finishDrawing) {
+                const canvas = store.getState().annotation.canvas.instance as Canvas;
+                finishDraw(canvas, activeControl);
+            }
+
             savingRef.current = true;
 
-            appDispatch(finishCurrentJobAsync()).then(() => {
+            appDispatch(finishCurrentJobAsync(() => {
                 message.open({
                     duration: 1,
                     type: 'success',
                     content: 'You tagged the job as completed',
                     className: 'cvat-annotation-job-finished-success',
                 });
-            }).finally(() => {
+            })).finally(() => {
                 appDispatch(setNavigationType(NavigationType.REGULAR));
                 dispatch(actionCreators.switchAutoNextFrame(false));
                 savingRef.current = false;
             });
         }
-    }, [state.saveOnFinish, state.nextFrame, jobInstance]);
+    }, [state.saveOnFinish, state.nextFrame, jobInstance, activeControl]);
 
     useEffect(() => {
         const defaultLabelInstance = defaultLabel ? state.labels
@@ -388,6 +417,13 @@ function SingleShapeSidebar(): JSX.Element {
                 appDispatch(removeObjectAsync(objectStateToRemove, event?.shiftKey || false));
             }
         },
+        HIDE_MASK_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            if (editedState?.shapeType === ShapeType.MASK || activeControl === ActiveControl.DRAW_MASK) {
+                const hide = editedState ? !editedState.hidden : !activeObjectHidden;
+                appDispatch(changeHideActiveObjectAsync(hide));
+            }
+        },
     };
 
     if (!state.labels.length) {
@@ -470,7 +506,7 @@ function SingleShapeSidebar(): JSX.Element {
                                                 Press
                                                 <Text strong>
                                                     {` ${
-                                                        normalizedKeyMap.CANCEL_SINGLE_SHAPE_CONTROLS
+                                                        normalizedKeyMap.CANCEL_SINGLE_SHAPE
                                                     } `}
                                                 </Text>
                                                 to reset drawing process
@@ -484,7 +520,7 @@ function SingleShapeSidebar(): JSX.Element {
                                                 Press
                                                 <Text strong>
                                                     {` ${
-                                                        normalizedKeyMap.SWITCH_DRAW_MODE_SINGLE_SHAPE_CONTROLS
+                                                        normalizedKeyMap.SWITCH_DRAW_MODE_SINGLE_SHAPE
                                                     } `}
                                                 </Text>
                                                 to finish drawing process
@@ -599,7 +635,7 @@ function SingleShapeSidebar(): JSX.Element {
                 </Col>
             </Row>
             { isPolylabel && (
-                <Row className='cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox'>
+                <Row className='cvat-single-shape-annotation-sidebar-predefined-points-count-checkbox'>
                     <Col>
                         <Checkbox
                             checked={state.pointsCountIsPredefined}

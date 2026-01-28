@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,14 +7,14 @@ import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Optional, Tuple
 
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
+from cvat_sdk.api_client.rest import RESTClientObject
+from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.proxies.types import Location
-from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
@@ -30,9 +30,10 @@ class TestTaskUsecases(TestDatasetExport):
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_login: tuple[Client, str],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_stdout: io.StringIO,
+        restore_redis_ondisk_per_function,
     ):
         self.tmp_path = tmp_path
         logger, self.logger_stream = fxt_logger
@@ -179,7 +180,7 @@ class TestTaskUsecases(TestDatasetExport):
             ],
         }
 
-        with pytest.raises(exceptions.ApiException) as capture:
+        with pytest.raises(BackgroundRequestException) as capture:
             self.client.tasks.create_from_data(
                 spec=task_spec,
                 resource_type=ResourceType.LOCAL,
@@ -301,7 +302,7 @@ class TestTaskUsecases(TestDatasetExport):
         format_name: str,
         include_images: bool,
         task: Task,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):
@@ -324,13 +325,29 @@ class TestTaskUsecases(TestDatasetExport):
             path = self.tmp_path / f"dataset-{i}.zip"
             fxt_new_task.export_dataset(
                 format_name="CVAT for images 1.1",
-                filename=self.tmp_path / f"dataset-{i}.zip",
+                filename=path,
                 include_images=False,
                 pbar=pbar,
             )
             assert self.stdout.getvalue() == ""
             assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
             assert path.is_file()
+
+    def test_can_download_dataset_with_server_filename(self, fxt_new_task: Task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        output_dir = self.tmp_path
+        output_path = fxt_new_task.export_dataset(
+            format_name="CVAT for images 1.1",
+            filename=output_dir,
+            include_images=False,
+            pbar=pbar,
+        )
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert output_path.is_relative_to(output_dir)
+        assert output_path.is_file()
+        assert self.stdout.getvalue() == ""
 
     def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
@@ -343,6 +360,20 @@ class TestTaskUsecases(TestDatasetExport):
 
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert path.is_file()
+        assert self.stdout.getvalue() == ""
+
+    def test_can_download_backup_with_server_filename(self, fxt_new_task: Task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task_id = fxt_new_task.id
+        output_dir = self.tmp_path
+        task = self.client.tasks.retrieve(task_id)
+        output_path = task.download_backup(filename=output_dir, pbar=pbar)
+
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert output_path.is_relative_to(output_dir)
+        assert output_path.is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_download_preview(self, fxt_new_task: Task):
@@ -363,7 +394,7 @@ class TestTaskUsecases(TestDatasetExport):
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     @pytest.mark.parametrize("image_extension", (None, "bmp"))
     def test_can_download_frames(
-        self, fxt_new_task: Task, quality: str, image_extension: Optional[str]
+        self, fxt_new_task: Task, quality: str, image_extension: str | None
     ):
         fxt_new_task.download_frames(
             [0],
@@ -396,15 +427,28 @@ class TestTaskUsecases(TestDatasetExport):
             assert len(chunk_zip.infolist()) == 1
         assert self.stdout.getvalue() == ""
 
-    def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
+    @pytest.mark.parametrize("convert", [True, False])
+    def test_can_upload_annotations(
+        self, fxt_new_task: Task, fxt_camvid_dataset: Path, convert: bool
+    ):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        fxt_new_task.import_annotations(format_name="COCO 1.0", filename=fxt_coco_file, pbar=pbar)
+        fxt_new_task.import_annotations(
+            format_name="CamVid 1.0",
+            filename=fxt_camvid_dataset,
+            conv_mask_to_poly=convert,
+            pbar=pbar,
+        )
 
         assert "uploaded" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+        imported_annotations = fxt_new_task.get_jobs()[0].get_annotations()
+        assert all(
+            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+        )
 
     def _test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
         pbar_out = io.StringIO()
@@ -425,17 +469,18 @@ class TestTaskUsecases(TestDatasetExport):
     def test_can_create_from_backup_in_chunks(
         self, monkeypatch: pytest.MonkeyPatch, fxt_new_task: Task, fxt_backup_file: Path
     ):
-        monkeypatch.setattr(Uploader, "_CHUNK_SIZE", 100)
+        monkeypatch.setattr("cvat_sdk.core.uploading.TUS_CHUNK_SIZE", 100)
 
         num_requests = 0
-        original_do_request = _MyTusUploader._do_request
+        original_request = RESTClientObject.request
 
-        def counting_do_request(uploader):
+        def counting_request(self, method, *args, headers, **kwargs):
             nonlocal num_requests
-            num_requests += 1
-            original_do_request(uploader)
+            if method.upper() == "PATCH" and "Upload-Offset" in headers:
+                num_requests += 1
+            return original_request(self, method, *args, headers=headers, **kwargs)
 
-        monkeypatch.setattr(_MyTusUploader, "_do_request", counting_do_request)
+        monkeypatch.setattr(RESTClientObject, "request", counting_request)
 
         self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
 

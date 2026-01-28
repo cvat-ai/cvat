@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,7 +18,7 @@ metadata:
 
 spec:
   description: Interactive object segmentation with Segment-Anything
-  runtime: 'python:3.8'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -39,22 +39,20 @@ spec:
           value: /opt/nuclio/sam
       # install basic deps
         - kind: RUN
-          value: apt-get update && apt-get -y install curl git python3 python3-pip ffmpeg libsm6 libxext6
+          value: apt-get update && apt-get -y install curl git python3 python3-pip python-is-python3 ffmpeg libsm6 libxext6 && rm -rf /var/lib/apt/lists/*
       # install sam deps
         - kind: RUN
-          value: pip3 install torch torchvision torchaudio pycocotools matplotlib onnxruntime onnx
+          value: pip3 install torch torchvision torchaudio pycocotools matplotlib onnxruntime onnx --no-cache-dir
       # install sam code
         - kind: RUN
-          value: pip3 install git+https://github.com/facebookresearch/segment-anything.git
+          value: pip3 install git+https://github.com/facebookresearch/segment-anything.git --no-cache-dir
       # download sam weights
         - kind: RUN
           value: curl -O https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
-      # map pip3 and python3 to pip and python
-        - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
+
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

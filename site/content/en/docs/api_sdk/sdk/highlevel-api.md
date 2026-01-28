@@ -24,7 +24,7 @@ from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
 # Create a Client instance bound to a local server and authenticate using basic auth
-with make_client(host="localhost", credentials=('user', 'password')) as client:
+with make_client("http://localhost", credentials=('user', 'password')) as client:
     # Let's create a new task.
 
     # Fill in task parameters first.
@@ -88,10 +88,9 @@ It is the starting point for using CVAT SDK.
 A `Client` instance allows you to:
 - configure connection options with the `Config` class
 - check server API compatibility with the current SDK version
-- deduce server connection scheme (`https` or `http`) automatically
 - manage user session with the `login()`, `logout()` and other methods
-- obtain Repository objects with the `users`, `tasks`, `jobs` and other members
-- reach to lower-level APIs with the corresponding members
+- obtain high-level server object wrappers with the `users`, `tasks`, `jobs` and other members
+- reach lower-level APIs to send raw requests, typically via the `api` member of the object
 
 An instance of `Client` can be created directly by calling the class constructor
 or with the utility function `cvat_sdk.core.client.make_client()` which can handle
@@ -108,7 +107,7 @@ You can create and start using a `Client` instance this way:
 ```python
 from cvat_sdk import make_client
 
-with make_client('localhost', port='8080', credentials=('user', 'password')) as client:
+with make_client("https://app.cvat.ai", credentials=("user", "password")) as client:
     ...
 ```
 
@@ -123,23 +122,81 @@ from cvat_sdk import Config, Client
 config = Config()
 # set up some config fields ...
 
-with Client('localhost:8080', config=config) as client:
-    client.login(('user', 'password'))
+with Client("https://app.cvat.ai", config=config) as client:
+    client.login(("user", "password"))
     ...
 ```
 
-You can specify server address both with and without the scheme. If the scheme is omitted,
-it will be deduced automatically.
-
-> The checks are performed in the following
-order: `https` (with the default port 8080), `http` (with the default port 80).
-In some cases it may lead to incorrect results - e.g. you have 2 servers running on the
-same host at default ports. In such cases just specify the schema manually: `https://localhost`.
+{{% alert title="Note" color="primary" %}}
+Historically, the SDK has allowed the URL scheme (`http:` or `https:`)
+to be omitted, and would attempt to automatically detect the protocol.
+This behavior is deprecated due to being inherently insecure,
+and will be removed in a future version.
+To avoid future breakage, make sure to specify the scheme explicitly.
+{{% /alert %}}
 
 When the server is located, its version is checked. If an unsupported version is found,
 an error can be raised or suppressed (controlled by `config.allow_unsupported_server`).
 If the error is suppressed, some SDK functions may not work as expected with this server.
 By default, a warning is raised and the error is suppressed.
+
+### Authentication
+
+High-level SDK supports 2 authentication options:
+- Personal Access Token (PAT) authentication, with an access token value
+- Password authentication, with a username and a password
+
+Personal Access Token (PAT) authentication requires a token that can be configured
+in the user settings section in the UI. It is the recommended authentication option
+for most API clients. {{< ilink "/docs/api_sdk/access_tokens" "Read more." >}}
+
+Password authentication requires a username and password pair. For better security it's
+recommended to use a Personal Access Token (PAT) instead, if possible.
+
+{{< tabpane text=true >}}
+
+{{%tab header="Personal Access Token (PAT) authentication" %}}
+
+```python
+from cvat_sdk import make_client
+
+with make_client("https://app.cvat.ai", access_token="token") as client:
+    ...
+```
+
+{{% /tab %}}
+
+{{%tab header="Password authentication" %}}
+
+```python
+from cvat_sdk import make_client
+
+with make_client("https://app.cvat.ai", credentials=("user", "password")) as client:
+    ...
+```
+
+{{% /tab %}}
+
+{{< /tabpane >}}
+
+With the `make_client()` function, the `Client` object create will perform authentication
+automatically for you. If you want more fine-grained control over the requests,
+there are several methods available:
+- `client.login()` - logs the user in using the specified credentials
+- `client.logout()` - logs the user out
+- `client.has_credentials()` - allows to check whether the `client` object is authenticated
+
+Example:
+```python
+from cvat_sdk.core.client import Client, AccessTokenCredentials
+
+with Client("https://app.cvat.ai") as client:
+    client.login(AccessTokenCredentials("token"))
+    # ...
+```
+
+If the `Client` is used as a context manager (with the `with` keyword), it automatically calls
+`logout()` before exiting.
 
 ### Users and organizations
 

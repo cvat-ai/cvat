@@ -1,11 +1,13 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 @import 'base';
 
 .cvat-organization-page {
+    display: flex;
+    flex-direction: column;
     height: 100%;
     padding-top: $grid-unit-size * 2;
     width: $grid-unit-size * 120;
@@ -82,23 +84,14 @@
         }
     }
 
-    > div:nth-child(2) {
+    .cvat-organization-members-list {
+        flex-grow: 1;
         overflow: auto;
-        height: auto;
-        max-height: 60%;
         margin-top: $grid-unit-size;
     }
 
-    @media screen and (height >= 900px) {
-        > div:nth-child(2) {
-            max-height: 65%;
-        }
-    }
-
-    @media screen and (height >= 1080px) {
-        > div:nth-child(2) {
-            max-height: 70%;
-        }
+    .cvat-organization-control-bar {
+        margin-top: $grid-unit-size;
     }
 }
 
@@ -120,10 +113,6 @@
     > .cvat-organization-member-item-dates {
         font-size: 12px;
         display: grid;
-    }
-
-    > .cvat-organization-member-item-remove {
-        text-align: center;
     }
 
     > .cvat-organization-member-item-role {
@@ -152,4 +141,20 @@
 
 .cvat-organization-page-actions-button {
     padding-right: $grid-unit-size * 0.5;
+}
+
+.cvat-organization-page-filters-wrapper {
+    margin-top: $grid-unit-size * 2;
+
+     > div {
+        display: flex;
+
+        > button:not(:last-child) {
+            margin-right: $grid-unit-size;
+        }
+     }
+}
+
+.cvat-organization-member-role-selector {
+    min-width: $grid-unit-size * 12;
 }

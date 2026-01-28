@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,8 +6,9 @@ import { SerializedQualityReportData } from './server-response-types';
 import User from './user';
 
 export interface QualitySummary {
-    frameCount: number;
-    frameSharePercent: number;
+    totalFrames: number;
+    validationFrames: number;
+    validationFrameShare: number;
     conflictCount: number;
     validCount: number;
     dsCount: number;
@@ -27,6 +28,19 @@ export interface QualitySummary {
         mismatchingGroups: number;
         coveredAnnotation: number;
     }
+    tasks: {
+        total: number;
+        custom: number;
+        notConfigured: number;
+        excluded: number;
+        included: number;
+    } | null;
+    jobs: {
+        total: number;
+        notCheckable: number;
+        excluded: number;
+        included: number;
+    } | null;
 }
 
 export default class QualityReport {
@@ -91,15 +105,16 @@ export default class QualityReport {
 
     get summary(): QualitySummary {
         return {
-            frameCount: this.#summary.frame_count,
-            frameSharePercent: this.#summary.frame_share * 100,
+            totalFrames: this.#summary.total_frames,
+            validationFrames: this.#summary.validation_frames,
+            validationFrameShare: this.#summary.validation_frame_share,
             conflictCount: this.#summary.conflict_count,
             validCount: this.#summary.valid_count,
             dsCount: this.#summary.ds_count,
             gtCount: this.#summary.gt_count,
-            accuracy: (this.#summary.valid_count / this.#summary.total_count) * 100,
-            precision: (this.#summary.valid_count / this.#summary.gt_count) * 100,
-            recall: (this.#summary.valid_count / this.#summary.ds_count) * 100,
+            accuracy: this.#summary.accuracy,
+            precision: this.#summary.precision,
+            recall: this.#summary.recall,
             conflictsByType: {
                 extraAnnotations: this.#summary.conflicts_by_type?.extra_annotation,
                 missingAnnotations: this.#summary.conflicts_by_type?.missing_annotation,
@@ -112,6 +127,19 @@ export default class QualityReport {
             },
             errorCount: this.#summary.error_count,
             warningCount: this.#summary.warning_count,
+            tasks: this.#summary.tasks ? {
+                total: this.#summary.tasks.total,
+                custom: this.#summary.tasks.custom,
+                notConfigured: this.#summary.tasks.not_configured,
+                excluded: this.#summary.tasks.excluded,
+                included: this.#summary.tasks.included,
+            } : null,
+            jobs: this.#summary.jobs ? {
+                total: this.#summary.jobs.total,
+                notCheckable: this.#summary.jobs.not_checkable,
+                excluded: this.#summary.jobs.excluded,
+                included: this.#summary.jobs.included,
+            } : null,
         };
     }
 }

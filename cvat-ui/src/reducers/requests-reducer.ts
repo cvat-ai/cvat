@@ -1,26 +1,30 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
-import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
-import { RequestsActionsTypes, RequestsActions } from 'actions/requests-actions';
-import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
-import { RequestsState } from '.';
+import { AnyAction } from 'redux';
+import { BoundariesActionTypes } from 'actions/boundaries-actions';
+import { RequestsActionsTypes } from 'actions/requests-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
+import { SelectionActionsTypes } from 'actions/selection-actions';
+import { RequestsState, SelectedResourceType } from '.';
 
 const defaultState: RequestsState = {
     initialized: false,
     fetching: false,
     requests: {},
-    disabled: {},
+    cancelled: {},
+    selected: [],
     query: {
         page: 1,
+        pageSize: 10,
     },
 };
 
 export default function (
     state = defaultState,
-    action: RequestsActions | AuthActions | BoundariesActions,
+    action: AnyAction,
 ): RequestsState {
     switch (action.type) {
         case RequestsActionsTypes.GET_REQUESTS: {
@@ -34,12 +38,12 @@ export default function (
                 },
             };
         }
-        case RequestsActionsTypes.DISABLE_REQUEST: {
+        case RequestsActionsTypes.CANCEL_REQUEST_SUCCESS: {
             const { request } = action.payload;
             return {
                 ...state,
-                disabled: {
-                    ...state.disabled,
+                cancelled: {
+                    ...state.cancelled,
                     [request.id]: true,
                 },
             };
@@ -60,7 +64,7 @@ export default function (
             };
         }
         case RequestsActionsTypes.GET_REQUEST_STATUS_SUCCESS: {
-            const { requests, disabled } = state;
+            const { requests, cancelled } = state;
 
             return {
                 ...state,
@@ -68,12 +72,33 @@ export default function (
                     ...requests,
                     [action.payload.request.id]: action.payload.request,
                 },
-                disabled: _.omit(disabled, action.payload.request.id),
+                cancelled: _.omit(cancelled, action.payload.request.id),
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.REQUESTS) {
+                return {
+                    ...state,
+                    selected: state.selected.filter((id: string) => !action.payload.resourceIds.includes(id)),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.REQUESTS) {
+                return {
+                    ...state,
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selected: [] };
         }
         default: {
             return state;

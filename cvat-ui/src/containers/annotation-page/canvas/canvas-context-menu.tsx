@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
 
 import { connect } from 'react-redux';
 import {
-    CombinedState, ContextMenuType, NewIssueSource, ShapeType, Workspace,
+    CombinedState, ContextMenuType, NewIssueSource, Workspace,
 } from 'reducers';
 
 import CanvasContextMenuComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-context-menu';
@@ -16,7 +16,7 @@ import { copyShape, pasteShapeAsync, updateCanvasContextMenu } from 'actions/ann
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ObjectState, QualityConflict } from 'cvat-core-wrapper';
+import { ObjectState, ShapeType, QualityConflict } from 'cvat-core-wrapper';
 
 interface OwnProps {
     readonly?: boolean;

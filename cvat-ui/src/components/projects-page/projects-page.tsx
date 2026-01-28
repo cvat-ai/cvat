@@ -1,17 +1,19 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import Spin from 'antd/lib/spin';
-import { CombinedState, Indexable, ProjectsQuery } from 'reducers';
+import { CombinedState, ProjectsQuery, SelectedResourceType } from 'reducers';
 import { getProjectsAsync } from 'actions/projects-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { anySearch } from 'utils/any-search';
+import { useResourceQuery } from 'utils/hooks';
+import { selectionActions } from 'actions/selection-actions';
 import EmptyListComponent from './empty-list';
 import TopBarComponent from './top-bar';
 import ProjectListComponent from './project-list';
@@ -19,22 +21,37 @@ import ProjectListComponent from './project-list';
 export default function ProjectsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
-    const fetching = useSelector((state: CombinedState) => state.projects.fetching);
-    const count = useSelector((state: CombinedState) => state.projects.current.length);
-    const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
-    const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
-    const importing = useSelector((state: CombinedState) => state.import.projects.backup.importing);
+    const {
+        fetching,
+        count,
+        query,
+        tasksQuery,
+        importing,
+        bulkFetching,
+        currentProjects,
+        deletedProjects,
+        selectedCount,
+    } = useSelector((state: CombinedState) => ({
+        fetching: state.projects.fetching,
+        count: state.projects.current.length,
+        query: state.projects.gettingQuery,
+        tasksQuery: state.projects.tasksGettingQuery,
+        importing: state.import.projects.backup.importing,
+        bulkFetching: state.bulkActions.fetching,
+        currentProjects: state.projects.current,
+        deletedProjects: state.projects.activities.deletes,
+        selectedCount: state.projects.selected.length,
+    }), shallowEqual);
     const [isMounted, setIsMounted] = useState(false);
     const isAnySearch = anySearch<ProjectsQuery>(query);
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    const selectableProjectIds = currentProjects
+        .map((p) => p.id).filter((id) => !deletedProjects[id]);
+    const onSelectAll = useCallback(() => {
+        dispatch(selectionActions.selectResources(selectableProjectIds, SelectedResourceType.PROJECTS));
+    }, [selectableProjectIds]);
+
+    const updatedQuery = useResourceQuery<ProjectsQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
         dispatch(getProjectsAsync({ ...updatedQuery }));
@@ -83,8 +100,10 @@ export default function ProjectsPageComponent(): JSX.Element {
                 }}
                 query={updatedQuery}
                 importing={importing}
+                selectedCount={selectedCount}
+                onSelectAll={onSelectAll}
             />
-            { fetching ? (
+            { fetching && !bulkFetching ? (
                 <div className='cvat-empty-project-list'>
                     <Spin size='large' className='cvat-spinner' />
                 </div>

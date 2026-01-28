@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,6 +7,7 @@
 
 export const labelName = 'Main task';
 export const taskName = `New annotation task for ${labelName}`;
+export const CLIPBOARD_ALIAS = 'copyTextToClipboard';
 export const attrName = `Attr for ${labelName}`;
 export const textDefaultValue = 'Some default value for type Text';
 export const imagesCount = 50;
@@ -34,31 +35,39 @@ export const multiAttrParams = {
     type: 'Text',
 };
 
-it('Prepare to testing', () => {
-    cy.visit('/');
-    cy.login();
-    cy.get('.cvat-tasks-page').should('exist');
-    const listItems = [];
-    cy.document().then((doc) => {
-        const collection = Array.from(doc.querySelectorAll('.cvat-item-task-name'));
-        for (let i = 0; i < collection.length; i++) {
-            listItems.push(collection[i].innerText);
-        }
-        if (listItems.indexOf(taskName) === -1) {
-            cy.task('log', "A task doesn't exist. Creating.");
-            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-            cy.createZipArchive(directoryToArchive, archivePath);
-            cy.createAnnotationTask(
-                taskName,
-                labelName,
-                attrName,
-                textDefaultValue,
-                archiveName,
-                multiAttrParams,
-                advancedConfigurationParams,
-            );
-        } else {
-            cy.task('log', 'The task exist. Skipping creation.');
-        }
-    });
-});
+export class ClipboardCtx {
+    constructor(selector) {
+        Cypress.automation('remote:debugger:protocol', {
+            command: 'Browser.grantPermissions',
+            params: {
+                permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
+                origin: window.location.origin,
+            },
+        });
+
+        this.alias = 'copyTextToClipboard';
+        this.ref = '@copyTextToClipboard';
+        this.button = selector;
+        this.value = null;
+    }
+
+    init() {
+        cy.window().its('navigator.clipboard').then((clipboard) => {
+            cy.spy(clipboard, 'writeText').as(this.alias);
+        });
+    }
+
+    get spy() {
+        return cy.get(this.ref);
+    }
+
+    copy() {
+        cy.get(this.button).click();
+        return this.spy.should('be.called').then((stub) => {
+            const last = stub.args.length - 1;
+            const actualValue = stub.args[last][0];
+            this.value = actualValue;
+            return cy.wrap(this.value);
+        });
+    }
+}

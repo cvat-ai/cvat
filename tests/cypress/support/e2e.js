@@ -1,8 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+require('allure-cypress');
 require('./commands');
 require('./commands_projects');
 require('./commands_review_pipeline');

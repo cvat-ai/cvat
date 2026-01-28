@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -61,6 +61,7 @@ context('Group features', () => {
     const trackSidebarItemArray = ['#cvat-objects-sidebar-state-item-3', '#cvat-objects-sidebar-state-item-4'];
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
@@ -235,13 +236,12 @@ context('Group features', () => {
                 cy.get(groupedShape).should('have.attr', 'stroke', `#${yellowHex}`);
             }
             for (const groupedSidebarItemShape of shapeSidebarItemArray) {
-                cy.get(groupedSidebarItemShape)
-                    .should('have.attr', 'style')
-                    .and('contain', `background-color: rgba(${yellowRgb}`);
+                cy.get(groupedSidebarItemShape).invoke('css', 'background-color')
+                    .should('contain', `rgba(${yellowRgb}`);
             }
         });
 
-        it('Try to change color group for third onject. Color not changed.', () => {
+        it('Try to change color group for third object. Color not changed.', () => {
             changeGroupColor('#cvat-objects-sidebar-state-item-3', yellowHex);
             cy.get('#cvat_canvas_shape_3').should('have.attr', 'stroke', defaultGroupColorHex);
             cy.get('#cvat-objects-sidebar-state-item-3')

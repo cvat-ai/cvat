@@ -20,13 +20,15 @@ the server calling REST API directly (as it done by users).
 ## How to run?
 **Initial steps**
 
+1. On Debian/Ubuntu, make sure that your `$USER` is in `docker` group:
+   ```shell
+   sudo usermod -aG docker $USER
+   ```
 1. Follow [this guide](../../site/content/en/docs/api_sdk/sdk/developer-guide.md) to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
-   ```
+   ```shell
    pip install -r ./tests/python/requirements.txt
-   pip install -e ./cvat-sdk
-   pip install -e ./cvat-cli
    ```
 1. Stop any other CVAT containers which you run previously. They keep ports
 which are used by containers for the testing system.
@@ -43,11 +45,6 @@ which are used by containers for the testing system.
   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
   to get more information about tests running.
 
-- Run tests to check the functionality of limiting active jobs in a queue per user:
-
-  ```shell
-  ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
-  ```
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already
@@ -85,8 +82,12 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign --exclude=auth.permission --exclude=contenttypes --exclude=django_rq > shared/assets/cvat_db/data.json
-docker exec test_cvat_server_1 tar -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
+cd tests/python
+docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign \
+    --exclude=admin --exclude=auth.permission --exclude=authtoken --exclude=contenttypes \
+    --exclude=django_rq --exclude=sessions \
+    > shared/assets/cvat_db/data.json
+docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
 ```
 
 > Note: if you won't be use --indent options or will be use with other value
@@ -118,12 +119,12 @@ Assets directory has two parts:
 
 - `cvat_db` directory --- this directory contains all necessary files for
   successful restoring of test db
-  - `cvat_data.tar.bz2` --- archieve with data volumes;
+  - `cvat_data.tar.bz2` --- archive with data volumes;
   - `data.json` --- file required for DB restoring.
     Contains all information about test db;
   - `restore.sql` --- SQL script for creating copy of database and
   killing connection for `cvat` database.
-  Script should be run with varialbe declaration:
+  Script should be run with variable declaration:
   ```
   # create database <new> with template <existing>
   psql -U root -d postgres -v from=<existing> -v to=<new> restore.sql

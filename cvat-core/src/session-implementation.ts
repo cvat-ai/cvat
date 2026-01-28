@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,15 +18,19 @@ import {
     deleteFrame,
     restoreFrame,
     getCachedChunks,
+    getJobFrameNumbers,
+    getFramesMeta,
     clear as clearFrames,
     findFrame,
     getContextImage,
     patchMeta,
-    getDeletedFrames,
     decodePreview,
 } from './frames';
 import Issue from './issue';
-import { SerializedLabel, SerializedTask } from './server-response-types';
+import {
+    SerializedLabel, SerializedTask, SerializedJobValidationLayout,
+    SerializedTaskValidationLayout,
+} from './server-response-types';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -36,6 +40,7 @@ import AnnotationGuide from './guide';
 import requestsManager from './requests-manager';
 import { Request } from './request';
 import User from './user';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -64,7 +69,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: JobClass,
-            fields: any,
+            fields: Parameters<typeof JobClass.prototype.save>[0],
         ): ReturnType<typeof JobClass.prototype.save> {
             if (this.id) {
                 const jobData = {
@@ -74,7 +79,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 };
 
                 if (jobData.assignee) {
-                    checkObjectType('job assignee', jobData.assignee, null, User);
+                    checkObjectType('job assignee', jobData.assignee, null, { cls: User, name: 'User' });
                     jobData.assignee = jobData.assignee.id;
                 }
 
@@ -131,7 +136,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             issue: Parameters<typeof JobClass.prototype.openIssue>[0],
             message: Parameters<typeof JobClass.prototype.openIssue>[1],
         ): ReturnType<typeof JobClass.prototype.openIssue> {
-            checkObjectType('issue', issue, null, Issue);
+            checkObjectType('issue', issue, null, { cls: Issue, name: 'Issue' });
             checkObjectType('message', message, 'string');
             const result = await serverProxy.issues.create({
                 ...issue.serialize(),
@@ -163,6 +168,19 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.validationLayout, 'implementation', {
+        value: async function validationLayoutImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.validationLayout> {
+            const result = await serverProxy.jobs.validationLayout(this.id);
+            if (Object.keys(result).length) {
+                return new JobValidationLayout(result as SerializedJobValidationLayout);
+            }
+
+            return null;
+        },
+    });
+
     Object.defineProperty(Job.prototype.frames.get, 'implementation', {
         value: function getFrameImplementation(
             this: JobClass,
@@ -185,11 +203,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 this.mode,
                 frame,
                 this.startFrame,
-                this.stopFrame,
                 isPlaying,
                 step,
                 this.dimension,
-                (chunkNumber, quality) => this.frames.chunk(chunkNumber, quality),
+                (chunkIndex, quality) => this.frames.chunk(chunkIndex, quality),
             );
         },
     });
@@ -232,7 +249,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: function saveFramesImplementation(
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.save> {
-            return patchMeta(this.id);
+            return patchMeta(this.id).then((meta) => [meta]);
         },
     });
 
@@ -241,6 +258,14 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.cachedChunks> {
             return Promise.resolve(getCachedChunks(this.id));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.frames.frameNumbers, 'implementation', {
+        value: function includedFramesImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.frames.frameNumbers> {
+            return getJobFrameNumbers(this.id);
         },
     });
 
@@ -261,22 +286,31 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.frames.contextImageData, 'implementation', {
+        value: function contextImageDataImplementation(
+            this: JobClass,
+            frameId: Parameters<typeof JobClass.prototype.frames.contextImageData>[0],
+        ): ReturnType<typeof JobClass.prototype.frames.contextImageData> {
+            return serverProxy.frames.getImageContext(this.id, frameId);
+        },
+    });
+
     Object.defineProperty(Job.prototype.frames.contextImage, 'implementation', {
         value: function contextImageImplementation(
             this: JobClass,
             frameId: Parameters<typeof JobClass.prototype.frames.contextImage>[0],
         ): ReturnType<typeof JobClass.prototype.frames.contextImage> {
-            return getContextImage(this.id, frameId);
+            return getContextImage(this.id, frameId, (frame) => this.frames.contextImageData(frame));
         },
     });
 
     Object.defineProperty(Job.prototype.frames.chunk, 'implementation', {
         value: function chunkImplementation(
             this: JobClass,
-            chunkNumber: Parameters<typeof JobClass.prototype.frames.chunk>[0],
+            chunkIndex: Parameters<typeof JobClass.prototype.frames.chunk>[0],
             quality: Parameters<typeof JobClass.prototype.frames.chunk>[1],
         ): ReturnType<typeof JobClass.prototype.frames.chunk> {
-            return serverProxy.frames.getData(this.id, chunkNumber, quality);
+            return serverProxy.frames.getData(this.id, chunkIndex, quality);
         },
     });
 
@@ -327,11 +361,6 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             }
 
             const annotationsData = await getAnnotations(this, frame, allTracks, filters);
-            const deletedFrames = await getDeletedFrames('job', this.id);
-            if (frame in deletedFrames) {
-                return [];
-            }
-
             return annotationsData;
         },
     });
@@ -352,7 +381,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             }
 
             if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
-                throw new ArgumentError('Both annotations filters and general fiters could not be used together');
+                throw new ArgumentError('Both annotations filters and general filters could not be used together');
             }
 
             if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -494,6 +523,18 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.commit, 'implementation', {
+        value: function commitAnnotationsImplementation(
+            this: JobClass,
+            added: Parameters<typeof JobClass.prototype.annotations.commit>[0],
+            removed: Parameters<typeof JobClass.prototype.annotations.commit>[1],
+            frame: Parameters<typeof JobClass.prototype.annotations.commit>[2],
+        ): ReturnType<typeof JobClass.prototype.annotations.commit> {
+            getCollection(this).commit(added, removed, frame);
+            return Promise.resolve();
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.upload, 'implementation', {
         value: async function uploadAnnotationsImplementation(
             this: JobClass,
@@ -585,6 +626,14 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.mergeConsensusJobs, 'implementation', {
+        value: function mergeConsensusJobsImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.mergeConsensusJobs> {
+            return serverProxy.jobs.mergeConsensusJobs(this.id, 'job');
+        },
+    });
+
     return Job;
 }
 
@@ -615,18 +664,37 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.validationLayout, 'implementation', {
+        value: async function validationLayoutImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.validationLayout> {
+            const result = await serverProxy.tasks.validationLayout(this.id) as SerializedTaskValidationLayout;
+            if (result.mode !== null) {
+                return new TaskValidationLayout(result);
+            }
+
+            return null;
+        },
+    });
+
     Object.defineProperty(Task.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: TaskClass,
-            options: Parameters<typeof TaskClass.prototype.save>[0],
+            fields: Parameters<typeof TaskClass.prototype.save>[0],
+            options: Parameters<typeof TaskClass.prototype.save>[1],
         ): ReturnType<typeof TaskClass.prototype.save> {
             if (typeof this.id !== 'undefined') {
                 // If the task has been already created, we update it
-                const taskData = this._updateTrigger.getUpdated(this, {
-                    bugTracker: 'bug_tracker',
-                    projectId: 'project_id',
-                    assignee: 'assignee_id',
-                });
+                const taskData = {
+                    ...this._updateTrigger.getUpdated(this, {
+                        bugTracker: 'bug_tracker',
+                        projectId: 'project_id',
+                        assignee: 'assignee_id',
+                        organizationId: 'organization_id',
+                        sourceStorage: 'source_storage',
+                        targetStorage: 'target_storage',
+                    }),
+                };
 
                 if (taskData.assignee_id) {
                     taskData.assignee_id = taskData.assignee_id.id;
@@ -686,6 +754,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
             }
+            if (typeof this.organizationId !== 'undefined') {
+                taskSpec.organization_id = this.organizationId;
+            }
 
             if (this.targetStorage) {
                 taskSpec.target_storage = this.targetStorage.toJSON();
@@ -693,6 +764,10 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
 
             if (this.sourceStorage) {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
+            }
+
+            if (fields.consensus_replicas) {
+                taskSpec.consensus_replicas = fields.consensus_replicas;
             }
 
             const taskDataSpec = {
@@ -709,17 +784,18 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
                 ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
+                ...(fields.validation_params ? { validation_params: fields.validation_params } : {}),
             };
 
             const { taskID, rqID } = await serverProxy.tasks.create(
                 taskSpec,
                 taskDataSpec,
-                options?.requestStatusCallback || (() => {}),
+                options?.updateStatusCallback || (() => {}),
             );
 
             await requestsManager.listen(rqID, {
                 callback: (request: Request) => {
-                    options?.requestStatusCallback(request);
+                    options?.updateStatusCallback(request);
                     if (request.status === RQStatus.FAILED) {
                         serverProxy.tasks.delete(taskID, config.organization.organizationSlug || null);
                     }
@@ -765,6 +841,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.mergeConsensusJobs, 'implementation', {
+        value: function mergeConsensusJobsImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.mergeConsensusJobs> {
+            return serverProxy.tasks.mergeConsensusJobs(this.id, 'task');
+        },
+    });
+
     Object.defineProperty(Task.prototype.issues, 'implementation', {
         value: function issuesImplementation(
             this: TaskClass,
@@ -780,8 +864,15 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             targetStorage: Parameters<typeof TaskClass.prototype.backup>[0],
             useDefaultSettings: Parameters<typeof TaskClass.prototype.backup>[1],
             fileName: Parameters<typeof TaskClass.prototype.backup>[2],
+            lightweight: Parameters<typeof TaskClass.prototype.backup>[3],
         ): ReturnType<typeof TaskClass.prototype.backup> {
-            const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
+            const rqID = await serverProxy.tasks.backup(
+                this.id,
+                targetStorage,
+                useDefaultSettings,
+                fileName,
+                lightweight,
+            );
             return rqID;
         },
     });
@@ -820,11 +911,10 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 this.mode,
                 frame,
                 job.startFrame,
-                job.stopFrame,
                 isPlaying,
                 step,
                 this.dimension,
-                (chunkNumber, quality) => job.frames.chunk(chunkNumber, quality),
+                (chunkIndex, quality) => job.frames.chunk(chunkIndex, quality),
             );
             return result;
         },
@@ -834,6 +924,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         value: async function cachedChunksImplementation(
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.cachedChunks> {
+            throw new Error('Not implemented for Task');
+        },
+    });
+
+    Object.defineProperty(Task.prototype.frames.frameNumbers, 'implementation', {
+        value: function includedFramesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.frameNumbers> {
             throw new Error('Not implemented for Task');
         },
     });
@@ -899,8 +997,24 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         value: async function saveFramesImplementation(
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.save> {
-            return Promise.all(this.jobs.map((job) => patchMeta(job.id)))
-                .then(() => Promise.resolve());
+            return Promise.all(this.jobs.map((job) => patchMeta(job.id)));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.meta.get, 'implementation', {
+        value: async function saveFramesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.meta.get> {
+            return getFramesMeta('task', this.id).then((_meta) => _meta);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.meta.save, 'implementation', {
+        value: async function saveFramesImplementation(
+            this: TaskClass,
+            meta: Parameters<typeof TaskClass.prototype.meta.save>[0],
+        ): ReturnType<typeof TaskClass.prototype.meta.save> {
+            return patchMeta(this.id, meta, 'task').then((_meta) => _meta);
         },
     });
 
@@ -945,6 +1059,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.frames.contextImageData, 'implementation', {
+        value: function contextImageDataImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.contextImageData> {
+            throw new Error('Not implemented for Task');
+        },
+    });
+
     Object.defineProperty(Task.prototype.frames.contextImage, 'implementation', {
         value: function contextImageImplementation(
             this: TaskClass,
@@ -981,11 +1103,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             const result = await getAnnotations(this, frame, allTracks, filters);
-            const deletedFrames = await getDeletedFrames('task', this.id);
-            if (frame in deletedFrames) {
-                return [];
-            }
-
             return result;
         },
     });
@@ -1006,7 +1123,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
-                throw new ArgumentError('Both annotations filters and general fiters could not be used together');
+                throw new ArgumentError('Both annotations filters and general filters could not be used together');
             }
 
             if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -1157,6 +1274,18 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.annotations.export> {
             return Promise.resolve(getCollection(this).export());
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.commit, 'implementation', {
+        value: function commitAnnotationsImplementation(
+            this: TaskClass,
+            added: Parameters<typeof TaskClass.prototype.annotations.commit>[0],
+            removed: Parameters<typeof TaskClass.prototype.annotations.commit>[1],
+            frame: Parameters<typeof TaskClass.prototype.annotations.commit>[2],
+        ): ReturnType<typeof TaskClass.prototype.annotations.commit> {
+            getCollection(this).commit(added, removed, frame);
+            return Promise.resolve();
         },
     });
 

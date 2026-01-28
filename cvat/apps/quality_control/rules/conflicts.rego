@@ -10,7 +10,7 @@ import data.organizations
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         },
 #         "organization": {
 #             "id": <num>,
@@ -57,6 +57,28 @@ allow if {
     organizations.is_member
 }
 
+
+q_user_is_maintainer(user) := [
+    {"report__job__segment__task__owner_id": user.id},
+    {"report__job__segment__task__assignee_id": user.id}, "|",
+    {"report__job__segment__task__project__owner_id": user.id}, "|",
+    {"report__job__segment__task__project__assignee_id": user.id}, "|",
+    {"report__task__owner_id": user.id}, "|",
+    {"report__task__assignee_id": user.id}, "|",
+    {"report__task__project__owner_id": user.id}, "|",
+    {"report__task__project__assignee_id": user.id}, "|",
+    {"report__project__owner_id": user.id}, "|",
+    {"report__project__assignee_id": user.id}, "|",
+]
+
+q_object_has_org(org) := [
+    {"report__job__segment__task__organization": org.id},
+    {"report__job__segment__task__project__organization": org.id}, "|",
+    {"report__task__organization": org.id}, "|",
+    {"report__task__project__organization": org.id}, "|",
+    {"report__project__organization": org.id}, "|",
+]
+
 filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
@@ -64,55 +86,23 @@ filter := [] if { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_organization
     org := input.auth.organization
-    qobject := [
-        {"report__job__segment__task__organization": org.id},
-        {"report__job__segment__task__project__organization": org.id}, "|",
-        {"report__task__organization": org.id}, "|",
-        {"report__task__project__organization": org.id}, "|",
-    ]
+    qobject := q_object_has_org(org)
 } else := qobject if {
     utils.is_sandbox
     user := input.auth.user
-    qobject := [
-        {"report__job__segment__task__owner_id": user.id},
-        {"report__job__segment__task__assignee_id": user.id}, "|",
-        {"report__job__segment__task__project__owner_id": user.id}, "|",
-        {"report__job__segment__task__project__assignee_id": user.id}, "|",
-        {"report__task__owner_id": user.id}, "|",
-        {"report__task__assignee_id": user.id}, "|",
-        {"report__task__project__owner_id": user.id}, "|",
-        {"report__task__project__assignee_id": user.id}, "|",
-    ]
+    qobject := q_user_is_maintainer(user)
 } else := qobject if {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
     org := input.auth.organization
-    qobject := [
-        {"report__job__segment__task__organization": org.id},
-        {"report__job__segment__task__project__organization": org.id}, "|",
-        {"report__task__organization": org.id}, "|",
-        {"report__task__project__organization": org.id}, "|",
-    ]
+    qobject := q_object_has_org(org)
 } else := qobject if {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
     org := input.auth.organization
-    qobject := [
-        {"report__job__segment__task__organization": org.id},
-        {"report__job__segment__task__project__organization": org.id}, "|",
-        {"report__task__organization": org.id}, "|",
-        {"report__task__project__organization": org.id}, "|",
-
-        {"report__job__segment__task__owner_id": user.id},
-        {"report__job__segment__task__assignee_id": user.id}, "|",
-        {"report__job__segment__task__project__owner_id": user.id}, "|",
-        {"report__job__segment__task__project__assignee_id": user.id}, "|",
-        {"report__task__owner_id": user.id}, "|",
-        {"report__task__assignee_id": user.id}, "|",
-        {"report__task__project__owner_id": user.id}, "|",
-        {"report__task__project__assignee_id": user.id}, "|",
-
-        "&"
-    ]
+    qobject := array.concat(
+        array.concat(q_object_has_org(org), q_user_is_maintainer(user)),
+        ["&"]
+    )
 }

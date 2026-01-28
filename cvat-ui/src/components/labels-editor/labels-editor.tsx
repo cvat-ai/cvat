@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,7 +50,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
     }
 
     public componentDidMount(): void {
-        // just need performe the same code
+        // just need to perform the same code
         this.componentDidUpdate((null as any) as LabelsEditorProps);
     }
 
@@ -162,7 +162,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 className: 'cvat-modal-delete-label',
                 icon: <ExclamationCircleOutlined />,
                 title: `Do you want to delete "${label.name}" label?`,
-                content: 'This action is undone. All annotations associated to the label will be deleted.',
+                content: 'This action cannot be undone. All annotations associated to the label will be deleted.',
                 type: 'warning',
                 okButtonProps: { type: 'primary', danger: true },
                 onOk() {

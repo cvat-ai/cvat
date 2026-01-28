@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,10 +39,12 @@ const webhooksActions = {
     updateWebhook: () => createAction(WebhooksActionsTypes.UPDATE_WEBHOOK),
     updateWebhookSuccess: (webhook: any) => createAction(WebhooksActionsTypes.UPDATE_WEBHOOK_SUCCESS, { webhook }),
     updateWebhookFailed: (error: any) => createAction(WebhooksActionsTypes.UPDATE_WEBHOOK_FAILED, { error }),
-    deleteWebhook: () => createAction(WebhooksActionsTypes.DELETE_WEBHOOK),
-    deleteWebhookSuccess: () => createAction(WebhooksActionsTypes.DELETE_WEBHOOK_SUCCESS),
-    deleteWebhookFailed: (webhookID: number, error: any) => createAction(
-        WebhooksActionsTypes.DELETE_WEBHOOK_FAILED, { webhookID, error },
+    deleteWebhook: (webhookId: number) => createAction(WebhooksActionsTypes.DELETE_WEBHOOK, { webhookId }),
+    deleteWebhookSuccess: (webhookId: number) => createAction(
+        WebhooksActionsTypes.DELETE_WEBHOOK_SUCCESS, { webhookId },
+    ),
+    deleteWebhookFailed: (webhookId: number, error: any) => createAction(
+        WebhooksActionsTypes.DELETE_WEBHOOK_FAILED, { webhookId, error },
     ),
 };
 
@@ -98,8 +100,9 @@ export function updateWebhookAsync(webhook: Webhook): ThunkAction {
 export function deleteWebhookAsync(webhook: Webhook): ThunkAction {
     return async function (dispatch) {
         try {
+            dispatch(webhooksActions.deleteWebhook(webhook.id));
             await webhook.delete();
-            dispatch(webhooksActions.deleteWebhookSuccess());
+            dispatch(webhooksActions.deleteWebhookSuccess(webhook.id));
         } catch (error) {
             dispatch(webhooksActions.deleteWebhookFailed(webhook.id, error));
             throw error;

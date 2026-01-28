@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import _ from 'lodash';
 import { platformInfo } from 'utils/platform-checker';
 
 const core = getCore();
-const { CONTROLS_LOGS_INTERVAL } = config;
+const { CONTROLS_LOGS_INTERVAL, ACTIVITY_EVENTS_INTERVAL_MS } = config;
 
 interface Logger {
     log(...parameters: Parameters<typeof core.logger.log>): ReturnType<typeof core.logger['log']>;
@@ -20,12 +20,14 @@ const defaultLogger: Logger = core.logger;
 // the class is responsible for logging general mouse events
 // and for saving recorded events to the server with a certain period
 class EventRecorder {
+    #lastActivityRecorded: number;
     #savingTimeout: number | null;
     #logger: Logger | null;
 
     public constructor() {
         this.#savingTimeout = null;
         this.#logger = null;
+        this.#lastActivityRecorded = Date.now();
         core.logger.log(EventScope.loadTool, {
             location: window.location.pathname,
             platform: platformInfo(),
@@ -36,6 +38,14 @@ class EventRecorder {
             deviceMemory: _.get(window.navigator, 'deviceMemory', null),
             jsHeapSizeLimit: _.get(window.performance, 'memory', { jsHeapSizeLimit: null }).jsHeapSizeLimit,
         });
+    }
+
+    public recordUserActivity(): void {
+        const currentTimestamp = Date.now();
+        if (this.#logger && currentTimestamp - ACTIVITY_EVENTS_INTERVAL_MS > this.#lastActivityRecorded) {
+            this.#lastActivityRecorded = currentTimestamp;
+            this.#logger.log(EventScope.userActivity);
+        }
     }
 
     public recordMouseEvent(event: MouseEvent): void {

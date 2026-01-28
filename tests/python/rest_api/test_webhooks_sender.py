@@ -1,15 +1,15 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
 from http import HTTPStatus
-from time import sleep
+from time import sleep, time
 
 import pytest
 from deepdiff import DeepDiff
 
-from shared.fixtures.init import CVAT_ROOT_DIR, _run
+from shared.fixtures.init import CVAT_ROOT_DIR
 from shared.utils.config import delete_method, get_method, patch_method, post_method
 
 # Testing webhook functionality:
@@ -30,12 +30,9 @@ def target_url():
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
-
-    container_id = _run(
-        "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' test_webhook_receiver_1"
-    )[0].strip()[1:-1]
-
-    return f'http://{container_id}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
+    return (
+        f'http://{env_data["SERVER_HOST"]}:{env_data["SERVER_PORT"]}/{env_data["PAYLOAD_ENDPOINT"]}'
+    )
 
 
 def webhook_spec(events, project_id=None, webhook_type="organization"):
@@ -65,9 +62,11 @@ def create_webhook(events, webhook_type, project_id=None, org_id=""):
     return response.json()
 
 
-def get_deliveries(webhook_id, expected_count=1):
+def get_deliveries(webhook_id, expected_count=1, *, timeout: int = 60):
+    start_time = time()
+
     delivery_response = {}
-    for _ in range(10):
+    while True:
         response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
         assert response.status_code == HTTPStatus.OK
 
@@ -75,6 +74,9 @@ def get_deliveries(webhook_id, expected_count=1):
         if deliveries["count"] == expected_count:
             delivery_response = json.loads(deliveries["results"][0]["response"])
             break
+
+        if time() - start_time > timeout:
+            raise TimeoutError("Failed to get deliveries within the specified time interval")
 
         sleep(1)
 
@@ -275,17 +277,15 @@ class TestWebhookIntersection:
 class TestWebhookTaskEvents:
     def test_webhook_update_task_assignee(self, users, tasks):
         task_id, project_id = next(
-            (
-                (task["id"], task["project_id"])
-                for task in tasks
-                if task["project_id"] is not None
-                and task["organization"] is None
-                and task["assignee"] is not None
-            )
+            (task["id"], task["project_id"])
+            for task in tasks
+            if task["project_id"] is not None
+            and task["organization"] is None
+            and task["assignee"] is not None
         )
 
         assignee_id = next(
-            (user["id"] for user in users if user["id"] != tasks[task_id]["assignee"]["id"])
+            user["id"] for user in users if user["id"] != tasks[task_id]["assignee"]["id"]
         )
 
         webhook_id = create_webhook(["update:task"], "project", project_id=project_id)["id"]
@@ -358,11 +358,9 @@ class TestWebhookTaskEvents:
 class TestWebhookJobEvents:
     def test_webhook_update_job_assignee(self, jobs, tasks, users):
         job = next(
-            (
-                job
-                for job in jobs
-                if job["assignee"] is None and tasks[job["task_id"]]["organization"] is not None
-            )
+            job
+            for job in jobs
+            if job["assignee"] is None and tasks[job["task_id"]]["organization"] is not None
         )
 
         org_id = tasks[job["task_id"]]["organization"]
@@ -381,7 +379,7 @@ class TestWebhookJobEvents:
 
     def test_webhook_update_job_stage(self, jobs, tasks):
         stages = {"annotation", "validation", "acceptance"}
-        job = next((job for job in jobs if tasks[job["task_id"]]["organization"] is not None))
+        job = next(job for job in jobs if tasks[job["task_id"]]["organization"] is not None)
 
         org_id = tasks[job["task_id"]]["organization"]
 
@@ -399,12 +397,9 @@ class TestWebhookJobEvents:
     def test_webhook_update_job_state(self, jobs, tasks):
         states = {"new", "in progress", "rejected", "completed"}
         job = next(
-            (
-                job
-                for job in jobs
-                if tasks[job["task_id"]]["organization"] is not None
-                and job["state"] == "in progress"
-            )
+            job
+            for job in jobs
+            if tasks[job["task_id"]]["organization"] is not None and job["state"] == "in progress"
         )
 
         org_id = tasks[job["task_id"]]["organization"]
@@ -425,11 +420,9 @@ class TestWebhookJobEvents:
 class TestWebhookIssueEvents:
     def test_webhook_update_issue_resolved(self, issues, jobs, tasks):
         issue = next(
-            (
-                issue
-                for issue in issues
-                if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
-            )
+            issue
+            for issue in issues
+            if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
         )
 
         org_id = tasks[jobs[issue["job"]]["task_id"]]["organization"]
@@ -448,11 +441,9 @@ class TestWebhookIssueEvents:
 
     def test_webhook_update_issue_position(self, issues, jobs, tasks):
         issue = next(
-            (
-                issue
-                for issue in issues
-                if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
-            )
+            issue
+            for issue in issues
+            if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
         )
 
         org_id = tasks[jobs[issue["job"]]["task_id"]]["organization"]
@@ -469,11 +460,9 @@ class TestWebhookIssueEvents:
         assert payload["before_update"]["position"] == issue["position"]
         assert payload["issue"]["position"] == patch_data["position"]
 
-    def test_webhook_create_and_delete_issue(self, organizations, jobs, tasks):
-        org_id = list(organizations)[0]["id"]
-        job_id = next(
-            (job["id"] for job in jobs if tasks[job["task_id"]]["organization"] == org_id)
-        )
+    @pytest.mark.parametrize("org_id", (2,))
+    def test_webhook_create_and_delete_issue(self, org_id: int, jobs, tasks):
+        job_id = next(job["id"] for job in jobs if tasks[job["task_id"]]["organization"] == org_id)
         events = ["create:issue", "delete:issue"]
 
         webhook = create_webhook(events, "organization", org_id=org_id)
@@ -522,9 +511,7 @@ class TestWebhookMembershipEvents:
     def test_webhook_update_membership_role(self, memberships):
         roles = {"worker", "supervisor", "maintainer"}
 
-        membership = next(
-            (membership for membership in memberships if membership["role"] != "owner")
-        )
+        membership = next(membership for membership in memberships if membership["role"] != "owner")
         org_id = membership["organization"]
 
         webhook_id = create_webhook(["update:membership"], "organization", org_id=org_id)["id"]
@@ -542,9 +529,7 @@ class TestWebhookMembershipEvents:
         assert payload["membership"]["role"] == patch_data["role"]
 
     def test_webhook_delete_membership(self, memberships):
-        membership = next(
-            (membership for membership in memberships if membership["role"] != "owner")
-        )
+        membership = next(membership for membership in memberships if membership["role"] != "owner")
         org_id = membership["organization"]
 
         webhook_id = create_webhook(["delete:membership"], "organization", org_id=org_id)["id"]
@@ -619,11 +604,9 @@ class TestWebhookCommentEvents:
 
     def test_webhook_create_and_delete_comment(self, issues, jobs, tasks):
         issue = next(
-            (
-                issue
-                for issue in issues
-                if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
-            )
+            issue
+            for issue in issues
+            if tasks[jobs[issue["job"]]["task_id"]]["organization"] is not None
         )
 
         org_id = tasks[jobs[issue["job"]]["task_id"]]["organization"]
@@ -656,6 +639,34 @@ class TestWebhookCommentEvents:
         )
 
 
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetWebhookDeliveries:
+    def test_not_project_staff_cannot_get_webhook(self, projects, users):
+        user, project = next(
+            (user, project)
+            for user in users
+            if "user" in user["groups"]
+            for project in projects
+            if project["owner"]["id"] != user["id"]
+        )
+
+        webhook = create_webhook(["create:task"], "project", project_id=project["id"])
+        owner = next(user for user in users if user["id"] == project["owner"]["id"])
+
+        response = post_method(owner["username"], f"webhooks/{webhook['id']}/ping", {})
+        assert response.status_code == HTTPStatus.OK
+
+        delivery_id = response.json()["id"]
+
+        response = get_method(user["username"], f"webhooks/{webhook['id']}/deliveries")
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+        response = get_method(
+            user["username"], f"webhooks/{webhook['id']}/deliveries/{delivery_id}"
+        )
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookPing:
     def test_ping_webhook(self, projects):
@@ -679,6 +690,20 @@ class TestWebhookPing:
             )
             == {}
         )
+
+    def test_not_project_staff_cannot_ping(self, projects, users):
+        user, project = next(
+            (user, project)
+            for user in users
+            if "user" in user["groups"]
+            for project in projects
+            if project["owner"]["id"] != user["id"]
+        )
+
+        webhook = create_webhook(["create:task"], "project", project_id=project["id"])
+
+        response = post_method(user["username"], f"webhooks/{webhook['id']}/ping", {})
+        assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -727,3 +752,25 @@ class TestWebhookRedelivery:
             )
             == {}
         )
+
+    def test_not_project_staff_cannot_redeliver(self, projects, users):
+        user, project = next(
+            (user, project)
+            for user in users
+            if "user" in user["groups"]
+            for project in projects
+            if project["owner"]["id"] != user["id"]
+        )
+
+        webhook = create_webhook(["create:task"], "project", project_id=project["id"])
+        owner = next(user for user in users if user["id"] == project["owner"]["id"])
+
+        response = post_method(owner["username"], f"webhooks/{webhook['id']}/ping", {})
+        assert response.status_code == HTTPStatus.OK
+
+        delivery_id = response.json()["id"]
+
+        response = post_method(
+            user["username"], f"webhooks/{webhook['id']}/deliveries/{delivery_id}/redelivery", {}
+        )
+        assert response.status_code == HTTPStatus.FORBIDDEN

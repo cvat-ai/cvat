@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,7 +28,7 @@ context('Tests source & target storage for backups.', () => {
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
-        manifest: 'manifest.jsonl',
+        manifest: 'images_with_manifest/manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
 
@@ -41,7 +41,7 @@ context('Tests source & target storage for backups.', () => {
         name: `Case ${caseId}`,
         label: labelName,
         attrName: 'color',
-        attrVaue: 'red',
+        attrValue: 'red',
         multiAttrParams: false,
         advancedConfiguration: {
             sourceStorage: {
@@ -86,7 +86,7 @@ context('Tests source & target storage for backups.', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         createdCloudStorageId = cy.attachS3Bucket(cloudStorageData);
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
@@ -99,7 +99,7 @@ context('Tests source & target storage for backups.', () => {
             project.name,
             project.label,
             project.attrName,
-            project.attrVaue,
+            project.attrValue,
             project.multiAttrParams,
             project.advancedConfiguration,
         );
@@ -125,8 +125,8 @@ context('Tests source & target storage for backups.', () => {
         cy.goToCloudStoragesPage();
         cy.deleteCloudStorage(cloudStorageData.displayName);
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteProjects(authKey, [project.name]);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteProjects(authHeaders, [project.name]);
         });
     });
 

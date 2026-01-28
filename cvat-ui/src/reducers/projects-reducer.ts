@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,16 +9,20 @@ import { omit } from 'lodash';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-import { ProjectsState } from '.';
+import { SelectionActionsTypes } from 'actions/selection-actions';
+import { ProjectsState, SelectedResourceType } from '.';
 
 const defaultState: ProjectsState = {
+    fetchingTimestamp: Date.now(),
     initialized: false,
     fetching: false,
     count: 0,
     current: [],
+    selected: [],
     previews: {},
     gettingQuery: {
         page: 1,
+        pageSize: 12,
         id: null,
         search: null,
         filter: null,
@@ -26,6 +30,7 @@ const defaultState: ProjectsState = {
     },
     tasksGettingQuery: {
         page: 1,
+        pageSize: 10,
         id: null,
         search: null,
         filter: null,
@@ -39,6 +44,7 @@ const defaultState: ProjectsState = {
             id: null,
             error: '',
         },
+        updates: {},
     },
 };
 
@@ -59,6 +65,7 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         case ProjectsActionTypes.GET_PROJECTS:
             return {
                 ...state,
+                fetchingTimestamp: action.payload.fetchingTimestamp,
                 initialized: false,
                 fetching: true,
                 count: 0,
@@ -203,6 +210,70 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                     },
                 },
             };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT: {
+            const { projectId } = action.payload;
+            return {
+                ...state,
+                fetching: true,
+                activities: {
+                    ...state.activities,
+                    updates: {
+                        ...state.activities.updates,
+                        [projectId]: true,
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_SUCCESS: {
+            const { project } = action.payload;
+            const { updates } = state.activities;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: omit(updates, project.id),
+                },
+                current: state.current.map((projectInstance) => {
+                    if (projectInstance.id === project.id) {
+                        return project;
+                    }
+                    return projectInstance;
+                }),
+                fetching: false,
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { projectId } = action.payload;
+            const { updates } = state.activities;
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    updates: omit(updates, projectId),
+                },
+            };
+        }
+        case SelectionActionsTypes.DESELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.PROJECTS) {
+                return {
+                    ...state,
+                    selected: state.selected.filter((id: number) => !action.payload.resourceIds.includes(id)),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.SELECT_RESOURCES: {
+            if (action.payload.resourceType === SelectedResourceType.PROJECTS) {
+                return {
+                    ...state,
+                    selected: Array.from(new Set([...state.selected, ...action.payload.resourceIds])),
+                };
+            }
+            return state;
+        }
+        case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
+            return { ...state, selected: [] };
         }
         default:
             return state;

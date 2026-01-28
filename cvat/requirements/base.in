@@ -1,12 +1,13 @@
 -r ../../utils/dataset_manifest/requirements.in
 
 attrs==21.4.0
-av==9.2.0
+
+av==16.0.1
+
 azure-storage-blob==12.13.0
-boto3==1.17.61
+boto3~=1.37
 clickhouse-connect==0.6.8
-coreapi==2.3.3
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@393cb666529067060ff57e30cb6e448669274f35
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@ce1e8117f5457136928ea9b12e6f6a2f58bdfa88
 dj-pagination==2.5.0
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)
@@ -15,7 +16,6 @@ dj-rest-auth[with_social]==5.0.2
 django-allauth[saml]==0.57.2
 
 django-auth-ldap==2.2.0
-django-compressor==4.3.1
 django-cors-headers==3.5.0
 django-crum==0.7.9
 django-filter==2.4.0
@@ -23,14 +23,17 @@ django-health-check>=3.18.1,<4
 django-rq==2.8.1
 django-sendfile2==0.7.0
 Django~=4.2.7
-djangorestframework~=3.14.0
+djangorestframework>=3.15.2,<4
+djangorestframework-api-key~=3.1
 drf-spectacular==0.26.2
-furl==2.1.0
-google-cloud-storage==1.42.0
+google-cloud-storage~=3.0
 lxml>=5.2.1,<6
 natsort==8.0.0
 numpy~=1.22.2
 opencv-python-headless~=4.8
+
+# Partial json reading
+json-stream>=2.0,<3
 
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
@@ -44,6 +47,7 @@ psycopg2-binary==2.9.5
 python-ldap==3.4.3
 python-logstash-async==2.5.0
 pyunpack==0.2.1
+python-rapidjson>=1.20
 redis==4.6.0
 requests~=2.26
 rq-scheduler==0.13.1

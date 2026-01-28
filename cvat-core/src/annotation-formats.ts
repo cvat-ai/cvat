@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -82,7 +82,7 @@ export class Dumper {
     }
 }
 
-export class AnnotationFormats {
+export default class AnnotationFormats {
     public loaders: Loader[];
     public dumpers: Dumper[];
 

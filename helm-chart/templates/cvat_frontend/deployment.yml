@@ -13,7 +13,7 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "cvat.labels" . | nindent 6 }}
+      {{- include "cvat.selectorLabels" . | nindent 6 }}
       app: cvat-app
       tier: frontend
   template:
@@ -39,19 +39,33 @@ spec:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
-          - containerPort: 80
+          - containerPort: 8000
           {{- with .Values.cvat.frontend.additionalEnv }}
           env:
           {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- if .Values.cvat.frontend.readinessProbe.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            {{- toYaml (omit .Values.cvat.frontend.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          {{- if .Values.cvat.frontend.livenessProbe.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            {{- toYaml (omit .Values.cvat.frontend.livenessProbe "enabled") | nindent 12 }}
           {{- end }}
           {{- with .Values.cvat.frontend.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
-        {{- with .Values.cvat.frontend.additionalVolumes }}
+          securityContext:
+            runAsNonRoot: true
+      {{- with .Values.cvat.frontend.additionalVolumes }}
       volumes:
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.cvat.frontend.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

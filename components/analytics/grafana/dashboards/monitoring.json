@@ -715,7 +715,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  $__timeInterval(timestamp) as time,\r\n  count(*)\r\nFROM events\r\nWHERE\r\n  $__timeFilter(timestamp)\r\n  AND ( scope = 'send:exception' )\r\n  AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND source IN (${sources})\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\nGROUP BY time\r\nORDER BY time",
+          "rawSql": "SELECT\r\n  $__timeInterval(timestamp) as time,\r\n  count(*)\r\nFROM events\r\nWHERE\r\n  $__timeFilter(timestamp)\r\n  AND ( scope = 'send:exception' )\r\n  AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND source IN (${sources})\r\n  AND (' ' in (${usernames}) OR user_name IN (${usernames}))\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\nGROUP BY time\r\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -947,16 +947,126 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  timestamp,\r\n  user_id,\r\n  user_name,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack,\r\n  payload\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'\r\n  AND source IN (${sources})\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\n  AND ('-1' IN (${errors}) OR error IN (${errors}))\r\nORDER BY timestamp DESC\r\nLIMIT 1000",
+          "rawSql": "SELECT\r\n  timestamp,\r\n  user_id,\r\n  user_name,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack,\r\n  payload\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'\r\n  AND source IN (${sources})\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (' ' IN (${usernames}) OR user_name IN (${usernames}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\n  AND ('-1' IN (${errors}) OR error IN (${errors}))\r\nORDER BY timestamp DESC\r\nLIMIT 1000",
           "refId": "A"
         }
       ],
       "title": "Exceptions table",
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "description": "MegaBytes per second grouped by queue",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 5000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "MBs"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.8.2",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\r\n    $__timeInterval(timestamp) AS time,\r\n    JSONExtractString(payload, 'queue') AS queue,\r\n    sum(JSONExtractUInt(JSONExtractRaw(payload, 'cache_item'), 'size')) \r\n        / $__interval_s \r\n        / 1048576 AS Throughput\r\nFROM events\r\nWHERE\r\n    $__timeFilter(timestamp)\r\n    AND scope = 'create:cache_item'\r\nGROUP BY\r\n    time,\r\n    queue\r\nORDER BY\r\n    time ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Cache Throughput by Queue",
+      "transformations": [],
+      "type": "timeseries"
     }
   ],
-  "refresh": "",
-  "schemaVersion": 37,
+  "refresh": false,
+  "schemaVersion": 38,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -1016,6 +1126,35 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "' '",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT DISTINCT user_name\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Username",
+        "multi": true,
+        "name": "usernames",
+        "options": [],
+        "query": "SELECT DISTINCT user_name\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
         "type": "query"
       },
       {
@@ -1173,6 +1312,6 @@
   "timezone": "",
   "title": "Monitoring",
   "uid": "WvDvWK04k",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }

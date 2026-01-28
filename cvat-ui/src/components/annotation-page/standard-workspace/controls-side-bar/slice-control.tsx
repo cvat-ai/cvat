@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -53,12 +53,12 @@ function SliceControl(props: Props): JSX.Element {
             {
                 className: 'cvat-slice-control',
                 onClick: (event?: React.MouseEvent): void => {
-                    const triggeredByShorcut = !event;
+                    const triggeredByShortcut = !event;
                     canvasInstance.cancel();
                     canvasInstance.slice({
                         enabled: true,
                         getContour: opencvWrapper.getContourFromState,
-                        ...(triggeredByShorcut ? {
+                        ...(triggeredByShortcut ? {
                             clientID: getCVATStore().getState().annotation.annotations.activatedStateID || undefined,
                         } : {}),
                     });

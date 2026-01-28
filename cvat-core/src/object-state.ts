@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,7 @@ import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import { isEnum } from './common';
+import { SerializedShape, SerializedTag, SerializedTrack } from './server-response-types';
 
 interface UpdateFlags {
     label: boolean;
@@ -259,12 +260,7 @@ export default class ObjectState {
                     },
                     set: (points) => {
                         if (!Array.isArray(points) || points.some((coord) => typeof coord !== 'number')) {
-                            throw new ArgumentError(
-                                'Points are expected to be an array of numbers ' +
-                                    `but got ${
-                                        typeof points === 'object' ? points.constructor.name : typeof points
-                                    }`,
-                            );
+                            throw new ArgumentError('Points are expected to be an array of numbers.');
                         }
 
                         if (data.shapeType === ShapeType.SKELETON) {
@@ -295,11 +291,7 @@ export default class ObjectState {
                             data.updateFlags.rotation = true;
                             data.rotation = rotation;
                         } else {
-                            throw new ArgumentError(
-                                `Rotation is expected to be a number, but got ${
-                                    typeof rotation === 'object' ? rotation.constructor.name : typeof rotation
-                                }`,
-                            );
+                            throw new ArgumentError('Rotation is expected to be a number.');
                         }
                     },
                 },
@@ -516,10 +508,15 @@ export default class ObjectState {
         const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.delete, frame, force);
         return result;
     }
+
+    async export(): Promise<SerializedShape | SerializedTrack | SerializedTag> {
+        const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.export);
+        return result;
+    }
 }
 
 Object.defineProperty(ObjectState.prototype.save, 'implementation', {
-    value: function save(): ObjectState {
+    value: function saveImplementation(): ObjectState {
         if (this.__internal && this.__internal.save) {
             return this.__internal.save(this);
         }
@@ -529,8 +526,19 @@ Object.defineProperty(ObjectState.prototype.save, 'implementation', {
     writable: false,
 });
 
+Object.defineProperty(ObjectState.prototype.export, 'implementation', {
+    value: function exportImplementation(): ObjectState {
+        if (this.__internal && this.__internal.export) {
+            return this.__internal.export(this);
+        }
+
+        return this;
+    },
+    writable: false,
+});
+
 Object.defineProperty(ObjectState.prototype.delete, 'implementation', {
-    value: function remove(frame: number, force: boolean): boolean {
+    value: function deleteImplementation(frame: number, force: boolean): boolean {
         if (this.__internal && this.__internal.delete) {
             if (!Number.isInteger(+frame) || +frame < 0) {
                 throw new ArgumentError('Frame argument must be a non negative integer');

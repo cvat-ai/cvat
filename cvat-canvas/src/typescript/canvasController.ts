@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,13 +43,14 @@ export interface CanvasController {
     mode: Mode;
     geometry: Geometry;
 
-    zoom(x: number, y: number, direction: number): void;
+    zoom(x: number, y: number, deltaY: number): void;
     draw(drawData: DrawData): void;
     edit(editData: MasksEditData | PolyEditData): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
     fit(): void;
+    focus(clientId: number, padding: number): void;
 }
 
 export class CanvasControllerImpl implements CanvasController {
@@ -61,8 +62,8 @@ export class CanvasControllerImpl implements CanvasController {
         this.model = model;
     }
 
-    public zoom(x: number, y: number, direction: number): void {
-        this.model.zoom(x, y, direction);
+    public zoom(x: number, y: number, deltaY: number): void {
+        this.model.zoom(x, y, deltaY);
     }
 
     public fit(): void {
@@ -99,6 +100,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public edit(editData: MasksEditData | PolyEditData): void {
         this.model.edit(editData);
+    }
+
+    public focus(clientID: number, padding: number): void {
+        this.model.focus(clientID, padding);
     }
 
     public get geometry(): Geometry {
