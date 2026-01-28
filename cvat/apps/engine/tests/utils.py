@@ -820,7 +820,15 @@ def check_annotation_response(
         if key_path and _format_key(key_path).endswith("shapes.elements"):
             return filter_dict(
                 optional_fields,
-                keep=["occluded", "outside", "z_order", "rotation", "source", "attributes", "score"],
+                keep=[
+                    "occluded",
+                    "outside",
+                    "z_order",
+                    "rotation",
+                    "source",
+                    "attributes",
+                    "score",
+                ],
             )
 
         return None
