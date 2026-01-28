@@ -864,9 +864,9 @@ class ZipChunkWriter(IChunkWriter):
     IMAGE_EXT = "jpeg"
     POINT_CLOUD_EXT = "pcd"
 
-    def _write_pcd_file(self, image: str | io.BytesIO) -> tuple[io.BytesIO, str]:
+    def _write_pcd_file(self, image: str | Path | io.BytesIO) -> tuple[io.BytesIO, str]:
         with ExitStack() as es:
-            if isinstance(image, str):
+            if isinstance(image, (Path, str)):
                 image_buf = es.enter_context(open(image, "rb"))
             else:
                 image_buf = image
