@@ -75,15 +75,34 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
     const withVotes = isConsensus;
 
     const hasDetails = attributes.length > 0 || sizeParams !== null;
+
+    const baseTooltipAlign = {
+        points: ['bl', 'tl'],
+        offset: [10, 0],
+        overflow: { adjustX: true, adjustY: true },
+    };
+
     const scoreTag = withScore ? (
-        <Tooltip title='Consensus score'>
+        <Tooltip
+            title='Consensus score'
+            align={{
+                ...baseTooltipAlign,
+                targetOffset: ['25%', '40%'],
+            }}
+        >
             <Tag color='#FFB347' className='cvat-object-item-score-tag'>
                 {score.toFixed(2)}
             </Tag>
         </Tooltip>
     ) : null;
     const votesTag = withVotes ? (
-        <Tooltip title='Number of votes'>
+        <Tooltip
+            title='Number of votes'
+            align={{
+                ...baseTooltipAlign,
+                targetOffset: ['40%', '40%'],
+            }}
+        >
             <Tag color='#FFB347' className='cvat-object-item-votes-tag'>
                 {votes}
             </Tag>
