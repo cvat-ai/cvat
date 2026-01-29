@@ -66,6 +66,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.lambda.cancel, lambdaManager.cancel.bind(lambdaManager));
     implementationMixin(cvat.lambda.listen, lambdaManager.listen.bind(lambdaManager));
     implementationMixin(cvat.lambda.requests, lambdaManager.requests.bind(lambdaManager));
+    implementationMixin(cvat.lambda.checkpoints, lambdaManager.getCheckpoints.bind(lambdaManager));
 
     implementationMixin(cvat.requests.list, requestsManager.list.bind(requestsManager));
     implementationMixin(cvat.requests.listen, requestsManager.listen.bind(requestsManager));

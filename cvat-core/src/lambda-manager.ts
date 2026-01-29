@@ -170,6 +170,15 @@ class LambdaManager {
             timeout: window.setTimeout(timeoutCallback),
         };
     }
+
+    async getCheckpoints(functionID: string): Promise<string[]> {
+        if (typeof functionID !== 'string') {
+            throw new ArgumentError(`Function id argument is required to be a string. But got ${functionID}`);
+        }
+
+        const result = await serverProxy.lambda.checkpoints(functionID);
+        return result.checkpoints || [];
+    }
 }
 
 export default new LambdaManager();

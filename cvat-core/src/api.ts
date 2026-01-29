@@ -271,6 +271,10 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.requests);
                 return result;
             },
+            async checkpoints(functionID) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.checkpoints, functionID);
+                return result;
+            },
         },
         logger,
         config: {

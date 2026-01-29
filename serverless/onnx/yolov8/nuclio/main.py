@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import os
 
 import yaml
 from model_handler import ModelHandler
@@ -27,6 +28,24 @@ def init_context(context):
 def handler(context, event):
     context.logger.info("Run YOLOv8 ONNX model")
     data = event.body
+
+    # Parse JSON if data is a string
+    if isinstance(data, str):
+        data = json.loads(data)
+
+    context.logger.info(f"Received data: {data}")
+
+    # Check if this is a request to list available checkpoints
+    if data and data.get("list_checkpoints"):
+        context.logger.info("Listing available checkpoints")
+        checkpoint_files = [f for f in os.listdir('.') if f.endswith('.onnx')]
+        context.logger.info(f"Found checkpoints: {checkpoint_files}")
+        return context.Response(body=json.dumps({"checkpoints": checkpoint_files}),
+            headers={},
+            content_type='application/json',
+            status_code=200
+        )
+
     buf = io.BytesIO(base64.b64decode(data["image"]))
     threshold = float(data.get("threshold", 0.25))
     keyword = data.get("keyword", None)
