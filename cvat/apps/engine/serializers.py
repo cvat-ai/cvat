@@ -3261,6 +3261,7 @@ class ShapeSerializer(serializers.Serializer):
 
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True, default=[])
+    score = serializers.FloatField(min_value=0, max_value=1, default=1, read_only=True)
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
@@ -3309,7 +3310,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_shape(shape):
             result = _convert_annotation(shape, [
-                'id', 'label_id', 'type', 'frame', 'group', 'source',
+                'id', 'label_id', 'type', 'frame', 'group', 'source', 'score',
                 'occluded', 'outside', 'z_order', 'rotation', 'points',
             ])
             result['attributes'] = _convert_attributes(shape['attributes'])

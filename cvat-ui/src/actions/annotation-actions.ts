@@ -310,17 +310,48 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     };
 }
 
+const userUnlockedInReviewMode = new Set<number>();
+
+function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
+    return states.map((state: ObjectState) => new Proxy(state, {
+        get(target, prop) {
+            if (prop === 'lock') {
+                // If user explicitly unlocked this object, return actual lock state
+                if (userUnlockedInReviewMode.has(target.clientID as number)) {
+                    return Reflect.get(target, prop);
+                }
+                return target.isGroundTruth ? Reflect.get(target, prop) : true;
+            }
+            return Reflect.get(target, prop);
+        },
+        set(target, prop, value) {
+            if (prop === 'lock') {
+                if (!value && !target.isGroundTruth) {
+                    userUnlockedInReviewMode.add(target.clientID as number);
+                } else if (value === true) {
+                    userUnlockedInReviewMode.delete(target.clientID as number);
+                }
+            }
+            return Reflect.set(target, prop, value);
+        },
+    }));
+}
+
 export function fetchAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
             const {
                 states, history, minZ, maxZ,
             } = await fetchAnnotations();
 
+            const { workspace } = getState().annotation;
+            const finalStates = workspace === Workspace.REVIEW ?
+                wrapStatesForReviewMode(states) : states;
+
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
-                    states,
+                    states: finalStates,
                     history,
                     minZ,
                     maxZ,
@@ -739,6 +770,15 @@ export function changeFrameAsync(
             const {
                 states, maxZ, minZ, history,
             } = await fetchAnnotations(toFrame);
+
+            // Wrap states with Proxy in review mode
+            let finalStates = states;
+            if (state.annotation.workspace === Workspace.REVIEW) {
+                // Clear user unlocks when changing frame since we're showing different objects
+                userUnlockedInReviewMode.clear();
+                finalStates = wrapStatesForReviewMode(states);
+            }
+
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {
@@ -746,7 +786,7 @@ export function changeFrameAsync(
                     data,
                     filename: data.filename,
                     relatedFiles: data.relatedFiles,
-                    states,
+                    states: finalStates,
                     history,
                     minZ,
                     maxZ,
@@ -1166,6 +1206,24 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
                 type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
                 payload: { error },
             });
+            dispatch(fetchAnnotationsAsync());
+        }
+    };
+}
+
+export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
+        const { workspace: currentWorkspace } = state.annotation;
+
+        if (currentWorkspace === Workspace.REVIEW && workspace !== Workspace.REVIEW) {
+            userUnlockedInReviewMode.clear();
+        }
+
+        dispatch(changeWorkspace(workspace));
+
+        // Re-fetch annotations to apply or remove the Proxy wrapper
+        if (currentWorkspace === Workspace.REVIEW || workspace === Workspace.REVIEW) {
             dispatch(fetchAnnotationsAsync());
         }
     };
