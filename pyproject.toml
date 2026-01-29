@@ -1,3 +1,13 @@
+[project]
+name = "cvat-dev"
+version = "1.0.0"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "cvat-cli>=2.44.3",
+]
+
+
 [tool.isort]
 profile = "black"
 forced_separate = ["tests"]
@@ -11,17 +21,23 @@ extend_skip=[
 
 [tool.black]
 line-length = 100
-target-version = ['py310']
+target-version = ['py39']
 extend-exclude = """
 # TODO: get rid of these
 ^/cvat/apps/(
     dataset_manager/bindings.py
     |engine/(
-        mixins.py
+        admin.py
+        |backup.py
+        |cloud_provider.py
+        |media_extractors.py
+        |mixins.py
         |models.py
+        |permissions.py
         |serializers.py
         |task.py
         |views.py
     )
 )
+| ^/serverless/
 """

@@ -1,3 +1,8 @@
+# Ignore domestic files
+buildbin/
+imagepull.yaml
+helm-chart/values.override.yaml
+
 # Project Specific
 /data/
 /events/
@@ -77,3 +82,7 @@ cvat-ui/dist
 **/!.yarn/releases
 **/!.yarn/sdks
 **/!.yarn/versions
+
+serverless/
+click-to-deploy/
+nuclio_models/

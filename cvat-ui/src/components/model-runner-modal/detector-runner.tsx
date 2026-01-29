@@ -28,7 +28,9 @@ interface Props {
     models: MLModel[];
     labels: Label[];
     dimension: DimensionType;
-    runInference(model: MLModel, body: object): void;
+    fetching?: boolean;
+    onStartROISelection?: () => void;
+    runInference(model: MLModel, body: object, useROI?: boolean): void;
 }
 
 type ServerMapping = Record<string, {
@@ -43,6 +45,7 @@ export interface AnnotateTaskRequestBody {
     cleanup: boolean;
     conv_mask_to_poly: boolean;
     threshold?: number;
+    roi?: number[];
 }
 
 function convertMappingToServer(mapping: FullMapping): ServerMapping {
@@ -65,7 +68,7 @@ function convertMappingToServer(mapping: FullMapping): ServerMapping {
 
 function DetectorRunner(props: Props): JSX.Element {
     const {
-        models, withCleanup, labels, dimension, runInference,
+        models, withCleanup, labels, dimension, fetching = false, runInference, onStartROISelection,
     } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
@@ -77,6 +80,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const [detectorThreshold, setDetectorThreshold] = useState<number | null>(null);
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
+    const [useROI, setUseROI] = useState<boolean>(false);
 
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
@@ -173,6 +177,24 @@ function DetectorRunner(props: Props): JSX.Element {
                     <Text>Convert masks to polygons</Text>
                 </div>
             )}
+            {isDetector && onStartROISelection && (
+                <div className='cvat-detector-runner-roi-wrapper'>
+                    <Row align='middle' justify='space-between'>
+                        <Col>
+                            <Switch
+                                checked={useROI}
+                                onChange={(checked: boolean) => setUseROI(checked)}
+                            />
+                            <Text style={{ marginLeft: 8 }}>Use ROI (Region of Interest)</Text>
+                        </Col>
+                        <Col>
+                            <CVATTooltip title='When enabled, clicking Annotate will first allow you to select a region of interest before running detection'>
+                                <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                            </CVATTooltip>
+                        </Col>
+                    </Row>
+                </div>
+            )}
             {isDetector && withCleanup && (
                 <div className='cvat-detector-runner-clean-previous-annotations-wrapper'>
                     <Switch
@@ -252,7 +274,7 @@ function DetectorRunner(props: Props): JSX.Element {
                 <Col>
                     <Button
                         className='cvat-inference-run-button'
-                        disabled={!buttonEnabled}
+                        disabled={!buttonEnabled || fetching}
                         type='primary'
                         onClick={() => {
                             if (!model) return;
@@ -266,7 +288,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                     ...(detectorThreshold !== null ? { threshold: detectorThreshold } : {}),
                                 };
 
-                                runInference(model, body);
+                                runInference(model, body, useROI);
                             } else if (model.kind === ModelKind.REID) {
                                 runInference(model, { threshold, max_distance: distance });
                             }

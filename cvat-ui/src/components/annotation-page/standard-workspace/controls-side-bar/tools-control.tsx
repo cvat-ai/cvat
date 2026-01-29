@@ -32,7 +32,7 @@ import {
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ToolsBlockerState, PluginComponent,
+    CombinedState, ActiveControl, ToolsBlockerState,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -68,7 +68,6 @@ interface StateToProps {
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
     frameIsDeleted: boolean;
-    interactorExtras: PluginComponent[];
 }
 
 interface DispatchToProps {
@@ -104,15 +103,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings: {
             workspace: { toolsBlockerState, defaultApproxPolyAccuracy },
         },
-        plugins: {
-            components: {
-                aiTools: {
-                    interactors: {
-                        extras: interactorExtras,
-                    },
-                },
-            },
-        },
     } = state;
 
     return {
@@ -130,7 +120,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         defaultApproxPolyAccuracy,
         toolsBlockerState,
         frameIsDeleted,
-        interactorExtras,
     };
 }
 
@@ -161,8 +150,10 @@ interface State {
     fetching: boolean;
     pointsReceived: boolean;
     approxPolyAccuracy: number;
-    mode: 'detection' | 'interaction' | 'tracking';
+    mode: 'detection' | 'interaction' | 'tracking' | 'detection_roi';
     portals: React.ReactPortal[];
+    detectorRoi: number[] | null;
+    pendingDetectorInference: { model: MLModel; body: any } | null;
 }
 
 type DetectorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { version: number }>;
@@ -262,6 +253,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             pointsReceived: false,
             mode: 'interaction',
             portals: [],
+            detectorRoi: null,
+            pendingDetectorInference: null,
         };
 
         this.interaction = {
@@ -589,6 +582,150 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (mode === 'tracking') {
             await this.onTracking(e);
+        }
+
+        if (mode === 'detection_roi') {
+            await this.onDetectionRoi(e);
+        }
+    };
+
+    private onDetectionRoi = async (e: Event): Promise<void> => {
+        const { canvasInstance } = this.props;
+        
+        console.log('[ROI] onDetectionRoi called', e);
+        console.log('[ROI] event detail:', (e as CustomEvent).detail);
+        
+        if (e instanceof CustomEvent) {
+            const detail = e.detail;
+            console.log('[ROI] detail keys:', Object.keys(detail));
+            console.log('[ROI] detail.isDone:', detail.isDone);
+            console.log('[ROI] detail.shapesUpdated:', detail.shapesUpdated);
+            console.log('[ROI] detail.shapes:', detail.shapes);
+            
+            if (detail.isDone && detail.shapes && detail.shapes.length > 0) {
+                const shape = detail.shapes[0];
+                console.log('[ROI] shape:', shape);
+                
+                if (shape.shapeType === 'rectangle' && shape.points.length === 4) {
+                    const [xtl, ytl, xbr, ybr] = shape.points;
+                    const newRoi = [xtl, ytl, xbr, ybr];
+                    
+                    console.log('[ROI] ROI selected:', newRoi);
+                    canvasInstance.cancel();
+                    
+                    // ROI選択後に推論を実行
+                    const { pendingDetectorInference } = this.state;
+                    console.log('[ROI] pendingDetectorInference:', pendingDetectorInference);
+                    
+                    if (pendingDetectorInference) {
+                        console.log('[ROI] Starting inference with ROI');
+                        await this.executeDetectorInference(
+                            pendingDetectorInference.model, 
+                            pendingDetectorInference.body, 
+                            newRoi
+                        );
+                        this.setState({ 
+                            pendingDetectorInference: null,
+                            detectorRoi: null,
+                            mode: 'detection'
+                        });
+                    } else {
+                        console.log('[ROI] No pending inference found');
+                    }
+                }
+            }
+        }
+    };
+
+    private startDetectionRoiSelection = (): void => {
+        const { canvasInstance } = this.props;
+        this.setState({ mode: 'detection_roi' });
+        canvasInstance.cancel();
+        canvasInstance.interact({
+            shapeType: 'rectangle',
+            enabled: true,
+        });
+    };
+
+    private executeDetectorInference = async (model: MLModel, body: any, roi?: number[] | null): Promise<void> => {
+        const { jobInstance, frame, createAnnotations, curZOrder } = this.props;
+
+        function loadAttributes(
+            attributes: { spec_id: number; value: string }[],
+        ): Record<number, string> {
+            return Object.fromEntries(attributes.map((a) => [a.spec_id, a.value]));
+        }
+
+        try {
+            this.setState({ mode: 'detection', fetching: true });
+
+            // The function call endpoint doesn't support the cleanup parameter.
+            const { cleanup, ...restOfBody } = body;
+
+            const result = await core.lambda.call(jobInstance.taskId, model, {
+                ...restOfBody,
+                ...(roi ? { roi } : {}),
+                type: 'annotate_frame',
+                frame,
+                job: jobInstance.id,
+            }) as DetectorResults;
+
+            const tagStates = result.tags.map((tag: any) => {
+                const jobLabel = jobInstance.labels
+                    .find((jLabel: any) => jLabel.id === tag.label_id)!;
+
+                return new core.classes.ObjectState({
+                    attributes: loadAttributes(tag.attributes),
+                    frame,
+                    label: jobLabel,
+                    objectType: ObjectType.TAG,
+                    source: core.enums.Source.AUTO,
+                });
+            });
+
+            const shapeStates = result.shapes.map((shape: any) => {
+                const jobLabel = jobInstance.labels
+                    .find((jLabel: any) => jLabel.id === shape.label_id)!;
+
+                return new core.classes.ObjectState({
+                    attributes: loadAttributes(shape.attributes),
+                    elements: shape.elements?.map((element: any) => {
+                        const jobSublabel = jobLabel.structure!.sublabels
+                            .find((sublabel: any) => sublabel.id === element.label_id)!;
+
+                        return {
+                            attributes: loadAttributes(element.attributes),
+                            frame,
+                            label: jobSublabel,
+                            objectType: ObjectType.SHAPE,
+                            occluded: element.occluded,
+                            outside: element.outside,
+                            points: element.points,
+                            shapeType: element.type,
+                            source: core.enums.Source.AUTO,
+                        };
+                    }),
+                    frame,
+                    label: jobLabel,
+                    objectType: ObjectType.SHAPE,
+                    occluded: shape.occluded,
+                    points: shape.points,
+                    rotation: shape.rotation,
+                    shapeType: shape.type,
+                    source: core.enums.Source.AUTO,
+                    zOrder: curZOrder,
+                });
+            });
+
+            createAnnotations([...tagStates, ...shapeStates]);
+        } catch (error: any) {
+            notification.error({
+                description: error.message,
+                message: 'Detection error occurred',
+                duration: null,
+            });
+        } finally {
+            this.setState({ fetching: false, detectorRoi: null });
         }
     };
 
@@ -1069,7 +1206,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderInteractorBlock(): JSX.Element {
         const {
-            interactors, canvasInstance, labels, onInteractionStart, interactorExtras,
+            interactors, canvasInstance, labels, onInteractionStart,
         } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, startInteractingWithBox, convertMasksToPolygons,
@@ -1089,13 +1226,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const minNegVertices = activeInteractor?.params?.canvas?.minNegVertices ?? -1;
         const renderStartWithBox = activeInteractor?.params?.canvas?.startWithBoxOptional ?? false;
-
-        const renderedInteractorExtras = interactorExtras
-            .sort((a, b) => a.data.weight - b.data.weight)
-            .filter((plugin) => plugin.data.shouldBeRendered(this.props, this.state))
-            .map(({ component: Component }, index) => (
-                <Component targetProps={this.props} targetState={this.state} key={index} />
-            ));
 
         return (
             <>
@@ -1160,9 +1290,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </div>
                     )}
                 </div>
-                <div className='cvat-tools-interactor-extras'>
-                    {renderedInteractorExtras}
-                </div>
                 <Row align='middle' justify='end'>
                     <Col>
                         <Button
@@ -1222,80 +1349,21 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 models={detectors}
                 labels={labels}
                 dimension={jobInstance.dimension}
-                runInference={async (model: MLModel, body: AnnotateTaskRequestBody) => {
-                    function loadAttributes(
-                        attributes: { spec_id: number; value: string }[],
-                    ): Record<number, string> {
-                        return Object.fromEntries(attributes.map((a) => [a.spec_id, a.value]));
+                onStartROISelection={() => this.startDetectionRoiSelection()}
+                runInference={async (model: MLModel, body: AnnotateTaskRequestBody, useROI?: boolean) => {
+                    console.log('[ROI] runInference called', { useROI, model: model.name, body });
+                    
+                    // ROIが必要な場合は、ROI選択を開始
+                    if (useROI) {
+                        console.log('[ROI] Setting pending inference and starting ROI selection');
+                        this.setState({ pendingDetectorInference: { model, body } });
+                        this.startDetectionRoiSelection();
+                        return;
                     }
 
-                    try {
-                        this.setState({ mode: 'detection', fetching: true });
-
-                        // The function call endpoint doesn't support the cleanup parameter.
-                        const { cleanup, ...restOfBody } = body;
-
-                        const result = await core.lambda.call(jobInstance.taskId, model, {
-                            ...restOfBody, type: 'annotate_frame', frame, job: jobInstance.id,
-                        }) as DetectorResults;
-
-                        const tagStates = result.tags.map((tag) => {
-                            const jobLabel = jobInstance.labels
-                                .find((jLabel) => jLabel.id === tag.label_id)!;
-
-                            return new core.classes.ObjectState({
-                                attributes: loadAttributes(tag.attributes),
-                                frame,
-                                label: jobLabel,
-                                objectType: ObjectType.TAG,
-                                source: core.enums.Source.AUTO,
-                            });
-                        });
-
-                        const shapeStates = result.shapes.map((shape) => {
-                            const jobLabel = jobInstance.labels
-                                .find((jLabel) => jLabel.id === shape.label_id)!;
-
-                            return new core.classes.ObjectState({
-                                attributes: loadAttributes(shape.attributes),
-                                elements: shape.elements?.map((element) => {
-                                    const jobSublabel = jobLabel.structure!.sublabels
-                                        .find((sublabel) => sublabel.id === element.label_id)!;
-
-                                    return {
-                                        attributes: loadAttributes(element.attributes),
-                                        frame,
-                                        label: jobSublabel,
-                                        objectType: ObjectType.SHAPE,
-                                        occluded: element.occluded,
-                                        outside: element.outside,
-                                        points: element.points,
-                                        shapeType: element.type,
-                                        source: core.enums.Source.AUTO,
-                                    };
-                                }),
-                                frame,
-                                label: jobLabel,
-                                objectType: ObjectType.SHAPE,
-                                occluded: shape.occluded,
-                                points: shape.points,
-                                rotation: shape.rotation,
-                                shapeType: shape.type,
-                                source: core.enums.Source.AUTO,
-                                zOrder: curZOrder,
-                            });
-                        });
-
-                        createAnnotations([...tagStates, ...shapeStates]);
-                    } catch (error: any) {
-                        notification.error({
-                            description: <CVATMarkdown>{error.message}</CVATMarkdown>,
-                            message: 'Detection error occurred',
-                            duration: null,
-                        });
-                    } finally {
-                        this.setState({ fetching: false });
-                    }
+                    // ROIが不要な場合は直接推論を実行
+                    console.log('[ROI] Running inference without ROI');
+                    this.executeDetectorInference(model, body, null);
                 }}
             />
         );

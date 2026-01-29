@@ -6,19 +6,22 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
+import math
 import os
 import textwrap
 from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
-from typing import Any
+from typing import Any, Optional
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
 import numpy as np
 import requests
 import rq
+from PIL import Image
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.signing import BadSignature, TimestampSigner
@@ -298,10 +301,10 @@ class LambdaFunction:
         db_task: Task,
         data: dict[str, Any],
         *,
-        db_job: Job | None = None,
-        is_interactive: bool | None = False,
-        request: ExtendedRequest | None = None,
-        converter: DetectionResultConverter | None = None,
+        db_job: Optional[Job] = None,
+        is_interactive: Optional[bool] = False,
+        request: Optional[ExtendedRequest] = None,
+        converter: Optional[DetectionResultConverter] = None,
     ):
         if db_job is not None and db_job.get_task_id() != db_task.id:
             raise ValidationError(
@@ -466,7 +469,13 @@ class LambdaFunction:
                     )
 
         if self.kind == FunctionKind.DETECTOR:
-            payload.update({"image": self._get_image(db_task, mandatory_arg("frame"))})
+            roi = data.get("roi")
+            roi_offset = None
+            if roi is not None:
+                image, roi_offset = self._get_cropped_image(db_task, mandatory_arg("frame"), roi)
+                payload.update({"image": image})
+            else:
+                payload.update({"image": self._get_image(db_task, mandatory_arg("frame"))})
         elif self.kind == FunctionKind.INTERACTOR:
             payload.update(
                 {
@@ -594,6 +603,9 @@ class LambdaFunction:
             return attributes
 
         if self.kind == FunctionKind.DETECTOR:
+            if roi_offset:
+                self._offset_detector_response(response, roi_offset)
+
             response_filtered = []
 
             for item in response:
@@ -649,6 +661,70 @@ class LambdaFunction:
 
         return base64.b64encode(image.data.getvalue()).decode("utf-8")
 
+    def _get_cropped_image(self, db_task, frame, roi):
+        frame_provider = TaskFrameProvider(db_task)
+        image = frame_provider.get_frame(frame)
+        image_bytes = image.data.getvalue()
+        return self._crop_image_bytes(image_bytes, roi)
+
+    def _crop_image_bytes(self, image_bytes, roi):
+        if not isinstance(roi, (list, tuple)) or len(roi) != 4:
+            raise ValidationError("ROI must be a list of four numbers")
+
+        try:
+            xtl, ytl, xbr, ybr = map(float, roi)
+        except (TypeError, ValueError) as err:
+            raise ValidationError("ROI must be a list of four numbers") from err
+
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            img_format = img.format or "JPEG"
+            img = img.convert("RGB")
+            width, height = img.size
+
+            left = max(0, min(width - 1, math.floor(min(xtl, xbr))))
+            top = max(0, min(height - 1, math.floor(min(ytl, ybr))))
+            right = max(left + 1, min(width, math.ceil(max(xtl, xbr)) + 1))
+            bottom = max(top + 1, min(height, math.ceil(max(ytl, ybr)) + 1))
+
+            if right <= left or bottom <= top:
+                raise ValidationError("ROI must have a positive area")
+
+            cropped = img.crop((left, top, right, bottom))
+            out = io.BytesIO()
+            cropped.save(out, format=img_format)
+
+        roi_offset = (left, top)
+        return base64.b64encode(out.getvalue()).decode("utf-8"), roi_offset
+
+    def _offset_detector_response(self, response, offset):
+        if not response or not offset or not isinstance(response, list):
+            return
+
+        left, top = offset
+
+        def shift_points(points):
+            if not points:
+                return points
+            return [
+                (value + left) if idx % 2 == 0 else (value + top)
+                for idx, value in enumerate(points)
+            ]
+
+        for item in response:
+            if "points" in item:
+                item["points"] = shift_points(item.get("points"))
+
+            if "mask" in item and isinstance(item["mask"], list) and len(item["mask"]) >= 4:
+                item["mask"][-4] += left
+                item["mask"][-3] += top
+                item["mask"][-2] += left
+                item["mask"][-1] += top
+
+            if "elements" in item:
+                for element in item["elements"]:
+                    if "points" in element:
+                        element["points"] = shift_points(element.get("points"))
+
 
 class LambdaQueue:
     RESULT_TTL = timedelta(minutes=30)
@@ -682,7 +758,7 @@ class LambdaQueue:
         max_distance,
         request,
         *,
-        job: int | None = None,
+        job: Optional[int] = None,
     ) -> LambdaJob:
         queue = self._get_queue()
         rq_id = RequestId(
@@ -783,7 +859,7 @@ class DetectionResultConverter:
 
     def _parse_anno(
         self, *, labels: dict, conv_mask_to_poly: bool, frame: int, anno: dict
-    ) -> dict | None:
+    ) -> Optional[dict]:
         label = labels.get(anno["label"])
         if label is None:
             # Invalid label provided
@@ -878,7 +954,7 @@ class DetectionResultConverter:
 
 
 class DetectionResultCollector:
-    def __init__(self, task: Task, job: Job | None) -> None:
+    def __init__(self, task: Task, job: Optional[Job]) -> None:
         self._task = task
         self._job = job
 
@@ -982,10 +1058,10 @@ class LambdaJob:
         function: LambdaFunction,
         db_task: Task,
         threshold: float,
-        mapping: dict[str, str] | None,
+        mapping: Optional[dict[str, str]],
         conv_mask_to_poly: bool,
         *,
-        db_job: Job | None = None,
+        db_job: Optional[Job] = None,
     ):
         collector = DetectionResultCollector(db_task, db_job)
 
@@ -1036,7 +1112,7 @@ class LambdaJob:
         return job.get_status()
 
     @classmethod
-    def _get_frame_set(cls, db_task: Task, db_job: Job | None):
+    def _get_frame_set(cls, db_task: Task, db_job: Optional[Job]):
         if db_job:
             task_data = db_task.data
             data_start_frame = task_data.start_frame
@@ -1057,7 +1133,7 @@ class LambdaJob:
         threshold: float,
         max_distance: int,
         *,
-        db_job: Job | None = None,
+        db_job: Optional[Job] = None,
     ):
         if db_job:
             data = dm.task.get_job_data(db_job.id)
@@ -1244,7 +1320,6 @@ class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = "[a-zA-Z0-9_.-]+"
     lookup_field = "func_id"
     iam_organization_field = None
-    iam_permission_class = LambdaPermission
     serializer_class = None
 
     @return_response()
@@ -1372,7 +1447,6 @@ class FunctionViewSet(viewsets.ViewSet):
 )
 class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None
-    iam_permission_class = LambdaPermission
     serializer_class = None
 
     @return_response()

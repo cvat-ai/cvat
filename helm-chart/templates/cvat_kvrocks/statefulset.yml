@@ -30,6 +30,18 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      initContainers:
+      {{- if .Values.cvat.backend.permissionFix.enabled }}
+      - name: user-data-permission-fix
+        image: busybox
+        command: [ "/bin/chmod", "-R", "777", "/var/lib/kvrocks/db" ]
+        volumeMounts:
+        - name: {{ .Release.Name }}-kvrocks-data
+          mountPath: /var/lib/kvrocks/db
+        {{- with .Values.cvat.kvrocks.additionalVolumeMounts }}
+        {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: cvat-kvrocks-app-container
           image: {{ .Values.cvat.kvrocks.image }}:{{ .Values.cvat.kvrocks.tag }}
@@ -106,9 +118,6 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      securityContext:
-        fsGroup: 999
-        fsGroupChangePolicy: "OnRootMismatch"
   {{- if .Values.cvat.kvrocks.defaultStorage.enabled }}
   volumeClaimTemplates:
   - metadata:
@@ -117,15 +126,8 @@ spec:
       labels:
         {{- include "cvat.labels" . | nindent 8 }}
         app: cvat-app
-        tier: kvrocks
-      {{- with .Values.cvat.kvrocks.defaultStorage.annotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        tier: kvroocks
     spec:
-      {{- if .Values.cvat.kvrocks.defaultStorage.volumeAttributesClass.create }}
-      volumeAttributesClassName: {{ .Values.cvat.kvrocks.defaultStorage.volumeAttributesClass.name }}
-      {{- end }}
       accessModes:
       {{- if .Values.cvat.kvrocks.defaultStorage.accessModes }}
       {{ .Values.cvat.kvrocks.defaultStorage.accessModes | toYaml | nindent 6 }}
