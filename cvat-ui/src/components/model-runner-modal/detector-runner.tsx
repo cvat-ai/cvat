@@ -19,7 +19,7 @@ import { ArrowRightOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import {
-    MLModel, ModelKind, DimensionType, Label, LabelType,
+    MLModel, ModelKind, DimensionType, Label, LabelType, getCore,
 } from 'cvat-core-wrapper';
 
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
@@ -78,6 +78,8 @@ function DetectorRunner(props: Props): JSX.Element {
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
 
     const [customWord, setCustomWord] = useState<string>('');
+    const [availableCheckpoints, setAvailableCheckpoints] = useState<string[]>([]);
+    const [loadingCheckpoints, setLoadingCheckpoints] = useState<boolean>(false);
 
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
@@ -115,8 +117,32 @@ function DetectorRunner(props: Props): JSX.Element {
             if (!model.labels.length && model.kind !== ModelKind.REID) {
                 notification.warning({ message: 'This model does not have specified labels' });
             }
+
+            // Load available checkpoints when model changes
+            if (isDetector) {
+                setLoadingCheckpoints(true);
+                const core = getCore();
+                core.lambda.checkpoints(model.id)
+                    .then((checkpoints: string[]) => {
+                        setAvailableCheckpoints(checkpoints);
+                        // Clear the selected checkpoint when changing models
+                        setCustomWord('');
+                    })
+                    .catch((error: Error) => {
+                        console.error('Failed to load checkpoints:', error);
+                        setAvailableCheckpoints([]);
+                    })
+                    .finally(() => {
+                        setLoadingCheckpoints(false);
+                    });
+            } else {
+                setAvailableCheckpoints([]);
+                setCustomWord('');
+            }
         } else {
             setModelLabels([]);
+            setAvailableCheckpoints([]);
+            setCustomWord('');
         }
     }, [labels, model]);
 
@@ -210,15 +236,31 @@ function DetectorRunner(props: Props): JSX.Element {
                 <div className='cvat-detector-runner-threshold-wrapper'>
                     <Row align='middle' justify='start'>
                         <Col>
-                            <Input
-                                placeholder='Enter checkpoint path'
-                                value={customWord}
-                                onChange={(e) => setCustomWord(e.target.value)}
-                            />
+                            <Select
+                                placeholder={
+                                    loadingCheckpoints
+                                        ? 'Loading checkpoints...'
+                                        : availableCheckpoints.length === 0
+                                            ? 'No checkpoints available'
+                                            : 'Select checkpoint (optional)'
+                                }
+                                value={customWord || undefined}
+                                onChange={(value) => setCustomWord(value)}
+                                allowClear
+                                loading={loadingCheckpoints}
+                                style={{ minWidth: 200 }}
+                                disabled={loadingCheckpoints}
+                            >
+                                {availableCheckpoints.map((checkpoint) => (
+                                    <Select.Option key={checkpoint} value={checkpoint}>
+                                        {checkpoint}
+                                    </Select.Option>
+                                ))}
+                            </Select>
                         </Col>
                         <Col>
                             <Text>Checkpoint path</Text>
-                            <CVATTooltip title='A custom checkpoint path you want to pass to the model backend'>
+                            <CVATTooltip title='Select a checkpoint file from the available options. Leave empty to use the default checkpoint'>
                                 <QuestionCircleOutlined className='cvat-info-circle-icon' />
                             </CVATTooltip>
                         </Col>

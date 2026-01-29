@@ -61,6 +61,7 @@ export default interface CVATCore {
         cancel: typeof lambdaManager.cancel;
         listen: typeof lambdaManager.listen;
         requests: typeof lambdaManager.requests;
+        checkpoints: typeof lambdaManager.getCheckpoints;
     };
     server: {
         about: () => Promise<AboutData>;

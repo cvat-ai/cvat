@@ -46,6 +46,7 @@ class LambdaPermission(OpenPolicyAgentPermission):
             {
                 ("lambda_function", "list"): Scopes.LIST,
                 ("lambda_function", "retrieve"): Scopes.VIEW,
+                ("lambda_function", "checkpoints"): Scopes.VIEW,
                 ("lambda_function", "call"): Scopes.CALL_ONLINE,
                 ("lambda_request", "create"): Scopes.CALL_OFFLINE,
                 ("lambda_request", "list"): Scopes.LIST_OFFLINE,

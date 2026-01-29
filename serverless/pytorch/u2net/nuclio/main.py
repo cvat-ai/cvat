@@ -28,6 +28,23 @@ def handler(context, event):
     try:
         data = event.body
 
+        # Parse JSON if data is a string
+        if isinstance(data, str):
+            data = json.loads(data)
+
+        context.logger.info(f"Received data: {data}")
+
+        # Check if this is a request to list available checkpoints
+        if data and data.get("list_checkpoints"):
+            context.logger.info("Listing available checkpoints")
+            checkpoint_files = [f for f in os.listdir('.') if f.endswith('.pth') or f.endswith('.onnx')]
+            context.logger.info(f"Found checkpoints: {checkpoint_files}")
+            return context.Response(body=json.dumps({"checkpoints": checkpoint_files}),
+                headers={},
+                content_type='application/json',
+                status_code=200
+            )
+
         threshold = float(data.get("threshold", 0.5))
         keyword = data.get("keyword", None)
         print(f"Threshold: {threshold}, ckpt_Path: {keyword}")
