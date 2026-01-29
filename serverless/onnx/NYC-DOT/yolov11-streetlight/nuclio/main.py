@@ -18,7 +18,7 @@ def init_context(context):
     labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
 
     # Default model configuration - will be used if no JSON config exists
-    default_model = "yolo_streetlight_640_v01.onnx"
+    default_model = "yolo_streetlight_640_v03.onnx"
     model_config = {
         'model_path': default_model,
         'input_size': 640,
