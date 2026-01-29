@@ -45,6 +45,8 @@ export interface SerializedData {
     color?: string;
     updated?: number;
     source?: Source;
+    score?: number;
+    votes?: number;
     zOrder?: number;
     points?: number[];
     occluded?: boolean;
@@ -88,6 +90,8 @@ export default class ObjectState {
         next: number | null;
         last: number | null;
     } | null;
+    public readonly score: number | undefined;
+    public readonly votes: number | undefined;
     public label: Label;
     public color: string;
     public hidden: boolean;
@@ -180,6 +184,9 @@ export default class ObjectState {
             objectType: serialized.objectType,
             shapeType: serialized.shapeType || null,
             updateFlags,
+            // score and votes are only available for shapes (not tracks or tags)
+            score: serialized.objectType === ObjectType.SHAPE ? (serialized.score ?? 1.0) : undefined,
+            votes: serialized.objectType === ObjectType.SHAPE ? (serialized.votes ?? 0) : undefined,
         };
 
         Object.defineProperties(
@@ -203,6 +210,12 @@ export default class ObjectState {
                 },
                 isGroundTruth: {
                     get: () => data.source === Source.GT,
+                },
+                score: {
+                    get: () => data.score,
+                },
+                votes: {
+                    get: () => data.votes,
                 },
                 clientID: {
                     get: () => data.clientID,

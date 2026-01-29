@@ -12,7 +12,7 @@ from typing import ClassVar, TypeAlias
 import attrs
 import datumaro as dm
 import datumaro.components.merge.intersect_merge
-from datumaro.components.errors import FailedLabelVotingError
+from datumaro.util import filter_dict
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
@@ -31,7 +31,7 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         sigma: float = 0.1
 
         output_conf_thresh: float = 0
-        quorum: int = 1
+        quorum: int = 0
         ignored_attributes: Collection[str] = attrs.field(factory=tuple)
         torso_r: float = 0.01
 
@@ -56,6 +56,16 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
     def _check_annotation_distance(self, t, merged_clusters):
         return  # disabled, need to clarify how to compare merged instances correctly
+
+    def _merge_clusters(self, t, clusters):
+        # A workaround for the incorrect implementation of attribute filtering in Datumaro
+        # TODO: fix in Datumaro
+        merged_annotations = super()._merge_clusters(t, clusters)
+
+        for ann in merged_annotations:
+            ann.attributes = filter_dict(ann.attributes, exclude_keys=self.conf.ignored_attributes)
+
+        return merged_annotations
 
     def get_ann_dataset_id(self, ann_id: int) -> int:
         return self._dataset_map[self.get_ann_source(ann_id)][1]
@@ -370,8 +380,6 @@ class AnnotationMerger(AnnotationMatcher, metaclass=ABCMeta):
 
 @attrs.define(kw_only=True, slots=False)
 class LabelMerger(AnnotationMerger, LabelMatcher):
-    quorum: int = 0
-
     def merge_clusters(self, clusters):
         assert len(clusters) <= 1
         if len(clusters) == 0:
@@ -384,10 +392,6 @@ class LabelMerger(AnnotationMerger, LabelMatcher):
 
         merged = []
         for label, count in votes.items():
-            if count < self.quorum:
-                self._context.add_item_error(FailedLabelVotingError, {label: count})
-                continue
-
             merged.append(
                 dm.Label(
                     self._context.get_label_id(label),
@@ -400,25 +404,17 @@ class LabelMerger(AnnotationMerger, LabelMatcher):
 
 @attrs.define(kw_only=True, slots=False)
 class ShapeMerger(AnnotationMerger, ShapeMatcher):
-    quorum = attrs.field(converter=int, default=0)
-
     def merge_clusters(self, clusters):
         return list(filter(lambda x: x is not None, map(self.merge_cluster, clusters)))
 
-    def find_cluster_label(self, cluster: Sequence[dm.Annotation]) -> tuple[int | None, float]:
+    def find_cluster_label(self, cluster: Sequence[dm.Annotation]) -> tuple[int, float]:
         votes = {}
         for s in cluster:
             label = self._context.get_src_label_name(s, s.label)
-            state = votes.setdefault(label, [0, 0])
-            state[0] += s.attributes.get("score", 1.0)
-            state[1] += 1
+            votes[label] = votes.get(label, 0) + 1
 
-        label, (score, count) = max(votes.items(), key=lambda e: e[1][0])
-        if count < self.quorum:
-            self._context.add_item_error(FailedLabelVotingError, votes)
-            label = None
-        else:
-            label = self._context.get_label_id(label)
+        label, score = max(votes.items(), key=lambda e: e[1])
+        label = self._context.get_label_id(label)
 
         score = score / self._context.dataset_count()
         return label, score
@@ -444,22 +440,16 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
     def merge_cluster_shape_mean_nearest(self, cluster: Sequence[dm.Annotation]) -> dm.Annotation:
         return self._merge_cluster_shape_mean_box_nearest(cluster)
 
-    def merge_cluster_shape(self, cluster: Sequence[dm.Annotation]) -> tuple[dm.Annotation, float]:
-        shape = self.merge_cluster_shape_mean_nearest(cluster)
-        shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
-        return shape, shape_score
+    def merge_cluster_shape(self, cluster: Sequence[dm.Annotation]) -> dm.Annotation:
+        return self.merge_cluster_shape_mean_nearest(cluster)
 
     def merge_cluster(self, cluster):
         label, label_score = self.find_cluster_label(cluster)
 
-        # when the merged annotation is rejected due to quorum constraint
-        if label is None:
-            return None
-
-        shape, shape_score = self.merge_cluster_shape(cluster)
+        shape = self.merge_cluster_shape(cluster)
         shape.z_order = max(cluster, key=lambda a: a.z_order).z_order
         shape.label = label
-        shape.attributes["score"] = label_score * shape_score
+        shape.attributes["score"] = round(label_score, 2)
 
         return shape
 
@@ -507,3 +497,12 @@ class SkeletonMerger(ShapeMerger, SkeletonMatcher):
             dist[idx] = a_cluster_distance / len(cluster)
 
         return cluster[min(dist, key=dist.get)]
+
+    def merge_cluster(self, cluster):
+        shape = super().merge_cluster(cluster)
+
+        if shape is not None:
+            for element in shape.elements:
+                element.attributes["source"] = "consensus"
+
+        return shape

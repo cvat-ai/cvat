@@ -16,13 +16,12 @@ import { getObjectStateColor } from './shared';
 interface OwnProps {
     parentID: number;
     clientID: number;
-    readonly: boolean;
     onMouseLeave?: () => void;
 }
 
 function ObjectItemElementComponent(props: OwnProps): JSX.Element {
     const {
-        clientID, parentID, readonly, onMouseLeave,
+        clientID, parentID, onMouseLeave,
     } = props;
 
     const dispatch = useDispatch();
@@ -63,10 +62,10 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
             >
                 {`${element.label.name} [${element.shapeType.toUpperCase()}]`}
             </Text>
-            <ObjectButtonsContainer readonly={readonly} clientID={element.clientID} />
+            <ObjectButtonsContainer clientID={element.clientID} />
             {!!element.label.attributes.length && (
                 <ItemDetailsContainer
-                    readonly={readonly || element.lock}
+                    readonly={element.lock}
                     parentID={parentID}
                     clientID={clientID}
                 />
