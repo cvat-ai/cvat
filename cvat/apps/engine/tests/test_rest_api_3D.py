@@ -343,6 +343,7 @@ class Task3DTest(_DbTestBase):
                     "label_id": None,
                     "group": 0,
                     "source": "manual",
+                    "score": 1.0,
                     "elements": [],
                     "attributes": [],
                 },

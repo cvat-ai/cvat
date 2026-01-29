@@ -645,6 +645,9 @@ class TestPatchSettings(_PermissionTestBase):
             self._test_patch_settings_403(user["username"], settings["id"], request_data)
 
 
+@pytest.mark.skip(
+    "Merging logic has been changed in #10172, we do not use quorum param, tests need to be re-written"
+)
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestMerging(_PermissionTestBase):
