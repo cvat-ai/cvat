@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add checkpoint selection for Yolov11 streetlight model [PR #39]
 
 ### Changed
 
