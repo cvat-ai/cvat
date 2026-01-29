@@ -95,7 +95,7 @@ def main():
         scene_paths, related_images = find_related_images(
             sources,
             root_path=abs_root,
-            scene_paths=(
+            is_scene_path=(
                 lambda p: not re.search(r"(^|{0})related_images{0}".format(os.sep), p)
                 # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
             ),

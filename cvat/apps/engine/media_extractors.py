@@ -91,7 +91,9 @@ def files_to_ignore(directory):
     return False
 
 
-def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
+def sort(
+    images: list[_T], sorting_method: SortingMethod, func: Callable[[_T], str] | None = None
+) -> list[_T]:
     if sorting_method == SortingMethod.LEXICOGRAPHICAL:
         return sorted(images, key=func)
     elif sorting_method == SortingMethod.NATURAL:
@@ -105,27 +107,29 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
         raise NotImplementedError()
 
 
-def image_size_within_orientation(img: Image.Image):
+def image_size_within_orientation(img: Image.Image) -> tuple[int, int]:
     orientation = img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL)
     if orientation > 4:
         return img.height, img.width
     return img.width, img.height
 
 
-def has_exif_rotation(img: Image.Image):
+def has_exif_rotation(img: Image.Image) -> bool:
     return (
         img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL)
         != ORIENTATION.NORMAL_HORIZONTAL
     )
 
 
-def load_image(image: tuple[str, str, str]) -> tuple[Image.Image, str, str]:
+def load_image(image: tuple[str, str]) -> tuple[Image.Image, str]:
     with Image.open(image[0]) as pil_img:
         pil_img.load()
-        return pil_img, image[1], image[2]
+        return pil_img, image[1]
 
 
-def get_video_chapters(manifest_path: Path, segment: tuple[int, int] = None) -> list[Chapter]:
+def get_video_chapters(
+    manifest_path: Path, segment: tuple[int, int] | None = None
+) -> list[Chapter]:
     if not manifest_path.is_file():
         # Some videos can have no manifest. Typically, because there are issues with keyframes.
         # In this case we don't have a quick and reliable source of information about chapters,
@@ -239,6 +243,14 @@ class CachingMediaIterator(RandomAccessIterator[_MediaT]):
 
 
 class IMediaReader(ABC):
+    ImageFrame: TypeAlias = tuple[str | io.BytesIO, str]
+    """
+    The first element is the contents of the image or the file system path to it.
+    The second element is always the path to the image.
+    """
+
+    VideoFrame: TypeAlias = tuple[av.VideoFrame, None]
+
     def __init__(
         self,
         *,
@@ -258,15 +270,11 @@ class IMediaReader(ABC):
         self._dimension = dimension
 
     @abstractmethod
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ImageFrame] | Iterator[VideoFrame]:
         pass
 
     @abstractmethod
-    def get_progress(self, pos):
-        pass
-
-    @abstractmethod
-    def get_image_size(self, i):
+    def get_image_size(self, i) -> tuple[int, int]:
         pass
 
     @property
@@ -313,9 +321,9 @@ class ImageListReader(IMediaReader):
         self._source_paths = sort(source_paths, sorting_method)
         self._sorting_method = sorting_method
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[IMediaReader.ImageFrame]:
         for i in self.frame_range:
-            yield (self.get_image(i), self.get_path(i), i)
+            yield (self.get_image(i), self.get_path(i))
 
     def __contains__(self, media_file):
         return media_file in self._source_paths
@@ -338,10 +346,7 @@ class ImageListReader(IMediaReader):
     def get_image(self, i):
         return self._source_paths[i]
 
-    def get_progress(self, pos):
-        return (pos + 1) / (len(self.frame_range) or 1)
-
-    def get_image_size(self, i):
+    def get_image_size(self, i) -> tuple[int, int]:
         if self._dimension == DimensionType.DIM_3D:
             properties = ValidateDimension.get_pcd_properties(Path(self.get_path(i)))
             return int(properties["WIDTH"]), int(properties["HEIGHT"])
@@ -504,7 +509,7 @@ class ZipReader(ImageListReader):
     def __del__(self):
         self._zip_source.close()
 
-    def get_image_size(self, i):
+    def get_image_size(self, i) -> tuple[int, int]:
         if self._dimension == DimensionType.DIM_3D:
             properties = PcdReader.parse_pcd_header(Path(self.get_path(i)))
             return int(properties["WIDTH"]), int(properties["HEIGHT"])
@@ -614,7 +619,7 @@ class VideoReader(IMediaReader):
         self,
         *,
         frame_filter: bool | Iterable[int] = True,
-    ) -> Iterator[tuple[av.VideoFrame, str, int]]:
+    ) -> Iterator[IMediaReader.VideoFrame]:
         """
         If provided, frame_filter must be an ordered sequence in the ascending order.
         'True' means using the frames configured in the reader object.
@@ -654,19 +659,15 @@ class VideoReader(IMediaReader):
                     if self._frame_size is None:
                         self._frame_size = (frame.width, frame.height)
 
-                    yield (frame, self._source_path, frame.pts)
+                    yield (frame, None)
 
                     next_frame_filter_frame = next(frame_filter_iter, None)
 
                 if next_frame_filter_frame is None:
                     return
 
-    def __iter__(self) -> Iterator[tuple[av.VideoFrame, str, int]]:
+    def __iter__(self) -> Iterator[IMediaReader.VideoFrame]:
         return self.iterate_frames()
-
-    def get_progress(self, pos):
-        duration = self._get_duration()
-        return pos / duration if duration else None
 
     def _read_av_container(self) -> av.container.InputContainer:
         return _AvVideoReading().read_av_container(self._source_path)
@@ -688,7 +689,7 @@ class VideoReader(IMediaReader):
                     duration = duration_sec * tb_denominator
             return duration
 
-    def get_image_size(self, i):
+    def get_image_size(self, i) -> tuple[int, int]:
         if self._frame_size is not None:
             return self._frame_size
 
@@ -821,7 +822,7 @@ class IChunkWriter(ABC):
         if isinstance(source_image, av.VideoFrame):
             image = source_image.to_image()
         elif isinstance(source_image, io.IOBase):
-            image, _, _ = load_image((source_image, None, None))
+            image, _ = load_image((source_image, None))
         elif isinstance(source_image, Image.Image):
             image = source_image
 
@@ -887,11 +888,11 @@ class ZipChunkWriter(IChunkWriter):
 
     def save_as_chunk(
         self,
-        images: Iterator[tuple[Image.Image | io.IOBase | str, str, str]],
+        images: Iterator[tuple[Image.Image | io.IOBase | str, str]],
         chunk_path: str | io.IOBase,
     ) -> None:
         with zipfile.ZipFile(chunk_path, "x") as zip_chunk:
-            for idx, (image, path, _) in enumerate(images):
+            for idx, (image, path) in enumerate(images):
                 ext = os.path.splitext(path)[1].replace(".", "")
 
                 if self._dimension == DimensionType.DIM_2D:
@@ -940,14 +941,14 @@ class ZipChunkWriter(IChunkWriter):
 class ZipCompressedChunkWriter(ZipChunkWriter):
     def save_as_chunk(
         self,
-        images: Iterator[tuple[Image.Image | io.IOBase | str, str | None, str]],
+        images: Iterator[tuple[Image.Image | io.IOBase | str, str | None]],
         chunk_path: str | io.IOBase,
         *,
         compress_frames: bool = True,
         zip_compress_level: int = 0,
     ) -> None:
         with zipfile.ZipFile(chunk_path, "x", compresslevel=zip_compress_level) as zip_chunk:
-            for idx, (image, path, _) in enumerate(images):
+            for idx, (image, path) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
                         try:
@@ -1035,7 +1036,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
-    FrameDescriptor: TypeAlias = tuple[av.VideoFrame, Any, Any]
+    FrameDescriptor: TypeAlias = tuple[av.VideoFrame, Any]
 
     def _peek_first_frame(
         self, frame_iter: Iterator[FrameDescriptor]
@@ -1071,7 +1072,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
     def _encode_images(
         images, container: av.container.OutputContainer, stream: av.video.stream.VideoStream
     ):
-        for frame, _, _ in images:
+        for frame, _ in images:
             # let libav set the correct pts and time_base
             frame.pts = None
             frame.time_base = Fraction(0, 1)

@@ -1431,7 +1431,6 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                         chunk_real_frame, quality=quality
                     ).data,
                     os.path.basename(db_frame_path),
-                    chunk_frame,
                 )
 
         with closing(_iterate_chunk_frames()) as frame_iter:
@@ -3928,6 +3927,11 @@ class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer)
 class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     task_id = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate_markdown(self, markdown: str) -> str:
+        if len(models.AnnotationGuide.get_asset_ids_from_markdown(markdown)) > settings.ASSET_MAX_COUNT_PER_GUIDE:
+            raise serializers.ValidationError("Maximum number of assets per guide reached")
+        return markdown
 
     @transaction.atomic
     def create(self, validated_data):

@@ -221,6 +221,8 @@ class MediaCache:
         create_callback: Callback,
         cache_item_ttl: int | None = None,
     ) -> DataWithMime:
+        from cvat.apps.engine.signals import cache_item_created_signal
+
         timestamp = django_tz.now()
         item_data = create_callback()
         item_data_bytes = item_data[0].getvalue()
@@ -244,6 +246,13 @@ class MediaCache:
                         f"{settings.CVAT_CACHE_ITEM_MAX_SIZE}."
                     )
                 cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
+
+                cache_item_created_signal.send(
+                    sender=cls,
+                    item_key=key,
+                    item_data_size=item_size,
+                    rq_queue=getattr(rq.get_current_job(), "origin", None),
+                )
 
         return item
 
@@ -580,7 +589,7 @@ class MediaCache:
     @staticmethod
     def read_raw_images(
         db_task: models.Task, frame_ids: Sequence[int], *, decode: bool = True
-    ) -> Generator[tuple[PIL.Image.Image | str, str, str], None, None]:
+    ) -> Generator[tuple[PIL.Image.Image | str, str], None, None]:
         db_data = db_task.require_data()
         manifest_path = db_data.get_manifest_path()
 
@@ -603,7 +612,7 @@ class MediaCache:
                     files_to_download.append((storage_filename, fs_filename))
 
                     checksums.append(item.get("checksum", None))
-                    media.append((fs_filename, fs_filename, None))
+                    media.append((fs_filename, fs_filename))
 
                 storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
@@ -653,7 +662,7 @@ class MediaCache:
             for frame_id, frame_path in db_images:
                 if frame_id == next_requested_frame_id:
                     source_path = os.path.join(raw_data_dir, frame_path)
-                    media.append((source_path, source_path, None))
+                    media.append((source_path, source_path))
 
                     next_requested_frame_id = next(requested_frame_iter, None)
 
@@ -675,7 +684,7 @@ class MediaCache:
         *,
         truncate_common_filename_prefix: bool = True,  # should be done on the UI, probably
         decode: bool = True,
-    ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str, str]], None, None]:
+    ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str]], None, None]:
         raw_data_dir = db_data.get_raw_data_dirname()
 
         def _validate_ri_path(path: str) -> str:
@@ -714,7 +723,7 @@ class MediaCache:
                         ri_realpath = os.path.join(tmp_dir, ri_filename)
 
                         files_to_download.append(ri_filename)
-                        frame_media.append((ri_realpath, ri_filename, None))
+                        frame_media.append((ri_realpath, ri_filename))
 
                     media.append((frame_id, frame_media))
 
@@ -747,7 +756,7 @@ class MediaCache:
                     common_prefix = os.path.commonpath(os.path.dirname(m[1]) for m in frame_media)
 
                     frame_media = [
-                        (m[0], os.path.relpath(m[1], common_prefix), m[2]) for m in frame_media
+                        (m[0], os.path.relpath(m[1], common_prefix)) for m in frame_media
                     ]
 
                 for m in frame_media:
@@ -759,7 +768,7 @@ class MediaCache:
     @staticmethod
     def _read_raw_frames(
         db_task: models.Task | int, frame_ids: Sequence[int]
-    ) -> Generator[tuple[av.VideoFrame | PIL.Image.Image | str, str, str], None, None]:
+    ) -> Generator[tuple[av.VideoFrame | PIL.Image.Image | str, str], None, None]:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
@@ -791,7 +800,7 @@ class MediaCache:
 
             if reader:
                 for frame in reader.iterate_frames(frame_filter=frame_ids):
-                    yield (frame, source_path, None)
+                    yield (frame, source_path)
             else:
                 reader = VideoReader([source_path], allow_threading=False)
 
@@ -946,7 +955,7 @@ class MediaCache:
                             )
                             frame = frame_data.data
                         else:
-                            frame, _, _ = next(frames_iter)
+                            frame, _ = next(frames_iter)
 
                         if hasattr(db_data, "video"):
                             # Decoded video frames can have different size, restore the original one
@@ -963,7 +972,7 @@ class MediaCache:
                         # this is required for video chunk decoding implementation in UI
                         frame = io.BytesIO(dummy_frame.getvalue())
 
-                    yield (frame, None, None)
+                    yield (frame, None)
 
         buff = io.BytesIO()
         with closing(get_frames()) as frame_iter:
@@ -1059,7 +1068,7 @@ class MediaCache:
             closing(self.read_raw_context_images(db_data, frame_ids=[frame_number])) as ri_iter,
             zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file,
         ):
-            for _, (image, path, _) in ri_iter:
+            for _, (image, path) in ri_iter:
                 name = os.path.splitext(path)[0]
 
                 try:
@@ -1094,7 +1103,7 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
 
 
 def prepare_chunk(
-    task_chunk_frames: Iterator[tuple[Any, str, int]],
+    task_chunk_frames: Iterator[tuple[Any, str]],
     *,
     quality: models.FrameQuality,
     db_task: models.Task,

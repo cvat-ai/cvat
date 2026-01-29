@@ -544,7 +544,7 @@ def _create_task_manifest_from_cloud_data(
 
     regular_images, related_images = find_related_images(
         sorted_media,
-        scene_paths=(
+        is_scene_path=(
             lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
             # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
         )
@@ -578,7 +578,7 @@ def _find_and_filter_related_images(
 ) -> dict[str, list[str]]:
     regular_images, related_images = find_related_images(
         extractor.absolute_source_paths,
-        scene_paths=(
+        is_scene_path=(
             lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
             # backward compatibility
         )

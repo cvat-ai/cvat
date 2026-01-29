@@ -37,30 +37,28 @@ from cvat.apps.engine.utils import take_by
 
 _T = TypeVar("_T")
 
+_ReaderFactory: TypeAlias = Callable[[BytesIO], IMediaReader]
+
 
 class _ChunkLoader(metaclass=ABCMeta):
     def __init__(
         self,
-        reader_class: type[IMediaReader],
         *,
-        reader_params: dict | None = None,
+        reader_factory: _ReaderFactory,
     ) -> None:
         self.chunk_id: int | None = None
         self.chunk_reader: RandomAccessIterator | None = None
-        self.reader_class = reader_class
-        self.reader_params = reader_params
+        self.reader_factory = reader_factory
 
-    def load(self, chunk_id: int) -> RandomAccessIterator[tuple[Any, str, int]]:
+    def load(self, chunk_id: int) -> RandomAccessIterator[tuple[Any, str]]:
         if self.chunk_id != chunk_id:
             self.unload()
 
             self.chunk_id = chunk_id
             self.chunk_reader = RandomAccessIterator(
-                self.reader_class(
-                    [self.read_chunk(chunk_id)[0]],
-                    **(self.reader_params or {}),
-                )
+                self.reader_factory(self.read_chunk(chunk_id)[0])
             )
+
         return self.chunk_reader
 
     def unload(self):
@@ -76,12 +74,11 @@ class _ChunkLoader(metaclass=ABCMeta):
 class _FileChunkLoader(_ChunkLoader):
     def __init__(
         self,
-        reader_class: type[IMediaReader],
-        get_chunk_path_callback: Callable[[int], str],
         *,
-        reader_params: dict | None = None,
+        reader_factory: _ReaderFactory,
+        get_chunk_path_callback: Callable[[int], str],
     ) -> None:
-        super().__init__(reader_class, reader_params=reader_params)
+        super().__init__(reader_factory=reader_factory)
         self.get_chunk_path = get_chunk_path_callback
 
     def read_chunk(self, chunk_id: int) -> DataWithMime:
@@ -96,12 +93,11 @@ class _FileChunkLoader(_ChunkLoader):
 class _BufferChunkLoader(_ChunkLoader):
     def __init__(
         self,
-        reader_class: type[IMediaReader],
-        get_chunk_callback: Callable[[int], DataWithMime],
         *,
-        reader_params: dict | None = None,
+        reader_factory: _ReaderFactory,
+        get_chunk_callback: Callable[[int], DataWithMime],
     ) -> None:
-        super().__init__(reader_class, reader_params=reader_params)
+        super().__init__(reader_factory=reader_factory)
         self.get_chunk = get_chunk_callback
 
     def read_chunk(self, chunk_id: int) -> DataWithMime:
@@ -336,7 +332,7 @@ class TaskFrameProvider(IFrameProvider):
                 frame, frame_name = segment_frame_provider._get_raw_frame(
                     task_chunk_frames_with_rel_numbers[task_chunk_frame_id], quality=quality
                 )
-                task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
+                task_chunk_frames[task_chunk_frame_id] = (frame, frame_name)
 
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
@@ -460,24 +456,19 @@ class TaskFrameProvider(IFrameProvider):
 
 
 class SegmentFrameProvider(IFrameProvider):
+    _READER_FACTORIES: dict[models.DataChoice, _ReaderFactory] = {
+        models.DataChoice.IMAGESET: lambda source: ZipReader([source]),
+        # disable threading to avoid unpredictable server
+        # resource consumption during reading in endpoints
+        # can be enabled for other clients
+        models.DataChoice.VIDEO: lambda source: VideoReader([source], allow_threading=False),
+    }
+
     def __init__(self, db_segment: models.Segment) -> None:
         super().__init__()
         self._db_segment = db_segment
 
         db_data = db_segment.task.require_data()
-
-        reader_class: dict[models.DataChoice, tuple[type[IMediaReader], dict | None]] = {
-            models.DataChoice.IMAGESET: (ZipReader, None),
-            models.DataChoice.VIDEO: (
-                VideoReader,
-                {
-                    "allow_threading": False
-                    # disable threading to avoid unpredictable server
-                    # resource consumption during reading in endpoints
-                    # can be enabled for other clients
-                },
-            ),
-        }
 
         if (
             db_data.storage_method
@@ -489,8 +480,7 @@ class SegmentFrameProvider(IFrameProvider):
             def make_loader(quality: models.FrameQuality) -> _ChunkLoader:
                 chunk_type = db_data.get_chunk_type(quality)
                 return _BufferChunkLoader(
-                    reader_class=reader_class[chunk_type][0],
-                    reader_params=reader_class[chunk_type][1],
+                    reader_factory=self._READER_FACTORIES[chunk_type],
                     get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
                         db_segment, chunk_idx, quality=quality
                     ),
@@ -501,8 +491,7 @@ class SegmentFrameProvider(IFrameProvider):
             def make_loader(quality: models.FrameQuality) -> _ChunkLoader:
                 chunk_type = db_data.get_chunk_type(quality)
                 return _FileChunkLoader(
-                    reader_class=reader_class[chunk_type][0],
-                    reader_params=reader_class[chunk_type][1],
+                    reader_factory=self._READER_FACTORIES[chunk_type],
                     get_chunk_path_callback=lambda chunk_idx: db_data.get_static_segment_chunk_path(
                         chunk_idx, segment_id=db_segment.id, quality=quality
                     ),
@@ -599,7 +588,7 @@ class SegmentFrameProvider(IFrameProvider):
         _, chunk_number, frame_offset = self.validate_frame_number(frame_number)
         loader = self._loaders[quality]
         chunk_reader = loader.load(chunk_number)
-        frame, frame_name, _ = chunk_reader[frame_offset]
+        frame, frame_name = chunk_reader[frame_offset]
         return frame, frame_name
 
     def get_frame(
