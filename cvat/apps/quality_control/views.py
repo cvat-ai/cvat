@@ -148,8 +148,7 @@ REPORT_TARGET_PARAM_NAME = "target"
     ),
     list=extend_schema(
         summary="Method returns a paginated list of quality reports.",
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Please note that children reports are included by default
             if the "task_id", "project_id" filters are used.
             If you want to restrict the list of results to a specific report type,
@@ -163,8 +162,7 @@ REPORT_TARGET_PARAM_NAME = "target"
             but the "parent_id" field in responses will include only the first parent report id.
             The "parent_id" filter still returns all the relevant nested reports,
             even though the response "parent_id" values may be different from the requested one.
-        """
-        ).format(REPORT_TARGET_PARAM_NAME),
+        """).format(REPORT_TARGET_PARAM_NAME),
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -304,22 +302,18 @@ class QualityReportViewSet(
     @extend_schema(
         operation_id="quality_create_report",
         summary="Create a quality report",
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Deprecation warning: Utilizing this endpoint to check the computation status is no longer possible.
             Consider using common requests API: GET /api/requests/<rq_id>
-            """
-        ),
+            """),
         parameters=[
             OpenApiParameter(
                 CREATE_REPORT_RQ_ID_PARAMETER,
                 type=str,
-                description=textwrap.dedent(
-                    """\
+                description=textwrap.dedent("""\
                     The report creation request id. Can be specified to check the report
                     creation status.
-                """
-                ),
+                """),
                 deprecated=True,
             )
         ],
@@ -328,16 +322,12 @@ class QualityReportViewSet(
             "201": QualityReportSerializer,
             "202": OpenApiResponse(
                 RqIdSerializer,
-                description=textwrap.dedent(
-                    """\
+                description=textwrap.dedent("""\
                     A quality report request has been enqueued, the request id is returned.
                     The request status can be checked at this endpoint by passing the {}
                     as the query parameter. If the request id is specified, this response
                     means the quality report request is queued or is being processed.
-                """.format(
-                        CREATE_REPORT_RQ_ID_PARAMETER
-                    )
-                ),
+                """.format(CREATE_REPORT_RQ_ID_PARAMETER)),
             ),
             "400": OpenApiResponse(
                 description="Invalid or failed request, check the response data for details"
@@ -468,13 +458,11 @@ SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
 @extend_schema_view(
     list=extend_schema(
         summary="List quality settings instances",
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Please note that child task settings are included by default
             if the "project_id" filter is used.
             If you want to restrict results only to a specific parent type, use the "{}" parameter.
-        """
-        ).format(SETTINGS_PARENT_TYPE_PARAM_NAME),
+        """).format(SETTINGS_PARENT_TYPE_PARAM_NAME),
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(

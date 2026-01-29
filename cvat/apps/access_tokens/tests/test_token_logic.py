@@ -17,7 +17,7 @@ from cvat.apps.engine.tests.utils import ApiTestBase, mock_method
 
 
 def create_db_users(cls: type[ApiTestBase]):
-    (group_admin, _) = Group.objects.get_or_create(name="admin")
+    group_admin, _ = Group.objects.get_or_create(name="admin")
     user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
     user_admin.groups.add(group_admin)
     cls.admin = user_admin

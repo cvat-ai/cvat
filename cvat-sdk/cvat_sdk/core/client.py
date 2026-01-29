@@ -190,7 +190,7 @@ class Client:
         def attempt(schema: str) -> bool:
             with ApiClient(Configuration(host=f"{schema}://{base_url}")) as api_client:
                 with suppress(urllib3.exceptions.RequestError):
-                    (_, response) = api_client.server_api.retrieve_about(
+                    _, response = api_client.server_api.retrieve_about(
                         _request_timeout=5, _parse_response=False, _check_status=False
                     )
 
@@ -341,7 +341,7 @@ class Client:
         )
 
     def get_server_version(self) -> pv.Version:
-        (about, _) = self.api_client.server_api.retrieve_about()
+        about, _ = self.api_client.server_api.retrieve_about()
         return pv.Version(about.version)
 
     def _get_repo(self, repo_type: _RepoType) -> _RepoType:
