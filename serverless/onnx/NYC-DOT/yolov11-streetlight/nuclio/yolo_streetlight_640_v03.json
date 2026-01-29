@@ -1,0 +1,8 @@
+{
+  "model_name": "yolo_streetlight_640_v03",
+  "model_path": "yolo_streetlight_640_v03.onnx",
+  "input_size": 640,
+  "conf_threshold": 0.25,
+  "iou_threshold": 0.6,
+  "description": "YOLOv11 street light detection model - version 03 (640x640 input)"
+}
