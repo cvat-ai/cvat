@@ -44,7 +44,7 @@ from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.errors import InvalidPcdError
 from utils.dataset_manifest.utils import MediaDimension as _MediaDimension
-from utils.dataset_manifest.utils import Openable, PcdReader, detect_media_dimension
+from utils.dataset_manifest.utils import MemOpenable, Openable, PcdReader, detect_media_dimension
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -483,7 +483,7 @@ class PdfReader(ImageListReader):
 class ZipReader(ImageListReader):
     def __init__(
         self,
-        source_paths: list[Path],
+        source_paths: Sequence[Path | io.BytesIO],
         step=1,
         start=0,
         stop=None,
@@ -587,7 +587,7 @@ class ZipReader(ImageListReader):
 class VideoReader(IMediaReader):
     def __init__(
         self,
-        source_paths: Sequence[Openable],
+        source_paths: Sequence[Openable | io.BytesIO],
         step: int = 1,
         start: int = 0,
         stop: int | None = None,
@@ -602,7 +602,11 @@ class VideoReader(IMediaReader):
             dimension=dimension,
         )
 
-        (self._source_path,) = source_paths
+        (source_path,) = source_paths
+        if isinstance(source_path, io.BytesIO):
+            self._source_path = MemOpenable(source_path.read())
+        else:
+            self._source_path = source_path
         self.allow_threading = allow_threading
         self._frame_count: int | None = None
         self._frame_size: tuple[int, int] | None = None  # (w, h)

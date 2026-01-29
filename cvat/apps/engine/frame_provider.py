@@ -34,7 +34,6 @@ from cvat.apps.engine.media_extractors import (
 )
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.utils import take_by
-from utils.dataset_manifest.utils import MemOpenable
 
 _T = TypeVar("_T")
 
@@ -462,9 +461,7 @@ class SegmentFrameProvider(IFrameProvider):
         # disable threading to avoid unpredictable server
         # resource consumption during reading in endpoints
         # can be enabled for other clients
-        models.DataChoice.VIDEO: lambda source: VideoReader(
-            [MemOpenable(source.getvalue())], allow_threading=False
-        ),
+        models.DataChoice.VIDEO: lambda source: VideoReader([source], allow_threading=False),
     }
 
     def __init__(self, db_segment: models.Segment) -> None:
