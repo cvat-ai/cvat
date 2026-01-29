@@ -1320,6 +1320,7 @@ class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = "[a-zA-Z0-9_.-]+"
     lookup_field = "func_id"
     iam_organization_field = None
+    iam_permission_class = LambdaPermission
     serializer_class = None
 
     @return_response()
@@ -1447,6 +1448,7 @@ class FunctionViewSet(viewsets.ViewSet):
 )
 class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None
+    iam_permission_class = LambdaPermission
     serializer_class = None
 
     @return_response()
