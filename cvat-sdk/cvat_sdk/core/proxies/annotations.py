@@ -20,7 +20,7 @@ class AnnotationCrudMixin(ABC):
     # TODO: refactor
 
     def get_annotations(self: _EntityT) -> models.ILabeledData:
-        (annotations, _) = self.api.retrieve_annotations(getattr(self, self._model_id_field))
+        annotations, _ = self.api.retrieve_annotations(getattr(self, self._model_id_field))
         return annotations
 
     def set_annotations(self: _EntityT, data: models.ILabeledDataRequest):

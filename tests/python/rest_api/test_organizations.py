@@ -127,7 +127,7 @@ class TestGetOrganizations:
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_org["owner"]["id"])
 
-            (_, response) = api_client.organizations_api.retrieve(source_org["id"])
+            _, response = api_client.organizations_api.retrieve(source_org["id"])
             fetched_org = json.loads(response.data)
 
         source_org["owner"] = None

@@ -65,12 +65,10 @@ class DeprecatedAlias:
 
     @property
     def description(self) -> str:
-        return textwrap.dedent(
-            f"""\
+        return textwrap.dedent(f"""\
             {self._command.description}
             (Deprecated; use "{self._replacement}" instead.)
-            """
-        )
+            """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         self._command.configure_parser(parser)

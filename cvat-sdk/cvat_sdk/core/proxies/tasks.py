@@ -182,13 +182,13 @@ class Task(
         params = {}
         if quality:
             params["quality"] = quality
-        (_, response) = self.api.retrieve_data(self.id, number=frame_id, **params, type="frame")
+        _, response = self.api.retrieve_data(self.id, number=frame_id, **params, type="frame")
         return io.BytesIO(response.data)
 
     def get_preview(
         self,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_preview(self.id)
+        _, response = self.api.retrieve_preview(self.id)
         return io.BytesIO(response.data)
 
     def download_chunk(
@@ -201,7 +201,7 @@ class Task(
         params = {}
         if quality:
             params["quality"] = quality
-        (_, response) = self.api.retrieve_data(
+        _, response = self.api.retrieve_data(
             self.id, number=chunk_id, **params, type="chunk", _parse_response=False
         )
 
@@ -252,7 +252,7 @@ class Task(
         ]
 
     def get_meta(self) -> models.IDataMetaRead:
-        (meta, _) = self.api.retrieve_data_meta(self.id)
+        meta, _ = self.api.retrieve_data_meta(self.id)
         return meta
 
     def get_labels(self) -> list[models.ILabel]:
