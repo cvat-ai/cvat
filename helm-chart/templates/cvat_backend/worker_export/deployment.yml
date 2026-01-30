@@ -82,7 +82,7 @@ spec:
           securityContext:
             runAsNonRoot: true
       initContainers:
-        {{- include "cvat.backend.initContainers" . | nindent 8 }}
+      {{- include "cvat.backend.initContainers" . | nindent 8 }}
       {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
