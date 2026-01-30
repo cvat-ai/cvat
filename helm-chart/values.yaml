@@ -37,6 +37,11 @@ cvat:
       additionalVolumeMounts: []
     server:
       replicas: 1
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
       labels: {}
       annotations: {}
       resources: {}
@@ -166,6 +171,11 @@ cvat:
         size: 20Gi
   frontend:
     replicas: 1
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
     image: cvat/ui
     tag: dev
     imagePullPolicy: Always
