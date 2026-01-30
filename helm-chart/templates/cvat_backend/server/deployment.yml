@@ -20,7 +20,10 @@ metadata:
 spec:
   replicas: {{ $localValues.replicas }}
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       {{- include "cvat.selectorLabels" . | nindent 6 }}
