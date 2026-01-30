@@ -285,18 +285,32 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): number[] {
-    let sorted = [];
+    let sorted: ObjectState[] = [];
     if (ordering === StatesOrdering.ID_ASCENT) {
-        sorted = [...objectStates].sort((a: any, b: any): number => a.clientID - b.clientID);
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => (
+            (a.clientID ?? 0) - (b.clientID ?? 0)
+        ));
     } else if (ordering === StatesOrdering.ID_DESCENT) {
-        sorted = [...objectStates].sort((a: any, b: any): number => b.clientID - a.clientID);
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => (
+            (b.clientID ?? 0) - (a.clientID ?? 0)
+        ));
     } else if (ordering === StatesOrdering.UPDATED) {
-        sorted = [...objectStates].sort((a: any, b: any): number => b.updated - a.updated);
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => b.updated - a.updated);
+    } else if (ordering === StatesOrdering.Z_ORDER) {
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => a.zOrder - b.zOrder);
+    } else if (ordering === StatesOrdering.LABEL_NAME) {
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => {
+            const labelComparison = a.label.name.localeCompare(b.label.name);
+            if (labelComparison !== 0) {
+                return labelComparison;
+            }
+            return (a.clientID ?? 0) - (b.clientID ?? 0);
+        });
     } else {
-        sorted = [...objectStates].sort((a: any, b: any): number => a.zOrder - b.zOrder);
+        sorted = [...objectStates];
     }
 
-    return sorted.map((state: any) => state.clientID);
+    return sorted.map((state: ObjectState) => state.clientID).filter((id): id is number => id !== null);
 }
 
 type Props = StateToProps & DispatchToProps;
