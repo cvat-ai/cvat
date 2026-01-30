@@ -7,13 +7,12 @@ import concurrent.futures
 import fnmatch
 import itertools
 import os
-import re
 import shutil
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Any, NamedTuple, TypeAlias
 from urllib import parse as urlparse
 from urllib import request as urlrequest
@@ -512,14 +511,14 @@ def _restore_file_order_from_manifest(
     return [input_files[fn] for fn in manifest_files]
 
 def _create_task_manifest_based_on_cloud_storage_manifest(
-    sorted_media: list[str],
+    sorted_media: Sequence[PurePath],
     cloud_storage_manifest_prefix: str,
     cloud_storage_manifest: ImageManifestManager,
     manifest: ImageManifestManager,
 ) -> None:
     if cloud_storage_manifest_prefix:
         sorted_media_without_manifest_prefix = [
-            os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
+            i.relative_to(cloud_storage_manifest_prefix) for i in sorted_media
         ]
         sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
         def _add_prefix(properties):
@@ -537,23 +536,21 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
 
 def _create_task_manifest_from_cloud_data(
     db_storage: models.CloudStorage,
-    sorted_media: list[str],
+    sorted_media: Sequence[PurePath],
     manifest: ImageManifestManager,
 ) -> None:
     dimension = ValidateDimension().detect_dimension_for_paths(sorted_media)
 
     regular_images, related_images = find_related_images(
         sorted_media,
-        is_scene_path=(
-            lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
-            # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
-        )
+        # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
+        is_scene_path=(lambda p: not "related_images" in p.parts),
     )
     sorted_media = [f for f in sorted_media if f in regular_images]
 
     storage_client = db_storage_to_storage_instance(db_storage)
     content_generator = storage_client.bulk_download_to_memory(
-        sorted_media,
+        list(map(os.fspath, sorted_media)),
         object_downloader=HeaderFirstMediaDownloader.create(
             dimension=dimension, client=storage_client
         ).download,
@@ -562,7 +559,7 @@ def _create_task_manifest_from_cloud_data(
     manifest.link(
         sources=content_generator,
         meta={
-            k: {'related_images': related_images[k] }
+            os.fspath(k): {'related_images': [ri.as_posix() for ri in related_images[k]]}
             for k in related_images
         },
         DIM_3D=(dimension == models.DimensionType.DIM_3D),
@@ -572,16 +569,14 @@ def _create_task_manifest_from_cloud_data(
     manifest.create()
 
 def _find_and_filter_related_images(
-    extractor: IMediaReader,
+    extractor: ImageListReader,
     *,
     upload_dir: str
 ) -> dict[str, list[str]]:
     regular_images, related_images = find_related_images(
         extractor.absolute_source_paths,
-        is_scene_path=(
-            lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
-            # backward compatibility
-        )
+        # backward compatibility
+        is_scene_path=(lambda p: not "related_images" in p.parts),
     )
 
     # extractor.filter() uses absolute paths, so we pass them
@@ -808,6 +803,8 @@ def create_thread(
             else:
                 sorted_media = sort(media['image'], data['sorting_method'])
                 media['image'] = sorted_media
+
+            sorted_media = [PurePosixPath(f) for f in sorted_media]
             is_media_sorted = True
 
             if manifest_file:
@@ -868,7 +865,7 @@ def create_thread(
         if extractor is not None:
             raise ValidationError('Combined data types are not supported')
 
-        source_paths = [os.path.join(upload_dir, f) for f in media_files]
+        source_paths = [upload_dir / f for f in media_files]
 
         details = {
             'source_paths': source_paths,
@@ -931,7 +928,7 @@ def create_thread(
         extractor.reconcile(
             source_paths=[
                 # We always work with .pcd files instead of .bin
-                (os.path.splitext(p)[0] + ".pcd") if p.endswith(".bin") else p
+                p.with_suffix('.pcd') if p.suffix == '.bin' else p
                 for p in extractor.absolute_source_paths
             ],
             step=db_data.get_frame_step(),
@@ -984,13 +981,13 @@ def create_thread(
 
             sorted_media_files = _restore_file_order_from_manifest(extractor, manifest, upload_dir)
 
-        sorted_media_files = [os.path.join(upload_dir, fn) for fn in sorted_media_files]
+        sorted_media_files = [upload_dir / fn for fn in sorted_media_files]
 
         # validate the sorting
         for file_path in sorted_media_files:
             if not file_path in extractor:
                 raise ValidationError(
-                    f"Can't find file '{os.path.basename(file_path)}' in the input files"
+                    f"Can't find file '{file_path.name}' in the input files"
                 )
 
         media_files = sorted_media_files.copy()
@@ -1127,7 +1124,7 @@ def create_thread(
                 # us to avoid downloading such images from cloud storage (when using static chunks),
                 # or copying them from the attached share (when using copy_data).
                 manifest.link(
-                    sources=list(map(Path, extractor.absolute_source_paths)),
+                    sources=extractor.absolute_source_paths,
                     meta={
                         k: {'related_images': related_images[k] }
                         for k in related_images
@@ -1147,7 +1144,7 @@ def create_thread(
                     image_info = manifest[frame_id]
 
                     # check mapping
-                    if not image_path.endswith(f"{image_info['name']}{image_info['extension']}"):
+                    if not image_path.as_posix().endswith(f"{image_info['name']}{image_info['extension']}"):
                         raise ValidationError('Incorrect file mapping to manifest content')
 
                     if (
@@ -1552,7 +1549,7 @@ def create_thread(
     if not (is_data_in_cloud and is_backup_restore):
         TaskFrameProvider(db_task=db_task).get_preview()
 
-def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: str):
+def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: Path) -> None:
     @attrs.define
     class _ChunkProgressUpdater:
         _call_counter: int = attrs.field(default=0, init=False)
@@ -1663,7 +1660,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         }
 
         frame_map = {
-            frame.frame: extractor_frame_ids[os.path.join(upload_dir, frame.path)]
+            frame.frame: extractor_frame_ids[upload_dir / frame.path]
             for frame in db_data.images.all()
         }
 

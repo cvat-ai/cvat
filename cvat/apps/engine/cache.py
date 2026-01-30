@@ -17,7 +17,6 @@ from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
-from pathlib import Path
 from typing import Any, TypeAlias, overload
 
 import attrs
@@ -768,7 +767,7 @@ class MediaCache:
     @staticmethod
     def _read_raw_frames(
         db_task: models.Task | int, frame_ids: Sequence[int]
-    ) -> Generator[tuple[av.VideoFrame | PIL.Image.Image | str, str], None, None]:
+    ) -> Generator[tuple[av.VideoFrame | PIL.Image.Image | str, str | None], None, None]:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
@@ -780,7 +779,7 @@ class MediaCache:
         db_data = db_task.require_data()
 
         if hasattr(db_data, "video"):
-            source_path = os.path.join(db_data.get_raw_data_dirname(), db_data.video.path)
+            source_path = db_data.get_raw_data_dirname() / db_data.video.path
 
             manifest_path = db_data.get_manifest_path()
             reader = VideoReaderWithManifest(
@@ -790,7 +789,7 @@ class MediaCache:
             )
             if not os.path.isfile(manifest_path):
                 try:
-                    reader.manifest.link(Path(source_path), force=True)
+                    reader.manifest.link(source_path, force=True)
                     reader.manifest.create()
                 except Exception as e:
                     slogger.task[db_task.id].warning(
@@ -800,7 +799,7 @@ class MediaCache:
 
             if reader:
                 for frame in reader.iterate_frames(frame_filter=frame_ids):
-                    yield (frame, source_path)
+                    yield (frame, None)
             else:
                 reader = VideoReader([source_path], allow_threading=False)
 

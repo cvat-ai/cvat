@@ -93,12 +93,10 @@ class AccessTokensViewSet(
 
     @extend_schema(
         summary="Get current token details",
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Get details of the token used for the current request.
             This endpoint is only allowed if the request is performed using an access token.
-            """
-        ),
+            """),
         responses={"200": AccessTokenReadSerializer},
     )
     @action(detail=False, methods=["GET"], authentication_classes=[AccessTokenAuthentication])
