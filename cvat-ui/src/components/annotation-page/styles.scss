@@ -563,6 +563,16 @@
             display: block;
             padding: $grid-unit-size * 2 $grid-unit-size * 3 $grid-unit-size  $grid-unit-size * 2;
         }
+
+        .cvat-filters-modal-navigation-checkbox {
+            padding: $grid-unit-size * 2 $grid-unit-size * 3;
+            margin-top: $grid-unit-size * 2;
+            border-top: 1px solid $border-color-1;
+
+            .ant-checkbox-wrapper {
+                font-size: 14px;
+            }
+        }
     }
 }
 
