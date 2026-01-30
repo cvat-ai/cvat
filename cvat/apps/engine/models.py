@@ -38,6 +38,7 @@ from cvat.utils import django_database as db_utils
 if TYPE_CHECKING:
     from cvat.apps.engine.cloud_provider import CloudStorageClient
     from cvat.apps.organizations.models import Organization
+    from utils.dataset_manifest.utils import NamedOpenable
 
 
 class SafeCharField(models.CharField):
@@ -544,6 +545,12 @@ class Data(models.Model):
 
     def get_static_cache_dirname(self, quality: FrameQuality) -> Path:
         return self.get_data_dirname() / quality.name.lower()
+
+    def get_openable(self, rel_path: str) -> NamedOpenable:
+        if storage_client := self.get_cloud_storage_client():
+            return storage_client.get_openable(rel_path)
+
+        return self.get_raw_data_dirname() / rel_path
 
     def get_chunk_type(self, quality: FrameQuality) -> DataChoice:
         if quality == FrameQuality.ORIGINAL:
