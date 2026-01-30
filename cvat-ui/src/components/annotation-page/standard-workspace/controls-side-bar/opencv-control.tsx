@@ -7,7 +7,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Popover from 'antd/lib/popover';
-import Icon, { AreaChartOutlined, ScissorOutlined, ThunderboltOutlined, FormatPainterOutlined } from '@ant-design/icons';
+import Icon, { AreaChartOutlined, ScissorOutlined, ThunderboltOutlined, FormatPainterOutlined, HeatMapOutlined, BgColorsOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
@@ -440,6 +440,54 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                             }}
                         >
                             <FormatPainterOutlined />
+                        </Button>
+                    </CVATTooltip>
+                </Col>
+                <Col>
+                    <CVATTooltip title='Heatmap' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={
+                                hasFilter(filters, ImageFilterAlias.HEATMAP) ?
+                                    'cvat-opencv-heatmap-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-heatmap-tool-button'
+                            }
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                if (!hasFilter(filters, ImageFilterAlias.HEATMAP)) {
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.heatmap(),
+                                        alias: ImageFilterAlias.HEATMAP,
+                                    });
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    disableImageFilter(ImageFilterAlias.HEATMAP);
+                                }
+                            }}
+                        >
+                            <HeatMapOutlined />
+                        </Button>
+                    </CVATTooltip>
+                </Col>
+                <Col>
+                    <CVATTooltip title='Gamma correction (OpenCV)' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={
+                                hasFilter(filters, ImageFilterAlias.OPENCV_GAMMA) ?
+                                    'cvat-opencv-gamma-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-gamma-tool-button'
+                            }
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                if (!hasFilter(filters, ImageFilterAlias.OPENCV_GAMMA)) {
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.gammaCorrection(),
+                                        alias: ImageFilterAlias.OPENCV_GAMMA,
+                                    });
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    disableImageFilter(ImageFilterAlias.OPENCV_GAMMA);
+                                }
+                            }}
+                        >
+                            <BgColorsOutlined />
                         </Button>
                     </CVATTooltip>
                 </Col>
