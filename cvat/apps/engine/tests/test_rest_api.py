@@ -1863,6 +1863,11 @@ class _CloudStorageTestBase(ApiTestBase):
             def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /):
                 stream.write(self._files[key])
 
+            def get_file_stream(self, key: str, /, *, offset: int) -> tuple[BytesIO, int]:
+                stream = io.BytesIO(self._files[key])
+                stream.seek(offset)
+                return stream, len(self._files[key])
+
         cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.S3CloudStorage", MockS3)
         cls._aws_patch.start()
 
@@ -1911,10 +1916,12 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
         if cls.MAKE_LIGHTWEIGHT_BACKUP or settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
             # should not load anything from CS anymore
 
-            def disabled(*args):
+            def disabled(*args, **kwargs):
                 raise RuntimeError("Disabled!")
 
             cls.mock_aws._download_fileobj_to_stream = disabled
+            cls.mock_aws._download_range_of_bytes = disabled
+            cls.mock_aws.get_file_stream = disabled
 
     @classmethod
     def tearDownClass(cls):
