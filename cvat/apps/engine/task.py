@@ -759,7 +759,7 @@ def create_thread(
     is_media_sorted = False
 
     if is_data_in_cloud:
-        is_packed_media = any(v for k, v in media.items() if k != 'image')
+        is_packed_media = any(v for k, v in media.items() if k not in {'image', "video"})
         if (
             # Download remote data if local storage is requested
             # TODO: maybe move into cache building to fail faster on invalid task configurations
@@ -779,7 +779,7 @@ def create_thread(
             is_data_in_cloud = False
             if is_packed_media:
                 db_data.storage = models.StorageChoice.LOCAL
-        else:
+        elif not media['video']:
             manifest = ImageManifestManager(db_data.get_manifest_path())
 
     if job_file_mapping is not None and task_mode != 'annotation':
@@ -796,7 +796,7 @@ def create_thread(
                 update_status_callback=update_status,
             )
             manifest_root = upload_dir
-        elif is_data_in_cloud:
+        elif is_data_in_cloud and media['image']:
             # we should sort media before sorting in the extractor because the manifest structure should match to the sorted media
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
@@ -865,10 +865,8 @@ def create_thread(
         if extractor is not None:
             raise ValidationError('Combined data types are not supported')
 
-        source_paths = [upload_dir / f for f in media_files]
-
         details = {
-            'source_paths': source_paths,
+            'source_paths': [db_data.get_openable(f) for f in media_files],
             'step': db_data.get_frame_step(),
             'start': db_data.start_frame,
             'stop': data['stop_frame'],
@@ -1010,7 +1008,7 @@ def create_thread(
     if db_data.chunk_size is None:
         if db_data.compressed_chunk_type == models.DataChoice.IMAGESET:
             first_image_idx = db_data.start_frame
-            if not is_data_in_cloud:
+            if media["video"] or not is_data_in_cloud:
                 w, h = extractor.get_image_size(first_image_idx)
             else:
                 img_properties = manifest[first_image_idx]
@@ -1045,7 +1043,7 @@ def create_thread(
                     update_status('Validating the input manifest file')
 
                     manifest = VideoManifestValidator(
-                        source_path=upload_dir / media_files[0],
+                        source_path=db_data.get_openable(media_files[0]),
                         manifest_path=db_data.get_manifest_path()
                     )
                     manifest.init_index()
@@ -1075,7 +1073,7 @@ def create_thread(
                     # TODO: maybe generate manifest in a temp directory
                     manifest = VideoManifestManager(db_data.get_manifest_path())
                     manifest.link(
-                        media_file=Path(upload_dir, media_files[0]),
+                        media_file=db_data.get_openable(media_files[0]),
                         chunk_size=db_data.chunk_size, # TODO: why it's needed here?
                         force=True
                     )

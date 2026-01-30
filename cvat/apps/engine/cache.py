@@ -779,7 +779,7 @@ class MediaCache:
         db_data = db_task.require_data()
 
         if hasattr(db_data, "video"):
-            source_path = db_data.get_raw_data_dirname() / db_data.video.path
+            source_path = db_data.get_openable(db_data.video.path)
 
             manifest_path = db_data.get_manifest_path()
             reader = VideoReaderWithManifest(
