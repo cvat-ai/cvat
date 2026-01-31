@@ -97,6 +97,10 @@ export default class MLModel {
         return this.serialized?.updated_date;
     }
 
+    public get isPromptable(): boolean {
+        return this.serialized?.is_promptable ?? false;
+    }
+
     public get url(): string | undefined {
         return this.serialized?.url;
     }

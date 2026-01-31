@@ -48,6 +48,7 @@ class FunctionCallRequestSerializer(serializers.Serializer):
         required=False,
         help_text="Label mapping from the model to the task labels",
     )
+    prompt = serializers.CharField(required=False, help_text="Prompt for the model")
 
 
 class FunctionCallParamsSerializer(serializers.Serializer):

@@ -176,6 +176,16 @@ match them.
 For this reason, supported DL models are suitable only for certain labels.
 <br>To check the list of labels for each model, see [Detectors models](#detectors-models).
 
+### Text Prompts for Detectors
+
+Some detector models (e.g., GroundingDINO) support text prompts that allow you to specify which objects to detect using natural language.
+
+If the model is promptable, you will see a **Text Prompt** field where you can enter the prompt. The prompt tells the model what objects to look for in the images.
+
+{{% alert title="Note" color="primary" %}}
+Currently, detector classes are defined statically. The list of output classes from the detector will not be affected by the prompt.
+{{% /alert %}}
+
 ### Annotate with detectors
 
 To annotate with detectors, do the following:

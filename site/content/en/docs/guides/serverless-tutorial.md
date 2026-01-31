@@ -707,6 +707,46 @@ absent. Theoretically it is possible to run different functions on different
 GPUs, but it requires to change source code on corresponding serverless
 functions to choose a free GPU._
 
+### Marking detectors as promptable
+
+Some detector models support text prompts that guide the detection process using natural language.
+To mark your detector as promptable, add the `is_promptable` field to the model's metadata annotations in `function.yaml`:
+
+```yaml
+metadata:
+  name: your-detector-name
+  namespace: cvat
+  annotations:
+    name: Your Detector Display Name
+    type: detector
+    framework: pytorch
+    is_promptable: true
+    spec: |
+      [
+        { "id": 0, "name": "person" },
+        { "id": 1, "name": "car" }
+      ]
+```
+
+When `is_promptable` is set to `true`, a **Text Prompt** input field in the CVAT UI
+when running the detector.
+
+{{% alert title="Important" color="primary" %}}
+- The `is_promptable` field only adds the UI input field.
+- Your model must be designed to accept and process text prompts.
+- Output classes remain defined by the `spec` field (static).
+- The prompt guides detection but doesn't change available labels.
+{{% /alert %}}
+
+#### Handling prompts in your serverless function
+
+The prompt text is passed to your function in the request body. Extract and use it in your handler:
+```python
+def handler(context, event):
+    data = event.body
+    prompt = data.get("prompt", "")
+```
+
 ### Debugging a serverless function
 
 Let's say you have a problem with your serverless function and want to debug it.
