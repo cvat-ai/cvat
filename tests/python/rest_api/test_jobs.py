@@ -551,7 +551,7 @@ class TestGetJobs:
             assert response.status == HTTPStatus.OK
 
             if expected_data is not None:
-                assert compare_annotations(expected_data, json.loads(response.data)) == {}
+                assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
 
     def _test_get_job_403(self, user, jid, **kwargs):
         with make_api_client(user) as client:
@@ -941,7 +941,7 @@ class TestListJobs:
             results = get_paginated_collection(
                 client.jobs_api.list_endpoint, return_json=True, **kwargs
             )
-            assert compare_annotations(data, results) == {}
+            assert DeepDiff(data, results, ignore_order=True) == {}
 
     def _test_list_jobs_403(self, user, **kwargs):
         with make_api_client(user) as client:
@@ -1135,7 +1135,9 @@ class TestPatchJobAnnotations:
 
             if expect_success:
                 assert response.status == HTTPStatus.OK
-                assert compare_annotations(data, json.loads(response.data)) == {}
+                assert (
+                    compare_annotations(data, json.loads(response.data), ignore_source=True) == {}
+                )
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
 

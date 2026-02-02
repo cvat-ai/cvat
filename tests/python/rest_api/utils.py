@@ -474,9 +474,16 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
     return task.id, response_.headers.get("X-Request-Id")
 
 
-def compare_annotations(a: dict, b: dict) -> dict:
+def compare_annotations(
+    a: dict,
+    b: dict,
+    *,
+    ignore_spec_ids: bool = False,
+    ignore_source: bool = False,
+    ignore_score: bool = False,
+) -> dict:
     def _exclude_cb(obj, path: str):
-        # ignoring track elements which do not have shapes
+        # ignore track elements which do not have shapes
         split_path = path.rsplit("['elements']", maxsplit=1)
         if len(split_path) == 2:
             if split_path[1].count("[") == 1 and not obj["shapes"]:
@@ -484,20 +491,34 @@ def compare_annotations(a: dict, b: dict) -> dict:
 
         return path.endswith("['elements']") and not obj
 
+    excluded_paths = [
+        r"root\['version|updated_date'\]",
+        r"root(\['\w+'\]\[\d+\])+\['id'\]",
+    ]
+
+    if ignore_score:
+        excluded_paths += [
+            r"root(\['\w+'\]\[\d+\])+\['score'\]",
+        ]
+
+    if ignore_source:
+        excluded_paths += [
+            r"root(\['\w+'\]\[\d+\])+\['source'\]",
+        ]
+
+    if ignore_spec_ids:
+        excluded_paths += [
+            r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+            r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+        ]
+
     return DeepDiff(
         a,
         b,
         ignore_order=True,
         significant_digits=2,  # annotations are stored with 2 decimal digit precision
         exclude_obj_callback=_exclude_cb,
-        exclude_regex_paths=[
-            r"root\['version|updated_date'\]",
-            r"root(\['\w+'\]\[\d+\])+\['id'\]",
-            r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-            r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-            r"root(\['\w+'\]\[\d+\])+\['source'\]",
-            r"root(\['\w+'\]\[\d+\])+\['score'\]",
-        ],
+        exclude_regex_paths=excluded_paths,
     )
 
 

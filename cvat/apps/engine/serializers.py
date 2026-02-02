@@ -3261,7 +3261,7 @@ class ShapeSerializer(serializers.Serializer):
 
 class SubLabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True, default=[])
-    score = serializers.FloatField(min_value=0, max_value=1, default=1, read_only=True)
+    score = serializers.FloatField(min_value=0, max_value=1, default=1)
 
 class LabeledShapeSerializer(SubLabeledShapeSerializer):
     elements = SubLabeledShapeSerializer(many=True, required=False)
