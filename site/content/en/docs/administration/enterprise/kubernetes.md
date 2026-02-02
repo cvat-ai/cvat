@@ -100,7 +100,7 @@ products:
 1. Create an auth_config.yml file based on the following sections:
    - {{< ilink "/docs/account_management/sso" "SSO configuration" >}}.
    - {{< ilink "/docs/account_management/social-accounts-configuration" "Social accounts configuration" >}}.
-   - {{< ilink "/docs/account_management/disable-basic-authentication" "Disable registration or password-based login" >}}.
+   - {{< ilink "/docs/account_management/disable-basic-authentication" "Disable basic authentication" >}}.
 1. Upload it as a secret to the Kubernetes cluster:
    ```bash
    kubectl create secret generic cvat-auth-config --from-file=auth_config.yml
