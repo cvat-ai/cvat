@@ -68,7 +68,14 @@ class AnnotationIR:
         assert not self.is_stream, "Not implemented for streaming"
         serializer = LabeledDataSerializer(data=self.data)
         if serializer.is_valid(raise_exception=True):
-            return serializer.data
+            data = serializer.data
+
+            # Explicitly preserve scores from shapes
+            for i, shape in enumerate(self.shapes):
+                if 'score' in shape:
+                    data['shapes'][i]['score'] = shape['score']
+
+            return data
 
     @staticmethod
     def _is_shape_inside(shape, start, stop):
