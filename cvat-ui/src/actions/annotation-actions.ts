@@ -676,23 +676,13 @@ export function changeFrameAsync(
             }, true);
 
             const currentTime = new Date().getTime();
-            let frameSpeed;
-            switch (state.settings.player.frameSpeed) {
-                case FrameSpeed.Fast: {
-                    frameSpeed = (FrameSpeed.Fast as number) / 2;
-                    break;
-                }
-                case FrameSpeed.Fastest: {
-                    frameSpeed = (FrameSpeed.Fastest as number) / 3;
-                    break;
-                }
-                default: {
-                    frameSpeed = state.settings.player.frameSpeed as number;
-                }
-            }
+            // Base FPS for playback, multiplied by the speed setting
+            const baseFPS = 25;
+            const speedMultiplier = state.settings.player.frameSpeed as number;
+            const effectiveFPS = baseFPS * speedMultiplier;
             const delay = Math.max(
                 0,
-                Math.round(1000 / frameSpeed) - currentTime + (state.annotation.player.frame.changeTime as number),
+                Math.round(1000 / effectiveFPS) - currentTime + (state.annotation.player.frame.changeTime as number),
             );
 
             const {

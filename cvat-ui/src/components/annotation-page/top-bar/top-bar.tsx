@@ -7,7 +7,7 @@ import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 
 import {
-    ActiveControl, NavigationType, ToolsBlockerState, Workspace,
+    ActiveControl, FrameSpeed, NavigationType, ToolsBlockerState, Workspace,
 } from 'reducers';
 import { Job } from 'cvat-core-wrapper';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -47,6 +47,7 @@ interface Props {
     keyMap: KeyMap;
     jobInstance: Job;
     ranges: string;
+    frameSpeed: FrameSpeed;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
     showFilters(): void;
@@ -70,6 +71,7 @@ interface Props {
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
     setNavigationType(navigationType: NavigationType): void;
+    onChangeFrameSpeed(speed: FrameSpeed): void;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -127,6 +129,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onRestoreFrame,
         setNavigationType,
         switchNavigationBlocked,
+        frameSpeed,
+        onChangeFrameSpeed,
     } = props;
 
     const playerItems: [JSX.Element, number][] = [];
@@ -152,6 +156,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             onSwitchPlay={onSwitchPlay}
             onSearchAnnotations={onSearchAnnotations}
             setNavigationType={setNavigationType}
+            frameSpeed={frameSpeed}
+            onChangeFrameSpeed={onChangeFrameSpeed}
         />
     ), 0]);
 
