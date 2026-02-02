@@ -20,7 +20,6 @@ from shared.utils.config import make_api_client
 
 from .utils import (
     CollectionSimpleFilterTestBase,
-    compare_annotations,
     invite_user_to_org,
     register_new_user,
     wait_background_request,
@@ -723,9 +722,7 @@ class TestMerging(_PermissionTestBase):
                 assert 0 <= shape["score"] <= 1, "Score must be between 0 and 1"
 
             full_agreement_shapes = [
-                s
-                for s in merged_annotations["shapes"]
-                if s["points"] == bbox_full_agreement.points
+                s for s in merged_annotations["shapes"] if s["points"] == bbox_full_agreement.points
             ]
             assert len(full_agreement_shapes) == 1
             assert (
@@ -798,8 +795,7 @@ class TestMerging(_PermissionTestBase):
             shapes = merged_annotations["shapes"]
             assert len(shapes) >= 1
             assert shapes[0]["score"] == expected_score, (
-                f"Expected score {expected_score} "
-                f"(1 annotator out of {num_replicas} agreed)"
+                f"Expected score {expected_score} " f"(1 annotator out of {num_replicas} agreed)"
             )
 
     @pytest.mark.parametrize("job_id", [42, 51])
@@ -813,6 +809,6 @@ class TestMerging(_PermissionTestBase):
             )
 
             for shape in merged_annotations.get("shapes", []):
-                assert shape.get("source") == "consensus", (
-                    "All merged shapes must have source='consensus'"
-                )
+                assert (
+                    shape.get("source") == "consensus"
+                ), "All merged shapes must have source='consensus'"
