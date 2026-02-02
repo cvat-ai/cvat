@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add checkpoint selection for Yolov11 streetlight model [PR #39]
 - Show checkpoints available for each model in the interface [PR #40]
+- Add CLAHE, sharpen, heatmat and gamma correction to OpenCv filters [PR #41]
 
 ### Changed
 
