@@ -27,8 +27,9 @@ import { getObjectStateColor } from 'components/annotation-page/standard-workspa
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
-    Label, ObjectState, Attribute, Job, ShapeType, ObjectType,
+    Label, ObjectState, Attribute, Job, ShapeType, ObjectType, Source
 } from 'cvat-core-wrapper';
+
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
@@ -320,6 +321,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     private changeLabel = (label: any): void => {
         const { objectState } = this.props;
         objectState.label = label;
+        if (objectState.source === Source.AUTO) {
+            objectState.source = Source.SEMI_AUTO;
+        }
         this.commit();
     };
 
