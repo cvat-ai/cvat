@@ -175,6 +175,68 @@ the next merging and avoid losing the reviewed annotations.
   The operation can take some time to be completed. Once it is completed, you will
   receive a status notification in the top right corner.
 
+### Review and resolve problems
+
+After merging replicas, the parent job will contain merged annotations with consensus scores.
+These scores help you identify which annotations may need closer review.
+
+#### Understanding consensus scores
+
+Each merged annotation has two important properties:
+
+- **Score**: A value from 0 to 1 that indicates the level of agreement between annotators.
+  A score of 1.0 means all replicas agreed on this annotation, while lower scores indicate
+  less agreement between annotators.
+- **Votes**: An approximate number showing how many annotators agreed on this annotation.
+  This is a UI-only value calculated as `replicas × score`. For example, with 5 replicas
+  and a score of 0.8, the votes value would be approximately 4.
+
+![Consensus score and votes on annotation page](/images/consensus-score-votes.png)
+
+Annotations with lower scores may indicate:
+- Ambiguous or difficult-to-annotate objects
+- Inconsistent annotation guidelines
+- Objects that need closer review
+
+#### Filtering low-confidence annotations
+
+Before starting manual review, you may want to filter out annotations with low scores
+to reduce the review workload. To do this:
+
+1. Open the merged parent job in the annotation view
+1. Use the {{< ilink "/docs/annotation/manual-annotation/utilities/filter" "filters panel" >}} to filter
+annotations by score
+1. Review the filtered annotations and delete those that don't meet your quality requirements
+1. Save the annotations
+
+{{% alert title="Note" color="primary" %}}
+Deleting low-score annotations is optional. You may prefer to review all annotations
+manually to ensure nothing valuable is removed.
+{{% /alert %}}
+
+#### Manual review process
+
+Once filtering is complete (or if you skip filtering), proceed with manual review:
+
+1. Open the merged parent job in the annotation view, enable review mode
+1. Navigate through annotations using keyboard shortcuts:
+   - **Tab**: Go to the next object
+   - **Shift+Tab**: Go to the previous object
+1. For each annotation, decide on one of the following actions:
+
+   - **Accept the annotation**: If the annotation is correct, simply move to the next object
+   - **Adjust the annotation**: If the annotation needs modifications:
+     1. Press **L** to unlock the object
+     1. Make necessary adjustments (resize, reposition, change attributes, etc.)
+     1. Press **L** again to lock the object
+     1. Move to the next object
+   - **Delete the annotation**: If the annotation is completely wrong:
+     1. Press **L** to unlock the object
+     1. Press **Delete** or use the context menu to remove it
+     1. Move to the next object
+
+1. After reviewing all annotations, save your work using **Ctrl+S** (or **Cmd+S** on macOS)
+
 ## Configuration
 
 ### Merging settings
@@ -190,11 +252,6 @@ The updated settings will take effect on the next merging.
 
 The following parameters are available:
 
-| **Parameter** | **Description** |
-| - | - |
-| _General_ |
-| Quorum | The minimum percentage of replicas that must contain an annotation for it to be included in the results. The number is rounded up to get the job count. For instance, if there are 5 replicas in a parent job and quorum is 70%, an annotation will be included in the results only if it has ceil(5 * 0.7) = 4 votes from replicas. |
-
-| _Shape matching_ | |
+| _Shape comparison_ | |
 | - | - |
 | Min overlap | Min overlap threshold used for the distinction between matched and unmatched annotations. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. Read more about annotation matching {{< ilink "/docs/qa-analytics/auto-qa#comparisons" "here" >}}. Keep in mind that quality settings do not affect consensus merging. |

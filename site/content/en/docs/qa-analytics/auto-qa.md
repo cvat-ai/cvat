@@ -126,7 +126,6 @@ to use Honeypots for your task, you will need to recreate the task.
   It can be any integer number, the same value will yield the same random selection (given that the
   frame number is unchanged). <br> **Note** that if you want to use a
   custom frame sequence, you can do this using the server API instead,
-  see {{< ilink "/docs/api_sdk/sdk/reference/apis/jobs-api#create" "Job API create()" >}}.
 
 4. Click **Submit**.
 

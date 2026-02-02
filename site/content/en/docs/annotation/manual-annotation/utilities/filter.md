@@ -45,6 +45,8 @@ The `Add rule` button adds a rule for objects display. A rule may use the follow
 | `Height`     | number of px or field                                  | shape height                                |
 | `ServerID`   | number or field                                        | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu) |
 | `ObjectID`   | number or field                                        | ID of the object in your client <br>(indicated on the objects sidebar) |
+| `Score` | number | {{< ilink "/docs/qa-analytics/consensus#understanding-consensus-scores" "consensus score" >}} |
+| `Votes` | number | {{< ilink "/docs/qa-analytics/consensus#understanding-consensus-scores" "consensus votes" >}} |
 | `Attributes` | some other fields including attributes with a <br>similar type or a specific attribute value | any fields specified by a label |
 
 - {{< ilink "/docs/workspace/projects#supported-properties-for-projects-list"
