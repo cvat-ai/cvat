@@ -42,6 +42,10 @@ export interface ImageFilter {
 export enum ImageFilterAlias {
     HISTOGRAM_EQUALIZATION = 'opencv.histogramEqualizaton',
     GAMMA_CORRECTION = 'fabric.gammaCorrection',
+    CLAHE = 'opencv.clahe',
+    SHARPEN = 'opencv.sharpen',
+    HEATMAP = 'opencv.heatmap',
+    OPENCV_GAMMA = 'opencv.gamma',
 }
 
 export function hasFilter(filters: ImageFilter[], alias: ImageFilterAlias): ImageFilter | null {

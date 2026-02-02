@@ -7,6 +7,10 @@ import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
 import waitFor from 'utils/wait-for';
 import config from 'config';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
+import CLAHEImplementation, { CLAHE } from './clahe';
+import SharpenImplementation, { Sharpen } from './sharpen';
+import HeatmapImplementation, { Heatmap } from './heatmap';
+import OpenCVGammaImplementation, { OpenCVGamma } from './opencv-gamma';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
@@ -34,6 +38,10 @@ export interface Contours {
 
 export interface ImgProc {
     hist: () => HistogramEqualization;
+    clahe: () => CLAHE;
+    sharpen: () => Sharpen;
+    heatmap: () => Heatmap;
+    gammaCorrection: () => OpenCVGamma;
 }
 
 export interface Tracking {
@@ -310,6 +318,22 @@ export class OpenCVWrapper {
             hist: () => {
                 this.checkInitialization();
                 return new HistogramEqualizationImplementation(this.cv);
+            },
+            clahe: () => {
+                this.checkInitialization();
+                return new CLAHEImplementation(this.cv);
+            },
+            sharpen: () => {
+                this.checkInitialization();
+                return new SharpenImplementation(this.cv);
+            },
+            heatmap: () => {
+                this.checkInitialization();
+                return new HeatmapImplementation(this.cv);
+            },
+            gammaCorrection: () => {
+                this.checkInitialization();
+                return new OpenCVGammaImplementation(this.cv);
             },
         };
     }

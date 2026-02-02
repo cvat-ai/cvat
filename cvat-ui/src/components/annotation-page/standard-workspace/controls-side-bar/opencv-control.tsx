@@ -7,7 +7,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Popover from 'antd/lib/popover';
-import Icon, { AreaChartOutlined, ScissorOutlined } from '@ant-design/icons';
+import Icon, { AreaChartOutlined, ScissorOutlined, ThunderboltOutlined, FormatPainterOutlined, HeatMapOutlined, BgColorsOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
@@ -370,7 +370,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private renderImageContent():JSX.Element {
         const { enableImageFilter, disableImageFilter, filters } = this.props;
         return (
-            <Row justify='start'>
+            <Row justify='start' gutter={[8, 8]}>
                 <Col>
                     <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
                         <Button
@@ -392,6 +392,102 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                             }}
                         >
                             <AreaChartOutlined />
+                        </Button>
+                    </CVATTooltip>
+                </Col>
+                <Col>
+                    <CVATTooltip title='CLAHE (Contrast Limited Adaptive Histogram Equalization)' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={
+                                hasFilter(filters, ImageFilterAlias.CLAHE) ?
+                                    'cvat-opencv-clahe-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-clahe-tool-button'
+                            }
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                if (!hasFilter(filters, ImageFilterAlias.CLAHE)) {
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.clahe(),
+                                        alias: ImageFilterAlias.CLAHE,
+                                    });
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    disableImageFilter(ImageFilterAlias.CLAHE);
+                                }
+                            }}
+                        >
+                            <ThunderboltOutlined />
+                        </Button>
+                    </CVATTooltip>
+                </Col>
+                <Col>
+                    <CVATTooltip title='Sharpen' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={
+                                hasFilter(filters, ImageFilterAlias.SHARPEN) ?
+                                    'cvat-opencv-sharpen-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-sharpen-tool-button'
+                            }
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                if (!hasFilter(filters, ImageFilterAlias.SHARPEN)) {
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.sharpen(),
+                                        alias: ImageFilterAlias.SHARPEN,
+                                    });
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    disableImageFilter(ImageFilterAlias.SHARPEN);
+                                }
+                            }}
+                        >
+                            <FormatPainterOutlined />
+                        </Button>
+                    </CVATTooltip>
+                </Col>
+                <Col>
+                    <CVATTooltip title='Heatmap' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={
+                                hasFilter(filters, ImageFilterAlias.HEATMAP) ?
+                                    'cvat-opencv-heatmap-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-heatmap-tool-button'
+                            }
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                if (!hasFilter(filters, ImageFilterAlias.HEATMAP)) {
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.heatmap(),
+                                        alias: ImageFilterAlias.HEATMAP,
+                                    });
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    disableImageFilter(ImageFilterAlias.HEATMAP);
+                                }
+                            }}
+                        >
+                            <HeatMapOutlined />
+                        </Button>
+                    </CVATTooltip>
+                </Col>
+                <Col>
+                    <CVATTooltip title='Gamma correction (OpenCV)' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={
+                                hasFilter(filters, ImageFilterAlias.OPENCV_GAMMA) ?
+                                    'cvat-opencv-gamma-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-gamma-tool-button'
+                            }
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                if (!hasFilter(filters, ImageFilterAlias.OPENCV_GAMMA)) {
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.gammaCorrection(),
+                                        alias: ImageFilterAlias.OPENCV_GAMMA,
+                                    });
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    disableImageFilter(ImageFilterAlias.OPENCV_GAMMA);
+                                }
+                            }}
+                        >
+                            <BgColorsOutlined />
                         </Button>
                     </CVATTooltip>
                 </Col>
