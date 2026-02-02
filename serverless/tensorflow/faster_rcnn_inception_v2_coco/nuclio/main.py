@@ -28,7 +28,7 @@ def handler(context, event):
     threshold = float(data.get("threshold", 0.5))
     image = Image.open(buf)
 
-    (boxes, scores, classes, num_detections) = context.user_data.model_handler.infer(image)
+    boxes, scores, classes, num_detections = context.user_data.model_handler.infer(image)
 
     results = []
     for i in range(int(num_detections[0])):

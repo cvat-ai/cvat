@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 
 slogger = ServerLogManager(__name__)
 
-CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
+CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation', 'source', 'score'}
 
 class InstanceLabelData:
     class Attribute(NamedTuple):
@@ -231,6 +231,7 @@ class CommonData(InstanceLabelData):
         elements: Sequence[CommonData.LabeledShape] = ()
         outside: bool = False
         id: int | None = None
+        score: float = 1.0
 
     class TrackedShape(NamedTuple):
         type: int
@@ -2248,6 +2249,10 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                 if hasattr(ann, 'label') and ann.label is None:
                     raise CvatImportError("annotation has no label")
 
+                score = ann.attributes.pop('score', None)
+                if score is None:
+                    score = 1
+
                 attributes = [
                     instance_data.Attribute(name=n, value=str(v))
                     for n, v in ann.attributes.items()
@@ -2323,6 +2328,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                             rotation=rotation,
                             attributes=attributes,
                             elements=elements,
+                            score=score,
                         ))
                         continue
 

@@ -19,7 +19,6 @@ extend-exclude = """
     |engine/(
         mixins.py
         |models.py
-        |permissions.py
         |serializers.py
         |task.py
         |views.py

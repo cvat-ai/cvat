@@ -234,6 +234,125 @@ class FloatArrayField(AbstractArrayField):
 class IntArrayField(AbstractArrayField):
     converter = int
 
+
+class TimestampedModel(models.Model):
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+    def touch(self) -> None:
+        self.save(update_fields=["updated_date"])
+
+
+class CloudProviderChoice(TextChoices):
+    AMAZON_S3 = "AWS_S3_BUCKET", "Amazon S3"
+    AZURE_BLOB_STORAGE = "AZURE_CONTAINER", "Azure Blob Storage"
+    GOOGLE_CLOUD_STORAGE = "GOOGLE_CLOUD_STORAGE", "Google Cloud Storage"
+
+
+class CredentialsTypeChoice(str, Enum):
+    # ignore bandit issues because false positives
+    KEY_SECRET_KEY_PAIR = "KEY_SECRET_KEY_PAIR" # nosec
+    ACCOUNT_NAME_TOKEN_PAIR = "ACCOUNT_NAME_TOKEN_PAIR" # nosec
+    KEY_FILE_PATH = "KEY_FILE_PATH"
+    ANONYMOUS_ACCESS = "ANONYMOUS_ACCESS"
+    CONNECTION_STRING = "CONNECTION_STRING"
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return [x.value for x in cls]
+
+    def __str__(self):
+        return self.value
+
+
+class CloudStorage(TimestampedModel):
+    # restrictions:
+    # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
+    # https://cloud.google.com/storage/docs/naming-buckets#requirements
+    # AWS access key id - 20, Oracle OCI access key id - 40
+    # AWS secret access key - 40, Oracle OCI secret access key - 44, Cloudflare R2 secret access key - 64
+    # AWS temporary session token - None
+    # The size of the security token that AWS STS API operations return is not fixed.
+    # We strongly recommend that you make no assumptions about the maximum size.
+    # The typical token size is less than 4096 bytes, but that can vary.
+    # specific attributes:
+    # location - max 23
+    # project ID: 6 - 30 (https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin)
+    provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices)
+    resource = models.CharField(max_length=222)
+    display_name = models.CharField(max_length=63)
+    owner = models.ForeignKey(User, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="cloud_storages", related_query_name="cloud_storage"
+    )
+    credentials = models.CharField(max_length=1024, null=True, blank=True)
+    credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
+    specific_attributes = models.CharField(max_length=1024, blank=True)
+    description = models.TextField(blank=True)
+    organization = models.ForeignKey("organizations.Organization", null=True, default=None,
+        blank=True, on_delete=models.SET_NULL,
+        related_name="cloud_storages", related_query_name="cloud_storage",
+    )
+
+    class Meta:
+        default_permissions = ()
+
+    def __str__(self):
+        return "{} {} {}".format(self.provider_type, self.display_name, self.id)
+
+    def get_storage_dirname(self) -> Path:
+        return settings.CLOUD_STORAGE_ROOT / str(self.id)
+
+    def get_specific_attributes(self):
+        return parse_specific_attributes(self.specific_attributes)
+
+    def get_key_file_path(self) -> Path:
+        return self.get_storage_dirname() / "key.json"
+
+    @property
+    def has_at_least_one_manifest(self) -> bool:
+        return self.manifests.exists()
+
+
+class Location(str, Enum):
+    CLOUD_STORAGE = "cloud_storage"
+    LOCAL = "local"
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+    @classmethod
+    def list(cls):
+        return [i.value for i in cls]
+
+    @classmethod
+    def _missing_(cls, value):
+        raise ValueError(f"The specified location {value!r} is not supported")
+
+
+class Storage(models.Model):
+    location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
+    cloud_storage = models.ForeignKey(
+        CloudStorage,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="+",
+    )
+
+    class Meta:
+        default_permissions = ()
+
+
 class ValidationMode(str, Enum):
     GT = "gt"
     GT_POOL = "gt_pool"
@@ -314,7 +433,7 @@ class Data(models.Model):
         default=DataChoice.IMAGESET)
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
     storage = models.CharField(max_length=15, choices=StorageChoice.choices(), default=StorageChoice.LOCAL)
-    cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
+    cloud_storage = models.ForeignKey(CloudStorage, on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
 
@@ -440,16 +559,6 @@ class Image(models.Model):
     class Meta:
         default_permissions = ()
 
-class TimestampedModel(models.Model):
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
-
-    def touch(self) -> None:
-        self.save(update_fields=["updated_date"])
-
 class AssignableModel(models.Model):
     assignee = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL,
@@ -541,9 +650,9 @@ class Project(TimestampedModel, AssignableModel, FileSystemRelatedModel):
                               default=StatusChoice.ANNOTATION)
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="projects")
-    source_storage = models.ForeignKey('Storage', null=True, default=None,
+    source_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-    target_storage = models.ForeignKey('Storage', null=True, default=None,
+    target_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
     tasks: models.manager.RelatedManager[Task]
@@ -637,9 +746,9 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     subset = models.CharField(max_length=64, blank=True, default="")
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
-    source_storage = models.ForeignKey('Storage', null=True, default=None,
+    source_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-    target_storage = models.ForeignKey('Storage', null=True, default=None,
+    target_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
     consensus_replicas = models.IntegerField(default=0)
     "Per job consensus replica count"
@@ -669,6 +778,10 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         if self.assignee == user_id:
             return True
         return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
+
+    def require_data(self) -> Data:
+        assert self.data is not None
+        return self.data
 
     @cached_property
     def completed_jobs_count(self) -> int | None:
@@ -1206,6 +1319,7 @@ class LabeledImageAttributeVal(AttributeVal):
 
 class LabeledShape(Annotation, Shape):
     parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
+    score = models.FloatField(default=1)
 
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(LabeledShape, on_delete=models.DO_NOTHING,
@@ -1290,117 +1404,16 @@ class Comment(TimestampedModel):
     def get_job_id(self):
         return self.issue.get_job_id()
 
-class CloudProviderChoice(TextChoices):
-    AMAZON_S3 = "AWS_S3_BUCKET", "Amazon S3"
-    AZURE_BLOB_STORAGE = "AZURE_CONTAINER", "Azure Blob Storage"
-    GOOGLE_CLOUD_STORAGE = "GOOGLE_CLOUD_STORAGE", "Google Cloud Storage"
-
-class CredentialsTypeChoice(str, Enum):
-    # ignore bandit issues because false positives
-    KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR' # nosec
-    ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
-    KEY_FILE_PATH = 'KEY_FILE_PATH'
-    ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
-    CONNECTION_STRING = 'CONNECTION_STRING'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return [x.value for x in cls]
-
-    def __str__(self):
-        return self.value
-
 class Manifest(models.Model):
     filename = models.CharField(max_length=1024, default='manifest.jsonl')
     cloud_storage = models.ForeignKey(
-        'CloudStorage', on_delete=models.CASCADE, null=True,
+        CloudStorage, on_delete=models.CASCADE, null=True,
         related_name='manifests', related_query_name='manifest',
     )
 
     def __str__(self):
         return '{}'.format(self.filename)
 
-class Location(str, Enum):
-    CLOUD_STORAGE = 'cloud_storage'
-    LOCAL = 'local'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-    @classmethod
-    def list(cls):
-        return [i.value for i in cls]
-
-    @classmethod
-    def _missing_(cls, value):
-        raise ValueError(f"The specified location {value!r} is not supported")
-
-class CloudStorage(TimestampedModel):
-    # restrictions:
-    # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
-    # https://cloud.google.com/storage/docs/naming-buckets#requirements
-    # AWS access key id - 20, Oracle OCI access key id - 40
-    # AWS secret access key - 40, Oracle OCI secret access key - 44, Cloudflare R2 secret access key - 64
-    # AWS temporary session token - None
-    # The size of the security token that AWS STS API operations return is not fixed.
-    # We strongly recommend that you make no assumptions about the maximum size.
-    # The typical token size is less than 4096 bytes, but that can vary.
-    # specific attributes:
-    # location - max 23
-    # project ID: 6 - 30 (https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin)
-    provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices)
-    resource = models.CharField(max_length=222)
-    display_name = models.CharField(max_length=63)
-    owner = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="cloud_storages", related_query_name="cloud_storage"
-    )
-    credentials = models.CharField(max_length=1024, null=True, blank=True)
-    credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
-    specific_attributes = models.CharField(max_length=1024, blank=True)
-    description = models.TextField(blank=True)
-    organization = models.ForeignKey('organizations.Organization', null=True, default=None,
-        blank=True, on_delete=models.SET_NULL,
-        related_name="cloud_storages", related_query_name="cloud_storage",
-    )
-
-    class Meta:
-        default_permissions = ()
-
-    def __str__(self):
-        return "{} {} {}".format(self.provider_type, self.display_name, self.id)
-
-    def get_storage_dirname(self) -> Path:
-        return settings.CLOUD_STORAGE_ROOT / str(self.id)
-
-    def get_specific_attributes(self):
-        return parse_specific_attributes(self.specific_attributes)
-
-    def get_key_file_path(self) -> Path:
-        return self.get_storage_dirname() / "key.json"
-
-    @property
-    def has_at_least_one_manifest(self) -> bool:
-        return self.manifests.exists()
-
-class Storage(models.Model):
-    location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
-    cloud_storage = models.ForeignKey(
-        CloudStorage,
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='+',
-    )
-
-    class Meta:
-        default_permissions = ()
 
 class AnnotationGuide(TimestampedModel):
     task = models.OneToOneField(Task, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
@@ -1417,6 +1430,11 @@ class AnnotationGuide(TimestampedModel):
     @property
     def organization_id(self):
         return self.target.organization_id
+
+    @staticmethod
+    def get_asset_ids_from_markdown(markdown: str) -> set[str]:
+        pattern = r"\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)"
+        return set(re.findall(pattern, markdown))
 
 class Asset(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

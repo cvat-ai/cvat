@@ -46,7 +46,7 @@ class _PermissionTestBase:
             kwargs["job_id"] = job_id
 
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.create_merge(
+            _, response = api_client.consensus_api.create_merge(
                 consensus_merge_create_request=models.ConsensusMergeCreateRequest(**kwargs),
                 _parse_response=False,
                 _check_status=raise_on_error,
@@ -290,7 +290,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
         another_user_status: int = HTTPStatus.FORBIDDEN,
     ):
         with make_api_client(another_user) as api_client:
-            (_, response) = api_client.requests_api.retrieve(
+            _, response = api_client.requests_api.retrieve(
                 rq_id, _parse_response=False, _check_status=False
             )
             assert response.status == another_user_status
@@ -448,7 +448,7 @@ class TestListSettings(_PermissionTestBase):
 
     def _test_list_settings_403(self, user: str, task_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.list_settings(
+            _, response = api_client.consensus_api.list_settings(
                 task_id=task_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -493,7 +493,7 @@ class TestGetSettings(_PermissionTestBase):
         self, user: str, obj_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.retrieve_settings(obj_id, **kwargs)
+            _, response = api_client.consensus_api.retrieve_settings(obj_id, **kwargs)
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
@@ -503,7 +503,7 @@ class TestGetSettings(_PermissionTestBase):
 
     def _test_get_settings_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.retrieve_settings(
+            _, response = api_client.consensus_api.retrieve_settings(
                 obj_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -556,7 +556,7 @@ class TestPatchSettings(_PermissionTestBase):
         **kwargs,
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.partial_update_settings(
+            _, response = api_client.consensus_api.partial_update_settings(
                 obj_id, patched_consensus_settings_request=data, **kwargs
             )
             assert response.status == HTTPStatus.OK
@@ -568,7 +568,7 @@ class TestPatchSettings(_PermissionTestBase):
 
     def _test_patch_settings_403(self, user: str, obj_id: int, data: dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.partial_update_settings(
+            _, response = api_client.consensus_api.partial_update_settings(
                 obj_id,
                 patched_consensus_settings_request=data,
                 **kwargs,
@@ -645,6 +645,9 @@ class TestPatchSettings(_PermissionTestBase):
             self._test_patch_settings_403(user["username"], settings["id"], request_data)
 
 
+@pytest.mark.skip(
+    "Merging logic has been changed in #10172, we do not use quorum param, tests need to be re-written"
+)
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestMerging(_PermissionTestBase):

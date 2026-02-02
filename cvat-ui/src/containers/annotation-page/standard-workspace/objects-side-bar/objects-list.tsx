@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import { connect } from 'react-redux';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -35,10 +34,6 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
-
-interface OwnProps {
-    readonly: boolean;
-}
 
 interface StateToProps {
     jobInstance: any;
@@ -129,7 +124,7 @@ const componentShortcuts = {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     TO_BACKGROUND: {
         name: 'To background',
@@ -290,21 +285,35 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): number[] {
-    let sorted = [];
+    let sorted: ObjectState[] = [];
     if (ordering === StatesOrdering.ID_ASCENT) {
-        sorted = [...objectStates].sort((a: any, b: any): number => a.clientID - b.clientID);
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => (
+            (a.clientID ?? 0) - (b.clientID ?? 0)
+        ));
     } else if (ordering === StatesOrdering.ID_DESCENT) {
-        sorted = [...objectStates].sort((a: any, b: any): number => b.clientID - a.clientID);
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => (
+            (b.clientID ?? 0) - (a.clientID ?? 0)
+        ));
     } else if (ordering === StatesOrdering.UPDATED) {
-        sorted = [...objectStates].sort((a: any, b: any): number => b.updated - a.updated);
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => b.updated - a.updated);
+    } else if (ordering === StatesOrdering.Z_ORDER) {
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => a.zOrder - b.zOrder);
+    } else if (ordering === StatesOrdering.LABEL_NAME) {
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => {
+            const labelComparison = a.label.name.localeCompare(b.label.name);
+            if (labelComparison !== 0) {
+                return labelComparison;
+            }
+            return (a.clientID ?? 0) - (b.clientID ?? 0);
+        });
     } else {
-        sorted = [...objectStates].sort((a: any, b: any): number => a.zOrder - b.zOrder);
+        sorted = [...objectStates];
     }
 
-    return sorted.map((state: any) => state.clientID);
+    return sorted.map((state: ObjectState) => state.clientID).filter((id): id is number => id !== null);
 }
 
-type Props = StateToProps & DispatchToProps & OwnProps;
+type Props = StateToProps & DispatchToProps;
 
 interface State {
     statesOrdering: StatesOrdering;
@@ -314,14 +323,6 @@ interface State {
 }
 
 class ObjectsListContainer extends React.PureComponent<Props, State> {
-    static propTypes = {
-        readonly: PropTypes.bool,
-    };
-
-    static defaultProps = {
-        readonly: false,
-    };
-
     public constructor(props: Props) {
         super(props);
         this.state = {
@@ -398,16 +399,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private lockAllStates(locked: boolean): void {
-        const { updateAnnotations, readonly } = this.props;
+        const { updateAnnotations } = this.props;
         const { filteredStates } = this.state;
 
-        if (!readonly) {
-            for (const objectState of filteredStates) {
-                objectState.lock = locked;
-            }
-
-            updateAnnotations(filteredStates);
+        for (const objectState of filteredStates) {
+            objectState.lock = locked;
         }
+
+        updateAnnotations(filteredStates);
     }
 
     private hideAllStates(hidden: boolean): void {
@@ -444,7 +443,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             normalizedKeyMap,
             colors,
             colorBy,
-            readonly,
             statesCollapsedAll,
             showGroundTruth,
             updateAnnotations,
@@ -490,7 +488,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly) {
+                if (state) {
                     state.lock = !state.lock;
                     updateAnnotations([state]);
                 }
@@ -517,7 +515,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                if (state && state.objectType !== ObjectType.TAG) {
                     state.occluded = !state.occluded;
                     updateAnnotations([state]);
                 }
@@ -525,7 +523,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && !readonly) {
+                if (state) {
                     state.pinned = !state.pinned;
                     updateAnnotations([state]);
                 }
@@ -533,7 +531,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_KEYFRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly && state.objectType === ObjectType.TRACK) {
+                if (state && state.objectType === ObjectType.TRACK) {
                     const { first, last } = state.keyframes as NonNullable<typeof state.keyframes>;
                     if (first !== last || !state.keyframe) {
                         state.keyframe = !state.keyframe;
@@ -544,7 +542,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly && (state.objectType === ObjectType.TRACK || state.parentID)) {
+                if (state && (state.objectType === ObjectType.TRACK || state.parentID)) {
                     state.outside = !state.outside;
                     updateAnnotations([state]);
                 }
@@ -552,7 +550,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             DELETE_OBJECT_STANDARD_WORKSPACE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && !readonly) {
+                if (state) {
                     removeObject(state, event ? event.shiftKey : false);
                 }
             },
@@ -576,7 +574,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                if (state && state.objectType !== ObjectType.TAG) {
                     state.zOrder = minZLayer - 1;
                     updateAnnotations([state]);
                 }
@@ -584,31 +582,29 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                if (state && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
                     updateAnnotations([state]);
                 }
             },
             COPY_SHAPE: () => {
                 const state = activatedState(true);
-                if (state && !readonly) {
+                if (state) {
                     copyShape(state);
                 }
             },
             RUN_ANNOTATIONS_ACTION: () => {
                 const state = activatedState(true);
-                if (!readonly) {
-                    if (state) {
-                        openAnnotationsActionModal({ defaultObjectState: state });
-                    } else {
-                        openAnnotationsActionModal();
-                    }
+                if (state) {
+                    openAnnotationsActionModal({ defaultObjectState: state });
+                } else {
+                    openAnnotationsActionModal();
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly) {
+                if (state) {
                     switchPropagateVisibility(true);
                 }
             },
@@ -641,7 +637,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesHidden={statesHidden}
                     statesLocked={statesLocked}
                     statesCollapsedAll={statesCollapsedAll}
-                    readonly={readonly || false}
                     workspace={workspace}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
@@ -663,6 +658,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 }
 
-export default connect<StateToProps, DispatchToProps, OwnProps, CombinedState>(
+export default connect(
     mapStateToProps, mapDispatchToProps,
 )(ObjectsListContainer);

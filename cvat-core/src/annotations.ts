@@ -97,6 +97,7 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
             stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
             labels: session.labels,
             dimension: session.dimension,
+            consensusReplicas: session instanceof Job ? session.consensusReplicas : undefined,
             framesInfo: {
                 isFrameDeleted: session instanceof Job ?
                     (frame: number) => !!getJobFramesMetaSync(session.id).deletedFrames[frame] :

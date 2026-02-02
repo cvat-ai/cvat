@@ -31,7 +31,7 @@ class TestGetUsers:
         with make_api_client(user) as api_client:
             # TODO: refactor into several functions
             if id_ == "self":
-                (_, response) = api_client.users_api.retrieve_self(**kwargs, _parse_response=False)
+                _, response = api_client.users_api.retrieve_self(**kwargs, _parse_response=False)
                 assert response.status == HTTPStatus.OK
                 response_data = json.loads(response.data)
             elif id_ is None:
@@ -39,7 +39,7 @@ class TestGetUsers:
                     api_client.users_api.list_endpoint, return_json=True, **kwargs
                 )
             else:
-                (_, response) = api_client.users_api.retrieve(id_, **kwargs, _parse_response=False)
+                _, response = api_client.users_api.retrieve(id_, **kwargs, _parse_response=False)
                 assert response.status == HTTPStatus.OK
                 response_data = json.loads(response.data)
 
@@ -49,15 +49,15 @@ class TestGetUsers:
         with make_api_client(user) as api_client:
             # TODO: refactor into several functions
             if id_ == "self":
-                (_, response) = api_client.users_api.retrieve_self(
+                _, response = api_client.users_api.retrieve_self(
                     **kwargs, _parse_response=False, _check_status=False
                 )
             elif id_ is None:
-                (_, response) = api_client.users_api.list(
+                _, response = api_client.users_api.list(
                     **kwargs, _parse_response=False, _check_status=False
                 )
             else:
-                (_, response) = api_client.users_api.retrieve(
+                _, response = api_client.users_api.retrieve(
                     id_, **kwargs, _parse_response=False, _check_status=False
                 )
             assert response.status == HTTPStatus.FORBIDDEN
