@@ -16,6 +16,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.56.0'></a>
+## \[2.56.0\] - 2026-02-02
+
+### Added
+
+- Adds the option to sort annotations by label
+  (<https://github.com/cvat-ai/cvat/pull/9738>)
+
+- Score visualization in UI with a virtual "Votes" attribute calculated as `score × replica_jobs`
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+- A user now may navigate between different shapes with shortcuts (Tab/Shift+Tab by default) in Standard, Review modes
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+- Review mode now supports editing objects. Users can unlock and edit individual annotations as needed
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+- Double-clicking an object in the sidebar now centers it on the canvas and expands its details
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+- Added a keyboard shortcut to switch object appearance using the “Color by” setting on the annotation page
+  (<https://github.com/cvat-ai/cvat/pull/10175>)
+
+- Individual annotations for CVAT and analytics ingress in Helm chart
+  (<https://github.com/cvat-ai/cvat/pull/10231>)
+
+### Changed
+
+- Increased the maximum number of assets per guide from 30 to 150
+  (<https://github.com/cvat-ai/cvat/pull/10185>)
+
+- Consensus merge function now preserves all shapes with their scores, regardless of quorum threshold
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+### Removed
+
+- Consensus quorum setting has been removed. All merged annotations are now kept with their consensus scores,
+  allowing users to filter results based on score thresholds instead
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+### Fixed
+
+- Missing validation for the maximum number of annotation guide assets
+  (<https://github.com/cvat-ai/cvat/pull/10185>)
+
+- In the raw label editor, double quote characters inside SVG strings are no
+  longer displayed as "\&quot;"
+  (<https://github.com/cvat-ai/cvat/pull/10198>)
+
+- Annotation `source` was not updated on label change
+  (<https://github.com/cvat-ai/cvat/pull/9886>)
+
+- Incorrect camera position on 3d scene when position of point clouds
+  shifted from center of coordinates (<https://github.com/cvat-ai/cvat/pull/10221>)
+
+- Possible 500 error in TUS uploading via SDK/CLI in development or customized deployments
+  (<https://github.com/cvat-ai/cvat/pull/10227>)
+
 <a id='changelog-2.55.0'></a>
 ## \[2.55.0\] - 2026-01-19
 
