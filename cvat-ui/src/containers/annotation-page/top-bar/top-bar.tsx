@@ -39,7 +39,7 @@ import {
 } from 'reducers';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
-import { switchToolsBlockerState } from 'actions/settings-actions';
+import { switchToolsBlockerState, changeFrameSpeed } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
 import { finishDraw } from 'utils/drawing';
 import { toClipboard } from 'utils/to-clipboard';
@@ -97,6 +97,7 @@ interface DispatchToProps {
     restoreFrame(frame: number): void;
     switchNavigationBlocked(blocked: boolean): void;
     setNavigationType(navigationType: NavigationType): void;
+    onChangeFrameSpeed(speed: FrameSpeed): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -219,6 +220,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         setNavigationType(navigationType: NavigationType): void {
             dispatch(setNavigationTypeAction(navigationType));
+        },
+        onChangeFrameSpeed(speed: FrameSpeed): void {
+            dispatch(changeFrameSpeed(speed));
         },
     };
 }
@@ -630,6 +634,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             frameNumber,
             frameFilename,
             frameIsDeleted,
+            frameSpeed,
             undoAction,
             redoAction,
             workspace,
@@ -643,6 +648,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             navigationType,
             switchNavigationBlocked,
             setNavigationType,
+            onChangeFrameSpeed,
         } = this.props;
 
         return (
@@ -700,6 +706,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 toolsBlockerState={toolsBlockerState}
                 jobInstance={jobInstance}
                 activeControl={activeControl}
+                frameSpeed={frameSpeed}
+                onChangeFrameSpeed={onChangeFrameSpeed}
             />
         );
     }

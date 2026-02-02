@@ -850,13 +850,16 @@ export enum GridColor {
     Blue = 'Blue',
 }
 
+// Playback speed multipliers - values represent the multiplier applied to base playback rate
+// Higher values = faster playback, x1 (1.0) is the default normal speed
 export enum FrameSpeed {
-    Fastest = 100,
-    Fast = 50,
-    Usual = 25,
-    Slow = 15,
-    Slower = 12,
-    Slowest = 1,
+    'x0.25' = 0.25,
+    'x0.5' = 0.5,
+    'x1' = 1,
+    'x1.25' = 1.25,
+    'x1.5' = 1.5,
+    'x1.75' = 1.75,
+    'x2' = 2,
 }
 
 export enum ColorBy {
