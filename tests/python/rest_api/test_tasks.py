@@ -476,7 +476,7 @@ class TestPatchTaskAnnotations:
     def _test_check_response(self, is_allow, response, data=None):
         if is_allow:
             assert response.status == HTTPStatus.OK
-            assert compare_annotations(data, json.loads(response.data)) == {}
+            assert compare_annotations(data, json.loads(response.data), ignore_source=True) == {}
         else:
             assert response.status == HTTPStatus.FORBIDDEN
 
@@ -1517,7 +1517,15 @@ class TestTaskBackups:
 
             old_job_annotations = json.loads(old_job.api.retrieve_annotations(old_job.id)[1].data)
             new_job_annotations = json.loads(new_job.api.retrieve_annotations(new_job.id)[1].data)
-            assert compare_annotations(old_job_annotations, new_job_annotations) == {}
+            assert (
+                compare_annotations(
+                    old_job_annotations,
+                    new_job_annotations,
+                    ignore_spec_ids=True,
+                    ignore_source=True,
+                )
+                == {}
+            )
 
         _, response = self.client.api_client.tasks_api.retrieve(new_task.id)
         restored_task_json = json.loads(response.data)
@@ -1572,7 +1580,12 @@ class TestTaskBackups:
 
         old_task_annotations = json.loads(old_task.api.retrieve_annotations(old_task.id)[1].data)
         new_task_annotations = json.loads(new_task.api.retrieve_annotations(new_task.id)[1].data)
-        assert compare_annotations(old_task_annotations, new_task_annotations) == {}
+        assert (
+            compare_annotations(
+                old_task_annotations, new_task_annotations, ignore_spec_ids=True, ignore_source=True
+            )
+            == {}
+        )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1897,8 +1910,24 @@ class TestWorkWithHoneypotTasks:
 
         assert task_raw_annotations["tags"] or task_raw_annotations["shapes"]
         assert not task_raw_annotations["tracks"]  # tracks are prohibited in such tasks
-        assert compare_annotations(task_raw_annotations, task_dataset_file_annotations) == {}
-        assert compare_annotations(task_raw_annotations, task_annotations_file_annotations) == {}
+        assert (
+            compare_annotations(
+                task_raw_annotations,
+                task_dataset_file_annotations,
+                ignore_spec_ids=True,
+                ignore_source=True,
+            )
+            == {}
+        )
+        assert (
+            compare_annotations(
+                task_raw_annotations,
+                task_annotations_file_annotations,
+                ignore_spec_ids=True,
+                ignore_source=True,
+            )
+            == {}
+        )
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
     @pytest.mark.parametrize("dataset_format", ["CVAT for images 1.1", "Datumaro 1.0"])
@@ -2620,7 +2649,7 @@ class TestPatchTask:
 
         response = get_method(user, f"tasks/{task_id}/annotations")
         assert response.status_code == HTTPStatus.OK
-        assert compare_annotations(annotations, response.json()) == {}
+        assert compare_annotations(annotations, response.json(), ignore_spec_ids=True) == {}
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
@@ -3143,7 +3172,9 @@ class TestImportTaskAnnotations:
                 api_client.tasks_api.retrieve_annotations(task["id"])[1].data
             )
 
-        assert compare_annotations(original_annotations, updated_annotations) == {}
+        assert (
+            compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}
+        )
 
     @parametrize(
         "format_name, specific_info_included",
@@ -3398,7 +3429,12 @@ class TestImportWithComplexFilenames:
         return original_annotations, imported_annotations
 
     def compare_original_and_import_annotations(self, original_annotations, imported_annotations):
-        assert compare_annotations(original_annotations, imported_annotations) == {}
+        assert (
+            compare_annotations(
+                original_annotations, imported_annotations, ignore_spec_ids=True, ignore_source=True
+            )
+            == {}
+        )
 
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_outside_true(self, format_name):

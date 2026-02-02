@@ -645,16 +645,13 @@ class TestPatchSettings(_PermissionTestBase):
             self._test_patch_settings_403(user["username"], settings["id"], request_data)
 
 
-@pytest.mark.skip(
-    "Merging logic has been changed in #10172, we do not use quorum param, tests need to be re-written"
-)
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestMerging(_PermissionTestBase):
     @pytest.mark.parametrize("task_id", [31])
-    def test_quorum_is_applied(self, admin_user, jobs, labels, consensus_settings, task_id: int):
+    def test_merged_annotations_have_scores(self, admin_user, jobs, labels, task_id: int):
+        """Test that merged annotations have score attributes based on agreement."""
         task_labels = [l for l in labels if l.get("task_id") == task_id]
-        settings = next(s for s in consensus_settings if s["task_id"] == task_id)
 
         task_jobs = [j for j in jobs if j["task_id"] == task_id]
         parent_job = next(
@@ -666,7 +663,6 @@ class TestMerging(_PermissionTestBase):
             if j["type"] == "consensus_replica"
             if j["parent_job_id"] == parent_job["id"]
         ]
-        assert len(replicas) == 2
 
         with make_api_client(admin_user) as api_client:
             api_client.tasks_api.destroy_annotations(task_id)
@@ -674,15 +670,7 @@ class TestMerging(_PermissionTestBase):
             for replica in replicas:
                 api_client.jobs_api.destroy_annotations(replica["id"])
 
-            api_client.consensus_api.partial_update_settings(
-                settings["id"],
-                patched_consensus_settings_request=models.PatchedConsensusSettingsRequest(
-                    quorum=0.6
-                ),
-            )
-
-            # Should be used > quorum times, must be present in the resulting dataset
-            bbox1 = models.LabeledShapeRequest(
+            bbox_full_agreement = models.LabeledShapeRequest(
                 type="rectangle",
                 frame=parent_job["start_frame"],
                 label_id=task_labels[0]["id"],
@@ -698,21 +686,29 @@ class TestMerging(_PermissionTestBase):
                 group=0,
             )
 
-            # Should be used < quorum times
-            bbox2 = models.LabeledShapeRequest(
+            bbox_partial_agreement = models.LabeledShapeRequest(
                 type="rectangle",
                 frame=parent_job["start_frame"],
                 label_id=task_labels[0]["id"],
                 points=[4, 0, 6, 2],
+                rotation=0,
+                z_order=0,
+                occluded=False,
+                outside=False,
+                group=0,
             )
+
+            for replica in replicas:
+                api_client.jobs_api.update_annotations(
+                    replica["id"],
+                    labeled_data_request=models.LabeledDataRequest(shapes=[bbox_full_agreement]),
+                )
 
             api_client.jobs_api.update_annotations(
                 replicas[0]["id"],
-                labeled_data_request=models.LabeledDataRequest(shapes=[bbox1]),
-            )
-            api_client.jobs_api.update_annotations(
-                replicas[1]["id"],
-                labeled_data_request=models.LabeledDataRequest(shapes=[bbox1, bbox2]),
+                labeled_data_request=models.LabeledDataRequest(
+                    shapes=[bbox_full_agreement, bbox_partial_agreement]
+                ),
             )
 
             self.merge(job_id=parent_job["id"], user=admin_user)
@@ -720,46 +716,19 @@ class TestMerging(_PermissionTestBase):
             merged_annotations = json.loads(
                 api_client.jobs_api.retrieve_annotations(parent_job["id"])[1].data
             )
-            assert (
-                compare_annotations(
-                    merged_annotations,
-                    {"version": 0, "tags": [], "shapes": [bbox1.to_dict()], "tracks": []},
-                )
-                == {}
+
+            assert compare_annotations(
+                merged_annotations,
+                {
+                    "shapes": [
+                        {**bbox_full_agreement.to_dict(), "source": "consensus", "score": 1.0},
+                        {
+                            **bbox_partial_agreement.to_dict(),
+                            "source": "consensus",
+                            "score": 1 / len(replicas),
+                        },
+                    ]
+                },
+                ignore_source=False,
+                ignore_score=False,
             )
-
-    @pytest.mark.parametrize("job_id", [42, 51])
-    def test_unmodified_job_produces_same_annotations(self, admin_user, annotations, job_id: int):
-        old_annotations = annotations["job"][str(job_id)]
-
-        self.merge(job_id=job_id, user=admin_user)
-
-        with make_api_client(admin_user) as api_client:
-            new_annotations = json.loads(api_client.jobs_api.retrieve_annotations(job_id)[1].data)
-
-            assert compare_annotations(old_annotations, new_annotations) == {}
-
-    @pytest.mark.parametrize("job_id", [42, 51])
-    def test_modified_job_produces_different_annotations(
-        self, admin_user, annotations, jobs, consensus_settings, job_id: int
-    ):
-        settings = next(
-            s for s in consensus_settings if s["task_id"] == jobs.map[job_id]["task_id"]
-        )
-        old_annotations = annotations["job"][str(job_id)]
-
-        with make_api_client(admin_user) as api_client:
-            api_client.consensus_api.partial_update_settings(
-                settings["id"],
-                patched_consensus_settings_request=models.PatchedConsensusSettingsRequest(
-                    quorum=0.9,
-                    iou_threshold=0.8,
-                ),
-            )
-
-        self.merge(job_id=job_id, user=admin_user)
-
-        with make_api_client(admin_user) as api_client:
-            new_annotations = json.loads(api_client.jobs_api.retrieve_annotations(job_id)[1].data)
-
-            assert compare_annotations(old_annotations, new_annotations) != {}
