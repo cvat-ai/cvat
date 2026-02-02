@@ -20,6 +20,7 @@ from shared.utils.config import make_api_client
 
 from .utils import (
     CollectionSimpleFilterTestBase,
+    compare_annotations,
     invite_user_to_org,
     register_new_user,
     wait_background_request,
@@ -716,99 +717,18 @@ class TestMerging(_PermissionTestBase):
                 api_client.jobs_api.retrieve_annotations(parent_job["id"])[1].data
             )
 
-            assert len(merged_annotations["shapes"]) >= 1
-            for shape in merged_annotations["shapes"]:
-                assert "score" in shape, "Merged shape must have a score attribute"
-                assert 0 <= shape["score"] <= 1, "Score must be between 0 and 1"
-
-            full_agreement_shapes = [
-                s for s in merged_annotations["shapes"] if s["points"] == bbox_full_agreement.points
-            ]
-            assert len(full_agreement_shapes) == 1
-            assert (
-                full_agreement_shapes[0]["score"] == 1.0
-            ), "Shape with full agreement should have score of 1.0"
-
-            partial_agreement_shapes = [
-                s
-                for s in merged_annotations["shapes"]
-                if s["points"] == bbox_partial_agreement.points
-            ]
-            if partial_agreement_shapes:
-                assert (
-                    partial_agreement_shapes[0]["score"] < 1.0
-                ), "Shape with partial agreement should have score < 1.0"
-                expected_score = round(1 / len(replicas), 2)
-                assert (
-                    partial_agreement_shapes[0]["score"] == expected_score
-                ), f"Expected score {expected_score} for partial agreement"
-
-    @pytest.mark.parametrize("task_id", [31])
-    def test_score_reflects_annotator_agreement(self, admin_user, jobs, labels, task_id: int):
-        """Test that score accurately reflects the number of annotators who agreed."""
-        task_labels = [l for l in labels if l.get("task_id") == task_id]
-
-        task_jobs = [j for j in jobs if j["task_id"] == task_id]
-        parent_job = next(
-            j for j in task_jobs if j["type"] == "annotation" if j["consensus_replicas"] > 0
-        )
-        replicas = [
-            j
-            for j in task_jobs
-            if j["type"] == "consensus_replica"
-            if j["parent_job_id"] == parent_job["id"]
-        ]
-        num_replicas = len(replicas)
-
-        with make_api_client(admin_user) as api_client:
-            api_client.tasks_api.destroy_annotations(task_id)
-
-            for replica in replicas:
-                api_client.jobs_api.destroy_annotations(replica["id"])
-
-            bbox = models.LabeledShapeRequest(
-                type="rectangle",
-                frame=parent_job["start_frame"],
-                label_id=task_labels[0]["id"],
-                points=[0, 0, 2, 2],
-                rotation=0,
-                z_order=0,
-                occluded=False,
-                outside=False,
-                group=0,
+            assert compare_annotations(
+                merged_annotations,
+                {
+                    "shapes": [
+                        {**bbox_full_agreement.to_dict(), "source": "consensus", "score": 1.0},
+                        {
+                            **bbox_partial_agreement.to_dict(),
+                            "source": "consensus",
+                            "score": 1 / len(replicas),
+                        },
+                    ]
+                },
+                ignore_source=False,
+                ignore_score=False,
             )
-
-            # Add bbox to only the first replica (1 out of N annotators agreed)
-            api_client.jobs_api.update_annotations(
-                replicas[0]["id"],
-                labeled_data_request=models.LabeledDataRequest(shapes=[bbox]),
-            )
-
-            self.merge(job_id=parent_job["id"], user=admin_user)
-
-            merged_annotations = json.loads(
-                api_client.jobs_api.retrieve_annotations(parent_job["id"])[1].data
-            )
-
-            expected_score = round(1 / num_replicas, 2)
-
-            shapes = merged_annotations["shapes"]
-            assert len(shapes) >= 1
-            assert shapes[0]["score"] == expected_score, (
-                f"Expected score {expected_score} " f"(1 annotator out of {num_replicas} agreed)"
-            )
-
-    @pytest.mark.parametrize("job_id", [42, 51])
-    def test_consensus_source_attribute(self, admin_user, job_id: int):
-        """Test that merged annotations have 'source=consensus' attribute."""
-        self.merge(job_id=job_id, user=admin_user)
-
-        with make_api_client(admin_user) as api_client:
-            merged_annotations = json.loads(
-                api_client.jobs_api.retrieve_annotations(job_id)[1].data
-            )
-
-            for shape in merged_annotations.get("shapes", []):
-                assert (
-                    shape.get("source") == "consensus"
-                ), "All merged shapes must have source='consensus'"
