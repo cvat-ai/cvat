@@ -49,8 +49,8 @@ interface Props {
     switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
-    moveToPreviousLayer(): void;
-    moveToNextLayer(): void;
+    toOneLayerBackward(): void;
+    toOneLayerForward(): void;
     resetCuboidPerspective(): void;
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
@@ -213,12 +213,12 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
 
 function ToOneLayerBackwardItem(props: Readonly<ItemProps>): JSX.Element {
     const { toolProps } = props;
-    const { oneLayerBackwardShortcut, moveToPreviousLayer } = toolProps;
+    const { oneLayerBackwardShortcut, toOneLayerBackward } = toolProps;
     return (
         <CVATTooltip title={`${oneLayerBackwardShortcut}`}>
             <Button
                 type='link'
-                onClick={moveToPreviousLayer}
+                onClick={toOneLayerBackward}
                 className='cvat-object-item-menu-to-one-layer-backward'
             >
                 <Icon component={PreviousLayerIcon} />
@@ -230,12 +230,12 @@ function ToOneLayerBackwardItem(props: Readonly<ItemProps>): JSX.Element {
 
 function ToOneLayerForwardItem(props: Readonly<ItemProps>): JSX.Element {
     const { toolProps } = props;
-    const { oneLayerForwardShortcut, moveToNextLayer } = toolProps;
+    const { oneLayerForwardShortcut, toOneLayerForward } = toolProps;
     return (
         <CVATTooltip title={`${oneLayerForwardShortcut}`}>
             <Button
                 type='link'
-                onClick={moveToNextLayer}
+                onClick={toOneLayerForward}
                 className='cvat-object-item-menu-to-one-layer-forward'
             >
                 <Icon component={NextLayerIcon} />

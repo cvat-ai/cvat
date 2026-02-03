@@ -282,7 +282,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         this.commit();
     };
 
-    private readonly moveToPreviousLayer = (): void => {
+    private readonly toOneLayerBackward = (): void => {
         const { objectState, readonly } = this.props;
 
         if (!readonly) {
@@ -291,7 +291,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private readonly moveToNextLayer = (): void => {
+    private readonly toOneLayerForward = (): void => {
         const { objectState, readonly } = this.props;
 
         if (!readonly) {
@@ -437,8 +437,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
-                moveToPreviousLayer={this.moveToPreviousLayer}
-                moveToNextLayer={this.moveToNextLayer}
+                toOneLayerBackward={this.toOneLayerBackward}
+                toOneLayerForward={this.toOneLayerForward}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 edit={this.edit}

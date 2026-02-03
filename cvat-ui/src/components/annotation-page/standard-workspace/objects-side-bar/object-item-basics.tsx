@@ -48,9 +48,9 @@ interface Props {
     createURL(): void;
     switchOrientation(): void;
     toBackground(): void;
-    moveToPreviousLayer(): void;
+    toOneLayerBackward(): void;
     toForeground(): void;
-    moveToNextLayer(): void;
+    toOneLayerForward(): void;
     resetCuboidPerspective(): void;
     runAnnotationAction(): void;
     edit(): void;
@@ -90,8 +90,8 @@ function ItemTopComponent(props: Props): JSX.Element {
         switchOrientation,
         toBackground,
         toForeground,
-        moveToPreviousLayer,
-        moveToNextLayer,
+        toOneLayerBackward,
+        toOneLayerForward,
         resetCuboidPerspective,
         runAnnotationAction,
         edit,
@@ -175,8 +175,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                             switchOrientation,
                             toBackground,
                             toForeground,
-                            moveToPreviousLayer,
-                            moveToNextLayer,
+                            toOneLayerBackward,
+                            toOneLayerForward,
                             resetCuboidPerspective,
                             setColorPickerVisible,
                             edit,
