@@ -22,7 +22,7 @@ description: 'Installing a development environment for different operating syste
   sudo npm -g install corepack # ensure corepack is installed
   ```
 
-  MacOS 10.15
+  MacOS 14
 
   ```bash
   brew install git python pyenv redis curl openssl node sqlite3 geos rust
