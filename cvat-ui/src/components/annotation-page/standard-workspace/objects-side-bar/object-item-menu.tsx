@@ -13,8 +13,8 @@ import Icon, {
 
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
-    PreviousLayerIcon,
-    NextLayerIcon,
+    OneLayerBackwardIcon,
+    OneLayerForwardIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ColorBy } from 'reducers';
@@ -221,7 +221,7 @@ function ToOneLayerBackwardItem(props: Readonly<ItemProps>): JSX.Element {
                 onClick={toOneLayerBackward}
                 className='cvat-object-item-menu-to-one-layer-backward'
             >
-                <Icon component={PreviousLayerIcon} />
+                <Icon component={OneLayerBackwardIcon} />
                 To one layer backward
             </Button>
         </CVATTooltip>
@@ -238,7 +238,7 @@ function ToOneLayerForwardItem(props: Readonly<ItemProps>): JSX.Element {
                 onClick={toOneLayerForward}
                 className='cvat-object-item-menu-to-one-layer-forward'
             >
-                <Icon component={NextLayerIcon} />
+                <Icon component={OneLayerForwardIcon} />
                 To one layer forward
             </Button>
         </CVATTooltip>
