@@ -6,10 +6,11 @@ import React, { CSSProperties } from 'react';
 import { Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
+import Select from 'antd/lib/select';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { NavigationType, Workspace } from 'reducers';
+import { FrameSpeed, NavigationType, Workspace } from 'reducers';
 import {
     FirstIcon,
     BackJumpIcon,
@@ -38,6 +39,7 @@ interface Props {
     keyMap: KeyMap;
     workspace: Workspace;
     navigationType: NavigationType;
+    frameSpeed: FrameSpeed;
     onSwitchPlay(): void;
     onPrevFrame(): void;
     onNextFrame(): void;
@@ -47,6 +49,7 @@ interface Props {
     onLastFrame(): void;
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
     setNavigationType(navigationType: NavigationType): void;
+    onChangeFrameSpeed(speed: FrameSpeed): void;
 }
 
 const componentShortcuts = {
@@ -107,6 +110,7 @@ function PlayerButtons(props: Props): JSX.Element {
         keyMap,
         navigationType,
         workspace,
+        frameSpeed,
         onSwitchPlay,
         onPrevFrame,
         onNextFrame,
@@ -116,6 +120,7 @@ function PlayerButtons(props: Props): JSX.Element {
         onLastFrame,
         setNavigationType,
         onSearchAnnotations,
+        onChangeFrameSpeed,
     } = props;
 
     const handlers: Partial<Record<keyof typeof componentShortcuts, ((event?: KeyboardEvent) => void)>> = {
@@ -314,6 +319,25 @@ function PlayerButtons(props: Props): JSX.Element {
                     component={LastIcon}
                     onClick={onLastFrame}
                 />
+            </CVATTooltip>
+            <CVATTooltip title='Playback speed'>
+                <Select
+                    style={{ ...navIconStyle, width: 70, marginLeft: 8 }}
+                    className='cvat-player-speed-selector'
+                    value={frameSpeed}
+                    onChange={(speed: FrameSpeed): void => {
+                        onChangeFrameSpeed(speed);
+                    }}
+                    size='small'
+                >
+                    <Select.Option key='x0.25' value={FrameSpeed['x0.25']}>x0.25</Select.Option>
+                    <Select.Option key='x0.5' value={FrameSpeed['x0.5']}>x0.5</Select.Option>
+                    <Select.Option key='x1' value={FrameSpeed['x1']}>x1</Select.Option>
+                    <Select.Option key='x1.25' value={FrameSpeed['x1.25']}>x1.25</Select.Option>
+                    <Select.Option key='x1.5' value={FrameSpeed['x1.5']}>x1.5</Select.Option>
+                    <Select.Option key='x1.75' value={FrameSpeed['x1.75']}>x1.75</Select.Option>
+                    <Select.Option key='x2' value={FrameSpeed['x2']}>x2</Select.Option>
+                </Select>
             </CVATTooltip>
         </Col>
     );

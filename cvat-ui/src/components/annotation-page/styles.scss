@@ -126,6 +126,19 @@
             transform: scale(1);
         }
     }
+
+    .cvat-player-speed-selector {
+        font-size: 12px;
+
+        .ant-select-selector {
+            height: 24px;
+            padding: 0 6px;
+        }
+
+        .ant-select-selection-item {
+            line-height: 22px;
+        }
+    }
 }
 
 .cvat-player-controls {

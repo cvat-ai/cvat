@@ -50,7 +50,7 @@ const defaultState: SettingsState = {
     player: {
         canvasBackgroundColor: '#ffffff',
         frameStep: 10,
-        frameSpeed: FrameSpeed.Usual,
+        frameSpeed: FrameSpeed['x1'],
         resetZoom: false,
         rotateAll: false,
         smoothImage: true,

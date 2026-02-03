@@ -12,9 +12,9 @@ context('Settings. "Player speed" option.', () => {
 
     let timeBeforePlay = 0;
     let timeAfterPlay = 0;
-    let durationSlower = 0;
-    let durationFastest = 0;
+    let durationSlow = 0;
     let durationFast = 0;
+    let durationNormal = 0;
 
     function changePlayerSpeed(speed) {
         cy.openSettings();
@@ -23,10 +23,7 @@ context('Settings. "Player speed" option.', () => {
             cy.wait(300); // Wait for the dropdown menu transition.
         });
         cy.get(`.cvat-player-settings-speed-${speed}`).click();
-        cy.get('.cvat-player-settings-speed-select').should(
-            'contain.text',
-            speed.charAt(0).toUpperCase() + speed.slice(1),
-        );
+        cy.get('.cvat-player-settings-speed-select').should('contain.text', speed.replace('x', 'x'));
         cy.closeSettings();
     }
 
@@ -35,8 +32,8 @@ context('Settings. "Player speed" option.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Change "Player speed" to "Slower" and measure the speed of changing frames. Go to first frame.', () => {
-            changePlayerSpeed('slower');
+        it('Change "Player speed" to "x0.5" (slow) and measure the speed of changing frames. Go to first frame.', () => {
+            changePlayerSpeed('x05');
             cy.get('.cvat-player-play-button').click();
             timeBeforePlay = Date.now();
             cy.log(timeBeforePlay);
@@ -44,28 +41,13 @@ context('Settings. "Player speed" option.', () => {
                 .should('have.text', `${imageFileName}_28.png`)
                 .then(() => {
                     timeAfterPlay = Date.now();
-                    durationSlower = timeAfterPlay - timeBeforePlay;
+                    durationSlow = timeAfterPlay - timeBeforePlay;
                 });
             cy.goCheckFrameNumber(0);
         });
 
-        it('Change "Player speed" to "Fastest" and measure the speed of changing frames. The "Slower" is expected to be slower than the "Fastest"', () => {
-            changePlayerSpeed('fastest');
-            cy.get('.cvat-player-play-button').click();
-            timeBeforePlay = Date.now();
-            cy.log(timeBeforePlay);
-            cy.get('.cvat-player-filename-wrapper')
-                .should('have.text', `${imageFileName}_28.png`)
-                .then(() => {
-                    timeAfterPlay = Date.now();
-                    durationFastest = timeAfterPlay - timeBeforePlay;
-                    expect(durationSlower).to.be.greaterThan(durationFastest);
-                });
-            cy.goCheckFrameNumber(0);
-        });
-
-        it('Change "Player speed" to "Fast" and measure the speed of changing frames. The "Slower" is expected to be slower than the "Fastest"', () => {
-            changePlayerSpeed('fast');
+        it('Change "Player speed" to "x2" (fast) and measure the speed of changing frames. The "x0.5" is expected to be slower than "x2"', () => {
+            changePlayerSpeed('x2');
             cy.get('.cvat-player-play-button').click();
             timeBeforePlay = Date.now();
             cy.log(timeBeforePlay);
@@ -74,7 +56,22 @@ context('Settings. "Player speed" option.', () => {
                 .then(() => {
                     timeAfterPlay = Date.now();
                     durationFast = timeAfterPlay - timeBeforePlay;
-                    expect(durationSlower).to.be.greaterThan(durationFast);
+                    expect(durationSlow).to.be.greaterThan(durationFast);
+                });
+            cy.goCheckFrameNumber(0);
+        });
+
+        it('Change "Player speed" to "x1" (normal) and measure the speed of changing frames. The "x0.5" is expected to be slower than "x1"', () => {
+            changePlayerSpeed('x1');
+            cy.get('.cvat-player-play-button').click();
+            timeBeforePlay = Date.now();
+            cy.log(timeBeforePlay);
+            cy.get('.cvat-player-filename-wrapper')
+                .should('have.text', `${imageFileName}_28.png`)
+                .then(() => {
+                    timeAfterPlay = Date.now();
+                    durationNormal = timeAfterPlay - timeBeforePlay;
+                    expect(durationSlow).to.be.greaterThan(durationNormal);
                 });
         });
     });
