@@ -492,10 +492,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return null;
         };
 
-        const zLayers = Array.from(new Set(
-            objectStates.filter((s) => s.objectType !== ObjectType.TAG).map((s) => s.zOrder),
-        )).sort((a, b) => a - b);
-
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_ALL_LOCK: (event?: KeyboardEvent) => {
                 preventDefault(event);
@@ -607,7 +603,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && state.objectType !== ObjectType.TAG) {
-                    state.zOrder = Math.max(...zLayers.filter((zLayer) => zLayer < state.zOrder), state.zOrder - 1);
+                    state.zOrder -= 1;
                     updateAnnotations([state]);
                 }
             },
@@ -615,7 +611,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && state.objectType !== ObjectType.TAG) {
-                    state.zOrder = Math.min(...zLayers.filter((zLayer) => zLayer > state.zOrder), state.zOrder + 1);
+                    state.zOrder += 1;
                     updateAnnotations([state]);
                 }
             },

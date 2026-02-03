@@ -283,21 +283,17 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private readonly toOneLayerBackward = (): void => {
-        const { objectState, readonly } = this.props;
+        const { objectState } = this.props;
 
-        if (!readonly) {
-            objectState.zOrder -= 1;
-            this.commit();
-        }
+        objectState.zOrder -= 1;
+        this.commit();
     };
 
     private readonly toOneLayerForward = (): void => {
-        const { objectState, readonly } = this.props;
+        const { objectState } = this.props;
 
-        if (!readonly) {
-            objectState.zOrder += 1;
-            this.commit();
-        }
+        objectState.zOrder += 1;
+        this.commit();
     };
 
     private activate = (activeElementID?: number): void => {

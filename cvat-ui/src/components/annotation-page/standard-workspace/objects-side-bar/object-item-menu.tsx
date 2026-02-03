@@ -13,8 +13,7 @@ import Icon, {
 
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
-    OneLayerBackwardIcon,
-    OneLayerForwardIcon,
+    OneLayerBackwardIcon, OneLayerForwardIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ColorBy } from 'reducers';
