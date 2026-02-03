@@ -124,8 +124,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}
                     toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
-                    moveToPreviousLayerShortcut={normalizedKeyMap.TO_ONE_LAYER_BACKWARD}
-                    moveToNextLayerShortcut={normalizedKeyMap.TO_ONE_LAYER_FORWARD}
+                    oneLayerBackwardShortcut={normalizedKeyMap.TO_ONE_LAYER_BACKWARD}
+                    oneLayerForwardShortcut={normalizedKeyMap.TO_ONE_LAYER_FORWARD}
                     removeShortcut={normalizedKeyMap.DELETE_OBJECT_STANDARD_WORKSPACE}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}

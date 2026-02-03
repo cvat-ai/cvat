@@ -37,8 +37,8 @@ interface Props {
     propagateShortcut: string;
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
-    moveToPreviousLayerShortcut: string;
-    moveToNextLayerShortcut: string;
+    oneLayerBackwardShortcut: string;
+    oneLayerForwardShortcut: string;
     removeShortcut: string;
     runAnnotationsActionShortcut: string;
     changeColor(value: string): void;
@@ -213,9 +213,9 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
 
 function ToOneLayerBackwardItem(props: Readonly<ItemProps>): JSX.Element {
     const { toolProps } = props;
-    const { moveToPreviousLayerShortcut, moveToPreviousLayer } = toolProps;
+    const { oneLayerBackwardShortcut, moveToPreviousLayer } = toolProps;
     return (
-        <CVATTooltip title={`${moveToPreviousLayerShortcut}`}>
+        <CVATTooltip title={`${oneLayerBackwardShortcut}`}>
             <Button
                 type='link'
                 onClick={moveToPreviousLayer}
@@ -230,9 +230,9 @@ function ToOneLayerBackwardItem(props: Readonly<ItemProps>): JSX.Element {
 
 function ToOneLayerForwardItem(props: Readonly<ItemProps>): JSX.Element {
     const { toolProps } = props;
-    const { moveToNextLayerShortcut, moveToNextLayer } = toolProps;
+    const { oneLayerForwardShortcut, moveToNextLayer } = toolProps;
     return (
-        <CVATTooltip title={`${moveToNextLayerShortcut}`}>
+        <CVATTooltip title={`${oneLayerForwardShortcut}`}>
             <Button
                 type='link'
                 onClick={moveToNextLayer}
