@@ -439,6 +439,8 @@ class DatasetMixin:
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
+            OpenApiParameter('server_path', description='Absolute path on the server where the dataset will be saved (only for location=server_path)',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('save_images', description='Include images or not',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=False),
         ],
@@ -538,6 +540,8 @@ class BackupMixin:
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
+            OpenApiParameter('server_path', description='Absolute path on the server where the backup will be saved (only for location=server_path)',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=OpenApiTypes.NONE,
         responses={

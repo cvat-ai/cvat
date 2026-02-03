@@ -408,3 +408,56 @@ def defaultdict_to_regular(d):
     if isinstance(d, defaultdict):
         d = {k: defaultdict_to_regular(v) for k, v in d.items()}
     return d
+
+
+def validate_server_path(path: str) -> str:
+    """
+    Validates a server path for export operations to prevent security issues.
+
+    Args:
+        path: The server path to validate (can be a file path or directory)
+
+    Returns:
+        The absolute normalized path
+
+    Raises:
+        ValidationError: If the path is invalid or contains security risks
+    """
+    if not path:
+        raise ValidationError("Server path cannot be empty")
+
+    # Remove any null bytes
+    if '\0' in path:
+        raise ValidationError("Server path contains null bytes")
+
+    # Convert to absolute path and normalize
+    abs_path = os.path.abspath(os.path.expanduser(path))
+
+    # Check for path traversal attempts by comparing the normalized path
+    # This prevents ../../../etc/passwd type attacks
+    if not os.path.normpath(abs_path) == abs_path:
+        raise ValidationError("Server path contains invalid path traversal sequences")
+
+    # If the path already exists as a directory, validate it directly
+    if os.path.exists(abs_path) and os.path.isdir(abs_path):
+        if not os.access(abs_path, os.W_OK):
+            raise ValidationError(f"No write permission for directory: {abs_path}")
+        return abs_path
+
+    # If path doesn't exist, check if parent directory exists and is writable
+    parent_dir = os.path.dirname(abs_path)
+    
+    # Handle case where path is just "/" or has no parent
+    if not parent_dir or parent_dir == abs_path:
+        raise ValidationError(f"Invalid path: {abs_path}")
+    
+    if not os.path.exists(parent_dir):
+        raise ValidationError(f"Parent directory does not exist: {parent_dir}. Please create it first or use an existing directory.")
+
+    if not os.path.isdir(parent_dir):
+        raise ValidationError(f"Parent path is not a directory: {parent_dir}")
+
+    if not os.access(parent_dir, os.W_OK):
+        raise ValidationError(f"No write permission for directory: {parent_dir}. Current user: {os.getenv('USER', 'unknown')}")
+
+    return abs_path

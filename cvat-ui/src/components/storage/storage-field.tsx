@@ -6,6 +6,8 @@ import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Select from 'antd/lib/select';
 import Form from 'antd/lib/form';
+import Input from 'antd/lib/input';
+import Text from 'antd/lib/typography/Text';
 import { CloudStorage } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 
@@ -31,6 +33,7 @@ export default function StorageField(props: Props): JSX.Element {
     } = props;
     const [cloudStorage, setCloudStorage] = useState<CloudStorage | null>(null);
     const [potentialCloudStorage, setPotentialCloudStorage] = useState('');
+    const [serverPath, setServerPath] = useState('');
     const [storageType, setStorageType] = useState('');
 
     useEffect(() => {
@@ -51,8 +54,38 @@ export default function StorageField(props: Props): JSX.Element {
         );
     }
 
+    function renderServerPath(): JSX.Element {
+        return (
+            <Form.Item
+                label={<Text>Server path (absolute path on the server)</Text>}
+                name={['targetStorage', 'serverPath']}
+                rules={[{ required: true, message: 'Please enter a server path' }]}
+            >
+                <Input
+                    placeholder='/data/exports/my_export.zip'
+                    value={serverPath}
+                    onChange={(e) => {
+                        setServerPath(e.target.value);
+                        if (onChangeStorage) {
+                            onChangeStorage({
+                                location: StorageLocation.SERVER_PATH,
+                                serverPath: e.target.value,
+                            });
+                        }
+                    }}
+                    className={`cvat-input-${storageType}-server-path`}
+                />
+            </Form.Item>
+        );
+    }
+
     useEffect(() => {
         if (locationValue === StorageLocation.LOCAL) {
+            setPotentialCloudStorage('');
+            setServerPath('');
+        } else if (locationValue === StorageLocation.CLOUD_STORAGE) {
+            setServerPath('');
+        } else if (locationValue === StorageLocation.SERVER_PATH) {
             setPotentialCloudStorage('');
         }
     }, [locationValue]);
@@ -62,9 +95,10 @@ export default function StorageField(props: Props): JSX.Element {
             onChangeStorage({
                 location: locationValue,
                 cloudStorageId: cloudStorage?.id ? parseInt(cloudStorage?.id, 10) : undefined,
+                serverPath: locationValue === StorageLocation.SERVER_PATH ? serverPath : undefined,
             });
         }
-    }, [cloudStorage, locationValue]);
+    }, [cloudStorage, locationValue, serverPath]);
 
     return (
         <>
@@ -94,9 +128,17 @@ export default function StorageField(props: Props): JSX.Element {
                     >
                         Cloud storage
                     </Option>
+                    <Option
+                        value={StorageLocation.SERVER_PATH}
+                        key={`${storageType}-${StorageLocation.SERVER_PATH.toLowerCase()}`}
+                        className={`cvat-select-${storageType}-location`}
+                    >
+                        Server path
+                    </Option>
                 </Select>
             </Form.Item>
             {locationValue === StorageLocation.CLOUD_STORAGE && renderCloudStorage()}
+            {locationValue === StorageLocation.SERVER_PATH && renderServerPath()}
         </>
     );
 }

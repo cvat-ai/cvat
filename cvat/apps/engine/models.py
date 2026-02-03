@@ -1263,6 +1263,7 @@ class Manifest(models.Model):
 class Location(str, Enum):
     CLOUD_STORAGE = 'cloud_storage'
     LOCAL = 'local'
+    SERVER_PATH = 'server_path'
 
     @classmethod
     def choices(cls):
