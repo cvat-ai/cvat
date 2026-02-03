@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import Sequence, TypeVar, Union
+from collections.abc import Iterable, Sequence
+from typing import TypeAlias, TypeVar
 
 from django.conf import settings
 from django.db import models
@@ -17,7 +17,7 @@ class Undefined:
     pass
 
 
-MaybeUndefined = Union[_T, Undefined]
+MaybeUndefined: TypeAlias = _T | Undefined
 """
 Can be used to annotate dynamic class members that may be undefined in the object.
 Such fields should typically be accessed via hasattr() and getattr().

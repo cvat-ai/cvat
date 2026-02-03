@@ -11,11 +11,11 @@ def init_context(context):
     context.logger.info("Init context...  0%")
 
     # Read labels
-    with open("/opt/nuclio/function.yaml", 'rb') as function_file:
+    with open("/opt/nuclio/function.yaml", "rb") as function_file:
         functionconfig = yaml.safe_load(function_file)
 
-    labels_spec = functionconfig['metadata']['annotations']['spec']
-    labels = {item['id']: item['name'] for item in json.loads(labels_spec)}
+    labels_spec = functionconfig["metadata"]["annotations"]["spec"]
+    labels = {item["id"]: item["name"] for item in json.loads(labels_spec)}
 
     # Read the DL model
     model = ModelHandler(labels)
@@ -33,5 +33,6 @@ def handler(context, event):
 
     results = context.user_data.model.infer(image, threshold)
 
-    return context.Response(body=json.dumps(results), headers={},
-        content_type='application/json', status_code=200)
+    return context.Response(
+        body=json.dumps(results), headers={}, content_type="application/json", status_code=200
+    )

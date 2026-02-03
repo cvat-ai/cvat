@@ -325,14 +325,10 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         allow_blank=True,
         max_length=1024,
         required=False,
-        help_text=textwrap.dedent(
-            """\
-        A JSON-based logic expression used to filter jobs for quality validation.
-        The filter supports various terms to specify conditions on job: {}
-        """.format(
-                Meta.model.get_job_filter_terms()
-            )
-        ),
+        help_text=textwrap.dedent("""\
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: {}
+        """.format(Meta.model.get_job_filter_terms())),
     )
 
     def validate_job_filter(self, value):

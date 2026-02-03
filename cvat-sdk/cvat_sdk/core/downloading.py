@@ -10,13 +10,13 @@ import os
 import re
 from contextlib import closing
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import urllib3
 
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.exceptions import CvatSdkException
-from cvat_sdk.core.helpers import expect_status
+from cvat_sdk.core.helpers import expect_status, make_request_headers
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.core.utils import atomic_writer
 
@@ -80,7 +80,7 @@ class Downloader:
         output_path: Path,
         *,
         timeout: int = 60,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
     ) -> Path:
         """
         Downloads the file from url into a temporary file, then renames it to the requested name.
@@ -100,8 +100,8 @@ class Downloader:
 
         response = self._client.api_client.rest_client.GET(
             url,
+            headers=make_request_headers(self._client.api_client),
             _request_timeout=timeout,
-            headers=self._client.api_client.get_common_headers(),
             _parse_response=False,
         )
         with closing(response):
@@ -139,9 +139,9 @@ class Downloader:
         self,
         endpoint: Endpoint,
         *,
-        url_params: Optional[dict[str, Any]] = None,
-        query_params: Optional[dict[str, Any]] = None,
-        status_check_period: Optional[int] = None,
+        url_params: dict[str, Any] | None = None,
+        query_params: dict[str, Any] | None = None,
+        status_check_period: int | None = None,
     ):
         client = self._client
         if status_check_period is None:
@@ -157,7 +157,7 @@ class Downloader:
         response = client.api_client.rest_client.request(
             method=endpoint.settings["http_method"],
             url=url,
-            headers=client.api_client.get_common_headers(),
+            headers=make_request_headers(self._client.api_client),
         )
 
         client.logger.debug("STATUS %s", response.status)
@@ -177,10 +177,10 @@ class Downloader:
         endpoint: Endpoint,
         filename: Path,
         *,
-        url_params: Optional[dict[str, Any]] = None,
-        query_params: Optional[dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
+        url_params: dict[str, Any] | None = None,
+        query_params: dict[str, Any] | None = None,
+        pbar: ProgressReporter | None = None,
+        status_check_period: int | None = None,
     ) -> Path:
         client = self._client
 

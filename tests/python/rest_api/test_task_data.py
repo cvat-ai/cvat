@@ -16,7 +16,7 @@ from http import HTTPStatus
 from itertools import chain, groupby, product
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -54,10 +54,10 @@ class TestPostTaskData:
 
     def _test_cannot_create_task(self, username, spec, data, **kwargs):
         with make_api_client(username) as api_client:
-            (task, response) = api_client.tasks_api.create(spec, **kwargs)
+            task, response = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
-            (result, response) = api_client.tasks_api.create_data(
+            result, response = api_client.tasks_api.create_data(
                 task.id, data_request=deepcopy(data), _content_type="application/json", **kwargs
             )
             assert response.status == HTTPStatus.ACCEPTED
@@ -98,7 +98,7 @@ class TestPostTaskData:
 
         # check task size
         with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(task_id)
+            task, _ = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
     def test_default_overlap_for_small_segment_size(self):
@@ -332,7 +332,7 @@ class TestPostTaskData:
         task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         with make_api_client(self._USERNAME) as api_client:
-            (_, response) = api_client.tasks_api.retrieve(task_id)
+            _, response = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
 
     @pytest.mark.parametrize("data_source", ["client_files", "server_files"])
@@ -363,11 +363,11 @@ class TestPostTaskData:
             "sorting_method": "predefined",
         }
 
-        (task_id, _) = create_task(self._USERNAME, task_spec, task_data)
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check that the frames were sorted again
         with make_api_client(self._USERNAME) as api_client:
-            (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
 
             for image_file, frame in zip(image_files, data_meta.frames):
                 if isinstance(image_file, str):
@@ -601,11 +601,11 @@ class TestPostTaskData:
         sorting_method: str = "lexicographical",
         data_type: str = "image",
         video_frame_count: int = 10,
-        server_files_exclude: Optional[list[str]] = None,
+        server_files_exclude: list[str] | None = None,
         org: str = "",
-        filenames: Optional[list[str]] = None,
-        task_spec_kwargs: Optional[dict[str, Any]] = None,
-        data_spec_kwargs: Optional[dict[str, Any]] = None,
+        filenames: list[str] | None = None,
+        task_spec_kwargs: dict[str, Any] | None = None,
+        data_spec_kwargs: dict[str, Any] | None = None,
     ) -> tuple[int, Any]:
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
         if data_type == "video":
@@ -713,7 +713,7 @@ class TestPostTaskData:
         use_cache: bool,
         use_manifest: bool,
         server_files: list[str],
-        server_files_exclude: Optional[list[str]],
+        server_files_exclude: list[str] | None,
         task_size: int,
         org: str,
         cloud_storages,
@@ -731,7 +731,7 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.retrieve(task_id)
+            task, response = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
             assert task.size == task_size
 
@@ -771,11 +771,11 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            (_, response) = api_client.tasks_api.retrieve(task_id)
+            _, response = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
 
             # check sequence of frames
-            (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             assert expected_result == [x.name for x in data_meta.frames]
 
     @pytest.mark.with_external_services
@@ -853,7 +853,7 @@ class TestPostTaskData:
             ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2, ""),
             ("abc_manifest.jsonl", "[d]*.jpeg", False, 1, ""),
             ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0, "No media data found"),
-            (None, "*", True, 0, "Combined media types are not supported"),
+            (None, "*", True, 0, "Only one video, archive, pdf, zip"),
             (None, "test/*", True, 3, ""),
             (None, "test/sub*1.jpeg", True, 1, ""),
             (None, "*image*.jpeg", True, 3, ""),
@@ -939,7 +939,7 @@ class TestPostTaskData:
             task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
 
             with make_api_client(self._USERNAME) as api_client:
-                (task, response) = api_client.tasks_api.retrieve(task_id)
+                task, response = api_client.tasks_api.retrieve(task_id)
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
@@ -981,7 +981,7 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            (_, response) = api_client.tasks_api.retrieve_data(
+            _, response = api_client.tasks_api.retrieve_data(
                 task_id, type="chunk", quality="compressed", number=0
             )
             assert response.status == HTTPStatus.OK
@@ -1056,7 +1056,7 @@ class TestPostTaskData:
             cloud_storage=cloud_storage,
             use_manifest=False,
             use_cache=False,
-            server_files=["test/video/video.avi"],
+            server_files=["test/video/video.mkv"],
             org=org,
             data_spec_kwargs=data_spec,
             data_type="video",
@@ -1097,7 +1097,7 @@ class TestPostTaskData:
             jobs: list[models.JobRead] = get_paginated_collection(
                 api_client.jobs_api.list_endpoint, task_id=task_id, sort="id"
             )
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(id=task_id)
 
             assert [f.name for f in task_meta.frames] == list(
                 chain.from_iterable(expected_segments)
@@ -1168,7 +1168,7 @@ class TestPostTaskData:
         cloud_storage = cloud_storages[cloud_storage_id]
 
         with make_api_client(self._USERNAME) as api_client:
-            (_, response) = api_client.cloudstorages_api.partial_update(
+            _, response = api_client.cloudstorages_api.partial_update(
                 cloud_storage_id,
                 patched_cloud_storage_write_request={
                     "specific_attributes": f'{cloud_storage["specific_attributes"]}&prefix={default_prefix}'
@@ -1181,7 +1181,7 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.retrieve(task_id)
+            task, response = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
             assert task.size == expected_task_size
 
@@ -1261,8 +1261,8 @@ class TestPostTaskData:
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(task_id)
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task, _ = api_client.tasks_api.retrieve(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             annotation_job_metas = [
                 api_client.jobs_api.retrieve_data_meta(job.id)[0]
                 for job in get_paginated_collection(
@@ -1456,8 +1456,8 @@ class TestPostTaskData:
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(task_id)
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task, _ = api_client.tasks_api.retrieve(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             annotation_job_metas = [
                 api_client.jobs_api.retrieve_data_meta(job.id)[0]
                 for job in get_paginated_collection(
@@ -1577,8 +1577,8 @@ class TestPostTaskData:
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(task_id)
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task, _ = api_client.tasks_api.retrieve(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             annotation_job_metas = [
                 api_client.jobs_api.retrieve_data_meta(job.id)[0]
                 for job in get_paginated_collection(
@@ -1654,7 +1654,7 @@ class TestPostTaskData:
         server_files = [f"test/sub_0/img_{i}.jpeg" for i in range(3)]
         validation_frames = ["test/sub_0/img_1.jpeg"]
 
-        (task_id, _) = self._create_task_with_cloud_data(
+        task_id, _ = self._create_task_with_cloud_data(
             request,
             cloud_storage,
             use_manifest=False,
@@ -1679,10 +1679,10 @@ class TestPostTaskData:
 
         with make_api_client(admin_user) as api_client:
             # check that GT job was created
-            (paginated_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
+            paginated_jobs, _ = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
             assert 1 == len(paginated_jobs["results"])
 
-            (paginated_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="annotation")
+            paginated_jobs, _ = api_client.jobs_api.list(task_id=task_id, type="annotation")
             jobs_count = (
                 len(server_files) - len(validation_frames)
                 if validation_mode == models.ValidationMode("gt_pool")
@@ -1693,8 +1693,8 @@ class TestPostTaskData:
             # Note: meta is based on the order of images from database
             # while chunk with CS data is based on the order of images in a manifest
             for job in paginated_jobs["results"]:
-                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job["id"])
-                (_, response) = api_client.jobs_api.retrieve_data(
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job["id"])
+                _, response = api_client.jobs_api.retrieve_data(
                     job["id"], type="chunk", quality="compressed", index=0
                 )
                 chunk_file = io.BytesIO(response.data)
@@ -1734,8 +1734,8 @@ class TestPostTaskData:
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
 
         with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(task_id)
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task, _ = api_client.tasks_api.retrieve(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             jobs = get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id)
 
             annotation_job_metas = {
@@ -1780,8 +1780,10 @@ class TestPostTaskData:
 class TestTaskData(TestTasksBase):
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
+
         with make_api_client(self._USERNAME) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task_meta, response = api_client.tasks_api.retrieve_data_meta(task_id)
+            task_meta_raw = json.loads(response.data)
 
             assert task_meta.size == task_spec.size
             assert task_meta.start_frame == getattr(task_spec, "start_frame", 0)
@@ -1798,8 +1800,18 @@ class TestTaskData(TestTasksBase):
 
             if task_spec.source_data_type == SourceDataType.video:
                 assert len(task_meta.frames) == 1
+                assert (
+                    DeepDiff(
+                        task_meta_raw["chapters"],
+                        task_spec.chapters,
+                        ignore_order=True,
+                        exclude_regex_paths=[r"root\[.*\]\['id'\]"],
+                    )
+                    == {}
+                )
             else:
                 assert len(task_meta.frames) == task_meta.size
+                assert task_meta.chapters is None
 
     @pytest.mark.timeout(
         # This test has to check all the task frames availability, it can make many requests
@@ -1808,7 +1820,7 @@ class TestTaskData(TestTasksBase):
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
 
             for quality, abs_frame_id in product(
                 ["original", "compressed"],
@@ -1817,7 +1829,7 @@ class TestTaskData(TestTasksBase):
                 rel_frame_id = (
                     abs_frame_id - getattr(task_spec, "start_frame", 0)
                 ) // task_spec.frame_step
-                (_, response) = api_client.tasks_api.retrieve_data(
+                _, response = api_client.tasks_api.retrieve_data(
                     task_id,
                     type="frame",
                     quality=quality,
@@ -1852,8 +1864,8 @@ class TestTaskData(TestTasksBase):
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_chunks(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(task_id)
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task, _ = api_client.tasks_api.retrieve(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
 
             if task_spec.source_data_type == SourceDataType.images:
                 assert task.data_original_chunk_type == "imageset"
@@ -1884,7 +1896,7 @@ class TestTaskData(TestTasksBase):
             for quality, (chunk_id, expected_chunk_frame_ids) in product(
                 ["original", "compressed"], task_chunk_frames
             ):
-                (_, response) = api_client.tasks_api.retrieve_data(
+                _, response = api_client.tasks_api.retrieve_data(
                     task_id, type="chunk", quality=quality, number=chunk_id, _parse_response=False
                 )
 
@@ -1920,8 +1932,8 @@ class TestTaskData(TestTasksBase):
     @parametrize("task_spec, task_id", TestTasksBase._tests_with_related_files_cases)
     def test_can_get_task_related_file_chunks(self, task_spec: ImagesTaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
-            (task, _) = api_client.tasks_api.retrieve(task_id)
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task, _ = api_client.tasks_api.retrieve(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
 
             if task_spec.source_data_type == SourceDataType.images:
                 assert task.data_original_chunk_type == "imageset"
@@ -1933,7 +1945,7 @@ class TestTaskData(TestTasksBase):
                 expected_related_images = task_spec.get_related_files(task_frame_id)
                 assert task_meta.frames[task_frame_id].related_files == len(expected_related_images)
 
-                (_, response) = api_client.tasks_api.retrieve_data(
+                _, response = api_client.tasks_api.retrieve_data(
                     task_id, type="context_image", number=task_frame_id, _parse_response=False
                 )
 
@@ -1979,7 +1991,7 @@ class TestTaskData(TestTasksBase):
             assert len(jobs) == len(segment_params)
 
             for (segment_start, segment_stop), job in zip(segment_params, jobs):
-                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
 
                 assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_stop)
                 assert job_meta.frame_filter == getattr(task_spec, "frame_filter", "")
@@ -2017,7 +2029,7 @@ class TestTaskData(TestTasksBase):
             assert len(jobs) == 1
 
             gt_job = jobs[0]
-            (job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+            job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
             task_start_frame = getattr(task_spec, "start_frame", 0)
             assert (job_meta.start_frame, job_meta.stop_frame) == (
@@ -2073,7 +2085,7 @@ class TestTaskData(TestTasksBase):
             segment_start = task_spec.size - task_spec.validation_params.frame_count
             segment_stop = task_spec.size - 1
 
-            (job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+            job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
             assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_stop)
             assert job_meta.frame_filter == getattr(task_spec, "frame_filter", "")
@@ -2141,7 +2153,7 @@ class TestTaskData(TestTasksBase):
                 key=lambda j: j.start_frame,
             )
             for job in jobs:
-                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
                 job_abs_frames = self._get_job_abs_frame_set(job_meta)
 
                 for quality, (frame_pos, abs_frame_id) in product(
@@ -2151,7 +2163,7 @@ class TestTaskData(TestTasksBase):
                     rel_frame_id = (
                         abs_frame_id - getattr(task_spec, "start_frame", 0)
                     ) // task_spec.frame_step
-                    (_, response) = api_client.jobs_api.retrieve_data(
+                    _, response = api_client.jobs_api.retrieve_data(
                         job.id,
                         type="frame",
                         quality=quality,
@@ -2194,10 +2206,10 @@ class TestTaskData(TestTasksBase):
                 key=lambda j: j.start_frame,
             )
 
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
 
             for job in jobs:
-                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
 
                 if job_meta.included_frames:
                     assert len(job_meta.included_frames) == job_meta.size
@@ -2264,7 +2276,7 @@ class TestTaskData(TestTasksBase):
                     else:
                         assert False
 
-                    (_, response) = api_client.jobs_api.retrieve_data(
+                    _, response = api_client.jobs_api.retrieve_data(
                         job.id,
                         type="chunk",
                         quality=quality,

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import traceback
-from typing import Any, Optional, Union
+from typing import Any
 
 import rq
 from crum import get_current_request, get_current_user
@@ -11,6 +11,8 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
+from cvat.apps.access_tokens.models import AccessToken
+from cvat.apps.access_tokens.serializers import AccessTokenReadSerializer
 from cvat.apps.dataset_manager.tracks_counter import TracksCounter
 from cvat.apps.engine.models import (
     CloudStorage,
@@ -155,10 +157,17 @@ def _get_value(obj, key):
 def request_info(instance=None):
     request = get_request(instance)
     request_headers = _get_value(request, "headers")
-    return {
+
+    data = {
         "id": _get_value(request, "uuid"),
         "user_agent": request_headers.get("User-Agent") if request_headers is not None else None,
     }
+
+    access_token = getattr(request, "auth", None)
+    if isinstance(access_token, AccessToken):
+        data["access_token_id"] = access_token.id
+
+    return data
 
 
 def user_id(instance=None):
@@ -262,6 +271,7 @@ def _get_object_name(instance):
 
 
 SERIALIZERS = [
+    (AccessToken, AccessTokenReadSerializer),
     (Organization, OrganizationReadSerializer),
     (Project, ProjectReadSerializer),
     (Task, TaskReadSerializer),
@@ -544,11 +554,11 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
 
 
 def handle_dataset_io(
-    instance: Union[Project, Task, Job],
+    instance: Project | Task | Job,
     action: str,
     *,
     format_name: str,
-    cloud_storage_id: Optional[int],
+    cloud_storage_id: int | None,
     **payload_fields,
 ) -> None:
     payload = {"format": format_name, **payload_fields}
@@ -572,10 +582,10 @@ def handle_dataset_io(
 
 
 def handle_dataset_export(
-    instance: Union[Project, Task, Job],
+    instance: Project | Task | Job,
     *,
     format_name: str,
-    cloud_storage_id: Optional[int],
+    cloud_storage_id: int | None,
     save_images: bool,
 ) -> None:
     handle_dataset_io(
@@ -588,10 +598,10 @@ def handle_dataset_export(
 
 
 def handle_dataset_import(
-    instance: Union[Project, Task, Job],
+    instance: Project | Task | Job,
     *,
     format_name: str,
-    cloud_storage_id: Optional[int],
+    cloud_storage_id: int | None,
 ) -> None:
     handle_dataset_io(
         instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id
@@ -600,7 +610,7 @@ def handle_dataset_import(
 
 def handle_function_call(
     function_id: str,
-    target: Union[Task, Job],
+    target: Task | Job,
     **payload_fields,
 ) -> None:
     record_server_event(
@@ -730,3 +740,32 @@ def handle_client_events_push(request, data: dict):
                     count=1,
                     **common,
                 )
+
+
+def handle_cache_item_create(
+    item_type: str,
+    target: str | None = None,
+    target_id: int | None = None,
+    size: int = 0,
+    number: int | None = None,
+    quality: int | None = None,
+    **payload_fields,
+) -> None:
+    record_server_event(
+        scope=event_scope("create", "cache_item"),
+        request_info=request_info(),
+        user_id=user_id(),
+        user_name=user_name(),
+        user_email=user_email(),
+        payload={
+            "cache_item": {
+                "type": item_type,
+                "target": target,
+                "target_id": target_id,
+                "number": number,
+                "size": size,
+                "quality": quality,
+            },
+            **payload_fields,
+        },
+    )

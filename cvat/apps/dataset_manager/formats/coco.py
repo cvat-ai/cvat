@@ -25,7 +25,7 @@ from .transformations import EllipsesToMasks
 
 
 @exporter(name="COCO", ext="ZIP", version="1.0")
-def _export(dst_file, temp_dir, instance_data, save_images=False):
+def _export_instances(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
         dataset.transform(EllipsesToMasks)
@@ -35,7 +35,9 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 
 @importer(name="COCO", ext="JSON, ZIP", version="1.0")
-def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None, **kwargs):
+def _import_instances(
+    src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None, **kwargs
+):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
         # We use coco importer because it gives better error message
@@ -58,7 +60,7 @@ def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None
 
 
 @exporter(name="COCO Keypoints", ext="ZIP", version="1.0")
-def _export(dst_file, temp_dir, instance_data, save_images=False):
+def _export_keypoints(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = StreamDataset.from_extractors(extractor, env=dm_env)
         dataset.transform(EllipsesToMasks)
@@ -80,7 +82,7 @@ class RemoveBboxAnnotations(ItemTransform):
 
 
 @importer(name="COCO Keypoints", ext="JSON, ZIP", version="1.0")
-def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+def _import_keypoints(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
         # We use coco importer because it gives better error message

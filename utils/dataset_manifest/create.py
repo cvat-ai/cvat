@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
 import argparse
 import re
-from glob import glob
+from pathlib import Path
 
 from dataset_manifest.core import ImageManifestManager, VideoManifestManager
 from dataset_manifest.utils import SortingMethod, find_related_images, is_image, is_video
@@ -42,9 +42,9 @@ def get_args():
     )
     parser.add_argument(
         "--output-dir",
-        type=str,
+        type=Path,
         help="Directory where the manifest file will be saved",
-        default=os.getcwd(),
+        default=Path.cwd(),
     )
     parser.add_argument(
         "--sorting",
@@ -52,27 +52,24 @@ def get_args():
         type=str,
         default=SortingMethod.LEXICOGRAPHICAL.value,
     )
-    parser.add_argument("source", type=str, help="Source paths")
+    parser.add_argument("source", type=Path, help="Source paths")
     return parser.parse_args()
 
 
 def main():
     args = get_args()
 
-    manifest_directory = os.path.abspath(args.output_dir)
-    if not os.path.exists(manifest_directory):
-        os.makedirs(manifest_directory)
-    source = os.path.abspath(os.path.expanduser(args.source))
+    manifest_directory: Path = args.output_dir.resolve()
+    manifest_directory.mkdir(parents=True, exist_ok=True)
+    source: Path = args.source.expanduser().resolve()
 
-    sources = []
-    if not os.path.isfile(source):  # directory/pattern with images
+    if not source.is_file():  # directory/pattern with images
         data_dir = None
-        if os.path.isdir(source):
+        if source.is_dir():
             data_dir = source
-            for root, _, files in os.walk(source):
-                sources.extend([os.path.join(root, f) for f in files if is_image(f)])
+            pattern = "**/*"
         else:
-            items = source.lstrip("/").split("/")
+            items = source.parts
             position = 0
             try:
                 for item in items:
@@ -81,27 +78,33 @@ def main():
                     position += 1
                 else:
                     raise Exception("Wrong positional argument")
-                assert position != 0, "Wrong pattern: there must be a common root"
-                data_dir = source.split(items[position])[0]
+
+                data_dir = Path(*items[:position])
+
+                assert data_dir.parents, "Wrong pattern: there must be a common root"
             except Exception as ex:
                 sys.exit(str(ex))
-            sources = list(filter(is_image, glob(source, recursive=True)))
+
+            pattern = os.fspath(source.relative_to(data_dir))
+
+        sources = list(filter(is_image, data_dir.glob(pattern)))
 
         # If the source is a glob expression, we need additional processing
         abs_root = source
-        while abs_root and re.search(r"[*?\[\]]", abs_root):
-            abs_root = os.path.split(abs_root)[0]
+        while re.search(r"[*?\[\]]", os.fspath(abs_root)):
+            abs_root = abs_root.parent
 
         scene_paths, related_images = find_related_images(
             sources,
             root_path=abs_root,
-            scene_paths=(
-                lambda p: not re.search(r"(^|{0})related_images{0}".format(os.sep), p)
-                # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
-            ),
+            # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
+            is_scene_path=(lambda p: not "related_images" in p.parts),
         )
-        sources = [p for p in sources if os.path.relpath(p, abs_root) in scene_paths]
-        meta = {k: {"related_images": related_images[k]} for k in related_images}
+        sources = [p for p in sources if p.relative_to(abs_root) in scene_paths]
+        meta = {
+            os.fspath(k): {"related_images": [ri.as_posix() for ri in related_images[k]]}
+            for k in related_images
+        }
         try:
             assert len(sources), "A images was not found"
             manifest = ImageManifestManager(manifest_path=manifest_directory)

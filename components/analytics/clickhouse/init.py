@@ -26,9 +26,7 @@ def create_db(client: clickhouse_connect.driver.client.Client, db_name: str):
 
 
 def migration_000_initial(client: clickhouse_connect.driver.client.Client):
-    client.query(
-        textwrap.dedent(
-            """\
+    client.query(textwrap.dedent("""\
         CREATE TABLE IF NOT EXISTS events
         (
             `scope` String NOT NULL,
@@ -53,13 +51,20 @@ def migration_000_initial(client: clickhouse_connect.driver.client.Client):
         PARTITION BY toYYYYMM(timestamp)
         ORDER BY (timestamp)
         SETTINGS index_granularity = 8192;
-        """
-        )
-    )
+        """))
+
+
+def migration_001_add_access_token(client: clickhouse_connect.driver.client.Client):
+    client.query(textwrap.dedent("""\
+        ALTER TABLE events
+        ADD COLUMN IF NOT EXISTS
+        `access_token_id` Nullable(UInt64) DEFAULT NULL
+        """))
 
 
 migrations = [
     migration_000_initial,
+    migration_001_add_access_token,
 ]
 
 

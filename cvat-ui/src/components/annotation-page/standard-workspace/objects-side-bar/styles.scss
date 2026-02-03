@@ -207,6 +207,11 @@
     background-color: $background-color-2;
     height: calc(100% - $grid-unit-size * 9);
     overflow-y: auto;
+
+    .cvat-objects-sidebar-state-item {
+        // opacity 0.53 in sidebar to keep the same look as before on sidebar
+        background-color: rgba(var(--state-item-background), 0.53);
+    }
 }
 
 .cvat-objects-sidebar-z-layer-mark {
@@ -220,8 +225,9 @@
 
 .cvat-objects-sidebar-state-item {
     width: 100%;
+    background-color: rgba(var(--state-item-background), 1);
     transition: box-shadow $box-shadow-transition;
-    border: 1px solid $border-color-1;
+    border: 1px solid rgba($color: white, $alpha: 0%);
     padding: $grid-unit-size * 0.5;
     margin-left: $grid-unit-size * 0.25;
     margin-right: $grid-unit-size * 0.25;
@@ -271,8 +277,7 @@
 
         > .ant-collapse-header {
             align-items: baseline;
-            padding-top: 2px;
-            padding-bottom: 2px;
+            padding: 2px;
 
             .ant-collapse-arrow {
                 padding: 0;
@@ -480,4 +485,20 @@
         margin-left: $grid-unit-size * 0.5;
         width: $grid-unit-size * 9;
     }
+}
+
+.cvat-object-item-score-votes-wrapper {
+    gap: $grid-unit-size * 0.5;
+    justify-content: flex-end;
+    margin-top: $grid-unit-size;
+}
+
+.cvat-object-item-score-tag {
+    font-size: 10px;
+    margin: 0 $grid-unit-size * 0.5 0 0;
+}
+
+.cvat-object-item-votes-tag {
+    font-size: 10px;
+    margin: 0;
 }

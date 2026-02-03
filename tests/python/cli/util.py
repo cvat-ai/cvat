@@ -11,7 +11,7 @@ import threading
 import unittest
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import pytest
 import requests
@@ -21,7 +21,11 @@ from shared.utils.config import BASE_URL, USER_PASS
 from shared.utils.helpers import generate_image_file
 
 
-def run_cli(test: Union[unittest.TestCase, Any], *args: str, expected_code: int = 0) -> None:
+def run_cli(
+    test: unittest.TestCase | Any,
+    *args: str,
+    expected_code: int = 0,
+) -> None:
     from cvat_cli.__main__ import main
 
     if isinstance(test, unittest.TestCase):
@@ -113,13 +117,22 @@ class TestCliBase:
         yield
 
     def run_cli(
-        self, cmd: str, *args: str, expected_code: int = 0, organization: Optional[str] = None
+        self,
+        cmd: str,
+        *args: str,
+        expected_code: int = 0,
+        organization: str | None = None,
+        authenticate: bool = True,
     ) -> str:
         common_args = [
-            f"--auth={self.user}:{self.password}",
             f"--server-host={self.host}",
             f"--server-port={self.port}",
         ]
+
+        if authenticate:
+            common_args += [
+                f"--auth={self.user}:{self.password}",
+            ]
 
         if organization is not None:
             common_args.append(f"--organization={organization}")

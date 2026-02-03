@@ -16,18 +16,18 @@ import {
     activateObject as activateObjectAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
+    collapseObjectItems,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy,
-    Workspace,
 } from 'reducers';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
+import { getObjectStateColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
-    Label, ObjectState, Attribute, Job, ShapeType,
+    Label, ObjectState, Attribute, Job, ShapeType, ObjectType,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
@@ -35,7 +35,6 @@ import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
 
 interface OwnProps {
-    readonly: boolean;
     clientID: number;
     objectStates: ObjectState[];
 }
@@ -54,7 +53,7 @@ interface StateToProps {
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas | Canvas3d;
-    workspace: Workspace;
+    focusedObjectPadding: number;
 }
 
 interface DispatchToProps {
@@ -66,6 +65,7 @@ interface DispatchToProps {
     switchPropagateVisibility: (visible: boolean) => void;
     changeGroupColor(group: number, color: string): void;
     updateActiveControl(activeControl: ActiveControl): void;
+    expandObject(objectState: ObjectState): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -80,10 +80,10 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 frame: { number: frameNumber },
             },
             canvas: { instance: canvasInstance, ready, activeControl },
-            workspace,
         },
         settings: {
             shapes: { colorBy },
+            workspace: { focusedObjectPadding },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -106,7 +106,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         maxZLayer,
         normalizedKeyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
-        workspace,
+        focusedObjectPadding,
     };
 }
 
@@ -136,6 +136,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         updateActiveControl(activeControl: ActiveControl): void {
             dispatch(updateActiveControlAction(activeControl));
+        },
+        expandObject(objectState: ObjectState): void {
+            dispatch(collapseObjectItems([objectState], false));
         },
     };
 }
@@ -170,25 +173,21 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     }
 
     private copy = (): void => {
-        const { objectState, readonly, copyShape } = this.props;
-        if (!readonly) {
-            copyShape(objectState);
-        }
+        const { objectState, copyShape } = this.props;
+        copyShape(objectState);
     };
 
     private propagate = (): void => {
-        const { switchPropagateVisibility, readonly } = this.props;
-        if (!readonly) {
-            switchPropagateVisibility(true);
-        }
+        const { switchPropagateVisibility } = this.props;
+        switchPropagateVisibility(true);
     };
 
     private edit = (): void => {
         const {
-            objectState, readonly, canvasInstance, updateActiveControl,
+            objectState, canvasInstance, updateActiveControl,
         } = this.props;
 
-        if (!readonly && canvasInstance instanceof Canvas &&
+        if (canvasInstance instanceof Canvas &&
             [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
         ) {
             if (canvasInstance.mode() !== CanvasMode.IDLE) {
@@ -202,10 +201,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private slice = async (): Promise<void> => {
         const {
-            objectState, readonly, canvasInstance, updateActiveControl,
+            objectState, canvasInstance, updateActiveControl,
         } = this.props;
 
-        if (!readonly && canvasInstance instanceof Canvas &&
+        if (canvasInstance instanceof Canvas &&
             [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
         ) {
             if (canvasInstance.mode() !== CanvasMode.IDLE) {
@@ -223,12 +222,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private remove = (): void => {
         const {
-            objectState, readonly, removeObject,
+            objectState, removeObject,
         } = this.props;
 
-        if (!readonly) {
-            removeObject(objectState);
-        }
+        removeObject(objectState);
     };
 
     private createURL = (): void => {
@@ -242,10 +239,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private switchOrientation = (): void => {
-        const { objectState, readonly, updateState } = this.props;
-        if (readonly) {
-            return;
-        }
+        const { objectState, updateState } = this.props;
 
         if (objectState.shapeType === ShapeType.CUBOID) {
             this.switchCuboidOrientation();
@@ -275,21 +269,17 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private toBackground = (): void => {
-        const { objectState, readonly, minZLayer } = this.props;
+        const { objectState, minZLayer } = this.props;
 
-        if (!readonly) {
-            objectState.zOrder = minZLayer - 1;
-            this.commit();
-        }
+        objectState.zOrder = minZLayer - 1;
+        this.commit();
     };
 
     private toForeground = (): void => {
-        const { objectState, readonly, maxZLayer } = this.props;
+        const { objectState, maxZLayer } = this.props;
 
-        if (!readonly) {
-            objectState.zOrder = maxZLayer + 1;
-            this.commit();
-        }
+        objectState.zOrder = maxZLayer + 1;
+        this.commit();
     };
 
     private readonly moveToPreviousLayer = (): void => {
@@ -323,6 +313,17 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private focusAndExpand = (): void => {
+        const {
+            objectState, canvasInstance, focusedObjectPadding, expandObject,
+        } = this.props;
+
+        if (canvasInstance instanceof Canvas && objectState.objectType !== ObjectType.TAG) {
+            canvasInstance.focus(objectState.clientID as number, focusedObjectPadding);
+        }
+        expandObject(objectState);
+    };
+
     private changeColor = (color: string): void => {
         const { objectState, colorBy, changeGroupColor } = this.props;
 
@@ -335,11 +336,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private changeLabel = (label: any): void => {
-        const { objectState, readonly } = this.props;
-        if (!readonly) {
-            objectState.label = label;
-            this.commit();
-        }
+        const { objectState } = this.props;
+        objectState.label = label;
+        this.commit();
     };
 
     private switchCuboidOrientation = (): void => {
@@ -347,9 +346,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             return points[12] > points[0];
         }
 
-        const { objectState, readonly } = this.props;
+        const { objectState } = this.props;
 
-        if (!readonly && objectState.shapeType === ShapeType.CUBOID) {
+        if (objectState.shapeType === ShapeType.CUBOID) {
             const points = objectState.points as number[];
             this.resetCuboidPerspective(false);
             objectState.points = shift(points, cuboidOrientationIsLeft(points) ? 4 : -4);
@@ -361,9 +360,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         function cuboidOrientationIsLeft(points: number[]): boolean {
             return points[12] > points[0];
         }
-        const { objectState, readonly } = this.props;
+        const { objectState } = this.props;
 
-        if (!readonly && objectState.shapeType === ShapeType.CUBOID) {
+        if (objectState.shapeType === ShapeType.CUBOID) {
             const points = objectState.points as number[];
             const minD = {
                 x: (points[6] - points[2]) * 0.001,
@@ -397,10 +396,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private commit(): void {
-        const { objectState, readonly, updateState } = this.props;
-        if (!readonly) {
-            updateState(objectState);
-        }
+        const { objectState, updateState } = this.props;
+        updateState(objectState);
     }
 
     public render(): JSX.Element {
@@ -411,15 +408,12 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             activated,
             colorBy,
             normalizedKeyMap,
-            readonly,
             jobInstance,
-            workspace,
         } = this.props;
 
         return (
             <ObjectStateItemComponent
                 jobInstance={jobInstance}
-                readonly={readonly}
                 activated={activated}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
@@ -428,14 +422,14 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 locked={objectState.lock}
                 labelID={objectState.label.id as number}
                 isGroundTruth={objectState.isGroundTruth}
-                color={getColor(objectState, colorBy)}
+                color={getObjectStateColor(objectState, colorBy).rgbComponents()}
                 attributes={attributes}
                 elements={elements}
                 normalizedKeyMap={normalizedKeyMap}
                 labels={labels}
                 colorBy={colorBy}
-                workspace={workspace}
                 activate={this.activate}
+                focusAndExpand={this.focusAndExpand}
                 remove={this.remove}
                 copy={this.copy}
                 createURL={this.createURL}

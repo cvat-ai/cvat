@@ -76,9 +76,8 @@ context('Review pipeline feature', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((response) => {
-            const authKey = response.body.key;
-            cy.deleteUsers(response, [
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteUsers(authHeaders, [
                 additionalUsers.annotator.username,
                 additionalUsers.reviewer.username,
             ]);
@@ -87,9 +86,7 @@ context('Review pipeline feature', () => {
                 cy.request({
                     method: 'DELETE',
                     url: `/api/tasks/${taskID}`,
-                    headers: {
-                        Authorization: `Token ${authKey}`,
-                    },
+                    headers: authHeaders,
                 });
             }
         });

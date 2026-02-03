@@ -68,6 +68,7 @@ export default class Collection {
         dimension: DimensionType;
         framesInfo: BasicInjection['framesInfo'];
         jobType: JobType;
+        consensusReplicas?: number;
     }) {
         this.stopFrame = data.stopFrame;
 
@@ -102,6 +103,7 @@ export default class Collection {
             nextClientID: () => ++config.globalObjectsCounter,
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
+            consensusReplicas: data.consensusReplicas,
         };
     }
 
@@ -936,6 +938,10 @@ export default class Collection {
                 .sort((a, b) => +a - +b)
                 .map((el) => +el)
                 .filter((frame) => !this.injection.framesInfo.isFrameDeleted(frame));
+
+            if (!keyframes.length) {
+                return;
+            }
 
             let prevKeyframe = keyframes[0];
             let visible = false;

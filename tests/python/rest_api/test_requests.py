@@ -5,7 +5,6 @@
 import io
 import json
 from http import HTTPStatus
-from typing import Optional
 from urllib.parse import parse_qsl, urlparse
 
 import pytest
@@ -291,7 +290,7 @@ class TestGetRequests:
     def _test_get_request_200(
         self, api_client: ApiClient, rq_id: str, validate_rq_id: bool = True, **kwargs
     ) -> models.Request:
-        (background_request, response) = api_client.requests_api.retrieve(rq_id, **kwargs)
+        background_request, response = api_client.requests_api.retrieve(rq_id, **kwargs)
         assert response.status == HTTPStatus.OK
 
         if validate_rq_id:
@@ -300,7 +299,7 @@ class TestGetRequests:
         return background_request
 
     def _test_get_request_403(self, api_client: ApiClient, rq_id: str):
-        (_, response) = api_client.requests_api.retrieve(
+        _, response = api_client.requests_api.retrieve(
             rq_id, _parse_response=False, _check_status=False
         )
         assert response.status == HTTPStatus.FORBIDDEN
@@ -370,7 +369,7 @@ class TestGetRequests:
         *,
         action: str,
         target_type: str,
-        subresource: Optional[str] = None,
+        subresource: str | None = None,
     ):
         with make_api_client(username) as api_client:
             bg_requests, _ = api_client.requests_api.list(
@@ -586,7 +585,7 @@ class TestGetRequests:
 
         with make_api_client(owner["username"]) as api_client:
             # initiate quality report calculation
-            (_, response) = api_client.quality_api.create_report(
+            _, response = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
                 _parse_response=False,
             )

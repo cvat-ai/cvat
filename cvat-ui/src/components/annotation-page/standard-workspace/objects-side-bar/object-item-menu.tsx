@@ -23,7 +23,6 @@ import {
 } from 'cvat-core-wrapper';
 
 interface Props {
-    readonly: boolean;
     locked: boolean;
     serverID: number | null;
     shapeType: ShapeType;
@@ -296,7 +295,7 @@ function RunAnnotationActionItem(props: ItemProps): JSX.Element {
 
 export default function ItemMenu(props: Props): MenuProps {
     const {
-        readonly, locked, shapeType, objectType, colorBy, jobInstance,
+        locked, shapeType, objectType, colorBy, jobInstance,
     } = props;
 
     enum MenuKeys {
@@ -323,14 +322,14 @@ export default function ItemMenu(props: Props): MenuProps {
         label: <CreateURLItem toolProps={props} />,
     }];
 
-    if (!readonly && objectType !== ObjectType.TAG) {
+    if (objectType !== ObjectType.TAG) {
         items.push({
             key: MenuKeys.COPY,
             label: <MakeCopyItem toolProps={props} />,
         });
     }
 
-    if (!readonly && !locked && shapeType === ShapeType.MASK) {
+    if (!locked && shapeType === ShapeType.MASK) {
         items.push({
             key: MenuKeys.EDIT_MASK,
             label: <EditMaskItem toolProps={props} />,
@@ -338,7 +337,7 @@ export default function ItemMenu(props: Props): MenuProps {
     }
 
     if (
-        !readonly && !locked && objectType === ObjectType.SHAPE &&
+        !locked && objectType === ObjectType.SHAPE &&
         [ShapeType.MASK, ShapeType.POLYGON].includes(shapeType)
     ) {
         items.push({
@@ -347,28 +346,26 @@ export default function ItemMenu(props: Props): MenuProps {
         });
     }
 
-    if (!readonly) {
-        items.push({
-            key: MenuKeys.PROPAGATE,
-            label: <PropagateItem toolProps={props} />,
-        });
-    }
+    items.push({
+        key: MenuKeys.PROPAGATE,
+        label: <PropagateItem toolProps={props} />,
+    });
 
-    if (is2D && !readonly && !locked && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType)) {
+    if (is2D && !locked && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType)) {
         items.push({
             key: MenuKeys.SWITCH_ORIENTATION,
             label: <SwitchOrientationItem toolProps={props} />,
         });
     }
 
-    if (is2D && !readonly && !locked && shapeType === ShapeType.CUBOID) {
+    if (is2D && !locked && shapeType === ShapeType.CUBOID) {
         items.push({
             key: MenuKeys.RESET_PERSPECTIVE,
             label: <ResetPerspectiveItem toolProps={props} />,
         });
     }
 
-    if (is2D && !readonly && !locked && objectType !== ObjectType.TAG) {
+    if (is2D && !locked && objectType !== ObjectType.TAG) {
         items.push({
             key: MenuKeys.TO_BACKGROUND,
             label: <ToBackgroundItem toolProps={props} />,
@@ -397,19 +394,15 @@ export default function ItemMenu(props: Props): MenuProps {
         });
     }
 
-    if (!readonly) {
-        items.push({
-            key: MenuKeys.REMOVE_ITEM,
-            label: <RemoveItem toolProps={props} />,
-        });
-    }
+    items.push({
+        key: MenuKeys.REMOVE_ITEM,
+        label: <RemoveItem toolProps={props} />,
+    });
 
-    if (!readonly) {
-        items.push({
-            key: MenuKeys.RUN_ANNOTATION_ACTION,
-            label: <RunAnnotationActionItem toolProps={props} />,
-        });
-    }
+    items.push({
+        key: MenuKeys.RUN_ANNOTATION_ACTION,
+        label: <RunAnnotationActionItem toolProps={props} />,
+    });
 
     return {
         items,

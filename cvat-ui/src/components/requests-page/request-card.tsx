@@ -12,8 +12,10 @@ import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
 import { MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
+import { MenuProps } from 'antd/lib/menu';
 
 import { RQStatus, Request } from 'cvat-core-wrapper';
+import { useContextMenuClick } from 'utils/hooks';
 
 import StatusMessage from './request-status';
 import RequestActionsComponent from './actions-menu';
@@ -143,6 +145,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
         request, cancelled, selected, onClick,
     } = props;
     const { operation } = request;
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
     const { type } = operation;
 
     const linkToEntity = constructLink(request);
@@ -159,107 +162,99 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
         style.opacity = 0.5;
     }
 
+    const card = (menuItems: NonNullable<MenuProps['items']>): JSX.Element => (
+        <Card
+            ref={itemRef}
+            className={`cvat-requests-card${selected ? ' cvat-item-selected' : ''}`}
+            style={style}
+            onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
+        >
+            <Row justify='space-between'>
+                <Col span={12}>
+                    <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
+                        <Col className='cvat-requests-type' {...dimensions}>
+                            <Text>
+                                {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                {' '}
+                            </Text>
+                        </Col>
+                        {name && (
+                            <Col className='cvat-requests-name'>
+                                {linkToEntity ?
+                                    (<Link to={linkToEntity}>{name}</Link>) :
+                                    <Text>{name}</Text>}
+                            </Col>
+                        )}
+                    </Row>
+                    {timestamps}
+                </Col>
+                <Col span={10} className='cvat-request-item-progress-wrapper'>
+                    <Row>
+                        <Col span={21}>
+                            <Row />
+                            <StatusMessage
+                                message={request.message}
+                                status={request.status}
+                                cancelled={cancelled}
+                            />
+                            <Row>
+                                <Col span={18} className='cvat-requests-progress'>
+                                    {request.status !== RQStatus.FAILED && (
+                                        <Progress
+                                            percent={percent}
+                                            strokeColor={{
+                                                from: '#108ee9',
+                                                to: '#87d068',
+                                            }}
+                                            showInfo={false}
+                                            strokeWidth={5}
+                                            size='small'
+                                        />
+                                    )}
+                                </Col>
+                                <Col span={2} className='cvat-requests-percent'>
+                                    {percentProgress}
+                                </Col>
+                            </Row>
+                            {operation?.format && (
+                                <Row>
+                                    <Col className='cvat-format-name'>
+                                        <Text type='secondary'>{operation.format}</Text>
+                                    </Col>
+                                </Row>
+                            )}
+                            {operation?.lightweight && (
+                                <Row>
+                                    <Col className='cvat-lightweight-label'>
+                                        <Text type='secondary'>Lightweight backup</Text>
+                                    </Col>
+                                </Row>
+                            )}
+                        </Col>
+                        <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
+                            {menuItems.length > 0 && (
+                                <Button
+                                    type='link'
+                                    size='middle'
+                                    className='cvat-requests-page-actions-button cvat-actions-menu-button'
+                                    icon={<MoreOutlined className='cvat-menu-icon' />}
+                                    onClick={handleContextMenuClick}
+                                />
+                            )}
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+        </Card>
+    );
+
     return (
         <RequestActionsComponent
             requestInstance={request}
             dropdownTrigger={['contextMenu']}
-            triggerElement={(
-                <Card
-                    className={
-                        `cvat-requests-card${selected ? ' cvat-item-selected' : ''}`
-                    }
-                    style={style}
-                    onClick={onClick}
-                >
-                    <Row justify='space-between'>
-                        <Col span={12}>
-                            <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
-                                <Col className='cvat-requests-type' {...dimensions}>
-                                    <Text>
-                                        {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                        {' '}
-                                    </Text>
-                                </Col>
-                                {name && (
-                                    <Col className='cvat-requests-name'>
-                                        {linkToEntity ?
-                                            (<Link to={linkToEntity}>{name}</Link>) :
-                                            <Text>{name}</Text>}
-                                    </Col>
-                                )}
-                            </Row>
-                            {timestamps}
-                        </Col>
-                        <Col span={10} className='cvat-request-item-progress-wrapper'>
-                            <Row>
-                                <Col span={21}>
-                                    <Row />
-                                    <StatusMessage
-                                        message={request.message}
-                                        status={request.status}
-                                        cancelled={cancelled}
-                                    />
-                                    <Row>
-                                        <Col span={18} className='cvat-requests-progress'>
-                                            {
-                                                request.status !== RQStatus.FAILED ? (
-                                                    <Progress
-                                                        percent={percent}
-                                                        strokeColor={{
-                                                            from: '#108ee9',
-                                                            to: '#87d068',
-                                                        }}
-                                                        showInfo={false}
-                                                        strokeWidth={5}
-                                                        size='small'
-                                                    />
-                                                ) : null
-                                            }
-                                        </Col>
-                                        <Col span={2} className='cvat-requests-percent'>
-                                            {percentProgress}
-                                        </Col>
-                                    </Row>
-                                    {
-                                        operation?.format ? (
-                                            <Row>
-                                                <Col className='cvat-format-name'>
-                                                    <Text type='secondary'>{operation.format}</Text>
-                                                </Col>
-                                            </Row>
-                                        ) : null
-                                    }
-                                    {
-                                        operation?.lightweight ? (
-                                            <Row>
-                                                <Col className='cvat-lightweight-label'>
-                                                    <Text type='secondary'>Lightweight backup</Text>
-                                                </Col>
-                                            </Row>
-                                        ) : null
-                                    }
-                                </Col>
-                                <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
-                                    <RequestActionsComponent
-                                        requestInstance={request}
-                                        renderTriggerIfEmpty={false}
-                                        triggerElement={(
-                                            <Button
-                                                type='link'
-                                                size='middle'
-                                                className='cvat-requests-page-actions-button cvat-actions-menu-button'
-                                                icon={<MoreOutlined className='cvat-menu-icon' />}
-                                            />
-                                        )}
-                                    />
-                                </Col>
-                            </Row>
-                        </Col>
-                    </Row>
-                </Card>
-            )}
+            triggerElement={card}
         />
-
     );
 }
 

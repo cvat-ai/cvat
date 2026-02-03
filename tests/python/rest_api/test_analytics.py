@@ -11,17 +11,15 @@ from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from io import StringIO
 from time import sleep
-from typing import Optional
 
 import pytest
-from cvat_sdk.api_client import ApiClient
 from dateutil import parser as datetime_parser
 
 import shared.utils.s3 as s3
 from shared.utils.config import delete_method, get_method, make_api_client, server_get
 from shared.utils.helpers import generate_image_files
 
-from .utils import create_task, wait_and_download_v2, wait_background_request
+from .utils import create_task, export_events
 
 
 class TestGetAnalytics:
@@ -63,7 +61,7 @@ class TestGetAuditEvents:
     @staticmethod
     def _create_project(user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (project, response) = api_client.projects_api.create(spec, **kwargs)
+            project, response = api_client.projects_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
         return project.id, response.headers.get("X-Request-Id")
 
@@ -151,55 +149,6 @@ class TestGetAuditEvents:
             assert False, "Could not wait for expected request IDs"
 
     @staticmethod
-    def _export_events(
-        api_client: ApiClient,
-        *,
-        api_version: int,
-        max_retries: int = 100,
-        interval: float = 0.1,
-        **kwargs,
-    ) -> Optional[bytes]:
-        if api_version == 1:
-            endpoint = api_client.events_api.list_endpoint
-            query_id = ""
-            for _ in range(max_retries):
-                (_, response) = endpoint.call_with_http_info(
-                    **kwargs, query_id=query_id, _parse_response=False
-                )
-                if response.status == HTTPStatus.CREATED:
-                    break
-                assert response.status == HTTPStatus.ACCEPTED
-                if not query_id:
-                    response_json = json.loads(response.data)
-                    query_id = response_json["query_id"]
-                sleep(interval)
-
-            assert response.status == HTTPStatus.CREATED
-
-            (_, response) = endpoint.call_with_http_info(
-                **kwargs, query_id=query_id, action="download", _parse_response=False
-            )
-            assert response.status == HTTPStatus.OK
-
-            return response.data
-
-        assert api_version == 2
-
-        request_id, response = api_client.events_api.create_export(**kwargs, _check_status=False)
-        assert response.status == HTTPStatus.ACCEPTED
-
-        if "location" in kwargs and "cloud_storage_id" in kwargs:
-            background_request, response = wait_background_request(
-                api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
-            )
-            assert background_request.result_url is None
-            return None
-
-        return wait_and_download_v2(
-            api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
-        )
-
-    @staticmethod
     def _csv_to_dict(csv_data):
         res = []
         with StringIO(csv_data.decode()) as f:
@@ -221,7 +170,7 @@ class TestGetAuditEvents:
 
     def _test_get_audit_logs_as_csv(self, *, api_version: int = 2, **kwargs):
         with make_api_client(self._USERNAME) as api_client:
-            return self._export_events(api_client, api_version=api_version, **kwargs)
+            return export_events(api_client, api_version=api_version, **kwargs)
 
     @pytest.mark.parametrize("api_version", [1, 2])
     def test_entry_to_time_interval(self, api_version: int):

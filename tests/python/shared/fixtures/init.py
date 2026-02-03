@@ -10,7 +10,6 @@ from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
-from typing import Union
 
 import pytest
 import requests
@@ -31,6 +30,7 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "docker-compose.dev.yml",
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
+    "tests/docker-compose.pat_settings.yml",
     "tests/docker-compose.test_servers.yml",
 ]
 
@@ -159,20 +159,20 @@ def docker_exec(container, command, capture_output=True):
     return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
 
 
-def docker_exec_cvat(command: Union[list[str], str]):
+def docker_exec_cvat(command: list[str] | str):
     base = f"docker exec {PREFIX}_cvat_server_1"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
 
-def kube_exec_cvat(command: Union[list[str], str]):
+def kube_exec_cvat(command: list[str] | str):
     pod_name = _kube_get_server_pod_name()
     base = f"kubectl exec {pod_name} --"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
 
-def container_exec_cvat(request: pytest.FixtureRequest, command: Union[list[str], str]):
+def container_exec_cvat(request: pytest.FixtureRequest, command: list[str] | str):
     platform = request.config.getoption("--platform")
     if platform == "local":
         return docker_exec_cvat(command)
@@ -436,19 +436,15 @@ def session_start(
 
     if session.config.getoption("--collect-only"):
         if any((stop, start, rebuild, cleanup, dumpdb)):
-            raise Exception(
-                """--collect-only is not compatible with any of the other options:
-                --stop-services --start-services --rebuild --cleanup --dumpdb"""
-            )
+            raise Exception("""--collect-only is not compatible with any of the other options:
+                --stop-services --start-services --rebuild --cleanup --dumpdb""")
         return  # don't need to start the services to collect tests
 
     platform = session.config.getoption("--platform")
 
     if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb)):
-        raise Exception(
-            """--platform=kube is not compatible with any of the other options
-            --stop-services --start-services --rebuild --cleanup --dumpdb"""
-        )
+        raise Exception("""--platform=kube is not compatible with any of the other options
+            --stop-services --start-services --rebuild --cleanup --dumpdb""")
 
     if platform == "local":
         local_start(

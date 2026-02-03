@@ -8,6 +8,8 @@ nameOverride: ""
 fullnameOverride: ""
 
 cvat:
+  ingress:
+    annotations: {}
   backend:
     labels: {}
     annotations: {}
@@ -218,7 +220,7 @@ cvat:
   opa:
     replicas: 1
     image: openpolicyagent/opa
-    tag: 0.63.0
+    tag: 1.12.2
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
@@ -324,6 +326,14 @@ cvat:
 #     accessModes:
 #       - ReadWriteOnce
       size: 100Gi
+      annotations: {}
+      volumeAttributesClass:
+        create: false
+#        name: "gp3-high-throughput"
+#        provider: ebs.csi.aws.com
+#        parameters:
+#          type: gp3
+#          provisioned-throughput: "250"
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
@@ -357,8 +367,11 @@ redis:
   enabled: true
   image:
     registry: public.ecr.aws
-    repository: b8u7h5e8/redis
-    tag: 7.2.3-debian-11-r1
+    repository: docker/library/redis
+    tag: 7.2.11
+  global:
+    security:
+      allowInsecureImages: true
   external:
     host: 127.0.0.1
   architecture: standalone
@@ -385,6 +398,8 @@ nuclio:
 analytics:
   # Set clickhouse.enabled to false if you disable analytics or use an external database
   enabled: true
+  ingress:
+    annotations: {}
   clickhouseDb: cvat
   clickhouseUser: user
   clickhousePassword: user

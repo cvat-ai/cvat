@@ -103,6 +103,7 @@ export enum AnnotationActionTypes {
     SAVE_ANNOTATIONS_FAILED = 'SAVE_ANNOTATIONS_FAILED',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
+    UPDATE_CACHED_CHUNKS = 'UPDATE_CACHED_CHUNKS',
 
     UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
 
@@ -154,6 +155,7 @@ export enum AnnotationActionTypes {
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
+    SEARCH_CHAPTERS_FAILED = 'SEARCH_CHAPTERS_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
@@ -171,6 +173,16 @@ export enum AnnotationActionTypes {
     RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
     UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
     HIGHLIGHT_CONFLICT = 'HIGHLIGHT_CONFCLICT',
+    HOVERED_CHAPTER = 'HOVERED_CHAPTER',
+}
+
+export function setHoveredChapter(id: number | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.HOVERED_CHAPTER,
+        payload: {
+            id,
+        },
+    };
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -298,17 +310,48 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     };
 }
 
+const userUnlockedInReviewMode = new Set<number>();
+
+function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
+    return states.map((state: ObjectState) => new Proxy(state, {
+        get(target, prop) {
+            if (prop === 'lock') {
+                // If user explicitly unlocked this object, return actual lock state
+                if (userUnlockedInReviewMode.has(target.clientID as number)) {
+                    return Reflect.get(target, prop);
+                }
+                return target.isGroundTruth ? Reflect.get(target, prop) : true;
+            }
+            return Reflect.get(target, prop);
+        },
+        set(target, prop, value) {
+            if (prop === 'lock') {
+                if (!value && !target.isGroundTruth) {
+                    userUnlockedInReviewMode.add(target.clientID as number);
+                } else if (value === true) {
+                    userUnlockedInReviewMode.delete(target.clientID as number);
+                }
+            }
+            return Reflect.set(target, prop, value);
+        },
+    }));
+}
+
 export function fetchAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
             const {
                 states, history, minZ, maxZ,
             } = await fetchAnnotations();
 
+            const { workspace } = getState().annotation;
+            const finalStates = workspace === Workspace.REVIEW ?
+                wrapStatesForReviewMode(states) : states;
+
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
-                    states,
+                    states: finalStates,
                     history,
                     minZ,
                     maxZ,
@@ -361,7 +404,7 @@ export function updateCanvasBrushTools(config: {
 }
 
 export function removeAnnotationsAsync(
-    startFrame: number, stopFrame: number, delTrackKeyframesOnly: boolean,
+    startFrame: number | undefined, stopFrame: number | undefined, delTrackKeyframesOnly: boolean,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
@@ -600,20 +643,23 @@ export function switchShowSearchFramesModal(visible: boolean): AnyAction {
     };
 }
 
-function confirmCanvasReady(ranges?: string): AnyAction {
+function updateCachedChunks(ranges: string): AnyAction {
     return {
-        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
+        type: AnnotationActionTypes.UPDATE_CACHED_CHUNKS,
         payload: { ranges },
     };
 }
 
-export function confirmCanvasReadyAsync(): ThunkAction {
+export function updateCachedChunksAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
             const state: CombinedState = getState();
             const job = state.annotation.job.instance as Job;
+            if (!job) {
+                return;
+            }
+
             const includedFrames = state.annotation.job.frameNumbers;
-            const { changeFrameEvent } = state.annotation.player.frame;
             const chunks = await job.frames.cachedChunks() as number[];
             const { frameCount, dataChunkSize } = job;
 
@@ -632,12 +678,27 @@ export function confirmCanvasReadyAsync(): ThunkAction {
                 return acc;
             }, []).map(([start, end]) => `${start}:${end}`).join(';');
 
-            dispatch(confirmCanvasReady(ranges));
-            await changeFrameEvent?.close();
+            dispatch(updateCachedChunks(ranges));
         } catch (error) {
             // even if error happens here, do not need to notify the users
-            dispatch(confirmCanvasReady());
         }
+    };
+}
+
+function confirmCanvasReady(): AnyAction {
+    return {
+        type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
+        payload: {},
+    };
+}
+
+export function confirmCanvasReadyAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+        const state: CombinedState = getState();
+        const { changeFrameEvent } = state.annotation.player.frame;
+        await dispatch(updateCachedChunksAsync());
+        dispatch(confirmCanvasReady());
+        await changeFrameEvent?.close();
     };
 }
 
@@ -709,6 +770,15 @@ export function changeFrameAsync(
             const {
                 states, maxZ, minZ, history,
             } = await fetchAnnotations(toFrame);
+
+            // Wrap states with Proxy in review mode
+            let finalStates = states;
+            if (state.annotation.workspace === Workspace.REVIEW) {
+                // Clear user unlocks when changing frame since we're showing different objects
+                userUnlockedInReviewMode.clear();
+                finalStates = wrapStatesForReviewMode(states);
+            }
+
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {
@@ -716,7 +786,7 @@ export function changeFrameAsync(
                     data,
                     filename: data.filename,
                     relatedFiles: data.relatedFiles,
-                    states,
+                    states: finalStates,
                     history,
                     minZ,
                     maxZ,
@@ -922,7 +992,7 @@ export function getJobAsync({
             getCore().config.globalObjectsCounter = 0;
             const [job] = await cvat.jobs.get({ jobID });
             let gtJob: Job | null = null;
-            if (job.type === JobType.ANNOTATION) {
+            if (job.type === JobType.ANNOTATION || job.type === JobType.CONSENSUS_REPLICA) {
                 try {
                     [gtJob] = await cvat.jobs.get({ taskID, type: JobType.GROUND_TRUTH });
                 } catch (e) {
@@ -1141,6 +1211,24 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     };
 }
 
+export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
+        const { workspace: currentWorkspace } = state.annotation;
+
+        if (currentWorkspace === Workspace.REVIEW && workspace !== Workspace.REVIEW) {
+            userUnlockedInReviewMode.clear();
+        }
+
+        dispatch(changeWorkspace(workspace));
+
+        // Re-fetch annotations to apply or remove the Proxy wrapper
+        if (currentWorkspace === Workspace.REVIEW || workspace === Workspace.REVIEW) {
+            dispatch(fetchAnnotationsAsync());
+        }
+    };
+}
+
 export function createAnnotationsAsync(statesToCreate: any[]): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
@@ -1319,6 +1407,40 @@ export function searchAnnotationsAsync(
                 payload: {
                     error,
                 },
+            });
+        }
+    };
+}
+
+export function searchChaptersAsync(
+    sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
+    frameFrom: number,
+    frameTo: number,
+) {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+        try {
+            const {
+                settings: {
+                    player: { showDeletedFrames },
+                },
+            } = getState();
+
+            const frame = await sessionInstance.frames
+                .search(
+                    {
+                        notDeleted: showDeletedFrames,
+                        chapterMark: true,
+                    },
+                    frameFrom,
+                    frameTo,
+                );
+            if (frame !== null) {
+                dispatch(changeFrameAsync(frame));
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SEARCH_CHAPTERS_FAILED,
+                payload: { error },
             });
         }
     };

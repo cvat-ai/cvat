@@ -11,8 +11,8 @@ import re
 import shutil
 import sys
 import textwrap
+from collections.abc import Callable
 from glob import iglob
-from typing import Callable
 
 from inflection import underscore
 
@@ -65,17 +65,14 @@ class Processor:
             assert lines[0].startswith("#")
             classname = lines[0][1:].strip()
 
-            header = textwrap.dedent(
-                """\
+            header = textwrap.dedent("""\
                 %(header_separator)s
                 title: '%(classname)s class reference'
                 linkTitle: '%(classname)s'
                 weight: 10
                 description: ''
                 %(header_separator)s
-            """
-                % {"header_separator": HEADER_SEPARATOR, "classname": classname}
-            )
+            """ % {"header_separator": HEADER_SEPARATOR, "classname": classname})
 
             contents = header + "\n".join(lines[1:])
 

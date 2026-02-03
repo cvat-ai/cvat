@@ -2,14 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
+import csv
+import io
 import json
 import math
-from collections.abc import Collection, Iterable
+from collections.abc import Callable, Collection, Iterable
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import groupby, product
-from typing import Any, Callable, Optional
+from typing import Any
 
 import pytest
 from cvat_sdk.api_client import exceptions, models
@@ -30,12 +32,12 @@ from .utils import (
 
 class _PermissionTestBase:
     def create_quality_report(
-        self, *, user: str, task_id: Optional[int] = None, project_id: Optional[int] = None
+        self, *, user: str, task_id: int | None = None, project_id: int | None = None
     ) -> dict:
         assert task_id is not None or project_id is not None
 
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.create_report(
+            _, response = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(
                     **{"task_id": task_id} if task_id else {},
                     **{"project_id": project_id} if project_id else {},
@@ -58,10 +60,10 @@ class _PermissionTestBase:
 
     def create_gt_job(self, user: str, task_id: int, *, complete: bool = True) -> models.IJobRead:
         with make_api_client(user) as api_client:
-            (meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             start_frame = meta.start_frame
 
-            (job, _) = api_client.jobs_api.create(
+            job, _ = api_client.jobs_api.create(
                 models.JobWriteRequest(
                     type="ground_truth",
                     task_id=task_id,
@@ -71,7 +73,7 @@ class _PermissionTestBase:
             )
 
             if complete:
-                (labels, _) = api_client.labels_api.list(
+                labels, _ = api_client.labels_api.list(
                     **({"project_id": job.project_id} if job.project_id else {"task_id": task_id})
                 )
 
@@ -102,7 +104,7 @@ class _PermissionTestBase:
     @pytest.fixture(scope="class")
     def find_sandbox_task(self, tasks, jobs, users, is_task_staff):
         def _find(
-            is_staff: bool, *, has_gt_jobs: Optional[bool] = None
+            is_staff: bool, *, has_gt_jobs: bool | None = None
         ) -> tuple[dict[str, Any], dict[str, Any]]:
             task = next(
                 t
@@ -134,7 +136,7 @@ class _PermissionTestBase:
     @pytest.fixture(scope="class")
     def find_org_task(self, tasks, jobs, users, is_org_member, is_task_staff):
         def _find(
-            is_staff: bool, user_org_role: str, *, has_gt_jobs: Optional[bool] = None
+            is_staff: bool, user_org_role: str, *, has_gt_jobs: bool | None = None
         ) -> tuple[dict[str, Any], dict[str, Any]]:
             for user in users:
                 if user["is_superuser"]:
@@ -175,7 +177,7 @@ class _PermissionTestBase:
     @pytest.fixture(scope="class")
     def find_sandbox_project(self, projects, tasks, users, labels, is_project_staff):
         def _find(
-            is_staff: bool, has_gt_jobs: Optional[bool] = False
+            is_staff: bool, has_gt_jobs: bool | None = False
         ) -> tuple[dict[str, Any], dict[str, Any]]:
             project = next(
                 p
@@ -217,7 +219,7 @@ class _PermissionTestBase:
         is_project_staff,
     ):
         def _find(
-            is_staff: bool, user_org_role: str, has_gt_jobs: Optional[bool] = False
+            is_staff: bool, user_org_role: str, has_gt_jobs: bool | None = False
         ) -> tuple[dict[str, Any], dict[str, Any]]:
             project = None
 
@@ -322,7 +324,7 @@ class TestListQualityReports(_PermissionTestBase):
 
     def _test_list_reports_403(self, user, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.list_reports(
+            _, response = api_client.quality_api.list_reports(
                 **kwargs, _parse_response=False, _check_status=False
             )
 
@@ -428,10 +430,10 @@ class TestListQualityReports(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetQualityReports(_PermissionTestBase):
     def _test_get_report_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
+        self, user: str, obj_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report(obj_id, **kwargs)
+            _, response = api_client.quality_api.retrieve_report(obj_id, **kwargs)
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
@@ -441,7 +443,7 @@ class TestGetQualityReports(_PermissionTestBase):
 
     def _test_get_report_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report(
+            _, response = api_client.quality_api.retrieve_report(
                 obj_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -487,10 +489,10 @@ class TestGetQualityReports(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetQualityReportData(_PermissionTestBase):
     def _test_get_report_data_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
+        self, user: str, obj_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report_data(obj_id, **kwargs)
+            _, response = api_client.quality_api.retrieve_report_data(obj_id, **kwargs)
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
@@ -500,7 +502,7 @@ class TestGetQualityReportData(_PermissionTestBase):
 
     def _test_get_report_data_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report_data(
+            _, response = api_client.quality_api.retrieve_report_data(
                 obj_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -513,10 +515,7 @@ class TestGetQualityReportData(_PermissionTestBase):
             r for r in quality_reports if r[self.key_field_for_target[target]] is not None
         )
         report_id = report["id"]
-
-        with make_api_client(admin_user) as api_client:
-            (report_data, response) = api_client.quality_api.retrieve_report_data(report_id)
-            assert response.status == HTTPStatus.OK
+        report_data = json.loads(self._test_get_report_data_200(admin_user, report_id).data)
 
         # Just check several keys exist
         for key in ["parameters", "comparison_summary"] + (
@@ -618,6 +617,25 @@ class TestGetQualityReportData(_PermissionTestBase):
             == {}
         )
 
+    @pytest.mark.parametrize("target", ["project", "task", "job"])
+    def test_can_get_confusion_matrix_csv(self, admin_user, target, quality_reports):
+        report = next(
+            r for r in quality_reports if r[self.key_field_for_target[target]] is not None
+        )
+        report_id = report["id"]
+        report_data = io.StringIO(
+            self._test_get_report_data_200(admin_user, report_id, format="csv").data.decode()
+        )
+
+        # Simply check that the report can be parsed as csv
+        csv_reader = csv.DictReader(report_data)
+        row_count = 0
+        for row in csv_reader:
+            assert row
+            row_count += 1
+
+        assert row_count
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostQualityReports(_PermissionTestBase):
@@ -711,7 +729,7 @@ class TestPostQualityReports(_PermissionTestBase):
 
     def _test_create_report_403(self, user: str, task_id: int):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.create_report(
+            _, response = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
                 _parse_response=False,
                 _check_status=False,
@@ -754,7 +772,7 @@ class TestPostQualityReports(_PermissionTestBase):
     @staticmethod
     def _initialize_report_creation(task_id: int, user: str) -> str:
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.create_report(
+            _, response = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
                 _parse_response=False,
             )
@@ -773,7 +791,7 @@ class TestPostQualityReports(_PermissionTestBase):
         another_user_status: int = HTTPStatus.FORBIDDEN,
     ):
         with make_api_client(another_user) as api_client:
-            (_, response) = api_client.requests_api.retrieve(
+            _, response = api_client.requests_api.retrieve(
                 rq_id, _parse_response=False, _check_status=False
             )
             assert response.status == another_user_status
@@ -989,7 +1007,7 @@ class TestListQualityConflicts(_PermissionTestBase):
 
     def _test_list_conflicts_403(self, user, report_id, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.list_conflicts(
+            _, response = api_client.quality_api.list_conflicts(
                 report_id=report_id, **kwargs, _parse_response=False, _check_status=False
             )
 
@@ -1262,7 +1280,7 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListSettings(_PermissionTestBase):
     def _test_list_settings_200(
-        self, user: str, task_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
+        self, user: str, task_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as api_client:
             actual = get_paginated_collection(
@@ -1277,7 +1295,7 @@ class TestListSettings(_PermissionTestBase):
 
     def _test_list_settings_403(self, user: str, task_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.list_settings(
+            _, response = api_client.quality_api.list_settings(
                 task_id=task_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -1324,10 +1342,10 @@ class TestListSettings(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetSettings(_PermissionTestBase):
     def _test_get_settings_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
+        self, user: str, obj_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(obj_id, **kwargs)
+            _, response = api_client.quality_api.retrieve_settings(obj_id, **kwargs)
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
@@ -1337,7 +1355,7 @@ class TestGetSettings(_PermissionTestBase):
 
     def _test_get_settings_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(
+            _, response = api_client.quality_api.retrieve_settings(
                 obj_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -1391,11 +1409,11 @@ class TestPatchSettings(_PermissionTestBase):
         obj_id: int,
         data: dict[str, Any],
         *,
-        expected_data: Optional[dict[str, Any]] = None,
+        expected_data: dict[str, Any] | None = None,
         **kwargs,
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.partial_update_settings(
+            _, response = api_client.quality_api.partial_update_settings(
                 obj_id, patched_quality_settings_request=data, **kwargs
             )
             assert response.status == HTTPStatus.OK
@@ -1415,7 +1433,7 @@ class TestPatchSettings(_PermissionTestBase):
 
     def _test_patch_settings_403(self, user: str, obj_id: int, data: dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.partial_update_settings(
+            _, response = api_client.quality_api.partial_update_settings(
                 obj_id,
                 patched_quality_settings_request=data,
                 **kwargs,
@@ -1486,7 +1504,7 @@ class TestPatchSettings(_PermissionTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestQualityReportMetrics(_PermissionTestBase):
+class TestQualityReportContents(_PermissionTestBase):
     demo_task_id = 22  # this task reproduces all the checkable cases
     demo_task_id_multiple_jobs = 23  # this task reproduces cases for multiple jobs
 
@@ -1522,8 +1540,12 @@ class TestQualityReportMetrics(_PermissionTestBase):
         new_report = self.create_quality_report(user=admin_user, task_id=task_id)
 
         with make_api_client(admin_user) as api_client:
-            (old_report_data, _) = api_client.quality_api.retrieve_report_data(old_report["id"])
-            (new_report_data, _) = api_client.quality_api.retrieve_report_data(new_report["id"])
+            old_report_data = json.load(
+                api_client.quality_api.retrieve_report_data(old_report["id"])[0]
+            )
+            new_report_data = json.load(
+                api_client.quality_api.retrieve_report_data(new_report["id"])[0]
+            )
 
         assert (
             DeepDiff(
@@ -1651,7 +1673,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert report["created_date"] < "2024"
 
         with make_api_client(admin_user) as api_client:
-            (report_data, _) = api_client.quality_api.retrieve_report_data(report["id"])
+            report_data = json.load(api_client.quality_api.retrieve_report_data(report["id"])[0])
 
         # This report should have been created before the Jaccard index was included.
         for d in [report_data["comparison_summary"], *report_data["frame_results"].values()]:
@@ -1662,7 +1684,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             user=admin_user, task_id=self.demo_task_id_multiple_jobs
         )
         with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
         report_data = json.loads(response.data)
         task_confusion_matrix = report_data["comparison_summary"]["annotations"][
@@ -1716,7 +1738,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
 
     def test_excluded_gt_job_frames_are_not_included_in_honeypot_task_quality_report(
@@ -1759,7 +1781,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             )
             report = self.create_quality_report(user=admin_user, task_id=task_id)
 
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
             assert honeypot_frames == json.loads(response.data)["comparison_summary"]["frames"]
 
@@ -1775,7 +1797,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
             report = self.create_quality_report(user=admin_user, task_id=task_id)
 
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
             assert [
                 v for v in honeypot_frames if v not in excluded_gt_frame_honeypots
@@ -1802,7 +1824,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             )
             report = self.create_quality_report(user=admin_user, task_id=task_id)
 
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
             assert gt_frames == json.loads(response.data)["comparison_summary"]["frames"]
 
@@ -1816,7 +1838,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
             report = self.create_quality_report(user=admin_user, task_id=task_id)
 
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
             assert [f for f in gt_frames if f != excluded_gt_frame] == json.loads(response.data)[
                 "comparison_summary"
@@ -1978,6 +2000,40 @@ class TestQualityReportMetrics(_PermissionTestBase):
         ]:
             assert summary[summary_field] == sum(r["summary"][summary_field] for r in task_reports)
 
+    @pytest.mark.parametrize("task_id", [demo_task_id])
+    def test_confusion_matrix_correct(self, admin_user, task_id, quality_reports, labels):
+        report_id = next(
+            r["id"] for r in quality_reports if r["task_id"] == task_id and r["target"] == "task"
+        )
+
+        with make_api_client(admin_user) as api_client:
+            report_data = io.StringIO(
+                api_client.quality_api.retrieve_report_data(report_id, format="csv")[
+                    1
+                ].data.decode()
+            )
+
+        label_names = set(
+            l["name"] for l in labels if l.get("task_id") == task_id if not l.get("parent_id")
+        )
+
+        csv_reader = csv.DictReader(report_data)
+        assert csv_reader.fieldnames[0] == "DS (row) \\ GT (col) label"
+        assert set(csv_reader.fieldnames[1:-2]) == label_names
+        assert list(csv_reader.fieldnames[-2:]) == ["unmatched", "precision"]
+
+        rows = list(csv_reader)
+        assert set(r["DS (row) \\ GT (col) label"] for r in rows[: len(label_names)]) == label_names
+        assert [r["DS (row) \\ GT (col) label"] for r in rows[len(label_names) :]] == [
+            "unmatched",
+            "recall",
+            "dice coefficient",
+            "jaccard index",
+            "",
+            "avg. accuracy (micro)",
+            "avg. dice coefficient (macro)",
+        ]
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostProjectQualityReports(_PermissionTestBase):
@@ -1986,7 +2042,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
 
     def _test_create_report_403(self, user: str, project_id: int):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.create_report(
+            _, response = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(
                     project_id=project_id
                 ),
@@ -2017,7 +2073,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
 
         # Check report data
         with make_api_client(admin_user) as api_client:
-            report_data, _ = api_client.quality_api.retrieve_report_data(report["id"])
+            report_data = json.load(api_client.quality_api.retrieve_report_data(report["id"])[0])
 
         for r in [report, report_data]:
             # Verify report was created
@@ -2251,6 +2307,8 @@ class TestProjectQualitySettingsBehavior(_PermissionTestBase):
             task_report = self.create_quality_report(user=admin_user, task_id=task_id)
 
             # Get report data to verify settings were inherited
-            task_report_data = api_client.quality_api.retrieve_report_data(task_report["id"])[0]
+            task_report_data = json.load(
+                api_client.quality_api.retrieve_report_data(task_report["id"])[0]
+            )
             assert task_report_data["parameters"]["empty_is_annotated"] == inherit
             assert task_report_data["parameters"]["inherited"] == inherit

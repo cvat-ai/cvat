@@ -54,6 +54,10 @@ const defaultState: NotificationsState = {
             requestPasswordReset: null,
             resetPassword: null,
             updateUser: null,
+            getApiTokens: null,
+            createApiToken: null,
+            updateApiToken: null,
+            revokeApiToken: null,
         },
         serverAPI: {
             fetching: null,
@@ -334,6 +338,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages.auth,
                         changePasswordDone: {
                             message: 'New password has been saved.',
+                            className: 'cvat-notification-notice-change-password-success',
                         },
                     },
                 },
@@ -2104,6 +2109,74 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             remainingItemsCount: action.payload.remainingItemsCount,
                             retryPayload: action.payload.retryPayload,
                             ignore: true,
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.GET_API_TOKENS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        getApiTokens: {
+                            message: 'Could not get API tokens',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-get-api-tokens-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.CREATE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        createApiToken: {
+                            message: 'Could not create API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-create-api-token-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.UPDATE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        updateApiToken: {
+                            message: 'Could not update API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-update-api-token-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.REVOKE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        revokeApiToken: {
+                            message: 'Could not revoke API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-revoke-api-token-failed',
                         },
                     },
                 },

@@ -15,7 +15,7 @@ from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pytest
@@ -73,7 +73,7 @@ def filter_jobs(jobs, tasks, org):
 class TestPostJobs:
     def _test_create_job_ok(self, user: str, data: dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.create(
+            _, response = api_client.jobs_api.create(
                 models.JobWriteRequest(**deepcopy(data)), **kwargs
             )
             assert response.status == HTTPStatus.CREATED
@@ -83,7 +83,7 @@ class TestPostJobs:
         self, user: str, data: dict[str, Any], *, expected_status: int, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.create(
+            _, response = api_client.jobs_api.create(
                 models.JobWriteRequest(**deepcopy(data)),
                 **kwargs,
                 _check_status=False,
@@ -169,7 +169,7 @@ class TestPostJobs:
             assert False
 
         with make_api_client(admin_user) as api_client:
-            (gt_job, _) = api_client.jobs_api.create(job_write_request=job_params)
+            gt_job, _ = api_client.jobs_api.create(job_write_request=job_params)
 
             # GT jobs occupy the whole task frame range
             assert gt_job.start_frame == 0
@@ -240,7 +240,7 @@ class TestPostJobs:
         job_id = json.loads(response.data)["id"]
 
         with make_api_client(user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(job_id)
 
         assert frame_ids == gt_job_meta.included_frames
 
@@ -267,7 +267,7 @@ class TestPostJobs:
         job_id = json.loads(response.data)["id"]
 
         with make_api_client(user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(job_id)
 
         assert task["size"] == gt_job_meta.size
 
@@ -387,7 +387,7 @@ class TestPostJobs:
         job = json.loads(response.data)
 
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.retrieve(job["id"])
+            _, response = api_client.jobs_api.retrieve(job["id"])
             assert DeepDiff(job, json.loads(response.data), ignore_order=True) == {}
 
     @pytest.mark.parametrize("assignee", [None, "admin1"])
@@ -408,7 +408,7 @@ class TestPostJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (job, _) = api_client.jobs_api.create(job_write_request=spec)
+            job, _ = api_client.jobs_api.create(job_write_request=spec)
 
             if assignee:
                 assert job.assignee.username == assignee
@@ -422,12 +422,12 @@ class TestPostJobs:
 class TestDeleteJobs:
     def _test_destroy_job_ok(self, user, job_id, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.destroy(job_id, **kwargs)
+            _, response = api_client.jobs_api.destroy(job_id, **kwargs)
             assert response.status == HTTPStatus.NO_CONTENT
 
     def _test_destroy_job_fails(self, user, job_id, *, expected_status: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.destroy(
+            _, response = api_client.jobs_api.destroy(
                 job_id, **kwargs, _check_status=False, _parse_response=False
             )
             assert response.status == expected_status
@@ -477,7 +477,7 @@ class TestDeleteJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (job, _) = api_client.jobs_api.create(job_spec)
+            job, _ = api_client.jobs_api.create(job_spec)
 
         self._test_destroy_job_ok(user, job.id)
 
@@ -531,7 +531,7 @@ class TestDeleteJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (job, _) = api_client.jobs_api.create(job_spec)
+            job, _ = api_client.jobs_api.create(job_spec)
 
         if allow:
             self._test_destroy_job_ok(user["username"], job.id)
@@ -544,18 +544,18 @@ class TestDeleteJobs:
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
     def _test_get_job_200(
-        self, user, jid, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
+        self, user, jid, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.retrieve(jid, **kwargs)
+            _, response = client.jobs_api.retrieve(jid, **kwargs)
             assert response.status == HTTPStatus.OK
 
             if expected_data is not None:
-                assert compare_annotations(expected_data, json.loads(response.data)) == {}
+                assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
 
     def _test_get_job_403(self, user, jid, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.retrieve(
+            _, response = client.jobs_api.retrieve(
                 jid, **kwargs, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -625,7 +625,7 @@ class TestGetJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (job, _) = api_client.jobs_api.create(job_spec)
+            job, _ = api_client.jobs_api.create(job_spec)
 
         self._test_get_job_200(user, job.id)
 
@@ -680,7 +680,7 @@ class TestGetJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.jobs_api.create(job_spec)
+            _, response = api_client.jobs_api.create(job_spec)
             job = json.loads(response.data)
 
         if allow:
@@ -712,7 +712,7 @@ class TestGetGtJobData:
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             frame_step = parse_frame_step(task_meta.frame_filter)
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
@@ -722,7 +722,7 @@ class TestGetGtJobData:
         request.addfinalizer(lambda: self._delete_gt_job(user, gt_job.id))
 
         with make_api_client(user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -776,7 +776,7 @@ class TestGetGtJobData:
         request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         with make_api_client(admin_user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -818,7 +818,7 @@ class TestGetGtJobData:
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             frame_step = parse_frame_step(task_meta.frame_filter)
 
         task_frame_ids = range(task_meta.start_frame, task_meta.stop_frame + 1, frame_step)
@@ -842,7 +842,7 @@ class TestGetGtJobData:
                 kwargs = {"index": chunk_id}
 
             with make_api_client(admin_user) as api_client:
-                (chunk_file, response) = api_client.jobs_api.retrieve_data(
+                chunk_file, response = api_client.jobs_api.retrieve_data(
                     gt_job.id, **kwargs, quality=quality, type="chunk"
                 )
                 assert response.status == HTTPStatus.OK
@@ -874,13 +874,13 @@ class TestGetGtJobData:
                 "frames": frames,
             }
 
-            (gt_job, _) = api_client.jobs_api.create(job_spec)
+            gt_job, _ = api_client.jobs_api.create(job_spec)
 
         return gt_job
 
     def _get_gt_job(self, user, task_id):
         with make_api_client(user) as api_client:
-            (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
+            task_jobs, _ = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
             gt_job = task_jobs.results[0]
 
         return gt_job
@@ -901,7 +901,7 @@ class TestGetGtJobData:
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             frame_step = parse_frame_step(task_meta.frame_filter)
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
@@ -917,7 +917,7 @@ class TestGetGtJobData:
         excluded_frames = list(set(frame_range).difference(included_frames))
 
         with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.jobs_api.retrieve_data(
+            _, response = api_client.jobs_api.retrieve_data(
                 gt_job.id,
                 number=excluded_frames[0],
                 quality=quality,
@@ -928,7 +928,7 @@ class TestGetGtJobData:
             assert response.status == HTTPStatus.BAD_REQUEST
             assert b"Incorrect requested frame number" in response.data
 
-            (_, response) = api_client.jobs_api.retrieve_data(
+            _, response = api_client.jobs_api.retrieve_data(
                 gt_job.id, number=included_frames[0], quality=quality, type="frame"
             )
             assert response.status == HTTPStatus.OK
@@ -941,13 +941,11 @@ class TestListJobs:
             results = get_paginated_collection(
                 client.jobs_api.list_endpoint, return_json=True, **kwargs
             )
-            assert compare_annotations(data, results) == {}
+            assert DeepDiff(data, results, ignore_order=True) == {}
 
     def _test_list_jobs_403(self, user, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.list(
-                **kwargs, _check_status=False, _parse_response=False
-            )
+            _, response = client.jobs_api.list(**kwargs, _check_status=False, _parse_response=False)
             assert response.status == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize("org", [None, "", 1, 2])
@@ -1009,13 +1007,13 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
 class TestGetAnnotations:
     def _test_get_job_annotations_200(self, user, jid, data):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.retrieve_annotations(jid)
+            _, response = client.jobs_api.retrieve_annotations(jid)
             assert response.status == HTTPStatus.OK
             assert compare_annotations(data, json.loads(response.data)) == {}
 
     def _test_get_job_annotations_403(self, user, jid):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.retrieve_annotations(
+            _, response = client.jobs_api.retrieve_annotations(
                 jid, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -1127,7 +1125,7 @@ class TestGetAnnotations:
 class TestPatchJobAnnotations:
     def _check_response(self, username, jid, expect_success, data=None):
         with make_api_client(username) as client:
-            (_, response) = client.jobs_api.partial_update_annotations(
+            _, response = client.jobs_api.partial_update_annotations(
                 id=jid,
                 patched_labeled_data_request=deepcopy(data),
                 action="update",
@@ -1137,7 +1135,9 @@ class TestPatchJobAnnotations:
 
             if expect_success:
                 assert response.status == HTTPStatus.OK
-                assert compare_annotations(data, json.loads(response.data)) == {}
+                assert (
+                    compare_annotations(data, json.loads(response.data), ignore_source=True) == {}
+                )
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
 
@@ -1319,7 +1319,7 @@ class TestPatchJob:
 
         assignee = new_assignee(jid, user["id"])
         with make_api_client(user["username"]) as client:
-            (_, response) = client.jobs_api.partial_update(
+            _, response = client.jobs_api.partial_update(
                 id=jid,
                 patched_job_write_request={"assignee": assignee},
                 _parse_response=expect_success,
@@ -1356,7 +1356,7 @@ class TestPatchJob:
             new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
 
         with make_api_client(admin_user) as api_client:
-            (updated_job, _) = api_client.jobs_api.partial_update(
+            updated_job, _ = api_client.jobs_api.partial_update(
                 job["id"], patched_job_write_request={"assignee": new_assignee_id}
             )
 
@@ -1450,7 +1450,7 @@ class TestJobDataset:
         *,
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_job_dataset(username, save_images=True, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
@@ -1462,7 +1462,7 @@ class TestJobDataset:
     @staticmethod
     def _test_export_annotations(
         username: str, jid: int, *, local_download: bool = True, **kwargs
-    ) -> Optional[bytes]:
+    ) -> bytes | None:
         dataset = export_job_dataset(username, save_images=False, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
@@ -1593,15 +1593,15 @@ class TestJobDataset:
 class TestGetJobPreview:
     def _test_get_job_preview_200(self, username, jid, **kwargs):
         with make_api_client(username) as client:
-            (_, response) = client.jobs_api.retrieve_preview(jid, **kwargs)
+            _, response = client.jobs_api.retrieve_preview(jid, **kwargs)
 
             assert response.status == HTTPStatus.OK
-            (width, height) = Image.open(BytesIO(response.data)).size
+            width, height = Image.open(BytesIO(response.data)).size
             assert width > 0 and height > 0
 
     def _test_get_job_preview_403(self, username, jid, **kwargs):
         with make_api_client(username) as client:
-            (_, response) = client.jobs_api.retrieve_preview(
+            _, response = client.jobs_api.retrieve_preview(
                 jid, **kwargs, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN

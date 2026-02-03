@@ -6,7 +6,6 @@
 import json
 from copy import deepcopy
 from http import HTTPStatus
-from typing import Optional
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -40,9 +39,9 @@ class TestMetadataOrganizations:
     )
     def test_can_send_options_request(
         self,
-        privilege: Optional[str],
-        role: Optional[str],
-        is_member: Optional[bool],
+        privilege: str | None,
+        role: str | None,
+        is_member: bool | None,
         find_users,
         organizations,
     ):
@@ -87,9 +86,9 @@ class TestGetOrganizations:
     )
     def test_can_see_specific_organization(
         self,
-        privilege: Optional[str],
-        role: Optional[str],
-        is_member: Optional[bool],
+        privilege: str | None,
+        role: str | None,
+        is_member: bool | None,
         is_allow: bool,
         find_users,
         organizations,
@@ -128,7 +127,7 @@ class TestGetOrganizations:
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_org["owner"]["id"])
 
-            (_, response) = api_client.organizations_api.retrieve(source_org["id"])
+            _, response = api_client.organizations_api.retrieve(source_org["id"])
             fetched_org = json.loads(response.data)
 
         source_org["owner"] = None
@@ -189,9 +188,9 @@ class TestPatchOrganizations:
     )
     def test_can_update_specific_organization(
         self,
-        privilege: Optional[str],
-        role: Optional[str],
-        is_member: Optional[bool],
+        privilege: str | None,
+        role: str | None,
+        is_member: bool | None,
         is_allow: bool,
         find_users,
         request_data,
@@ -241,9 +240,9 @@ class TestDeleteOrganizations:
     )
     def test_can_delete(
         self,
-        privilege: Optional[str],
-        role: Optional[str],
-        is_member: Optional[bool],
+        privilege: str | None,
+        role: str | None,
+        is_member: bool | None,
         is_allow: bool,
         find_users,
     ):

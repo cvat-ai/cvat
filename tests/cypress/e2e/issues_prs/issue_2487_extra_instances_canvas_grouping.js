@@ -11,6 +11,7 @@ context('Extra instances on canvas when grouping.', () => {
     const issueId = '2487';
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

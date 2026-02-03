@@ -6,10 +6,10 @@
 import io
 import itertools
 from collections import OrderedDict, defaultdict
+from collections.abc import Callable
 from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
-from typing import Callable, Optional, Union
 
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
@@ -485,11 +485,11 @@ class JobAnnotation:
         if not self._data_is_empty(self.data):
             self._set_updated_date()
 
-    def _validate_input_annotations(self, data: Union[AnnotationIR, dict]) -> AnnotationIR:
+    def _validate_input_annotations(self, data: AnnotationIR | dict) -> AnnotationIR:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_job.segment.task.dimension, data)
 
-        db_data = self.db_job.segment.task.data
+        db_data = self.db_job.segment.task.require_data()
 
         if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
             # Only tags and shapes can be used in tasks with GT pool
@@ -639,6 +639,7 @@ class JobAnnotation:
                 "frame",
                 "group",
                 "source",
+                "score",
                 "occluded",
                 "outside",
                 "z_order",
@@ -870,9 +871,11 @@ class TaskAnnotation:
         if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             requested_job_types.append(models.JobType.GROUND_TRUTH)
 
-        self.db_jobs = JobAnnotation.add_prefetch_info(
-            models.Job.objects, prefetch_images=False
-        ).filter(segment__task_id=pk, type__in=requested_job_types)
+        self.db_jobs = (
+            JobAnnotation.add_prefetch_info(models.Job.objects, prefetch_images=False)
+            .filter(segment__task_id=pk, type__in=requested_job_types)
+            .order_by("id")
+        )
 
         if not write_only:
             self.ir_data = AnnotationIR(self.db_task.dimension)
@@ -880,7 +883,7 @@ class TaskAnnotation:
     def reset(self):
         self.ir_data.reset()
 
-    def _patch_data(self, data: Union[AnnotationIR, dict], action: Optional[PatchAction]):
+    def _patch_data(self, data: AnnotationIR | dict, action: PatchAction | None):
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
 
@@ -920,7 +923,7 @@ class TaskAnnotation:
         self._patch_data(data, PatchAction.CREATE)
 
     def _preprocess_input_annotations_for_gt_pool_task(
-        self, data: Union[AnnotationIR, dict], *, action: Optional[PatchAction]
+        self, data: AnnotationIR | dict, *, action: PatchAction | None
     ) -> AnnotationIR:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
@@ -937,7 +940,7 @@ class TaskAnnotation:
         if gt_job is None:
             raise AssertionError(f"Can't find GT job in the task {self.db_task.id}")
 
-        db_data = self.db_task.data
+        db_data = self.db_task.require_data()
         frame_step = db_data.get_frame_step()
 
         def _to_rel_frame(abs_frame: int) -> int:

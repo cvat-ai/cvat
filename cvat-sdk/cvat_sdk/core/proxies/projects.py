@@ -7,7 +7,7 @@ from __future__ import annotations
 import io
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -49,9 +49,9 @@ class Project(
         format_name: str,
         filename: StrPath,
         *,
-        conv_mask_to_poly: Optional[bool] = None,
-        status_check_period: Optional[int] = None,
-        pbar: Optional[ProgressReporter] = None,
+        conv_mask_to_poly: bool | None = None,
+        status_check_period: int | None = None,
+        pbar: ProgressReporter | None = None,
     ):
         """
         Import dataset for a project in the specified format (e.g. 'YOLO 1.1').
@@ -72,7 +72,7 @@ class Project(
         self._client.logger.info(f"Annotation file '{filename}' for project #{self.id} uploaded")
 
     def get_annotations(self) -> models.ILabeledData:
-        (annotations, _) = self.api.retrieve_annotations(self.id)
+        annotations, _ = self.api.retrieve_annotations(self.id)
         return annotations
 
     def get_tasks(self) -> list[Task]:
@@ -91,7 +91,7 @@ class Project(
     def get_preview(
         self,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_preview(self.id)
+        _, response = self.api.retrieve_preview(self.id)
         return io.BytesIO(response.data)
 
 
@@ -111,8 +111,8 @@ class ProjectsRepo(
         dataset_path: str = "",
         dataset_format: str = "CVAT XML 1.1",
         status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
-        conv_mask_to_poly: Optional[bool] = None,
+        pbar: ProgressReporter | None = None,
+        conv_mask_to_poly: bool | None = None,
     ) -> Project:
         """
         Create a new project with the given name and labels JSON and
@@ -140,7 +140,7 @@ class ProjectsRepo(
         filename: StrPath,
         *,
         status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
+        pbar: ProgressReporter | None = None,
     ) -> Project:
         """
         Import a project from a backup file

@@ -1,33 +1,21 @@
 {{ $links := .Site.Params.links -}}
 <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
   <div class="container-fluid">
-    <div class="row">
-      <div class="col text-center">
-        {{ with $links }}
-        {{ with index . "user" }}
-        {{ template "footer-links-block"  . }}
-        {{ end }}
-        {{ end }}
+    <div class="row align-items-center">
+      <!-- LEFT: copyright + links -->
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© {{ now.Year }} CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
       </div>
-      <div class="col-4 text-center">
-        <div class="row">
-          {{ with .Site.Params.cvat_ai_privacy_notice }}<a href="{{ . }}">{{ T "footer_cvat_ai_privacy_notice" }}</a>{{ end }}
-        </div>
-        <div class="row">
-          {{ with .Site.Params.cvat_ai_terms_of_use }}<a href="{{ . }}">{{ T "footer_cvat_ai_terms_of_use" }}</a>{{ end }}
-        </div>
-        {{ if hugo.IsProduction -}}
-        <div class="row">
-          <a href="#" onclick="showCookieSettings(); return false;">Cookie Settings</a>
-        </div>
-        {{ end -}}
-        <div class="row">
-          {{ if not .Site.Params.ui.footer_about_disable }}
-            {{ with .Site.GetPage "about" }}<p><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>{{ end }}
-          {{ end }}
-        </div>
-      </div>
-      <div class="col text-right text-center">
+
+      <!-- RIGHT: social icons -->
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
         {{ with $links }}
         {{ with index . "developer" }}
         {{ template "footer-links-block"  . }}

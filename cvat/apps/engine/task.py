@@ -7,14 +7,13 @@ import concurrent.futures
 import fnmatch
 import itertools
 import os
-import re
 import shutil
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any, Callable, NamedTuple, Optional, Union
+from pathlib import Path, PurePath, PurePosixPath
+from typing import Any, NamedTuple, TypeAlias
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -57,18 +56,19 @@ from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_in
 
 slogger = ServerLogManager(__name__)
 
-JobFileMapping = list[list[str]]
+JobFileMapping: TypeAlias = list[list[str]]
 
 class SegmentParams(NamedTuple):
     start_frame: int
     stop_frame: int
     type: models.SegmentType = models.SegmentType.RANGE
-    frames: Optional[Sequence[int]] = []
+    frames: Sequence[int] | None = []
 
 class SegmentsParams(NamedTuple):
     segments: Iterator[SegmentParams]
     segment_size: int
     overlap: int
+    segments_count: int
 
 def _copy_data_from_share_point(
     server_files: list[str],
@@ -112,8 +112,8 @@ def _copy_data_from_share_point(
 def _generate_segment_params(
     db_task: models.Task,
     *,
-    data_size: Optional[int] = None,
-    job_file_mapping: Optional[JobFileMapping] = None,
+    data_size: int | None = None,
+    job_file_mapping: JobFileMapping | None = None,
 ) -> SegmentsParams:
     if job_file_mapping is not None:
         def _segments():
@@ -134,6 +134,7 @@ def _generate_segment_params(
         segments = _segments()
         segment_size = 0
         overlap = 0
+        segments_count = len(job_file_mapping)
     else:
         # The segments have equal parameters
         if data_size is None:
@@ -148,6 +149,8 @@ def _generate_segment_params(
                 else 5 if db_task.mode == 'interpolation' else 0,
             segment_size // 2,
         )
+        segments_range = range(0, data_size - overlap, segment_size - overlap)
+        segments_count = len(segments_range)
 
         segments = (
             SegmentParams(
@@ -155,24 +158,33 @@ def _generate_segment_params(
                 stop_frame=min(start_frame + segment_size - 1, data_size - 1),
                 type=models.SegmentType.RANGE
             )
-            for start_frame in range(0, data_size - overlap, segment_size - overlap)
+            for start_frame in segments_range
         )
 
-    return SegmentsParams(segments, segment_size, overlap)
+    return SegmentsParams(segments, segment_size, overlap, segments_count)
+
 
 def _create_segments_and_jobs(
     db_task: models.Task,
     *,
     update_status_callback: Callable[[str], None],
-    job_file_mapping: Optional[JobFileMapping] = None,
+    job_file_mapping: JobFileMapping | None = None,
 ):
     update_status_callback('Task is being saved in database')
 
-    segments, segment_size, overlap = _generate_segment_params(
+    segments, segment_size, overlap, segments_count = _generate_segment_params(
         db_task=db_task, job_file_mapping=job_file_mapping,
     )
     db_task.segment_size = segment_size
     db_task.overlap = overlap
+
+    job_count_total = segments_count * (db_task.consensus_replicas + 1)
+    if job_count_total > settings.MAX_JOBS_PER_TASK:
+        raise ValueError(
+            "Too many jobs would be created for the task. "
+            f"Current total: {job_count_total}, "
+            f"maximum allowed: {settings.MAX_JOBS_PER_TASK}."
+        )
 
     for segment_idx, segment_params in enumerate(segments):
         slogger.glob.info(
@@ -199,6 +211,7 @@ def _create_segments_and_jobs(
     db_task.data.save()
     db_task.save()
 
+
 def _count_files(data):
     share_root = settings.SHARE_ROOT
     server_files = []
@@ -207,8 +220,7 @@ def _count_files(data):
         path = os.path.normpath(path).lstrip('/')
         if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
-        full_path = os.path.abspath(os.path.join(share_root, path))
-        if os.path.commonprefix([share_root, full_path]) != share_root:
+        if not (share_root / path).resolve().is_relative_to(share_root):
             raise ValueError("Bad file path: " + path)
         server_files.append(path)
 
@@ -292,7 +304,7 @@ def _validate_data(counter, manifest_files=None):
 
 def _validate_job_file_mapping(
     db_task: models.Task, data: dict[str, Any]
-) -> Optional[JobFileMapping]:
+) -> JobFileMapping | None:
     job_file_mapping = data.get('job_file_mapping', None)
 
     if job_file_mapping is None:
@@ -331,7 +343,7 @@ def _validate_job_file_mapping(
 
 def _validate_validation_params(
     db_task: models.Task, data: dict[str, Any], *, is_backup_restore: bool = False
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     params = data.get('validation_params', {})
     if not params:
         return None
@@ -370,19 +382,19 @@ def _validate_validation_params(
 
 def _validate_manifest(
     manifests: list[str],
-    root_dir: Optional[str],
+    root_dir: Path,
     *,
     is_in_cloud: bool,
-    db_cloud_storage: Optional[Any],
+    db_cloud_storage: Any | None,
     is_backup_restore: bool,
-) -> Optional[str]:
+) -> str | None:
     if not manifests:
         return None
 
     if len(manifests) != 1:
         raise ValidationError('Only one manifest file can be attached to data')
     manifest_file = manifests[0]
-    full_manifest_path = os.path.join(root_dir, manifests[0])
+    full_manifest_path = root_dir / manifests[0]
 
     if is_in_cloud and not is_backup_restore:
         cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
@@ -452,10 +464,7 @@ def _download_data_from_cloud_storage(
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
     cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
 
-def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
-    return lambda frame_id: start_frame + frame_id * frame_step
-
-def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageManifestManager:
+def _read_dataset_manifest(path: Path, *, create_index: bool = False) -> ImageManifestManager:
     """
     Reads an upload manifest file
     """
@@ -463,7 +472,7 @@ def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageMan
     if not is_dataset_manifest(path):
         raise ValidationError(
             "Can't recognize a dataset manifest file in "
-            "the uploaded file '{}'".format(os.path.basename(path))
+            "the uploaded file '{}'".format(path.name)
         )
 
     return ImageManifestManager(path, create_index=create_index)
@@ -502,14 +511,14 @@ def _restore_file_order_from_manifest(
     return [input_files[fn] for fn in manifest_files]
 
 def _create_task_manifest_based_on_cloud_storage_manifest(
-    sorted_media: list[str],
+    sorted_media: Sequence[PurePath],
     cloud_storage_manifest_prefix: str,
     cloud_storage_manifest: ImageManifestManager,
     manifest: ImageManifestManager,
 ) -> None:
     if cloud_storage_manifest_prefix:
         sorted_media_without_manifest_prefix = [
-            os.path.relpath(i, cloud_storage_manifest_prefix) for i in sorted_media
+            i.relative_to(cloud_storage_manifest_prefix) for i in sorted_media
         ]
         sequence, raw_content = cloud_storage_manifest.get_subset(sorted_media_without_manifest_prefix)
         def _add_prefix(properties):
@@ -527,23 +536,21 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
 
 def _create_task_manifest_from_cloud_data(
     db_storage: models.CloudStorage,
-    sorted_media: list[str],
+    sorted_media: Sequence[PurePath],
     manifest: ImageManifestManager,
 ) -> None:
     dimension = ValidateDimension().detect_dimension_for_paths(sorted_media)
 
     regular_images, related_images = find_related_images(
         sorted_media,
-        scene_paths=(
-            lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
-            # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
-        )
+        # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
+        is_scene_path=(lambda p: not "related_images" in p.parts),
     )
     sorted_media = [f for f in sorted_media if f in regular_images]
 
     storage_client = db_storage_to_storage_instance(db_storage)
     content_generator = storage_client.bulk_download_to_memory(
-        sorted_media,
+        list(map(os.fspath, sorted_media)),
         object_downloader=HeaderFirstMediaDownloader.create(
             dimension=dimension, client=storage_client
         ).download,
@@ -552,25 +559,24 @@ def _create_task_manifest_from_cloud_data(
     manifest.link(
         sources=content_generator,
         meta={
-            k: {'related_images': related_images[k] }
+            os.fspath(k): {'related_images': [ri.as_posix() for ri in related_images[k]]}
             for k in related_images
         },
         DIM_3D=(dimension == models.DimensionType.DIM_3D),
         stop=len(sorted_media) - 1,
+        data_dir=".",
     )
     manifest.create()
 
 def _find_and_filter_related_images(
-    extractor: IMediaReader,
+    extractor: ImageListReader,
     *,
     upload_dir: str
 ) -> dict[str, list[str]]:
     regular_images, related_images = find_related_images(
         extractor.absolute_source_paths,
-        scene_paths=(
-            lambda p: not re.search(r'(^|{0})related_images{0}'.format(os.sep), p)
-            # backward compatibility
-        )
+        # backward compatibility
+        is_scene_path=(lambda p: not "related_images" in p.parts),
     )
 
     # extractor.filter() uses absolute paths, so we pass them
@@ -582,13 +588,13 @@ def _find_and_filter_related_images(
         for k, k_ris in related_images.items()
     }
 
+
 @transaction.atomic
 def create_thread(
-    db_task: Union[int, models.Task],
+    db_task: int | models.Task,
     data: dict[str, Any],
     *,
     is_backup_restore: bool = False,
-    is_dataset_import: bool = False,
 ) -> None:
     if isinstance(db_task, int):
         db_task = models.Task.objects.select_for_update().get(pk=db_task)
@@ -608,16 +614,16 @@ def create_thread(
         db_task, data, is_backup_restore=is_backup_restore
     )
 
-    db_data = db_task.data
+    db_data = db_task.require_data()
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
-    if data['remote_files'] and not is_dataset_import:
+    if data['remote_files']:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir, update_status_callback=update_status)
 
     # find and validate manifest file
     manifest_files = _find_manifest_files(data)
-    manifest_root = None
+    manifest_root: Path
 
     # we should also handle this case because files from the share source have not been downloaded yet
     if data['copy_data']:
@@ -654,7 +660,7 @@ def create_thread(
 
         if manifest_file:
             cloud_storage_manifest = ImageManifestManager(
-                os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
+                db_data.cloud_storage.get_storage_dirname() / manifest_file,
                 db_data.cloud_storage.get_storage_dirname()
             )
             cloud_storage_manifest.set_index()
@@ -764,24 +770,11 @@ def create_thread(
         ):
             update_status("Downloading input media")
 
-            filtered_data = []
-            for files in (i for i in media.values() if i):
-                filtered_data.extend(files)
-            media_to_download = filtered_data
-
-            if media['image']:
-                start_frame = db_data.start_frame
-                stop_frame = len(filtered_data) - 1
-                if data['stop_frame'] is not None:
-                    stop_frame = min(stop_frame, data['stop_frame'])
-
-                step = db_data.get_frame_step()
-                if start_frame or step != 1 or stop_frame != len(filtered_data) - 1:
-                    media_to_download = filtered_data[start_frame : stop_frame + 1: step]
-
-            _download_data_from_cloud_storage(db_data.cloud_storage, media_to_download, upload_dir)
-            del media_to_download
-            del filtered_data
+            _download_data_from_cloud_storage(
+                db_storage=db_data.cloud_storage,
+                files=list(itertools.chain.from_iterable(media.values())),
+                upload_dir=upload_dir,
+            )
 
             is_data_in_cloud = False
             if is_packed_media:
@@ -810,6 +803,8 @@ def create_thread(
             else:
                 sorted_media = sort(media['image'], data['sorting_method'])
                 media['image'] = sorted_media
+
+            sorted_media = [PurePosixPath(f) for f in sorted_media]
             is_media_sorted = True
 
             if manifest_file:
@@ -842,7 +837,7 @@ def create_thread(
         media['image'].extend(
             [os.path.relpath(image, upload_dir) for image in
                 MEDIA_TYPES['directory']['extractor'](
-                    source_path=[os.path.join(upload_dir, f) for f in media['directory']],
+                    source_paths=[os.path.join(upload_dir, f) for f in media['directory']],
                 ).absolute_source_paths
             ]
         )
@@ -862,8 +857,7 @@ def create_thread(
         )
 
     # Extract input data
-    extractor: Optional[IMediaReader] = None
-    manifest_index = _get_manifest_frame_indexer()
+    extractor: IMediaReader | None = None
     for media_type, media_files in media.items():
         if not media_files:
             continue
@@ -871,16 +865,10 @@ def create_thread(
         if extractor is not None:
             raise ValidationError('Combined data types are not supported')
 
-        if (is_dataset_import or is_backup_restore) and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
-            manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
-            db_data.start_frame = 0
-            data['stop_frame'] = None
-            db_data.frame_filter = ''
-
-        source_paths = [os.path.join(upload_dir, f) for f in media_files]
+        source_paths = [upload_dir / f for f in media_files]
 
         details = {
-            'source_path': source_paths,
+            'source_paths': source_paths,
             'step': db_data.get_frame_step(),
             'start': db_data.start_frame,
             'stop': data['stop_frame'],
@@ -938,9 +926,9 @@ def create_thread(
 
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
-            source_files=[
+            source_paths=[
                 # We always work with .pcd files instead of .bin
-                (os.path.splitext(p)[0] + ".pcd") if p.endswith(".bin") else p
+                p.with_suffix('.pcd') if p.suffix == '.bin' else p
                 for p in extractor.absolute_source_paths
             ],
             step=db_data.get_frame_step(),
@@ -960,7 +948,6 @@ def create_thread(
             db_data.storage_method == models.StorageMethodChoice.CACHE and
             db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
         ) or (
-            not is_dataset_import and
             not is_backup_restore and
             data['sorting_method'] == models.SortingMethod.PREDEFINED and (
                 # Sorting with manifest is required for zip
@@ -988,19 +975,19 @@ def create_thread(
                         .format(manifest_file or os.path.basename(db_data.get_manifest_path()))
                     )
 
-                manifest = _read_dataset_manifest(os.path.join(manifest_root, manifest_file),
-                    create_index=manifest_root.startswith(db_data.get_upload_dirname())
+                manifest = _read_dataset_manifest(manifest_root / manifest_file,
+                    create_index=manifest_root.is_relative_to(db_data.get_upload_dirname())
                 )
 
             sorted_media_files = _restore_file_order_from_manifest(extractor, manifest, upload_dir)
 
-        sorted_media_files = [os.path.join(upload_dir, fn) for fn in sorted_media_files]
+        sorted_media_files = [upload_dir / fn for fn in sorted_media_files]
 
         # validate the sorting
         for file_path in sorted_media_files:
             if not file_path in extractor:
                 raise ValidationError(
-                    f"Can't find file '{os.path.basename(file_path)}' in the input files"
+                    f"Can't find file '{file_path.name}' in the input files"
                 )
 
         media_files = sorted_media_files.copy()
@@ -1008,7 +995,7 @@ def create_thread(
 
         data['sorting_method'] = models.SortingMethod.PREDEFINED
         extractor.reconcile(
-            source_files=media_files,
+            source_paths=media_files,
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data['stop_frame'],
@@ -1038,7 +1025,7 @@ def create_thread(
     if (manifest_file and not os.path.exists(db_data.get_manifest_path())):
         shutil.copyfile(os.path.join(manifest_root, manifest_file),
             db_data.get_manifest_path())
-        if manifest_root and manifest_root.startswith(db_data.get_upload_dirname()):
+        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
             os.remove(os.path.join(manifest_root, manifest_file))
         manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
@@ -1058,7 +1045,7 @@ def create_thread(
                     update_status('Validating the input manifest file')
 
                     manifest = VideoManifestValidator(
-                        source_path=os.path.join(upload_dir, media_files[0]),
+                        source_path=upload_dir / media_files[0],
                         manifest_path=db_data.get_manifest_path()
                     )
                     manifest.init_index()
@@ -1088,8 +1075,7 @@ def create_thread(
                     # TODO: maybe generate manifest in a temp directory
                     manifest = VideoManifestManager(db_data.get_manifest_path())
                     manifest.link(
-                        media_file=media_files[0],
-                        upload_dir=upload_dir,
+                        media_file=Path(upload_dir, media_files[0]),
                         chunk_size=db_data.chunk_size, # TODO: why it's needed here?
                         force=True
                     )
@@ -1133,6 +1119,10 @@ def create_thread(
 
             manifest = ImageManifestManager(db_data.get_manifest_path())
             if not manifest.exists:
+                # TODO: Try to avoid adding manifest entries for images that are not in
+                # extractor.frame_range. In addition to less processing here, it would also allow
+                # us to avoid downloading such images from cloud storage (when using static chunks),
+                # or copying them from the attached share (when using copy_data).
                 manifest.link(
                     sources=extractor.absolute_source_paths,
                     meta={
@@ -1151,10 +1141,10 @@ def create_thread(
                 image_size = None
 
                 if manifest:
-                    image_info = manifest[manifest_index(frame_id)]
+                    image_info = manifest[frame_id]
 
                     # check mapping
-                    if not image_path.endswith(f"{image_info['name']}{image_info['extension']}"):
+                    if not image_path.as_posix().endswith(f"{image_info['name']}{image_info['extension']}"):
                         raise ValidationError('Incorrect file mapping to manifest content')
 
                     if (
@@ -1559,7 +1549,7 @@ def create_thread(
     if not (is_data_in_cloud and is_backup_restore):
         TaskFrameProvider(db_task=db_task).get_preview()
 
-def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: str):
+def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: Path) -> None:
     @attrs.define
     class _ChunkProgressUpdater:
         _call_counter: int = attrs.field(default=0, init=False)
@@ -1605,20 +1595,20 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         fs_original = executor.submit(
             original_chunk_writer.save_as_chunk,
             images=chunk_data,
-            chunk_path=db_data.get_original_segment_chunk_path(
-                chunk_idx, segment_id=db_segment.id
+            chunk_path=db_data.get_static_segment_chunk_path(
+                chunk_idx, segment_id=db_segment.id, quality=models.FrameQuality.ORIGINAL
             ),
         )
         compressed_chunk_writer.save_as_chunk(
             images=chunk_data,
-            chunk_path=db_data.get_compressed_segment_chunk_path(
-                chunk_idx, segment_id=db_segment.id
+            chunk_path=db_data.get_static_segment_chunk_path(
+                chunk_idx, segment_id=db_segment.id, quality=models.FrameQuality.COMPRESSED
             ),
         )
 
         fs_original.result()
 
-    db_data = db_task.data
+    db_data = db_task.require_data()
 
     if db_data.compressed_chunk_type == models.DataChoice.VIDEO:
         compressed_chunk_writer_class = Mpeg4CompressedChunkWriter
@@ -1636,13 +1626,12 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         original_chunk_writer_class = ZipChunkWriter
         original_quality = 100
 
-    chunk_writer_kwargs = {}
-    if db_task.dimension == models.DimensionType.DIM_3D:
-        chunk_writer_kwargs["dimension"] = db_task.dimension
     compressed_chunk_writer = compressed_chunk_writer_class(
-        db_data.image_quality, **chunk_writer_kwargs
+        quality=db_data.image_quality, dimension=db_task.dimension
     )
-    original_chunk_writer = original_chunk_writer_class(original_quality, **chunk_writer_kwargs)
+    original_chunk_writer = original_chunk_writer_class(
+        quality=original_quality, dimension=db_task.dimension
+    )
 
     db_segments = db_task.segment_set.order_by('start_frame').all()
 
@@ -1671,7 +1660,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
         }
 
         frame_map = {
-            frame.frame: extractor_frame_ids[os.path.join(upload_dir, frame.path)]
+            frame.frame: extractor_frame_ids[upload_dir / frame.path]
             for frame in db_data.images.all()
         }
 

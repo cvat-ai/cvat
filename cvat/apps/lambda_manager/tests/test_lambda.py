@@ -7,7 +7,6 @@ import json
 import os
 from collections import Counter
 from itertools import groupby
-from typing import Optional
 from unittest import mock, skip
 
 import requests
@@ -171,8 +170,8 @@ class _LambdaTestCaseBase(ApiTestBase):
 
     @classmethod
     def _create_db_users(cls):
-        (group_admin, _) = Group.objects.get_or_create(name="admin")
-        (group_user, _) = Group.objects.get_or_create(name="user")
+        group_admin, _ = Group.objects.get_or_create(name="admin")
+        group_user, _ = Group.objects.get_or_create(name="user")
 
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
         user_admin.groups.add(group_admin)
@@ -238,7 +237,7 @@ class _LambdaTestCaseBase(ApiTestBase):
         for key in expected_keys_in_response_all_functions:
             self.assertIn(key, data)
 
-    def _delete_lambda_request(self, request_id: str, user: Optional[User] = None) -> None:
+    def _delete_lambda_request(self, request_id: str, user: User | None = None) -> None:
         response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", user or self.admin)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
@@ -1690,7 +1689,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
 
         return org
 
-    def _set_task_assignee(self, task: int, assignee: Optional[int]):
+    def _set_task_assignee(self, task: int, assignee: int | None):
         response = self._patch_request(
             f"/api/tasks/{task}",
             user=self.admin,
@@ -1700,7 +1699,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
         )
         assert response.status_code == status.HTTP_200_OK
 
-    def _set_job_assignee(self, job: int, assignee: Optional[int]):
+    def _set_job_assignee(self, job: int, assignee: int | None):
         response = self._patch_request(
             f"/api/jobs/{job}",
             user=self.admin,

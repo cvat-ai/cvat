@@ -3,9 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-import { RouteComponentProps } from 'react-router';
-import { withRouter } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
@@ -17,6 +16,7 @@ import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import Preview from 'components/common/preview';
 import { ActiveInference, PluginComponent } from 'reducers';
 import StatusMessage from 'components/requests-page/request-status';
+import { useContextMenuClick, useIsMounted } from 'utils/hooks';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 import TaskActionsComponent from './actions-menu';
 
@@ -32,69 +32,62 @@ export interface TaskItemProps {
     onClick: () => void;
 }
 
-interface State {
-    importingState: {
-        state: RQStatus | null;
-        message: string;
-        progress: number;
-    } | null;
+interface ImportingState {
+    state: RQStatus | null;
+    message: string;
+    progress: number;
 }
 
-class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps, State> {
-    #isUnmounted: boolean;
+function TaskItemComponent(props: TaskItemProps): JSX.Element {
+    const {
+        taskInstance,
+        deleted,
+        activeInference,
+        activeRequest,
+        ribbonPlugins,
+        cancelAutoAnnotation,
+        updateTaskInState,
+        selected,
+        onClick,
+    } = props;
 
-    constructor(props: TaskItemProps & RouteComponentProps) {
-        super(props);
-        const { taskInstance } = props;
-        this.#isUnmounted = false;
-        this.state = {
-            importingState: taskInstance.size > 0 ? null : {
-                state: null,
-                message: 'Request current progress',
-                progress: 0,
-            },
-        };
-    }
+    const isMounted = useIsMounted();
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
 
-    public componentDidMount(): void {
-        const { taskInstance, updateTaskInState, activeRequest } = this.props;
-        const { importingState } = this.state;
+    const [importingState, setImportingState] = useState<ImportingState | null>(
+        taskInstance.size > 0 ? null : {
+            state: null,
+            message: 'Request current progress',
+            progress: 0,
+        },
+    );
 
+    useEffect(() => {
         if (importingState !== null && activeRequest !== null) {
-            if (!this.#isUnmounted) {
-                this.setState({
-                    importingState: {
-                        message: activeRequest.message,
-                        progress: Math.floor(activeRequest.progress * 100),
-                        state: activeRequest.status,
-                    },
-                });
-            }
+            setImportingState({
+                message: activeRequest.message,
+                progress: Math.floor((activeRequest.progress ?? 0) * 100),
+                state: activeRequest.status,
+            });
+
             taskInstance.listenToCreate(activeRequest.id, {
                 callback: (request: Request) => {
-                    if (!this.#isUnmounted) {
-                        this.setState({
-                            importingState: {
-                                message: request.message,
-                                progress: Math.floor(request.progress * 100),
-                                state: request.status,
-                            },
+                    if (isMounted()) {
+                        setImportingState({
+                            message: request.message,
+                            progress: Math.floor((request.progress ?? 0) * 100),
+                            state: request.status,
                         });
                     }
                 },
                 initialRequest: activeRequest,
-            },
-            ).then((createdTask: Task) => {
-                if (!this.#isUnmounted) {
-                    this.setState({ importingState: null });
+            }).then((createdTask: Task) => {
+                if (isMounted()) {
+                    setImportingState(null);
 
                     setTimeout(() => {
-                        if (!this.#isUnmounted) {
-                            // check again, because the component may be unmounted to this moment
-                            const { taskInstance: currentTaskInstance } = this.props;
-                            if (currentTaskInstance.size !== createdTask.size) {
-                                // update state only if it was not updated anywhere else
-                                // for example in createTaskAsync
+                        if (isMounted()) {
+                            if (taskInstance.size !== createdTask.size) {
                                 updateTaskInState(createdTask);
                             }
                         }
@@ -102,59 +95,24 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 }
             }).catch(() => {});
         }
+    }, []);
+
+    const style: React.CSSProperties = {};
+    if (deleted) {
+        style.pointerEvents = 'none';
+        style.opacity = 0.5;
     }
 
-    public componentWillUnmount(): void {
-        this.#isUnmounted = true;
-    }
+    const { id } = taskInstance;
+    const owner = taskInstance.owner ? taskInstance.owner.username : null;
+    const updated = dayjs(taskInstance.updatedDate).fromNow();
+    const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
 
-    private renderPreview(): JSX.Element {
-        const { taskInstance } = this.props;
-        return (
-            <Col span={4}>
-                <Preview
-                    task={taskInstance}
-                    loadingClassName='cvat-task-item-loading-preview'
-                    emptyPreviewClassName='cvat-task-item-empty-preview'
-                    previewWrapperClassName='cvat-task-item-preview-wrapper'
-                    previewClassName='cvat-task-item-preview'
-                />
-            </Col>
-        );
-    }
+    const ribbonItems = ribbonPlugins
+        .filter((plugin) => plugin.data.shouldBeRendered(props, { importingState }))
+        .map((plugin) => ({ component: plugin.component, weight: plugin.data.weight }));
 
-    private renderDescription(): JSX.Element {
-        // Task info
-        const { taskInstance } = this.props;
-        const { id } = taskInstance;
-        const owner = taskInstance.owner ? taskInstance.owner.username : null;
-        const updated = dayjs(taskInstance.updatedDate).fromNow();
-        const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
-
-        return (
-            <Col span={10} className='cvat-task-item-description'>
-                <Text ellipsis={{ tooltip: taskInstance.name }}>
-                    <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
-                    <Text strong className='cvat-item-task-name'>
-                        {taskInstance.name}
-                    </Text>
-                </Text>
-                <br />
-                {owner && (
-                    <>
-                        <Text type='secondary'>{`Created ${owner ? `by ${owner}` : ''} on ${created}`}</Text>
-                        <br />
-                    </>
-                )}
-                <Text type='secondary'>{`Last updated ${updated}`}</Text>
-            </Col>
-        );
-    }
-
-    private renderProgress(): JSX.Element {
-        const { taskInstance, activeInference, cancelAutoAnnotation } = this.props;
-        const { importingState } = this.state;
-
+    const renderProgress = (): JSX.Element => {
         if (importingState) {
             return (
                 <Col span={7}>
@@ -163,27 +121,23 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             <div>
                                 <StatusMessage status={importingState.state} message={importingState.message} />
                             </div>
-                            {
-                                importingState.state !== RQStatus.FAILED ? (
-                                    <Progress
-                                        percent={importingState.progress}
-                                        strokeColor='#1890FF'
-                                        size='small'
-                                    />
-                                ) : null
-                            }
+                            {importingState.state !== RQStatus.FAILED && (
+                                <Progress
+                                    percent={importingState.progress}
+                                    strokeColor='#1890FF'
+                                    size='small'
+                                />
+                            )}
                         </Col>
                     </Row>
                 </Col>
             );
         }
-        // Count number of jobs and performed jobs
+
         const numOfJobs = taskInstance.progress.totalJobs;
         const numOfCompleted = taskInstance.progress.completedJobs;
         const numOfValidation = taskInstance.progress.validationJobs;
         const numOfAnnotation = taskInstance.progress.annotationJobs;
-
-        // Progress appearance depends on number of jobs
         const jobsProgress = ((numOfCompleted + numOfValidation) * 100) / numOfJobs;
 
         return (
@@ -191,19 +145,17 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 <Row>
                     <Col span={24} className='cvat-task-item-progress-wrapper'>
                         <div>
-                            { numOfCompleted > 0 && (
+                            {numOfCompleted > 0 && (
                                 <Text strong className='cvat-task-completed-progress'>
                                     {`\u2022 ${numOfCompleted} done `}
                                 </Text>
                             )}
-
-                            { numOfValidation > 0 && (
+                            {numOfValidation > 0 && (
                                 <Text strong className='cvat-task-validation-progress'>
                                     {`\u2022 ${numOfValidation} on review `}
                                 </Text>
                             )}
-
-                            { numOfAnnotation > 0 && (
+                            {numOfAnnotation > 0 && (
                                 <Text strong className='cvat-task-annotation-progress'>
                                     {`\u2022 ${numOfAnnotation} annotating `}
                                 </Text>
@@ -214,9 +166,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         </div>
                         <Progress
                             percent={jobsProgress}
-                            success={{
-                                percent: (numOfCompleted * 100) / numOfJobs,
-                            }}
+                            success={{ percent: (numOfCompleted * 100) / numOfJobs }}
                             strokeColor='#1890FF'
                             showInfo={false}
                             size='small'
@@ -229,99 +179,95 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 />
             </Col>
         );
-    }
+    };
 
-    private renderNavigation(): JSX.Element {
-        const { importingState } = this.state;
-        const { taskInstance, history } = this.props;
-        const { id } = taskInstance;
-
-        return (
+    /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
+    const row = (
+        <Row
+            ref={itemRef}
+            className={`cvat-tasks-list-item${selected ? ' cvat-item-selected' : ''}`}
+            justify='center'
+            align='top'
+            style={style}
+            onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
+        >
+            <Col span={4}>
+                <Preview
+                    task={taskInstance}
+                    loadingClassName='cvat-task-item-loading-preview'
+                    emptyPreviewClassName='cvat-task-item-empty-preview'
+                    previewWrapperClassName='cvat-task-item-preview-wrapper'
+                    previewClassName='cvat-task-item-preview'
+                />
+            </Col>
+            <Col span={10} className='cvat-task-item-description'>
+                <Text ellipsis={{ tooltip: taskInstance.name }}>
+                    <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                    <Text strong className='cvat-item-task-name'>{taskInstance.name}</Text>
+                </Text>
+                <br />
+                {owner && (
+                    <>
+                        <Text type='secondary'>{`Created ${owner ? `by ${owner}` : ''} on ${created}`}</Text>
+                        <br />
+                    </>
+                )}
+                <Text type='secondary'>{`Last updated ${updated}`}</Text>
+            </Col>
+            {renderProgress()}
             <Col span={3}>
                 <Row justify='end'>
                     <Col>
-                        <Button
-                            disabled={!!importingState}
-                            className='cvat-item-open-task-button'
-                            type='primary'
-                            size='large'
-                            ghost
-                            href={`/tasks/${id}`}
-                            onClick={(e: React.MouseEvent): void => {
-                                e.preventDefault();
-                                history.push(`/tasks/${id}`);
-                            }}
-                        >
-                            Open
-                        </Button>
+                        <Link to={`/tasks/${id}`}>
+                            <Button
+                                disabled={!!importingState}
+                                className='cvat-item-open-task-button'
+                                type='primary'
+                                size='large'
+                                ghost
+                            >
+                                Open
+                            </Button>
+                        </Link>
                     </Col>
                 </Row>
                 <Row justify='end'>
                     <Col className='cvat-item-open-task-actions'>
-                        <TaskActionsComponent
-                            taskInstance={taskInstance}
-                            triggerElement={(
-                                <div className='cvat-task-item-actions-button cvat-actions-menu-button'>
-                                    <Text className='cvat-text-color'>Actions</Text>
-                                    <MoreOutlined className='cvat-menu-icon' />
-                                </div>
-                            )}
-                        />
+                        <div
+                            onClick={handleContextMenuClick}
+                            className='cvat-task-item-actions-button cvat-actions-menu-button'
+                        >
+                            <Text className='cvat-text-color'>Actions</Text>
+                            <MoreOutlined className='cvat-menu-icon' />
+                        </div>
                     </Col>
                 </Row>
             </Col>
-        );
-    }
+        </Row>
+    );
 
-    public render(): JSX.Element {
-        const {
-            deleted, ribbonPlugins, selected, onClick, taskInstance,
-        } = this.props;
-        const style: React.CSSProperties = {};
-        if (deleted) {
-            style.pointerEvents = 'none';
-            style.opacity = 0.5;
-        }
-
-        const ribbonItems = ribbonPlugins
-            .filter((plugin) => plugin.data.shouldBeRendered(this.props, this.state))
-            .map((plugin) => ({ component: plugin.component, weight: plugin.data.weight }));
-
-        return (
-            <Badge.Ribbon
-                style={{ visibility: ribbonItems.length ? 'visible' : 'hidden' }}
-                className='cvat-task-item-ribbon'
-                placement='start'
-                text={(
-                    <div>
-                        {ribbonItems.sort((item1, item2) => item1.weight - item2.weight)
-                            .map((item) => item.component).map((Component, index) => (
-                                <Component key={index} targetProps={this.props} targetState={this.state} />
-                            ))}
-                    </div>
-                )}
-            >
-                <TaskActionsComponent
-                    taskInstance={taskInstance}
-                    dropdownTrigger={['contextMenu']}
-                    triggerElement={(
-                        <Row
-                            className={`cvat-tasks-list-item${selected ? ' cvat-item-selected' : ''}`}
-                            justify='center'
-                            align='top'
-                            style={style}
-                            onClick={onClick}
-                        >
-                            {this.renderPreview()}
-                            {this.renderDescription()}
-                            {this.renderProgress()}
-                            {this.renderNavigation()}
-                        </Row>
-                    )}
-                />
-            </Badge.Ribbon>
-        );
-    }
+    return (
+        <Badge.Ribbon
+            style={{ visibility: ribbonItems.length ? 'visible' : 'hidden' }}
+            className='cvat-task-item-ribbon'
+            placement='start'
+            text={(
+                <div>
+                    {ribbonItems.sort((item1, item2) => item1.weight - item2.weight)
+                        .map((item) => item.component).map((Component, index) => (
+                            <Component key={index} targetProps={props} targetState={{ importingState }} />
+                        ))}
+                </div>
+            )}
+        >
+            <TaskActionsComponent
+                dropdownTrigger={['contextMenu']}
+                taskInstance={taskInstance}
+                triggerElement={row}
+            />
+        </Badge.Ribbon>
+    );
 }
 
-export default withRouter(TaskItemComponent);
+export default React.memo(TaskItemComponent);

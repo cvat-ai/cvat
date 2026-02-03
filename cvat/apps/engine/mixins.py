@@ -114,7 +114,7 @@ class UploadMixin:
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204_NO_CONTENT)
 
-        upload_dir = Path(self.get_upload_dir())
+        upload_dir = self.get_upload_dir()
 
         try:
             metadata = TusFile.TusMeta.from_request(request)
@@ -152,9 +152,7 @@ class UploadMixin:
             metadata=metadata, upload_dir=upload_dir, user_id=request.user.id
         )
 
-        location = request.build_absolute_uri()
-        if 'HTTP_X_FORWARDED_HOST' not in request.META:
-            location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
+        location = request.build_absolute_uri(request.path)
 
         # FUTURE-TODO: migrate to common TMP cache where files
         # are deleted automatically by a periodic background job
@@ -183,8 +181,7 @@ class UploadMixin:
         )
 
     def append_tus_chunk(self, request: ExtendedRequest, file_id: str):
-        tus_file = TusFile(file_id, upload_dir=Path(self.get_upload_dir()))
-        tus_file.meta_file.init_from_file()
+        tus_file = TusFile(file_id, upload_dir=self.get_upload_dir())
 
         try:
             tus_file.validate(user_id=request.user.id)
@@ -193,6 +190,8 @@ class UploadMixin:
             return self._tus_response(status=status.HTTP_404_NOT_FOUND)
         except TusFileForbiddenError:
             return self._tus_response(status=status.HTTP_403_FORBIDDEN)
+
+        tus_file.meta_file.init_from_file()
 
         if request.method == 'HEAD':
             return self._tus_response(
@@ -208,7 +207,7 @@ class UploadMixin:
         if chunk.offset != tus_file.offset:
             return self._tus_response(status=status.HTTP_409_CONFLICT)
 
-        if chunk.offset > tus_file.file_size:
+        if chunk.end_offset > tus_file.file_size:
             return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
         tus_file.write_chunk(chunk)
@@ -232,7 +231,7 @@ class UploadMixin:
         if not file_path.resolve().is_relative_to(upload_dir):
             raise UploadedFileError
 
-    def get_upload_dir(self) -> str:
+    def get_upload_dir(self) -> Path:
         return self._object.data.get_upload_dirname()
 
     def _get_request_client_files(self, request: ExtendedRequest):
@@ -252,7 +251,7 @@ class UploadMixin:
             for client_file in client_files:
                 filename = client_file['file'].name
                 try:
-                    self.validate_uploaded_file_name(filename=filename, upload_dir=Path(upload_dir))
+                    self.validate_uploaded_file_name(filename=filename, upload_dir=upload_dir)
                 except UploadedFileError:
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST,

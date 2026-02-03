@@ -7,7 +7,7 @@ import io
 import json
 from functools import partial
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
@@ -29,7 +29,7 @@ pytestmark = [pytest.mark.with_external_services]
 class TestGetCloudStorage:
     def _test_can_see(self, user, storage_id, data):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.cloudstorages_api.retrieve(
+            _, response = api_client.cloudstorages_api.retrieve(
                 id=storage_id,
                 _parse_response=False,
                 _check_status=False,
@@ -46,7 +46,7 @@ class TestGetCloudStorage:
 
     def _test_cannot_see(self, user, storage_id):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.cloudstorages_api.retrieve(
+            _, response = api_client.cloudstorages_api.retrieve(
                 id=storage_id,
                 _parse_response=False,
                 _check_status=False,
@@ -116,7 +116,7 @@ class TestGetCloudStorage:
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_storage["owner"]["id"])
 
-            (_, response) = api_client.cloudstorages_api.retrieve(source_storage["id"])
+            _, response = api_client.cloudstorages_api.retrieve(source_storage["id"])
             fetched_storage = json.loads(response.data)
 
         source_storage["owner"] = None
@@ -175,7 +175,7 @@ class TestPostCloudStorage:
 
     def _test_can_create(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.cloudstorages_api.create(
+            _, response = api_client.cloudstorages_api.create(
                 models.CloudStorageWriteRequest(**spec),
                 **kwargs,
                 _parse_response=False,
@@ -193,7 +193,7 @@ class TestPostCloudStorage:
 
     def _test_cannot_create(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.cloudstorages_api.create(
+            _, response = api_client.cloudstorages_api.create(
                 models.CloudStorageWriteRequest(**spec),
                 **kwargs,
                 _parse_response=False,
@@ -266,7 +266,7 @@ class TestPatchCloudStorage:
 
     def _test_can_update(self, user, storage_id, spec):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.cloudstorages_api.partial_update(
+            _, response = api_client.cloudstorages_api.partial_update(
                 id=storage_id,
                 patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(**spec),
                 _parse_response=False,
@@ -282,7 +282,7 @@ class TestPatchCloudStorage:
 
     def _test_cannot_update(self, user, storage_id, spec):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.cloudstorages_api.partial_update(
+            _, response = api_client.cloudstorages_api.partial_update(
                 id=storage_id,
                 patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(**spec),
                 _parse_response=False,
@@ -349,19 +349,19 @@ class TestPatchCloudStorage:
 class TestGetCloudStoragePreview:
     def _test_can_see(self, user, storage_id):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.cloudstorages_api.retrieve_preview(
+            _, response = api_client.cloudstorages_api.retrieve_preview(
                 id=storage_id,
                 _parse_response=False,
                 _check_status=False,
             )
             assert response.status == HTTPStatus.OK
 
-            (width, height) = Image.open(io.BytesIO(response.data)).size
+            width, height = Image.open(io.BytesIO(response.data)).size
             assert width > 0 and height > 0
 
     def _test_cannot_see(self, user, storage_id):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.cloudstorages_api.retrieve_preview(
+            _, response = api_client.cloudstorages_api.retrieve_preview(
                 id=storage_id,
                 _parse_response=False,
                 _check_status=False,
@@ -430,7 +430,7 @@ class TestGetCloudStorageContent:
     def _test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        manifest: Optional[str] = None,
+        manifest: str | None = None,
         **kwargs,
     ):
         with make_api_client(self.USER) as api_client:
@@ -440,7 +440,7 @@ class TestGetCloudStorageContent:
                 if item_value := kwargs.get(item):
                     content_kwargs[item] = item_value
 
-            (data, _) = api_client.cloudstorages_api.retrieve_content_v2(
+            data, _ = api_client.cloudstorages_api.retrieve_content_v2(
                 cloud_storage_id, **content_kwargs
             )
 
@@ -641,18 +641,18 @@ class TestGetCloudStorageContent:
     def test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        manifest: Optional[str],
-        prefix: Optional[str],
-        default_bucket_prefix: Optional[str],
-        page_size: Optional[int],
-        expected_content: Optional[Any],
+        manifest: str | None,
+        prefix: str | None,
+        default_bucket_prefix: str | None,
+        page_size: int | None,
+        expected_content: Any | None,
         cloud_storages,
     ):
         if default_bucket_prefix:
             cloud_storage = cloud_storages[cloud_storage_id]
 
             with make_api_client(self.USER) as api_client:
-                (_, response) = api_client.cloudstorages_api.partial_update(
+                _, response = api_client.cloudstorages_api.partial_update(
                     cloud_storage_id,
                     patched_cloud_storage_write_request={
                         "specific_attributes": f'{cloud_storage["specific_attributes"]}&prefix={default_bucket_prefix}'
@@ -693,7 +693,8 @@ class TestGetCloudStorageContent:
             if not next_token:
                 break
 
-        assert expected_content == current_content
+        # Each page is currently sorted individually, so we have to resort after combining.
+        assert expected_content == sorted(current_content, key=lambda el: el["type"].value)
 
     @pytest.mark.parametrize("cloud_storage_id", [2])
     def test_can_get_storage_content_with_manually_created_dirs(
@@ -750,3 +751,17 @@ class TestListCloudStorages:
         self._test_can_see_cloud_storages(
             "admin2", list(cloud_storages), page_size="all", org_id=query_value
         )
+
+
+class TestCloudStorageStatus:
+    @pytest.mark.parametrize(
+        "cloud_storage_id, expected_response",
+        [
+            (3, "AVAILABLE"),
+            (4, "NOT_FOUND"),
+        ],
+    )
+    def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
+        with make_api_client(admin_user) as api_client:
+            data, _ = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
+            assert data == expected_response

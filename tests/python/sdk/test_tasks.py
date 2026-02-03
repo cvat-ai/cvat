@@ -7,7 +7,6 @@ import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from cvat_sdk import Client, models
@@ -303,7 +302,7 @@ class TestTaskUsecases(TestDatasetExport):
         format_name: str,
         include_images: bool,
         task: Task,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):
@@ -379,7 +378,7 @@ class TestTaskUsecases(TestDatasetExport):
 
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_preview()
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
@@ -387,7 +386,7 @@ class TestTaskUsecases(TestDatasetExport):
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     def test_can_download_frame(self, fxt_new_task: Task, quality: str):
         frame_encoded = fxt_new_task.get_frame(0, quality=quality)
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
@@ -395,7 +394,7 @@ class TestTaskUsecases(TestDatasetExport):
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     @pytest.mark.parametrize("image_extension", (None, "bmp"))
     def test_can_download_frames(
-        self, fxt_new_task: Task, quality: str, image_extension: Optional[str]
+        self, fxt_new_task: Task, quality: str, image_extension: str | None
     ):
         fxt_new_task.download_frames(
             [0],

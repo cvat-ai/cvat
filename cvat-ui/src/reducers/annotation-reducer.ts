@@ -105,6 +105,7 @@ const defaultState: AnnotationState = {
         playing: false,
         frameAngles: [],
         navigationBlocked: false,
+        hoveredChapter: null,
     },
     drawing: {
         activeShapeType: ShapeType.RECTANGLE,
@@ -290,6 +291,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.job,
                     instance: undefined,
                     fetching: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.HOVERED_CHAPTER: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    hoveredChapter: action.payload.id,
                 },
             };
         }
@@ -496,12 +506,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CONFIRM_CANVAS_READY: {
-            const { ranges } = action.payload;
             return {
                 ...state,
                 player: {
                     ...state.player,
-                    ranges: ranges || state.player.ranges,
                     frame: {
                         ...state.player.frame,
                         changeFrameEvent: null,
@@ -510,6 +518,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     ready: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_CACHED_CHUNKS: {
+            const { ranges } = action.payload;
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    ranges,
                 },
             };
         }

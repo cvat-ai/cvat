@@ -18,7 +18,6 @@ import ColorPicker from './color-picker';
 
 interface Props {
     jobInstance: any;
-    readonly: boolean;
     clientID: number;
     serverID: number | null;
     labelID: number;
@@ -60,7 +59,6 @@ interface Props {
 
 function ItemTopComponent(props: Props): JSX.Element {
     const {
-        readonly,
         clientID,
         serverID,
         labelID,
@@ -120,7 +118,7 @@ function ItemTopComponent(props: Props): JSX.Element {
             <Col span={12}>
                 <CVATTooltip title='Change current label'>
                     <LabelSelector
-                        disabled={locked || readonly || shapeType === ShapeType.SKELETON}
+                        disabled={locked || shapeType === ShapeType.SKELETON}
                         size='small'
                         labels={labels}
                         value={labelID}
@@ -151,7 +149,6 @@ function ItemTopComponent(props: Props): JSX.Element {
                         className='cvat-object-item-menu-button'
                         menu={ItemMenu({
                             jobInstance,
-                            readonly,
                             locked,
                             serverID,
                             shapeType,

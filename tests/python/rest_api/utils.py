@@ -4,12 +4,12 @@
 
 import json
 from abc import ABCMeta, abstractmethod
-from collections.abc import Hashable, Iterator, Sequence
+from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from time import sleep
-from typing import Any, Callable, Iterable, Optional, TypeVar, Union
+from typing import Any, TypeAlias, TypeVar
 
 import requests
 from cvat_sdk.api_client import apis, models
@@ -29,9 +29,7 @@ DEFAULT_INTERVAL = 0.1
 
 
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
-    (_, response) = endpoint.call_with_http_info(
-        **kwargs, _parse_response=False, _check_status=False
-    )
+    _, response = endpoint.call_with_http_info(**kwargs, _parse_response=False, _check_status=False)
     if expect_forbidden:
         assert (
             response.status == HTTPStatus.FORBIDDEN
@@ -54,7 +52,7 @@ def wait_background_request(
     interval: float = DEFAULT_INTERVAL,
 ) -> tuple[models.Request, HTTPResponse]:
     for _ in range(max_retries):
-        (background_request, response) = api_client.requests_api.retrieve(rq_id)
+        background_request, response = api_client.requests_api.retrieve(rq_id)
         assert response.status == HTTPStatus.OK
         if (
             background_request.status.value
@@ -102,7 +100,7 @@ def export_v2(
     wait_result: bool = True,
     download_result: bool = True,
     **kwargs,
-) -> Union[bytes, str]:
+) -> bytes | str:
     """Export datasets|annotations|backups using the second version of export API
 
     Args:
@@ -138,14 +136,14 @@ def export_v2(
 
 
 def export_dataset(
-    api: Union[ProjectsApi, TasksApi, JobsApi],
+    api: ProjectsApi | TasksApi | JobsApi,
     *,
     save_images: bool,
     max_retries: int = 300,
     interval: float = DEFAULT_INTERVAL,
     format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
     **kwargs,
-) -> Optional[bytes]:
+) -> bytes | None:
     return export_v2(
         api.create_dataset_export_endpoint,
         max_retries=max_retries,
@@ -158,38 +156,38 @@ def export_dataset(
 
 # FUTURE-TODO: support username: optional, api_client: optional
 # tODO: make func signature more userfrendly
-def export_project_dataset(username: str, *args, **kwargs) -> Optional[bytes]:
+def export_project_dataset(username: str, *args, **kwargs) -> bytes | None:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.projects_api, *args, **kwargs)
 
 
-def export_task_dataset(username: str, *args, **kwargs) -> Optional[bytes]:
+def export_task_dataset(username: str, *args, **kwargs) -> bytes | None:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.tasks_api, *args, **kwargs)
 
 
-def export_job_dataset(username: str, *args, **kwargs) -> Optional[bytes]:
+def export_job_dataset(username: str, *args, **kwargs) -> bytes | None:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.jobs_api, *args, **kwargs)
 
 
 def export_backup(
-    api: Union[ProjectsApi, TasksApi],
+    api: ProjectsApi | TasksApi,
     *,
     max_retries: int = DEFAULT_RETRIES,
     interval: float = DEFAULT_INTERVAL,
     **kwargs,
-) -> Optional[bytes]:
+) -> bytes | None:
     endpoint = api.create_backup_export_endpoint
     return export_v2(endpoint, max_retries=max_retries, interval=interval, **kwargs)
 
 
-def export_project_backup(username: str, *args, **kwargs) -> Optional[bytes]:
+def export_project_backup(username: str, *args, **kwargs) -> bytes | None:
     with make_api_client(username) as api_client:
         return export_backup(api_client.projects_api, *args, **kwargs)
 
 
-def export_task_backup(username: str, *args, **kwargs) -> Optional[bytes]:
+def export_task_backup(username: str, *args, **kwargs) -> bytes | None:
     with make_api_client(username) as api_client:
         return export_backup(api_client.tasks_api, *args, **kwargs)
 
@@ -202,9 +200,9 @@ def import_resource(
     expect_forbidden: bool = False,
     wait_result: bool = True,
     **kwargs,
-) -> Optional[models.Request]:
+) -> models.Request | None:
     # initialize background process and ensure that the first request returns 403 code if request should be forbidden
-    (_, response) = endpoint.call_with_http_info(
+    _, response = endpoint.call_with_http_info(
         **kwargs,
         _parse_response=False,
         _check_status=False,
@@ -225,7 +223,7 @@ def import_resource(
 
     # check status of background process
     for _ in range(max_retries):
-        (background_request, response) = endpoint.api_client.requests_api.retrieve(rq_id)
+        background_request, response = endpoint.api_client.requests_api.retrieve(rq_id)
         assert response.status == HTTPStatus.OK
         if background_request.status.value in (
             models.RequestStatus.allowed_values[("value",)]["FINISHED"],
@@ -242,7 +240,7 @@ def import_resource(
 
 
 def import_backup(
-    api: Union[ProjectsApi, TasksApi],
+    api: ProjectsApi | TasksApi,
     *,
     max_retries: int = DEFAULT_RETRIES,
     interval: float = DEFAULT_INTERVAL,
@@ -293,7 +291,7 @@ def import_job_annotations(username: str, file_content: BytesIO, **kwargs):
         )
 
 
-FieldPath = Sequence[Union[str, Callable]]
+FieldPath: TypeAlias = Sequence[str | Callable]
 
 
 class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
@@ -312,7 +310,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
             return get_paginated_collection(self._get_endpoint(api_client), **kwargs)
 
     @classmethod
-    def _get_field(cls, d: dict[str, Any], path: Union[str, FieldPath]) -> Optional[Any]:
+    def _get_field(cls, d: dict[str, Any], path: str | FieldPath) -> Any | None:
         assert path
         for key in path:
             if isinstance(d, dict):
@@ -367,7 +365,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
         assert diff == {}, diff
 
     def _test_can_use_simple_filter_for_object_list(
-        self, field: str, field_values: Optional[list[Any]] = None
+        self, field: str, field_values: list[Any] | None = None
     ):
         gt_objects = []
         field_path = self._map_field(field)
@@ -411,7 +409,7 @@ def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> list[str]:
 
 def wait_until_task_is_created(api: apis.RequestsApi, rq_id: str) -> models.Request:
     for _ in range(100):
-        (request_details, _) = api.retrieve(rq_id)
+        request_details, _ = api.retrieve(rq_id)
 
         if request_details.status.value in ("finished", "failed"):
             return request_details
@@ -421,7 +419,7 @@ def wait_until_task_is_created(api: apis.RequestsApi, rq_id: str) -> models.Requ
 
 def create_task(username, spec, data, content_type="application/json", **kwargs):
     with make_api_client(username) as api_client:
-        (task, response_) = api_client.tasks_api.create(spec, **kwargs)
+        task, response_ = api_client.tasks_api.create(spec, **kwargs)
         assert response_.status == HTTPStatus.CREATED
 
         sent_upload_start = False
@@ -431,7 +429,7 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
         data_kwargs.pop("org_id", None)
 
         if data.get("client_files") and "json" in content_type:
-            (_, response) = api_client.tasks_api.create_data(
+            _, response = api_client.tasks_api.create_data(
                 task.id,
                 data_request=models.DataRequest(image_quality=data["image_quality"]),
                 upload_start=True,
@@ -442,7 +440,7 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
             sent_upload_start = True
 
             # Can't encode binary files in json
-            (_, response) = api_client.tasks_api.create_data(
+            _, response = api_client.tasks_api.create_data(
                 task.id,
                 data_request=models.DataRequest(
                     client_files=data["client_files"],
@@ -461,7 +459,7 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
         if sent_upload_start:
             last_kwargs["upload_finish"] = True
 
-        (result, response) = api_client.tasks_api.create_data(
+        result, response = api_client.tasks_api.create_data(
             task.id,
             data_request=deepcopy(data),
             _content_type=content_type,
@@ -476,9 +474,16 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
     return task.id, response_.headers.get("X-Request-Id")
 
 
-def compare_annotations(a: dict, b: dict) -> dict:
+def compare_annotations(
+    a: dict,
+    b: dict,
+    *,
+    ignore_spec_ids: bool = False,
+    ignore_source: bool = False,
+    ignore_score: bool = False,
+) -> dict:
     def _exclude_cb(obj, path: str):
-        # ignoring track elements which do not have shapes
+        # ignore track elements which do not have shapes
         split_path = path.rsplit("['elements']", maxsplit=1)
         if len(split_path) == 2:
             if split_path[1].count("[") == 1 and not obj["shapes"]:
@@ -486,19 +491,34 @@ def compare_annotations(a: dict, b: dict) -> dict:
 
         return path.endswith("['elements']") and not obj
 
+    excluded_paths = [
+        r"root\['version|updated_date'\]",
+        r"root(\['\w+'\]\[\d+\])+\['id'\]",
+    ]
+
+    if ignore_score:
+        excluded_paths += [
+            r"root(\['\w+'\]\[\d+\])+\['score'\]",
+        ]
+
+    if ignore_source:
+        excluded_paths += [
+            r"root(\['\w+'\]\[\d+\])+\['source'\]",
+        ]
+
+    if ignore_spec_ids:
+        excluded_paths += [
+            r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+            r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+        ]
+
     return DeepDiff(
         a,
         b,
         ignore_order=True,
         significant_digits=2,  # annotations are stored with 2 decimal digit precision
         exclude_obj_callback=_exclude_cb,
-        exclude_regex_paths=[
-            r"root\['version|updated_date'\]",
-            r"root(\['\w+'\]\[\d+\])+\['id'\]",
-            r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-            r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-            r"root(\['\w+'\]\[\d+\])+\['source'\]",
-        ],
+        exclude_regex_paths=excluded_paths,
     )
 
 
@@ -517,7 +537,7 @@ _T2 = TypeVar("_T2")
 
 
 def unique(
-    it: Union[Iterator[_T], Iterable[_T]], *, key: Callable[[_T], Hashable] = None
+    it: Iterator[_T] | Iterable[_T], *, key: Callable[[_T], Hashable] = None
 ) -> Iterable[_T]:
     return {key(v): v for v in it}.values()
 
@@ -558,8 +578,8 @@ def get_cloud_storage_content(
     username: str,
     cloud_storage_id: int,
     *,
-    manifest: Optional[str] = None,
-    prefix: Optional[str] = None,
+    manifest: str | None = None,
+    prefix: str | None = None,
 ) -> list[str]:
     kwargs = {}
 
@@ -572,14 +592,63 @@ def get_cloud_storage_content(
     prefix = (prefix or "").rstrip("/") + "/"
 
     with make_api_client(username) as api_client:
-        (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
+        data, _ = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
         return [
             f"{prefix}{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]
         ]
 
 
+def export_events(
+    api_client: ApiClient,
+    *,
+    api_version: int,
+    max_retries: int = 100,
+    interval: float = 0.1,
+    **kwargs,
+) -> bytes | None:
+    if api_version == 1:
+        endpoint = api_client.events_api.list_endpoint
+        query_id = ""
+        for _ in range(max_retries):
+            _, response = endpoint.call_with_http_info(
+                **kwargs, query_id=query_id, _parse_response=False
+            )
+            if response.status == HTTPStatus.CREATED:
+                break
+            assert response.status == HTTPStatus.ACCEPTED
+            if not query_id:
+                response_json = json.loads(response.data)
+                query_id = response_json["query_id"]
+            sleep(interval)
+
+        assert response.status == HTTPStatus.CREATED
+
+        _, response = endpoint.call_with_http_info(
+            **kwargs, query_id=query_id, action="download", _parse_response=False
+        )
+        assert response.status == HTTPStatus.OK
+
+        return response.data
+
+    assert api_version == 2
+
+    request_id, response = api_client.events_api.create_export(**kwargs, _check_status=False)
+    assert response.status == HTTPStatus.ACCEPTED
+
+    if "location" in kwargs and "cloud_storage_id" in kwargs:
+        background_request, response = wait_background_request(
+            api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
+        )
+        assert background_request.result_url is None
+        return None
+
+    return wait_and_download_v2(
+        api_client, rq_id=request_id.rq_id, max_retries=max_retries, interval=interval
+    )
+
+
 def iter_exclude(
-    it: Iterable[_T], excludes: Iterable[_T2], *, key: Optional[Callable[[_T], _T2]] = None
+    it: Iterable[_T], excludes: Iterable[_T2], *, key: Callable[[_T], _T2] | None = None
 ) -> Iterable[_T]:
     excludes = set(excludes)
 

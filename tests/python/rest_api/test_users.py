@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import typing
 from http import HTTPStatus
+from typing import Literal
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -23,7 +23,7 @@ class TestGetUsers:
         self,
         user,
         data,
-        id_: typing.Union[typing.Literal["self"], int, None] = None,
+        id_: Literal["self"] | int | None = None,
         *,
         exclude_paths="",
         **kwargs,
@@ -31,7 +31,7 @@ class TestGetUsers:
         with make_api_client(user) as api_client:
             # TODO: refactor into several functions
             if id_ == "self":
-                (_, response) = api_client.users_api.retrieve_self(**kwargs, _parse_response=False)
+                _, response = api_client.users_api.retrieve_self(**kwargs, _parse_response=False)
                 assert response.status == HTTPStatus.OK
                 response_data = json.loads(response.data)
             elif id_ is None:
@@ -39,27 +39,25 @@ class TestGetUsers:
                     api_client.users_api.list_endpoint, return_json=True, **kwargs
                 )
             else:
-                (_, response) = api_client.users_api.retrieve(id_, **kwargs, _parse_response=False)
+                _, response = api_client.users_api.retrieve(id_, **kwargs, _parse_response=False)
                 assert response.status == HTTPStatus.OK
                 response_data = json.loads(response.data)
 
         assert DeepDiff(data, response_data, ignore_order=True, exclude_paths=exclude_paths) == {}
 
-    def _test_cannot_see(
-        self, user, id_: typing.Union[typing.Literal["self"], int, None] = None, **kwargs
-    ):
+    def _test_cannot_see(self, user, id_: Literal["self"] | int | None = None, **kwargs):
         with make_api_client(user) as api_client:
             # TODO: refactor into several functions
             if id_ == "self":
-                (_, response) = api_client.users_api.retrieve_self(
+                _, response = api_client.users_api.retrieve_self(
                     **kwargs, _parse_response=False, _check_status=False
                 )
             elif id_ is None:
-                (_, response) = api_client.users_api.list(
+                _, response = api_client.users_api.list(
                     **kwargs, _parse_response=False, _check_status=False
                 )
             else:
-                (_, response) = api_client.users_api.retrieve(
+                _, response = api_client.users_api.retrieve(
                     id_, **kwargs, _parse_response=False, _check_status=False
                 )
             assert response.status == HTTPStatus.FORBIDDEN

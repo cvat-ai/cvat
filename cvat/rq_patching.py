@@ -4,7 +4,6 @@
 
 import traceback
 from datetime import datetime
-from typing import Optional
 
 import rq.registry
 from redis import WatchError
@@ -20,7 +19,7 @@ from rq.version import VERSION
 # there is no enqueuing dependent jobs in original function
 # https://github.com/rq/rq/issues/2006
 # Link to PR: https://github.com/rq/rq/pull/2008
-def custom_started_job_registry_cleanup(self, timestamp: Optional[float] = None):
+def custom_started_job_registry_cleanup(self, timestamp: float | None = None):
     """Remove abandoned jobs from registry and add them to FailedJobRegistry.
 
     Removes jobs with an expiry time earlier than timestamp, specified as

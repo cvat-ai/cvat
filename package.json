@@ -123,7 +123,7 @@
     "@types/fabric": "^4.5.7",
     "@types/lodash": "^4.14.191",
     "fabric": "^5.2.1",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.23"
   },
   "packageManager": "yarn@4.9.2"
 }
