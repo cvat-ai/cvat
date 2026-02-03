@@ -1,5 +1,6 @@
 services:
   cvat_server:
+    user: "1000:1000"
     environment:
       EMAIL_HOST_USER: ${EMAIL_HOST_USER}
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
@@ -12,6 +13,7 @@ services:
       DJANGO_SETTINGS_MODULE: cvat.settings.email_settings
     volumes:
       - cvat_share:/home/django/share:ro
+      - /data/projects:/data/projects
       - ./cvat/settings/email_settings.py:/home/django/cvat/settings/email_settings.py
       - ./cvat/apps/organizations/serializers.py:/home/django/cvat/apps/organizations/serializers.py
 
@@ -28,6 +30,7 @@ services:
       DJANGO_SETTINGS_MODULE: cvat.settings.email_settings
 
   cvat_worker_import:
+    user: "1000:1000"
     environment:
       EMAIL_HOST_USER: ${EMAIL_HOST_USER}
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
@@ -39,15 +42,22 @@ services:
       SITE_ID: ${SITE_ID:-3}
     volumes:
       - cvat_share:/home/django/share:ro
+      - /data/projects:/data/projects
   cvat_worker_export:
+    user: "1000:1000"
     volumes:
       - cvat_share:/home/django/share:ro
+      - /data/projects:/data/projects
   cvat_worker_annotation:
+    user: "1000:1000"
     volumes:
       - cvat_share:/home/django/share:ro
+      - /data/projects:/data/projects
   cvat_worker_chunks:
+    user: "1000:1000"
     volumes:
       - cvat_share:/home/django/share:ro
+      - /data/projects:/data/projects
 
 volumes:
   cvat_share:
