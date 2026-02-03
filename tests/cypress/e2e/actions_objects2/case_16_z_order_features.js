@@ -141,19 +141,19 @@ context('Actions on polygon', () => {
         };
 
         it('Send shape to background', () => {
-            performZOrderAction('.cvat-object-item-menu-to-background', '-1');
+            performZOrderAction('.cvat-object-item-menu-to-layer-background', '-1');
         });
 
         it('Move shape to next layer', () => {
-            performZOrderAction('.cvat-object-item-menu-move-to-next-layer', '0');
+            performZOrderAction('.cvat-object-item-menu-to-one-layer-forward', '0');
         });
 
         it('Move shape to previous layer', () => {
-            performZOrderAction('.cvat-object-item-menu-move-to-previous-layer', '-1');
+            performZOrderAction('.cvat-object-item-menu-to-one-layer-backward', '-1');
         });
 
         it('Send shape to foreground', () => {
-            performZOrderAction('.cvat-object-item-menu-to-foreground', '3');
+            performZOrderAction('.cvat-object-item-menu-to-layer-foreground', '3');
         });
     });
 });

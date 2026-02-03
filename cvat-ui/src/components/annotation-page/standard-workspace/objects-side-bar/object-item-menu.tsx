@@ -185,7 +185,7 @@ function ToBackgroundItem(props: ItemProps): JSX.Element {
             <Button
                 type='link'
                 onClick={toBackground}
-                className='cvat-object-item-menu-to-background'
+                className='cvat-object-item-menu-to-layer-background'
             >
                 <Icon component={BackgroundIcon} />
                 To background
@@ -202,7 +202,7 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
             <Button
                 type='link'
                 onClick={toForeground}
-                className='cvat-object-item-menu-to-foreground'
+                className='cvat-object-item-menu-to-layer-foreground'
             >
                 <Icon component={ForegroundIcon} />
                 To foreground
@@ -211,7 +211,7 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
     );
 }
 
-function MoveToPreviousLayerItem(props: Readonly<ItemProps>): JSX.Element {
+function ToOneLayerBackwardItem(props: Readonly<ItemProps>): JSX.Element {
     const { toolProps } = props;
     const { moveToPreviousLayerShortcut, moveToPreviousLayer } = toolProps;
     return (
@@ -219,16 +219,16 @@ function MoveToPreviousLayerItem(props: Readonly<ItemProps>): JSX.Element {
             <Button
                 type='link'
                 onClick={moveToPreviousLayer}
-                className='cvat-object-item-menu-move-to-previous-layer'
+                className='cvat-object-item-menu-to-one-layer-backward'
             >
                 <Icon component={PreviousLayerIcon} />
-                Move to previous layer
+                To one layer backward
             </Button>
         </CVATTooltip>
     );
 }
 
-function MoveToNextLayerItem(props: Readonly<ItemProps>): JSX.Element {
+function ToOneLayerForwardItem(props: Readonly<ItemProps>): JSX.Element {
     const { toolProps } = props;
     const { moveToNextLayerShortcut, moveToNextLayer } = toolProps;
     return (
@@ -236,10 +236,10 @@ function MoveToNextLayerItem(props: Readonly<ItemProps>): JSX.Element {
             <Button
                 type='link'
                 onClick={moveToNextLayer}
-                className='cvat-object-item-menu-move-to-next-layer'
+                className='cvat-object-item-menu-to-one-layer-forward'
             >
                 <Icon component={NextLayerIcon} />
-                Move to next layer
+                To one layer forward
             </Button>
         </CVATTooltip>
     );
@@ -306,8 +306,8 @@ export default function ItemMenu(props: Props): MenuProps {
         RESET_PERSPECTIVE = 'reset_perspective',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
-        MOVE_TO_PREVIOUS_LAYER = 'move_to_previous_layer',
-        MOVE_TO_NEXT_LAYER = 'move_to_next_layer',
+        TO_ONE_LAYER_BACKWARD = 'to_one_layer_backward',
+        TO_ONE_LAYER_FORWARD = 'to_one_layer_forward',
         SWITCH_COLOR = 'switch_color',
         REMOVE_ITEM = 'remove_item',
         EDIT_MASK = 'edit_mask',
@@ -377,13 +377,13 @@ export default function ItemMenu(props: Props): MenuProps {
         });
 
         items.push({
-            key: MenuKeys.MOVE_TO_PREVIOUS_LAYER,
-            label: <MoveToPreviousLayerItem toolProps={props} />,
+            key: MenuKeys.TO_ONE_LAYER_BACKWARD,
+            label: <ToOneLayerBackwardItem toolProps={props} />,
         });
 
         items.push({
-            key: MenuKeys.MOVE_TO_NEXT_LAYER,
-            label: <MoveToNextLayerItem toolProps={props} />,
+            key: MenuKeys.TO_ONE_LAYER_FORWARD,
+            label: <ToOneLayerForwardItem toolProps={props} />,
         });
     }
 
