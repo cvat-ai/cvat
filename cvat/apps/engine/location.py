@@ -49,14 +49,22 @@ def get_location_configuration(
             raise ValueError(f"The specified location {location} is not supported")
 
         cloud_storage_id = query_params.get("cloud_storage_id")
+        server_path = query_params.get("server_path")
 
         if location == Location.CLOUD_STORAGE and not cloud_storage_id:
             raise ValueError(
                 "Cloud storage was selected as location but cloud_storage_id was not specified"
             )
 
+        if location == Location.SERVER_PATH and not server_path:
+            raise ValueError(
+                "Server path was selected as location but server_path was not specified"
+            )
+
         location_conf["location"] = location
         if cloud_storage_id:
             location_conf["storage_id"] = int(cloud_storage_id)
+        if server_path:
+            location_conf["server_path"] = server_path
 
     return location_conf

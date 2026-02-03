@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Show checkpoints available for each model in the interface [PR #40]
 - Add CLAHE, sharpen, heatmat and gamma correction to OpenCv filters [PR #41]
 - Add playback speed selector in the UI [PR #42]
+- Add the option to export tasks to a server path [PR #43]
 
 ### Changed
 

@@ -53,6 +53,9 @@ function configureStorage(storage: Storage, useDefaultLocation = false): Partial
             ...(storage.cloudStorageId ? {
                 cloud_storage_id: storage.cloudStorageId,
             } : {}),
+            ...(storage.serverPath ? {
+                server_path: storage.serverPath,
+            } : {}),
         } : {}),
     };
 }

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
+import shutil
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -40,6 +41,7 @@ from cvat.apps.engine.utils import (
     get_rq_lock_for_job,
     is_dataset_export,
     sendfile,
+    validate_server_path,
 )
 from cvat.apps.events.handlers import handle_dataset_export
 
@@ -231,6 +233,51 @@ def cancel_and_delete(rq_job: RQJob) -> None:
     rq_job.delete()
 
 
+def export_resource_to_server_path(
+    server_path: str,
+    callback: callable,
+    resource_id: int,
+    format_name: str,
+    **kwargs
+) -> str:
+    """
+    Export resource to a specified server path.
+
+    Args:
+        server_path: Validated absolute path on the server where file will be saved
+        callback: Export callback function (e.g., export_task_annotations)
+        resource_id: ID of the resource to export
+        format_name: Format name for export
+        **kwargs: Additional arguments to pass to callback
+
+    Returns:
+        The server path where the file was saved
+    """
+    # Validate the server path first
+    validated_path = validate_server_path(server_path)
+
+    # Call the export callback which generates the file
+    result_path = callback(resource_id, format_name, **kwargs)
+
+    # Copy the generated file to the server path
+    if result_path and osp.exists(result_path):
+        # If validated_path is a directory, append the filename
+        if osp.isdir(validated_path):
+            filename = osp.basename(result_path)
+            final_path = osp.join(validated_path, filename)
+        else:
+            final_path = validated_path
+
+        # Copy the file to the destination
+        shutil.copy2(result_path, final_path)
+        slogger.glob.info(f"Exported file copied to server path: {final_path}")
+
+        # Return the original cache path so RQ job result handling still works
+        return result_path
+    else:
+        raise Exception(f"Export callback did not generate a file at {result_path}")
+
+
 class DatasetExportManager(ResourceExportManager):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
     SUPPORTED_SUBRESOURCES = {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
@@ -347,6 +394,22 @@ class DatasetExportManager(ResourceExportManager):
                 db_storage,
                 self.export_callback,
             ) + func_args
+        elif self.export_args.location == Location.SERVER_PATH:
+            try:
+                server_path = self.export_args.location_config["server_path"]
+            except KeyError:
+                raise serializers.ValidationError(
+                    "Server path location was selected as the destination,"
+                    " but server_path was not specified"
+                )
+
+            func = export_resource_to_server_path
+            func_args = (
+                server_path,
+                self.export_callback,
+            ) + func_args
+            # Still provide result_url for potential local download
+            result_url = self.make_result_url(rq_id=rq_id)
         else:
             db_storage = None
             result_url = self.make_result_url(rq_id=rq_id)
@@ -487,6 +550,22 @@ class BackupExportManager(ResourceExportManager):
                 db_storage,
                 self.export_callback,
             ) + func_args
+        elif self.export_args.location == Location.SERVER_PATH:
+            try:
+                server_path = self.export_args.location_config["server_path"]
+            except KeyError:
+                raise serializers.ValidationError(
+                    "Server path location was selected as the destination,"
+                    " but server_path was not specified"
+                )
+
+            func = export_resource_to_server_path
+            func_args = (
+                server_path,
+                self.export_callback,
+            ) + func_args
+            # Still provide result_url for potential local download
+            result_url = self.make_result_url(rq_id=rq_id)
         else:
             result_url = self.make_result_url(rq_id=rq_id)
 
