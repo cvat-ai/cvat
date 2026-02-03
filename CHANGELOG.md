@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.56.1'></a>
+## \[2.56.1\] - 2026-02-03
+
+### Fixed
+
+- Consensus score calculation always returning 1.0 regardless of actual agreement
+  (<https://github.com/cvat-ai/cvat/pull/10247>)
+
 <a id='changelog-2.56.0'></a>
 ## \[2.56.0\] - 2026-02-02
 
