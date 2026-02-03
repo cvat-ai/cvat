@@ -9,6 +9,8 @@
     height: 100%;
     display: flex;
     justify-content: center;
+    overflow: hidden;
+    border-radius: 10px 10px 0 0;
 
     > .ant-spin {
         position: absolute;
@@ -60,15 +62,33 @@
             top: $grid-unit-size;
             right: $grid-unit-size;
         }
+
+        > .cvat-context-image-reset-button{
+            position: absolute;
+            opacity: 0.6;
+            top: $grid-unit-size * 1.1;
+            left: $grid-unit-size * 7;
+
+            &:hover{
+                opacity: 1;
+            }
+        }
     }
 
-    > canvas {
-        object-fit: contain;
+    .draggable-wrapper{
         position: relative;
-        top: calc(50% + $grid-unit-size * 2);
-        transform: translateY(-50%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
         width: 100%;
-        height: calc(100% - $grid-unit-size * 4);
+
+        > canvas {
+            object-fit: contain;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
     }
 
     &:hover {

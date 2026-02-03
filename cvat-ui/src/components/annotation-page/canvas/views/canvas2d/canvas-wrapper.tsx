@@ -605,7 +605,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-
+        canvasInstance.html().removeEventListener('mousemove', this.onCanvasMouseMove);
         canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
         canvasInstance.html().removeEventListener('canvas.editstart', this.onCanvasEditStart);
@@ -758,6 +758,25 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { onStartIssue } = this.props;
         const { points } = event.detail;
         onStartIssue(points);
+    };
+
+    private onCanvasMouseMove = (e: MouseEvent): void => {
+        if (e.buttons === 2) {
+            const {
+                onChangeBrightnessLevel,
+                onChangeContrastLevel,
+                brightnessLevel,
+                contrastLevel,
+            } = this.props;
+
+            const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+
+            const newBrightness = clamp((brightnessLevel * 100) + (e.movementX / 2), 50, 200);
+            const newContrast = clamp((contrastLevel * 100) + (e.movementY / 2), 50, 200);
+
+            onChangeBrightnessLevel(newBrightness);
+            onChangeContrastLevel(newContrast);
+        }
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
@@ -1073,6 +1092,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             { once: true },
         );
 
+        canvasInstance.html().addEventListener('mousemove', this.onCanvasMouseMove);
         canvasInstance.html().addEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().addEventListener('click', this.onCanvasClicked);
         canvasInstance.html().addEventListener('canvas.editstart', this.onCanvasEditStart);
