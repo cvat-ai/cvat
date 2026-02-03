@@ -69,7 +69,7 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.task import JobFileMapping
 from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
-from utils.dataset_manifest import ImageManifestManager
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_video_manifest
 
 slogger = ServerLogManager(__name__)
 
@@ -505,8 +505,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
 
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
-            assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
-
             data_dir = self._db_data.get_upload_dirname()
 
             if self._lightweight:
@@ -517,6 +515,10 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     target_dir=target_data_dir,
                 )
             else:
+                assert not hasattr(
+                    self._db_data, "video"
+                ), "Only images can be stored in cloud storage"
+
                 self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
 
                 files_for_local_copy = []
@@ -1047,15 +1049,23 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             if data["client_files"] != [self.MEDIA_MANIFEST_FILENAME]:
                 raise ValidationError(f"Expected {self.MEDIA_MANIFEST_FILENAME} in backup files")
 
-            manifest = ImageManifestManager(
+            media_manifest_path = (
                 self._db_task.data.get_upload_dirname() / self.MEDIA_MANIFEST_FILENAME
             )
+
             data["server_files"] = []
-            for _, manifest_entry in manifest:
-                data["server_files"].append(manifest_entry.full_name)
-                data["server_files"].extend(
-                    manifest_entry.get("meta", {}).get("related_images", [])
-                )
+
+            if is_video_manifest(media_manifest_path):
+                manifest = VideoManifestManager(media_manifest_path)
+                data["server_files"].append(manifest.video_name)
+            else:
+                manifest = ImageManifestManager(media_manifest_path)
+
+                for _, manifest_entry in manifest:
+                    data["server_files"].append(manifest_entry.full_name)
+                    data["server_files"].extend(
+                        manifest_entry.get("meta", {}).get("related_images", [])
+                    )
         else:
             if data_serializer.initial_data["storage"] != StorageChoice.LOCAL:
                 raise ValidationError(f"Unexpected storage type in the backup files")

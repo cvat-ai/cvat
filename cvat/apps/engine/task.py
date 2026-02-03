@@ -866,7 +866,7 @@ def create_thread(
             raise ValidationError('Combined data types are not supported')
 
         details = {
-            'source_paths': [db_data.get_openable(f) for f in media_files],
+            'source_paths': [db_data.get_openable(f) for f in media_files] if media_type == "video" and not is_backup_restore else [upload_dir / f for f in media_files],
             'step': db_data.get_frame_step(),
             'start': db_data.start_frame,
             'stop': data['stop_frame'],
@@ -1039,30 +1039,35 @@ def create_thread(
 
         if task_mode == MEDIA_TYPES['video']['mode']:
             if manifest_file:
-                try:
+                if is_data_in_cloud and is_backup_restore:
+                    manifest = VideoManifestManager(db_data.get_manifest_path())
+                    manifest.init_index()
+                else:
                     update_status('Validating the input manifest file')
 
                     manifest = VideoManifestValidator(
                         source_path=db_data.get_openable(media_files[0]),
                         manifest_path=db_data.get_manifest_path()
                     )
-                    manifest.init_index()
-                    manifest.validate_seek_key_frames()
 
-                    if not len(manifest):
-                        raise ValidationError("No key frames found in the manifest")
+                    try:
+                        manifest.init_index()
+                        manifest.validate_seek_key_frames()
 
-                except Exception as ex:
-                    manifest.remove()
-                    manifest = None
+                        if not len(manifest):
+                            raise ValidationError("No key frames found in the manifest")
 
-                    if isinstance(ex, (ValidationError, AssertionError)):
-                        base_msg = f"Invalid manifest file was uploaded: {ex}"
-                    else:
-                        base_msg = "Failed to parse the uploaded manifest file"
-                        slogger.glob.warning(ex, exc_info=True)
+                    except Exception as ex:
+                        manifest.remove()
+                        manifest = None
 
-                    update_status(base_msg)
+                        if isinstance(ex, (ValidationError, AssertionError)):
+                            base_msg = f"Invalid manifest file was uploaded: {ex}"
+                        else:
+                            base_msg = "Failed to parse the uploaded manifest file"
+                            slogger.glob.warning(ex, exc_info=True)
+
+                        update_status(base_msg)
             else:
                 manifest = None
 
