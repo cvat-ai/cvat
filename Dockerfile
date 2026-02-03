@@ -5,23 +5,24 @@ FROM ${BASE_IMAGE} AS build-image-base
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
+        cargo-1.85 \
         curl \
         g++ \
         gcc \
         git \
         libgeos-dev \
+        libhdf5-dev \
         libldap2-dev \
+        libopus-dev \
         libsasl2-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libxmlsec1-openssl \
         make \
         nasm \
         pkg-config \
         python3-dev \
         python3-pip \
-        libxml2-dev \
-        libxmlsec1-dev \
-        libxmlsec1-openssl \
-        libhdf5-dev \
-        cargo-1.85 \
     && update-alternatives \
         --install /usr/bin/rustc rustc /usr/bin/rustc-1.85 185 \
         --slave /usr/bin/cargo cargo /usr/bin/cargo-1.85 \
@@ -51,7 +52,7 @@ RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.
 WORKDIR /tmp/ffmpeg
 RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --output - | \
     tar -zx --strip-components=1 && \
-    ./configure --disable-nonfree --disable-gpl --enable-libopenh264 \
+    ./configure --disable-nonfree --disable-gpl --enable-libopenh264 --enable-libopus \
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
     make -j5 && make install && make clean
 
@@ -122,6 +123,7 @@ RUN apt-get update && \
         libgl1 \
         libgomp1 \
         libldap-2.5-0 \
+        libopus0 \
         libpython3.10 \
         libsasl2-2 \
         libxml2 \
