@@ -35,8 +35,8 @@ interface Props {
     propagateShortcut: string;
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
-    oneLayerBackwardShortcut: string;
-    oneLayerForwardShortcut: string;
+    toOneLayerBackwardShortcut: string;
+    toOneLayerForwardShortcut: string;
     removeShortcut: string;
     sliceShortcut: string;
     runAnnotationsActionShortcut: string;
@@ -75,8 +75,8 @@ function ItemTopComponent(props: Props): JSX.Element {
         propagateShortcut,
         toBackgroundShortcut,
         toForegroundShortcut,
-        oneLayerBackwardShortcut,
-        oneLayerForwardShortcut,
+        toOneLayerBackwardShortcut,
+        toOneLayerForwardShortcut,
         removeShortcut,
         sliceShortcut,
         runAnnotationsActionShortcut,
@@ -162,8 +162,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                             propagateShortcut,
                             toBackgroundShortcut,
                             toForegroundShortcut,
-                            oneLayerBackwardShortcut,
-                            oneLayerForwardShortcut,
+                            toOneLayerBackwardShortcut,
+                            toOneLayerForwardShortcut,
                             removeShortcut,
                             sliceShortcut,
                             runAnnotationsActionShortcut,
