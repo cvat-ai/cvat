@@ -8343,17 +8343,15 @@ components:
           type: integer
           nullable: true
           readOnly: true
-        issues:
-          $ref: '#/components/schemas/IssuesSummary'
         consensus_replicas:
           type: integer
           readOnly: true
           deprecated: true
+        issues:
+          $ref: '#/components/schemas/IssuesSummary'
         has_replicas:
           type: boolean
           readOnly: true
-        issues:
-          $ref: '#/components/schemas/IssuesSummary'
       required:
       - issues
       - labels

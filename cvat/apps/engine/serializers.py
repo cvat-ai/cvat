@@ -830,7 +830,7 @@ class JobReadSerializer(JobReadForEventSerializer):
     class Meta(JobReadForEventSerializer.Meta):
         model = models.Job
         fields = JobReadForEventSerializer.Meta.fields + (
-            'issues', 'consensus_replicas', 'has_replicas',
+            'consensus_replicas', 'issues', 'has_replicas',
         )
         read_only_fields = fields
         list_serializer_class = JobReadListSerializer
