@@ -144,7 +144,7 @@ export default function ResourceFilterHOC(
             } catch (_: any) {
                 // nothing to do
             }
-        }, []);
+        }, [value]);
 
         useEffect(() => {
             const listener = (event: MouseEvent): void => {

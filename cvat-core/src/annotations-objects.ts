@@ -82,7 +82,7 @@ export interface BasicInjection {
     jobType: JobType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
-    consensusReplicas?: number;
+    replicasCount?: number;
 }
 
 type AnnotationInjection = BasicInjection & {
@@ -135,8 +135,8 @@ class Annotation {
         this.color = color;
         this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
         this.score = data.score;
-        this.votes = injection.consensusReplicas !== undefined ?
-            Math.round(this.score * injection.consensusReplicas) : 0;
+        this.votes = injection.replicasCount !== undefined ?
+            Math.round(this.score * injection.replicasCount) : 0;
         this.updated = Date.now();
         this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
             attributeAccumulator[attr.spec_id] = attr.value;

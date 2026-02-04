@@ -1034,6 +1034,8 @@ class JobQuerySet(models.QuerySet):
     def with_issue_counts(self):
         return self.annotate(issue__count=models.Count('issue'))
 
+    def with_child_jobs_counts(self):
+        return self.annotate(child_jobs__count=models.Count('child_job'))
 
 
 class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
@@ -1071,6 +1073,9 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
     issue__count: MaybeUndefined[int]
+    "Can be defined by the fetching queryset"
+
+    child_jobs__count: MaybeUndefined[int]
     "Can be defined by the fetching queryset"
 
     def get_target_storage(self) -> Storage | None:

@@ -25,9 +25,9 @@ import JobActionsItems from './actions-menu-items';
 
 interface Props {
     jobInstance: Job;
-    consensusJobsPresent: boolean;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    onApplyFilter?: (filter: string | null) => void;
 }
 
 function JobActionsComponent(
@@ -36,8 +36,8 @@ function JobActionsComponent(
     const {
         jobInstance,
         triggerElement,
-        consensusJobsPresent,
         dropdownTrigger,
+        onApplyFilter,
     } = props;
     const dispatch = useDispatch();
 
@@ -77,7 +77,7 @@ function JobActionsComponent(
     }, [jobInstance]);
 
     const onMergeConsensusJob = useCallback(() => {
-        if (consensusJobsPresent && jobInstance.parentJobId === null) {
+        if (jobInstance.replicasCount > 0) {
             Modal.confirm({
                 title: 'The consensus job will be merged',
                 content: 'Existing annotations in the parent job will be updated. Continue?',
@@ -92,7 +92,7 @@ function JobActionsComponent(
                 okText: 'Merge',
             });
         }
-    }, [consensusJobsPresent, jobInstance]);
+    }, [jobInstance]);
 
     const onDeleteJob = useCallback(() => {
         const jobsToDelete = allJobs.filter((job) => selectedIds.includes(job.id));
@@ -125,6 +125,30 @@ function JobActionsComponent(
             okText: isBulk ? 'Delete selected' : 'Delete',
         });
     }, [jobInstance, allJobs, selectedIds, dispatch]);
+
+    const onGoToParent = useCallback(() => {
+        if (onApplyFilter) {
+            const selectedJobs = allJobs.filter((job) => selectedIds.includes(job.id));
+            const jobsToProcess = selectedJobs.length ? selectedJobs : [jobInstance];
+            const parentIds = [...new Set(
+                jobsToProcess.map((j) => j?.parentJobId).filter((id) => id != null),
+            )];
+            const logic = JSON.stringify({
+                or: parentIds.map((id) => ({ '==': [{ var: 'id' }, id] })),
+            });
+            onApplyFilter(logic);
+        }
+    }, [jobInstance, onApplyFilter, allJobs, selectedIds]);
+
+    const onGoToReplicas = useCallback(() => {
+        if (onApplyFilter) {
+            const jobIds = selectedIds.length ? selectedIds : [jobInstance.id];
+            const logic = JSON.stringify({
+                or: jobIds.map((id) => ({ '==': [{ var: 'parent_job_id' }, id] })),
+            });
+            onApplyFilter(logic);
+        }
+    }, [jobInstance.id, onApplyFilter, selectedIds]);
 
     const onUpdateJobField = useCallback((
         fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>,
@@ -198,8 +222,10 @@ function JobActionsComponent(
             onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
             onImportAnnotations,
             onExportAnnotations,
-            onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ? onMergeConsensusJob : null,
+            onMergeConsensusJob: jobInstance.replicasCount > 0 ? onMergeConsensusJob : null,
             onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
+            onGoToParent: jobInstance.parentJobId ? onGoToParent : null,
+            onGoToReplicas: jobInstance.replicasCount > 0 ? onGoToReplicas : null,
             selectedIds,
         }, props);
     }

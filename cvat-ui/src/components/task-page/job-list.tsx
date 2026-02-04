@@ -39,9 +39,6 @@ interface Props {
 function filterJobs(jobs: Job[], query: JobsQuery): Job[] {
     let result = jobs;
 
-    // consensus jobs will be under the collapse view
-    result = result.filter((job) => job.parentJobId === null);
-
     if (query.sort) {
         let sort = query.sort.split(',');
         const orders = sort.map((elem: string) => (elem.startsWith('-') ? 'desc' : 'asc'));
@@ -61,6 +58,7 @@ function filterJobs(jobs: Job[], query: JobsQuery): Job[] {
             updatedDate: job.updatedDate,
             type: job.type,
             id: job.id,
+            parent_job_id: job.parentJobId,
         }));
         const filter = JSON.parse(query.filter);
         result = result.filter((job, index) => jsonLogic.apply(filter, converted[index]));
@@ -86,50 +84,9 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
         pageSize: 10,
         sort: null,
         search: null,
-        filter: null,
+        filter: '{"and":[{"!":{"var":"parent_job_id"}}]}',
     };
-    const updatedQuery = useResourceQuery<JobsQuery>(defaultQuery);
-
-    const [jobChildMapping, setJobChildMapping] = useState<Record<number, Job[]>>({});
-    useEffect(() => {
-        if (taskInstance.consensusEnabled) {
-            const mapping = jobs.reduce((acc, job) => {
-                if (job.parentJobId === null && !acc[job.id]) {
-                    acc[job.id] = [];
-                } else if (job.parentJobId !== null) {
-                    if (!acc[job.parentJobId]) {
-                        acc[job.parentJobId] = [];
-                    }
-                    acc[job.parentJobId].push(job);
-                }
-                return acc;
-            }, {} as Record<number, Job[]>);
-            setJobChildMapping(mapping);
-        }
-    }, [taskInstance]);
-
-    const jobChildIdMapping = Object.keys(jobChildMapping).reduce((acc, jobId) => {
-        const childIds = jobChildMapping[Number(jobId)].map((job) => job.id);
-        acc[Number(jobId)] = childIds;
-        return acc;
-    }, {} as Record<number, number[]>);
-
-    const [uncollapsedJobs, setUncollapsedJobs] = useState<Record<number, boolean>>({});
-    useEffect(() => {
-        const savedState = localStorage.getItem('uncollapsedJobs');
-        if (savedState) {
-            setUncollapsedJobs(JSON.parse(savedState));
-        }
-    }, []);
-    const onCollapseChange = useCallback((jobId: number) => {
-        setUncollapsedJobs((prevState) => {
-            const newState = { ...prevState };
-            newState[jobId] = !prevState[jobId];
-
-            localStorage.setItem('uncollapsedJobs', JSON.stringify(newState));
-            return newState;
-        });
-    }, []);
+    const updatedQuery = useResourceQuery<JobsQuery>(defaultQuery, defaultQuery);
 
     const [query, setQuery] = useState<JobsQuery>(updatedQuery);
     const filteredJobs = filterJobs(jobs, query);
@@ -150,10 +107,16 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
     const onSelectAll = useCallback(() => {
         const allJobIds = viewedJobs.flatMap((job) => [
             job.id,
-            ...(jobChildIdMapping[job.id] || []),
         ]);
         dispatch(selectionActions.selectResources(allJobIds, SelectedResourceType.JOBS));
     }, [dispatch, filteredJobs]);
+
+    const onApplyFilter = useCallback((filter: string | null) => {
+        setQuery({
+            ...query,
+            filter: filter || '{}',
+        });
+    }, [query]);
 
     return (
         <>
@@ -193,12 +156,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                         onRecentVisibleChange={(visible: boolean) => (
                             setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
                         )}
-                        onApplyFilter={(filter: string | null) => {
-                            setQuery({
-                                ...query,
-                                filter,
-                            });
-                        }}
+                        onApplyFilter={onApplyFilter}
                     />
                     <div className='cvat-job-add-wrapper'>
                         <Button onClick={onCreateJob} type='primary' className='cvat-create-job' icon={<PlusOutlined />} />
@@ -210,7 +168,6 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                     <Col className='cvat-jobs-list'>
                         <BulkWrapper
                             currentResourceIds={jobIds}
-                            parentToChildrenMap={jobChildIdMapping}
                             resourceType={SelectedResourceType.JOBS}
                         >
                             {(selectProps) => (
@@ -223,11 +180,9 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                                                 job={job}
                                                 task={taskInstance}
                                                 onJobUpdate={onJobUpdate}
-                                                childJobs={jobChildMapping[job.id] || []}
-                                                defaultCollapsed={!uncollapsedJobs[job.id]}
-                                                onCollapseChange={onCollapseChange}
                                                 selected={selected}
                                                 onClick={onClick}
+                                                onApplyFilter={onApplyFilter}
                                             />
                                         );
                                     })

@@ -20,6 +20,8 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
+    onGoToParent: (() => void) | null;
+    onGoToReplicas: (() => void) | null;
     startEditField: (key: string) => void;
     selectedIds: number[];
 }
@@ -41,10 +43,15 @@ export default function JobActionsItems(
         onMergeConsensusJob,
         onDeleteJob,
         selectedIds = [],
+        onGoToParent,
+        onGoToReplicas,
     } = menuItemsData;
 
     const isBulkMode = selectedIds.length > 1;
-    const bulkAllowedKeys = ['edit_assignee', 'edit_state', 'edit_stage', 'export_job', 'delete'];
+    const bulkAllowedKeys = [
+        'edit_assignee', 'edit_state', 'edit_stage', 'export_job', 'delete',
+        'go-to-parent', 'go-to-replicas',
+    ];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
     const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
 
@@ -132,6 +139,23 @@ export default function JobActionsItems(
             label: withCount('Delete', 'delete'),
             disabled: isDisabled('delete'),
         }, 100]);
+    }
+
+    if (onGoToParent) {
+        menuItems.push([{
+            key: 'go-to-parent',
+            onClick: onGoToParent,
+            label: withCount('Go to parent', 'go-to-parent'),
+            disabled: isDisabled('go-to-parent'),
+        }, 200]);
+    }
+    if (onGoToReplicas) {
+        menuItems.push([{
+            key: 'go-to-replicas',
+            onClick: onGoToReplicas,
+            label: withCount('Go to replicas', 'go-to-replicas'),
+            disabled: isDisabled('go-to-replicas'),
+        }, 210]);
     }
 
     menuItems.push(

@@ -8346,8 +8346,12 @@ components:
         consensus_replicas:
           type: integer
           readOnly: true
+          deprecated: true
         issues:
           $ref: '#/components/schemas/IssuesSummary'
+        replicas_count:
+          type: integer
+          readOnly: true
       required:
       - issues
       - labels
