@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import functools
+import io
 import json
 import os
 from abc import ABC, abstractmethod
@@ -16,7 +17,7 @@ from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from queue import Queue
-from typing import Any, BinaryIO, TypeVar
+from typing import IO, Any, BinaryIO, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
@@ -171,6 +172,9 @@ class AbstractCloudStorage(ABC):
     @abstractmethod
     def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
         pass
+
+    def get_file_stream(self, key: str, /, *, offset: int) -> tuple[Any, int]:
+        raise NotImplementedError()
 
     @validate_file_status
     @validate_bucket_status
@@ -372,6 +376,9 @@ class AbstractCloudStorage(ABC):
     @abstractmethod
     def supported_actions(self):
         pass
+
+    def get_openable(self, key: str, /) -> NamedOpenable:
+        return _CloudStorageOpenable(self, key)
 
 
 class HeaderFirstDownloader(ABC):
@@ -742,6 +749,10 @@ class S3CloudStorage(AbstractCloudStorage):
                 else:
                     slogger.glob.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
             raise
+
+    def get_file_stream(self, key: str, /, *, offset: int) -> tuple[Any, int]:
+        obj = self._client.get_object(Bucket=self.bucket.name, Key=key, Range=f"bytes={offset}-")
+        return obj["Body"], obj["ContentLength"] + offset
 
     def delete_file(self, file_name: str, /):
         try:
@@ -1181,3 +1192,77 @@ def export_resource_to_cloud_storage(
     storage.upload_file(file_path, rq_job_meta.result_filename)
 
     return file_path
+
+
+class _CloudStorageOpenable(NamedOpenable):
+    def __init__(self, storage: AbstractCloudStorage, key: str):
+        self._storage = storage
+        self._key = key
+
+    def open(self, mode: str) -> IO[bytes]:
+        assert mode == "rb"
+        return _CloudStorageFile(self._storage, self._key)
+
+    def __fspath__(self) -> str:
+        return self._key
+
+
+class _CloudStorageFile(io.IOBase):
+    _SKIP_THRESHOLD = 1 << 20
+
+    def __init__(self, storage: AbstractCloudStorage, key: str):
+        self._storage = storage
+        self._key = key
+
+        self._logical_offset = self._stream_offset = 0
+        self._stream, self._length = self._storage.get_file_stream(self._key, offset=0)
+
+    def _reopen_stream(self, offset: int) -> None:
+        self._stream.close()
+        self._stream, new_length = self._storage.get_file_stream(self._key, offset=offset)
+        self._stream_offset = offset
+
+        assert new_length == self._length  # TODO: exception
+
+    def readable(self) -> bool:
+        return True
+
+    def _read_from_stream(self, size: int) -> bytes:
+        # TODO: reopen the stream if it fails
+        result = self._stream.read(size)
+        self._stream_offset += len(result)
+        return result
+
+    def read(self, size: int = -1) -> bytes:
+        # synchronize the stream offset with the logical offset
+        if self._stream_offset != self._logical_offset:
+            if 0 <= self._logical_offset - self._stream_offset <= self._SKIP_THRESHOLD:
+                self._read_from_stream(self._logical_offset - self._stream_offset)
+            else:
+                self._reopen_stream(self._logical_offset)
+
+        result = self._read_from_stream(size)
+        self._logical_offset += len(result)
+        return result
+
+    def seekable(self) -> bool:
+        return True
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        match whence:
+            case io.SEEK_SET:
+                self._logical_offset = offset
+            case io.SEEK_CUR:
+                self._logical_offset = self._logical_offset + offset
+            case io.SEEK_END:
+                self._logical_offset = self._length + offset
+            case _:
+                assert False, f"invalid whence value {whence}"
+
+        return self._logical_offset
+
+    def tell(self) -> int:
+        return self._logical_offset
+
+    def close(self):
+        self._stream.close()

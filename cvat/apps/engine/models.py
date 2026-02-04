@@ -36,6 +36,7 @@ from cvat.apps.events.utils import cache_deleted
 
 if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
+    from utils.dataset_manifest.utils import NamedOpenable
 
 
 class SafeCharField(models.CharField):
@@ -476,6 +477,14 @@ class Data(models.Model):
 
     def get_static_cache_dirname(self, quality: FrameQuality) -> Path:
         return self.get_data_dirname() / quality.name.lower()
+
+    def get_openable(self, rel_path: str) -> NamedOpenable:
+        if self.storage == StorageChoice.CLOUD_STORAGE:
+            from .cloud_provider import db_storage_to_storage_instance
+
+            # TODO: what about when cloud storage is disconnected?
+            return db_storage_to_storage_instance(self.cloud_storage).get_openable(rel_path)
+        return self.get_raw_data_dirname() / rel_path
 
     def get_chunk_type(self, quality: FrameQuality) -> DataChoice:
         if quality == FrameQuality.ORIGINAL:
