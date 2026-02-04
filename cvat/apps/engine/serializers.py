@@ -743,11 +743,12 @@ class JobReadListSerializer(serializers.ListSerializer):
                 visible_tasks_perm.filter(visible_tasks_queryset).values_list("id", flat=True)
             )
 
+            job_ids = set(j.id for j in page)
             # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
-            # limiting in only for the page
+            # limiting it only for the page
             issue_counts = dict(
                 models.Job.objects.with_issue_counts().filter(
-                    id__in=set(j.id for j in page)
+                    id__in=job_ids
                 ).values_list("id", "issue__count")
             )
 
@@ -755,7 +756,7 @@ class JobReadListSerializer(serializers.ListSerializer):
             # limiting it only for the page
             children_counts = dict(
                 models.Job.objects.with_child_jobs_counts().filter(
-                    id__in=set(j.id for j in page)
+                    id__in=job_ids
                 ).values_list("id", "child_jobs__count")
             )
 
