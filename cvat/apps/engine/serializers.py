@@ -823,8 +823,8 @@ class JobReadForEventSerializer(serializers.ModelSerializer):
 
 @extend_schema_serializer(deprecate_fields=["consensus_replicas"])
 class JobReadSerializer(JobReadForEventSerializer):
-    issues = IssuesSummarySerializer(source='*')
     consensus_replicas = serializers.IntegerField(read_only=True)
+    issues = IssuesSummarySerializer(source='*')
     has_replicas = serializers.BooleanField(read_only=True)
 
     class Meta(JobReadForEventSerializer.Meta):

@@ -8352,6 +8352,8 @@ components:
         has_replicas:
           type: boolean
           readOnly: true
+        issues:
+          $ref: '#/components/schemas/IssuesSummary'
       required:
       - issues
       - labels
