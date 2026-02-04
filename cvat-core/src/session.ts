@@ -534,7 +534,7 @@ export class Job extends Session {
         source_storage: Storage,
         target_storage: Storage,
         parent_job_id: number | null;
-        has_replicas: number;
+        replicas_count: number;
     };
 
     constructor(initialData: InitializerType) {
