@@ -2,8 +2,8 @@ FROM ubuntu:22.04
 RUN apt-get update && apt-get install -y python3=3.10.* python3-pip
 COPY ai-models/tracker/sam2/ /app/
 WORKDIR /app
+RUN apt-get install -y curl git
 RUN pip3 install cvat-cli -r requirements.txt
-RUN apt-get install -y curl
 COPY ai-models/agents_deployment/sam2/function_registration.sh /app/function_registration.sh
 COPY ai-models/agents_deployment/sam2/function_deregistration.sh /app/function_deregistration.sh
 COPY ai-models/agents_deployment/sam2/entrypoint.sh /entrypoint.sh
