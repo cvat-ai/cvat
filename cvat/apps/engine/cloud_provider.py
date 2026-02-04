@@ -14,7 +14,7 @@ from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
 from datetime import datetime
 from enum import Enum
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath
 from queue import Queue
 from typing import Any, BinaryIO, TypeVar
 
@@ -181,13 +181,13 @@ class AbstractCloudStorage(ABC):
 
     @validate_file_status
     @validate_bucket_status
-    def download_file(self, key: str, path: str, /) -> None:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+    def download_file(self, key: str, path: Path, /) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
         try:
             with open(path, "wb") as f:
                 self._download_fileobj_to_stream(key, f)
         except Exception:
-            Path(path).unlink()
+            path.unlink()
             raise
 
     @validate_file_status
@@ -243,8 +243,8 @@ class AbstractCloudStorage(ABC):
 
     def bulk_download_to_dir(
         self,
-        files: list[str | tuple[str, str]],
-        upload_dir: str,
+        files: Sequence[PurePath | tuple[str, PurePath]],
+        upload_dir: Path,
     ) -> None:
         """
         :param files: a list of filenames or (storage filename, output filename) pairs
@@ -259,10 +259,10 @@ class AbstractCloudStorage(ABC):
                 if isinstance(f, tuple):
                     key, output_path = f
                 else:
-                    key = f
+                    key = f.as_posix()
                     output_path = f
 
-                output_path = os.path.join(upload_dir, output_path)
+                output_path = upload_dir / output_path
                 futures.append(executor.submit(self.download_file, key, output_path))
 
             done, _ = wait(futures, return_when=FIRST_EXCEPTION)
@@ -275,7 +275,7 @@ class AbstractCloudStorage(ABC):
         pass
 
     @abstractmethod
-    def upload_file(self, file_path: str, key: str | None = None, /) -> None:
+    def upload_file(self, file_path: Path, key: str | None = None, /) -> None:
         pass
 
     @abstractmethod
@@ -678,11 +678,11 @@ class S3CloudStorage(AbstractCloudStorage):
         )
 
     @validate_bucket_status
-    def upload_file(self, file_path: str, key: str | None = None, /):
+    def upload_file(self, file_path: Path, key: str | None = None, /):
         try:
             self._bucket.upload_file(
-                file_path,
-                key or os.path.basename(file_path),
+                os.fspath(file_path),
+                key or file_path.name,
                 Config=TransferConfig(max_io_queue=self.transfer_config["max_io_queue"]),
             )
         except ClientError as ex:
@@ -866,9 +866,9 @@ class AzureBlobCloudStorage(AbstractCloudStorage):
     def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
         self._client.upload_blob(name=key, data=file_obj, overwrite=True)
 
-    def upload_file(self, file_path: str, key: str | None = None, /):
+    def upload_file(self, file_path: Path, key: str | None = None, /):
         with open(file_path, "rb") as f:
-            self.upload_fileobj(f, key or os.path.basename(file_path))
+            self.upload_fileobj(f, key or file_path.name)
 
     def _list_raw_content_on_one_page(
         self,
@@ -1029,8 +1029,8 @@ class GcsCloudStorage(AbstractCloudStorage):
         self.bucket.blob(key).upload_from_file(file_obj)
 
     @validate_bucket_status
-    def upload_file(self, file_path: str, key: str | None = None, /):
-        self.bucket.blob(key or os.path.basename(file_path)).upload_from_filename(file_path)
+    def upload_file(self, file_path: Path, key: str | None = None, /):
+        self.bucket.blob(key or file_path.name).upload_from_filename(os.fspath(file_path))
 
     @validate_file_status
     @validate_bucket_status
@@ -1160,7 +1160,7 @@ def import_resource_from_cloud_storage(
     **kwargs,
 ) -> Any:
     storage = db_storage_to_storage_instance(db_storage)
-    storage.download_file(key, filename)
+    storage.download_file(key, Path(filename))
 
     return import_func(filename, *args, **kwargs)
 
@@ -1178,6 +1178,6 @@ def export_resource_to_cloud_storage(
     rq_job_meta = ExportRQMeta.for_job(rq_job)
 
     storage = db_storage_to_storage_instance(db_storage)
-    storage.upload_file(file_path, rq_job_meta.result_filename)
+    storage.upload_file(Path(file_path), rq_job_meta.result_filename)
 
     return file_path
