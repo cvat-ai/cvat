@@ -1,0 +1,54 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+metadata:
+  name: pth-facebookresearch-sam-vit-h
+  namespace: cvat
+  annotations:
+    name: Segment Anything
+    version: 2
+    type: interactor
+    spec:
+    min_pos_points: 0
+    min_neg_points: 0
+    startswith_box_optional: true
+    animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/develop/site/content/en/images/hrnet_example.gif
+    help_message: The interactor allows to get a mask of an object using at least one positive, and any negative points inside it
+
+spec:
+  description: Interactive object segmentation with Segment-Anything (CUDA 12.8)
+  runtime: 'python:3.11'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/sam
+
+  build:
+    image:  cvat.pth.unified:cuda12.8
+    baseImage: pytorch-unified:cuda12.8
+    noBaseImagesPull: true
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 32768
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+    requests:
+      cpu: "1"
+      memory: "4Gi"
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

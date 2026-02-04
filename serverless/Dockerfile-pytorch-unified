@@ -76,6 +76,9 @@ COPY pytorch/glass/nuclio/model_handler.py /opt/nuclio/glass_model_handler.py
 COPY pytorch/u2net/nuclio/main.py /opt/nuclio/u2net_main.py
 COPY pytorch/u2net/nuclio/model_handler.py /opt/nuclio/u2net_model_handler.py
 
+COPY pytorch/facebookresearch/sam/nuclio/main.py /opt/nuclio/sam_main.py
+COPY pytorch/facebookresearch/sam/nuclio/model_handler.py /opt/nuclio/sam_model_handler.py
+
 # Create directory structure for models
 RUN mkdir -p /opt/nuclio/models
 
@@ -87,7 +90,7 @@ ENV PYTHONUNBUFFERED=1 \
 LABEL maintainer="DigitalSense AI" \
       description="Unified PyTorch CUDA 12.8 image for all CVAT PyTorch serverless functions" \
       version="2.0" \
-      models="GLASS,U2Net,TransT"
+      models="GLASS,U2Net,TransT,SAM"
 
 # Note: Model-specific code will be copied by Nuclio during deployment
 # Each function will use this same image with different handlers
