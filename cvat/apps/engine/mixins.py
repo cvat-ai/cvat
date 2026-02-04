@@ -11,7 +11,6 @@ import shutil
 from pathlib import Path
 from textwrap import dedent
 from unittest import mock
-from urllib.parse import urljoin
 
 import django_rq
 from django.conf import settings
@@ -90,7 +89,7 @@ class UploadMixin:
                 response.__setitem__(key, value)
         return response
 
-    def upload_data(self, request: ExtendedRequest):
+    def upload_data(self, request: ExtendedRequest, append_url_name: str) -> Response:
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
         bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
         start_upload = request.headers.get('Upload-Start', None) is not None
@@ -101,7 +100,7 @@ class UploadMixin:
         elif start_upload:
             return self.upload_started(request)
         elif tus_request:
-            return self.init_tus_upload(request)
+            return self.init_tus_upload(request, append_url_name)
         elif bulk_file_upload:
             return self.append_files(request)
         else: # backward compatibility case - no upload headers were found
@@ -110,7 +109,7 @@ class UploadMixin:
     def should_result_file_be_replaced(self) -> bool:
         return self.action in ("data", "append_data_chunk")
 
-    def init_tus_upload(self, request: ExtendedRequest):
+    def init_tus_upload(self, request: ExtendedRequest, append_url_name: str) -> Response:
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -152,8 +151,6 @@ class UploadMixin:
             metadata=metadata, upload_dir=upload_dir, user_id=request.user.id
         )
 
-        location = request.build_absolute_uri(request.path)
-
         # FUTURE-TODO: migrate to common TMP cache where files
         # are deleted automatically by a periodic background job
         if self.action in ("annotations", "dataset") and str(upload_dir) != TmpDirManager.TMP_ROOT:
@@ -175,7 +172,9 @@ class UploadMixin:
         return self._tus_response(
             status=status.HTTP_201_CREATED,
             extra_headers={
-                'Location': urljoin(location, tus_file.file_id.as_str),
+                "Location": self.reverse_action(
+                    append_url_name, kwargs={**self.kwargs, "file_id": tus_file.file_id.as_str}
+                ),
                 'Upload-Filename': tus_file.meta_file.meta.filename if replaceable_result_file else tus_file.file_id.as_str
             }
         )
