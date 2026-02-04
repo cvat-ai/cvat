@@ -479,6 +479,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction.isAborted = true;
             this.interaction.latestRequest = null;
             if (this.interaction.lastestApproximatedPoints.length) {
+                // constructFromPoints will create the annotation and re-enable the interactor
                 this.constructFromPoints();
             }
         } else if (shapesUpdated) {
@@ -868,9 +869,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private async constructFromPoints(): Promise<void> {
-        const { convertMasksToPolygons } = this.state;
+        const { convertMasksToPolygons, activeInteractor, startInteractingWithBox } = this.state;
         const {
-            frame, labels, curZOrder, activeLabelID, createAnnotations,
+            frame, labels, curZOrder, activeLabelID, createAnnotations, canvasInstance, onInteractionStart,
         } = this.props;
 
         if (convertMasksToPolygons) {
@@ -899,6 +900,29 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             });
 
             createAnnotations([object]);
+        }
+
+        // Reset interaction state to allow continuing with the same interactor
+        this.interaction.id = null;
+        this.interaction.isAborted = false;
+        this.interaction.lastestApproximatedPoints = [];
+        this.interaction.latestResponse = { rle: [], top: 0, left: 0, width: 0, height: 0 };
+
+        // Re-enable the interactor to continue annotating without having to click "Interact" again
+        // Use setTimeout to ensure the canvas has finished cleanup before re-enabling
+        if (activeInteractor && activeLabelID) {
+            setTimeout(() => {
+                const interactorParameters = {
+                    ...omit(activeInteractor.params.canvas, 'startWithBoxOptional'),
+                    ...(activeInteractor.params.canvas.startWithBoxOptional ? {
+                        startWithBox: startInteractingWithBox,
+                    } : {
+                        startWithBox: activeInteractor.params.canvas.startWithBox,
+                    }),
+                };
+                canvasInstance.interact({ shapeType: 'points', enabled: true, ...interactorParameters });
+                onInteractionStart(activeInteractor, activeLabelID, interactorParameters);
+            }, 50);
         }
     }
 
