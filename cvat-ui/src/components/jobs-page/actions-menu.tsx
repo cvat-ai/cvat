@@ -127,16 +127,28 @@ function JobActionsComponent(
     }, [jobInstance, allJobs, selectedIds, dispatch]);
 
     const onGoToParent = useCallback(() => {
-        if (jobInstance.parentJobId && onApplyFilter) {
-            onApplyFilter(`{"and":[{"==":[{"var":"id"},${jobInstance.parentJobId}]}]}`);
+        if (onApplyFilter) {
+            const selectedJobs = allJobs.filter((job) => selectedIds.includes(job.id));
+            const jobsToProcess = selectedJobs.length ? selectedJobs : [jobInstance];
+            const parentIds = [...new Set(
+                jobsToProcess.map((j) => j?.parentJobId).filter((id) => id != null),
+            )];
+            const logic = JSON.stringify({
+                or: parentIds.map((id) => ({ '==': [{ var: 'id' }, id] })),
+            });
+            onApplyFilter(logic);
         }
-    }, [jobInstance.parentJobId, onApplyFilter]);
+    }, [jobInstance, onApplyFilter, allJobs, selectedIds]);
 
     const onGoToReplicas = useCallback(() => {
         if (onApplyFilter) {
-            onApplyFilter(`{"and":[{"==":[{"var":"parent_job_id"},${jobInstance.id}]}]}`);
+            const jobIds = selectedIds.length ? selectedIds : [jobInstance.id];
+            const logic = JSON.stringify({
+                or: jobIds.map((id) => ({ '==': [{ var: 'parent_job_id' }, id] })),
+            });
+            onApplyFilter(logic);
         }
-    }, [jobInstance.id, onApplyFilter]);
+    }, [jobInstance.id, onApplyFilter, selectedIds]);
 
     const onUpdateJobField = useCallback((
         fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>,
