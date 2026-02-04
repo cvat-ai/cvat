@@ -752,7 +752,7 @@ class JobReadListSerializer(serializers.ListSerializer):
             )
 
             # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
-            # limiting in only for the page
+            # limiting it only for the page
             children_counts = dict(
                 models.Job.objects.with_child_jobs_counts().filter(
                     id__in=set(j.id for j in page)

@@ -155,7 +155,7 @@ export default function JobActionsItems(
             onClick: onGoToReplicas,
             label: withCount('Go to replicas', 'go-to-replicas'),
             disabled: isDisabled('go-to-replicas'),
-        }, 201]);
+        }, 210]);
     }
 
     menuItems.push(
