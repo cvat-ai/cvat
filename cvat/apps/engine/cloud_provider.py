@@ -1208,7 +1208,7 @@ class _CloudStorageOpenable(NamedOpenable):
 
 
 class _CloudStorageFile(io.IOBase):
-    _SKIP_THRESHOLD = 1 << 20
+    _SKIP_THRESHOLD = 16 << 20
 
     def __init__(self, storage: AbstractCloudStorage, key: str):
         self._storage = storage
