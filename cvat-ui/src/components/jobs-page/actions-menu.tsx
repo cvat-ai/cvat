@@ -77,7 +77,7 @@ function JobActionsComponent(
     }, [jobInstance]);
 
     const onMergeConsensusJob = useCallback(() => {
-        if (jobInstance.hasReplicas) {
+        if (jobInstance.replicasCount > 0) {
             Modal.confirm({
                 title: 'The consensus job will be merged',
                 content: 'Existing annotations in the parent job will be updated. Continue?',
@@ -222,10 +222,10 @@ function JobActionsComponent(
             onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
             onImportAnnotations,
             onExportAnnotations,
-            onMergeConsensusJob: jobInstance.hasReplicas ? onMergeConsensusJob : null,
+            onMergeConsensusJob: jobInstance.replicasCount > 0 ? onMergeConsensusJob : null,
             onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
             onGoToParent: jobInstance.parentJobId ? onGoToParent : null,
-            onGoToReplicas: jobInstance.hasReplicas ? onGoToReplicas : null,
+            onGoToReplicas: jobInstance.replicasCount > 0 ? onGoToReplicas : null,
             selectedIds,
         }, props);
     }

@@ -15,7 +15,6 @@
       "dimension": "2d",
       "frame_count": 2,
       "guide_id": null,
-      "has_replicas": false,
       "id": 63,
       "issues": {
         "count": 0,
@@ -28,6 +27,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 18,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 59,
@@ -60,7 +60,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": false,
       "id": 62,
       "issues": {
         "count": 0,
@@ -73,6 +72,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 55,
@@ -105,7 +105,6 @@
       "dimension": "2d",
       "frame_count": 10,
       "guide_id": null,
-      "has_replicas": false,
       "id": 61,
       "issues": {
         "count": 0,
@@ -118,6 +117,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 55,
@@ -150,7 +150,6 @@
       "dimension": "2d",
       "frame_count": 10,
       "guide_id": null,
-      "has_replicas": false,
       "id": 60,
       "issues": {
         "count": 0,
@@ -163,6 +162,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 55,
@@ -195,7 +195,6 @@
       "dimension": "2d",
       "frame_count": 10,
       "guide_id": null,
-      "has_replicas": false,
       "id": 59,
       "issues": {
         "count": 0,
@@ -208,6 +207,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 55,
@@ -240,7 +240,6 @@
       "dimension": "2d",
       "frame_count": 2,
       "guide_id": null,
-      "has_replicas": false,
       "id": 58,
       "issues": {
         "count": 0,
@@ -253,6 +252,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
       "start_frame": 8,
@@ -277,7 +277,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": false,
       "id": 57,
       "issues": {
         "count": 0,
@@ -290,6 +289,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 5,
@@ -314,7 +314,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 56,
       "issues": {
         "count": 0,
@@ -327,6 +326,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -351,7 +351,6 @@
       "dimension": "2d",
       "frame_count": 2,
       "guide_id": null,
-      "has_replicas": false,
       "id": 55,
       "issues": {
         "count": 0,
@@ -364,6 +363,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
       "start_frame": 0,
@@ -388,7 +388,6 @@
       "dimension": "2d",
       "frame_count": 4,
       "guide_id": null,
-      "has_replicas": false,
       "id": 54,
       "issues": {
         "count": 0,
@@ -401,6 +400,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -425,7 +425,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": false,
       "id": 53,
       "issues": {
         "count": 0,
@@ -438,6 +437,7 @@
       "organization": null,
       "parent_job_id": 51,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 53,
@@ -470,7 +470,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": false,
       "id": 52,
       "issues": {
         "count": 0,
@@ -483,6 +482,7 @@
       "organization": null,
       "parent_job_id": 51,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 53,
@@ -515,7 +515,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": true,
       "id": 51,
       "issues": {
         "count": 0,
@@ -528,6 +527,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 2,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 53,
@@ -560,7 +560,6 @@
       "dimension": "2d",
       "frame_count": 2,
       "guide_id": null,
-      "has_replicas": false,
       "id": 50,
       "issues": {
         "count": 0,
@@ -573,6 +572,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 51,
@@ -605,7 +605,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": false,
       "id": 49,
       "issues": {
         "count": 0,
@@ -618,6 +617,7 @@
       "organization": 2,
       "parent_job_id": 46,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 51,
@@ -650,7 +650,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": false,
       "id": 48,
       "issues": {
         "count": 0,
@@ -663,6 +662,7 @@
       "organization": 2,
       "parent_job_id": 46,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 51,
@@ -695,7 +695,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": false,
       "id": 47,
       "issues": {
         "count": 0,
@@ -708,6 +707,7 @@
       "organization": 2,
       "parent_job_id": 46,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 51,
@@ -740,7 +740,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": true,
       "id": 46,
       "issues": {
         "count": 0,
@@ -753,6 +752,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 3,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 51,
@@ -785,7 +785,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 45,
       "issues": {
         "count": 0,
@@ -798,6 +797,7 @@
       "organization": 2,
       "parent_job_id": 42,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 51,
@@ -830,7 +830,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 44,
       "issues": {
         "count": 0,
@@ -843,6 +842,7 @@
       "organization": 2,
       "parent_job_id": 42,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 51,
@@ -875,7 +875,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 43,
       "issues": {
         "count": 0,
@@ -888,6 +887,7 @@
       "organization": 2,
       "parent_job_id": 42,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 51,
@@ -920,7 +920,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": true,
       "id": 42,
       "issues": {
         "count": 0,
@@ -933,6 +932,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 3,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 51,
@@ -965,7 +965,6 @@
       "dimension": "2d",
       "frame_count": 6,
       "guide_id": null,
-      "has_replicas": false,
       "id": 41,
       "issues": {
         "count": 0,
@@ -978,6 +977,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 23,
@@ -1002,7 +1002,6 @@
       "dimension": "2d",
       "frame_count": 7,
       "guide_id": null,
-      "has_replicas": false,
       "id": 40,
       "issues": {
         "count": 0,
@@ -1015,6 +1014,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 16,
@@ -1039,7 +1039,6 @@
       "dimension": "2d",
       "frame_count": 8,
       "guide_id": null,
-      "has_replicas": false,
       "id": 39,
       "issues": {
         "count": 0,
@@ -1052,6 +1051,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 8,
@@ -1076,7 +1076,6 @@
       "dimension": "2d",
       "frame_count": 8,
       "guide_id": null,
-      "has_replicas": false,
       "id": 38,
       "issues": {
         "count": 0,
@@ -1089,6 +1088,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -1113,7 +1113,6 @@
       "dimension": "2d",
       "frame_count": 1,
       "guide_id": null,
-      "has_replicas": false,
       "id": 37,
       "issues": {
         "count": 0,
@@ -1126,6 +1125,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 10,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 49,
@@ -1158,7 +1158,6 @@
       "dimension": "2d",
       "frame_count": 1,
       "guide_id": null,
-      "has_replicas": false,
       "id": 36,
       "issues": {
         "count": 0,
@@ -1171,6 +1170,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 47,
@@ -1203,7 +1203,6 @@
       "dimension": "2d",
       "frame_count": 1,
       "guide_id": null,
-      "has_replicas": false,
       "id": 35,
       "issues": {
         "count": 0,
@@ -1216,6 +1215,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 45,
@@ -1248,7 +1248,6 @@
       "dimension": "2d",
       "frame_count": 1,
       "guide_id": null,
-      "has_replicas": false,
       "id": 34,
       "issues": {
         "count": 0,
@@ -1261,6 +1260,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 14,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 39,
@@ -1293,7 +1293,6 @@
       "dimension": "2d",
       "frame_count": 1,
       "guide_id": null,
-      "has_replicas": false,
       "id": 33,
       "issues": {
         "count": 0,
@@ -1306,6 +1305,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 14,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 37,
@@ -1338,7 +1338,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": false,
       "id": 32,
       "issues": {
         "count": 0,
@@ -1351,6 +1350,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
       "start_frame": 0,
@@ -1375,7 +1375,6 @@
       "dimension": "2d",
       "frame_count": 1,
       "guide_id": null,
-      "has_replicas": false,
       "id": 31,
       "issues": {
         "count": 0,
@@ -1388,6 +1387,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
       "start_frame": 10,
@@ -1412,7 +1412,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 30,
       "issues": {
         "count": 0,
@@ -1425,6 +1424,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
       "start_frame": 5,
@@ -1449,7 +1449,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 29,
       "issues": {
         "count": 0,
@@ -1462,6 +1461,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
       "start_frame": 0,
@@ -1486,7 +1486,6 @@
       "dimension": "2d",
       "frame_count": 3,
       "guide_id": null,
-      "has_replicas": false,
       "id": 28,
       "issues": {
         "count": 0,
@@ -1499,6 +1498,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
       "start_frame": 0,
@@ -1523,7 +1523,6 @@
       "dimension": "2d",
       "frame_count": 11,
       "guide_id": null,
-      "has_replicas": false,
       "id": 27,
       "issues": {
         "count": 0,
@@ -1536,6 +1535,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -1560,7 +1560,6 @@
       "dimension": "2d",
       "frame_count": 4,
       "guide_id": null,
-      "has_replicas": false,
       "id": 26,
       "issues": {
         "count": 0,
@@ -1573,6 +1572,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 33,
@@ -1605,7 +1605,6 @@
       "dimension": "2d",
       "frame_count": 6,
       "guide_id": null,
-      "has_replicas": false,
       "id": 25,
       "issues": {
         "count": 0,
@@ -1618,6 +1617,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 33,
@@ -1650,7 +1650,6 @@
       "dimension": "2d",
       "frame_count": 2,
       "guide_id": null,
-      "has_replicas": false,
       "id": 24,
       "issues": {
         "count": 0,
@@ -1663,6 +1662,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 12,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 29,
@@ -1695,7 +1695,6 @@
       "dimension": "2d",
       "frame_count": 2,
       "guide_id": null,
-      "has_replicas": false,
       "id": 23,
       "issues": {
         "count": 0,
@@ -1708,6 +1707,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 25,
@@ -1740,7 +1740,6 @@
       "dimension": "2d",
       "frame_count": 2,
       "guide_id": null,
-      "has_replicas": false,
       "id": 22,
       "issues": {
         "count": 0,
@@ -1753,6 +1752,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 11,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 23,
@@ -1785,7 +1785,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 21,
       "issues": {
         "count": 0,
@@ -1798,6 +1797,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -1822,7 +1822,6 @@
       "dimension": "2d",
       "frame_count": 25,
       "guide_id": null,
-      "has_replicas": false,
       "id": 19,
       "issues": {
         "count": 0,
@@ -1835,6 +1834,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 8,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 15,
@@ -1867,7 +1867,6 @@
       "dimension": "2d",
       "frame_count": 8,
       "guide_id": null,
-      "has_replicas": false,
       "id": 18,
       "issues": {
         "count": 0,
@@ -1880,6 +1879,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 5,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
         "id": 7,
@@ -1912,7 +1912,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 17,
       "issues": {
         "count": 0,
@@ -1925,6 +1924,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 4,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -1955,7 +1955,6 @@
       "dimension": "2d",
       "frame_count": 11,
       "guide_id": null,
-      "has_replicas": false,
       "id": 16,
       "issues": {
         "count": 1,
@@ -1968,6 +1967,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 2,
+      "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": 3,
         "id": 4,
@@ -2000,7 +2000,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 14,
       "issues": {
         "count": 0,
@@ -2013,6 +2012,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 1,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 15,
@@ -2037,7 +2037,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 13,
       "issues": {
         "count": 0,
@@ -2050,6 +2049,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 1,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
       "start_frame": 10,
@@ -2074,7 +2074,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 12,
       "issues": {
         "count": 0,
@@ -2087,6 +2086,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 1,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "validation",
       "start_frame": 5,
@@ -2117,7 +2117,6 @@
       "dimension": "2d",
       "frame_count": 5,
       "guide_id": null,
-      "has_replicas": false,
       "id": 11,
       "issues": {
         "count": 1,
@@ -2130,6 +2129,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 1,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -2160,7 +2160,6 @@
       "dimension": "2d",
       "frame_count": 14,
       "guide_id": null,
-      "has_replicas": false,
       "id": 10,
       "issues": {
         "count": 1,
@@ -2173,6 +2172,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -2197,7 +2197,6 @@
       "dimension": "2d",
       "frame_count": 11,
       "guide_id": null,
-      "has_replicas": false,
       "id": 9,
       "issues": {
         "count": 1,
@@ -2210,6 +2209,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -2234,7 +2234,6 @@
       "dimension": "3d",
       "frame_count": 1,
       "guide_id": null,
-      "has_replicas": false,
       "id": 8,
       "issues": {
         "count": 0,
@@ -2247,6 +2246,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -2277,7 +2277,6 @@
       "dimension": "2d",
       "frame_count": 25,
       "guide_id": null,
-      "has_replicas": false,
       "id": 7,
       "issues": {
         "count": 1,
@@ -2290,6 +2289,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -2320,7 +2320,6 @@
       "dimension": "2d",
       "frame_count": 23,
       "guide_id": null,
-      "has_replicas": false,
       "id": 2,
       "issues": {
         "count": 0,
@@ -2333,6 +2332,7 @@
       "organization": 1,
       "parent_job_id": null,
       "project_id": null,
+      "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
       "start_frame": 0,

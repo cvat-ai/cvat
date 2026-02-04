@@ -136,7 +136,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                 <CVATTag type={TagType.GROUND_TRUTH} />
             </Col>
         );
-    } else if (job.hasReplicas) {
+    } else if (job.replicasCount > 0) {
         tag = (
             <Col offset={1}>
                 <CVATTag type={TagType.PARENT} />

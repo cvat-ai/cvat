@@ -687,8 +687,8 @@ export class Job extends Session {
         return this.#data.parent_job_id;
     }
 
-    public get hasReplicas(): number {
-        return this.#data.has_replicas;
+    public get replicasCount(): number {
+        return this.#data.replicas_count;
     }
 
     public get dataChunkType(): ChunkType {

@@ -8349,8 +8349,8 @@ components:
           deprecated: true
         issues:
           $ref: '#/components/schemas/IssuesSummary'
-        has_replicas:
-          type: boolean
+        replicas_count:
+          type: integer
           readOnly: true
       required:
       - issues

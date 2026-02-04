@@ -826,12 +826,12 @@ class JobReadForEventSerializer(serializers.ModelSerializer):
 class JobReadSerializer(JobReadForEventSerializer):
     consensus_replicas = serializers.IntegerField(read_only=True)
     issues = IssuesSummarySerializer(source='*')
-    has_replicas = serializers.BooleanField(read_only=True)
+    replicas_count = serializers.IntegerField(read_only=True)
 
     class Meta(JobReadForEventSerializer.Meta):
         model = models.Job
         fields = JobReadForEventSerializer.Meta.fields + (
-            'consensus_replicas', 'issues', 'has_replicas',
+            'consensus_replicas', 'issues', 'replicas_count',
         )
         read_only_fields = fields
         list_serializer_class = JobReadListSerializer
@@ -840,7 +840,7 @@ class JobReadSerializer(JobReadForEventSerializer):
         data = super().to_representation(instance)
 
         data['consensus_replicas'] = instance.child_jobs__count
-        data['has_replicas'] = instance.child_jobs__count > 0
+        data['replicas_count'] = instance.child_jobs__count
 
         return data
 
