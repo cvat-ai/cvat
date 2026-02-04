@@ -843,11 +843,6 @@ def create_thread(
         )
         media['directory'] = []
 
-    if (not is_backup_restore and manifest_file and
-        data['sorting_method'] == models.SortingMethod.RANDOM
-    ):
-        raise ValidationError("It isn't supported to upload manifest file and use random sorting")
-
     if (is_backup_restore and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and
         data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}
     ):
@@ -1135,6 +1130,18 @@ def create_thread(
                 manifest.create()
             else:
                 manifest.init_index()
+
+            # Align manifest order with the selected sorting method for image-based tasks.
+            if data['sorting_method'] != models.SortingMethod.PREDEFINED:
+                desired_order = [
+                    os.path.relpath(extractor.get_path(frame_id), upload_dir)
+                    for frame_id in extractor.frame_range
+                ]
+
+                try:
+                    manifest.reorder(desired_order)
+                except Exception as e:
+                    raise ValidationError("Manifest reordering failed") from e
 
             for frame_id in extractor.frame_range:
                 image_path = extractor.get_path(frame_id)
