@@ -563,7 +563,7 @@ export class Job extends Session {
             source_storage: undefined,
             target_storage: undefined,
             parent_job_id: null,
-            has_replicas: undefined,
+            replicas_count: undefined,
         };
 
         this.#data.id = initialData.id ?? this.#data.id;
@@ -579,7 +579,7 @@ export class Job extends Session {
         this.#data.mode = initialData.mode ?? this.#data.mode;
         this.#data.created_date = initialData.created_date ?? this.#data.created_date;
         this.#data.parent_job_id = initialData.parent_job_id ?? this.#data.parent_job_id;
-        this.#data.has_replicas = initialData.has_replicas ?? this.#data.has_replicas;
+        this.#data.replicas_count = initialData.replicas_count ?? this.#data.replicas_count;
 
         if (Array.isArray(initialData.labels)) {
             this.#data.labels = initialData.labels.map((labelData) => {
@@ -947,7 +947,7 @@ export class Task extends Session {
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
                     parent_job_id: job.parent_job_id,
-                    has_replicas: job.has_replicas,
+                    replicas_count: job.replicas_count,
                 });
                 data.jobs.push(jobInstance);
             }
