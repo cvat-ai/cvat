@@ -282,6 +282,20 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         this.commit();
     };
 
+    private readonly toOneLayerBackward = (): void => {
+        const { objectState } = this.props;
+
+        objectState.zOrder -= 1;
+        this.commit();
+    };
+
+    private readonly toOneLayerForward = (): void => {
+        const { objectState } = this.props;
+
+        objectState.zOrder += 1;
+        this.commit();
+    };
+
     private activate = (activeElementID?: number): void => {
         const {
             objectState, ready, activeControl, activateObject,
@@ -419,6 +433,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
+                toOneLayerBackward={this.toOneLayerBackward}
+                toOneLayerForward={this.toOneLayerForward}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 edit={this.edit}

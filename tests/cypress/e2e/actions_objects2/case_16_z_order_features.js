@@ -120,4 +120,40 @@ context('Actions on polygon', () => {
             cy.get('#cvat_canvas_shape_2').should('be.visible');
         });
     });
+
+    describe('Z-order button actions', () => {
+        const performZOrderAction = (actionSelector, expectedZOrder) => {
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .find('.cvat-object-item-menu-button')
+                .click();
+
+            cy.get(actionSelector).click();
+
+            cy.get('.cvat-canvas-z-axis-wrapper .ant-slider')
+                .then(() => {
+                    cy.get('.cvat-canvas-z-axis-wrapper .ant-slider')
+                        .click('bottom', { force: true });
+                });
+
+            cy.get('#cvat_canvas_shape_1')
+                .should('be.visible')
+                .should('have.attr', 'data-z-order', expectedZOrder);
+        };
+
+        it('Send shape to background', () => {
+            performZOrderAction('.cvat-object-item-menu-to-layer-background', '-1');
+        });
+
+        it('Move shape to next layer', () => {
+            performZOrderAction('.cvat-object-item-menu-to-one-layer-forward', '0');
+        });
+
+        it('Move shape to previous layer', () => {
+            performZOrderAction('.cvat-object-item-menu-to-one-layer-backward', '-1');
+        });
+
+        it('Send shape to foreground', () => {
+            performZOrderAction('.cvat-object-item-menu-to-layer-foreground', '3');
+        });
+    });
 });
