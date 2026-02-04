@@ -121,16 +121,12 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     Rules: TypeAlias = dict[str, Any]
     filter_param = "filter"
     filter_title = _("Filter")
-    filter_description = _(
-        dedent(
-            """
-            JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
-            For example, using such a filter you can get all resources created by you:\n
-                - {"and":[{"==":[{"var":"owner"},"<user>"]}]}\n
-            Details about the syntax used can be found at the link: https://jsonlogic.com/\n
-            """
-        )
-    )
+    filter_description = _(dedent("""
+        JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
+        For example, using such a filter you can get all resources created by you:\n
+            - {"and":[{"==":[{"var":"owner"},"<user>"]}]}\n
+        Details about the syntax used can be found at the link: https://jsonlogic.com/\n
+        """))
 
     def _build_Q(self, rules, lookup_fields, *, parent_op: str | None = None):
         def _validate_arg(arg: Any, *, allowed_type: type):
@@ -510,14 +506,10 @@ class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
 
 
 class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
-    filter_description = _(
-        dedent(
-            """
-            JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
-            Details about the syntax used can be found at the link: https://jsonlogic.com/\n
-            """
-        )
-    )
+    filter_description = _(dedent("""
+        JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
+        Details about the syntax used can be found at the link: https://jsonlogic.com/\n
+        """))
 
     def _apply_filter(self, rules, lookup_fields, obj):
         op, args = next(iter(rules.items()))

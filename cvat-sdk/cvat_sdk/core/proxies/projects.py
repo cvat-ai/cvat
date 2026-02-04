@@ -72,7 +72,7 @@ class Project(
         self._client.logger.info(f"Annotation file '{filename}' for project #{self.id} uploaded")
 
     def get_annotations(self) -> models.ILabeledData:
-        (annotations, _) = self.api.retrieve_annotations(self.id)
+        annotations, _ = self.api.retrieve_annotations(self.id)
         return annotations
 
     def get_tasks(self) -> list[Task]:
@@ -91,7 +91,7 @@ class Project(
     def get_preview(
         self,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_preview(self.id)
+        _, response = self.api.retrieve_preview(self.id)
         return io.BytesIO(response.data)
 
 

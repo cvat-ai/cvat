@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.55.1
+  version: 2.56.2
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -7462,13 +7462,6 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
-        quorum:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Minimum required share of sources having an annotation for it to be accepted
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -8733,6 +8726,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
         elements:
           type: array
           items:
@@ -8788,6 +8787,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
         elements:
           type: array
           items:
@@ -9582,13 +9587,6 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
-        quorum:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Minimum required share of sources having an annotation for it to be accepted
     PatchedDataMetaWriteRequest:
       type: object
       properties:
@@ -10897,6 +10895,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
       required:
       - frame
       - label_id
@@ -10948,6 +10952,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
       required:
       - frame
       - label_id

@@ -55,6 +55,10 @@ function computeNewSource(currentSource: Source): Source {
         return Source.SEMI_AUTO;
     }
 
+    if (currentSource === Source.CONSENSUS) {
+        return Source.CONSENSUS;
+    }
+
     return Source.MANUAL;
 }
 
@@ -78,6 +82,7 @@ export interface BasicInjection {
     jobType: JobType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
+    consensusReplicas?: number;
 }
 
 type AnnotationInjection = BasicInjection & {
@@ -104,6 +109,8 @@ class Annotation {
     protected readOnlyFields: string[];
     protected color: string;
     protected source: Source;
+    public score: number;
+    public votes: number;
     public updated: number;
     public attributes: Record<number, string>;
     protected groupObject: {
@@ -127,6 +134,9 @@ class Annotation {
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
         this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
+        this.score = data.score;
+        this.votes = injection.consensusReplicas !== undefined ?
+            Math.round(this.score * injection.consensusReplicas) : 0;
         this.updated = Date.now();
         this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
             attributeAccumulator[attr.spec_id] = attr.value;
@@ -567,6 +577,7 @@ export class Shape extends Drawn {
             label_id: this.label.id,
             group: this.group,
             source: this.source,
+            score: this.score,
         };
 
         if (this.serverID !== null) {
@@ -606,6 +617,8 @@ export class Shape extends Drawn {
             pinned: this.pinned,
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
 
@@ -956,6 +969,8 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -1489,6 +1504,8 @@ export class Tag extends Annotation {
             updated: this.updated,
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -2016,6 +2033,7 @@ export class SkeletonShape extends Shape {
             label_id: this.label.id,
             group: this.group,
             source: this.source,
+            score: this.score,
         };
 
         if (this.serverID !== null) {
@@ -2060,6 +2078,8 @@ export class SkeletonShape extends Shape {
             hidden: elements.every((el) => el.hidden),
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -3102,6 +3122,8 @@ export class SkeletonTrack extends Track {
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }

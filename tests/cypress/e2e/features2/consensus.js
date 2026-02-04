@@ -142,7 +142,6 @@ context('Basic manipulations with consensus job replicas', () => {
         });
 
         it('Check consensus management page', () => {
-            const defaultQuorum = 50;
             const defaultIoU = 40;
             cy.contains('button', 'Actions').click();
             cy.contains('Consensus management').should('be.visible').click();
@@ -173,10 +172,8 @@ context('Basic manipulations with consensus job replicas', () => {
                 cy.contains('button', 'Save').click();
                 cy.closeNotification('.cvat-notification-save-consensus-settings-failed');
             }
-            checkFieldValue('#quorum', defaultQuorum).clear();
-            attemptInvalidSaving(1);
             checkFieldValue('#iouThreshold', defaultIoU).clear();
-            attemptInvalidSaving(2);
+            attemptInvalidSaving(1);
             cy.get('.ant-notification-notice').should('not.exist');
 
             // Go back to task page

@@ -8,13 +8,13 @@ import json
 import os
 from abc import ABC, abstractmethod
 from bisect import bisect_left, insort
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from enum import Enum
 from inspect import isgenerator
 from io import StringIO
 from itertools import islice
 from json.decoder import JSONDecodeError
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Any
 
 import av
@@ -604,9 +604,6 @@ class _ManifestManager(ABC):
     @abstractmethod
     def data(self): ...
 
-    @abstractmethod
-    def get_subset(self, subset_names): ...
-
     @property
     def exists(self):
         return self._manifest.path.exists()
@@ -687,9 +684,6 @@ class VideoManifestManager(_ManifestManager):
     @property
     def chapters(self):
         return self["properties"].get("chapters", [])
-
-    def get_subset(self, subset_names):
-        raise NotImplementedError()
 
 
 class VideoManifestValidator(VideoManifestManager):
@@ -793,11 +787,13 @@ class ImageManifestManager(_ManifestManager):
     def data(self):
         return (f"{image.full_name}" for _, image in self)
 
-    def get_subset(self, subset_names):
+    def get_subset(
+        self, subset_names: Sequence[PurePath]
+    ) -> tuple[list[int], list[dict[str, Any]]]:
         index_list = []
         subset = []
         for _, image in self:
-            image_name = f"{image.full_name}"
+            image_name = PurePosixPath(image.full_name)
             if image_name in subset_names:
                 index_list.append(subset_names.index(image_name))
                 properties = {

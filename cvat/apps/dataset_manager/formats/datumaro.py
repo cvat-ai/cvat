@@ -54,7 +54,7 @@ def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None
 
 
 @exporter(name="Datumaro 3D", ext="ZIP", version="1.0", dimension=DimensionType.DIM_3D)
-def _export(dst_file, temp_dir, instance_data, save_images=False):
+def _export_3d(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(
         instance_data=instance_data, include_images=save_images, dimension=DimensionType.DIM_3D
     ) as extractor:
@@ -65,7 +65,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 
 @importer(name="Datumaro 3D", ext="JSON, ZIP", version="1.0", dimension=DimensionType.DIM_3D)
-def _import(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None, **kwargs):
+def _import_3d(src_file: BinaryIO, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
 

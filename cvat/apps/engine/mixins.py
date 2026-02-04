@@ -152,9 +152,7 @@ class UploadMixin:
             metadata=metadata, upload_dir=upload_dir, user_id=request.user.id
         )
 
-        location = request.build_absolute_uri()
-        if 'HTTP_X_FORWARDED_HOST' not in request.META:
-            location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
+        location = request.build_absolute_uri(request.path)
 
         # FUTURE-TODO: migrate to common TMP cache where files
         # are deleted automatically by a periodic background job

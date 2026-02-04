@@ -25,11 +25,9 @@ COMMANDS = CommandGroup(description="Perform operations on CVAT lambda functions
 
 @COMMANDS.command_class("create-native")
 class FunctionCreateNative:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Create a CVAT function that can be powered by an agent running the given local function.
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(

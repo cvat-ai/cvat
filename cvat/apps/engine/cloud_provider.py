@@ -11,6 +11,7 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Sequence
 from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
+from datetime import datetime
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
@@ -35,7 +36,12 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rq import get_current_job
 
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice, DimensionType
+from cvat.apps.engine.models import (
+    CloudProviderChoice,
+    CloudStorage,
+    CredentialsTypeChoice,
+    DimensionType,
+)
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
@@ -141,33 +147,25 @@ def validate_file_status(func):
     return wrapper
 
 
-class _CloudStorage(ABC):
-    def __init__(self, prefix: str | None = None):
+class AbstractCloudStorage(ABC):
+    def __init__(self, prefix: str | None = None) -> None:
         self.prefix = prefix
 
     @property
     @abstractmethod
-    def name(self):
+    def name(self) -> str:
         pass
 
     @abstractmethod
-    def _head_file(self, key: str, /):
+    def get_status(self) -> Status:
         pass
 
     @abstractmethod
-    def _head(self):
+    def get_file_status(self, key: str, /) -> Status:
         pass
 
     @abstractmethod
-    def get_status(self):
-        pass
-
-    @abstractmethod
-    def get_file_status(self, key: str, /):
-        pass
-
-    @abstractmethod
-    def get_file_last_modified(self, key: str, /):
+    def get_file_last_modified(self, key: str, /) -> datetime:
         pass
 
     @abstractmethod
@@ -214,7 +212,7 @@ class _CloudStorage(ABC):
         return self._download_range_of_bytes(key, stop_byte=stop_byte, start_byte=start_byte)
 
     @abstractmethod
-    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int):
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
         pass
 
     def bulk_download_to_memory(
@@ -273,11 +271,11 @@ class _CloudStorage(ABC):
                     raise ex
 
     @abstractmethod
-    def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /) -> None:
         pass
 
     @abstractmethod
-    def upload_file(self, file_path: str, key: str | None = None, /):
+    def upload_file(self, file_path: str, key: str | None = None, /) -> None:
         pass
 
     @abstractmethod
@@ -375,17 +373,9 @@ class _CloudStorage(ABC):
     def supported_actions(self):
         pass
 
-    @property
-    def read_access(self):
-        return Permissions.READ in self.access
-
-    @property
-    def write_access(self):
-        return Permissions.WRITE in self.access
-
 
 class HeaderFirstDownloader(ABC):
-    def __init__(self, *, client: _CloudStorage):
+    def __init__(self, *, client: AbstractCloudStorage):
         self.client = client
 
     @abstractmethod
@@ -534,7 +524,7 @@ def get_cloud_storage_instance(
     cloud_provider: CloudProviderChoice,
     resource: str,
     credentials: Credentials,
-    specific_attributes: dict[str, Any] | None = None,
+    specific_attributes: dict[str, Any],
 ):
     instance = None
     if cloud_provider == CloudProviderChoice.AMAZON_S3:
@@ -569,7 +559,7 @@ def get_cloud_storage_instance(
     return instance
 
 
-class S3CloudStorage(_CloudStorage):
+class S3CloudStorage(AbstractCloudStorage):
     transfer_config = {
         "max_io_queue": 10,
     }
@@ -788,7 +778,7 @@ class S3CloudStorage(_CloudStorage):
         return allowed_actions
 
 
-class AzureBlobCloudStorage(_CloudStorage):
+class AzureBlobCloudStorage(AbstractCloudStorage):
     MAX_CONCURRENCY = 3
 
     class Effect:
@@ -941,7 +931,7 @@ def _define_gcs_status(func):
     return wrapper
 
 
-class GcsCloudStorage(_CloudStorage):
+class GcsCloudStorage(AbstractCloudStorage):
 
     class Effect:
         pass
@@ -1142,7 +1132,7 @@ class Credentials:
         ]
 
 
-def db_storage_to_storage_instance(db_storage):
+def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
     credentials = Credentials()
     credentials.convert_from_db(
         {
@@ -1163,7 +1153,7 @@ T = TypeVar("T", Callable[[str, int, int], int], Callable[[str, int, str, bool],
 
 def import_resource_from_cloud_storage(
     filename: str,
-    db_storage: Any,
+    db_storage: CloudStorage,
     key: str,
     import_func: T,
     *args,
@@ -1176,7 +1166,7 @@ def import_resource_from_cloud_storage(
 
 
 def export_resource_to_cloud_storage(
-    db_storage: Any,
+    db_storage: CloudStorage,
     func: Callable[[int, str | None, str | None], str],
     *args,
     **kwargs,

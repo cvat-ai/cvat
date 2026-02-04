@@ -37,14 +37,12 @@ class TaskList(GenericListCommand, GenericTaskCommand):
 
 @COMMANDS.command_class("create")
 class TaskCreate:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Create a new CVAT task. To create a task, you need
         to specify labels using the --labels argument or
         attach the task to an existing project using the
         --project_id argument.
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("name", type=str, help="name of the task")
@@ -79,45 +77,37 @@ class TaskCreate:
             dest="status_check_period",
             default=2,
             type=float,
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 number of seconds to wait until checking
                 if data compression finished (necessary before uploading annotations)
-                """
-            ),
+                """),
         )
         parser.add_argument(
             "--copy_data",
             default=False,
             action="store_true",
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 set the option to copy the data, only used when resource type is
                 share (default: %(default)s)
-                """
-            ),
+                """),
         )
         parser.add_argument(
             "--frame_step",
             default=argparse.SUPPRESS,
             type=int,
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 set the frame step option in the advanced configuration
                 when uploading image series or videos
-                """
-            ),
+                """),
         )
         parser.add_argument(
             "--image_quality",
             default=70,
             type=int,
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 set the image quality option in the advanced configuration
                 when creating tasks.(default: %(default)s)
-                """
-            ),
+                """),
         )
         parser.add_argument(
             "--labels",
@@ -175,16 +165,14 @@ class TaskCreate:
             "--filename_pattern",
             default=argparse.SUPPRESS,
             type=str,
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 pattern for filtering data from the manifest file for the upload.
                 Only shell-style wildcards are supported:
                 * - matches everything;
                 ? - matches any single character;
                 [seq] - matches any character in 'seq';
                 [!seq] - matches any character not in seq
-                """
-            ),
+                """),
         )
 
     def execute(
@@ -229,12 +217,10 @@ class TaskDelete(GenericDeleteCommand, GenericTaskCommand):
 
 @COMMANDS.command_class("frames")
 class TaskFrames:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Download the requested frame numbers for a task and save images as
         task_<ID>_frame_<FRAME>.jpg.
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("task_id", type=int, help="task ID")
@@ -269,11 +255,9 @@ class TaskFrames:
 
 @COMMANDS.command_class("export-dataset")
 class TaskExportDataset:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Export a task as a dataset in the specified format (e.g. 'YOLO 1.1').
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("task_id", type=int, help="task ID")
@@ -334,12 +318,10 @@ class TaskExportDataset:
 
 @COMMANDS.command_class("import-dataset")
 class TaskImportDataset:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Import annotations into a task from a dataset in the specified format
         (e.g. 'YOLO 1.1').
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("task_id", type=int, help="task ID")
