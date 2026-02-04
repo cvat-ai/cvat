@@ -27,7 +27,7 @@ function CVATTag(props: TagProps): JSX.Element | null {
         case TagType.PARENT:
             return <Tag className='cvat-tag-parent' color='#1890FF'>Parent</Tag>;
         case TagType.REPLICA:
-            return <Tag className='cvat-tag-replica' color=#69c0ff'>Replica</Tag>;
+            return <Tag className='cvat-tag-replica' color='#69c0ff'>Replica</Tag>;
         default:
             return null;
     }

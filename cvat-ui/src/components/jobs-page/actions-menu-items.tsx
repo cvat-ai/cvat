@@ -138,9 +138,6 @@ export default function JobActionsItems(
         }, 100]);
     }
 
-    if (onGoToParent || onGoToReplicas) {
-        menuItems.push([{ type: 'divider' }, 199]);
-    }
     if (onGoToParent) {
         menuItems.push([{
             key: 'go-to-parent',
