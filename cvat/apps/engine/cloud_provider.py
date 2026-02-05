@@ -1069,6 +1069,73 @@ class GcsCloudStorage(AbstractCloudStorage):
         pass
 
 
+class SubdirectoryCloudStorage(AbstractCloudStorage):
+    def __init__(self, underlying: AbstractCloudStorage, subdirectory: str) -> None:
+        super().__init__()
+
+        self.underlying = underlying
+        self.subdirectory = subdirectory
+        if not self.subdirectory.endswith("/"):
+            self.subdirectory += "/"
+
+    def _map_key(self, key: str) -> str:
+        return self.subdirectory + key
+
+    def _unmap_key(self, key: str) -> str:
+        assert key.startswith(self.subdirectory)
+        return key[len(self.subdirectory) :]
+
+    @property
+    def name(self) -> str:
+        return self.underlying.name + "/" + self.subdirectory
+
+    def get_status(self) -> Status:
+        return self.underlying.get_status()
+
+    def get_file_status(self, key: str, /) -> Status:
+        return self.underlying.get_file_status(self._map_key(key))
+
+    def get_file_last_modified(self, key: str, /) -> datetime:
+        return self.underlying.get_file_last_modified(self._map_key(key))
+
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
+        return self.underlying._download_fileobj_to_stream(self._map_key(key), stream)
+
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
+        return self.underlying._download_range_of_bytes(
+            self._map_key(key), start_byte=start_byte, stop_byte=stop_byte
+        )
+
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /) -> None:
+        return self.underlying.upload_fileobj(file_obj, self._map_key(key))
+
+    def upload_file(self, file_path: Path, key: str | None = None, /) -> None:
+        assert key is not None
+        return self.underlying.upload_file(file_path, self._map_key(key))
+
+    def bulk_delete(self, files: Sequence[str]) -> None:
+        self.underlying.bulk_delete(list(map(self._map_key, files)))
+
+    def _list_raw_content_on_one_page(
+        self,
+        prefix: str = "",
+        *,
+        next_token: str | None = None,
+        page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
+    ) -> dict:
+        result = self.underlying._list_raw_content_on_one_page(
+            self._map_key(prefix), next_token=next_token, page_size=page_size
+        )
+
+        for key in ("files", "directories"):
+            result[key] = list(map(self._unmap_key, result[key]))
+
+        return result
+
+    def supported_actions(self):
+        return self.underlying.supported_actions
+
+
 class Credentials:
     __slots__ = (
         "key",
