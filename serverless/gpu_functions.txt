@@ -3,3 +3,4 @@ serverless/pytorch/u2net
 serverless/onnx/yolov8
 serverless/onnx/NYC-DOT/yolov11
 serverless/onnx/NYC-DOT/yolov11-streetlight
+serverless/pytorch/facebookresearch/sam

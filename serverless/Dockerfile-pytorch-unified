@@ -56,6 +56,9 @@ RUN pip install --no-cache-dir \
     pyyaml \
     tqdm
 
+# Install Segment Anything (SAM) from Facebook Research
+RUN pip install --no-cache-dir git+https://github.com/facebookresearch/segment-anything.git
+
 # Clean up pip cache
 RUN pip cache purge && \
     rm -rf /root/.cache/pip
@@ -67,6 +70,11 @@ WORKDIR /opt/nuclio
 RUN git clone --depth 1 https://github.com/xuebinqin/U-2-Net.git u2net && \
     rm -rf u2net/.git
 
+# Download SAM model weights
+RUN mkdir -p /opt/nuclio/sam && \
+    curl -L -o /opt/nuclio/sam/sam_vit_h_4b8939.pth \
+    https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
+
 # Copy ALL PyTorch model code into the image
 # This allows all models to share the same image
 COPY pytorch/glass/nuclio/glass /opt/nuclio/glass
@@ -75,6 +83,9 @@ COPY pytorch/glass/nuclio/model_handler.py /opt/nuclio/glass_model_handler.py
 
 COPY pytorch/u2net/nuclio/main.py /opt/nuclio/u2net_main.py
 COPY pytorch/u2net/nuclio/model_handler.py /opt/nuclio/u2net_model_handler.py
+
+COPY pytorch/facebookresearch/sam/nuclio/main.py /opt/nuclio/sam_main.py
+COPY pytorch/facebookresearch/sam/nuclio/model_handler.py /opt/nuclio/sam_model_handler.py
 
 # Create directory structure for models
 RUN mkdir -p /opt/nuclio/models
@@ -87,7 +98,7 @@ ENV PYTHONUNBUFFERED=1 \
 LABEL maintainer="DigitalSense AI" \
       description="Unified PyTorch CUDA 12.8 image for all CVAT PyTorch serverless functions" \
       version="2.0" \
-      models="GLASS,U2Net,TransT"
+      models="GLASS,U2Net,TransT,SAM"
 
 # Note: Model-specific code will be copied by Nuclio during deployment
 # Each function will use this same image with different handlers
