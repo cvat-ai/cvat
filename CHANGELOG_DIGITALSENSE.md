@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Change docker images labels for GLASS, U2Net and SAM [PR #44]
+- Enable continuous tracking with play button [PR #45]
 
 ### Fixed
 

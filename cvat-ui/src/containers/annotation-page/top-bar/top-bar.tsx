@@ -319,8 +319,30 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
                     const next = await jobInstance.frames
                         .search({ notDeleted: !showDeletedFrames }, nextCandidate, stopFrame);
-                    if (next !== null && isAbleToChangeFrame(next)) {
-                        onChangeFrame(next, currentPlaying);
+                    if (next !== null) {
+                        // Wait until navigation is not blocked (e.g., tracker inference completes)
+                        // Check up to 50 times with 100ms intervals (5 seconds max)
+                        let canChange = isAbleToChangeFrame(next);
+                        let attempts = 0;
+                        while (!canChange && currentPlaying && attempts < 50) {
+                            await new Promise((resolve) => {
+                                setTimeout(resolve, 100);
+                            });
+                            // Recheck if we can change frame and if play is still active
+                            canChange = isAbleToChangeFrame(next);
+                            const { playing: stillPlaying } = this.props;
+                            if (!stillPlaying) {
+                                return;
+                            }
+                            attempts += 1;
+                        }
+
+                        if (canChange) {
+                            onChangeFrame(next, currentPlaying);
+                        } else {
+                            // If still blocked after waiting, stop playing
+                            onSwitchPlay(false);
+                        }
                     } else {
                         onSwitchPlay(false);
                     }
