@@ -433,8 +433,8 @@ def _validate_manifest(
     if is_in_cloud and not is_backup_restore:
         cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
         # check that cloud storage manifest file exists and is up to date
-        if not os.path.exists(full_manifest_path) or (
-            datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc)
+        if not full_manifest_path.exists() or (
+            datetime.fromtimestamp(full_manifest_path.stat().st_mtime, tz=timezone.utc)
             < cloud_storage_instance.get_file_last_modified(manifest_file)
         ):
             cloud_storage_instance.download_file(manifest_file, full_manifest_path)
@@ -499,8 +499,8 @@ def _download_data(
 
 def _download_data_from_cloud_storage(
     db_storage: models.CloudStorage,
-    files: list[str],
-    upload_dir: str,
+    files: Sequence[PurePath],
+    upload_dir: Path,
 ):
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
     cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
@@ -852,7 +852,7 @@ def create_thread(
 
             _download_data_from_cloud_storage(
                 db_storage=db_data.cloud_storage,
-                files=list(itertools.chain.from_iterable(media.values())),
+                files=list(map(PurePosixPath, itertools.chain.from_iterable(media.values()))),
                 upload_dir=upload_dir,
             )
 
