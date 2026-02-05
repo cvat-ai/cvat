@@ -757,7 +757,8 @@ class JobReadListSerializer(serializers.ListSerializer):
 
         return super().to_representation(data)
 
-class JobReadSerializer(serializers.ModelSerializer):
+
+class JobReadForEventSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="get_task_id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
     guide_id = serializers.ReadOnlyField(source="get_guide_id", allow_null=True)
@@ -774,7 +775,6 @@ class JobReadSerializer(serializers.ModelSerializer):
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
-    issues = IssuesSummarySerializer(source='*')
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     parent_job_id = serializers.ReadOnlyField(allow_null=True)
@@ -786,14 +786,13 @@ class JobReadSerializer(serializers.ModelSerializer):
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
-            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
+            'created_date', 'updated_date', 'labels', 'type', 'organization',
             'target_storage', 'source_storage', 'assignee_updated_date', 'parent_job_id',
             'consensus_replicas'
         )
         read_only_fields = fields
-        list_serializer_class = JobReadListSerializer
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: models.Job):
         data = super().to_representation(instance)
 
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
@@ -818,6 +817,19 @@ class JobReadSerializer(serializers.ModelSerializer):
                     data['target_storage'] = StorageSerializer(task_target_storage).data
 
         return data
+
+
+class JobReadSerializer(JobReadForEventSerializer):
+    issues = IssuesSummarySerializer(source='*')
+
+    class Meta(JobReadForEventSerializer.Meta):
+        model = models.Job
+        fields = JobReadForEventSerializer.Meta.fields + (
+            'issues',
+        )
+        read_only_fields = fields
+        list_serializer_class = JobReadListSerializer
+
 
 class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
