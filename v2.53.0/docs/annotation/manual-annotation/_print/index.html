@@ -1,0 +1,3251 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/v2.53.0/docs/annotation/manual-annotation/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/v2.53.0/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/v2.53.0/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-192x192.png" sizes="192x192">
+
+<title>Manual Annotation | CVAT</title>
+<meta name="description" content="Tools, shape types, and annotation modes used for manual object labeling.">
+<meta property="og:title" content="Manual Annotation" />
+<meta property="og:description" content="Tools, shape types, and annotation modes used for manual object labeling." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/v2.53.0/docs/annotation/manual-annotation/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Manual Annotation">
+<meta itemprop="description" content="Tools, shape types, and annotation modes used for manual object labeling."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Manual Annotation"/>
+<meta name="twitter:description" content="Tools, shape types, and annotation modes used for manual object labeling."/>
+
+
+
+
+<link rel="preload" href="/v2.53.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" as="style">
+<link href="/v2.53.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/v2.53.0/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.53.0/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.53.0/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.53.0/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/v2.53.0/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.53.0/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.53.0</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/../">Latest version</a></li>
+    <li><a class="dropdown-item" href="/../v2.56.1">v2.56.1</a></li>
+    <li><a class="dropdown-item" href="/../v2.55.0">v2.55.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.54.0">v2.54.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.53.0">v2.53.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.52.0">v2.52.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.51.0">v2.51.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/v2.53.0/offline-search-index.d48a47be58be9f41445f03ca06c95588.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/v2.53.0/docs/annotation/manual-annotation/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Manual Annotation</h1>
+<div class="lead">Tools, shape types, and annotation modes used for manual object labeling.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-50eb10bbcafee13be44b7dd102be76d2">Annotation modes</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1.1: <a href="#pg-459b8d3d722f76fa1cf94a7b3181ebc7">Single shape</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.2: <a href="#pg-a15dadc334f6059973bcbf8ebc06a081">Track mode</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.3: <a href="#pg-ce6f6bfb4b5dda1ca32ced1ce3f11142">Attribute annotation mode</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.4: <a href="#pg-eaf0487d927672c52bdb8454c4c93c91">3D object annotation</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.5: <a href="#pg-5ec77f6573ffae8f9922a74e90912424">Annotation with tags</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-f503d9b0ea321d18edf3682b298d04f2">Annotation with shapes</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>2.1: <a href="#pg-7ddb601215fedc9c3f4014ddf15b2d76">Annotation with rectangles</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.2: <a href="#pg-ba195b6e4b05fd4b3b44a09c27133fa1">Shape mode</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.3: <a href="#pg-bca2998a5b65f0984631c2e00614fd97">Annotation with polygons</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>2.3.1: <a href="#pg-efcfd7bc02fba9dcb7b024270e0ff0ca">Manual drawing</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.3.2: <a href="#pg-1485c86fa5c4c627c883b64458eec590">Drawing using automatic borders</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.3.3: <a href="#pg-94cb430249a25663d6a79213bad7fc25">Edit polygon</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.3.4: <a href="#pg-f021a15097f280c532f4813c8d48bead">Track mode with polygons</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.3.5: <a href="#pg-c5ec64bcdb00243d9fd316473f65db97">Creating masks</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>2.4: <a href="#pg-cb143d62ed11a93ae8ee77204768df7b">Annotation with polylines</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.5: <a href="#pg-ea372ebddfadf1eacd3ff256692dfdcf">Track mode</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.6: <a href="#pg-40fd51f1fbaf95a6c639cd8d3565453a">Annotation with points</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>2.6.1: <a href="#pg-feb7de44f70012c8bac5d4e8a0330dac">Points in shape mode</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.6.2: <a href="#pg-8487f6bcb524c39cd011771bf93ee97f">Linear interpolation with one point</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>2.7: <a href="#pg-4b7a67c40353b473b49e88e94d6ab974">Annotation with ellipses</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.8: <a href="#pg-535cf9747f398e998f66a6fb1573f2d7">Annotation with cuboids</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>2.8.1: <a href="#pg-3faee3ffb42055085d27be3c8e18374e">Creating the cuboid</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.8.2: <a href="#pg-9a243ff8f2ffe5fcff1a99651be076df">Editing the cuboid</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>2.9: <a href="#pg-d2345c9e442a7f17060f774620e71c87">Annotation with skeletons</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.10: <a href="#pg-2f65ed610caefa58869fdf2927823617">Annotation with brush tool</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.11: <a href="#pg-d23e4f774a1b726c49e3c64f209ce2a3">Types of shapes</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.12: <a href="#pg-7964f030a5ff7b0c3d370b68ee4a1e89">Shape grouping</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-ed5058cc35e4aa0485ff9b097439b1aa">Editing &amp; Utility Tools</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>3.1: <a href="#pg-3a0617868795ef9848cad38985c86332">Join and slice tools</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3.2: <a href="#pg-73f32ce78d9ee72130b224ff734dcd09">Shapes converter</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3.3: <a href="#pg-e1e9c706c043636f7093cbd54492debb">Contextual images</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3.4: <a href="#pg-ab7fac07de5140bb0bf4a000837e3db4">Filter</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-50eb10bbcafee13be44b7dd102be76d2">1 - Annotation modes</h1>
+    <div class="lead">Overview of editor-level modes in CVAT and how they affect the annotation workflow.</div>
+	<p>CVAT provides several editor-level modes that change how the annotation workspace behaves.
+These modes control what actions are available to the user, which tools can be used, and how objects can be
+created or modified.</p>
+<p>Use this section to understand when to switch modes and how each mode supports a specific step of the annotation workflow.</p>
+
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-459b8d3d722f76fa1cf94a7b3181ebc7">1.1 - Single shape</h1>
+    <div class="lead">Guide to annotating tasks using Single Shape mode</div>
+	<p>The CVAT Single Shape annotation mode accelerates the annotation process and enhances
+workflow efficiency for specific scenarios.</p>
+<p>By using this mode you can label objects with a chosen annotation shape and label when an image
+contains only a single object. By eliminating the necessity to select tools from the sidebar
+and facilitating quicker navigation between images without
+the reliance on hotkeys, this feature makes the annotation process significantly faster.</p>
+<p>See:</p>
+<ul>
+<li><a href="#single-shape-mode-annotation-interface">Single Shape mode annotation interface</a></li>
+<li><a href="#annotating-in-single-shape-mode">Annotating in Single Shape mode</a></li>
+<li><a href="#query-parameters">Query parameters</a></li>
+<li><a href="#video-tutorial">Video tutorial</a></li>
+</ul>
+<h2 id="single-shape-mode-annotation-interface">Single Shape mode annotation interface</h2>
+<p>A set of controls in the interface of the <strong>Single Shape</strong> annotation mode may vary depending on different settings.</p>
+<p>Images below displays the complete interface, featuring all available fields;
+as mentioned above, certain fields may be absent depending on the scenario.</p>
+<p>For instance, when annotating
+with rectangles, the <strong>Number of points</strong> field will not appear, and if annotating a single class,
+the <strong>Labels selector</strong> will be omitted.</p>
+<p>To access <strong>Single Shape</strong> mode, open the job, navigate to the
+top right corner, and from the drop-down menu, select <strong>Single Shape</strong>.</p>
+<p><img src="/images/single-shape-interface.png" alt="Single Shape Annotation Mode Interface"></p>
+<p>The interface will be different if the shape type was set to <strong>Any</strong> in the label <strong>Constructor</strong>:</p>
+<p><img src="/images/single-shape-label-any.jpg" alt="Single Shape Annotation Mode Interface"></p>
+<p>The <strong>Single Shape</strong> annotation mode has the following fields:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Prompt for Shape and Label</strong></td>
+<td>Displays the selected shape and label for the annotation task, for example: &ldquo;Annotate <strong>cat</strong> on the image using <strong>rectangle</strong>&rdquo;.</td>
+</tr>
+<tr>
+<td><strong>Skip Button</strong></td>
+<td>Enables moving to the next frame without annotating the current one, particularly useful when the frame does not have anything to be annotated.</td>
+</tr>
+<tr>
+<td><strong>List of Hints</strong></td>
+<td>Offers guidance on using the interface effectively, including: <br> - Click <strong>Skip</strong> for frames without required annotations. <br> - Hold the <strong>Alt</strong> button to avoid unintentional drawing (e.g. when you want only move the image). <br> - Use the <strong>Ctrl+Z</strong> combination to undo the last action if needed. <br> - Use the <strong>Esc</strong> button to completely reset the current drawing progress.</td>
+</tr>
+<tr>
+<td><strong>Label selector</strong></td>
+<td>Allows for the selection of different labels (<code>cat</code>, or <code>dog</code> in our example) for annotation within the interface.</td>
+</tr>
+<tr>
+<td><strong>Label type selector</strong></td>
+<td>A drop-down list to select type of the label (rectangle, ellipse, etc). Only visible when the type of the shape is <strong>Any</strong>.</td>
+</tr>
+<tr>
+<td><strong>Options to Enable or Disable</strong></td>
+<td>Provides configurable options to streamline the annotation process, such as: <br> - <strong>Automatically go to the next frame</strong>. <br> - <strong>Automatically save when finish</strong>. <br> - <strong>Navigate only empty frames</strong>. <br> - <strong>Predefined number of points</strong> - Specific to polyshape annotations, enabling this option auto-completes a shape once a predefined number of points is reached. Otherwise, pressing <strong>N</strong> is required to finalize the shape.</td>
+</tr>
+<tr>
+<td><strong>Number of Points</strong></td>
+<td>Applicable for polyshape annotations, indicating the number of points to use for image annotation.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="annotating-in-single-shape-mode">Annotating in Single Shape mode</h2>
+<p>To annotate in Single Shape mode, follow these steps:</p>
+<ol>
+<li>Open the job and switch to <strong>Single Shape</strong> mode.</li>
+<li>Annotate the image based on the selected shape.
+For more information on shapes, see
+<a href="/v2.53.0/docs/getting_started/overview/#annotation-tools">Annotation Tools</a>.</li>
+<li>(Optional) If the image does not contain any objects to annotate,
+click <strong>Skip</strong> at the top of the right panel.</li>
+<li>Submit your work.</li>
+</ol>
+<h2 id="query-parameters">Query parameters</h2>
+<p>Also, we introduced additional query parameters, which you may append to
+the job link, to initialize the annotation process and automate workflow:</p>
+<table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Possible Values</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>defaultWorkspace</code></td>
+<td>Workspace identifier (e.g., <code>single_shape</code>, <code>tags</code>, <code>review</code>, <code>attributes</code>)</td>
+<td>Specifies the workspace to be used initially, streamlining the setup for different annotation tasks.</td>
+</tr>
+<tr>
+<td><code>defaultLabel</code></td>
+<td>A string representation of a label (label name)</td>
+<td>Sets a default label for the annotation session, facilitating consistency across similar tasks.</td>
+</tr>
+<tr>
+<td><code>defaultPointsCount</code></td>
+<td>Integer - number of points for polyshapes</td>
+<td>Defines a preset number of points for polyshape annotations, optimizing the annotation process.</td>
+</tr>
+</tbody>
+</table>
+<p>You can combine these parameters to customize the workspace for an annotator, for example:</p>
+<pre tabindex="0"><code>/tasks/&lt;tid&gt;/jobs/&lt;jid&gt;?defaultWorkspace=single_shape&amp;defaultLabel=dog&amp;defaultPointsCount=10
+</code></pre><p>Will open the following job:</p>
+<p><img src="/images/query-example.png" alt="Query Example"></p>
+<h2 id="video-tutorial">Video tutorial</h2>
+<p>For a better understanding of how Single Shape mode operates,
+we recommend watching the following tutorial.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/u17OXSD7Y4U?si=4z-f52lbxe0CpZEg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-a15dadc334f6059973bcbf8ebc06a081">1.2 - Track mode</h1>
+    <div class="lead">Usage examples and basic operations available during annotation in track mode.</div>
+	<p>Usage examples:</p>
+<ul>
+<li>Create new annotations for a sequence of frames.</li>
+<li>Add/modify/delete objects for existing annotations.</li>
+<li>Edit tracks, merge several rectangles into one track.</li>
+</ul>
+<ol>
+<li>
+<p>Like in the <code>Shape mode</code>, you need to select a <code>Rectangle</code> on the sidebar,
+in the appearing form, select the desired <code>Label</code> and the <code>Drawing method</code>.</p>
+<p><img src="/images/image083.jpg" alt="&amp;ldquo;Draw new rectangle&amp;rdquo; window with highlighted &amp;ldquo;Label&amp;rdquo; and &amp;ldquo;Drawing method&amp;rdquo; options"></p>
+</li>
+<li>
+<p>Creating a track for an object (look at the selected car as an example):</p>
+<ul>
+<li>
+<p>Create a <code>Rectangle</code> in <code>Track mode</code> by selecting <code>Track</code>.</p>
+<p><img src="/images/image014.jpg" alt="&amp;ldquo;Draw new rectangle&amp;rdquo; window with highlighted &amp;ldquo;Track&amp;rdquo; option"></p>
+</li>
+<li>
+<p>In <code>Track mode</code>, the rectangle will be automatically interpolated on the next frames.</p>
+</li>
+<li>
+<p>The cyclist starts moving on frame #2270. Let&rsquo;s mark the frame as a key frame.
+You can press <code>K</code> for that or select the <code>star</code> button (see the screenshot below).</p>
+<p><img src="/images/image016.jpg" alt="Objects sidebar with highlighted button for making a keyframe"></p>
+</li>
+<li>
+<p>If the object starts to change its position, you need to modify the rectangle where it happens.
+It isn&rsquo;t necessary to change the rectangle on each frame, simply update several keyframes
+and the frames between them will be interpolated automatically.</p>
+</li>
+<li>
+<p>Let&rsquo;s jump 30 frames forward and adjust the boundaries of the object. See an example below:</p>
+<p><img src="/images/image017_detrac.jpg" alt="Several frames displaying a keyframe annotation"></p>
+</li>
+<li>
+<p>After that the rectangle of the object will be changed automatically on frames 2270 to 2300:</p>
+<p><img src="/images/gif019_detrac.gif" alt="Example of automatically tracked object"></p>
+</li>
+</ul>
+</li>
+<li>
+<p>When the annotated object disappears or becomes too small, you need to
+finish the track. You have to choose <code>Outside Property</code>, shortcut <code>O</code>.</p>
+<p><img src="/images/image019.jpg" alt="Objects sidebar with highlighted &amp;ldquo;Outside property&amp;rdquo; button"></p>
+</li>
+<li>
+<p>If the object isn&rsquo;t visible on a couple of frames and then appears again,
+you can use the <code>Merge</code> feature to merge several individual tracks
+into one.</p>
+<p><img src="/images/image020.jpg" alt="User interface with highlighted &amp;ldquo;Merge&amp;rdquo; button"></p>
+<ul>
+<li>
+<p>Create tracks for moments when the cyclist is visible:</p>
+<p><img src="/images/gif001_detrac.gif" alt="Example of a created track for an object that is sometimes not visible"></p>
+</li>
+<li>
+<p>Select <code>Merge</code> button or press key <code>M</code> and select on any rectangle of the first track
+and on any rectangle of the second track and so on:</p>
+<p><img src="/images/image162_detrac.jpg" alt="Several frames displaying the process of track merging"></p>
+</li>
+<li>
+<p>Select <code>Merge</code> button or press <code>M</code> to apply changes.</p>
+<p><img src="/images/image020.jpg" alt="User interface with highlighted &amp;ldquo;Merge&amp;rdquo; button"></p>
+</li>
+<li>
+<p>The final annotated sequence of frames in <code>Interpolation</code> mode can
+look like the clip below:</p>
+<p><img src="/images/gif003_detrac.gif" alt="Example of a track with interpolated frames"></p>
+</li>
+</ul>
+</li>
+</ol>
+<p>Shapes that were created in the track mode, have extra navigation buttons.</p>
+<ul>
+<li>
+<p>These buttons help to jump to the previous/next keyframe.</p>
+<p><img src="/images/image056.jpg" alt="Highlighted &amp;ldquo;Previous&amp;rdquo; and &amp;ldquo;Next&amp;rdquo; buttons in user interface"></p>
+</li>
+<li>
+<p>The button helps to jump to the initial frame and to the last keyframe.</p>
+<p><img src="/images/image057.jpg" alt="Highlighted &amp;ldquo;Initial frame&amp;rdquo; and &amp;ldquo;Last frame&amp;rdquo; buttons in user interface"></p>
+</li>
+</ul>
+<p>You can use the <code>Split</code> function to split one track into two tracks:</p>
+<h1 id="example-of-an-annotation-with-split-tracksimagesgif010_detracgif"><img src="/images/gif010_detrac.gif" alt="Example of an annotation with split tracks"></h1>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-ce6f6bfb4b5dda1ca32ced1ce3f11142">1.3 - Attribute annotation mode</h1>
+    <div class="lead">Usage examples and basic operations available in attribute annotation mode.</div>
+	<ul>
+<li>
+<p>In this mode, you can edit attributes with fast navigation between objects and frames using a keyboard.
+Open the drop-down list in the top panel and select <strong>Attribute annotation</strong>.</p>
+<p><img src="/images/Attribute%20annotation%20mode_01.png" alt="User interface with opened menu for changing annotation mode"></p>
+</li>
+<li>
+<p>In this mode, objects panel change to a special panel:</p>
+<p><img src="/images/Attribute%20annotation%20mode_02.png" alt="Object panel interface in attribute annotation mode with marked elements"></p>
+</li>
+<li>
+<p>The active attribute will be red. In this case, it is <code>gender</code>. Look at the bottom side panel to see all possible
+shortcuts for changing the attribute. Press key <code>2</code> on your keyboard to assign a value (female) for the attribute
+or select from the drop-down list.</p>
+<p><img src="/images/Attribute%20annotation%20mode_03.png" alt="Example of assigning an attribute value in objects sidebar"></p>
+</li>
+<li>
+<p>Press <code>Up Arrow</code>/<code>Down Arrow</code> on your keyboard or select the buttons in the UI to go to the next/previous
+attribute. In this case, after pressing <code>Down Arrow</code> you will be able to edit the <code>Age</code> attribute.</p>
+<p><img src="/images/Attribute%20annotation%20mode_04.png" alt="Example of selecting an attribute value in objects sidebar with keyboard"></p>
+</li>
+<li>
+<p>Use <code>Right Arrow</code>/<code>Left Arrow</code> keys to move to the previous/next image with annotation.</p>
+</li>
+</ul>
+<p>To display all the hot keys available in the attribute annotation mode, press <code>F2</code>.</p>
+<p>It is possible to handle lots of objects on the same frame in the mode.</p>
+<p><img src="/images/image058_detrac.jpg" alt="Example of user interface in attribute annotation mode"></p>
+<p>It is more convenient to annotate objects of the same type. In this case you can apply
+the appropriate filter. For example, the following filter will
+hide all objects except person: <code>label==&quot;Person&quot;</code>.</p>
+<p>To navigate between objects (person in this case),
+use the following buttons <code>switch between objects in the frame</code> on the special panel:</p>
+<p><img src="/images/image026.jpg" alt="Panel for attribute annotation with marked options and parameters"></p>
+<p>or shortcuts:</p>
+<ul>
+<li><code>Tab</code> — go to the next object</li>
+<li><code>Shift+Tab</code> — go to the previous object.</li>
+</ul>
+<p>In order to change the zoom level, go to settings (press <code>F3</code>) in the workspace tab and set the value Attribute annotation mode (AAM) zoom margin in px.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-eaf0487d927672c52bdb8454c4c93c91">1.4 - 3D object annotation</h1>
+    <div class="lead">Overview of basic operations available when annotating 3D objects.</div>
+	<p>Use the 3D Annotation tool for labeling 3D objects and scenes, such as vehicles, buildings, landscapes, and others.</p>
+<p>Check out:</p>
+<ul>
+<li><a href="#navigation">Navigation</a></li>
+<li><a href="#annotation-with-cuboids">Annotation with cuboids</a>
+<ul>
+<li><a href="#annotation-with-shapes">Annotation with shapes</a></li>
+<li><a href="#tracking-with-cuboids">Tracking with cuboids</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="navigation">Navigation</h2>
+<p>The 3D annotation canvas looks like the following:</p>
+<p><img src="/images/3d-canvas.jpg" alt="3D canvas"></p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    If you added contextual images to the dataset, the canvas will include them.
+For more information, consult <a href="/v2.53.0/docs/annotation/manual-annotation/utilities/contextual-images/">Contextual images</a>
+
+</div>
+
+<p>For information on the available tools, consult
+<a href="/v2.53.0/docs/annotation/annotation-editor/controls-sidebar/">Controls sidebar</a>.</p>
+<p>You can navigate, using the mouse, or navigation keys:</p>
+<p><img src="/images/image216_carla_town3.jpg" alt="Navigation keys used in 3D annotation"></p>
+<p>You can also use keyboard shortcuts to navigate:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Keys</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Camera rotation</td>
+<td><strong>Shift</strong> + <strong>Arrow</strong> (Up, Down, Left, Right)</td>
+</tr>
+<tr>
+<td>Left/Right</td>
+<td><strong>Alt</strong>+<strong>J</strong>/ <strong>Alt</strong>+<strong>L</strong></td>
+</tr>
+<tr>
+<td>Up/down</td>
+<td><strong>Al</strong>t+<strong>U</strong>/ <strong>Alt</strong>+<strong>O</strong></td>
+</tr>
+<tr>
+<td>Zoom in/ou</td>
+<td><strong>Alt</strong>+<strong>K</strong>/ <strong>Alt</strong>+<strong>I</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="annotation-with-cuboids">Annotation with cuboids</h2>
+<p>There are two options available for 3D annotation:</p>
+<ul>
+<li><strong>Shape</strong>: for tasks like object detection.</li>
+<li><strong>Track</strong>: uses interpolation to predict the position of objects in subsequent frames.
+A unique ID will be assigned to each object and maintained throughout the sequence of images.</li>
+</ul>
+<h3 id="annotation-with-shapes">Annotation with shapes</h3>
+<p>To add a 3D shape:</p>
+<ol>
+<li>
+<p>On the objects pane, select <strong>Draw new cuboid</strong> &gt;
+select the label from the drop-down list &gt; <strong>Shape</strong>.</p>
+<p><img src="/images/image217.jpg" alt="Opened &amp;ldquo;Draw new cuboid&amp;rdquo; window"></p>
+</li>
+<li>
+<p>The cursor will be followed by a cuboid.
+Place the cuboid on the 3D scene.</p>
+<p><img src="/images/gif026_carla_town3.gif" alt="Example of placing cuboid on a 3D scene"></p>
+</li>
+<li>
+<p>Use projections to adjust the cuboid.
+Click and hold the left mouse button to edit the label shape on the projection.</p>
+<p><img src="/images/gif027_carla_town3.gif" alt="Example of a cuboid adjustment with projections"></p>
+</li>
+<li>
+<p>(Optional) Move one of the four points to change the size of the cuboid.</p>
+<p><img src="/images/gif028_carla_town3.gif" alt="Example of a cuboid size change using cuboid points"></p>
+</li>
+<li>
+<p>(Optional) To rotate the cuboid, select the middle point
+and then drag the cuboid up/down or to left/right.</p>
+<p><img src="/images/gif029_carla_town3.gif" alt="Example of a cuboid rotation using cuboid middle point"></p>
+</li>
+</ol>
+<h3 id="tracking-with-cuboids">Tracking with cuboids</h3>
+<p>To track with cuboids:</p>
+<ol>
+<li>
+<p>On the objects pane, select <strong>Draw new cuboid</strong> &gt;
+select the label from the drop-down list &gt; <strong>Track</strong>.</p>
+</li>
+<li>
+<p>The cursor will be followed by a cuboid.
+Place the cuboid on the 3D scene.</p>
+</li>
+<li>
+<p>Use projections to adjust the cuboid.
+Select and hold the left mouse button to edit the label shape on the projection.</p>
+<p><img src="/images/gif027_carla_town3.gif" alt="Adjusting cuboid"></p>
+</li>
+<li>
+<p>(Optional) Move one of the four points to change the size of the cuboid.</p>
+<p><img src="/images/gif028_carla_town3.gif" alt="Moving cuboid"></p>
+</li>
+<li>
+<p>(Optional) To rotate the cuboid, click on the middle point
+and then drag the cuboid up/down or to left/right.</p>
+<p><img src="/images/gif029_carla_town3.gif" alt="Rotating cuboid"></p>
+</li>
+<li>
+<p>Move several frames forward. You will see the cuboid you&rsquo;ve added in frame 1.
+Adjust it, if needed.</p>
+</li>
+<li>
+<p>Repeat to the last frame with the presence of the object you are tracking.</p>
+</li>
+</ol>
+<p>For more information about tracking, consult <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/track-mode-basics/">Track mode</a>.</p>
+<p>As well as 2D-task objects, 3D-task objects support the ability to change appearance, attributes,
+properties and have an action menu. Read more in
+<a href="/v2.53.0/docs/annotation/annotation-editor/objects-sidebar/">objects sidebar</a> section.</p>
+<h2 id="moving-an-object">Moving an object</h2>
+<p>If you hover the cursor over a cuboid and press <code>Shift+N</code>, the cuboid will be cut,
+so you can paste it in other place (double-click to paste the cuboid).</p>
+<h2 id="copying">Copying</h2>
+<p>As well as in 2D task you can copy and paste objects by <code>Ctrl+C</code> and <code>Ctrl+V</code>,
+but unlike 2D tasks you have to place a copied object in a 3D space (double click to paste).</p>
+<p><img src="/images/gif030_carla_town3.gif" alt="Example of copying a cuboid and placing the copy in 3D space"></p>
+<h2 id="image-of-the-projection-window">Image of the projection window</h2>
+<p>You can copy or save the projection-window image by left-clicking on it and selecting a &ldquo;save image as&rdquo; or &ldquo;copy image&rdquo;.</p>
+<h2 id="cuboid-orientation">Cuboid orientation</h2>
+<p>The feature enables or disables the display of cuboid orientation arrows in the 3D space.
+It is controlled by a checkbox located in the appearance block. When enabled, arrows representing
+the cuboid&rsquo;s axis orientation (X - red, Y - green, Z - blue) are displayed, providing a visual reference
+for the cuboid&rsquo;s alignment within the 3D environment. This feature is useful for understanding the spatial
+orientation of the cuboid.</p>
+<p><img src="/images/cuboid_orientation.gif" alt="User interface with cuboid projections and orientation elements"></p>
+<h2 id="cuboid-size-input">Cuboid size input</h2>
+<p>The size input feature allows users to manually specify the dimensions of a cuboid in the 3D space.
+This feature is accessible through the objects sidebar - details panel, where you can input precise
+values for the width, height, and length (X - width, Y - height, Z - length) of the cuboid.
+By entering these values, the cuboid&rsquo;s size is adjusted accordingly to its orientation, providing
+greater control and accuracy when annotating objects in 3D tasks.</p>
+<p><img src="/images/cuboid_size_input.gif" alt="Example of changing a cuboid size using input fields in sidebar"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-5ec77f6573ffae8f9922a74e90912424">1.5 - Annotation with tags</h1>
+    
+	<p>It is used to annotate frames, tags are not displayed in the workspace.
+Before you start, open the drop-down list in the top panel and select <code>Tag annotation</code>.</p>
+<p><img src="/images/image183.jpg" alt="Open drop-down list with highlighted &amp;ldquo;Tag annotation&amp;rdquo; option"></p>
+<p>The objects sidebar will be replaced with a special panel for working with tags.
+Here you can select a label for a tag and add it by clicking on the <code>Plus</code> button.
+You can also customize hotkeys for each label.</p>
+<p><img src="/images/image181.jpg" alt="Panel for tag annotation with marked options and parameters"></p>
+<p>If you need to use only one label for one frame, then enable the <code>Automatically go to the next frame</code>
+checkbox, then after you add the tag the frame will automatically switch to the next.</p>
+<p>Tags will be shown in the top left corner of the canvas. You can show/hide them in the settings.</p>
+<p><img src="/images/image249.jpg" alt="Example of tag labels on an annotation"></p>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f503d9b0ea321d18edf3682b298d04f2">2 - Annotation with shapes</h1>
+    <div class="lead">Overview of object types supported in CVAT for annotation.</div>
+	<p>This section describes all shapes you can create in CVAT. Each shape type supports its own tools, editing options, and
+use cases.</p>
+<p>Review these pages to choose the correct shape tool for your annotation task.</p>
+
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-7ddb601215fedc9c3f4014ddf15b2d76">2.1 - Annotation with rectangles</h1>
+    
+	<p>To learn more about annotation using a rectangle, see the sections:</p>
+<ul>
+<li><a href="/v2.53.0/docs/annotation/manual-annotation/shapes/shape-mode-basics/">Shape mode (basics)</a></li>
+<li><a href="/v2.53.0/docs/annotation/manual-annotation/shapes/track-mode-basics/">Track mode (basics)</a></li>
+</ul>
+<h2 id="rotation-rectangle">Rotation rectangle</h2>
+<p>To rotate the rectangle, pull on the <code>rotation point</code>. Rotation is done around the center of the rectangle.
+To rotate at a fixed angle (multiple of 15 degrees),
+hold <code>shift</code>. In the process of rotation, you can see the angle of rotation.</p>
+<p><img src="/images/image230.jpg" alt="Annotation with rectangle shape and highlighted rotation point"></p>
+<h2 id="annotation-with-rectangle-by-4-points">Annotation with rectangle by 4 points</h2>
+<p>It is an efficient method of bounding box annotation, proposed
+<a href="https://arxiv.org/pdf/1708.02750.pdf">here</a>.
+Before starting, you need to make sure that the drawing method by 4 points is selected.</p>
+<p><img src="/images/image134.jpg" alt="Open &amp;ldquo;Draw new rectangle&amp;rdquo; window with highlighted &amp;ldquo;By 4 points&amp;rdquo; option"></p>
+<p>Press <code>Shape</code> or <code>Track</code> for entering drawing mode. Click on four extreme points:
+the top, bottom, left- and right-most physical points on the object.
+Drawing will be automatically completed right after clicking the fourth point.
+Press <code>Esc</code> to cancel editing.</p>
+<p><img src="/images/gif016_mapillary_vistas.gif" alt="Example of annotation process made with four point rectangle"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-ba195b6e4b05fd4b3b44a09c27133fa1">2.2 - Shape mode</h1>
+    <div class="lead">Usage examples and basic operations available during annotation in shape mode.</div>
+	<p>Usage examples:</p>
+<ul>
+<li>Create new annotations for a set of images.</li>
+<li>Add/modify/delete objects for existing annotations.</li>
+</ul>
+<ol>
+<li>
+<p>You need to select <code>Rectangle</code> on the controls sidebar:</p>
+<p><img src="/images/image082.jpg" alt="&amp;ldquo;Rectangle&amp;rdquo; button highlighted in user interface"></p>
+<p>Before you start, select the correct <code> Label</code> (should be specified by you when creating the task)
+and <code> Drawing Method</code> (by 2 points or by 4 points):</p>
+<p><img src="/images/image080.jpg" alt="&amp;ldquo;Draw new rectangle&amp;rdquo; window with highlighted &amp;ldquo;Label&amp;rdquo; and &amp;ldquo;Track&amp;rdquo; options"></p>
+</li>
+<li>
+<p>Creating a new annotation in <code>Shape mode</code>:</p>
+<ul>
+<li>
+<p>Create a separate <code>Rectangle</code> by selecting <code>Shape</code>.</p>
+<p><img src="/images/image081.jpg" alt="&amp;ldquo;Draw new rectangle&amp;rdquo; window with highlighted &amp;ldquo;Shape&amp;rdquo; option"></p>
+</li>
+<li>
+<p>Choose the opposite points. Your first rectangle is ready!</p>
+<p><img src="/images/image011_detrac.jpg" alt="Several frames demonstrating the creation of a rectangle shape"></p>
+</li>
+<li>
+<p>To learn more about creating a rectangle
+<a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-rectangles/">read here</a>.</p>
+</li>
+<li>
+<p>It is possible to adjust boundaries and location of the rectangle using a mouse.
+The rectangle&rsquo;s size is shown in the top right corner, you can check it by selecting any point of the shape.
+You can also undo your actions using <code>Ctrl+Z</code> and redo them with <code>Shift+Ctrl+Z</code> or <code>Ctrl+Y</code>.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>You can see the <code>Object card</code> in the objects sidebar or open it by right-clicking on the object.
+You can change the attributes in the details section.
+You can perform basic operations or delete an object by selecting on the action menu button.</p>
+<p><img src="/images/image012.jpg" alt="Objects sidebar with an example of object settings"></p>
+</li>
+<li>
+<p>The following figure is an example of a fully annotated frame with separate shapes.</p>
+<p><img src="/images/image013_detrac.jpg" alt="Example of annotated frame with several rectangles"></p>
+</li>
+</ol>
+<p><strong>Occluded</strong>
+Occlusion is an attribute used if an object is occluded by another object or
+isn&rsquo;t fully visible on the frame. Use <code>Q</code> shortcut to set the property
+quickly.</p>
+<p><img src="/images/image065.jpg" alt="Objects sidebar with highlighted button for occluding objects"></p>
+<p>Example: the three cars on the figure below should be labeled as <strong>occluded</strong>.</p>
+<p><img src="/images/image054_mapillary_vistas.jpg" alt="Example of an occluded object on an annotation"></p>
+<p>If a frame contains too many objects and it is difficult to annotate them
+due to many shapes placed mostly in the same place, it makes sense
+to lock them. Shapes for locked objects are transparent, and it is easy to
+annotate new objects. Besides, you can&rsquo;t change previously annotated objects
+by accident. Shortcut: <code>L</code>.</p>
+<p><img src="/images/image066.jpg" alt="Objects sidebar with highlighted button for locking objects"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-bca2998a5b65f0984631c2e00614fd97">2.3 - Annotation with polygons</h1>
+    <div class="lead">Guide to creating and editing polygons.</div>
+	
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-efcfd7bc02fba9dcb7b024270e0ff0ca">2.3.1 - Manual drawing</h1>
+    
+	<p>It is used for semantic / instance segmentation.</p>
+<p>Before starting, you need to select <code>Polygon</code> on the controls sidebar and choose the correct Label.</p>
+<p><img src="/images/image084.jpg" alt="Highlighted &amp;ldquo;Polygon&amp;rdquo; button and open &amp;ldquo;Draw new polygon&amp;rdquo; window"></p>
+<ul>
+<li>Click <code>Shape</code> to enter drawing mode.
+There are two ways to draw a polygon: either create points by clicking or
+by dragging the mouse on the screen while holding <code>Shift</code>.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Clicking points</th>
+<th>Holding Shift+Dragging</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/images/gif005_detrac.gif" alt="Example of creating a polygon by clicking points"></td>
+<td><img src="/images/gif006_detrac.gif" alt="Example of creating a polygon by dragging with mouse"></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>When <code>Shift</code> isn&rsquo;t pressed, you can zoom in/out (when scrolling the mouse
+wheel) and move (when clicking the mouse wheel and moving the mouse), you can also
+delete the previous point by right-clicking on it.</li>
+<li>You can use the <code>Selected opacity</code> slider in the <code>Objects sidebar</code> to change the opacity of the polygon.
+You can read more in the
+<a href="/v2.53.0/docs/annotation/annotation-editor/objects-sidebar/#appearance">Objects sidebar</a> section.</li>
+<li>Press <code>N</code> again or click the <code>Done</code> button on the top panel for completing the shape.</li>
+<li>After creating the polygon, you can move the points or delete them by right-clicking and selecting <code>Delete point</code>
+or clicking with pressed <code>Alt</code> key in the context menu.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-1485c86fa5c4c627c883b64458eec590">2.3.2 - Drawing using automatic borders</h1>
+    
+	<p><img src="/images/gif025_mapillary_vistas.gif" alt="Example of annotation made with polygon and automatic borders option"></p>
+<p>You can use auto borders when drawing a polygon. Using automatic borders allows you to automatically trace
+the outline of polygons existing in the annotation.</p>
+<ul>
+<li>
+<p>To do this, go to settings -&gt; workspace tab and enable <code>Automatic Bordering</code>
+or press <code>Ctrl</code> while drawing a polygon.</p>
+<p><img src="/images/image161.jpg" alt="&amp;ldquo;Workspace&amp;rdquo; tab in &amp;ldquo;Settings&amp;rdquo; and highlighted &amp;ldquo;Automatic bordering&amp;rdquo; setting"></p>
+</li>
+<li>
+<p>Start drawing / editing a polygon.</p>
+</li>
+<li>
+<p>Points of other shapes will be highlighted, which means that the polygon can be attached to them.</p>
+</li>
+<li>
+<p>Define the part of the polygon path that you want to repeat.</p>
+<p><img src="/images/image157_mapillary_vistas.jpg" alt="Annotation with highlighted part for repetition"></p>
+</li>
+<li>
+<p>Click on the first point of the contour part.</p>
+<p><img src="/images/image158_mapillary_vistas.jpg" alt="Annotation with first contour point highlighted"></p>
+</li>
+<li>
+<p>Then click on any point located on part of the path. The selected point will be highlighted in purple.</p>
+<p><img src="/images/image159_mapillary_vistas.jpg" alt="Annotation with highlighted middle point"></p>
+</li>
+<li>
+<p>Click on the last point and the outline to this point will be built automatically.</p>
+<p><img src="/images/image160_mapillary_vistas.jpg" alt="Annotation with last contour point highlighted"></p>
+</li>
+</ul>
+<p>Besides, you can set a fixed number of points in the <code>Number of points</code> field, then
+drawing will be stopped automatically. To enable dragging you should right-click
+inside the polygon and choose <code>Switch pinned property</code>.</p>
+<p>Below you can see results with opacity and black stroke:</p>
+<p><img src="/images/image064_mapillary_vistas.jpg" alt="Example of annotation with applied opacity and black stroke"></p>
+<p>If you need to annotate small objects, increase <code>Image Quality</code> to
+<code>95</code> in <code>Create task</code> dialog for your convenience.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-94cb430249a25663d6a79213bad7fc25">2.3.3 - Edit polygon</h1>
+    
+	<p>To edit a polygon you have to click on it while holding <code>Shift</code>, it will open the polygon editor.</p>
+<ul>
+<li>
+<p>In the editor you can create new points or delete part of a polygon by closing the line on another point.</p>
+</li>
+<li>
+<p>When <code>Intelligent polygon cropping</code> option is activated in the settings,
+CVAT considers two criteria to decide which part of a polygon should be cut off during automatic editing.</p>
+<ul>
+<li>The first criteria is a number of cut points.</li>
+<li>The second criteria is a length of a cut curve.</li>
+</ul>
+<p>If both criteria recommend to cut the same part, algorithm works automatically,
+and if not, a user has to make the decision.
+If you want to choose manually which part of a polygon should be cut off,
+disable <code>Intelligent polygon cropping</code> in the settings.
+In this case after closing the polygon, you can select the part of the polygon you want to leave.</p>
+<p><img src="/images/image209.jpg" alt="Setting for Intelligent polygon cropping"></p>
+</li>
+<li>
+<p>You can press <code>Esc</code> to cancel editing.</p>
+<p><img src="/images/gif007_mapillary_vistas.gif" alt="Example of editing a polygon shape and canceling editing"></p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f021a15097f280c532f4813c8d48bead">2.3.4 - Track mode with polygons</h1>
+    
+	<p>Polygons in the track mode allow you to mark moving objects more accurately other than using a rectangle.</p>
+<ol>
+<li>
+<p>To create a polygon in the track mode, click the <code>Track</code> button.</p>
+<p><img src="/images/image184.jpg" alt="Open &amp;ldquo;Draw new polygon&amp;rdquo; window with highlighted &amp;ldquo;Track&amp;rdquo; button"></p>
+</li>
+<li>
+<p>Create a polygon the same way as in the case of
+<a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/">Annotation with polygons</a>.
+Press <code>N</code> or click the <code>Done</code> button on the top panel to complete the polygon.</p>
+</li>
+<li>
+<p>Pay attention to the fact that the created polygon has a starting point and a direction,
+these elements are important for annotation of the following frames.</p>
+</li>
+<li>
+<p>After going a few frames forward press <code>Shift+N</code>, the old polygon will disappear and you can create a new polygon.
+The new starting point should match the starting point of the previously created polygon
+(in this example, the top of the left mirror). The direction must also match (in this example, clockwise).
+After creating the polygon, press <code>N</code> and the intermediate frames will be interpolated automatically.</p>
+<p><img src="/images/image185_detrac.jpg" alt="Several images demonstrating creation of a keyframe for interpolation"></p>
+</li>
+<li>
+<p>If you need to change the starting point, right-click on the desired point and select <code>Set starting point</code>.
+To change the direction, right-click on the desired point and select switch orientation.</p>
+<p><img src="/images/image186_detrac.jpg" alt="Part of annotation with open menu for a point and highlighted &amp;ldquo;Set starting point&amp;rdquo;"></p>
+</li>
+</ol>
+<p>There is no need to redraw the polygon every time using <code>Shift+N</code>,
+instead you can simply move the points or edit a part of the polygon by pressing <code>Shift+Click</code>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-c5ec64bcdb00243d9fd316473f65db97">2.3.5 - Creating masks</h1>
+    
+	<h3 id="cutting-holes-in-polygons">Cutting holes in polygons</h3>
+<p>Currently, CVAT does not support cutting transparent holes in polygons. However,
+it is possible to generate holes in exported instance and class masks.
+To do this, one needs to define a background class in the task and draw holes
+with it as additional shapes above the shapes needed to have holes:</p>
+<p>The editor window:</p>
+<p><img src="/images/mask_export_example1_editor.png" alt="The editor"></p>
+<p>Remember to use z-axis ordering for shapes by [-] and [+, =] keys.</p>
+<p>Exported masks:</p>
+<p><img src="/images/mask_export_example1_cls_mask.png" alt="A class mask">  <img src="/images/mask_export_example1_inst_mask.png" alt="An instance mask"></p>
+<p>Notice that it is currently impossible to have a single instance number for
+internal shapes (they will be merged into the largest one and then covered by
+&ldquo;holes&rdquo;).</p>
+<h3 id="creating-masks">Creating masks</h3>
+<p>There are several formats in CVAT that can be used to export masks:</p>
+<ul>
+<li><code>Segmentation Mask</code> (PASCAL VOC masks)</li>
+<li><code>CamVid</code></li>
+<li><code>MOTS</code></li>
+<li><code>ICDAR</code></li>
+<li><code>COCO</code> (RLE-encoded instance masks, <a href="/v2.53.0/docs/dataset_management/formats/format-coco/">guide</a>)</li>
+<li><code>Datumaro</code></li>
+</ul>
+<p>An example of exported masks (in the <code>Segmentation Mask</code> format):</p>
+<p><img src="/images/exported_cls_masks_example.png" alt="A class mask"> <img src="/images/exported_inst_masks_example.png" alt="An instance mask"></p>
+<p>Important notices:</p>
+<ul>
+<li>Both boxes and polygons are converted into masks</li>
+<li>Grouped objects are considered as a single instance and exported as a single
+mask (label and attributes are taken from the largest object in the group)</li>
+</ul>
+<h4 id="class-colors">Class colors</h4>
+<p>All the labels have associated colors, which are used in the generated masks.
+These colors can be changed in the task label properties:</p>
+<p><img src="/images/label_color_picker.jpg" alt="Task label properties with color picker"></p>
+<p>Label colors are also displayed in the annotation window on the right panel,
+where you can show or hide specific labels
+(only the presented labels are displayed):</p>
+<p><img src="/images/label_panel_anno_window.jpg" alt="Label tab with label colors open in annotation window"></p>
+<p>A background class can be:</p>
+<ul>
+<li>A default class, which is implicitly-added, of black color (RGB 0, 0, 0)</li>
+<li><code>background</code> class with any color (has a priority, name is case-insensitive)</li>
+<li>Any class of black color (RGB 0, 0, 0)</li>
+</ul>
+<p>To change background color in generated masks (default is black),
+change <code>background</code> class color to the desired one.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-cb143d62ed11a93ae8ee77204768df7b">2.4 - Annotation with polylines</h1>
+    <div class="lead">Guide to annotating tasks using polylines.</div>
+	<p>It is used for road markup annotation etc.</p>
+<p>Before starting, you need to select the <code>Polyline</code>. You can set a fixed number of points
+in the <code>Number of points</code> field, then drawing will be stopped automatically.</p>
+<p><img src="/images/image085.jpg" alt="Highlighted &amp;ldquo;Polyline&amp;rdquo; button with open &amp;ldquo;Draw new polyline&amp;rdquo; window"></p>
+<p>Click <code>Shape</code> to enter drawing mode. There are two ways to draw a polyline —
+you either create points by clicking or by dragging a mouse on the screen while holding <code>Shift</code>.
+When <code>Shift</code> isn&rsquo;t pressed, you can zoom in/out (when scrolling the mouse wheel)
+and move (when clicking the mouse wheel and moving the mouse), you can delete
+previous points by right-clicking on it.
+Press <code>N</code> again or click the <code>Done</code> button on the top panel to complete the shape.
+You can delete a point by clicking on it with pressed <code>Ctrl</code> or right-clicking on a point
+and selecting <code>Delete point</code>. Click with pressed <code>Shift</code> will open a polyline editor.
+There you can create new points(by clicking or dragging) or delete part of a polygon closing
+the red line on another point. Press <code>Esc</code> to cancel editing.</p>
+<p><img src="/images/image039_mapillary_vistas.jpg" alt="Example of annotation with several polylines"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-ea372ebddfadf1eacd3ff256692dfdcf">2.5 - Track mode</h1>
+    <div class="lead">Usage examples and basic operations available during annotation in track mode.</div>
+	<p>Usage examples:</p>
+<ul>
+<li>Create new annotations for a sequence of frames.</li>
+<li>Add/modify/delete objects for existing annotations.</li>
+<li>Edit tracks, merge several rectangles into one track.</li>
+</ul>
+<ol>
+<li>
+<p>Like in the <code>Shape mode</code>, you need to select a <code>Rectangle</code> on the sidebar,
+in the appearing form, select the desired <code>Label</code> and the <code>Drawing method</code>.</p>
+<p><img src="/images/image083.jpg" alt="&amp;ldquo;Draw new rectangle&amp;rdquo; window with highlighted &amp;ldquo;Label&amp;rdquo; and &amp;ldquo;Drawing method&amp;rdquo; options"></p>
+</li>
+<li>
+<p>Creating a track for an object (look at the selected car as an example):</p>
+<ul>
+<li>
+<p>Create a <code>Rectangle</code> in <code>Track mode</code> by selecting <code>Track</code>.</p>
+<p><img src="/images/image014.jpg" alt="&amp;ldquo;Draw new rectangle&amp;rdquo; window with highlighted &amp;ldquo;Track&amp;rdquo; option"></p>
+</li>
+<li>
+<p>In <code>Track mode</code>, the rectangle will be automatically interpolated on the next frames.</p>
+</li>
+<li>
+<p>The cyclist starts moving on frame #2270. Let&rsquo;s mark the frame as a key frame.
+You can press <code>K</code> for that or select the <code>star</code> button (see the screenshot below).</p>
+<p><img src="/images/image016.jpg" alt="Objects sidebar with highlighted button for making a keyframe"></p>
+</li>
+<li>
+<p>If the object starts to change its position, you need to modify the rectangle where it happens.
+It isn&rsquo;t necessary to change the rectangle on each frame, simply update several keyframes
+and the frames between them will be interpolated automatically.</p>
+</li>
+<li>
+<p>Let&rsquo;s jump 30 frames forward and adjust the boundaries of the object. See an example below:</p>
+<p><img src="/images/image017_detrac.jpg" alt="Several frames displaying a keyframe annotation"></p>
+</li>
+<li>
+<p>After that the rectangle of the object will be changed automatically on frames 2270 to 2300:</p>
+<p><img src="/images/gif019_detrac.gif" alt="Example of automatically tracked object"></p>
+</li>
+</ul>
+</li>
+<li>
+<p>When the annotated object disappears or becomes too small, you need to
+finish the track. You have to choose <code>Outside Property</code>, shortcut <code>O</code>.</p>
+<p><img src="/images/image019.jpg" alt="Objects sidebar with highlighted &amp;ldquo;Outside property&amp;rdquo; button"></p>
+</li>
+<li>
+<p>If the object isn&rsquo;t visible on a couple of frames and then appears again,
+you can use the <code>Merge</code> feature to merge several individual tracks
+into one.</p>
+<p><img src="/images/image020.jpg" alt="User interface with highlighted &amp;ldquo;Merge&amp;rdquo; button"></p>
+<ul>
+<li>
+<p>Create tracks for moments when the cyclist is visible:</p>
+<p><img src="/images/gif001_detrac.gif" alt="Example of a created track for an object that is sometimes not visible"></p>
+</li>
+<li>
+<p>Select <code>Merge</code> button or press key <code>M</code> and select on any rectangle of the first track
+and on any rectangle of the second track and so on:</p>
+<p><img src="/images/image162_detrac.jpg" alt="Several frames displaying the process of track merging"></p>
+</li>
+<li>
+<p>Select <code>Merge</code> button or press <code>M</code> to apply changes.</p>
+<p><img src="/images/image020.jpg" alt="User interface with highlighted &amp;ldquo;Merge&amp;rdquo; button"></p>
+</li>
+<li>
+<p>The final annotated sequence of frames in <code>Interpolation</code> mode can
+look like the clip below:</p>
+<p><img src="/images/gif003_detrac.gif" alt="Example of a track with interpolated frames"></p>
+</li>
+</ul>
+</li>
+</ol>
+<p>Shapes that were created in the track mode, have extra navigation buttons.</p>
+<ul>
+<li>
+<p>These buttons help to jump to the previous/next keyframe.</p>
+<p><img src="/images/image056.jpg" alt="Highlighted &amp;ldquo;Previous&amp;rdquo; and &amp;ldquo;Next&amp;rdquo; buttons in user interface"></p>
+</li>
+<li>
+<p>The button helps to jump to the initial frame and to the last keyframe.</p>
+<p><img src="/images/image057.jpg" alt="Highlighted &amp;ldquo;Initial frame&amp;rdquo; and &amp;ldquo;Last frame&amp;rdquo; buttons in user interface"></p>
+</li>
+</ul>
+<p>You can use the <code>Split</code> function to split one track into two tracks:</p>
+<p><img src="/images/gif010_detrac.gif" alt="Example of an annotation with split tracks"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-40fd51f1fbaf95a6c639cd8d3565453a">2.6 - Annotation with points</h1>
+    <div class="lead">Guide to annotating tasks using single points or shapes containing multiple points.</div>
+	
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-feb7de44f70012c8bac5d4e8a0330dac">2.6.1 - Points in shape mode</h1>
+    
+	<p>It is used for face, landmarks annotation etc.</p>
+<p>Before you start you need to select the <code>Points</code>. If necessary you can set a fixed number of points
+in the <code>Number of points</code> field, then drawing will be stopped automatically.</p>
+<p><img src="/images/image042.jpg" alt="Highlighted &amp;ldquo;Points&amp;rdquo; button with &amp;ldquo;Draw new points&amp;rdquo; window"></p>
+<p>Click <code>Shape</code> to entering the drawing mode. Now you can start annotation of the necessary area.
+Points are automatically grouped — all points will be considered linked between each start and finish.
+Press <code>N</code> again or click the <code>Done</code> button on the top panel to finish marking the area.
+You can delete a point by clicking with pressed <code>Ctrl</code> or right-clicking on a point and selecting <code>Delete point</code>.
+Clicking with pressed <code>Shift</code> will open the points shape editor.
+There you can add new points into an existing shape. You can zoom in/out (when scrolling the mouse wheel)
+and move (when clicking the mouse wheel and moving the mouse) while drawing. You can drag an object after
+it has been drawn and change the position of individual points after finishing an object.</p>
+<p><img src="/images/image063_affectnet.jpg" alt="Example of annotation with different points"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-8487f6bcb524c39cd011771bf93ee97f">2.6.2 - Linear interpolation with one point</h1>
+    
+	<p>You can use linear interpolation for points to annotate a moving object:</p>
+<ol>
+<li>
+<p>Before you start, select the <code>Points</code>.</p>
+</li>
+<li>
+<p>Linear interpolation works only with one point, so you need to set <code>Number of points</code> to 1.</p>
+</li>
+<li>
+<p>After that select the <code>Track</code>.</p>
+<p><img src="/images/image122.jpg" alt="Highlighted &amp;ldquo;Points&amp;rdquo; button with open &amp;ldquo;Draw new points&amp;rdquo; window"></p>
+</li>
+<li>
+<p>Click <code>Track</code> to enter the drawing mode left-click to create a point
+and after that shape will be automatically completed.</p>
+<p><img src="/images/image163_detrac.jpg" alt="Example of annotation interface with created point"></p>
+</li>
+<li>
+<p>Move forward a few frames and move the point to the desired position,
+this way you will create a keyframe and intermediate frames will be drawn automatically.
+You can work with this object as with an interpolated track: you can hide it using the <code>Outside</code>,
+move around keyframes, etc.</p>
+<p><img src="/images/image165_detrac.jpg" alt="Example of interpolated object created using keyframes"></p>
+</li>
+<li>
+<p>This way you&rsquo;ll get linear interpolation using the <code>Points</code>.</p>
+<p><img src="/images/gif013_detrac.gif" alt="Example of annotation result made with linear interpolation"></p>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-4b7a67c40353b473b49e88e94d6ab974">2.7 - Annotation with ellipses</h1>
+    <div class="lead">Guide to annotating tasks using ellipses.</div>
+	<p>It is used for road sign annotation etc.</p>
+<p>First of all you need to select the <code>ellipse</code> on the controls sidebar.</p>
+<p><img src="/images/image239.jpg" alt="Highlighted &amp;ldquo;Ellipse&amp;rdquo; button with open &amp;ldquo;Draw new ellipse&amp;rdquo; window"></p>
+<p>Choose a <code>Label</code> and click <code>Shape</code> or <code>Track</code> to start drawing. An ellipse can be created the same way as
+a <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-rectangles/">rectangle</a>,
+you need to specify two opposite points,
+and the ellipse will be inscribed in an imaginary rectangle. Press <code>N</code> or click the <code>Done</code> button on the top panel
+to complete the shape.</p>
+<p><img src="/images/image240_mapillary_vistas.jpg" alt="Example of annotation with ellipse shape"></p>
+<p>You can rotate ellipses using a rotation point in the same way as
+<a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-rectangles/#rotation-rectangle">rectangles</a>.</p>
+<h2 id="annotation-with-ellipses-video-tutorial">Annotation with ellipses video tutorial</h2>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/jmwtePYCz94?si=wbfYEX4pzGziXf1Y" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-535cf9747f398e998f66a6fb1573f2d7">2.8 - Annotation with cuboids</h1>
+    <div class="lead">Guide to creating and editing cuboids.</div>
+	<p>It is used to annotate 3 dimensional objects such as cars, boxes, etc&hellip;
+Currently the feature supports one point perspective and has the constraint
+where the vertical edges are exactly parallel to the sides.</p>
+
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-3faee3ffb42055085d27be3c8e18374e">2.8.1 - Creating the cuboid</h1>
+    
+	<p>Before you start, you have to make sure that <code>Cuboid</code> is selected
+and choose a drawing method <code>from rectangle</code> or <code>by 4 points</code>.</p>
+<p><img src="/images/image091.jpg" alt="Highlighted button for creating cuboid and Draw new cuboid window"></p>
+<h3 id="drawing-cuboid-by-4-points">Drawing cuboid by 4 points</h3>
+<p>Choose a drawing method <code>by 4 points</code> and select <code>Shape</code> to enter the drawing mode.
+There are many ways to draw a cuboid.
+You can draw the cuboid by placing 4 points, after that the drawing will be completed automatically.
+The first 3 points determine the plane of the cuboid while the last point determines the depth of that plane.
+For the first 3 points, it is recommended to only draw the 2 closest side faces, as well as the top and bottom face.</p>
+<p>A few examples:</p>
+<p><img src="/images/image177_mapillary_vistas.jpg" alt="Example of drawing cuboid with four points"></p>
+<h3 id="drawing-cuboid-from-rectangle">Drawing cuboid from rectangle</h3>
+<p>Choose a drawing method <code>from rectangle</code> and select <code>Shape</code> to enter the drawing mode.
+When you draw using the rectangle method, you must select the frontal plane of the object using the bounding box.
+The depth and perspective of the resulting cuboid can be edited.</p>
+<p>Example:</p>
+<p><img src="/images/image182_mapillary_vistas.jpg" alt="Example of drawing cuboid from rectangle"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9a243ff8f2ffe5fcff1a99651be076df">2.8.2 - Editing the cuboid</h1>
+    
+	<p><img src="/images/image178_mapillary_vistas.jpg" alt="Several cuboids with marked points and faces to edit shape"></p>
+<p>The cuboid can be edited in multiple ways: by dragging points, by dragging certain faces or by dragging planes.
+First notice that there is a face that is painted with gray lines only, let us call it the front face.</p>
+<p>You can move the cuboid by simply dragging the shape behind the front face.
+The cuboid can be extended by dragging on the point in the middle of the edges.
+The cuboid can also be extended up and down by dragging the point at the vertices.</p>
+<p><img src="/images/gif017_mapillary_vistas.gif" alt="Example of extending cuboid shape"></p>
+<p>To draw with perspective effects it should be assumed that the front face is the closest to the camera.
+To begin simply drag the points on the vertices that are not on the gray/front face while holding <code>Shift</code>.
+The cuboid can then be edited as usual.</p>
+<p><img src="/images/gif018_mapillary_vistas.gif" alt="Example of creating perspective effects in cuboid"></p>
+<p>If you wish to reset perspective effects, you may right click on the cuboid,
+and select <code>Reset perspective</code> to return to a regular cuboid.</p>
+<p><img src="/images/image180_mapillary_vistas.jpg" alt="Comparative images of cuboid with perspective and cuboid without perspective"></p>
+<p>The location of the gray face can be swapped with the adjacent visible side face.
+You can do it by right clicking on the cuboid and selecting <code>Switch perspective orientation</code>.
+Note that this will also reset the perspective effects.</p>
+<p><img src="/images/image179_mapillary_vistas.jpg" alt="Comparative images of cuboids with different perspectives"></p>
+<p>Certain faces of the cuboid can also be edited,
+these faces are: the left, right and dorsal faces, relative to the gray face.
+Simply drag the faces to move them independently from the rest of the cuboid.</p>
+<p><img src="/images/gif020_mapillary_vistas.gif" alt="Example of editing cuboid faces"></p>
+<p>You can also use cuboids in track mode, similar to rectangles in track mode
+(<a href="/v2.53.0/docs/annotation/manual-annotation/shapes/track-mode-basics/">basics</a>) or</p>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-d2345c9e442a7f17060f774620e71c87">2.9 - Annotation with skeletons</h1>
+    <div class="lead">Guide to annotating tasks using Skeletons</div>
+	<p>In this guide, we delve into the efficient process of annotating complex
+structures through the implementation of <strong>Skeleton</strong> annotations.</p>
+<p><strong>Skeletons</strong> serve as annotation templates
+for annotating complex objects with a consistent structure,
+such as human pose estimation or facial landmarks.</p>
+<p>A <strong>Skeleton</strong> is composed of numerous points (also referred to as elements),
+which may be connected by edges. Each point functions as an individual object,
+possessing unique attributes and properties like color, occlusion, and visibility.</p>
+<p><strong>Skeletons</strong> can be <a href="/v2.53.0/docs/dataset_management/formats/"><strong>exported</strong></a>
+in two formats: <a href="/v2.53.0/docs/dataset_management/formats/format-cvat/#cvat-for-videos-export"><strong>CVAT for image</strong></a>
+and <a href="/v2.53.0/docs/dataset_management/formats/format-coco-keypoints/"><strong>COCO Keypoints</strong></a>.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Skeletons&rsquo; labels cannot be imported in a label-less project by importing a dataset.
+You need to define the labels manually before the import.
+
+</div>
+
+<p>See:</p>
+<ul>
+<li><a href="#adding-skeleton-manually">Adding Skeleton manually</a>
+<ul>
+<li><a href="#skeleton-configurator">Skeleton Configurator</a></li>
+<li><a href="#configuring-skeleton-points">Configuring Skeleton points</a></li>
+<li><a href="#adding-skeleton-labels-manually">Adding Skeleton labels manually</a></li>
+</ul>
+</li>
+<li><a href="#adding-skeleton-labels-from-the-model">Adding Skeleton labels from the model</a></li>
+<li><a href="#annotation-with-skeletons">Annotation with Skeletons</a></li>
+<li><a href="#automatic-annotation-with-skeletons">Automatic annotation with Skeletons</a></li>
+<li><a href="#editing-skeletons-on-the-canvas">Editing skeletons on the canvas</a></li>
+<li><a href="#editing-skeletons-on-the-sidebar">Editing skeletons on the sidebar</a></li>
+</ul>
+<h2 id="adding-skeleton-manually">Adding Skeleton manually</h2>
+<p>To start annotating using skeletons, you need to set up a <strong>Skeleton</strong> task
+in <strong>Configurator</strong>:</p>
+<p>To open <strong>Configurator</strong>, when <a href="/v2.53.0/docs/workspace/tasks-page/#create-annotation-task">creating a task</a>,
+click on the <strong>Setup skeleton</strong> button if you want to set up the skeleton manually, or
+<a href="/v2.53.0/docs/annotation/manual-annotation/shapes/skeletons/#adding-skeleton-labels-from-the-model"><strong>From model</strong></a>
+if you want to add skeleton labels from a model.</p>
+<p><img src="/images/image-setup-skeleton-1.jpg" alt="Task creation window with highlighted buttons for skeleton configuration"></p>
+<h3 id="skeleton-configurator">Skeleton Configurator</h3>
+<p>The skeleton <strong>Configurator</strong> is a tool to build
+skeletons for annotation. It has the following fields:</p>
+<p><img src="/images/image-skeleton-configurator-overview.jpg" alt="Skeleton configurator with numbered interface elements"></p>
+<table>
+<thead>
+<tr>
+<th>Number</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td><strong>Upload background image</strong></td>
+<td>(Optional) Use it to upload a background image, to draw a skeleton on top of it.</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td><strong>Add point</strong></td>
+<td>Use it to add Skeleton points to the <strong>Drawing area</strong> (<strong>8</strong>).</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td><strong>Click and drag</strong></td>
+<td>Use it to move points across the <strong>Drawing area</strong> (<strong>8</strong>).</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td><strong>Add edge</strong></td>
+<td>Use it to add edge on the <strong>Drawing area</strong> (<strong>8</strong>) to connect the points (<strong>2</strong>).</td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td><strong>Remove point</strong></td>
+<td>Use it to remove points. Click on <strong>Remove point</strong> and then on any point (<strong>2</strong>) on the <strong>Drawing area</strong> (<strong>8</strong>) to delete the point.</td>
+</tr>
+<tr>
+<td><strong>6</strong></td>
+<td><strong>Download skeleton</strong></td>
+<td>Use it to download created skeleton in .SVG format.</td>
+</tr>
+<tr>
+<td><strong>7</strong></td>
+<td><strong>Upload skeleton</strong></td>
+<td>Use it to upload skeleton in .SVG format.</td>
+</tr>
+<tr>
+<td><strong>8</strong></td>
+<td><strong>Drawing area</strong></td>
+<td>Use it as a canvas to draw a skeleton.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="configuring-skeleton-points">Configuring Skeleton points</h3>
+<p>You can name labels, set attributes,
+and change the color of each point of the skeleton.</p>
+<p>To do this, right-click on the skeleton point and select <strong>Configure</strong>:</p>
+<p><img src="/images/image-skeleton-drawn-example.jpg" alt="Skeleton example with opened menu and highlighted &amp;ldquo;Configure&amp;rdquo; option"></p>
+<p>In the opened menu, you can change the point setting. It is similar to
+<a href="/v2.53.0/docs/workspace/tasks-page/#create-a-task">adding labels and attributes of the regular task</a>:</p>
+<p><img src="/images/image-skeleton-point-setup.jpg" alt="Example of menu for configuring skeleton point"></p>
+<p>A <strong>Skeleton</strong> point can only exist within its parent <strong>Skeleton</strong>.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    <p>You cannot change the skeleton configuration for an existing task/project.</p>
+<p>You can copy/insert skeleton configuration from the <strong>Raw</strong> tab of the label configurator.</p>
+
+
+</div>
+
+<h3 id="adding-skeleton-labels-manually">Adding Skeleton labels manually</h3>
+<p>To create the <strong>Skeleton</strong> task, do the following:</p>
+<ol>
+<li>Open <strong>Configurator</strong>.</li>
+<li>(Optional) Upload background image.</li>
+<li>In the Label name field, enter the name of the label.</li>
+<li>(Optional) <a href="/v2.53.0/docs/workspace/tasks-page/#add-an-attribute"><strong>Add attribute</strong></a>
+<br><strong>Note</strong>: you can add attributes exclusively to each point,
+for more information, see <a href="#configuring-skeleton-points"><strong>Configuring Skeleton points</strong></a></li>
+<li>Use <strong>Add point</strong> to add points to the <strong>Drawing area</strong>.</li>
+<li>Use <strong>Add edge</strong> to add edges between points.</li>
+<li>Upload files.</li>
+<li>Click:
+<ul>
+<li><strong>Submit &amp; Open</strong> to create and open the task.</li>
+<li><strong>Submit &amp; Continue</strong> to submit the configuration and start creating a new task.</li>
+</ul>
+</li>
+</ol>
+<h2 id="adding-skeleton-labels-from-the-model">Adding Skeleton labels from the model</h2>
+<p>To add points from the model, and annotate do the following:</p>
+<ol>
+<li>
+<p>Open <strong>Basic configurator</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Constructor</strong> tab, click <strong>From model</strong>.</p>
+</li>
+<li>
+<p>From the <strong>Select a model to pick labels</strong> select the
+<code>Human pose estimation</code> model or others if available.</p>
+</li>
+<li>
+<p>Click on the model&rsquo;s labels, you want to use.
+<br>Selected labels will become gray.</p>
+<p><img src="/images/auto-annot-sk.jpg" alt="Example of configuration for skeleton labels from model"></p>
+</li>
+<li>
+<p>(Optional) If you want to adjust labels, within the
+label, click the <strong>Update</strong> attributes icon.
+<br>The <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/skeletons/#skeleton-configurator"><strong>Skeleton configurator</strong></a>
+will open, where you can
+<a href="/v2.53.0/docs/annotation/manual-annotation/shapes/skeletons/#configuring-skeleton-points"><strong>configure the skeleton</strong></a>.
+<br><strong>Note</strong>: Labels cannot be adjusted after the task/project is created.</p>
+</li>
+<li>
+<p>Click <strong>Done</strong>. The labels, that you selected,
+will appear in the labels window.</p>
+</li>
+<li>
+<p>Upload data.</p>
+</li>
+<li>
+<p>Click:</p>
+<ul>
+<li><strong>Submit &amp; Open</strong> to create and open the task.</li>
+<li><strong>Submit &amp; Continue</strong> to submit the configuration and start creating a new task.</li>
+</ul>
+</li>
+</ol>
+<h2 id="annotation-with-skeletons">Annotation with Skeletons</h2>
+<p>To annotate with <strong>Skeleton</strong>, do the following</p>
+<ol>
+<li>
+<p>Open job.</p>
+</li>
+<li>
+<p>On the tools panel select <strong>Draw new skeleton</strong>.</p>
+</li>
+<li>
+<p>Select <strong>Track</strong> to annotate with tracking or <strong>Shape</strong> to annotate
+without tracking.</p>
+<p><img src="/images/image-draw-new-skeleton.jpg" alt="Highlighted &amp;ldquo;Skeleton&amp;rdquo; button with &amp;ldquo;Draw new skeleton&amp;rdquo; window"></p>
+</li>
+<li>
+<p>Draw a skeleton on the image.</p>
+</li>
+</ol>
+<p><img src="/images/image-draw-new-skeleton.gif" alt="Example of drawing a skeleton in shape mode"></p>
+<h2 id="automatic-annotation-with-skeletons">Automatic annotation with Skeletons</h2>
+<p>To automatically annotate with <strong>Skeleton</strong>, do the following</p>
+<ol>
+<li>
+<p>Open the job and on the tools panel select <strong>AI Tools</strong> &gt; <strong>Detectors</strong></p>
+</li>
+<li>
+<p>From the drop-down list select the model.
+You will see a list of points to match and
+the name of the skeleton on the top of the list.</p>
+<p><img src="/images/auto-annot-sk-detectors.jpg" alt="&amp;ldquo;Detectors&amp;rdquo; tab in &amp;ldquo;AI Tools&amp;rdquo; with drop-down menu for selecting model for automatic annotation with skeletons"></p>
+</li>
+<li>
+<p>(Optional) By clicking on the <strong>Bin</strong> icon, you can
+remove any mapped item:</p>
+<ul>
+<li>A skeleton together with all points.</li>
+<li>Certain points from two mapped skeletons.</li>
+</ul>
+</li>
+<li>
+<p>Click <strong>Annotate</strong>.</p>
+</li>
+</ol>
+<h2 id="editing-skeletons-on-the-canvas">Editing skeletons on the canvas</h2>
+<p>A drawn skeleton is encompassed within a bounding box,
+it allows you to manipulate the skeleton as a regular bounding box,
+enabling actions such as dragging, resizing, or rotating:</p>
+<p><img src="/images/skeleton_editing_canvas.gif" alt="Example of editing a skeleton"></p>
+<p>Upon repositioning a point, the bounding box adjusts automatically,
+without affecting other points:</p>
+<p><img src="/images/skeleton_editing_canvas-2.gif" alt="Example of bounding box adjustment after skeleton editing"></p>
+<p>Additionally, <strong>Shortcuts</strong> are applicable
+to both the skeleton as a whole and its elements:</p>
+<ul>
+<li>To use a shortcut to the entire skeleton, hover over
+the bounding box and push the shortcut keyboard key.
+This action is applicable for shortcuts like the lock, occluded,
+pinned, keyframe, and outside for skeleton tracks.</li>
+<li>To use a shortcut to a specific skeleton point, hover over the
+point and push the shortcut keyboard key.
+The same list of shortcuts is available, with the addition of outside,
+which is also applicable to individual skeleton shape elements.</li>
+</ul>
+<h2 id="editing-skeletons-on-the-sidebar">Editing skeletons on the sidebar</h2>
+<p>In CVAT, the sidebar offers an alternative method for setting
+up skeleton properties and attributes.</p>
+<p>This approach is similar to that used for other
+object types supported by CVAT, but with a few specific alterations:</p>
+<p>An additional collapsible section is provided for
+users to view a comprehensive list of skeleton parts.</p>
+<div style="display: flex; align-items: flex-start;">
+    <img src="/images/image-skeleton-track-sidebar.jpg" alt="Example of interface with skeleton parts for track mode" width="300px" />
+    <img src="/images/image-skeleton-shape-sidebar.jpg" alt="Example of interface with skeleton parts for shape mode" width="300px" />
+</div>
+<p>Skeleton points can have properties like <strong>Outside</strong>, <strong>Occluded</strong>, and <strong>Hidden</strong>.</p>
+<p><img src="/images/point-properties.jpg" alt="Skeleton point properties shown in interface"></p>
+<p>Both <strong>Outside</strong> and <strong>Hidden</strong> make a skeleton point invisible.</p>
+<ul>
+<li>
+<p><strong>Outside</strong> property is part of annotations.
+Use it when part of the object is out of frame borders.</p>
+</li>
+<li>
+<p><strong>Hidden</strong> makes a point hidden only for the annotator&rsquo;s
+convenience, this property will not be saved between different sessions.</p>
+</li>
+<li>
+<p><strong>Occluded</strong> keeps the point visible on the frame and usually
+means that the point is still on a frame, just hidden behind another object.</p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-2f65ed610caefa58869fdf2927823617">2.10 - Annotation with brush tool</h1>
+    <div class="lead">Guide to annotating tasks using brush tools.</div>
+	<p>With a brush tool, you can create masks for disjoint objects, that have multiple parts,
+such as a house hiding behind trees, a car behind a pedestrian, or a pillar behind a
+traffic sign.
+The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.</p>
+<p>Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. <br>For more information about segmentation masks in CVAT, see <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/creating-mask/">Creating masks</a>.</p>
+<p>See:</p>
+<ul>
+<li><a href="#brush-tool-menu">Brush tool menu</a></li>
+<li><a href="#annotation-with-brush">Annotation with brush</a></li>
+<li><a href="#annotation-with-polygon-to-mask">Annotation with polygon-to-mask</a></li>
+<li><a href="#remove-underlying-pixels">Remove underlying pixels</a></li>
+<li><a href="#ai-tools">AI Tools</a></li>
+<li><a href="#import-and-export">Import and export</a></li>
+</ul>
+<h2 id="brush-tool-menu">Brush tool menu</h2>
+<p>The brush tool menu appears on the top of the screen after you click <strong>Shape</strong>:</p>
+<p><img src="/images/brushing_tool_menu.png" alt="BT Menu"></p>
+<p>It has the following elements:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/images/tick_icon.png" alt="Tick icon"></td>
+<td><strong>Save mask</strong> saves the created mask. The saved mask will appear on the object sidebar</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_add_label.png" alt="Save mask and continue"></td>
+<td><strong>Save mask and continue</strong> adds a new mask to the object sidebar and allows you to draw a new one immediately.</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_icon.png" alt="Brush"></td>
+<td><strong>Brush</strong> adds new mask/ new regions to the previously added mask).</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_erase.png" alt="Eraser"></td>
+<td><strong>Eraser</strong> removes part of the mask.</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_add_poly.png" alt="Add poly"></td>
+<td><strong>Polygon</strong> selection tool. Selection will become a mask.</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_remove_poly.png" alt="Remove poly"></td>
+<td><strong>Remove polygon selection</strong> subtracts part of the polygon selection.</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_brush_size.png" alt="Brush size"></td>
+<td><strong>Brush size</strong> in pixels. <br><strong>Note:</strong> Visible only when <strong>Brush</strong> or <strong>Eraser</strong> are selected.</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_brush_shape.png" alt="Brush shape"></td>
+<td><strong>Brush shape</strong> with two options: circle and square. <br><strong>Note:</strong> Visible only when <strong>Brush</strong> or <strong>Eraser</strong> are selected.</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_pixels.png" alt="Pixel remove"></td>
+<td><strong>Remove underlying pixels</strong>. When you are drawing or editing a mask with this tool, <br>pixels on other masks that are located at the same positions as the pixels of the <br>current mask are deleted.</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_hide.png" alt="Hide mask"></td>
+<td><strong>Hide mask</strong>. When drawing or editing a mask, you can enable this feature to temporarily hide the mask, allowing you to see the objects underneath more clearly.</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_label_drop.png" alt="Label"></td>
+<td><strong>Label</strong> that will be assigned to the newly created mask</td>
+</tr>
+<tr>
+<td><img src="/images/brushing_tools_brush_move.png" alt="Move"></td>
+<td><strong>Move</strong>. Click and hold to move the menu bar to the other place on the screen</td>
+</tr>
+</tbody>
+</table>
+<h2 id="annotation-with-brush">Annotation with brush</h2>
+<p>To annotate with brush, do the following:</p>
+<ol>
+<li>
+<p>From the <a href="/v2.53.0/docs/annotation/annotation-editor/controls-sidebar/">controls sidebar</a>,
+select <strong>Brush</strong> <img src="/images/brushing_tools_icon.png" alt="Brush icon">.</p>
+</li>
+<li>
+<p>In the <strong>Draw new mask</strong> menu, select label for your mask, and click <strong>Shape</strong>. <br>The <strong>Brush</strong><img src="/images/brushing_tools_icon.png" alt="Brush"> tool will be selected by default.</p>
+<p><img src="/images/brushing_tools_context_menu.png" alt="BT context menu"></p>
+</li>
+<li>
+<p>With the brush, draw a mask on the object you want to label. <br>To erase selection, use <strong>Eraser</strong> <img src="/images/brushing_tools_erase.png" alt="Eraser"></p>
+<p><img src="/images/brushing_tools.gif" alt="Brushing"></p>
+</li>
+<li>
+<p>After you applied the mask, on the top menu bar click <strong>Save mask</strong> <img src="/images/tick_icon.png" alt="Tick icon"> <br>to finish the process (or <strong>N</strong> on the keyboard).</p>
+</li>
+<li>
+<p>Added object will appear on the
+<a href="/v2.53.0/docs/annotation/annotation-editor/objects-sidebar/">objects sidebar</a>.</p>
+</li>
+</ol>
+<p>To add the next object, repeat steps 1 to 5.
+All added objects will be visible on the image and the
+<a href="/v2.53.0/docs/annotation/annotation-editor/objects-sidebar/">objects sidebar</a>.</p>
+<p>To save the job with all added objects, on the top menu, click <strong>Save</strong> <img src="/images/brushing_tools_save.png" alt="Save">.</p>
+<h2 id="annotation-with-polygon-to-mask">Annotation with polygon-to-mask</h2>
+<p>To annotate with polygon-to-mask, do the following:</p>
+<ol>
+<li>
+<p>From the <a href="/v2.53.0/docs/annotation/annotation-editor/controls-sidebar/">controls sidebar</a>,
+select <strong>Brush</strong> <img src="/images/brushing_tools_icon.png" alt="Brush icon">.</p>
+</li>
+<li>
+<p>In the <strong>Draw new mask</strong> menu, select label for your mask, and click <strong>Shape</strong>.</p>
+<p><img src="/images/brushing_tools_context_menu.png" alt="BT context menu"></p>
+</li>
+<li>
+<p>In the brush tool menu, select <strong>Polygon</strong> <img src="/images/brushing_tools_add_poly.png" alt="Add poly">.</p>
+</li>
+<li>
+<p>With the <strong>Polygon</strong><img src="/images/brushing_tools_add_poly.png" alt="Add poly"> tool, draw a mask for the object you want to label. <br>To correct selection, use <strong>Remove polygon selection</strong> <img src="/images/brushing_tools_remove_poly.png" alt="Remove poly">.</p>
+</li>
+<li>
+<p>Use <strong>Save mask</strong> <img src="/images/tick_icon.png" alt="Tick icon"> (or <strong>N</strong> on the keyboard) <br>to switch between add/remove polygon tools:</p>
+<p><img src="/images/brushing_tools_polygon.gif" alt="Brushing"></p>
+</li>
+<li>
+<p>After you added the polygon selection, on the top menu bar click <strong>Save mask</strong> <img src="/images/tick_icon.png" alt="Tick icon"> <br>to finish the process (or <strong>N</strong> on the keyboard).</p>
+</li>
+<li>
+<p>Click <strong>Save mask</strong> <img src="/images/tick_icon.png" alt="Tick icon"> again (or <strong>N</strong> on the keyboard). <br>The added object will appear on the <a href="/v2.53.0/docs/annotation/annotation-editor/objects-sidebar/">objects sidebar</a>.</p>
+</li>
+</ol>
+<p>To add the next object, repeat steps 1 to 5.</p>
+<p>All added objects will be visible on the image and the
+<a href="/v2.53.0/docs/annotation/annotation-editor/objects-sidebar/">objects sidebar</a>.</p>
+<p>To save the job with all added objects, on the top menu, click <strong>Save</strong> <img src="/images/brushing_tools_save.png" alt="Save">.</p>
+<h2 id="remove-underlying-pixels">Remove underlying pixels</h2>
+<p>Use <strong>Remove underlying pixels</strong> tool when you want to add a mask and simultaneously delete the pixels of <br>other masks that are located at the same positions. It is a highly useful feature to avoid meticulous drawing edges twice between two different objects.</p>
+<p><img src="/images/brushing_tools_pixel_underlying.gif" alt="Remove pixel"></p>
+<h2 id="ai-tools">AI Tools</h2>
+<p>You can convert <a href="/v2.53.0/docs/annotation/auto-annotation/ai-tools/">AI tool</a> masks to polygons.
+To do this, use the following <a href="/v2.53.0/docs/annotation/auto-annotation/ai-tools/">AI tool</a> menu:</p>
+<p><img src="/images/brushing_tool_ai.jpg" alt="Save"></p>
+<ol>
+<li>Go to the <strong>Detectors</strong> tab.</li>
+<li>Switch toggle <strong>Masks to polygons</strong> to the right.</li>
+<li>Add source and destination labels from the drop-down lists.</li>
+<li>Click <strong>Annotate</strong>.</li>
+</ol>
+<h2 id="import-and-export">Import and export</h2>
+<p>For export, see <a href="/v2.53.0/docs/dataset_management/import-datasets/">Export dataset</a></p>
+<p>Import follows the general <a href="/v2.53.0/docs/dataset_management/import-datasets/">import dataset</a> procedure,
+with the additional option of converting masks to polygons.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    This option is available for formats that work with masks only.
+
+</div>
+
+<p>To use it, when uploading the dataset, switch the <strong>Convert masks to polygon</strong> toggle to the right:</p>
+<p><img src="/images/brushing_tools_import.png" alt="Remove pixel"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-d23e4f774a1b726c49e3c64f209ce2a3">2.11 - Types of shapes</h1>
+    <div class="lead">List of shapes available for annotation.</div>
+	<p>There are several shapes with which you can annotate your images:</p>
+<ul>
+<li><code>Rectangle</code> or <code>Bounding box</code></li>
+<li><code>Polygon</code></li>
+<li><code>Polyline</code></li>
+<li><code>Points</code></li>
+<li><code>Ellipse</code></li>
+<li><code>Cuboid</code></li>
+<li><code>Cuboid in 3D task</code></li>
+<li><code>Skeleton</code></li>
+<li><code>Tag</code></li>
+</ul>
+<p>And there is what they look like:</p>
+<p><img src="/images/image038_detrac.jpg" alt="Example of an annotation with &amp;ldquo;Rectangle&amp;rdquo; shape" title="Rectangle"> <img src="/images/image033_detrac.jpg" alt="Example of an annotation with &amp;ldquo;Polygon&amp;rdquo; shape" title="Polygon"></p>
+<p><img src="/images/image009_mapillary_vistas.jpg" alt="Example of an annotation with &amp;ldquo;Polyline&amp;rdquo; shape" title="Polyline"> <img src="/images/image010_affectnet.jpg" alt="Example of an annotation with &amp;ldquo;Points&amp;rdquo; shape" title="Points"></p>
+<p><img src="/images/image240_mapillary_vistas.jpg" alt="Example of an annotation with &amp;ldquo;Ellipse&amp;rdquo; shape" title="Ellipse"> <img src="/images/image015_detrac.jpg" alt="Example of an annotation with &amp;ldquo;Cuboid&amp;rdquo; shape" title="Cuboid"></p>
+<p><img src="/images/image218_carla_town3.jpg" alt="Example of a cuboid in 3D task" title="Cuboid in 3D task"> <img src="/images/image_skeleton_sample.jpg" alt="Example of an annotation with &amp;ldquo;Skeleton&amp;rdquo; shape" title="Skeleton"></p>
+<p><img src="/images/image135.jpg" alt="Example of a tag in interface" title="Tag"></p>
+<p><code>Tag</code> - has no shape in the workspace, but is displayed in objects sidebar.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-7964f030a5ff7b0c3d370b68ee4a1e89">2.12 - Shape grouping</h1>
+    <div class="lead">Grouping multiple shapes during annotation.</div>
+	<p>This feature allows us to group several shapes.</p>
+<p>You may use the <code>Group Shapes</code> button or shortcuts:</p>
+<ul>
+<li><code>G</code> — start selection / end selection in group mode</li>
+<li><code>Esc</code> — close group mode</li>
+<li><code>Shift+G</code> — reset group for selected shapes</li>
+</ul>
+<p>You may select shapes clicking on them or selecting an area.</p>
+<p>Grouped shapes will have <code>group_id</code> filed in dumped annotation.</p>
+<p>Also you may switch color distribution from an instance (default) to a group.
+You have to switch <code>Color By Group</code> checkbox for that.</p>
+<p>Shapes that don&rsquo;t have <code>group_id</code>, will be highlighted in white.</p>
+<p><img src="/images/image078_detrac.jpg" alt="Example of an annotation with grouped shapes"></p>
+<p><img src="/images/image077_detrac.jpg" alt="Example of an annotation with grouped and non-grouped shapes"></p>
+<h2 id="shapes-grouping-video-tutorial">Shapes grouping video tutorial</h2>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/m8bB9f23wLs?si=N5EzIRG-1Wn6R15G" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-ed5058cc35e4aa0485ff9b097439b1aa">3 - Editing &amp; Utility Tools</h1>
+    <div class="lead">Tools for modifying, grouping, filtering, and managing annotations.</div>
+	<p>This section covers tools that help modify shapes, manage large annotations, and streamline the annotation workflow.</p>
+<p>Use these guides to learn how to join or split shapes, group them, filter objects, and work with contextual images and frame operations.</p>
+
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-3a0617868795ef9848cad38985c86332">3.1 - Join and slice tools</h1>
+    <div class="lead">This section explains how to slice or join several labels</div>
+	<p>In CVAT you can modify shapes by either joining multiple shapes into
+a single label or slicing a single label into several shapes.</p>
+<p>This document provides guidance on how to perform these operations effectively.</p>
+<p>See:</p>
+<ul>
+<li><a href="#joining-masks">Joining masks</a></li>
+<li><a href="#slicing-polygons-and-masks">Slicing polygons and masks</a></li>
+</ul>
+<h2 id="joining-masks">Joining masks</h2>
+<p>The <strong>Join masks</strong> tool (<img src="/images/join-masks-icon.jpg" alt="Join masks tool icon">),
+is specifically designed to work with mask annotations.</p>
+<p>This tool is useful in scenarios where a single object
+in an image is annotated with multiple shapes,
+and there is a need to merge these shapes into a single one.</p>
+<p><img src="/images/joining-tool-01.jpg" alt="Join masks"></p>
+<p>To join masks, do the following:</p>
+<ol>
+<li>From the <a href="/v2.53.0/docs/annotation/annotation-editor/controls-sidebar/#edit"><strong>Edit</strong></a> block,
+select <strong>Join masks</strong> <img src="/images/join-masks-icon.jpg" alt="Join masks tool icon">.</li>
+<li>Click on the canvas area, to select masks that you want to join.</li>
+<li>(Optional) To remove the selection click the mask one more time.</li>
+<li>Click again on <strong>Join masks</strong><img src="/images/join-masks-icon.jpg" alt="Join masks tool icon">
+(<strong>J</strong>) to execute the join operation.</li>
+</ol>
+<p>Upon completion, the selected masks will be joined into a single mask.</p>
+<p><img src="/images/joining-tool-02.gif" alt="Join masks gif"></p>
+<h2 id="slicing-polygons-and-masks">Slicing polygons and masks</h2>
+<p>The <strong>Slice mask/polygon</strong> (<img src="/images/slicing-tool-icon.jpg" alt="Slicing tool icon">)
+is compatible with both mask and polygon annotations.</p>
+<p>This tool is useful in scenarios where multiple objects in an image
+are annotated with one shape,
+and there is a need to slice this shape into multiple parts.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The shape can be sliced only in two parts
+at a time. Use the slice tool several times
+to split a shape to as many parts as you need.
+
+</div>
+
+<p><img src="/images/slicing-tool-01.jpg" alt="Slicing tool"></p>
+<p>To slice mask or polygon, do the following:</p>
+<ol>
+<li>From the <a href="/v2.53.0/docs/annotation/annotation-editor/controls-sidebar/#edit"><strong>Edit</strong></a> block,
+select <strong>Slice mask/polygon</strong> <img src="/images/slicing-tool-icon.jpg" alt="Slicing tool icon">.</li>
+<li>Click on the shape you intend to slice.
+A black contour will appear around the selected shape.</li>
+<li>Set an initial point for slicing by clicking on the contour.</li>
+<li>Draw a line across the shape to define the slicing path.
+<br>Hold Shift to add points automatically on cursor movement.
+<br> <strong>Note</strong>: The line cannot cross itself.
+<br> <strong>Note</strong>: The line cannot cross the contour more than twice.</li>
+<li>(Optional)&gt; Right-click to cancel the latest point.</li>
+<li>Click on the contour (<strong>Alt</strong>+<strong>J</strong>) (outside the contour) to finalize the slicing.</li>
+</ol>
+<p><img src="/images/slicing-tool-02.gif" alt="Slicing tool"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-73f32ce78d9ee72130b224ff734dcd09">3.2 - Shapes converter</h1>
+    <div class="lead">How to perform bulk actions on filtered shapes</div>
+	<p>The shapes converter is a feature that enables bulk actions on filtered <strong>shapes</strong>. It allows you to perform mutual
+conversion between masks, polygons and rectangles.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    All shapes converter work only when the filter is set up.
+
+</div>
+
+<p>See:</p>
+<ul>
+<li><a href="#run-actions-menu">Run actions menu</a></li>
+<li><a href="#convert-shapes">Convert shapes</a></li>
+<li><a href="#convert-shapes-video-tutorial">Convert shapes video tutorial</a></li>
+</ul>
+<h2 id="run-actions-menu">Run actions menu</h2>
+<p>Annotations actions can be accessed from the annotation menu.
+To access it, click on the burger icon
+and then select <strong>Run actions</strong>.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    All <strong>Shapes converter</strong> functions work in alignment with set up filter.
+
+</div>
+
+<p><img src="/images/run-actions-menu.jpg" alt="Run actions menu open in annotation"></p>
+<p>You will see the following dialog:</p>
+<p><img src="/images/shapes-converter-dialog.jpg" alt="Dialog for removing filtered shapes"></p>
+<p>With the following fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Select action</strong></td>
+<td>Drop-down list with available actions: <br><li><strong>Remove filtered shapes</strong> - removes all shapes in alignment with the set-up filter. Doesn&rsquo;t work with tracks.</li><li><strong>Propagate shapes</strong> - propagates all the filtered shapes from the current frame to the target frame.</li><li><strong>Shapes converter: masks to polygons</strong> - converts all masks to polygons.</li><li><strong>Shapes converter: masks to rectangles</strong> - converts all masks to rectangles in alignment with the set-up filter.</li><li><strong>Shapes converter: polygon to masks</strong> - converts all polygons to masks.</li><li><strong>Shapes converter: polygon to rectangles</strong> - converts all polygons to rectangles.</li><li><strong>Shapes converter: rectangles to masks</strong> - converts all rectangles to masks.</li><li><strong>Shapes converter: rectangles to polygons</strong> - converts all rectangles to polygons.</li><br><strong>Note:</strong> only <strong>Propagate shapes</strong> and <strong>Remove filtered shapes</strong> is available in the community version.</td>
+</tr>
+<tr>
+<td><strong>Specify frames to run action</strong></td>
+<td>Field where you can specify the frame range for the selected action. Enter the starting frame in the <strong>Starting from frame:</strong> field, and the ending frame in the <strong>up to frame</strong> field. <br><br>If nothing is selected here or in <strong>Choose one of the predefined options</strong> section, the action will be applied to all fields.</td>
+</tr>
+<tr>
+<td><strong>Choose one of the predefined options</strong></td>
+<td>Predefined options to apply to frames. Selection here is mutually exclusive with <strong>Specify frames to run action</strong>. <br><br>If nothing is selected here or in <strong>Specify frames to run action</strong> section, the action will be applied to all fields.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="convert-shapes">Convert shapes</h2>
+<p><strong>Recommended Precautions Before Running Annotation Actions</strong></p>
+<ul>
+<li>
+<p><strong>Saving changes:</strong> It is recommended to save all changes prior to initiating the annotation action.
+If unsaved changes are detected, a prompt will advise to save these changes
+to avoid any potential loss of data.</p>
+</li>
+<li>
+<p><strong>Disable auto-save:</strong> Prior to running the annotation action, disabling the auto-save feature
+is advisable. A notification will suggest this action if auto-save is currently active.</p>
+</li>
+<li>
+<p><strong>Committing changes:</strong> Changes applied during the annotation session
+will not be committed to the server until the saving process is manually
+initiated. This can be done either by the user or through the
+auto-save feature, should it be enabled.</p>
+</li>
+</ul>
+<p>To convert shapes, do the following:</p>
+<ol>
+<li>
+<p>Annotate your dataset.</p>
+<p><img src="/images/shapes-converter-annotated-dataset.jpg" alt="Example of annotated dataset with different shapes"></p>
+</li>
+<li>
+<p>Set up <a href="/v2.53.0/docs/annotation/manual-annotation/utilities/filter/">filters</a>.</p>
+<p><img src="/images/shapes-converter-setup-filter.png" alt="Example of a filter for shapes"></p>
+</li>
+<li>
+<p>From the burger menu, select <strong>Run actions</strong>.</p>
+</li>
+<li>
+<p>Choose the action you need from the <strong>Select action</strong> drop-down list.</p>
+</li>
+<li>
+<p>(Optional) In the <strong>Starting from frame</strong> field, enter the frame number where the action should begin,
+and in the <strong>up to frame</strong> field, specify the frame number where the action should end.</p>
+</li>
+<li>
+<p>(Optional) Select an option from <strong>Or choose one of the predefined options</strong> to apply the action.</p>
+</li>
+<li>
+<p>Click <strong>Run</strong>. <br> A progress bar will appear. You may abort the process by clicking <strong>Cancel</strong> until the process commits modified objects at the end of pipeline.</p>
+<p><img src="/images/shapes-converter-action-run.jpg" alt="Progress bar for shapes converter with defined parameters"></p>
+</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Once the action is applied, it cannot be undone.
+
+</div>
+
+<h2 id="convert-shapes-video-tutorial">Convert shapes video tutorial</h2>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/sAVEdjmw0C0?si=ZhRuwdAMSNrdieBp" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e1e9c706c043636f7093cbd54492debb">3.3 - Contextual images</h1>
+    <div class="lead">Contextual images of the task</div>
+	<p>Contextual images (or related images) are additional images that provide
+context or additional information related to the primary image.</p>
+<p>Use them to add extra contextual about the object to improve the accuracy of annotation.</p>
+<p>Contextual images are available for 2D and 3D tasks.</p>
+<p>See:</p>
+<ul>
+<li><a href="#folder-structure">Folder structure</a></li>
+<li><a href="#contextual-images">Contextual images</a></li>
+</ul>
+<h2 id="folder-structure">Folder structure</h2>
+<p>To add contextual images to the task, you need to organize the images folder into one of
+the supported file layouts. A task with contextual images can be created both from an archive
+or from raw files.</p>
+<p>Example for 2D tasks:</p>
+<ol>
+<li>In the folder with the images for annotation, create a folder: <code>related_images</code>.</li>
+<li>Add to the <code>related_images</code> a subfolder with the same name
+as the primary image to which it should be linked.</li>
+<li>Place the contextual image(s) within the subfolder created in step 2.</li>
+<li>Add folder to the archive.</li>
+<li><a href="/v2.53.0/docs/workspace/tasks-page/#create-annotation-task">Create task</a>.</li>
+</ol>
+<p>Supported file layouts for 2D and 3D tasks:</p>
+
+
+
+
+
+
+<ul class="nav nav-tabs" id="tabs-1" role="tablist">
+  <li class="nav-item">
+      <button class="nav-link active"
+          id="tabs-01-00-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-00" role="tab"
+          aria-controls="tabs-01-00" aria-selected="true">
+        2D task
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-01-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-01" role="tab"
+          aria-controls="tabs-01-01" aria-selected="false">
+        3D option 1
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-02-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-02" role="tab"
+          aria-controls="tabs-01-02" aria-selected="false">
+        3D option 2
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-03-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-03" role="tab"
+          aria-controls="tabs-01-03" aria-selected="false">
+        3D task KITTI format
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-04-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-04" role="tab"
+          aria-controls="tabs-01-04" aria-selected="false">
+        3D task Supervisely format
+      </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs-1-content">
+    <div class="tab-body tab-pane fade show active"
+        id="tabs-01-00" role="tabpanel" aria-labelled-by="tabs-01-00-tab" tabindex="1">
+        <pre tabindex="0"><code>root_directory/
+  image_1_to_be_annotated.jpg
+  image_2_to_be_annotated.jpg
+  related_images/
+    image_1_to_be_annotated_jpg/
+      context_image_for_image_1.jpg
+    image_2_to_be_annotated_jpg/
+      context_image_for_image_2.jpg
+    subdirectory_example/
+      image_3_to_be_annotated.jpg
+        related_images/
+        image_3_to_be_annotated_jpg/
+            context_image_for_image_3.jpg
+</code></pre>
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-01" role="tabpanel" aria-labelled-by="tabs-01-01-tab" tabindex="1">
+        <p>Point clouds and related images are put into the same directory. Related files must have the same
+names as the corresponding point clouds. This format is limited by only 1 related image
+per point cloud.</p>
+<pre tabindex="0"><code>root_directory/
+  pointcloud1.pcd
+  pointcloud1.jpg
+  pointcloud2.pcd
+  pointcloud2.png
+  ...
+</code></pre>
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-02" role="tabpanel" aria-labelled-by="tabs-01-02-tab" tabindex="1">
+        <p>Each point cloud is put into a separate directory with matching file name. Related images
+are put next to the corresponding point cloud, the file names and extensions can be arbitrary.</p>
+<pre tabindex="0"><code>root_directory/
+  pointcloud1/
+    pointcloud1.pcd
+    pointcloud1_ri1.png
+    pointcloud1_ri2.jpg
+    ...
+  pointcloud2/
+    pointcloud2.pcd
+    pointcloud2_ri1.bmp
+</code></pre>
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-03" role="tabpanel" aria-labelled-by="tabs-01-03-tab" tabindex="1">
+        <p>Context images are placed in the <code>image_00/</code>, <code>image_01/</code>, <code>image_N/</code> (<code>N</code> is any number)
+directories. Their file names must correspond to the point cloud files in the <code>data/</code> directory.</p>
+<pre tabindex="0"><code>image_00/
+  data/
+    0000000000.png
+    0000000001.png
+    0000000002.png
+    0000000003.png
+image_01/
+  data/
+    0000000000.png
+    0000000001.png
+    0000000002.png
+    0000000003.png
+image_N/
+  data/
+    0000000000.png
+    0000000001.png
+    0000000002.png
+    0000000003.png
+velodyne_points/
+  data/
+    0000000000.bin
+    0000000001.bin
+    0000000002.bin
+    0000000003.bin
+</code></pre>
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-04" role="tabpanel" aria-labelled-by="tabs-01-04-tab" tabindex="1">
+        <pre tabindex="0"><code>root_directory/
+  pointcloud/
+    pointcloud1.pcd
+    pointcloud2.pcd
+  related_images/
+    pointcloud1_pcd/
+      context_image_for_pointclud1.jpg
+    pointcloud2_pcd/
+      context_image_for_pointcloud2.jpg
+</code></pre>
+    </div>
+</div>
+
+<p>For more general information about 3D data formats,
+see <a href="/v2.53.0/docs/workspace/tasks-page/#data-formats-for-a-3d-task">3D data formats</a>.</p>
+<h2 id="contextual-images">Contextual images</h2>
+<p>The maximum amount of contextual images is twelve.</p>
+<p>By default they will be positioned on the right side of the main image.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    By default, only three contextual images will be visible.
+
+</div>
+
+<p><img src="/images/context_img_01.jpg" alt="context_images_1"></p>
+<p>When you add contextual images to the set,
+small toolbar will appear on the top of the screen, with the following elements:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/images/context_img_04.jpg" alt="context_images_4"></td>
+<td><strong>Fit views</strong>. Click to restore the layout to its original appearance. <p>If you&rsquo;ve expanded any images in the layout, they will returned to their original size. <p>This won&rsquo;t affect the number of context images on the screen.</td>
+</tr>
+<tr>
+<td><img src="/images/context_img_05.jpg" alt="context_images_5"></td>
+<td><strong>Add new image</strong>. Click to add context image to the layout.</td>
+</tr>
+<tr>
+<td><img src="/images/context_img_06.jpg" alt="context_images_6"></td>
+<td><strong>Reload layout</strong>. Click to reload layout to the default view. <p>Note, that this action can change the number of context images resetting them back to three.</td>
+</tr>
+</tbody>
+</table>
+<p>Each context image has the following elements:</p>
+<p><img src="/images/context_img_02.jpg" alt="context_images_2"></p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Full screen</strong>. Click to expand the contextual image in to the full screen mode. <p>Click again to revert contextual image to windowed mode.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Move contextual image</strong>. Hold and move contextual image to the other place on the screen. <p><img src="/images/context_img_03.gif" alt="context_images_3"></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Name</strong>. Unique contextual image name</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Select contextual image</strong>. Click to open a horizontal listview of all available contextual images. <p>Click on one to select.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Close</strong>. Click to remove image from contextual images menu.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Extend</strong> Hold and pull to extend the image.</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-ab7fac07de5140bb0bf4a000837e3db4">3.4 - Filter</h1>
+    <div class="lead">Guide to using the Filter feature in CVAT.</div>
+	<p>There are some reasons to use the feature:</p>
+<ol>
+<li>When you use a filter, objects that don&rsquo;t match the filter will be hidden.</li>
+<li>The fast navigation between frames which have an object of interest.
+Use the <code>Left Arrow</code> / <code>Right Arrow</code> keys for this purpose
+or customize the UI buttons by right-clicking and select <code>switching by filter</code>.
+If there are no objects which correspond to the filter,
+you will go to the previous / next frame which contains any annotated objects.</li>
+</ol>
+<p>To apply filters you need to click on the button on the top panel.</p>
+<p><img src="/images/image059.jpg" alt="Filter button in user interface"></p>
+<h2 id="create-a-filter">Create a filter</h2>
+<p>It will open a window for filter input. Here you will find two buttons: <code>Add rule</code> and <code>Add group</code>.</p>
+<p><img src="/images/image202.jpg" alt="Filter window with highlighted &amp;ldquo;Add rule&amp;rdquo; and &amp;ldquo;Add group&amp;rdquo; buttons"></p>
+<h3 id="rules">Rules</h3>
+<p>The <code>Add rule</code> button adds a rule for objects display. A rule may use the following properties:</p>
+<p><img src="/images/image204.jpg" alt="Available objects, operators, and values for filter rules"></p>
+<h3 id="supported-properties-for-annotation">Supported properties for annotation</h3>
+<table>
+<thead>
+<tr>
+<th>Properties</th>
+<th>Supported values</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Label</code></td>
+<td>all the label names that are in the task</td>
+<td>label name</td>
+</tr>
+<tr>
+<td><code>Type</code></td>
+<td>shape, track or tag</td>
+<td>type of object</td>
+</tr>
+<tr>
+<td><code>Shape</code></td>
+<td>all shape types</td>
+<td>type of shape</td>
+</tr>
+<tr>
+<td><code>Occluded</code></td>
+<td>true or false</td>
+<td>occluded (<a href="/v2.53.0/docs/annotation/manual-annotation/shapes/shape-mode-basics/#occluded">read more</a>)</td>
+</tr>
+<tr>
+<td><code>Width</code></td>
+<td>number of px or field</td>
+<td>shape width</td>
+</tr>
+<tr>
+<td><code>Height</code></td>
+<td>number of px or field</td>
+<td>shape height</td>
+</tr>
+<tr>
+<td><code>ServerID</code></td>
+<td>number or field</td>
+<td>ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu)</td>
+</tr>
+<tr>
+<td><code>ObjectID</code></td>
+<td>number or field</td>
+<td>ID of the object in your client <br>(indicated on the objects sidebar)</td>
+</tr>
+<tr>
+<td><code>Attributes</code></td>
+<td>some other fields including attributes with a <br>similar type or a specific attribute value</td>
+<td>any fields specified by a label</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<a href="/v2.53.0/docs/workspace/projects/#supported-properties-for-projects-list">Supported properties for projects list</a>
+</li>
+<li>
+<a href="/v2.53.0/docs/workspace/tasks-page/#supported-properties-for-tasks-list">Supported properties for tasks list</a>
+</li>
+<li>
+<a href="/v2.53.0/docs/workspace/jobs-page/#supported-properties-for-jobs-list">Supported properties for jobs list</a>
+</li>
+<li>
+<a href="/v2.53.0/docs/workspace/cloud-storages/#supported-properties-for-cloud-storages-list">Supported properties for cloud storages list</a>
+</li>
+</ul>
+<h3 id="supported-operators-for-properties">Supported operators for properties</h3>
+<p><code>==</code> - Equally; <code>!=</code> - Not equal; <code>&gt;</code> - More; <code>&gt;=</code> - More or equal; <code>&lt;</code> - Less; <code>&lt;=</code> - Less or equal;</p>
+<p><code>Any in</code>; <code>Not in</code> - these operators allow you to set multiple values in one rule;</p>
+<p><img src="/images/image203.jpg" alt="Example of &amp;ldquo;any in&amp;rdquo; filter"></p>
+<p><code>Is empty</code>; <code>is not empty</code> – these operators don&rsquo;t require to input a value.</p>
+<p><code>Between</code>; <code>Not between</code> – these operators allow you to choose a range between two values.</p>
+<p><code>Like</code> - this operator indicate that the property must contain a value.</p>
+<p><code>Starts with</code>; <code>Ends with</code> - filter by beginning or end.</p>
+<p>Some properties support two types of values that you can choose:</p>
+<p><img src="/images/image205.jpg" alt="Choosing value type in a filter property"></p>
+<p>You can add multiple rules, to do so click the add rule button and set another rule.
+Once you&rsquo;ve set a new rule, you&rsquo;ll be able to choose which operator they will be connected by: <code>And</code> or <code>Or</code>.</p>
+<p><img src="/images/image206.jpg" alt="Filter window with highlighted operators"></p>
+<p>All subsequent rules will be joined by the chosen operator.
+Click <code>Submit</code> to apply the filter or if you want multiple rules to be connected by different operators, use groups.</p>
+<h3 id="groups">Groups</h3>
+<p>To add a group, click the <code>Add group</code> button. Inside the group you can create rules or groups.</p>
+<p><img src="/images/image207.jpg" alt="Filter window with highlighted group and &amp;ldquo;Add group&amp;rdquo; button"></p>
+<p>If there is more than one rule in the group, they can be connected by <code>And</code> or <code>Or</code> operators.
+The rule group will work as well as a separate rule outside the group and will be joined by an
+operator outside the group.
+You can create groups within other groups, to do so you need to click the add group button within the group.</p>
+<p>You can move rules and groups. To move the rule or group, drag it by the button.
+To remove the rule or group, click on the <code>Delete</code> button.</p>
+<p><img src="/images/image208.jpg" alt="Part of the filter window with highlighted buttons for moving and deleting groups and rules"></p>
+<p>If you activate the <code>Not</code> button, objects that don&rsquo;t match the group will be filtered out.
+Click <code>Submit</code> to apply the filter.
+The <code>Cancel</code> button undoes the filter. The <code>Clear filter</code> button removes the filter.</p>
+<p>Once applied filter automatically appears in <code>Recent used</code> list. Maximum length of the list is 10.</p>
+<hr>
+<h2 id="sort-and-filter-lists">Sort and filter lists</h2>
+<p>On the <a href="/v2.53.0/docs/workspace/projects/#projects-page">projects</a>, task list on the project page,
+<a href="/v2.53.0/docs/workspace/tasks-page/">tasks</a>, <a href="/v2.53.0/docs/workspace/jobs-page/">jobs</a>,
+and <a href="/v2.53.0/docs/workspace/cloud-storages/">cloud storage</a> pages, you can use sorting and filters.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The applied filter and sorting will be displayed in the URL of your browser,
+Thus, you can share the page with sorting and filter applied.
+
+</div>
+
+<h3 id="sort-by">Sort by</h3>
+<p>You can sort by the following parameters:</p>
+<ul>
+<li>Jobs list: ID, assignee, updated date, <a href="/v2.53.0/docs/getting_started/vocabulary/#stage">stage</a>,
+<a href="/v2.53.0/docs/getting_started/vocabulary/#state">state</a>, task ID, project ID,
+task name, project name.</li>
+<li>Tasks list or tasks list on project page: ID, owner, status, assignee, updated date,
+<a href="/v2.53.0/docs/getting_started/vocabulary/#subset">subset</a>,
+<a href="/v2.53.0/docs/getting_started/vocabulary/#mode">mode</a>,
+<a href="/v2.53.0/docs/getting_started/vocabulary/#dimension">dimension</a>, project ID, name, project name.</li>
+<li>Projects list: ID, assignee, owner, status, name, updated date.</li>
+<li>Cloud storages list: ID, provider type, updated date, display name,
+<a href="/v2.53.0/docs/getting_started/vocabulary/#resource">resource</a>,
+<a href="/v2.53.0/docs/getting_started/vocabulary/#credentials">credentials</a>, owner, description.</li>
+</ul>
+<p>To apply sorting, drag the parameter to the top area above the horizontal bar.
+The parameters below the horizontal line will not be applied.
+By moving the parameters you can change the priority,
+first of all sorting will occur according to the parameters that are above.</p>
+<p>Pressing the <code>Sort button</code> switches <code>Ascending sort</code>/<code>Descending sort</code>.</p>
+<h3 id="quick-filters">Quick filters</h3>
+<p>Quick Filters contain several frequently used filters:</p>
+<ul>
+<li><code>Assigned to me</code> - show only those projects, tasks or jobs that are assigned to you.</li>
+<li><code>Owned by me</code> -  show only those projects or tasks that are owned by you.</li>
+<li><code>Not completed</code> - show only those projects, tasks or jobs that have a status other than completed.</li>
+<li><code>AWS storages</code> - show only AWS cloud storages</li>
+<li><code>Azure storages</code> - show only Azure cloud storages</li>
+<li><code>Google cloud storages</code> - show only Google cloud storages</li>
+</ul>
+<h4 id="date-and-time-selection">Date and time selection</h4>
+<p>When creating a <code>Last updated</code> rule, you can select the date and time by using the selection window.</p>
+<p><img src="/images/image244_detrac.jpg" alt="Filter window with opened date and time filter and marked elements"></p>
+<p>You can select the year and month using the arrows or by clicking on the year and month.
+To select a day, click on it in the calendar,
+To select the time, you can select the hours and minutes using the scrolling list.
+Or you can select the current date and time by clicking the <code>Now</code> button.
+To apply, click <code>Ok</code>.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/v2.53.0/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/v2.53.0/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/v2.53.0/js/prism.js'></script>
+<script src='/v2.53.0/js/tabpane-persist.js'></script>
+
+  </body>
+</html>

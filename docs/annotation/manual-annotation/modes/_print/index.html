@@ -1,0 +1,915 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/docs/annotation/manual-annotation/modes/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Annotation modes | CVAT</title>
+<meta name="description" content="Overview of editor-level modes in CVAT and how they affect the annotation workflow.">
+<meta property="og:title" content="Annotation modes" />
+<meta property="og:description" content="Overview of editor-level modes in CVAT and how they affect the annotation workflow." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/docs/annotation/manual-annotation/modes/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Annotation modes">
+<meta itemprop="description" content="Overview of editor-level modes in CVAT and how they affect the annotation workflow."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Annotation modes"/>
+<meta name="twitter:description" content="Overview of editor-level modes in CVAT and how they affect the annotation workflow."/>
+
+
+
+
+<link rel="preload" href="/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" as="style">
+<link href="/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">develop</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/">Latest version</a></li>
+    <li><a class="dropdown-item" href="/v2.56.1">v2.56.1</a></li>
+    <li><a class="dropdown-item" href="/v2.55.0">v2.55.0</a></li>
+    <li><a class="dropdown-item" href="/v2.54.0">v2.54.0</a></li>
+    <li><a class="dropdown-item" href="/v2.53.0">v2.53.0</a></li>
+    <li><a class="dropdown-item" href="/v2.52.0">v2.52.0</a></li>
+    <li><a class="dropdown-item" href="/v2.51.0">v2.51.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/offline-search-index.f1da21596247befb0dcabb4fe9375b9d.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/annotation/manual-annotation/modes/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Annotation modes</h1>
+<div class="lead">Overview of editor-level modes in CVAT and how they affect the annotation workflow.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-459b8d3d722f76fa1cf94a7b3181ebc7">Single shape</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-a15dadc334f6059973bcbf8ebc06a081">Track mode</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-ce6f6bfb4b5dda1ca32ced1ce3f11142">Attribute annotation mode</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-eaf0487d927672c52bdb8454c4c93c91">3D object annotation</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-5ec77f6573ffae8f9922a74e90912424">Annotation with tags</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>CVAT provides several editor-level modes that change how the annotation workspace behaves.
+These modes control what actions are available to the user, which tools can be used, and how objects can be
+created or modified.</p>
+<p>Use this section to understand when to switch modes and how each mode supports a specific step of the annotation workflow.</p>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-459b8d3d722f76fa1cf94a7b3181ebc7">1 - Single shape</h1>
+    <div class="lead">Guide to annotating tasks using Single Shape mode</div>
+	<p>The CVAT Single Shape annotation mode accelerates the annotation process and enhances
+workflow efficiency for specific scenarios.</p>
+<p>By using this mode you can label objects with a chosen annotation shape and label when an image
+contains only a single object. By eliminating the necessity to select tools from the sidebar
+and facilitating quicker navigation between images without
+the reliance on hotkeys, this feature makes the annotation process significantly faster.</p>
+<p>See:</p>
+<ul>
+<li><a href="#single-shape-mode-annotation-interface">Single Shape mode annotation interface</a></li>
+<li><a href="#annotating-in-single-shape-mode">Annotating in Single Shape mode</a></li>
+<li><a href="#query-parameters">Query parameters</a></li>
+<li><a href="#video-tutorial">Video tutorial</a></li>
+</ul>
+<h2 id="single-shape-mode-annotation-interface">Single Shape mode annotation interface</h2>
+<p>A set of controls in the interface of the <strong>Single Shape</strong> annotation mode may vary depending on different settings.</p>
+<p>Images below displays the complete interface, featuring all available fields;
+as mentioned above, certain fields may be absent depending on the scenario.</p>
+<p>For instance, when annotating
+with rectangles, the <strong>Number of points</strong> field will not appear, and if annotating a single class,
+the <strong>Labels selector</strong> will be omitted.</p>
+<p>To access <strong>Single Shape</strong> mode, open the job, navigate to the
+top right corner, and from the drop-down menu, select <strong>Single Shape</strong>.</p>
+<p><img src="/images/single-shape-interface.png" alt="Single Shape Annotation Mode Interface"></p>
+<p>The interface will be different if the shape type was set to <strong>Any</strong> in the label <strong>Constructor</strong>:</p>
+<p><img src="/images/single-shape-label-any.jpg" alt="Single Shape Annotation Mode Interface"></p>
+<p>The <strong>Single Shape</strong> annotation mode has the following fields:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Prompt for Shape and Label</strong></td>
+<td>Displays the selected shape and label for the annotation task, for example: &ldquo;Annotate <strong>cat</strong> on the image using <strong>rectangle</strong>&rdquo;.</td>
+</tr>
+<tr>
+<td><strong>Skip Button</strong></td>
+<td>Enables moving to the next frame without annotating the current one, particularly useful when the frame does not have anything to be annotated.</td>
+</tr>
+<tr>
+<td><strong>List of Hints</strong></td>
+<td>Offers guidance on using the interface effectively, including: <br> - Click <strong>Skip</strong> for frames without required annotations. <br> - Hold the <strong>Alt</strong> button to avoid unintentional drawing (e.g. when you want only move the image). <br> - Use the <strong>Ctrl+Z</strong> combination to undo the last action if needed. <br> - Use the <strong>Esc</strong> button to completely reset the current drawing progress.</td>
+</tr>
+<tr>
+<td><strong>Label selector</strong></td>
+<td>Allows for the selection of different labels (<code>cat</code>, or <code>dog</code> in our example) for annotation within the interface.</td>
+</tr>
+<tr>
+<td><strong>Label type selector</strong></td>
+<td>A drop-down list to select type of the label (rectangle, ellipse, etc). Only visible when the type of the shape is <strong>Any</strong>.</td>
+</tr>
+<tr>
+<td><strong>Options to Enable or Disable</strong></td>
+<td>Provides configurable options to streamline the annotation process, such as: <br> - <strong>Automatically go to the next frame</strong>. <br> - <strong>Automatically save when finish</strong>. <br> - <strong>Navigate only empty frames</strong>. <br> - <strong>Predefined number of points</strong> - Specific to polyshape annotations, enabling this option auto-completes a shape once a predefined number of points is reached. Otherwise, pressing <strong>N</strong> is required to finalize the shape.</td>
+</tr>
+<tr>
+<td><strong>Number of Points</strong></td>
+<td>Applicable for polyshape annotations, indicating the number of points to use for image annotation.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="annotating-in-single-shape-mode">Annotating in Single Shape mode</h2>
+<p>To annotate in Single Shape mode, follow these steps:</p>
+<ol>
+<li>Open the job and switch to <strong>Single Shape</strong> mode.</li>
+<li>Annotate the image based on the selected shape.
+For more information on shapes, see
+<a href="/docs/getting_started/overview/#annotation-tools">Annotation Tools</a>.</li>
+<li>(Optional) If the image does not contain any objects to annotate,
+click <strong>Skip</strong> at the top of the right panel.</li>
+<li>Submit your work.</li>
+</ol>
+<h2 id="query-parameters">Query parameters</h2>
+<p>Also, we introduced additional query parameters, which you may append to
+the job link, to initialize the annotation process and automate workflow:</p>
+<table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Possible Values</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>defaultWorkspace</code></td>
+<td>Workspace identifier (e.g., <code>single_shape</code>, <code>tags</code>, <code>review</code>, <code>attributes</code>)</td>
+<td>Specifies the workspace to be used initially, streamlining the setup for different annotation tasks.</td>
+</tr>
+<tr>
+<td><code>defaultLabel</code></td>
+<td>A string representation of a label (label name)</td>
+<td>Sets a default label for the annotation session, facilitating consistency across similar tasks.</td>
+</tr>
+<tr>
+<td><code>defaultPointsCount</code></td>
+<td>Integer - number of points for polyshapes</td>
+<td>Defines a preset number of points for polyshape annotations, optimizing the annotation process.</td>
+</tr>
+</tbody>
+</table>
+<p>You can combine these parameters to customize the workspace for an annotator, for example:</p>
+<pre tabindex="0"><code>/tasks/&lt;tid&gt;/jobs/&lt;jid&gt;?defaultWorkspace=single_shape&amp;defaultLabel=dog&amp;defaultPointsCount=10
+</code></pre><p>Will open the following job:</p>
+<p><img src="/images/query-example.png" alt="Query Example"></p>
+<h2 id="video-tutorial">Video tutorial</h2>
+<p>For a better understanding of how Single Shape mode operates,
+we recommend watching the following tutorial.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/u17OXSD7Y4U?si=4z-f52lbxe0CpZEg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-a15dadc334f6059973bcbf8ebc06a081">2 - Track mode</h1>
+    <div class="lead">Usage examples and basic operations available during annotation in track mode.</div>
+	<p>Usage examples:</p>
+<ul>
+<li>Create new annotations for a sequence of frames.</li>
+<li>Add/modify/delete objects for existing annotations.</li>
+<li>Edit tracks, merge several rectangles into one track.</li>
+</ul>
+<ol>
+<li>
+<p>Like in the <code>Shape mode</code>, you need to select a <code>Rectangle</code> on the sidebar,
+in the appearing form, select the desired <code>Label</code> and the <code>Drawing method</code>.</p>
+<p><img src="/images/image083.jpg" alt="&amp;ldquo;Draw new rectangle&amp;rdquo; window with highlighted &amp;ldquo;Label&amp;rdquo; and &amp;ldquo;Drawing method&amp;rdquo; options"></p>
+</li>
+<li>
+<p>Creating a track for an object (look at the selected car as an example):</p>
+<ul>
+<li>
+<p>Create a <code>Rectangle</code> in <code>Track mode</code> by selecting <code>Track</code>.</p>
+<p><img src="/images/image014.jpg" alt="&amp;ldquo;Draw new rectangle&amp;rdquo; window with highlighted &amp;ldquo;Track&amp;rdquo; option"></p>
+</li>
+<li>
+<p>In <code>Track mode</code>, the rectangle will be automatically interpolated on the next frames.</p>
+</li>
+<li>
+<p>The cyclist starts moving on frame #2270. Let&rsquo;s mark the frame as a key frame.
+You can press <code>K</code> for that or select the <code>star</code> button (see the screenshot below).</p>
+<p><img src="/images/image016.jpg" alt="Objects sidebar with highlighted button for making a keyframe"></p>
+</li>
+<li>
+<p>If the object starts to change its position, you need to modify the rectangle where it happens.
+It isn&rsquo;t necessary to change the rectangle on each frame, simply update several keyframes
+and the frames between them will be interpolated automatically.</p>
+</li>
+<li>
+<p>Let&rsquo;s jump 30 frames forward and adjust the boundaries of the object. See an example below:</p>
+<p><img src="/images/image017_detrac.jpg" alt="Several frames displaying a keyframe annotation"></p>
+</li>
+<li>
+<p>After that the rectangle of the object will be changed automatically on frames 2270 to 2300:</p>
+<p><img src="/images/gif019_detrac.gif" alt="Example of automatically tracked object"></p>
+</li>
+</ul>
+</li>
+<li>
+<p>When the annotated object disappears or becomes too small, you need to
+finish the track. You have to choose <code>Outside Property</code>, shortcut <code>O</code>.</p>
+<p><img src="/images/image019.jpg" alt="Objects sidebar with highlighted &amp;ldquo;Outside property&amp;rdquo; button"></p>
+</li>
+<li>
+<p>If the object isn&rsquo;t visible on a couple of frames and then appears again,
+you can use the <code>Merge</code> feature to merge several individual tracks
+into one.</p>
+<p><img src="/images/image020.jpg" alt="User interface with highlighted &amp;ldquo;Merge&amp;rdquo; button"></p>
+<ul>
+<li>
+<p>Create tracks for moments when the cyclist is visible:</p>
+<p><img src="/images/gif001_detrac.gif" alt="Example of a created track for an object that is sometimes not visible"></p>
+</li>
+<li>
+<p>Select <code>Merge</code> button or press key <code>M</code> and select on any rectangle of the first track
+and on any rectangle of the second track and so on:</p>
+<p><img src="/images/image162_detrac.jpg" alt="Several frames displaying the process of track merging"></p>
+</li>
+<li>
+<p>Select <code>Merge</code> button or press <code>M</code> to apply changes.</p>
+<p><img src="/images/image020.jpg" alt="User interface with highlighted &amp;ldquo;Merge&amp;rdquo; button"></p>
+</li>
+<li>
+<p>The final annotated sequence of frames in <code>Interpolation</code> mode can
+look like the clip below:</p>
+<p><img src="/images/gif003_detrac.gif" alt="Example of a track with interpolated frames"></p>
+</li>
+</ul>
+</li>
+</ol>
+<p>Shapes that were created in the track mode, have extra navigation buttons.</p>
+<ul>
+<li>
+<p>These buttons help to jump to the previous/next keyframe.</p>
+<p><img src="/images/image056.jpg" alt="Highlighted &amp;ldquo;Previous&amp;rdquo; and &amp;ldquo;Next&amp;rdquo; buttons in user interface"></p>
+</li>
+<li>
+<p>The button helps to jump to the initial frame and to the last keyframe.</p>
+<p><img src="/images/image057.jpg" alt="Highlighted &amp;ldquo;Initial frame&amp;rdquo; and &amp;ldquo;Last frame&amp;rdquo; buttons in user interface"></p>
+</li>
+</ul>
+<p>You can use the <code>Split</code> function to split one track into two tracks:</p>
+<h1 id="example-of-an-annotation-with-split-tracksimagesgif010_detracgif"><img src="/images/gif010_detrac.gif" alt="Example of an annotation with split tracks"></h1>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-ce6f6bfb4b5dda1ca32ced1ce3f11142">3 - Attribute annotation mode</h1>
+    <div class="lead">Usage examples and basic operations available in attribute annotation mode.</div>
+	<ul>
+<li>
+<p>In this mode, you can edit attributes with fast navigation between objects and frames using a keyboard.
+Open the drop-down list in the top panel and select <strong>Attribute annotation</strong>.</p>
+<p><img src="/images/Attribute%20annotation%20mode_01.png" alt="User interface with opened menu for changing annotation mode"></p>
+</li>
+<li>
+<p>In this mode, objects panel change to a special panel:</p>
+<p><img src="/images/Attribute%20annotation%20mode_02.png" alt="Object panel interface in attribute annotation mode with marked elements"></p>
+</li>
+<li>
+<p>The active attribute will be red. In this case, it is <code>gender</code>. Look at the bottom side panel to see all possible
+shortcuts for changing the attribute. Press key <code>2</code> on your keyboard to assign a value (female) for the attribute
+or select from the drop-down list.</p>
+<p><img src="/images/Attribute%20annotation%20mode_03.png" alt="Example of assigning an attribute value in objects sidebar"></p>
+</li>
+<li>
+<p>Press <code>Up Arrow</code>/<code>Down Arrow</code> on your keyboard or select the buttons in the UI to go to the next/previous
+attribute. In this case, after pressing <code>Down Arrow</code> you will be able to edit the <code>Age</code> attribute.</p>
+<p><img src="/images/Attribute%20annotation%20mode_04.png" alt="Example of selecting an attribute value in objects sidebar with keyboard"></p>
+</li>
+<li>
+<p>Use <code>Right Arrow</code>/<code>Left Arrow</code> keys to move to the previous/next image with annotation.</p>
+</li>
+</ul>
+<p>To display all the hot keys available in the attribute annotation mode, press <code>F2</code>.</p>
+<p>It is possible to handle lots of objects on the same frame in the mode.</p>
+<p><img src="/images/image058_detrac.jpg" alt="Example of user interface in attribute annotation mode"></p>
+<p>It is more convenient to annotate objects of the same type. In this case you can apply
+the appropriate filter. For example, the following filter will
+hide all objects except person: <code>label==&quot;Person&quot;</code>.</p>
+<p>To navigate between objects (person in this case),
+use the following buttons <code>switch between objects in the frame</code> on the special panel:</p>
+<p><img src="/images/image026.jpg" alt="Panel for attribute annotation with marked options and parameters"></p>
+<p>or shortcuts:</p>
+<ul>
+<li><code>Tab</code> — go to the next object</li>
+<li><code>Shift+Tab</code> — go to the previous object.</li>
+</ul>
+<p>In order to change the zoom level, go to settings (press <code>F3</code>) in the workspace tab and set the value Attribute annotation mode (AAM) zoom margin in px.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-eaf0487d927672c52bdb8454c4c93c91">4 - 3D object annotation</h1>
+    <div class="lead">Overview of basic operations available when annotating 3D objects.</div>
+	<p>Use the 3D Annotation tool for labeling 3D objects and scenes, such as vehicles, buildings, landscapes, and others.</p>
+<p>Check out:</p>
+<ul>
+<li><a href="#navigation">Navigation</a></li>
+<li><a href="#annotation-with-cuboids">Annotation with cuboids</a>
+<ul>
+<li><a href="#annotation-with-shapes">Annotation with shapes</a></li>
+<li><a href="#tracking-with-cuboids">Tracking with cuboids</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="navigation">Navigation</h2>
+<p>The 3D annotation canvas looks like the following:</p>
+<p><img src="/images/3d-canvas.jpg" alt="3D canvas"></p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    If you added contextual images to the dataset, the canvas will include them.
+For more information, consult <a href="/docs/annotation/manual-annotation/utilities/contextual-images/">Contextual images</a>
+
+</div>
+
+<p>For information on the available tools, consult
+<a href="/docs/annotation/annotation-editor/controls-sidebar/">Controls sidebar</a>.</p>
+<p>You can navigate, using the mouse, or navigation keys:</p>
+<p><img src="/images/image216_carla_town3.jpg" alt="Navigation keys used in 3D annotation"></p>
+<p>You can also use keyboard shortcuts to navigate:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Keys</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Camera rotation</td>
+<td><strong>Shift</strong> + <strong>Arrow</strong> (Up, Down, Left, Right)</td>
+</tr>
+<tr>
+<td>Left/Right</td>
+<td><strong>Alt</strong>+<strong>J</strong>/ <strong>Alt</strong>+<strong>L</strong></td>
+</tr>
+<tr>
+<td>Up/down</td>
+<td><strong>Al</strong>t+<strong>U</strong>/ <strong>Alt</strong>+<strong>O</strong></td>
+</tr>
+<tr>
+<td>Zoom in/ou</td>
+<td><strong>Alt</strong>+<strong>K</strong>/ <strong>Alt</strong>+<strong>I</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="annotation-with-cuboids">Annotation with cuboids</h2>
+<p>There are two options available for 3D annotation:</p>
+<ul>
+<li><strong>Shape</strong>: for tasks like object detection.</li>
+<li><strong>Track</strong>: uses interpolation to predict the position of objects in subsequent frames.
+A unique ID will be assigned to each object and maintained throughout the sequence of images.</li>
+</ul>
+<h3 id="annotation-with-shapes">Annotation with shapes</h3>
+<p>To add a 3D shape:</p>
+<ol>
+<li>
+<p>On the objects pane, select <strong>Draw new cuboid</strong> &gt;
+select the label from the drop-down list &gt; <strong>Shape</strong>.</p>
+<p><img src="/images/image217.jpg" alt="Opened &amp;ldquo;Draw new cuboid&amp;rdquo; window"></p>
+</li>
+<li>
+<p>The cursor will be followed by a cuboid.
+Place the cuboid on the 3D scene.</p>
+<p><img src="/images/gif026_carla_town3.gif" alt="Example of placing cuboid on a 3D scene"></p>
+</li>
+<li>
+<p>Use projections to adjust the cuboid.
+Click and hold the left mouse button to edit the label shape on the projection.</p>
+<p><img src="/images/gif027_carla_town3.gif" alt="Example of a cuboid adjustment with projections"></p>
+</li>
+<li>
+<p>(Optional) Move one of the four points to change the size of the cuboid.</p>
+<p><img src="/images/gif028_carla_town3.gif" alt="Example of a cuboid size change using cuboid points"></p>
+</li>
+<li>
+<p>(Optional) To rotate the cuboid, select the middle point
+and then drag the cuboid up/down or to left/right.</p>
+<p><img src="/images/gif029_carla_town3.gif" alt="Example of a cuboid rotation using cuboid middle point"></p>
+</li>
+</ol>
+<h3 id="tracking-with-cuboids">Tracking with cuboids</h3>
+<p>To track with cuboids:</p>
+<ol>
+<li>
+<p>On the objects pane, select <strong>Draw new cuboid</strong> &gt;
+select the label from the drop-down list &gt; <strong>Track</strong>.</p>
+</li>
+<li>
+<p>The cursor will be followed by a cuboid.
+Place the cuboid on the 3D scene.</p>
+</li>
+<li>
+<p>Use projections to adjust the cuboid.
+Select and hold the left mouse button to edit the label shape on the projection.</p>
+<p><img src="/images/gif027_carla_town3.gif" alt="Adjusting cuboid"></p>
+</li>
+<li>
+<p>(Optional) Move one of the four points to change the size of the cuboid.</p>
+<p><img src="/images/gif028_carla_town3.gif" alt="Moving cuboid"></p>
+</li>
+<li>
+<p>(Optional) To rotate the cuboid, click on the middle point
+and then drag the cuboid up/down or to left/right.</p>
+<p><img src="/images/gif029_carla_town3.gif" alt="Rotating cuboid"></p>
+</li>
+<li>
+<p>Move several frames forward. You will see the cuboid you&rsquo;ve added in frame 1.
+Adjust it, if needed.</p>
+</li>
+<li>
+<p>Repeat to the last frame with the presence of the object you are tracking.</p>
+</li>
+</ol>
+<p>For more information about tracking, consult <a href="/docs/annotation/manual-annotation/shapes/track-mode-basics/">Track mode</a>.</p>
+<p>As well as 2D-task objects, 3D-task objects support the ability to change appearance, attributes,
+properties and have an action menu. Read more in
+<a href="/docs/annotation/annotation-editor/objects-sidebar/">objects sidebar</a> section.</p>
+<h2 id="moving-an-object">Moving an object</h2>
+<p>If you hover the cursor over a cuboid and press <code>Shift+N</code>, the cuboid will be cut,
+so you can paste it in other place (double-click to paste the cuboid).</p>
+<h2 id="copying">Copying</h2>
+<p>As well as in 2D task you can copy and paste objects by <code>Ctrl+C</code> and <code>Ctrl+V</code>,
+but unlike 2D tasks you have to place a copied object in a 3D space (double click to paste).</p>
+<p><img src="/images/gif030_carla_town3.gif" alt="Example of copying a cuboid and placing the copy in 3D space"></p>
+<h2 id="image-of-the-projection-window">Image of the projection window</h2>
+<p>You can copy or save the projection-window image by left-clicking on it and selecting a &ldquo;save image as&rdquo; or &ldquo;copy image&rdquo;.</p>
+<h2 id="cuboid-orientation">Cuboid orientation</h2>
+<p>The feature enables or disables the display of cuboid orientation arrows in the 3D space.
+It is controlled by a checkbox located in the appearance block. When enabled, arrows representing
+the cuboid&rsquo;s axis orientation (X - red, Y - green, Z - blue) are displayed, providing a visual reference
+for the cuboid&rsquo;s alignment within the 3D environment. This feature is useful for understanding the spatial
+orientation of the cuboid.</p>
+<p><img src="/images/cuboid_orientation.gif" alt="User interface with cuboid projections and orientation elements"></p>
+<h2 id="cuboid-size-input">Cuboid size input</h2>
+<p>The size input feature allows users to manually specify the dimensions of a cuboid in the 3D space.
+This feature is accessible through the objects sidebar - details panel, where you can input precise
+values for the width, height, and length (X - width, Y - height, Z - length) of the cuboid.
+By entering these values, the cuboid&rsquo;s size is adjusted accordingly to its orientation, providing
+greater control and accuracy when annotating objects in 3D tasks.</p>
+<p><img src="/images/cuboid_size_input.gif" alt="Example of changing a cuboid size using input fields in sidebar"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-5ec77f6573ffae8f9922a74e90912424">5 - Annotation with tags</h1>
+    
+	<p>It is used to annotate frames, tags are not displayed in the workspace.
+Before you start, open the drop-down list in the top panel and select <code>Tag annotation</code>.</p>
+<p><img src="/images/image183.jpg" alt="Open drop-down list with highlighted &amp;ldquo;Tag annotation&amp;rdquo; option"></p>
+<p>The objects sidebar will be replaced with a special panel for working with tags.
+Here you can select a label for a tag and add it by clicking on the <code>Plus</code> button.
+You can also customize hotkeys for each label.</p>
+<p><img src="/images/image181.jpg" alt="Panel for tag annotation with marked options and parameters"></p>
+<p>If you need to use only one label for one frame, then enable the <code>Automatically go to the next frame</code>
+checkbox, then after you add the tag the frame will automatically switch to the next.</p>
+<p>Tags will be shown in the top left corner of the canvas. You can show/hide them in the settings.</p>
+<p><img src="/images/image249.jpg" alt="Example of tag labels on an annotation"></p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/js/prism.js'></script>
+<script src='/js/tabpane-persist.js'></script>
+
+  </body>
+</html>

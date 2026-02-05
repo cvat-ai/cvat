@@ -1,0 +1,1047 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/v2.51.0/docs/getting_started/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/v2.51.0/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/v2.51.0/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-192x192.png" sizes="192x192">
+
+<title>Getting Started | CVAT</title>
+<meta name="description" content="">
+<meta property="og:title" content="Getting Started" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/v2.51.0/docs/getting_started/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Getting Started">
+<meta itemprop="description" content=""><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Getting Started"/>
+<meta name="twitter:description" content=""/>
+
+
+
+
+<link rel="preload" href="/v2.51.0/scss/main.min.6a6d2a9e0613b368ab0341ae2eee8fa51a7d998debf986030b070a9247093f0e.css" as="style">
+<link href="/v2.51.0/scss/main.min.6a6d2a9e0613b368ab0341ae2eee8fa51a7d998debf986030b070a9247093f0e.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/v2.51.0/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.51.0/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.51.0/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.51.0/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/v2.51.0/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.51.0/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.51.0</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/../">Latest version</a></li>
+    <li><a class="dropdown-item" href="/../v2.56.1">v2.56.1</a></li>
+    <li><a class="dropdown-item" href="/../v2.55.0">v2.55.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.54.0">v2.54.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.53.0">v2.53.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.52.0">v2.52.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.51.0">v2.51.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/v2.51.0/offline-search-index.7d3472d6f3cf10150155603bd6a99607.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/v2.51.0/docs/getting_started/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Getting Started</h1>
+
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-fcee10706b7cc3dd20b293a6eb21661b">CVAT Overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-a8f71bf4d423115598ae3ea4595059c5">Vocabulary</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-d6578e574987c9cbc72f6fb5991b3e65">Shortcuts</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-fcee10706b7cc3dd20b293a6eb21661b">1 - CVAT Overview</h1>
+    
+	<p>CVAT is an enterprise-grade platform for managing high-quality visual
+datasets for computer vision applications.
+It offers advanced tools for image, video, and 3D annotation,
+built-in quality assurance (QA), automation, and secure team collaboration.</p>
+<p>Backed by an active open-source community
+and trusted by thousands of organizations worldwide, CVAT helps organizations streamline data labeling for faster, more
+accurate model development.</p>
+<hr>
+<h2 id="products-and-services">Products and services</h2>
+<p>CVAT comes in three editions: CVAT Community, CVAT Online, and CVAT Enterprise.</p>
+<h3 id="cvat-community">CVAT Community</h3>
+<ul>
+<li>Free edition you can deploy on-premises or in your own cloud</li>
+<li>Full annotation toolset, import/export formats, and core workflow</li>
+<li>Ideal for technical teams comfortable managing infrastructure</li>
+<li><a href="/v2.51.0/docs/administration/basics/installation/">Installation &amp; Setup Guide →</a></li>
+<li><a href="https://github.com/cvat-ai/cvat">GitHub repository</a></li>
+</ul>
+<h3 id="cvat-online">CVAT Online</h3>
+<ul>
+<li>Hosted cloud edition with automatic updates, maintenance, and managed infrastructure.</li>
+<li>Available under multiple subscription tiers (Free, Solo, Team) for individual and collaborative work.</li>
+<li>Designed for fast onboarding, built-in collaboration and flexible storage</li>
+<li><a href="https://www.cvat.ai/pricing/cvat-online">Pricing &amp; Plans →</a></li>
+<li>Try for free: <a href="https://app.cvat.ai"><strong>app.cvat.ai</strong></a></li>
+</ul>
+<h3 id="cvat-enterprise">CVAT Enterprise</h3>
+<ul>
+<li>For large organisations and regulated environments.</li>
+<li>Includes advanced features such as SSO/LDAP, audit logs, dedicated support, and custom SLAs.</li>
+<li>Managed deployment options, on-premises or private cloud.</li>
+<li><a href="https://www.cvat.ai/pricing/enterprise">Pricing &amp; Plans →</a></li>
+</ul>
+<h3 id="labeling-as-a-service">Labeling as a Service</h3>
+<ul>
+<li>If you prefer not to build your own annotation team, we offer expert annotation services using CVAT.</li>
+<li>Scalable annotation across projects, with QA built-in and reporting dashboards.</li>
+<li>Ideal for one-time annotation projects and recurring workflows alike.</li>
+</ul>
+<p><a href="https://www.cvat.ai/annotation-services">Learn more about CVAT Labeling Services →</a></p>
+<h2 id="supported-data--formats">Supported data &amp; formats</h2>
+<p>CVAT supports a wide range of file formats and includes comprehensive built-in
+annotation tools for various computer vision tasks.</p>
+<p>Input:</p>
+<ul>
+<li><strong>Image</strong>: All formats supported by the Python
+<a href="https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html"><strong>Pillow library</strong></a>,
+including <code>JPEG</code>, <code>PNG</code>, <code>BMP</code>, <code>GIF</code>, <code>PPM</code>and <code>TIFF</code></li>
+<li><strong>Video</strong>: all formats, supported by ffmpeg, including <code>MP4</code>, <code>AVI</code>, and <code>MOV</code></li>
+<li><strong>3D</strong>: <code>.pcd</code>, <code>.bin</code></li>
+</ul>
+<p>For more information about dataset formats, see
+<a href="/v2.51.0/docs/dataset_management/formats/"><strong>Dataset Management</strong></a>.</p>
+<h2 id="manual-annotation">Manual annotation</h2>
+<p>CVAT supports several tools and modes for manually labeling images, videos, and 3D data.</p>
+<p>These tools define how the editor behaves, how shapes are created,
+and what geometric types you can use during annotation.</p>
+<h3 id="annotation-modes">Annotation modes</h3>
+<p>Annotation modes control how the annotation workspace behaves and which actions are available:</p>
+<ul>
+<li><strong>Standard mode</strong> – full access to all annotation tools and object editing.</li>
+<li><a href="/v2.51.0/docs/annotation/manual-annotation/modes/attribute-annotation-mode-basics/"><strong>Attribute annotation mode</strong></a> –
+focus on editing object attributes, such as color, size, etc. without changing shapes.</li>
+<li><strong>Single shape mode</strong> – create one shape and automatically exit drawing.</li>
+<li><strong>Tag annotation mode</strong> – add frame-level tags without drawing shapes.</li>
+<li><strong>Review mode</strong> – review and validate existing annotations.</li>
+</ul>
+<h3 id="creating-shapes">Creating shapes</h3>
+<p>When drawing objects on frames, you can choose how shapes behave over time:</p>
+<p><strong>Shape</strong> – creates a single shape on the current frame.</p>
+<p><strong>Track</strong> – creates a sequence of shapes linked as the same object across multiple frames.</p>
+<p>CVAT also supports different drawing methods, such as defining shapes by two opposite points
+or by placing four corner points for extra control.</p>
+<h3 id="shape-tools">Shape tools</h3>
+<p>Shapes represent the geometry used to annotate objects. CVAT supports multiple shape types for different tasks:</p>
+<table>
+<thead>
+<tr>
+<th>Shape</th>
+<th>Use case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="/v2.51.0/docs/annotation/manual-annotation/shapes/annotation-with-rectangles/"><strong>Rectangles</strong></a></td>
+<td>Best for simple object detection where objects have a box-like shape, such as detecting windows in a building.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/"><strong>Polygons</strong></a></td>
+<td>Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/annotation/manual-annotation/shapes/annotation-with-polylines/"><strong>Polylines</strong></a></td>
+<td>Great for annotating linear objects like roads, pathways, or limbs in pose estimation.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/annotation/manual-annotation/shapes/annotation-with-ellipses/"><strong>Ellipses</strong></a></td>
+<td>A tool for creating segmentation masks for circular or oval objects like plates, balls, or eyes.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/annotation/manual-annotation/shapes/annotation-with-cuboids/"><strong>Cuboids</strong></a></td>
+<td>A tool for creating 3D segmentation masks that capture object volume and position, useful for autonomous driving or robotics.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/annotation/manual-annotation/shapes/skeletons/"><strong>Skeletons</strong></a></td>
+<td>A tool for creating segmentation masks of articulated structures, ideal for human pose estimation, animation, and movement analysis.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/annotation/manual-annotation/shapes/annotation-with-brush-tool/"><strong>Brush Tool</strong></a></td>
+<td>A tool for creating detailed, free-form segmentation masks where pixel-level precision is required, such as in medical imaging.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/annotation/manual-annotation/modes/annotation-with-tags/"><strong>Tags</strong></a></td>
+<td>Useful for image and video classification tasks, like identifying scenes or themes in a dataset.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="automated-annotation">Automated annotation</h2>
+<p>CVAT provides a set of AI-powered tools that speed up annotation by automatically detecting, segmenting,
+or tracking objects on images and videos. These tools work with built-in models (such as SAM/SAM2),
+pre-trained models from native integrations like Hugging Face and Roboflow,
+as well as custom or third-party models you deploy through CVAT AI Agents (including YOLO and other frameworks).</p>
+<p>Below is a detailed table of the supported models and the platforms they operate on:</p>
+<table>
+<thead>
+<tr>
+<th>Algorithm Name</th>
+<th>Category</th>
+<th>Framework</th>
+<th>CPU Support</th>
+<th>GPU Support</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/sam/nuclio">Segment Anything</a></td>
+<td>Interactor</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/dextr/nuclio">Deep Extreme Cut</a></td>
+<td>Interactor</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/public/faster_rcnn_inception_resnet_v2_atrous_coco/nuclio">Faster RCNN</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio">Mask RCNN</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/public/yolo-v3-tf/nuclio">YOLO v3</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/onnx/WongKinYiu/yolov7/nuclio">YOLO v7</a></td>
+<td>Detector</td>
+<td>ONNX</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/person-reidentification-retail-0277/nuclio">Object Reidentification</a></td>
+<td>ReID</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio">Semantic Segmentation for ADAS</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/text-detection-0004/nuclio">Text Detection v4</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/foolwood/siammask/nuclio">SiamMask</a></td>
+<td>Tracker</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/dschoerk/transt/nuclio">TransT</a></td>
+<td>Tracker</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/shiyinzhang/iog/nuclio">Inside-Outside Guidance</a></td>
+<td>Interactor</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio">Faster RCNN</a></td>
+<td>Detector</td>
+<td>TensorFlow</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio">RetinaNet</a></td>
+<td>Detector</td>
+<td>PyTorch</td>
+<td>✔️</td>
+<td>✔️</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/tree/develop/serverless/openvino/omz/intel/face-detection-0205/nuclio">Face Detection</a></td>
+<td>Detector</td>
+<td>OpenVINO</td>
+<td>✔️</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="useful-links">Useful links</h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="/v2.51.0/docs/administration/basics/installation/"><strong>Self-hosted Installation Guide</strong></a></td>
+<td>Start here to install self-hosted solution on your premises.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/datumaro/blob/develop/README.md"><strong>Dataset Management Framework</strong></a></td>
+<td>Specifically for the Self-Hosted version, this framework and CLI tool are essential for building, transforming, and analyzing datasets.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/api_sdk/api/"><strong>Server API</strong></a></td>
+<td>The CVAT server offers a HTTP REST API for interactions. This section explains how client applications, whether they are command line tools, browsers, or scripts, interact with CVAT through HTTP requests and responses.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/api_sdk/sdk/"><strong>Python SDK</strong></a></td>
+<td>The CVAT SDK is a Python library providing access to server interactions and additional functionalities like data validation and serialization.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/api_sdk/cli/"><strong>Command Line Tool</strong></a></td>
+<td>This tool offers a straightforward command line interface for managing CVAT tasks. Currently featuring basic functionalities, it has the potential to develop into a more advanced administration tool for CVAT.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/dataset_management/formats/format-cvat/#format-specifications"><strong>XML Annotation Format</strong></a></td>
+<td>Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/administration/basics/aws-deployment-guide/"><strong>AWS Deployment Guide</strong></a></td>
+<td>A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.</td>
+</tr>
+<tr>
+<td><a href="/v2.51.0/docs/faq/"><strong>Frequently Asked Questions</strong></a></td>
+<td>This section addresses common queries and provides helpful answers and insights about using CVAT.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="integrations">Integrations</h2>
+<p>CVAT is a global tool, trusted and utilized by teams worldwide.
+Below is a list of key companies that contribute significantly to our
+product support or are an integral part of our ecosystem.</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Available In</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://hmt.ai"><strong>Human Protocol</strong></a></td>
+<td>CVAT Online, CVAT Community, CVAT Enterprise</td>
+<td>Incorporates CVAT to augment annotation services within the Human Protocol framework, enhancing its capabilities in data labeling.</td>
+</tr>
+<tr>
+<td><a href="https://fiftyone.ai"><strong>FiftyOne</strong></a></td>
+<td>CVAT Online, CVAT Community, CVAT Enterprise</td>
+<td>An open-source tool for dataset management and model analysis in computer vision, FiftyOne is <a href="https://voxel51.com/docs/fiftyone/integrations/cvat.html">closely integrated</a> with CVAT to enhance annotation capabilities and label refinement.</td>
+</tr>
+<tr>
+<td><a href="https://huggingface.co/"><strong>Hugging Face</strong></a>,  <a href="https://roboflow.com/"><strong>Roboflow</strong></a></td>
+<td>CVAT Online</td>
+<td>In CVAT Online, models from Hugging Face and Roboflow can be added to enhance computer vision tasks. For more information, see <a href="https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models"><strong>Integration with Hugging Face and Roboflow</strong></a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="license-information">License information</h2>
+<p>CVAT includes the following licenses:</p>
+<table>
+<thead>
+<tr>
+<th>License Type</th>
+<th>Applicable To</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://opensource.org/licenses/MIT"><strong>MIT License</strong></a></td>
+<td>CVAT Community, CVAT Enterprise</td>
+<td>This code is distributed under the MIT License, a permissive free software license that allows for broad use, modification, and distribution.</td>
+</tr>
+<tr>
+<td><a href="https://www.ffmpeg.org"><strong>LGPL License (FFmpeg)</strong></a></td>
+<td>CVAT Online, CVAT Community, CVAT Enterprise</td>
+<td>Incorporates LGPL-licensed components from the FFmpeg project. Users should verify if their use of FFmpeg requires additional licenses. CVAT.ai Corporation does not provide these licenses and is not liable for any related licensing fees.</td>
+</tr>
+<tr>
+<td><strong>Commercial License</strong></td>
+<td>CVAT Enterprise</td>
+<td>For commercial use of the Enterprise solution of CVAT, a separate commercial license is applicable. This is tailored for businesses and commercial entities.</td>
+</tr>
+<tr>
+<td><a href="https://www.cvat.ai/terms-of-use"><strong>Terms of Use</strong></a></td>
+<td>CVAT Online, CVAT Community, CVAT Enterprise</td>
+<td>Outlines the terms of use and confidential information handling for CVAT. Important for understanding the legal framework of using the platform.</td>
+</tr>
+<tr>
+<td><a href="https://www.cvat.ai/privacy"><strong>Privacy Policy</strong></a></td>
+<td>CVAT Online, CVAT Community, CVAT Enterprise</td>
+<td>Our Privacy Policy governs your visit to <a href="https://cvat.ai">https://cvat.ai</a> and your use of <a href="https://app.cvat.ai">https://app.cvat.ai</a>, and explains how we collect, safeguard and disclose information that results from your use of our Service.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="get-in-touch">Get in touch</h2>
+<p>To get in touch, use one of the following channels:</p>
+<table>
+<thead>
+<tr>
+<th>Type of inquiry</th>
+<th>Applicable to</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://www.cvat.ai/sales"><strong>Commercial Inquiries</strong></a></td>
+<td>CVAT Online, CVAT Enterprise, Labeling Services</td>
+<td>Request a quote for CVAT Enterprise, CVAT Online Team subscription or order our labeling services.</td>
+</tr>
+<tr>
+<td><a href="https://www.cvat.ai/general"><strong>General Inquiries</strong></a></td>
+<td>All products and services</td>
+<td>Reach out to discuss partnership, co-marketing or investment opportunities with CVAT team.</td>
+</tr>
+<tr>
+<td><a href="https://youtrack.cvat.ai/form/447d9c98-ab4b-466e-bf9d-004f01b22f73"><strong>CVAT Online Customer Support</strong></a></td>
+<td>CVAT Online (Pro and Team plans)</td>
+<td>Chat with us about product support, resolve billing questions, or provide feedback.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/cvat-ai/cvat/issues"><strong>CVAT Community Customer Support</strong></a></td>
+<td>CVAT Community</td>
+<td>Report a bug or submit a feature request in out GitHub repository.</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-a8f71bf4d423115598ae3ea4595059c5">2 - Vocabulary</h1>
+    <div class="lead">List of terms pertaining to annotation in CVAT.</div>
+	<h2 id="label">Label</h2>
+<p>Label is a type of an annotated object (e.g. person, car, vehicle, etc.)</p>
+<p><img src="/images/image032_detrac.jpg" alt="Example of a label in interface"></p>
+<hr>
+<h2 id="attribute">Attribute</h2>
+<p>Attribute is a property of an annotated object (e.g. color, model,
+quality, etc.). There are two types of attributes:</p>
+<h3 id="unique">Unique</h3>
+<p>Unique immutable and can&rsquo;t be changed from frame to frame (e.g. age, gender, color, etc.)</p>
+<p><img src="/images/image073.jpg" alt="Example of a unique attribute"></p>
+<h3 id="temporary">Temporary</h3>
+<p>Temporary mutable and can be changed on any frame (e.g. quality, pose, truncated, etc.)</p>
+<p><img src="/images/image072.jpg" alt="Example of a temporary attribute"></p>
+<hr>
+<h2 id="track">Track</h2>
+<p>Track is a set of shapes on different frames which corresponds to one object.
+Tracks are created in <code>Track mode</code></p>
+<p><img src="/images/gif003_detrac.gif" alt="Example of a track in interface"></p>
+<hr>
+<h2 id="annotation">Annotation</h2>
+<p>Annotation is a set of shapes and tracks. There are several types of annotations:</p>
+<ul>
+<li><em>Manual</em> which is created by a person</li>
+<li><em>Semi-automatic</em> which is created mainly automatically, but the user provides some data (e.g. interpolation)</li>
+<li><em>Automatic</em> which is created automatically without a person in the loop</li>
+</ul>
+<hr>
+<h2 id="approximation">Approximation</h2>
+<p>Approximation allows you to reduce the number of points in the polygon.
+Can be used to reduce the annotation file and to facilitate editing polygons.</p>
+<p><img src="/images/approximation_accuracy.gif" alt="Example of an applied approximation"></p>
+<hr>
+<h2 id="trackable">Trackable</h2>
+<p>Trackable object will be tracked automatically if the previous frame was
+a latest keyframe for the object. More details in the section
+<a href="/v2.51.0/docs/annotation/auto-annotation/ai-tools/#trackers">trackers</a>.</p>
+<p><img src="/images/tracker_indication_detrac.png" alt="Example of a trackable object in interface"></p>
+<hr>
+<h2 id="mode">Mode</h2>
+<h3 id="interpolation">Interpolation</h3>
+<p>Mode for video annotation, which uses <a href="#track"><code>track</code></a> objects.
+Only objects on keyframes are manually annotation, and intermediate frames are linearly interpolated.</p>
+<p>Related sections:</p>
+<ul>
+<li><a href="/v2.51.0/docs/annotation/manual-annotation/shapes/track-mode-basics/">Track mode</a></li>
+</ul>
+<h3 id="annotation-1">Annotation</h3>
+<p>Mode for images annotation, which uses <code>shape</code> objects.</p>
+<p>Related sections:</p>
+<ul>
+<li><a href="/v2.51.0/docs/annotation/manual-annotation/shapes/shape-mode-basics/">Shape mode</a></li>
+</ul>
+<hr>
+<h2 id="dimension">Dimension</h2>
+<p>Depends on the task data type that is defined when the
+<a href="/v2.51.0/docs/workspace/tasks-page/#create-annotation-task">task is created</a>.</p>
+<h3 id="2d">2D</h3>
+<p>The data format of 2d tasks are images and videos.
+Related sections:</p>
+<ul>
+<li><a href="/v2.51.0/docs/workspace/tasks-page/#create-annotation-task">Creating an annotation task</a></li>
+</ul>
+<h3 id="3d">3D</h3>
+<p>The data format of 3d tasks is a cloud of points.
+<a href="/v2.51.0/docs/workspace/tasks-page/#data-formats-for-a-3d-task">Data formats for a 3D task</a></p>
+<p>Related sections:</p>
+<ul>
+<li><a href="/v2.51.0/docs/annotation/annotation-editor/3d-task-workspace/">3D task workspace</a></li>
+<li><a href="/v2.51.0/docs/annotation/manual-annotation/modes/3d-object-annotation/">3D Object annotation</a></li>
+</ul>
+<hr>
+<h2 id="state">State</h2>
+<p>State of the job. The state can be changed by an assigned user in
+<a href="/v2.51.0/docs/annotation/annotation-editor/navbar/#top-panel">the menu inside the job</a>.
+There are several possible states: <code>new</code>, <code>in progress</code>, <code>rejected</code>, <code>completed</code>.</p>
+<hr>
+<h2 id="stage">Stage</h2>
+<p>Stage of the job. The stage is specified with the drop-down list on the
+<a href="/v2.51.0/docs/workspace/tasks-page/">task page</a>.
+There are three stages: <code>annotation</code>, <code>validation</code> or <code>acceptance</code>. This value affects the task progress bar.</p>
+<hr>
+<h2 id="subset">Subset</h2>
+<p>A project can have subsets. Subsets are groups for tasks that make it easier to work with the dataset.
+It could be <code>test</code>, <code>train</code>, <code>validation</code> or custom subset.</p>
+<hr>
+<h2 id="credentials">Credentials</h2>
+<p>Under <code>credentials</code> is understood <code>Key &amp; secret key</code>, <code>Account name and token</code>, <code>Anonymous access</code>, <code>Key file</code>.
+Used to <a href="/v2.51.0/docs/workspace/attach-cloud-storage/#attach-new-cloud-storage">attach cloud storage</a>.</p>
+<hr>
+<h2 id="resource">Resource</h2>
+<p>Under <code>resource</code> is understood <code>bucket name</code> or <code>container name</code>.
+Used to <a href="/v2.51.0/docs/workspace/attach-cloud-storage/#attach-new-cloud-storage">attach cloud storage</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-d6578e574987c9cbc72f6fb5991b3e65">3 - Shortcuts</h1>
+    <div class="lead">List of available keyboard shortcuts and notes about their customization.</div>
+	<p>CVAT provides a wide range of customizable shortcuts, with many UI elements
+offering shortcut hints when hovered over with the mouse.</p>
+<p><img src="/images/image075.jpg" alt="Example of a shortcut tip in user interface"></p>
+<p>These shortcuts are organized by scopes. Some are global, meaning they work across the entire application,
+while others are specific to certain sections or workspaces.
+This approach allows reusing the same shortcuts in different scopes, depending on whether they might conflict.
+For example, global shortcuts must be unique since they apply across all pages and workspaces.
+However, similar shortcuts can be used in different workspaces, like having the same shortcuts
+in both the Standard Workspace and the Standard 3D Workspace, as these two do not coexist.</p>
+<table>
+<thead>
+<tr>
+<th><strong>Scope</strong></th>
+<th><strong>Shortcut Conflicts</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global</strong></td>
+<td>Must be unique across all scopes, as they apply universally.</td>
+</tr>
+<tr>
+<td><strong>Annotation Page</strong></td>
+<td>Must be unique across all scopes, except Labels Editor.</td>
+</tr>
+<tr>
+<td><strong>Standard Workspace</strong></td>
+<td>Must be unique across itself, Annotation Page and Global Scope.</td>
+</tr>
+<tr>
+<td><strong>Standard 3D Workspace</strong></td>
+<td>Must be unique across itself, Annotation Page and Global Scope.</td>
+</tr>
+<tr>
+<td><strong>Attribute Annotation Workspace</strong></td>
+<td>Must be unique across itself, Annotation Page and Global Scope.</td>
+</tr>
+<tr>
+<td><strong>Review Workspace</strong></td>
+<td>Must be unique across itself, Annotation Page and Global Scope.</td>
+</tr>
+<tr>
+<td><strong>Tag Annotation Workspace</strong></td>
+<td>Must be unique across itself, Annotation Page and Global Scope.</td>
+</tr>
+<tr>
+<td><strong>Control Sidebar</strong></td>
+<td>Must be unique across itself, all workspaces, Annotation Page and Global Scope.</td>
+</tr>
+<tr>
+<td><strong>Objects Sidebar</strong></td>
+<td>Must be unique across itself, all workspaces, Annotation Page and Global Scope.</td>
+</tr>
+<tr>
+<td><strong>Labels Editor</strong></td>
+<td>Must be unique across itself and Global Scope.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="shortcuts-customization">Shortcuts Customization</h2>
+<p>You can customize shortcuts in CVAT settings.</p>
+<ul>
+<li>
+<p>Open Settings:<br>
+<img src="/images/shortcuts01.png" alt="User menu with highlighted &amp;ldquo;Settings&amp;rdquo; option"></p>
+</li>
+<li>
+<p>Go to the Shortcuts tab:<br>
+<img src="/images/shortcuts02.png" alt="&amp;ldquo;Settings&amp;rdquo; section with highlighted &amp;ldquo;Shortcuts&amp;rdquo; tab"></p>
+</li>
+<li>
+<p>You&rsquo;ll see the shortcuts customization menu:<br>
+<img src="/images/shortcuts03.png" alt="&amp;ldquo;Shortcuts&amp;rdquo; tab with customization menu"></p>
+</li>
+<li>
+<p>As it can be seen there is a warning, that some shortcuts are reserved by a browser and cannot be overridden in CVAT,
+there isn&rsquo;t a specific list available for such combinations, but shortcuts such as ctrl + tab (switching tabs) or
+ctrl + w (closing tabs) etc, are reserved by the browser and shortcuts such as alt + f4 (closing the window)
+are usually reserved by your operating system.</p>
+</li>
+<li>
+<p>All sections collapsible, so you can easily navigate through the list of shortcuts.
+Here is the Global scope expanded:<br>
+<img src="/images/shortcuts04.png" alt="Expanded &amp;ldquo;General&amp;rdquo; section in &amp;ldquo;Shortcuts&amp;rdquo; tab"></p>
+</li>
+<li>
+<p>To add a custom shortcut all you have to do is to click the input field and start pressing the sequence you want
+to assign to the action. As an example <code>f3</code> has been set here for Show Shortcuts along with <code>f1</code>:<br>
+<img src="/images/shortcuts05.png" alt="Example of two custom shortcuts"></p>
+</li>
+<li>
+<p>Shortcuts can be any combination of modifiers (ctrl, shift or alt)
+and up to one non-modifier key e.g. <code>ctrl+shift+f1</code> etc.<br>
+<img src="/images/shortcuts06.png" alt="Example of adding a shortcut"></p>
+</li>
+<li>
+<p>If you try to add a shortcut that is already in use, you will get a warning message:<br>
+<img src="/images/shortcuts07.png" alt="Conflicting shortcuts window"></p>
+</li>
+<li>
+<p>If pressed cancel it will remain the same otherwise the conflicting shortcut will be unset.<br>
+<img src="/images/shortcuts08.png" alt="Example of a result of resolving shortcuts conflict"></p>
+</li>
+<li>
+<p>If you want to reset all the shortcuts to default, you can do so by clicking the
+Restore Defaults button at the top of the shortcut settings.<br>
+<img src="/images/shortcuts09.png" alt="&amp;ldquo;Shortcuts&amp;rdquo; tab with highlighted &amp;ldquo;Restore defaults&amp;rdquo; button"></p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/v2.51.0/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/v2.51.0/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/v2.51.0/js/prism.js'></script>
+<script src='/v2.51.0/js/tabpane-persist.js'></script>
+
+  </body>
+</html>

@@ -1,0 +1,1232 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/v2.51.0/docs/annotation/auto-annotation/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/v2.51.0/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/v2.51.0/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/v2.51.0/favicons/android-192x192.png" sizes="192x192">
+
+<title>Automated Annotation | CVAT</title>
+<meta name="description" content="Learn how to leverage AI models and automation tools in CVAT to speed up labeling and improve consistency.">
+<meta property="og:title" content="Automated Annotation" />
+<meta property="og:description" content="Learn how to leverage AI models and automation tools in CVAT to speed up labeling and improve consistency." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/v2.51.0/docs/annotation/auto-annotation/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Automated Annotation">
+<meta itemprop="description" content="Learn how to leverage AI models and automation tools in CVAT to speed up labeling and improve consistency."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Automated Annotation"/>
+<meta name="twitter:description" content="Learn how to leverage AI models and automation tools in CVAT to speed up labeling and improve consistency."/>
+
+
+
+
+<link rel="preload" href="/v2.51.0/scss/main.min.6a6d2a9e0613b368ab0341ae2eee8fa51a7d998debf986030b070a9247093f0e.css" as="style">
+<link href="/v2.51.0/scss/main.min.6a6d2a9e0613b368ab0341ae2eee8fa51a7d998debf986030b070a9247093f0e.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/v2.51.0/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.51.0/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.51.0/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.51.0/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/v2.51.0/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.51.0/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.51.0</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/../">Latest version</a></li>
+    <li><a class="dropdown-item" href="/../v2.56.1">v2.56.1</a></li>
+    <li><a class="dropdown-item" href="/../v2.55.0">v2.55.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.54.0">v2.54.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.53.0">v2.53.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.52.0">v2.52.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.51.0">v2.51.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/v2.51.0/offline-search-index.7d3472d6f3cf10150155603bd6a99607.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/v2.51.0/docs/annotation/auto-annotation/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Automated Annotation</h1>
+<div class="lead">Learn how to leverage AI models and automation tools in CVAT to speed up labeling and improve consistency.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-40909d37636182bc842aec41410f0d6e">Overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-251303bd18780bce614fba34c54905d8">Segment Anything 2 Tracker</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-e407907bd8969d68fc8db85132e9fda4">AI Tools</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-40909d37636182bc842aec41410f0d6e">1 - Overview</h1>
+    <div class="lead">Automatic annotation of tasks</div>
+	<p>Automatic annotation in CVAT is a tool that you can use
+to automatically pre-annotate your data with pre-trained models.</p>
+<p>CVAT can use models from the following sources:</p>
+<ul>
+<li><a href="#models">Pre-installed models</a>.</li>
+<li>Models integrated from <a href="#adding-models-from-hugging-face-and-roboflow">Hugging Face and Roboflow</a>.</li>
+<li><a href="/v2.51.0/docs/guides/serverless-tutorial/">Self-hosted models deployed with Nuclio</a>.</li>
+<li><a href="/v2.51.0/docs/annotation/auto-annotation/segment-anything-2-tracker/">AI agent functions (SAM2 tracking)</a>
+for CVAT Online and Enterprise.</li>
+</ul>
+<p>The following table describes the available options:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Self-hosted</th>
+<th>Online</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Price</strong></td>
+<td>Free</td>
+<td>See <a href="https://www.cvat.ai/pricing/cvat-online">Pricing</a></td>
+</tr>
+<tr>
+<td><strong>Models</strong></td>
+<td>You have to add models</td>
+<td>You can use pre-installed models</td>
+</tr>
+<tr>
+<td><strong>Hugging Face &amp; Roboflow <br>integration</strong></td>
+<td>Not supported</td>
+<td>Supported</td>
+</tr>
+<tr>
+<td><strong>AI Agent Functions</strong></td>
+<td>Supported (Enterprise)</td>
+<td>Supported (SAM2 tracking available)</td>
+</tr>
+</tbody>
+</table>
+<p>See:</p>
+<ul>
+<li><a href="#running-automatic-annotation">Running Automatic annotation</a></li>
+<li><a href="#labels-matching">Labels matching</a></li>
+<li><a href="#models">Models</a></li>
+<li><a href="#adding-models-from-hugging-face-and-roboflow">Adding models from Hugging Face and Roboflow</a></li>
+</ul>
+<h2 id="running-automatic-annotation">Running Automatic annotation</h2>
+<p>To start automatic annotation, do the following:</p>
+<ol>
+<li>
+<p>On the top menu, click <strong>Tasks</strong>.</p>
+</li>
+<li>
+<p>Find the task you want to annotate and click <strong>Action</strong> &gt; <strong>Automatic annotation</strong>.</p>
+<p><img src="/images/image119_detrac.jpg" alt="Task with opened &amp;ldquo;Actions&amp;rdquo; menu"></p>
+</li>
+<li>
+<p>In the Automatic annotation dialog, from the drop-down list, select a <a href="#models">model</a>.</p>
+</li>
+<li>
+<p><a href="#labels-matching">Match the labels</a> of the model and the task.</p>
+</li>
+<li>
+<p>(Optional) In case you need the model to return masks as polygons, switch toggle <strong>Return masks as polygons</strong>.</p>
+</li>
+<li>
+<p>(Optional) In case you need to remove all previous annotations, switch toggle <strong>Clean old annotations</strong>.</p>
+</li>
+<li>
+<p>(Optional) You can specify a <strong>Threshold</strong> for the model.
+If not provided, the default value from the model settings will be used.</p>
+<p><img src="/images/running_automatic_annotation.png" alt="Automatic annotation window displaying the selected YOLOv3 model and parameters"></p>
+</li>
+<li>
+<p>Click <strong>Annotate</strong>.</p>
+</li>
+</ol>
+<p>CVAT will show the progress of annotation on the progress bar.</p>
+<p><img src="/images/image121_detrac.jpg" alt="Progress bar"></p>
+<p>You can stop the automatic annotation at any moment by clicking cancel.</p>
+<h2 id="labels-matching">Labels matching</h2>
+<p>Each model is trained on a dataset and supports only the dataset&rsquo;s labels.</p>
+<p>For example:</p>
+<ul>
+<li>DL model has the label <code>car</code>.</li>
+<li>Your task (or project) has the label <code>vehicle</code>.</li>
+</ul>
+<p>To annotate, you need to match these two labels to give
+CVAT a hint that, in this case, <code>car</code> = <code>vehicle</code>.</p>
+<p>If you have a label that is not on the list
+of DL labels, you will not be able to
+match them.</p>
+<p>For this reason, supported DL models are suitable only
+for certain labels.</p>
+<p>To check the list of labels for each model, see <a href="#models">Models</a>
+papers and official documentation.</p>
+<h2 id="models">Models</h2>
+<p>Automatic annotation uses pre-installed and added models.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    For self-hosted solutions,
+you need to
+<a href="/v2.51.0/docs/administration/advanced/installation_automatic_annotation/">install Automatic Annotation first</a>
+and <a href="/v2.51.0/docs/workspace/models/">add models</a>.
+
+</div>
+
+<p>List of pre-installed models:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Attributed face detection</td>
+<td>Three OpenVINO models work together: <br><br><li> <a href="https://docs.openvino.ai/2022.3/omz_models_model_face_detection_0205.html">Face Detection 0205</a>: face detector based on MobileNetV2 as a backbone with a FCOS head for indoor and outdoor scenes shot by a front-facing camera. <li><a href="https://docs.openvino.ai/2022.3/omz_models_model_emotions_recognition_retail_0003.html#emotions-recognition-retail-0003">Emotions recognition retail 0003</a>: fully convolutional network for recognition of five emotions (‘neutral’, ‘happy’, ‘sad’, ‘surprise’, ‘anger’). <li><a href="https://docs.openvino.ai/2022.3/omz_models_model_age_gender_recognition_retail_0013.html">Age gender recognition retail 0013</a>: fully convolutional network for simultaneous Age/Gender recognition. The network can recognize the age of people in the [18 - 75] years old range; it is not applicable for children since their faces were not in the training set.</td>
+</tr>
+<tr>
+<td>RetinaNet R101</td>
+<td>RetinaNet is a one-stage object detection model that utilizes a focal loss function to address class imbalance during training. Focal loss applies a modulating term to the cross entropy loss to focus learning on hard negative examples. RetinaNet is a single, unified network composed of a backbone network and two task-specific subnetworks. <br><br>For more information, see: <li><a href="https://paperswithcode.com/lib/detectron2/retinanet">Site: RetinaNET</a></td>
+</tr>
+<tr>
+<td>Text detection</td>
+<td>Text detector based on PixelLink architecture with MobileNetV2, depth_multiplier=1.4 as a backbone for indoor/outdoor scenes. <br><br> For more information, see: <li><a href="https://docs.openvino.ai/2022.3/omz_models_model_text_detection_0004.html">Site: OpenVINO Text detection 004</a></td>
+</tr>
+<tr>
+<td>YOLO v3</td>
+<td>YOLO v3 is a family of object detection architectures and models pre-trained on the COCO dataset. <br><br> For more information, see: <li><a href="https://docs.openvino.ai/2022.3/omz_models_model_yolo_v3_tf.html">Site: YOLO v3</a></td>
+</tr>
+<tr>
+<td>YOLO v7</td>
+<td>YOLOv7 is an advanced object detection model that outperforms other detectors in terms of both speed and accuracy. It can process frames at a rate ranging from 5 to 160 frames per second (FPS) and achieves the highest accuracy with 56.8% average precision (AP) among real-time object detectors running at 30 FPS or higher on the V100 graphics processing unit (GPU). <br><br> For more information, see: <li><a href="https://github.com/WongKinYiu/yolov7">GitHub: YOLO v7</a> <li><a href="https://arxiv.org/pdf/2207.02696.pdf">Paper: YOLO v7</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="adding-models-from-hugging-face-and-roboflow">Adding models from Hugging Face and Roboflow</h2>
+<p>In case you did not find the model you need, you can add a model
+of your choice from <a href="https://huggingface.co/">Hugging Face</a>
+or <a href="https://roboflow.com/">Roboflow</a>.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    You cannot add models from Hugging Face and Roboflow to self-hosted CVAT.
+
+</div>
+
+<p>For more information,
+see <a href="https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models">Streamline annotation by integrating Hugging Face and Roboflow models</a>.</p>
+<p>This video demonstrates the process:</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/SbU3aB65W5s" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-251303bd18780bce614fba34c54905d8">2 - Segment Anything 2 Tracker</h1>
+    <div class="lead">Accelerating video labeling using SAM2 model</div>
+	<h2 id="overview">Overview</h2>
+<p>Segment Anything 2 is a segmentation model that allows fast and precise selection of any object in videos or images.
+SAM2 tracking is available in two implementations:</p>
+<ol>
+<li>
+<p><strong>Nuclio SAM2 Tracker</strong>: Available only for Enterprise deployments.
+This is implemented as a serverless function deployed via Nuclio framework.</p>
+</li>
+<li>
+<p><strong>AI Agent SAM2 Tracker</strong>: Available for CVAT Online and Enterprise via auto-annotation (AA) functions
+that run on user-side agents. This brings SAM2 tracking capabilities to CVAT Online users who previously
+couldn&rsquo;t access this feature.</p>
+</li>
+</ol>
+<p>It is strongly recommended to deploy the model using a GPU. Although it is possible to use a CPU-based version,
+it generally performs much slower and is suitable only for handling a single parallel request.
+The AI agent variant runs on user hardware, providing flexibility for GPU usage without
+server configuration requirements.</p>
+<p>Unlike a regular tracking model, both SAM2 tracker implementations are designed to be applied
+to existing objects (polygons and masks) to track them forward for a specified number of frames.</p>
+<h2 id="how-to-install">How to install</h2>
+<p>Choose the installation method based on your platform and deployment needs.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Nuclio SAM2 Tracker is only available in the Enterprise version.
+The AI agent variant brings SAM2 tracking to CVAT Online and Enterprise.
+
+</div>
+
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Both tracker implementations require the enhanced actions UI plugin, which is enabled by default.
+Usually, no additional steps are necessary on this.
+
+</div>
+
+<h3 id="nuclio-sam2-tracker-cvat-enterprise">Nuclio SAM2 Tracker (CVAT Enterprise)</h3>
+<h4 id="docker">Docker</h4>
+<p>You can use existing scripts from the community repository
+(<code>./serverless/deploy_cpu.sh</code> or <code>./serverless/deploy_gpu.sh</code>).
+To deploy the feature, simply run:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>./serverless/deploy_gpu.sh <span style="color:#4e9a06">&#34;path/to/the/function&#34;</span>
+</span></span></code></pre></div><h4 id="kubernetes">Kubernetes</h4>
+<ul>
+<li>You need to deploy the Nuclio function manually.
+Note that this function requires a Redis storage configured to keep the tracking state.
+You may use the same storage as <code>cvat_redis_ondisk</code> uses.
+When running the <code>nuclio deploy</code> command, make sure to provide the necessary arguments.
+The minimal command is:</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>nuctl deploy <span style="color:#4e9a06">&#34;path/to/the/function&#34;</span>
+</span></span><span style="display:flex;"><span>  --env <span style="color:#000">CVAT_FUNCTIONS_REDIS_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;redis_host&gt;&#34;</span>
+</span></span><span style="display:flex;"><span>  --env <span style="color:#000">CVAT_FUNCTIONS_REDIS_PORT</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;redis_port&gt;&#34;</span>
+</span></span><span style="display:flex;"><span>  --env <span style="color:#000">CVAT_FUNCTIONS_REDIS_PASSWORD</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;redis_password&gt;&#34;</span> <span style="color:#8f5902;font-style:italic"># if applicable</span>
+</span></span></code></pre></div><h3 id="ai-agent-sam2-tracker-cvat-online--enterprise">AI Agent SAM2 Tracker (CVAT Online + Enterprise)</h3>
+<p>The AI agent implementation enables SAM2 tracking for CVAT Online users and provides an alternative deployment method
+for Enterprise customers. This approach runs the tracking model on user hardware via auto-annotation (AA) functions.</p>
+<h4 id="prerequisites">Prerequisites</h4>
+<ul>
+<li>Python 3.10 or later</li>
+<li>Git</li>
+<li>CVAT Online account or Enterprise instance</li>
+<li>Optional: NVIDIA GPU with CUDA support for faster inference</li>
+</ul>
+<h4 id="setup-instructions">Setup Instructions</h4>
+<ol>
+<li>
+<p>Clone the CVAT repository:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>git clone https://github.com/cvat-ai/cvat.git &lt;CVAT_DIR&gt;
+</span></span></code></pre></div></li>
+<li>
+<p>Install required dependencies:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>pip install cvat-cli -r &lt;CVAT_DIR&gt;/ai-models/tracker/sam2/requirements.txt
+</span></span></code></pre></div>
+
+<div class="alert alert-info" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    If you encounter issues installing SAM2, refer to the
+<a href="https://github.com/facebookresearch/sam2/blob/main/INSTALL.md#common-installation-issues">SAM2 installation guide</a>
+for solutions to common problems.
+
+</div>
+
+</li>
+<li>
+<p>Register the SAM2 function with CVAT:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>cvat-cli --server-host &lt;CVAT_BASE_URL&gt; --auth &lt;USERNAME&gt;:&lt;PASSWORD&gt; <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>    <span style="color:#204a87;font-weight:bold">function</span> create-native <span style="color:#4e9a06">&#34;SAM2&#34;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>    --function-file<span style="color:#ce5c00;font-weight:bold">=</span>&lt;CVAT_DIR&gt;/ai-models/tracker/sam2/func.py -p <span style="color:#000">model_id</span><span style="color:#ce5c00;font-weight:bold">=</span>str:&lt;MODEL_ID&gt;
+</span></span></code></pre></div></li>
+<li>
+<p>Run the AI agent:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>cvat-cli --server-host &lt;CVAT_BASE_URL&gt; --auth &lt;USERNAME&gt;:&lt;PASSWORD&gt; <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>    <span style="color:#204a87;font-weight:bold">function</span> run-agent &lt;FUNCTION_ID&gt; <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>    --function-file<span style="color:#ce5c00;font-weight:bold">=</span>&lt;CVAT_DIR&gt;/ai-models/tracker/sam2/func.py -p <span style="color:#000">model_id</span><span style="color:#ce5c00;font-weight:bold">=</span>str:&lt;MODEL_ID&gt;
+</span></span></code></pre></div></li>
+</ol>
+<h4 id="parameter-reference">Parameter Reference</h4>
+<ul>
+<li><code>&lt;CVAT_BASE_URL&gt;</code>: Your CVAT instance URL (e.g., <code>https://app.cvat.ai</code>)</li>
+<li><code>&lt;USERNAME&gt;</code> and <code>&lt;PASSWORD&gt;</code>: Your CVAT credentials</li>
+<li><code>&lt;FUNCTION_ID&gt;</code>: The ID returned by the <code>function create-native</code> command</li>
+<li><code>&lt;MODEL_ID&gt;</code>: A <a href="https://huggingface.co/models?search=facebook%2Fsam2">SAM2 model ID</a> from Hugging Face Hub (e.g., <code>facebook/sam2.1-hiera-tiny</code>)</li>
+</ul>
+<h4 id="optional-parameters">Optional Parameters</h4>
+<ul>
+<li><strong>GPU Support</strong>: Add <code>-p device=str:cuda</code> to the agent command to use NVIDIA GPU acceleration</li>
+<li><strong>Organization Sharing</strong>: Add <code>--org &lt;ORG_SLUG&gt;</code> to both commands to share the function with your organization</li>
+</ul>
+<h4 id="agent-behavior-and-resilience">Agent Behavior and Resilience</h4>
+<p>The AI agent runs as a persistent process on your hardware, providing several advantages:</p>
+<ul>
+<li><strong>Hardware Independence</strong>: Runs outside the CVAT server, enabling tracking without server-side GPU/Nuclio installation</li>
+<li><strong>Isolation</strong>: Agent crashes don&rsquo;t affect the server; requests are retried or reassigned automatically</li>
+<li><strong>Resource Control</strong>: You control the computational resources (CPU/GPU) used for tracking</li>
+</ul>
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading">Important</h4>
+
+    Keep the agent process running to handle tracking requests.
+If the agent stops, active tracking operations will fail and need to be restarted.
+
+</div>
+
+<h2 id="version-requirements">Version Requirements</h2>
+<ul>
+<li><strong>AI Agent SAM2 Tracker</strong>: Requires CVAT version 2.42.0 or later</li>
+<li><strong>Classic SAM2 Tracker</strong>: Available in all Enterprise versions</li>
+<li><strong>Python</strong>: Version 3.10 or later for AI agent setup</li>
+<li><strong>GPU Support</strong>: Optional but recommended for both implementations</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<p>Both SAM2 tracker implementations provide similar user experiences with slight differences in the UI labels.</p>
+<h3 id="running-the-nuclio-sam2-tracker">Running the Nuclio SAM2 Tracker</h3>
+<p>The nuclio tracker can be applied to any polygons and masks.
+To run the tracker on an object, open the object menu and click
+<strong>Run annotation action</strong>.</p>
+<img src="/images/sam2_tracker_run_shape_action.png" style="max-width: 200px; padding: 16px;">
+<p>Alternatively, you can use a hotkey: select the object and press <strong>Ctrl + E</strong> (default shortcut).
+When the modal opened, in &ldquo;Select action&rdquo; list, choose <strong>Segment Anything 2: Tracker</strong>:</p>
+<img src="/images/sam2_tracker_run_shape_action_modal.png" style="max-width: 500px; padding: 16px;">
+<h3 id="running-the-ai-agent-sam2-tracker">Running the AI Agent SAM2 Tracker</h3>
+<p>Once you have registered the SAM2 AI agent and it&rsquo;s running,
+you&rsquo;ll see <strong>&ldquo;AI Tracker: SAM2&rdquo;</strong> as an available action in the annotation UI for video shape tracking.</p>
+<p>To use the AI agent tracker:</p>
+<ol>
+<li>Create or open a CVAT task from a video file or video-like sequence of images
+(all images must have the same dimensions)</li>
+<li>Open one of the jobs from the task</li>
+<li>Draw a mask or polygon around an object</li>
+<li>Right-click the object and choose &ldquo;Run annotation action&rdquo;</li>
+<li>Select <strong>&ldquo;AI Tracker: SAM2&rdquo;</strong> from the action list</li>
+<li>Specify the target frame and click <strong>Run</strong></li>
+</ol>
+<p>The usage flow parallels the existing annotation action interface but utilizes the remote AI agent
+rather than built-in serverless functions.</p>
+<h3 id="tracking-process">Tracking Process</h3>
+<p>Specify the <strong>target frame</strong> until which you want the object to be tracked,
+then click the <strong>Run</strong> button to start tracking. The process begins and may take some time to complete.
+The duration depends on the inference device, and the number of frames where the object will be tracked.</p>
+<img src="/images/sam2_tracker_run_shape_action_modal_progress.png" style="max-width: 500px; padding: 16px;">
+<p>Once the process is complete, the modal window closes. You can review how the object was tracked.
+If you notice that the tracked shape deteriorates at some point,
+you can adjust the object coordinates and run the tracker again from that frame.</p>
+<h2 id="running-on-multiple-objects">Running on multiple objects</h2>
+<p>Instead of tracking each object individually, you can track multiple objects
+simultaneously. To do this, click the <strong>Menu</strong> button in the annotation view and select the <strong>Run Actions</strong> option:</p>
+<img src="/images/sam2_tracker_run_action.png" style="max-width: 200px; padding: 16px;">
+<p>Alternatively, you can use a hotkey: just press <strong>Ctrl + E</strong> (default shortcut) when there are no objects selected.
+This opens the actions modal. In this case, the tracker will be applied to all visible objects of suitable types
+(polygons and masks). In the action list of the opened modal, select either:</p>
+<ul>
+<li><strong>Segment Anything 2: Tracker</strong> (for the nuclio implementation)</li>
+<li><strong>AI Tracker: SAM2</strong> (for the AI agent implementation)</li>
+</ul>
+<img src="/images/sam2_tracker_run_action_modal.png" style="max-width: 500px; padding: 16px;">
+<p>Specify the <strong>target frame</strong> until which you want the objects to be tracked,
+then click the <strong>Run</strong> button to start tracking. The process begins and may take some time to complete.
+The duration depends on the inference device, the number of simultaneously tracked objects,
+and the number of frames where the objects will be tracked.</p>
+<img src="/images/sam2_tracker_run_action_modal_progress.png" style="max-width: 500px; padding: 16px;">
+<p>Once the process finishes, you may close the modal and review how the objects were tracked.
+If you notice that the tracked shapes deteriorate, you can adjust their
+coordinates and run the tracker again from that frame (for a single object or for many objects).</p>
+<h2 id="limitations-and-considerations">Limitations and Considerations</h2>
+<h3 id="ai-agent-limitations">AI Agent Limitations</h3>
+<p>When using the AI agent implementation, keep in mind:</p>
+<ul>
+<li><strong>Single Agent Constraint</strong>: Only one agent can run at a time for any given tracking function.
+Running multiple agents may cause random failures as they compete for tracking states.</li>
+<li><strong>Memory-based State</strong>: Tracking states are kept in agent memory.
+If the agent crashes or is shut down, all tracking states are lost and active tracking processes will fail.</li>
+<li><strong>Agent-only Usage</strong>: Tracking functions can only be used via agents.
+There is no equivalent of the <code>cvat-cli task auto-annotate</code> command for tracking.</li>
+<li><strong>Rectangle Limitation</strong>: When using the AI Tools dialog (sidebar),
+only tracking functions that support rectangles will be selectable.
+The SAM2 tracker supports polygons and masks but not rectangles.</li>
+<li><strong>Skeleton Tracking</strong>: Skeletons cannot currently be tracked by either implementation.</li>
+</ul>
+<h2 id="tracker-parameters">Tracker parameters</h2>
+<ul>
+<li><strong>Target frame</strong>: Objects will be tracked up to this frame. Must be greater than the current frame</li>
+<li><strong>Convert polygon shapes to tracks</strong>: When enabled, all visible polygon shapes in the current frame will be converted
+to tracks before tracking begins. Use this option if you need tracks as the final output but started with shapes,
+produced for example by interactors (e.g. SAM2 or another one).</li>
+</ul>
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="https://www.cvat.ai/resources/blog/sam2-ai-agent-tracking">SAM2 Object Tracking via AI Agent (Blog, July 31, 2025)</a> -
+Detailed implementation and background information</li>
+<li><a href="https://docs.cvat.ai/docs/api_sdk/sdk/auto-annotation/">Auto-annotation Functions Documentation</a> -
+Reference for creating custom tracking functions</li>
+<li><a href="https://docs.cvat.ai/docs/api_sdk/cli/#examples---functions">CVAT CLI Examples</a> - Additional CLI usage examples</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e407907bd8969d68fc8db85132e9fda4">3 - AI Tools</h1>
+    <div class="lead">Overview of semi-automatic and automatic annotation tools available in CVAT.</div>
+	<p>Label and annotate your data in semi-automatic and automatic mode with the help of <strong>AI</strong> and <strong>OpenCV</strong> tools.</p>
+<p>While <a href="/v2.51.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/track-mode-with-polygons/">interpolation</a>
+is good for annotation of the videos made by the security cameras,
+<strong>AI</strong> and <strong>OpenCV</strong> tools are good for both:
+videos where the camera is stable and videos, where it
+moves together with the object, or movements of the object are chaotic.</p>
+<p>See:</p>
+<ul>
+<li><a href="#interactors">Interactors</a>
+<ul>
+<li><a href="#ai-tools-annotate-with-interactors">AI tools: annotate with interactors</a></li>
+<li><a href="#ai-tools-add-extra-points">AI tools: add extra points</a></li>
+<li><a href="#ai-tools-delete-points">AI tools: delete points</a></li>
+<li><a href="#opencv-intelligent-scissors">OpenCV: intelligent scissors</a></li>
+<li><a href="#settings">Settings</a></li>
+<li><a href="#interactors-models">Interactors models</a></li>
+</ul>
+</li>
+<li><a href="#detectors">Detectors</a>
+<ul>
+<li><a href="#labels-matching">Labels matching</a></li>
+<li><a href="#annotate-with-detectors">Annotate with detectors</a></li>
+<li><a href="#detectors-models">Detectors models</a></li>
+</ul>
+</li>
+<li><a href="#trackers">Trackers</a>
+<ul>
+<li><a href="#ai-tools-annotate-with-trackers">AI tools: annotate with trackers</a></li>
+<li><a href="#opencv-annotate-with-trackers">OpenCV: annotate with trackers</a></li>
+<li><a href="#when-tracking">When tracking</a></li>
+<li><a href="#trackers-models">Trackers models</a></li>
+</ul>
+</li>
+<li><a href="#opencv-histogram-equalization">OpenCV: histogram equalization</a></li>
+</ul>
+<h2 id="interactors">Interactors</h2>
+<p>Interactors are a part of <strong>AI</strong> and <strong>OpenCV</strong> tools.</p>
+<p>Use interactors to label objects in images by
+creating a polygon semi-automatically.</p>
+<p>When creating a polygon, you can use positive points
+or negative points (for some models):</p>
+<ul>
+<li><strong>Positive points</strong> define the area in which the object is located.</li>
+<li><strong>Negative points</strong> define the area in which the object is not located.</li>
+</ul>
+<p><img src="/images/image188_detrac.jpg" alt="Annotated object with positive and negative points"></p>
+<h3 id="ai-tools-annotate-with-interactors">AI tools: annotate with interactors</h3>
+<p>To annotate with interactors, do the following:</p>
+<ol>
+<li>Click <strong>Magic wand</strong> <img src="/images/image189.jpg" alt="Magic wand icon">, and go to the <strong>Interactors</strong> tab.</li>
+<li>From the <strong>Label</strong> drop-down, select a label for the polygon.</li>
+<li>From the <strong>Interactor</strong> drop-down, select a model (see <a href="#interactors-models">Interactors models</a>).
+<br>Click the <strong>Question mark</strong> to see information about each model:
+<br><img src="/images/image114_detrac.jpg" alt="AI Tools interface with open Model information tooltip"></li>
+<li>(Optional) If the model returns masks, and you need to
+convert masks to polygons, use the <strong>Convert masks to polygons</strong> toggle.</li>
+<li>Click <strong>Interact</strong>.</li>
+<li>Use the left click to add positive points and the right click to add negative points.
+<br>Number of points you can add depends on the model.</li>
+<li>On the top menu, click <strong>Done</strong> (or <strong>Shift+N</strong>, <strong>N</strong>).</li>
+</ol>
+<h3 id="ai-tools-add-extra-points">AI tools: add extra points</h3>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    More points improve outline accuracy, but make shape editing harder.
+Fewer points make shape editing easier, but reduce outline accuracy.
+
+</div>
+
+<p>Each model has a minimum required number of points for annotation.
+Once the required number of points is reached, the request
+is automatically sent to the server.
+The server processes the request and adds a polygon to the frame.</p>
+<p>For a more accurate outline, postpone request
+to finish adding extra points first:</p>
+<ol>
+<li>Hold down the <strong>Ctrl</strong> key.
+<br>On the top panel, the <strong>Block</strong> button will turn blue.</li>
+<li>Add points to the image.</li>
+<li>Release the <strong>Ctrl</strong> key, when ready.</li>
+</ol>
+<p>In case you used <strong>Mask to polygon</strong> when the object is finished,
+you can edit it like a polygon.</p>
+<p>You can change the number of points in the
+polygon with the slider:</p>
+<p><img src="/images/image224.jpg" alt="Slider for point number in polygon"></p>
+<h3 id="ai-tools-delete-points">AI tools: delete points</h3>
+<p><br>To delete a point, do the following:</p>
+<ol>
+<li>With the cursor, hover over the point you want to delete.</li>
+<li>If the point can be deleted, it will enlarge and the cursor will turn into a cross.</li>
+<li>Left-click on the point.</li>
+</ol>
+<h3 id="opencv-intelligent-scissors">OpenCV: intelligent scissors</h3>
+<p>To use <strong>Intelligent scissors</strong>, do the following:</p>
+<ol>
+<li>
+<p>On the menu toolbar, click <strong>OpenCV</strong><img src="/images/image201.jpg" alt="OpenCV icon"> and wait for the library to load.</p>
+<p><br><img src="/images/image198.jpg" alt="Interface for loading OpenCV progress bar"></p>
+</li>
+<li>
+<p>Go to the <strong>Drawing</strong> tab, select the label, and click on the <strong>Intelligent scissors</strong> button.</p>
+<p><img src="/images/image199.jpg" alt="Selecting Intelligent scissors instrument in Drawing tab"></p>
+</li>
+<li>
+<p>Add the first point on the boundary of the allocated object. <br> You will see a line repeating the outline of the object.</p>
+</li>
+<li>
+<p>Add the second point, so that the previous point is within the restrictive threshold.
+<br>After that a line repeating the object boundary will be automatically created between the points.
+<img src="/images/image200_detrac.jpg" alt="Diagram with points and lines created by intelligent scissors"></p>
+</li>
+<li>
+<p>To finish placing points, on the top menu click <strong>Done</strong> (or <strong>N</strong> on the keyboard).</p>
+</li>
+</ol>
+<p>As a result, a polygon will be created.</p>
+<p>You can change the number of points in the
+polygon with the slider:</p>
+<p><img src="/images/image224.jpg" alt="Slider for point number in polygon"></p>
+<p>To increase or lower the action threshold, hold <strong>Ctrl</strong> and scroll the mouse wheel.</p>
+<p>During the drawing process, you can remove the last point by clicking on it with the left mouse button.</p>
+<h3 id="settings">Settings</h3>
+<ul>
+<li>
+<p>On how to adjust the polygon,
+see <a href="/v2.51.0/docs/annotation/annotation-editor/objects-sidebar/">Objects sidebar</a>.</p>
+</li>
+<li>
+<p>For more information about polygons in general, see
+<a href="/v2.51.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/">Annotation with polygons</a>.</p>
+</li>
+</ul>
+<h3 id="interactors-models">Interactors models</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Tool</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Segment Anything Model (SAM)</td>
+<td>AI Tools</td>
+<td>The Segment Anything Model (SAM) produces high <br> quality object masks, and it can be used to generate <br> masks for all objects in an image. It has been trained <br>on a dataset of 11 million images and <br>1.1 billion masks, and has strong zero-shot performance on a variety of segmentation tasks. <br><br>For more information, see: <li><a href="https://github.com/facebookresearch/segment-anything">GitHub: Segment Anything</a> <li><a href="https://segment-anything.com/">Site: Segment Anything</a><li><a href="https://ai.facebook.com/research/publications/segment-anything/">Paper: Segment Anything</a></td>
+<td><img src="/images/interactors_SAM.gif" alt="Example of annotation process using Segment Anything Model"></td>
+</tr>
+<tr>
+<td>Deep extreme <br>cut (DEXTR)</td>
+<td>AI Tool</td>
+<td>This is an optimized version of the original model, <br>introduced at the end of 2017. It uses the <br>information about extreme points of an object <br>to get its mask. The mask is then converted to a polygon. <br>For now this is the fastest interactor on the CPU. <br><br>For more information, see: <li><a href="https://github.com/scaelles/DEXTR-PyTorch">GitHub: DEXTR-PyTorch</a> <li><a href="https://cvlsegmentation.github.io/dextr">Site: DEXTR-PyTorch</a><li><a href="https://arxiv.org/pdf/1711.09081.pdf">Paper: DEXTR-PyTorch</a></td>
+<td><img src="/images/dextr_example.gif" alt="Example of annotation process using Deep extreme cut model"></td>
+</tr>
+<tr>
+<td>Inside-Outside-Guidance<br>(IOG)</td>
+<td>AI Tool</td>
+<td>The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. <br><br>For more information, see: <li><a href="https://github.com/shiyinzhang/Inside-Outside-Guidance">GitHub: IOG</a> <li><a href="https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Interactive_Object_Segmentation_With_Inside-Outside_Guidance_CVPR_2020_paper.pdf">Paper: IOG</a></td>
+<td><img src="/images/iog_example.gif" alt="Example of annotation process using Inside-Outside-Guidance model"></td>
+</tr>
+<tr>
+<td>Intelligent scissors</td>
+<td>OpenCV</td>
+<td>Intelligent scissors is a CV method of creating <br>a polygon by placing points with the automatic <br>drawing of a line between them. The distance<br> between the adjacent points is limited by <br>the threshold of action, displayed as a <br>red square that is tied to the cursor. <br><br> For more information, see: <li><a href="https://docs.opencv.org/4.x/df/d6b/classcv_1_1segmentation_1_1IntelligentScissorsMB.html">Site: Intelligent Scissors Specification</a></td>
+<td><img src="/images/intelligent_scissors.gif" alt="Example of annotation process using Intelligent scissors"></td>
+</tr>
+</tbody>
+</table>
+<h2 id="detectors">Detectors</h2>
+<p>Detectors are a part of <strong>AI</strong> tools.</p>
+<p>Use detectors to automatically
+identify and locate objects in images or videos.</p>
+<h3 id="labels-matching">Labels matching</h3>
+<p>Each model is trained on a dataset and supports only the dataset&rsquo;s labels.</p>
+<p>For example:</p>
+<ul>
+<li>DL model has the label <code>car</code>.</li>
+<li>Your task (or project) has the label <code>vehicle</code>.</li>
+</ul>
+<p>To annotate, you need to match these two labels to give
+DL model a hint, that in this case <code>car</code> = <code>vehicle</code>.</p>
+<p>If you have a label that is not on the list
+of DL labels, you will not be able to
+match them.</p>
+<p>For this reason, supported DL models are suitable only for certain labels.
+<br>To check the list of labels for each model, see <a href="#detectors-models">Detectors models</a>.</p>
+<h3 id="annotate-with-detectors">Annotate with detectors</h3>
+<p>To annotate with detectors, do the following:</p>
+<ol>
+<li>
+<p>Click <strong>Magic wand</strong> <img src="/images/image189.jpg" alt="Magic wand icon">, and go to the <strong>Detectors</strong> tab.</p>
+</li>
+<li>
+<p>From the <strong>Model</strong> drop-down, select model (see <a href="#detectors-models">Detectors models</a>).</p>
+</li>
+<li>
+<p>From the left drop-down select the DL model label, from the right drop-down
+select the matching label of your task.</p>
+<p><img src="/images/detectors_tab.png" alt="Detectors tab with YOLO v3 model selected and matching labels"></p>
+</li>
+<li>
+<p>(Optional) If the model returns masks, and you
+need to convert masks to polygons, use the <strong>Convert masks to polygons</strong> toggle.</p>
+</li>
+<li>
+<p>(Optional) You can specify a <strong>Threshold</strong> for the model. If not provided, the
+default value from the model settings will be used.</p>
+</li>
+<li>
+<p>Click <strong>Annotate</strong>.</p>
+</li>
+</ol>
+<p>This action will automatically annotate one frame.
+For automatic annotation of multiple frames,
+see <a href="/v2.51.0/docs/annotation/auto-annotation/automatic-annotation/">Automatic annotation</a>.</p>
+<h3 id="detectors-models">Detectors models</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mask RCNN</td>
+<td>The model generates polygons for each instance of an object in the image. <br><br> For more information, see: <li><a href="https://github.com/matterport/Mask_RCNN">GitHub: Mask RCNN</a> <li><a href="https://arxiv.org/pdf/1703.06870.pdf">Paper: Mask RCNN</a></td>
+</tr>
+<tr>
+<td>Faster RCNN</td>
+<td>The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li><a href="https://github.com/ShaoqingRen/faster_rcnn">GitHub: Faster RCNN</a> <li><a href="https://arxiv.org/pdf/1506.01497.pdf">Paper: Faster RCNN</a></td>
+</tr>
+<tr>
+<td>YOLO v3</td>
+<td>YOLO v3 is a family of object detection architectures and models pre-trained on the COCO dataset. <br><br> For more information, see: <li><a href="https://github.com/ultralytics/yolov3">GitHub: YOLO v3</a> <li><a href="https://docs.ultralytics.com/#yolov3">Site: YOLO v3</a> <li><a href="https://arxiv.org/pdf/1804.02767v1.pdf">Paper: YOLO v3</a></td>
+</tr>
+<tr>
+<td>Semantic segmentation for ADAS</td>
+<td>This is a segmentation network to classify each pixel into 20 classes. <br><br> For more information, see: <li><a href="https://docs.openvino.ai/2019_R1/_semantic_segmentation_adas_0001_description_semantic_segmentation_adas_0001.html">Site: ADAS</a></td>
+</tr>
+<tr>
+<td>Faster RCNN with Tensorflow</td>
+<td>Faster RCNN version with Tensorflow. The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li><a href="https://docs.openvino.ai/2021.4/omz_models_model_faster_rcnn_inception_v2_coco.html">Site: Faster RCNN with Tensorflow</a> <li><a href="https://arxiv.org/pdf/1506.01497.pdf">Paper: Faster RCNN</a></td>
+</tr>
+<tr>
+<td>RetinaNet</td>
+<td>Pytorch implementation of RetinaNet object detection. <br> <br><br> For more information, see: <li><a href="https://paperswithcode.com/lib/detectron2/retinanet">Specification: RetinaNet</a> <li><a href="https://arxiv.org/pdf/1708.02002.pdf">Paper: RetinaNet</a><li><a href="https://detectron2.readthedocs.io/en/latest/tutorials/training.html">Documentation: RetinaNet</a></td>
+</tr>
+<tr>
+<td>Face Detection</td>
+<td>Face detector based on MobileNetV2 as a backbone for indoor and outdoor scenes shot by a front-facing camera. <br> <br><br> For more information, see: <li><a href="https://docs.openvino.ai/latest/omz_models_model_face_detection_0205.html">Site: Face Detection 0205</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="trackers">Trackers</h2>
+<p>Trackers are part of <strong>AI</strong> and <strong>OpenCV</strong> tools.</p>
+<p>Use trackers to identify and label
+objects in a video or image sequence
+that are moving or changing over time.</p>
+<h3 id="ai-tools-annotate-with-trackers">AI tools: annotate with trackers</h3>
+<p>To annotate with trackers, do the following:</p>
+<ol>
+<li>
+<p>Click <strong>Magic wand</strong> <img src="/images/image189.jpg" alt="Magic wand icon">, and go to the <strong>Trackers</strong> tab.</p>
+<p><br><img src="/images/trackers_tab.jpg" alt="Trackers tab with selected label and tracker"></p>
+</li>
+<li>
+<p>From the <strong>Label</strong> drop-down, select the label for the object.</p>
+</li>
+<li>
+<p>From <strong>Tracker</strong> drop-down, select tracker.</p>
+</li>
+<li>
+<p>Click <strong>Track</strong>, and annotate the objects with the bounding box in the first frame.</p>
+</li>
+<li>
+<p>Go to the top menu and click <strong>Next</strong> (or the <strong>F</strong> on the keyboard)
+to move to the next frame.
+<br>All annotated objects will be automatically tracked.</p>
+</li>
+</ol>
+<h3 id="when-tracking">When tracking</h3>
+<ul>
+<li>
+<p>To enable/disable tracking, use <strong>Tracker switcher</strong> on the sidebar.</p>
+<p><img src="/images/tracker_switcher.png" alt="Object interface with highlighted Tracker switcher"></p>
+</li>
+<li>
+<p>Trackable objects have an indication on canvas with a model name.</p>
+<p><img src="/images/tracker_indication_detrac.png" alt="Annotated object displaying Tracker indication with model name"></p>
+</li>
+<li>
+<p>You can follow the tracking by the messages appearing at the top.</p>
+<p><img src="/images/tracker_pop-up_window.png" alt="Example of interface messages about tracking process"></p>
+</li>
+</ul>
+<h3 id="opencv-annotate-with-trackers">OpenCV: annotate with trackers</h3>
+<p>To annotate with trackers, do the following:</p>
+<ol>
+<li>
+<p>Create basic rectangle shapes or tracks for tracker initialization</p>
+</li>
+<li>
+<p>On the menu toolbar, click <strong>OpenCV</strong><img src="/images/image201.jpg" alt="OpenCV icon"> and wait for the library to load.</p>
+<p><br><img src="/images/image198.jpg" alt="Interface for loading OpenCV progress bar"></p>
+</li>
+<li>
+<p>From <strong>Tracker</strong> drop-down, select tracker and Click <strong>Track</strong></p>
+<p><br><img src="/images/tracker_mil_control.png" alt="Tracking tab in OpenCV window with selected Tracker"></p>
+</li>
+<li>
+<p>Annotation actions window will pop-up. Setup <code>Target frame</code>
+and <code>Convert rectangle shapes to tracks</code> parameters and click <code>Run</code></p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Tracking will be applied to all filtered rectangle annotations.
+
+</div>
+
+<p><br><img src="/images/tracker_mil_action.png" alt="Annotation actions window with parameters and buttons"></p>
+</li>
+</ol>
+<p>All annotated objects will be automatically tracked up until target frame parameter.</p>
+<h3 id="trackers-models">Trackers models</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Tool</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TrackerMIL</td>
+<td>OpenCV</td>
+<td>TrackerMIL model is not bound to <br>labels and can be used for any <br>object. It is a fast client-side model <br>designed to track simple non-overlapping objects. <br><br>For more information, see: <li><a href="https://learnopencv.com/tag/mil/">Article: Object Tracking using OpenCV</a></td>
+<td><img src="/images/tracker_mil_detrac.gif" alt="Example of annotation process using TrackerMIL model"></td>
+</tr>
+<tr>
+<td>SiamMask</td>
+<td>AI Tools</td>
+<td>Fast online Object Tracking and Segmentation. The trackable object will <br>be tracked automatically if the previous frame <br>was the latest keyframe for the object. <br><br>For more information, see:<li> <a href="https://github.com/foolwood/SiamMask">GitHub: SiamMask</a> <li> <a href="https://arxiv.org/pdf/1812.05050.pdf">Paper: SiamMask</a></td>
+<td><img src="/images/tracker_ai_tools.gif" alt="Example of annotation process using SiamMask"></td>
+</tr>
+<tr>
+<td>Transformer Tracking (TransT)</td>
+<td>AI Tools</td>
+<td>Simple and efficient online tool for object tracking and segmentation. <br>If the previous frame was the latest keyframe <br>for the object, the trackable object will be tracked automatically.<br>This is a modified version of the PyTracking <br> Python framework based on Pytorch<br> <br><br>For more information, see: <li> <a href="https://github.com/chenxin-dlut/TransT">GitHub: TransT</a><li> <a href="https://arxiv.org/pdf/2103.15436.pdf">Paper: TransT</a></td>
+<td><img src="/images/tracker_transit.gif" alt="Example of annotation process using Transformer Tracking"></td>
+</tr>
+<tr>
+<td>SAM2 Tracker</td>
+<td>AI Agent</td>
+<td>Advanced object tracking and segmentation using Meta&rsquo;s Segment Anything Model 2. <br>Available for CVAT Online and Enterprise via AI agents. <br>Supports polygons and masks with high precision tracking. <br>Requires user-side agent setup with Python 3.10+. <br><br>For more information, see: <li><a href="/v2.51.0/docs/annotation/auto-annotation/segment-anything-2-tracker/">SAM2 Tracker Setup Guide</a> <li><a href="https://www.cvat.ai/resources/blog/sam2-ai-agent-tracking">SAM2 Blog: AI Agent Integration</a></td>
+<td><em>Example coming soon</em></td>
+</tr>
+</tbody>
+</table>
+<h2 id="opencv-histogram-equalization">OpenCV: histogram equalization</h2>
+<p><strong>Histogram equalization</strong> improves
+the contrast by stretching the intensity range.</p>
+<p>It increases the global contrast of images
+when its usable data is represented by close contrast values.</p>
+<p>It is useful in images with backgrounds
+and foregrounds that are bright or dark.</p>
+<p>To improve the contrast of the image, do the following:</p>
+<ol>
+<li>In the <strong>OpenCV</strong> menu, go to the <strong>Image</strong> tab.</li>
+<li>Click on <strong>Histogram equalization</strong> button.
+<br><img src="/images/image221.jpg" alt="Image tab in OpenCV window with highlighted histogram equalization button"></li>
+</ol>
+<p><strong>Histogram equalization</strong> will improve
+contrast on current and following
+frames.</p>
+<p>Example of the result:</p>
+<p><img src="/images/image222.jpg" alt="Example of original image and image with applied histogram equalization"></p>
+<p>To disable <strong>Histogram equalization</strong>, click on the button again.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/v2.51.0/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/v2.51.0/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/v2.51.0/js/prism.js'></script>
+<script src='/v2.51.0/js/tabpane-persist.js'></script>
+
+  </body>
+</html>

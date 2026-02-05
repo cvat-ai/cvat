@@ -1,0 +1,2438 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/docs/account_management/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Account Management | CVAT</title>
+<meta name="description" content="Manage your CVAT account settings, team invitations, subscriptions, and single sign-on (SSO) setup.">
+<meta property="og:title" content="Account Management" />
+<meta property="og:description" content="Manage your CVAT account settings, team invitations, subscriptions, and single sign-on (SSO) setup." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/docs/account_management/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Account Management">
+<meta itemprop="description" content="Manage your CVAT account settings, team invitations, subscriptions, and single sign-on (SSO) setup."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Account Management"/>
+<meta name="twitter:description" content="Manage your CVAT account settings, team invitations, subscriptions, and single sign-on (SSO) setup."/>
+
+
+
+
+<link rel="preload" href="/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" as="style">
+<link href="/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">develop</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/">Latest version</a></li>
+    <li><a class="dropdown-item" href="/v2.56.1">v2.56.1</a></li>
+    <li><a class="dropdown-item" href="/v2.55.0">v2.55.0</a></li>
+    <li><a class="dropdown-item" href="/v2.54.0">v2.54.0</a></li>
+    <li><a class="dropdown-item" href="/v2.53.0">v2.53.0</a></li>
+    <li><a class="dropdown-item" href="/v2.52.0">v2.52.0</a></li>
+    <li><a class="dropdown-item" href="/v2.51.0">v2.51.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/offline-search-index.f1da21596247befb0dcabb4fe9375b9d.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/account_management/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Account Management</h1>
+<div class="lead">Manage your CVAT account settings, team invitations, subscriptions, and single sign-on (SSO) setup.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-7339e2cf689a34db89718e52e19713f1">Registration &amp; account access</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-5f70fe4b4baf39715a70b72bd6d80808">User roles</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-62c5f22fd8b4897a374f08d3993ce0c0">Organization</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-ef7585eca5af779feae50d1ee0a60f21">Subscription management</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-2ba185031e6fc77bb91ce34ff0f916d4">SSO configuration</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6: <a href="#pg-56144b1e7b897378eaa237549df3aaad">Social auth configuration</a></li>
+
+
+    
+  
+    
+    
+	
+<li>7: <a href="#pg-29b4a23552f4ee6f32f87f95cad0a27b">Disable registration or password-based login</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-7339e2cf689a34db89718e52e19713f1">1 - Registration &amp; account access</h1>
+    <div class="lead">CVAT registration and account access.</div>
+	<p>To start annotating in CVAT, you must create an account or log in to the existing one.</p>
+<p>Check out:</p>
+<ul>
+<li><a href="#user-registration">User registration</a></li>
+<li><a href="#user-registration-with-social-accounts">User registration with social accounts</a></li>
+<li><a href="#account-access">Account access</a></li>
+<li><a href="#password-reset">Password reset</a></li>
+<li><a href="#change-password">Change password</a></li>
+</ul>
+<p>To create an account or log in, go to the <a href="https://app.cvat.ai/">CVAT Online</a> login page:</p>
+<p><img src="/images/image001.jpg" alt="CVAT Online login page"></p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    By default, authentication and registration with
+Google and GitHub work only for <a href="https://app.cvat.ai/">CVAT Online</a>.
+<br>If you want to use Google and GitHub authentication on a local installation,
+consult <a href="/docs/account_management/social-accounts-configuration/">Social auth configuration</a>.
+
+</div>
+
+<h2 id="user-registration">User registration</h2>
+<p>To register:</p>
+<ol>
+<li>
+<p>Select <strong>Create an account</strong>.</p>
+<p><img src="/images/image002.jpg" alt="Create account"></p>
+</li>
+<li>
+<p>Fill in all blank fields, accept terms of use, and
+select <strong>Create an account</strong>.</p>
+</li>
+</ol>
+<p><img src="/images/image003.jpg" alt="Account form"></p>
+<p><br>A username generates from the email automatically. You can edit it if needed.</p>
+<p><img src="/images/filling_email.gif" alt="Username generation"></p>
+<h2 id="user-registration-with-social-accounts">User registration with social accounts</h2>
+<p>To register with Google or GitHub,
+select the button with the service name
+and follow the instructions.</p>
+<h2 id="account-access">Account access</h2>
+<p>To access your account:</p>
+<ol>
+<li>Go to the <a href="https://app.cvat.ai/auth/login">login page</a>.</li>
+<li>Enter username or email. The password field will appear.</li>
+<li>Enter the password and click <strong>Next</strong>.</li>
+</ol>
+<p>To log in with Google or GitHub, select the button with the service name.</p>
+<h2 id="password-reset">Password reset</h2>
+<p>To reset password:</p>
+<ol>
+<li>
+<p>Go to the <a href="https://app.cvat.ai/">CVAT Online</a> page and select
+<strong>Forgot password?</strong></p>
+<p><img src="/images/reset-password.jpg" alt="Reset password"></p>
+</li>
+<li>
+<p>Enter email you used for registration and select <strong>Send</strong>.</p>
+</li>
+<li>
+<p>Open email and select on the link from CVAT.</p>
+</li>
+<li>
+<p>Enter new password in both fields and select <strong>Change password</strong>.</p>
+<p><img src="/images/reset-password-01.jpg" alt="Reset password"></p>
+</li>
+</ol>
+<h2 id="change-password">Change password</h2>
+<p>To change password:</p>
+<ol>
+<li>
+<p>Log in to your CVAT account.</p>
+</li>
+<li>
+<p>In the top right corner, select the username.</p>
+</li>
+<li>
+<p>Select <strong>Change password</strong>.</p>
+</li>
+<li>
+<p>Follow the instructions on the screen.</p>
+<p><img src="/images/change_password.jpg" alt="Reset password"></p>
+</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-5f70fe4b4baf39715a70b72bd6d80808">2 - User roles</h1>
+    
+	<p>CVAT offers two distinct types of roles:</p>
+<ul>
+<li><strong>Global Roles</strong>: These are universal roles that apply to the entire system. Anyone who logs into the CVAT
+platform is automatically assigned a global role. It sets the basic permissions that every registered user
+has across CVAT, regardless of their specific tasks or responsibilities.</li>
+<li><strong>Organization Roles</strong>: These roles determine what a user can do within the Organization,
+allowing for more tailored access based on the user’s specific duties and responsibilities.</li>
+</ul>
+<p>Organization roles complement global roles by determining the
+visibility of different resources for example, tasks or jobs.</p>
+<p><strong>Limits</strong>: Limits are applicable to all users of CVAT Online
+using the <a href="https://www.cvat.ai/pricing/cvat-online"><strong>Free plan</strong></a> and can be lifted upon
+<a href="/docs/account_management/subscription-management/"><strong>choosing a subscription</strong></a>.</p>
+<p>All roles are predefined and cannot be modified through the user interface.
+However, within the <em>self-hosted solution</em>, roles can be adjusted using <code>.rego</code>
+files stored in <code>cvat/apps/*/rules/</code>.
+Rego is a declarative language employed for defining
+OPA (Open Policy Agent) policies, and its syntax is detailed
+in the <a href="https://www.openpolicyagent.org/docs/latest/policy-language/"><strong>OPA documentation</strong></a>.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Once you&rsquo;ve made changes to the <code>.rego</code> files, you must
+rebuild and restart the Docker Compose for those changes to be applied.
+In this scenario, be sure to include the <code>docker-compose.dev.yml</code> compose
+configuration file when executing the Docker Compose command.
+
+</div>
+
+<p>See:</p>
+<ul>
+<li><a href="#global-roles-in-cvat">Global roles in CVAT</a></li>
+<li><a href="#organization-roles-in-cvat">Organization roles in CVAT</a></li>
+<li><a href="#job-stage">Job Stage</a></li>
+</ul>
+<h2 id="global-roles-in-cvat">Global roles in CVAT</h2>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Global roles can be adjusted only on self-hosted solution.
+
+</div>
+
+<p>CVAT has implemented three Global roles, categorized as user Groups. These roles are:</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Administrator</strong></td>
+<td>An administrator possesses unrestricted access to the CVAT instance and all activities within this instance. The administrator has visibility over all tasks and projects, with the ability to modify or manage each comprehensively. This role is exclusive to self-hosted instances, ensuring comprehensive oversight and control.</td>
+</tr>
+<tr>
+<td><strong>User <br>(default role)</strong></td>
+<td>A User is a default role who is assigned to any user who is registered in CVAT*. Users can view and manage all tasks and projects within their registered accounts, but their activities are subject to specific limitations, see Free plan. <br><br>* If a user, that did not have a CVAT account, has been invited to the organization by the organization owner or maintainer, it will be automatically assigned the Organization role and will be subject to the role&rsquo;s limitations when operating within the Organization.</td>
+</tr>
+<tr>
+<td><strong>Worker</strong></td>
+<td>Workers are limited to specific functionalities and do not have the permissions to create tasks, assign roles, or perform other administrative actions. Their activities are primarily focused on viewing and interacting with the content within the boundaries of their designated roles (validation or annotation of the jobs).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="organization-roles-in-cvat">Organization roles in CVAT</h2>
+<p>Organization Roles are available only within the
+<a href="/docs/account_management/organization/"><strong>CVAT Organization</strong></a>.</p>
+<p><img src="/images/user-roles.png" alt="Organization Roles"></p>
+<p>Organization roles are assigned when users are invited to the Organization.</p>
+<p><img src="/images/org-roles.png" alt="Organization Roles"></p>
+<p>There are the following roles available in CVAT:</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Owner</strong></td>
+<td>The Owner is the person who created the Organization. The Owner role is assigned to the creator of the organization by default. This role has maximum capabilities and cannot be changed or assigned to the other user. <br><br>The Owner has no extra restrictions in the organization and is only limited by the chosen organization plan (see <a href="https://www.cvat.ai/pricing/cloud">Free and Team</a> plans). <br><br>Owners can invite other users to the Organization and assign roles to the invited users so the team can collaborate.</td>
+</tr>
+<tr>
+<td><strong>Maintainer</strong></td>
+<td>The maintainer is the person who can invite users to organization, create and update tasks and jobs, and see all tasks within the organization. Maintainer has complete access to Cloud Storages, and the ability to modify members and their roles.</td>
+</tr>
+<tr>
+<td><strong>Supervisor</strong></td>
+<td>The supervisor is a manager role. Supervisor can create and assign jobs, tasks, and projects to the Organization members. Supervisor cannot invite new members and modify members roles.</td>
+</tr>
+<tr>
+<td><strong>Worker</strong></td>
+<td>Workers&rsquo; primary focus is actual annotation and reviews. They are limited to specific functionalities and has access only to the jobs assigned to them.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="job-stage">Job Stage</h2>
+<p>Job <strong>Stage</strong> can be assigned to any team member.</p>
+<p><strong>Stages</strong> are not roles.</p>
+<p>Jobs can have an assigned user (with any role) and that <strong>Assignee</strong>
+will perform a <strong>Stage</strong> specific work which is to annotate,
+validate, or accept the job.</p>
+<p><img src="/images/job-stage.png" alt="Job stage"></p>
+<p>Job <strong>Stage</strong> can be:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Annotation</strong></td>
+<td>Provides access to annotation tools. Assignees will be able to see their assigned jobs and annotate them. By default, assignees with the <strong>Annotation</strong> stage cannot report annotation errors or issues.</td>
+</tr>
+<tr>
+<td><strong>Validation</strong></td>
+<td>Grants access to QA tools. Assignees will see their assigned jobs and can validate them while also reporting issues. By default, assignees with the <strong>Validation</strong> stage cannot correct errors or annotate datasets.</td>
+</tr>
+<tr>
+<td><strong>Acceptance</strong></td>
+<td>Does not grant any additional access or change the annotator’s interface. It just marks the job as done.</td>
+</tr>
+</tbody>
+</table>
+<p>Any <strong>Assignee</strong> can modify their assigned <strong>Stage</strong> specific
+functions via the annotation interface toolbar:</p>
+<p><img src="/images/change-stage.png" alt="Job stage change"></p>
+<ul>
+<li><strong>Standard</strong>: switches interface to <strong>Annotation</strong> mode.</li>
+<li><strong>Review</strong>: switches interface to the <strong>Validation</strong> mode.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-62c5f22fd8b4897a374f08d3993ce0c0">3 - Organization</h1>
+    <div class="lead">Using organization in CVAT.</div>
+	<p><strong>Organization</strong> is a feature for teams of several users
+who work together on projects and share tasks.</p>
+<p>Create an <strong>Organization</strong>, invite your team members, and assign
+roles to make the team work better on shared tasks.</p>
+<p>See:</p>
+<ul>
+<li><a href="#personal-workspace">Personal workspace</a></li>
+<li><a href="#create-new-organization">Create new organization</a>
+<ul>
+<li><a href="#switching-between-organizations">Switching between organizations</a></li>
+</ul>
+</li>
+<li><a href="#organization-page">Organization page</a></li>
+<li><a href="#invite-members-into-organization-menu-and-roles">Invite members into organization: menu and roles</a>
+<ul>
+<li><a href="#inviting-members-to-organization">Inviting members to Organization</a></li>
+<li><a href="#invitations-list">Invitations list</a></li>
+<li><a href="#resending-and-removing-invitations">Resending and removing invitations</a></li>
+</ul>
+</li>
+<li><a href="#delete-organization">Delete organization</a></li>
+</ul>
+<h2 id="personal-workspace">Personal workspace</h2>
+<p>The account&rsquo;s default state is activated when no <strong>Organization</strong> is selected.</p>
+<p>If you do not select an <strong>Organization</strong>, the system links all new resources directly
+to your personal account, that inhibits resource sharing with others.</p>
+<p>When <strong>Personal workspace</strong> is selected, it will be marked with a tick in the menu.</p>
+<p><img src="/images/user_menu_organization.png" alt="User menu with selected &amp;ldquo;Personal workspace&amp;rdquo; in &amp;ldquo;Organization&amp;rdquo; option"></p>
+<h2 id="create-new-organization">Create new organization</h2>
+<p>To create an organization, do the following:</p>
+<ol>
+<li>
+<p>Log in to the CVAT.</p>
+</li>
+<li>
+<p>On the top menu, click your <strong>Username</strong> &gt; <strong>Organization</strong> &gt; <strong>+ Create</strong>.</p>
+<p><img src="/images/user_menu_organization_create.png" alt="User menu with highlighted &amp;ldquo;Create&amp;rdquo; button for creating organization"></p>
+</li>
+<li>
+<p>Fill in the following fields and click <strong>Submit</strong>.</p>
+<p><img src="/images/create_organization_form.png" alt="&amp;ldquo;Create a new organization&amp;rdquo; window with options and parameters"></p>
+</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Short name</strong></td>
+<td>A name of the organization that will be displayed in the CVAT menu.</td>
+</tr>
+<tr>
+<td><strong>Full name</strong></td>
+<td>Optional. Full name of the organization.</td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>Optional. Description of organization.</td>
+</tr>
+<tr>
+<td><strong>Email</strong></td>
+<td>Optional. Your email.</td>
+</tr>
+<tr>
+<td><strong>Phone number</strong></td>
+<td>Optional. Your phone number.</td>
+</tr>
+<tr>
+<td><strong>Location</strong></td>
+<td>Optional. Organization address.</td>
+</tr>
+</tbody>
+</table>
+<p>Upon creation, the organization page will open automatically.</p>
+<p>For future access to your organization,
+navigate to <strong>Username</strong> &gt; <strong>Organization</strong></p>
+<h3 id="switching-between-organizations">Switching between organizations</h3>
+<p>If you have more than one <strong>Organization</strong>,
+it is possible to switch between these <strong>Organizations</strong> at any given time.</p>
+<p>Follow these steps:</p>
+<ol>
+<li>In the top menu, select your <strong>Username</strong> &gt; <strong>Organization</strong>.</li>
+<li>From the drop-down menu, under the <strong>Personal space</strong> section,
+choose the desired <strong>Organization</strong>.</li>
+</ol>
+<p><img src="/images/user_menu_select_org.png" alt="Example of user menu with available organizations"></p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    If you&rsquo;ve created more than 10 organizations,
+a <strong>Switch organization</strong> line will appear in the drop-down menu.
+
+</div>
+
+<p><img src="/images/switch_org.png" alt="Part of user menu with highlighted &amp;ldquo;Switch organization&amp;rdquo; button"></p>
+<p>Click on it to see the <strong>Select organization</strong> dialog, and select organization
+from drop-down list.</p>
+<p><img src="/images/select_org.png" alt="&amp;ldquo;Select organization&amp;rdquo; window"></p>
+<h3 id="transfer-tasks-and-projects-between-organizations">Transfer tasks and projects between organizations</h3>
+<p>You can move high-level resources (projects and individual tasks) between organizations and the personal workspace.</p>
+<p>To transfer a resource:</p>
+<ol>
+<li>Open the <strong>Actions</strong> menu of the corresponding task or project.</li>
+<li>In the <strong>Actions</strong> menu, select <strong>Organization</strong> (only visible if the resource can be transferred).</li>
+<li>Choose the destination workspace in the selector.</li>
+<li>A dialog will open. Confirm the transfer.</li>
+<li>If the resource has attached to a cloud storage, choose how CVAT should handle it:
+<ul>
+<li>The current cloud storages will be detached anyway as they are not available in another workspace.</li>
+<li><strong>Move &amp; Detach</strong>: After transferring, you can set a new cloud storage manually
+(only applicable for data source cloud storage in a task).
+Source and target cloud storages cannot be setup this way.</li>
+<li><strong>Move &amp; Auto Match</strong>: During the transfer, CVAT will try finding a
+cloud storage, matching similar parameters in the target workspace.
+This option is only available if the resource has source or target cloud storage configured.</li>
+</ul>
+</li>
+</ol>
+<img src="/images/project_org_transfer_1.png" style="max-width: 600px; padding: 16px;">
+<br />
+<img src="/images/project_org_transfer_2.png" style="max-width: 250px; padding: 16px;">
+<img src="/images/project_org_transfer_3.png" style="max-width: 350px; padding: 16px;">
+<h2 id="organization-page">Organization page</h2>
+<p><strong>Organization page</strong> is a place, where you can edit the <strong>Organization</strong> information
+and manage <strong>Organization</strong> members.</p>
+<p><img src="/images/org_page.png" alt="Example of organization page interface"></p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    In order to access the organization page, you must first activate
+the organization (see <a href="#switching-between-organizations">Switching between organizations</a>).
+Without activation, the organization page will remain inaccessible.
+<br>An organization is considered activated when it&rsquo;s ticked in the drop-down menu
+and its name is visible in the top-right corner under the username.
+
+</div>
+
+<p>To go to the <strong>Organization page</strong>, do the following:</p>
+<ol>
+<li>On the top menu, click your <strong>Username</strong> &gt; <strong>Organization</strong>.</li>
+<li>In the drop-down menu, select <strong>Organization</strong>.</li>
+<li>In the drop-down menu, click <strong>Settings</strong>.</li>
+</ol>
+<p><img src="/images/org_page_steps.png" alt="User menu with highlighted steps to open organization settings"></p>
+<h2 id="invite-members-into-organization-menu-and-roles">Invite members into organization: menu and roles</h2>
+<p>Invite members form is available from <a href="#organization-page">Organization page</a>.</p>
+<p>It has the following fields:</p>
+<p><img src="/images/invite_org_members.png" alt="Form for inviting users to organization"></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Email</strong></td>
+<td>Specifies the email address of the user who is being added to the <strong>Organization</strong>.</td>
+</tr>
+<tr>
+<td>Role drop-down list</td>
+<td>Defines the role of the user which sets the level of access within the <strong>Organization</strong>: <br><li><strong>Worker</strong>: Has access only to the tasks, projects, and jobs assigned to them. <li><strong>Supervisor</strong>: Can create and assign jobs, tasks, and projects to the <strong>Organization</strong> members. <li><strong>Maintainer</strong>: Has the same capabilities as the <strong>Supervisor</strong>, but with additional visibility over all tasks and projects created by other members, complete access to <strong>Cloud Storages</strong>, and the ability to modify members and their roles. <li><strong>Owner</strong>: role assigned to the creator of the organization by default. Has maximum capabilities and cannot be changed or assigned to the other user.</td>
+</tr>
+<tr>
+<td><strong>Invite more</strong></td>
+<td>Button to add another user to the <strong>Organization</strong>.</td>
+</tr>
+</tbody>
+</table>
+<p>Members of <strong>Organization</strong> will appear on the <strong>Organization page</strong>:</p>
+<p><img src="/images/org_members.png" alt="Organization page with opened menu for organization member roles"></p>
+<p>The member of the organization can leave the organization
+by going to <strong>Organization page</strong> &gt; <strong>Leave organization</strong>.</p>
+<p>The organization owner can remove members, by clicking on the <strong>Bin</strong> icon.</p>
+<h3 id="inviting-members-to-organization">Inviting members to Organization</h3>
+<p>To invite members to <strong>Organization</strong> do the following:</p>
+<ol>
+<li>
+<p>Go to the <a href="#organization-page"><strong>Organization page</strong></a>, and click <strong>Invite members</strong>.</p>
+</li>
+<li>
+<p>Fill in the form (see below).</p>
+<p><img src="/images/org_invite_form.png" alt="Invite user form with options and parameters"></p>
+</li>
+<li>
+<p>Click <strong>OK</strong>.</p>
+</li>
+<li>
+<p>The person being invited will receive an email with the link.</p>
+<p><img src="/images/invitation_to_org.png" alt="Invitation to organization email example"></p>
+</li>
+<li>
+<p>Person must click the link and:</p>
+<ol>
+<li>If the invitee does not have the CVAT account, then
+<a href="/docs/account_management/registration/#user-registration"><strong>set up an account</strong></a>.</li>
+<li>If the invitee has a CVAT account, then log in to the account.</li>
+</ol>
+</li>
+</ol>
+<h3 id="invitations-list">Invitations list</h3>
+<p>User can see the list of active invitations.</p>
+<p>To see the list, Go to <strong>Username</strong> &gt; <strong>Organization</strong> &gt; <strong>Invitations</strong>.</p>
+<p><img src="/images/invitations_list.png" alt="User menu with highlighted &amp;ldquo;Invitations&amp;rdquo; section"></p>
+<p>You will see the page with the list of invitations.</p>
+<p>You will also see pop-up notification the link to the page with
+invitations list.</p>
+<h3 id="resending-and-removing-invitations">Resending and removing invitations</h3>
+<p>The organization owner and maintainers can remove members, by
+clicking on the three dots, and selecting <strong>Remove invitation</strong></p>
+<p><img src="/images/resend_remove_invitation.png" alt="Organization page with opened menu for resending and removing invitations"></p>
+<h2 id="delete-organization">Delete organization</h2>
+<p>You can remove an organization that you created.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Removing an organization will delete all related resources (annotations,
+jobs, tasks, projects, cloud storage, and so on).
+
+</div>
+
+<p>To remove an organization, do the following:</p>
+<ol>
+<li>Go to the <strong>Organization page</strong>.</li>
+<li>In the top-right corner click <strong>Actions</strong> &gt; <strong>Remove organization</strong>.</li>
+<li>Enter the short name of the organization in the dialog field.</li>
+<li>Click <strong>Remove</strong>.</li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-ef7585eca5af779feae50d1ee0a60f21">4 - Subscription management</h1>
+    <div class="lead">How to manage your subscription</div>
+	<p>This article provides tips on how to effectively manage your
+CVAT Online subscriptions, including tracking expenses and canceling
+unnecessary subscriptions, to optimize your finances and save time.</p>
+<p>Whether you&rsquo;re a business owner or an individual,
+you&rsquo;ll learn how to take control of your subscriptions and manage them.</p>
+<p>See:</p>
+<ul>
+<li><a href="#available-paid-plans">Available paid plans</a>
+<ul>
+<li><a href="#monthly-plans">Monthly plans</a></li>
+<li><a href="#annual-plans">Annual plans</a></li>
+</ul>
+</li>
+<li><a href="#billing">Billing</a>
+<ul>
+<li><a href="#how-to-add-vattax-and-other-information-to-the-cvat-online-invoice-before-the-first-payment">How to add VAT/tax and other information to the CVAT Online invoice before the first payment?</a></li>
+<li><a href="#how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvat-online">How to update VAT/tax information and other details for upcoming invoices from CVAT Online?</a></li>
+<li><a href="#can-a-paid-invoice-be-modified">Can a paid invoice be modified?</a></li>
+<li><a href="#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices">How can I get a quote before I subscribe? How to add a PO number to my invoices?</a></li>
+<li><a href="#can-you-sign-an-agreement-before-i-subscribe">Can you sign an agreement before I subscribe?</a></li>
+<li><a href="#can-you-handle-a-bank-transfer-with-30-day-payment-terms">Can you handle a bank transfer with 30-day payment terms?</a></li>
+<li><a href="#where-can-i-find-my-invoices">Where can I find my invoices?</a></li>
+<li><a href="#i-am-a-student-can-i-have-a-discount-or-free-access">I am a student, can I have a discount or free access?</a></li>
+</ul>
+</li>
+<li><a href="#payment-methods">Payment methods</a>
+<ul>
+<li><a href="#paying-with-bank-transfer">Paying with bank transfer</a></li>
+<li><a href="#how-to-change-the-payment-method">How to change the payment method?</a></li>
+</ul>
+</li>
+<li><a href="#adding-and-removing-team-members">Adding and removing team members</a></li>
+<li><a href="#change-plan">Change plan</a>
+<ul>
+<li><a href="#how-to-change-the-plan-from-solo-to-team">How to change the plan from Solo to Team?</a></li>
+<li><a href="#how-to-switch-from-a-monthly-subscription-to-an-annual-one">How to switch from a monthly subscription to an annual one?</a></li>
+</ul>
+</li>
+<li><a href="#can-i-subscribe-to-several-plans">Can I subscribe to several plans?</a></li>
+<li><a href="#cancel-plan">Cancel plan</a>
+<ul>
+<li><a href="#what-will-happen-to-my-data">What will happen to my data?</a></li>
+<li><a href="#how-to-cancel-any-plan">How to cancel any plan?</a></li>
+<li><a href="#how-can-i-get-a-refund">How can I get a refund?</a></li>
+</ul>
+</li>
+<li><a href="#plan-renewal">Plan renewal</a></li>
+<li><a href="#subscription-management-video-tutorial">Subscription management video tutorial</a></li>
+</ul>
+<h2 id="available-paid-plans">Available paid plans</h2>
+<p>This section outlines the paid plans available on CVAT Online.</p>
+<h3 id="monthly-plans">Monthly plans</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Solo</strong></td>
+<td>The <strong>Solo</strong> plan has a fixed price and is designed <strong>for personal use only</strong>. <br><br>It does not assume collaboration with team members and is not suitable for use within organizations, but it removes all other limitations of the <strong>Free</strong> plan. <Br><br> <strong>Note</strong>: Although it allows the creation of an organization and access for up to 2 members &ndash; it is <em>for trial purposes</em> only! <br>Organization and members <em>will have all the limitations of the <strong>Free</strong> plan</em>.</td>
+</tr>
+<tr>
+<td><strong>Team</strong></td>
+<td>The <strong>Team</strong> is <strong>for collaboration</strong>, it removes limitations of the <strong>Free</strong> plan for the whole organization, allowing you to share paid benefits with your colleagues. <br><br>The <strong>monthly payment for the plan depends on the number of team members you&rsquo;ve added</strong>. All limits of the <strong>Free</strong> plan will be removed. <Br><br> <strong>Note</strong>: The organization owner is also part of the team. So, if you have two annotators working, you&rsquo;ll need to pay for 3 seats (2 annotators + 1 organization owner).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="annual-plans">Annual plans</h3>
+<p>Whether you&rsquo;re a new user, or have a subscription to <strong>Team</strong> or <strong>Solo</strong> plan, <a href="https://www.cvat.ai/post/cvat-annual-plans">you can
+subscribe to our annual plan</a>
+and save up to 30% on CVAT Online usage costs.</p>
+<p>The annual subscription offers all the benefits of our paid plans but at
+a more affordable monthly rate.</p>
+<p>For more information, see <a href="#how-to-switch-from-monthly-subscription-to-annual">How to switch from monthly subscription to annual?</a></p>
+<h2 id="billing">Billing</h2>
+<p>This section describes the billing model and gives short a
+description of limitations for each plan.</p>
+<p>There are two types of subscriptions available for both the Solo
+and Team plans: monthly and annual.</p>
+<p>For more information,
+see: <a href="https://www.cvat.ai/post/new-pricing-plans">Pricing Plans</a></p>
+<h3 id="how-to-add-vattax-and-other-information-to-the-cvat-online-invoice-before-the-first-payment">How to add VAT/tax and other information to the CVAT Online invoice before the first payment?</h3>
+<p>To ensure VAT (tax) information and other relevant details are included on your
+CVAT Online invoices,
+it&rsquo;s important to add this information before making the first payment.</p>
+<p>Here’s how you can do it:</p>
+<ol>
+<li>Sign up for a CVAT Online account and log in.</li>
+<li>(Optional) If you add the VAT/tax number to the organization,
+first create an <a href="/docs/account_management/organization/">organization</a> and
+switch to an <strong>Organization</strong> account.</li>
+<li>Navigate to the top right corner, next to the nickname,
+click on the arrow &gt; upgrade to the plan.</li>
+<li>Switch on the <strong>I would like the invoice to include additional
+data (address, phone number, VAT information)</strong> toggle, select the
+best payment period for you, and click <strong>Get Started</strong>.</li>
+</ol>
+<p><img src="/images/add-invoice.png" alt="Stripe Link"></p>
+<ol start="5">
+<li>You will see the billing page:</li>
+</ol>
+<p><img src="/images/add-vat.png" alt="Stripe Link"></p>
+<ul>
+<li>Phone number <strong>(1)</strong>.</li>
+<li><strong>Billing Address</strong>: Enter the billing address you want to appear on the invoice
+   in the address field <strong>(2)</strong>.</li>
+<li><strong>VAT Information</strong> and <strong>Business Name</strong>: Select the checkbox <strong>I am purchasing as a business</strong> and enter
+your VAT and business name information <strong>(3)</strong>.</li>
+</ul>
+<ol start="6">
+<li>
+<p>Select checkbox <strong>I agree to refund policy</strong> <strong>(4)</strong>.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Please read the <strong>Refund policy</strong> before selecting the checkbox.
+
+</div>
+
+</li>
+<li>
+<p>Click <strong>Pay &amp; Subscribe</strong>.</p>
+</li>
+</ol>
+<p>All information you&rsquo;ve added will appear on the billing page and in the invoice.</p>
+<p><img src="/images/sm-profile-upd-inf.png" alt="Stripe Payment Info"></p>
+<p>By following these steps, you can seamlessly add VAT and other crucial information to your
+invoices, making your financial transactions with CVAT Online transparent and compliant.</p>
+<h3 id="how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvat-online">How to update VAT/tax information and other details for upcoming invoices from CVAT Online?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan.</p>
+<p>You will see the Stripe page. Go to the <strong>Billing Information</strong> &gt; <strong>Update Information</strong>.</p>
+<p><img src="/images/sm-profile-upd-inf-2.png" alt="Stripe Payment Info"></p>
+<h3 id="can-a-paid-invoice-be-modified">Can a paid invoice be modified?</h3>
+<p>Once an invoice has been paid, it is not possible to modify it. This restriction is due to the
+limitations of the payment processing platform used, which in the case of CVAT Online,
+is <a href="https://stripe.com/">Stripe</a>.</p>
+<p>Stripe&rsquo;s policy dictates that revisions to an invoice can only be made before payment.
+For more comprehensive information on this policy, please refer to Stripe&rsquo;s official documentation
+on <a href="https://docs.stripe.com/invoicing/invoice-edits#:~:text=Stripe%20lets%20you%20revise%20a,Edit%20the%20invoice%20description.">invoice edits</a>
+at their website.</p>
+<h3 id="how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices">How can I get a quote before I subscribe? How to add a PO number to my invoices?</h3>
+<p>If you require a quote from CVAT Online for payment via bank transfer, certain criteria must be met:</p>
+<ul>
+<li>The <strong>total subscription cost must be $396 and up per year</strong>.</li>
+<li>Quotes are available exclusively <strong>for annual subscriptions</strong>.</li>
+</ul>
+<p>Should you meet these requirements, please write to <a href="mailto:support@cvat.ai">support@cvat.ai</a></p>
+<h3 id="can-you-sign-an-agreement-before-i-subscribe">Can you sign an agreement before I subscribe?</h3>
+<p>Sign of specific agreements and approvals are available if you meet specific criteria
+(the <strong>total subscription cost must be $10,000 and up per year</strong>), for more details contact <a href="mailto:support@cvat.ai">support@cvat.ai</a></p>
+<h3 id="can-you-handle-a-bank-transfer-with-30-day-payment-terms">Can you handle a bank transfer with 30-day payment terms?</h3>
+<p>Yes, it is available if you fit the quota criteria, for details contact <a href="mailto:support@cvat.ai">support@cvat.ai</a>.</p>
+<h3 id="where-can-i-find-my-invoices">Where can I find my invoices?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan.</p>
+<p>You will see the Stripe page.
+At the bottom of the page, you will see the <strong>Invoice History</strong> section with all invoices.</p>
+<p>Invoices are automatically sent to the account owner&rsquo;s address used for the registration.</p>
+<p>To see the invoice click on the <strong>Show Invoice Icon</strong><img src="/images/invoice-icon.png" alt="Stripe Invoice Icon"> icon.</p>
+<p><img src="/images/show-invoice.png" alt="Show Invoice"></p>
+<h3 id="i-am-a-student-can-i-have-a-discount-or-free-access">I am a student, can I have a discount or free access?</h3>
+<p>To consider your request for a discount, we&rsquo;d need a few details from you:</p>
+<ul>
+<li>A copy of your valid student ID or any document confirming your university affiliation.</li>
+<li>Your university advisor&rsquo;s contact details.</li>
+<li>The name and contact information of the dean of your faculty.</li>
+<li>A brief outline of your project plan. This helps us understand how we might collaborate
+ on a joint marketing statement highlighting your use of CVAT Online, and how it can benefit your project.</li>
+<li>We&rsquo;d also appreciate a positive LinkedIn post about your experience using CVAT Online,
+making sure to tag @CVAT.ai.</li>
+</ul>
+<p>All these details must be sent to <a href="mailto:support@cvat.ai">support@cvat.ai</a>. Once we have this
+information, we&rsquo;ll gladly offer you a 50% discount for one year.</p>
+<h2 id="payment-methods">Payment methods</h2>
+<p>This section describes how to change or add payment methods.</p>
+<h3 id="paying-with-bank-transfer">Paying with bank transfer</h3>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    At the moment this method of payment
+works only with US banks.
+
+</div>
+
+<p>To pay with a bank transfer:</p>
+<ol>
+<li>Go to the <strong>Upgrade to Solo</strong>/<strong>Team plan</strong>&gt; <strong>Get started</strong>.</li>
+<li>Click <strong>US Bank Transfer</strong>.</li>
+<li>Upon successful completion of the payment, you will receive a receipt via email.</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The completion of the payment process may take up to three banking days.
+
+</div>
+
+<p><img src="/images/bank_transfer_payment.png" alt="Bank Transfer Payment"></p>
+<h3 id="how-to-change-the-payment-method">How to change the payment method?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan &gt; <strong>+Add Payment Method</strong></p>
+<p><img src="/images/update_payment_team.png" alt="Payment team"></p>
+<h2 id="adding-and-removing-team-members">Adding and removing team members</h2>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    <strong>Solo plan</strong> is <strong>for personal use only</strong>, you cannot add or remove team members.
+
+</div>
+
+<p><strong>Team plan</strong> is for collaboration. To add members to your
+<a href="/docs/account_management/organization/">Organization</a>,
+go to the <strong>Manage Team plan</strong> &gt; <strong>Update quantity</strong>.</p>
+<p><img src="/images/change_members_number_team.gif" alt="Add members"></p>
+<p>If you&rsquo;ve added a user <strong>before the current billing period ends</strong>,
+the payment will be prorated for the remaining time until the
+next billing cycle begins. From the following month onward,
+the full payment will be charged.</p>
+<p>In case you <strong>removed the user before the current billing period ends</strong>,
+funds will not be returned to your account,
+but next month you will pay less by the amount of unused funds.</p>
+<h2 id="change-plan">Change plan</h2>
+<h3 id="how-to-change-the-plan-from-solo-to-team">How to change the plan from Solo to Team?</h3>
+<p>The procedure is the same for both <strong>Solo</strong> and <strong>Team</strong> plans.</p>
+<p>If for some reason you want to change your plan, you need to:</p>
+<ol>
+<li>Unsubscribe from the previous plan.</li>
+<li>If you need a refund, contact us at <a href="mailto:support@cvat.ai">support@cvat.ai</a>.</li>
+<li>Subscribe to a new plan.</li>
+</ol>
+<h3 id="how-to-switch-from-a-monthly-subscription-to-an-annual-one">How to switch from a monthly subscription to an annual one?</h3>
+<p>If you have <strong>monthly subscription</strong>, and wish to switch to the
+<strong>Annual plan</strong>, please follow these steps:</p>
+<ol>
+<li>In the top-right corner, near the nickname, click on the arrow.</li>
+<li>Select <strong>Manage Solo</strong>/<strong>Team Plan</strong>.</li>
+<li>On the Stripe page that appears, click <strong>Update Plan</strong>.</li>
+</ol>
+<p><img src="/images/switch-to-annual.png" alt="Stripe Update Plan"></p>
+<ol start="4">
+<li>Choose <strong>Yearly</strong> and then click <strong>Continue</strong>.</li>
+</ol>
+<p><img src="/images/yearly-plan.png" alt="Stripe Yearly Plan"></p>
+<p>The price will be adjusted according to the number of members, selected in the
+<strong>Quantity</strong> field (if updated), taking into account the amount of money
+that was not spent in the current period.</p>
+<p>Upon payment, your subscription will be renewed and the start
+date will be reset to the day you switch to the new plan.</p>
+<h2 id="can-i-subscribe-to-several-plans">Can I subscribe to several plans?</h2>
+<p>Paid plans are not mutually exclusive.
+You can have several active subscriptions,
+for example, the <strong>Solo</strong> plan and several <strong>Team</strong>
+plans for different organizations.</p>
+<h2 id="cancel-plan">Cancel plan</h2>
+<p>This section describes how to cancel your CVAT subscription
+and what will happen to your data.</p>
+<h3 id="what-will-happen-to-my-data">What will happen to my data?</h3>
+<p>Once you have terminated your subscription, your data will remain
+accessible within the system for a month. During this period,
+you will be unable to add new tasks and free plan limits will be applied.</p>
+<p>In case you possess a substantial amount of data,
+it will be switched to read-only mode. It means
+you will not be able to save annotations, add any resources,
+and so on.</p>
+<p>Following the one month, you will receive a
+notification requesting you to either remove the
+excess data or it will be deleted automatically.</p>
+<h3 id="how-to-cancel-any-plan">How to cancel any plan?</h3>
+<p>To cancel the plan, in the top right corner, near the nickname,
+click on the arrow&gt; manage plan &gt; <strong>Cancel plan</strong></p>
+<p>Please, fill out the feedback form, to help us improve our platform.</p>
+<p><img src="/images/cancel-plan.png" alt="Cancel pro"></p>
+<h3 id="how-can-i-get-a-refund">How can I get a refund?</h3>
+<p>To understand if you are eligible for a refund,
+see <a href="https://www.cvat.ai/refund-policy">Refund policy</a>.</p>
+<ol>
+<li>Cancel the subscription before asking for a refund.</li>
+<li>Contact our support team at <a href="mailto:support@cvat.ai">support@cvat.ai</a>
+or use the &ldquo;Support&rdquo; option in the app.cvat.ai interface.</li>
+<li>Provide your account details and a brief explanation of the reason for the refund:
+<ul>
+<li>Send us your last invoice.</li>
+<li>Send us the username and e-mail address you’ve used to register in CVAT Online.</li>
+</ul>
+</li>
+</ol>
+<p>Our team will review your request. We may request additional information if needed.
+Once approved, the refund will be processed to your original
+payment method <a href="https://docs.stripe.com/refunds#tracing-refunds">within 5-10 business days</a>.</p>
+<h2 id="plan-renewal">Plan renewal</h2>
+<p>To renew your CVAT Online subscription, in the top right corner, near the nickname,
+click on the arrow&gt; manage plan &gt; <strong>Renew plan</strong>.</p>
+<h2 id="subscription-management-video-tutorial">Subscription management video tutorial</h2>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AMPtbmqZKNY?si=2TLhdytDIlSJ3Fwd" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-2ba185031e6fc77bb91ce34ff0f916d4">5 - SSO configuration</h1>
+    <div class="lead">SSO for a Self-Hosted solution</div>
+	<p>CVAT supports Single Sign-On (SSO) using both OpenID Connect (OIDC) and Security Assertion Markup Language (SAML)
+protocols.</p>
+<p>To configure SSO, complete the following 2 main steps:</p>
+<ol>
+<li>Configure the Identity Provider (IdP) — set up an application on your IdP platform.</li>
+<li>Update the CVAT configuration — provide the necessary identity provider settings in the CVAT configuration file.</li>
+</ol>
+<p>If the application is already configured, refer to the <a href="#configuring-sso-in-cvat">Configuring SSO in CVAT</a> section.
+Otherwise, you may follow one of the detailed platform-specific guides to set up such an application:</p>
+<ul>
+<li><a href="#microsoft-azure">Microsoft Azure</a></li>
+<li><a href="#okta">Okta</a></li>
+<li><a href="#auth0">Auth0</a></li>
+<li><a href="#keycloak">keycloak</a></li>
+</ul>
+<h2 id="platform-specific-idp-configuration">Platform specific IdP configuration</h2>
+<h3 id="microsoft-azure">Microsoft Azure</h3>
+<h4 id="openid-connect">OpenID Connect</h4>
+<p>Follow these steps to configure an application on the <code>Microsoft Azure</code> platform and integrate it with CVAT:</p>
+<h5 id="step-1-register-an-oidc-based-application"><strong>Step 1: Register an OIDC-based application</strong></h5>
+<p>To start, log into your <a href="https://portal.azure.com/#home">Microsoft Azure Portal</a>. Once you&rsquo;re in:</p>
+<ol>
+<li>
+<p>Navigate to the  <code>Microsoft Entra ID</code> service -&gt; <code>App registrations</code> section in the menu on the left.</p>
+</li>
+<li>
+<p>Click on the <code>+ New registration</code> button.</p>
+</li>
+<li>
+<p>Enter application name.</p>
+</li>
+<li>
+<p>Select <code>Supported account types</code> based on your needs.</p>
+</li>
+<li>
+<p>Add <code>Redirect URI</code>: choose <code>Web</code> platform and set <code>&lt;scheme:cvat_domain&gt;/api/auth/oidc/&lt;idp-id:azure-oidc&gt;/login/callback/</code>
+to the value field.</p>
+<p><img src="/images/azure_oidc_1.jpeg" alt="Azure portal screen showing a completed registration form for creating an OIDC-based application"></p>
+</li>
+<li>
+<p>Click on the <code>Register</code> button.</p>
+</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    More information on how to configure an OIDC-based application on the Azure platform can be found
+<a href="https://learn.microsoft.com/en-us/power-pages/security/authentication/openid-settings#create-an-app-registration-in-azure">here</a>.
+
+</div>
+
+<p>You’ve created an app, now you should configure the credentials for it.</p>
+<h5 id="step-2-configure-credentials"><strong>Step 2: Configure credentials</strong></h5>
+<ol>
+<li>Navigate to the <code>Overview</code> tab of your newly created application.
+<img src="/images/azure_oidc_2.jpeg" alt="Azure portal screen showing an overview tab of the created OIDC-based application"></li>
+<li>In the <code>Client credentials</code> section, click the <code>Add a certificate or secret</code> link.
+This will take you to the <code>Certificates &amp; secrets</code> page.</li>
+<li>Click <code>+ New client secret</code>.</li>
+<li>In the popup form, enter a description and select an expiration period, then click <code>Add</code>.
+<img src="/images/azure_oidc_3.jpeg" alt="Azure portal screen showing client secret creation form"></li>
+</ol>
+<p>The newly created secret will appear in the list.
+Make sure to copy the value now — you won’t be able to see it again later.
+<img src="/images/azure_oidc_4.jpeg" alt="Azure portal screen showing the Certificates &amp; secrets tab with a newly added client secret"></p>
+<h5 id="step-3-configure-cvat"><strong>Step 3: Configure CVAT</strong></h5>
+<p>Utilize the example below as a template for your configuration:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;idp-id:azure-oidc&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">OIDC</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">Azure OIDC-based IdP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">server_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">https://&lt;Directory (tenant) ID&gt;/v2.0/</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Secret ID&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Secret Value&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">email_domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;company_email_domain&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Tip</h4>
+
+    Actual <code>Secret ID</code> and <code>Secret Value</code> values may be found on <code>Certificates &amp; secrets</code> tab of the application,
+while <code>Directory (tenant) ID</code> - on the <code>Overview</code> tab.
+
+</div>
+
+<p>You can now proceed to <a href="#start-cvat">start CVAT</a>.
+For additional CVAT configuration details, refer to <a href="#configuring-sso-in-cvat">Configuring SSO in CVAT</a>.</p>
+<h4 id="saml">SAML</h4>
+<p>Follow these steps to configure an application on the <code>Microsoft Azure</code> platform and integrate it with CVAT:</p>
+<h5 id="step-1-register-an-saml-based-application"><strong>Step 1: Register an SAML-based application</strong></h5>
+<p>To start, log into your <a href="https://portal.azure.com/#home">Microsoft Azure Portal</a>. Once you&rsquo;re in:</p>
+<ol>
+<li>Navigate to the  <code>Microsoft Entra ID</code> service -&gt; <code>Enterprise applications</code> section in the menu on the left.</li>
+<li>Click <code>+ New application</code> and enter a name for the application in the popup window, then click <code>Create</code>.
+<img src="/images/azure_saml_1.jpeg" alt="Azure portal screen showing a completed form for an enterprise application"></li>
+</ol>
+<p>You’ve created an app, now you should finalize its configuration and assign users or groups.</p>
+<h5 id="step-2-configure-a-created-application"><strong>Step 2: Configure a created application</strong></h5>
+<ol>
+<li>Navigate to the <code>Single sign-on</code> section in the menu on the left.</li>
+<li>Choose the SAML protocol as the single sign-on method.
+<img src="/images/azure_saml_2.jpeg" alt="Azure portal screen where SAML is selected as the Single sign-on method for the application being configured"></li>
+<li>Edit <code>Basic SAML Configuration</code>:
+<ul>
+<li><code>Identifier (Entity ID)</code>: <code>&lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:azure-saml&gt;/metadata/</code></li>
+<li><code>Reply URL (Assertion Consumer Service URL)</code>: <code>&lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:azure-saml&gt;/acs/</code>
+<img src="/images/azure_saml_3.jpeg" alt="Azure portal screen with basic SAML-based application settings filled in"></li>
+<li>Save changes</li>
+</ul>
+</li>
+<li>Edit <code>Attributes &amp; Claims</code> by adding a new <code>uid</code> claim:
+<ul>
+<li>Name: <code>uid</code></li>
+<li>Namespace: <code>http://schemas.xmlsoap.org/ws/2005/05/identity/claims</code></li>
+<li>Source: <code>attribute</code></li>
+<li>Source attribute: <code>user.objectid</code>
+<img src="/images/azure_saml_4.jpeg" alt="Azure portal screen showing the filled-in form for creating a new uid claim"></li>
+</ul>
+</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    More information on how to configure an application on Azure platform can be
+found <a href="https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/add-application-portal-setup-sso">here</a>.
+
+</div>
+
+<h5 id="step-3-assign-users-and-groups"><strong>Step 3: Assign users and groups</strong></h5>
+<p>At this point, no users or groups have been assigned to the application.
+To grant access:</p>
+<ol>
+<li>Navigate to the <code>Users and groups</code> section of the application.</li>
+<li>Click the <code>+ Add user/group</code> button.</li>
+<li>Select the users or groups you want to assign.</li>
+<li>Confirm selection.</li>
+</ol>
+<p>The selected users or groups will now appear in the assignment list.</p>
+<p>That&rsquo;s it, now we can move on to the configuration in CVAT.</p>
+<h5 id="step-4-configure-cvat"><strong>Step 4: Configure CVAT</strong></h5>
+<p>Utilize the example below as a template for your configuration:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;idp-id:azure-saml&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">SAML</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">Azure SAML-based IdP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">entity_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Microsoft Entra Identifier&gt; (https://sts.windows.net/&lt;tenantId&gt;/)</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">metadata_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;App Federation Metadata Url&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">attribute_mapping</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">uid</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/uid</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">username</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">email</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">first_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">last_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#8f5902;font-style:italic"># email_verified: it is not possible to configure SAML-based application to send this claim to the SP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">email_domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;company_email_domain&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Tip</h4>
+
+    <p>Actual <code>Microsoft Entra Identifier</code> and <code>App Federation Metadata Url</code> values may be found
+on the <code>Single sign-on</code> tab of the created application</p>
+<p><img src="/images/azure_saml_5.jpeg" alt="Azure portal screen displaying SAML-based application values required for CVAT integration"></p>
+
+
+</div>
+
+<p>You can now proceed to <a href="#start-cvat">start CVAT</a>.
+For additional CVAT configuration details, refer to <a href="#configuring-sso-in-cvat">Configuring SSO in CVAT</a>.</p>
+<h3 id="okta">Okta</h3>
+<h4 id="openid-connect-1">OpenID Connect</h4>
+<p>Follow these steps to configure an application on the <code>Okta</code> platform and integrate it with CVAT:</p>
+<h5 id="step-1-register-an-oidc-based-application-1"><strong>Step 1: Register an OIDC-based application</strong></h5>
+<p>To start, log into your <a href="https://login.okta.com/">Okta admin dashboard</a>. Once you&rsquo;re in:</p>
+<ol>
+<li>
+<p>Navigate to the <code>Applications</code> section in the menu on the left.</p>
+</li>
+<li>
+<p>Click on the <code>Create App integration</code> button.</p>
+</li>
+<li>
+<p>Select <code>OIDC - OpenID Connect</code> as a sign-in method and <code>Web Application</code> type.
+<img src="/images/okta_oidc_1.jpeg" alt="Okta admin dashboard screen showing the initial form to create a new app integration with the OIDC sign-in method and Web application type"></p>
+</li>
+<li>
+<p>Fill the form with the following content:</p>
+<ul>
+<li><code>App integration name</code>: enter a name for the application</li>
+<li><code>Sign-in redirect URIs</code>: <code>&lt;scheme:cvat_domain&gt;/api/auth/oidc/&lt;idp-id:okta-oidc&gt;/login/callback/</code></li>
+<li>Select option in the <code>Controlled access</code> to match your requirements. In this example, we&rsquo;ll use <code>Skip group assignment for now</code>.</li>
+</ul>
+<p><img src="/images/okta_oidc_2.jpeg" alt="Okta admin dashboard screen showing a completed registration form to create an OIDC-based app integration"></p>
+</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    More information on how to configure an OIDC-based application on the Okta platform can be
+found <a href="https://help.okta.com/en-us/content/topics/apps/apps_app_integration_wizard_oidc.htm">here</a>.
+
+</div>
+
+<p>You’ve created and configured the app, now you should assign users or groups to the application.</p>
+<h5 id="step-2-assign-users-or-groups"><strong>Step 2: Assign users or groups</strong></h5>
+<p>At this point, no users or groups have been assigned to the application.
+To grant access:</p>
+<ol>
+<li>Navigate to the <code>Assignments</code> tab of the application.</li>
+<li>Click the <code>Assign</code> button and select <code>Assign to People</code> or <code>Assign to Groups</code> based on your needs.</li>
+<li>Identify the users or groups you want to assign, then click <code>assign</code>.</li>
+</ol>
+<p>The selected users or groups will now appear in the assignment list.
+<img src="/images/okta_oidc_3.jpeg" alt="Okta admin dashboard screen showing a user being added to the list with users and groups assigned to the OIDC-based application"></p>
+<h5 id="step-3-configure-cvat-1"><strong>Step 3: Configure CVAT</strong></h5>
+<p>Utilize the example below as a template for your configuration:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;idp-id:okta-oidc&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">OIDC</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">Okta OIDC-based IdP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">server_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">https://&lt;okta_domain&gt;/</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">email_domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;company_email_domain&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Tip</h4>
+
+    Actual <code>Client ID</code> and <code>Client secret</code> key values may be found on the <code>General</code> tab of the created application
+<img src="/images/okta_oidc_4.jpeg" alt="Okta admin dashboard screen showing Client Credentials for the created OIDC-based application">
+
+</div>
+
+<p>You can now proceed to <a href="#start-cvat">start CVAT</a>.
+For additional CVAT configuration details, refer to <a href="#configuring-sso-in-cvat">Configuring SSO in CVAT</a>.</p>
+<h4 id="saml-1">SAML</h4>
+<p>Follow these steps to configure an application on the <code>Okta</code> platform and integrate it with CVAT:</p>
+<h5 id="step-1-register-an-saml-based-application-1"><strong>Step 1: Register an SAML-based application</strong></h5>
+<p>To start, log into your <a href="https://login.okta.com/">Okta admin dashboard</a>. Once you&rsquo;re in:</p>
+<ol>
+<li>
+<p>Navigate to the <code>Applications</code> section in the menu on the left.</p>
+</li>
+<li>
+<p>Click on the <code>Create App integration</code> button.</p>
+</li>
+<li>
+<p>Select <code>SAML 2.0</code> as a sign-in method, then click <code>Next</code>.
+<img src="/images/okta_saml_1.jpeg" alt="Okta admin dashboard screen showing the initial form to create a new app integration with SAML sign-in method"></p>
+</li>
+<li>
+<p>Fill the form with the general settings and go to the next configuration step.</p>
+</li>
+<li>
+<p>On the <code>Configure SAML</code> form set the following fields:</p>
+<ul>
+<li><code>Single sign-on URL</code>:<code> &lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:okta-saml&gt;/acs/</code></li>
+<li><code>Audience URI (SP Entity ID</code>: <code>&lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:okta-saml&gt;/metadata/</code>
+<img src="/images/okta_saml_2.jpeg" alt="Okta admin dashboard screen showing a completed registration form to create an SAML-based app integration"></li>
+</ul>
+</li>
+<li>
+<p>Define attribute statements that will be shared with CVAT.
+In our example we will use the <code>Basic</code> attribute name format and set the mapping as shown below:</p>
+<ul>
+<li><code>firstName</code>: <code>user.firstName</code></li>
+<li><code>lastName</code>: <code>user.lastName</code></li>
+<li><code>username</code>: <code>user.login</code></li>
+<li><code>email</code>: <code>user.email</code></li>
+<li><code>uid</code>: <code>user.getInternalProperty(&quot;id&quot;)</code></li>
+</ul>
+<p><img src="/images/okta_saml_3.jpeg" alt="Okta admin dashboard screen with attribute statements configuration for the SAML-based application being created">
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Tip</h4>
+
+    If attribute mapping needs to be adapted, follow the official
+<a href="https://help.okta.com/oie/en-us/content/topics/apps/define-attribute-statements.htm">documentation</a>
+on how to configure <code>Attribute Statements</code>
+
+</div>
+</p>
+</li>
+<li>
+<p>Navigate to the next configuration step and fill the <code>Feedback</code> form.</p>
+</li>
+</ol>
+<p>You’ve created and configured the app. You can now either complete an optional step to simplify the login process
+in CVAT or proceed directly to the <a href="#step-3-configure-cvat-2">CVAT configuration step</a>.</p>
+<h5 id="step-2-simplify-login-process"><strong>Step 2: Simplify login process</strong></h5>
+<p>If CVAT is configured to require
+<a href="/docs/administration/community/basics/installation/#email-verification">email verification</a>,
+it expects the Identity Provider to include the <code>email_verified</code> claim. However, Okta does not send this claim
+by default. As a result, users will receive a confirmation email with a verification link.</p>
+<p>There is an option to include email verification claim on the sign-in step:</p>
+<ol>
+<li>Add one more mapping <code>emailVerified</code> -&gt; <code>user.emailVerified</code> on SAML-based application configuration step:
+<ol>
+<li>Navigate to the <code>SAML Settings</code> on the <code>General</code> tab and click <code>Edit</code>.</li>
+<li>Add one more attribute mapping as it was described in the app configuration step.</li>
+</ol>
+</li>
+<li>Add custom user attribute <code>emailVerified</code>:
+<ul>
+<li>Navigate to the <code>Directory</code> section in the menu on the left -&gt; <code>Profile Editor</code> item</li>
+<li>Select the default user profile from the list (<code>User (default)</code>)</li>
+<li>Click <code>+ Add Attribute</code></li>
+<li>Fill out the form with your desired values, making sure to select the <code>boolean</code> data type
+<img src="/images/okta_saml_4.jpeg" alt="Okta admin dashboard screen showing the filled-in form to add a new emailVerified attribute"></li>
+<li>Click <code>Save</code></li>
+</ul>
+</li>
+<li>Update user profiles:
+<ul>
+<li>Navigate to the <code>People</code> section in the menu on the left</li>
+<li>Set the value for the recently created attribute for each person</li>
+</ul>
+</li>
+</ol>
+<h5 id="step-3-configure-cvat-2"><strong>Step 3: Configure CVAT</strong></h5>
+<p>Utilize the example below as a template for your configuration:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;idp-id:okta-saml&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">SAML</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">Okta SAML-based Identity Provider</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">entity_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Issuer&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">metadata_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Metadata URL&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">attribute_mapping</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">uid</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">uid</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">username</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">username</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">email</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">first_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">firstName</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">last_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">lastName</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">email_verified</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">emailVerified</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#8f5902;font-style:italic"># if configured</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">email_domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;company_email_domain&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Tip</h4>
+
+    <code>Metadata URL</code> and <code>Issuer</code> values may be found on the <code>Sign On</code> tab of the application setting
+<img src="/images/okta_saml_5.jpeg" alt="Okta admin dashboard screen showing metadata details for the created SAML-based application">
+
+</div>
+
+<p>You can now proceed to <a href="#start-cvat">start CVAT</a>.
+For additional CVAT configuration details, refer to <a href="#configuring-sso-in-cvat">Configuring SSO in CVAT</a>.</p>
+<h3 id="auth0">Auth0</h3>
+<h4 id="openid-connect-2">OpenID Connect</h4>
+<p>Follow these steps to configure an application in the <code>Auth0</code> platform and integrate it with CVAT:</p>
+<h5 id="step-1-register-an-oidc-based-application-2"><strong>Step 1: Register an OIDC-based application</strong></h5>
+<p>To start, log into your <a href="https://manage.auth0.com/dashboard">Auth0 dashboard</a>. Once you&rsquo;re in:</p>
+<ol>
+<li>Navigate to the <code>Applications</code> section in the menu on the left, click <code>+ Create Application</code>.</li>
+<li>Enter a name for the application and choose the <code>Regular Web Applications</code> type, then click <code>Create</code>.</li>
+</ol>
+<p><img src="/images/auth0_oidc_1.jpeg" alt="Auth0 dashboard screen showing a completed form for creating an OIDC-based application"></p>
+<p>You’ve created an app, now you should finalize its configuration.</p>
+<h5 id="step-2-configure-a-created-application-1"><strong>Step 2: Configure a created application</strong></h5>
+<ol>
+<li>In the <code>Settings</code> tab of your new application, scroll down to the <code>Application URIs</code> section.</li>
+<li>Add <code>&lt;scheme:cvat_domain&gt;/api/auth/oidc/&lt;idp-id:auth0-oidc&gt;/login/callback/</code> to the <code>Allowed Callback URLs</code>.</li>
+<li>Save changes.</li>
+</ol>
+<p><img src="/images/auth0_oidc_2.jpeg" alt="Auth0 dashboard screen showing Allowed Callback URLs configuring for the created OIDC-based application"></p>
+<p>That&rsquo;s it, now we can move on to the configuration in CVAT.</p>
+<h5 id="step-3-configure-cvat-3"><strong>Step 3: Configure CVAT</strong></h5>
+<p>Utilize the example below as a template for your configuration:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;idp-id:auth0-oidc&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">OIDC</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">Auth0 OIDC-based IdP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">server_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">https://&lt;auth0_domain&gt;/</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">email_domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;company_email_domain&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Tip</h4>
+
+    <code>Client ID</code>, <code>Client Secret</code> and <code>Domain</code> can be found in the <code>Basic Information</code> section of application settings
+<img src="/images/auth0_oidc_3.jpeg" alt="Auth0 dashboard screen showing the section with the basic information for the created OIDC-based application">
+
+</div>
+
+<p>You can now proceed to <a href="#start-cvat">start CVAT</a>.
+For additional CVAT configuration details, refer to <a href="#configuring-sso-in-cvat">Configuring SSO in CVAT</a>.</p>
+<h4 id="saml-2">SAML</h4>
+<p>Follow these steps to configure an application in the <code>Auth0</code> platform and integrate it with CVAT:</p>
+<h5 id="step-1-register-an-saml-based-application-2"><strong>Step 1: Register an SAML-based application</strong></h5>
+<p>To start, log into your <a href="https://manage.auth0.com/dashboard">Auth0 dashboard</a>. Once you&rsquo;re in:</p>
+<ol>
+<li>Navigate to the <code>Applications</code> section in the menu on the left, click <code>+ Create Application</code>.</li>
+<li>Enter a name for the application and choose the <code>Regular Web Applications</code> type, then click <code>Create</code>.</li>
+</ol>
+<p><img src="/images/auth0_saml_1.jpeg" alt="Auth0 dashboard screen showing a completed form for creating a SAML-based application"></p>
+<p>You’ve created an app, now you should finalize its configuration.</p>
+<h5 id="step-2-configure-a-created-application-2"><strong>Step 2: Configure a created application</strong></h5>
+<ol>
+<li>
+<p>Navigate to the <code>Addons</code> tab of the created application and click on the <code>SAML2 WEB APP</code> button.
+<img src="/images/auth0_saml_2.jpeg" alt="Auth0 dashboard screen showing SAML2 WEB APP plugin on the Addons tab for the created SAML-based application"></p>
+</li>
+<li>
+<p>Open the <code>Settings</code> tab in the popup window and set the following configuration:
+<img src="/images/auth0_saml_3.jpeg" alt="Auth0 dashboard screen showing SAML2 WEB APP plugin configuring by adding Application Callback URL and SAML-specific settings"></p>
+<ul>
+<li><code>Application Callback URL</code>: <code>&lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:auth0-saml&gt;/acs/</code></li>
+<li><code>Settings</code>: enter a JSON object like the following:</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;audience&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;&lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:auth0-saml&gt;/metadata/&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;recipient&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;&lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:auth0-saml&gt;/acs/&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;destination&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;&lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:auth0-saml&gt;/acs/&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;mappings&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;user_id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;email&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;nickname&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/username&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;given_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;family_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;email_verified&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailverified&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">},</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;createUpnClaim&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;passthroughClaimsWithNoMapping&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#204a87;font-weight:bold">false</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;mapIdentities&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#204a87;font-weight:bold">false</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div></li>
+<li>
+<p>Scroll down and click <code>Enable</code>.</p>
+</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    More information on how to configure an application on Auth0 platform can be
+found <a href="https://auth0.com/docs/authenticate/single-sign-on/outbound-single-sign-on/configure-auth0-saml-identity-provider#configure-saml-sso-in-auth0">here</a>.
+
+</div>
+
+<p>That&rsquo;s it, now we can move on to the configuration in CVAT.</p>
+<h5 id="step-3-configure-cvat-4"><strong>Step 3: Configure CVAT</strong></h5>
+<p>Utilize the example below as a template for your configuration:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;idp-id:auth0-saml&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">SAML</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">Auth0 SAML-based IdP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">entity_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Issuer&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">metadata_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Metadata URL&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">attribute_mapping</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">uid</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">username</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/username</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">email</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">first_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">last_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">email_verified</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailverified</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">email_domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;company_email_domain&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Tip</h4>
+
+    Actual <code>Metadata URL</code> and <code>Issuer</code> values may be found on the <code>Usage</code> tab of the <code>SAML2 Web App</code> plugin
+<img src="/images/auth0_saml_4.jpeg" alt="Auth0 dashboard screen showing SAML configuration parameters for the created SAML-based application">
+
+</div>
+
+<p>You can now proceed to <a href="#start-cvat">start CVAT</a>.
+For additional CVAT configuration details, refer to <a href="#configuring-sso-in-cvat">Configuring SSO in CVAT</a>.</p>
+<h3 id="keycloak">Keycloak</h3>
+<p>To configure SSO in terms of Keycloak we need to create a <code>client</code>.</p>
+<h4 id="openid-connect-3">OpenID Connect</h4>
+<p>Follow these steps to do that:</p>
+<h5 id="step-1-register-an-oidc-based-client"><strong>Step 1: Register an OIDC-based client</strong></h5>
+<p>To start, go to the Keycloak service (by default it is listening for HTTP and HTTPS requests
+using the ports 8080 and 8443, respectively) and log into your admin account. Once you&rsquo;re in:</p>
+<ol>
+<li>Under the desired <code>realm</code> navigate to the <code>Clients</code> section and click <code>create client</code>.</li>
+<li>Fill out the general client settings:
+<img src="/images/keycloak_oidc_1.jpeg" alt="Keycloak admin console screen showing a completed form with general settings for creating an OIDC-based client">
+<ul>
+<li><code>Client type</code>: OpenID Connect</li>
+<li><code>Client ID</code>: enter client identifier</li>
+<li>Enter a name for the client, e.g. OIDC-based client</li>
+</ul>
+</li>
+<li>In the next step, enable the <code>Client authentication</code> toggle.
+<img src="/images/keycloak_oidc_2.jpeg" alt="Keycloak admin console screen showing the client authentication option being enabled for the OIDC-based client being created"></li>
+<li>In the <code>Login settings</code> section, provide the following values:
+<img src="/images/keycloak_oidc_3.jpeg" alt="Keycloak admin console screen showing a completed form with login settings for the OIDC-based client being created">
+<ul>
+<li><code>Home URL</code>: <code>&lt;scheme:cvat_domain&gt;</code></li>
+<li><code>Valid redirect URIs</code>: <code>&lt;scheme:cvat_domain&gt;/api/auth/oidc/&lt;idp-id:keycloak-oidc&gt;/login/callback/</code></li>
+<li><code>Web origins</code>: <code>&lt;scheme:cvat_domain&gt;</code></li>
+</ul>
+</li>
+</ol>
+<p>That&rsquo;s it, now we can move on to the configuration in CVAT.</p>
+<h5 id="step-2-configure-cvat"><strong>Step 2: Configure CVAT</strong></h5>
+<p>Utilize the example below as a template for your configuration:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;idp-id:keycloak-oidc&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">OIDC</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">Keycloak OIDC-based Identity Provider</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">server_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;scheme:keycloak_domain&gt;/realms/&lt;custom_realm&gt;/.well-known/openid-configuration</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Client ID&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Client Secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">email_domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;company_email_domain&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Tip</h4>
+
+    Actual <code>Client Secret</code> value can be found on the <code>Credentials</code> tab of the created OIDC client
+<img src="/images/keycloak_oidc_4.jpeg" alt="Keycloak admin console screen showing the Credentials tab for the created OIDC-based client">
+
+</div>
+
+<p>You can now proceed to <a href="#start-cvat">start CVAT</a>.
+For additional CVAT configuration details, refer to <a href="#configuring-sso-in-cvat">Configuring SSO in CVAT</a>.</p>
+<h4 id="saml-3">SAML</h4>
+<p>Follow these steps to configure a client:</p>
+<h5 id="step-1-register-a-saml-based-client"><strong>Step 1: Register a SAML-based client</strong></h5>
+<p>To start, go to the Keycloak service (by default it is listening for HTTP and HTTPS requests
+using the ports 8080 and 8443, respectively) and log into your admin account. Once you&rsquo;re in:</p>
+<ol>
+<li>Under the desired <code>realm</code> navigate to the <code>Clients</code> section and click <code>create client</code>.</li>
+<li>Fill out the general client settings:
+<img src="/images/keycloak_saml_1.jpeg" alt="Keycloak admin console screen showing a completed form with general settings for creating a SAML-based client">
+<ul>
+<li><code>Client type</code>: SAML</li>
+<li>Set the <code>Clint ID</code> the URL: <code>&lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:keycloak-saml&gt;/metadata/</code></li>
+<li>Enter a name for the client, e.g. SAML client</li>
+</ul>
+</li>
+<li>In the <code>Login settings</code> section, provide the following values:
+<img src="/images/keycloak_saml_2.jpeg" alt="Keycloak admin console screen showing a completed form with login settings for the SAML-based client being created">
+<ul>
+<li><code>Home  URL</code>: <code>&lt;scheme:cvat_domain&gt;</code></li>
+<li><code>Valid redirect URIs</code>: <code>&lt;scheme:cvat_domain&gt;/api/auth/saml/&lt;idp-id:keycloak-saml&gt;/acs/</code></li>
+</ul>
+</li>
+</ol>
+<p>You’ve created a client, now you should finalize its configuration.</p>
+<h5 id="step-2-configure-a-created-client"><strong>Step 2: Configure a created client</strong></h5>
+<ol>
+<li>Navigate to the general settings of the created client, scroll down to the <code>SAML capabilities</code> section.</li>
+<li>Update the following parameters:
+<ul>
+<li><code>Name ID format</code>: email</li>
+<li><code>Force name ID format</code>: <code>On</code></li>
+</ul>
+</li>
+<li>Navigate to the <code>Keys</code> tab and enable the <code>Client signature required</code> toggle.</li>
+<li>Configure attributes &amp; claims:
+<ol>
+<li>
+<p>Navigate to the <code>Client scopes</code> tab on the created client -&gt; dedicated scopes for the client.
+You will see that there is no configured mappers.
+<img src="/images/keycloak_saml_3.jpeg" alt="Keycloak admin screen showing that no mappers are configured yet for the created SAML-based client"></p>
+</li>
+<li>
+<p>Set up mappers for the following attributes:</p>
+<ul>
+<li>uid</li>
+<li>first_name</li>
+<li>last_name</li>
+<li>username</li>
+<li>email</li>
+</ul>
+<p>For attributes like <code>email</code>, <code>first name</code>, and <code>last name</code>, you can either</p>
+<ul>
+<li>Use the predefined mappers
+<img src="/images/keycloak_saml_4.jpeg" alt="Keycloak admin screen showing a table of predefined mappers to be added to the created SAML-based client"></li>
+<li>Or follow the manual configuration steps to create them yourself.</li>
+</ul>
+<p>To configure other mappers click <code>Configure a new mapper</code> if it is a first mapper or <code>Add mapper</code>
+-&gt; <code>By configuration</code> and then select <code>User Property</code>.</p>
+<p>For instance, to configure a mapper for the <code>username</code> attribute, fill in the form as it is done below:
+<img src="/images/keycloak_saml_5.jpeg" alt="Keycloak admin screen showing a completed form for creating a mapper for the username attribute in a SAML-based client"></p>
+<ul>
+<li><code>Name</code>: username</li>
+<li><code>Property</code>: username</li>
+<li><code>SAML Attribute Name</code>: usernameAttribute</li>
+</ul>
+</li>
+</ol>
+</li>
+</ol>
+<p>That&rsquo;s it, now we can move on to the configuration in CVAT.</p>
+<h5 id="step-3-configure-cvat-5"><strong>Step 3: Configure CVAT</strong></h5>
+<p>Utilize the example below as a template for your configuration:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;idp-id:keycloak-saml&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">SAML</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">Keycloak SAML-based Identity Provider</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">entity_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;scheme:keycloak_domain&gt;/realms/&lt;custom_realm&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">metadata_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;scheme:keycloak_domain&gt;/realms/&lt;custom_realm&gt;/protocol/saml/descriptor</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">attribute_mapping</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">uid</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">uidAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">email_verified</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">emailVerifiedAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">email</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">emailAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">last_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">lastNameAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">first_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">firstNameAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">        </span><span style="color:#204a87;font-weight:bold">username</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">usernameAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">email_domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;company_email_domain&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Tip</h4>
+
+    Actual <code>Metadata URL</code> may be found in the <code>Realm settings</code> on the <code>General</code> tab
+<img src="/images/keycloak_saml_6.jpeg" alt="Keycloak admin screen showing the General tab of the realm with highlighted SAML Metadata URL">
+
+</div>
+
+<p>You can now proceed to <a href="#start-cvat">start CVAT</a>.
+For additional CVAT configuration details, refer to <a href="#configuring-sso-in-cvat">Configuring SSO in CVAT</a>.</p>
+<h2 id="configuring-sso-in-cvat">Configuring SSO in CVAT</h2>
+<p>CVAT provides a dedicated configuration file to customize the login and registration flow.
+The <a href="#sso-settings"><code>sso</code></a> section of this file specifies which external Identity Provider (IdP)
+integrations are enabled. To set up SSO, you typically create a custom YAML configuration file
+(e.g., <code>auth_config.yml</code>) and supply its path when <a href="#start-cvat">starting</a> CVAT.</p>
+<h3 id="sso-settings">SSO settings</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enabled</code></td>
+<td>Enables or disables Single Sign-On (SSO) functionality.</td>
+</tr>
+<tr>
+<td><code>selection_mode</code></td>
+<td>Defines how the Identity Provider (IdP) is selected for authenticating a given user.<br>Available modes:<br><ul><li><code>email_address</code> (default): Selects the IdP based on the domain of the user’s email address.</li><li><code>lowest_weight</code>: Selects the IdP with the lowest configured weight.</li></ul></td>
+</tr>
+<tr>
+<td><code>enable_pkce</code></td>
+<td>Controls whether <code>Proof Key for Code Exchange</code> (PKCE) is enabled for the authentication flow (disabled by default). <br>This setting applies to all configured OIDC-based Identity Providers</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#000">|false</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address|lowest_weight</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enable_pkce</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#000">|false</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#000">...</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="idp-configuration-structure">IdP Configuration Structure</h3>
+<p>To integrate an Identity Provider, you must define its configuration block under the <code>identity_providers</code> section
+in the CVAT config file. Each provider&rsquo;s configuration includes both general and protocol-specific settings.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><em>required</em></td>
+<td>A unique, URL-safe identifier for the IdP. Used in callback URLs.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><em>required</em></td>
+<td>A human-readable name for the IdP.</td>
+</tr>
+<tr>
+<td><code>protocol</code></td>
+<td><em>required</em></td>
+<td>Authentication protocol (<code>OIDC</code>/<code>SAML</code>).</td>
+</tr>
+<tr>
+<td><code>email_domain</code></td>
+<td><em>optional</em></td>
+<td>Company email domain (used with <code>email_address</code> selection mode).</td>
+</tr>
+<tr>
+<td><code>weight</code></td>
+<td><em>optional</em></td>
+<td>Determines priority (used with <code>lowest_weight</code> selection mode). The default is 10.</td>
+</tr>
+</tbody>
+</table>
+<p>Additionally, each IdP configuration must include several protocol-specific parameters:
+
+
+
+<ul class="nav nav-tabs" id="tabs-14" role="tablist">
+  <li class="nav-item">
+      <button class="nav-link active"
+          id="tabs-14-00-tab" data-bs-toggle="tab" data-bs-target="#tabs-14-00" role="tab"
+          aria-controls="tabs-14-00" aria-selected="true">
+        OpenID Connect
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-14-01-tab" data-bs-toggle="tab" data-bs-target="#tabs-14-01" role="tab"
+          aria-controls="tabs-14-01" aria-selected="false">
+        SAML
+      </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs-14-content">
+    <div class="tab-body tab-pane fade show active"
+        id="tabs-14-00" role="tabpanel" aria-labelled-by="tabs-14-00-tab" tabindex="14">
+        <ul>
+<li>
+<p><code>client_id</code> and <code>client_secret</code> (<em>required</em>): These values can be obtained
+from the configuration page of the specific provider.</p>
+</li>
+<li>
+<p><code>server_url</code> (<em>required</em>): URL is used to obtain IdP OpenID Configuration Metadata.</p>
+<p><strong>NOTE</strong>: How to check <code>server_url</code> correctness: server_url + <code>/.well-known/openid-configuration</code> API should exist
+and return <a href="https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata">OpenID Provider Metadata</a>.
+Generally, each authentication platform provides a list of all endpoints. You need to find the corresponding endpoint
+and select the part in front of <code>/.well-known/openid-configuration</code>. For example, in the case of integrating
+an OIDC Microsoft Entry ID application, don&rsquo;t forget to specify the second version of API
+(<code>https://login.microsoftonline.com/&lt;tenant_id&gt;/v2.0</code>).</p>
+</li>
+<li>
+<p><code>token_auth_method</code> (<em>optional</em>): Token endpoint authentication method which can be one of
+<code>client_secret_basic</code>, <code>client_secret_post</code>. If this field is omitted, a method from
+the server&rsquo;s token auth methods list will be used.</p>
+</li>
+</ul>
+
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-14-01" role="tabpanel" aria-labelled-by="tabs-14-01-tab" tabindex="14">
+        <ul>
+<li><code>entity_id</code> (<em>required</em>): IdP entity ID, should be equal to the corresponding setting in the IdP configuration.</li>
+<li><code>metadata_url</code> (<em>optional</em>): SAML metadata URL. This can typically be found on the IdP configuration page.</li>
+<li><code>x509_cert</code> (<em>optional</em>): The SAML X.509 certificate. Also could be found in the IdP’s configuration.
+If the <code>metadata_url</code> is not specified, this parameter becomes <strong>required</strong>.</li>
+<li><code>sso_url</code> (<em>optional</em>): SAML endpoint for the Single Sign-On service. Also could be found in the IdP’s configuration.
+If the <code>metadata_url</code> is not specified, this parameter becomes <strong>required</strong>.</li>
+<li><code>attribute_mapping</code> (<em>required</em>): A mapping between user account attributes and attributes sent by
+the Identity Provider.</li>
+</ul>
+
+    </div>
+</div>
+</p>
+<p>Below are examples of SSO configuration file for both protocols:
+
+  
+  
+<ul class="nav nav-tabs" id="tabs-15" role="tablist">
+  <li class="nav-item">
+      <button class="nav-link active"
+          id="tabs-15-00-tab" data-bs-toggle="tab" data-bs-target="#tabs-15-00" role="tab"
+          aria-controls="tabs-15-00" aria-selected="true">
+        Integrate OIDC-based IdP
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-15-01-tab" data-bs-toggle="tab" data-bs-target="#tabs-15-01" role="tab"
+          aria-controls="tabs-15-01" aria-selected="false">
+        Integrate SAML-based IdP
+      </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs-15-content">
+    <div class="tab-body tab-pane fade show active"
+        id="tabs-15-00" role="tabpanel" aria-labelled-by="tabs-15-00-tab" tabindex="15">
+        <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">email_address</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">oidc-idp</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">OIDC</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">OIDC-based IdP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">server_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">https://example.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">xxx</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">xxx</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">email_domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">example.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-15-01" role="tabpanel" aria-labelled-by="tabs-15-01-tab" tabindex="15">
+        <div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"> </span>---<span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">sso</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">selection_mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">lowest_weight</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">   </span><span style="color:#204a87;font-weight:bold">identity_providers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">     </span>- <span style="color:#204a87;font-weight:bold">id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">saml-idp</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">SAML</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">SAML-based IdP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">entity_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;idp-entity-id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">weight</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">1</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#8f5902;font-style:italic"># specify only metadata_url or sso_url and x509_cert</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">metadata_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http://example.com/path/to/saml/metadata/</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">sso_url</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;Login URL&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">x509_cert</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">         -----BEGIN CERTIFICATE-----
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">         certificate content
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">         -----END CERTIFICATE-----</span><span style="color:#f8f8f8;text-decoration:underline">         
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">       </span><span style="color:#204a87;font-weight:bold">attribute_mapping</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">uid</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">uidAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">email_verified</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">emailVerifiedAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">email</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">emailAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">last_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">lastNameAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">first_name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">firstNameAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">         </span><span style="color:#204a87;font-weight:bold">username</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">usernameAttribute</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+    </div>
+</div>
+</p>
+<p>More information about OIDC-based and SAML-based IdP configuration expected by Django Allauth
+can be found <a href="https://docs.allauth.org/en/latest/socialaccount/providers/openid_connect.html">here</a>
+and <a href="https://docs.allauth.org/en/latest/socialaccount/providers/saml.html">here</a> respectively.</p>
+<h3 id="start-cvat">Start CVAT</h3>
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading">Restart required</h4>
+
+    If CVAT is already running, don’t forget to restart the containers to apply the SSO configuration
+
+</div>
+
+<p>Once the configuration file is created, several environment variables must be exported before running CVAT:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">AUTH_CONFIG_PATH</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;path_to_auth_config&gt;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;cvat_host&gt;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># cvat_port is optional</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_BASE_URL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;http|https&gt;://</span><span style="color:#4e9a06">${</span><span style="color:#000">CVAT_HOST</span><span style="color:#4e9a06">}</span><span style="color:#4e9a06">:&lt;cvat_port&gt;&#34;</span>
+</span></span></code></pre></div><p>Start the CVAT Enterprise instance as usual.</p>
+<p>That&rsquo;s it! The CVAT login page now should have the <code>Continue with SSO</code> option,
+allowing users to authenticate using the configured Identity Provider.</p>
+<p><img src="/images/sso_enabled.jpeg" alt="Screenshot showing CVAT login page with SSO enabled"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-56144b1e7b897378eaa237549df3aaad">6 - Social auth configuration</h1>
+    <div class="lead">Social accounts authentication for a Self-Hosted solution</div>
+	
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    This is a paid feature available for <a href="https://www.cvat.ai/pricing/on-prem">Enterprise clients</a>.
+
+</div>
+
+<p>You can now easily set up authentication with popular social services, which opens doors to
+such benefits as:</p>
+<ul>
+<li>Convenience: you can use the existing
+social service credentials to sign in to CVAT.</li>
+<li>Time-saving: with just two clicks, you can
+sign in without the hassle of typing in credentials, saving time and effort.</li>
+<li>Security: social auth service providers have
+high-level security measures in place to protect your accounts.</li>
+</ul>
+<p>Currently, we offer three options:</p>
+<ul>
+<li><a href="#authentication-with-google">Authentication with Google</a></li>
+<li><a href="#authentication-with-github">Authentication with GitHub</a></li>
+<li><a href="#authentication-with-amazon-cognito">Authentication with Amazon Cognito</a></li>
+</ul>
+<p>With more to come soon. Stay tuned!</p>
+<h2 id="authentication-with-google">Authentication with Google</h2>
+<p>To enable authentication, do the following:</p>
+<ol>
+<li>
+<p>Log in to the <a href="https://console.cloud.google.com/">Google Cloud console</a></p>
+</li>
+<li>
+<p><a href="https://cloud.google.com/resource-manager/docs/creating-managing-projects">Create a project</a>,
+and go to <a href="https://console.cloud.google.com/apis/">APIs &amp; Services</a></p>
+</li>
+<li>
+<p>On the left menu, select <strong>OAuth consent</strong>, then select
+<strong>User type</strong> (<strong>Internal</strong> or <strong>External</strong>), and click <strong>Create</strong>.</p>
+</li>
+<li>
+<p>On the <strong>OAuth consent screen</strong> fill all required fields, and click <strong>Save and Continue</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Scopes</strong> screen, click <strong>Add or remove scopes</strong> and
+select <code>auth/userinfo.email</code>, <code>auth/userinfo.profile</code>, and <code>openid</code>.
+Click <strong>Update</strong>, and <strong>Save and Continue</strong>.
+<br>For more information, see <a href="https://developers.google.com/workspace/guides/configure-oauth-consent">Configure Auth Consent</a>.</p>
+</li>
+<li>
+<p>On the left menu, click <strong>Credentials</strong>, on the top
+menu click <strong>+ Create credentials</strong>, and select <strong>OAuth client ID</strong>.</p>
+</li>
+<li>
+<p>From the <strong>Application Type</strong> select <strong>Web application</strong> and
+configure: <strong>Application name</strong>, <strong>Authorized JavaScript origins</strong>, <strong>Authorized redirect URIs</strong>.
+<br> For example, if you plan to deploy CVAT instance on <code>https://localhost:8080</code>, add <code>https://localhost:8080</code>
+to authorized JS origins and <code>https://localhost:8080/api/auth/social/goolge/login/callback/</code> to redirect URIs.</p>
+</li>
+<li>
+<p>Create configuration file in CVAT:</p>
+<ol>
+<li>
+<p>Create the <code>auth_config.yml</code> file with the following content:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">social_account</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">google</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div></li>
+<li>
+<p>Set <code>AUTH_CONFIG_PATH=&quot;&lt;path_to_auth_config&gt;</code> environment variable.</p>
+</li>
+</ol>
+</li>
+<li>
+<p>In a terminal, run the following command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+</span></span></code></pre></div></li>
+</ol>
+<h2 id="authentication-with-github">Authentication with GitHub</h2>
+<p>There are 2 basic steps to enable GitHub account authentication.</p>
+<ol>
+<li>
+<p>Open the GitHub settings page.</p>
+</li>
+<li>
+<p>On the left menu, click <strong>&lt;&gt; Developer settings</strong> &gt; <strong>OAuth Apps</strong> &gt; <strong>Register new application</strong>.
+<br>For more information, see <a href="https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app">Creating an OAuth App</a></p>
+</li>
+<li>
+<p>Fill in the name field, set the homepage URL (for example: <code>https://localhost:8080</code>),
+and authentication callback URL (for example: <code>https://localhost:8080/api/auth/social/github/login/callback/</code>).</p>
+</li>
+<li>
+<p>Create configuration file in CVAT:</p>
+<ol>
+<li>
+<p>Create the <code>auth_config.yml</code> file with the following content:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">social_account</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">github</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;some_client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div></li>
+<li>
+<p>Set <code>AUTH_CONFIG_PATH=&quot;&lt;path_to_auth_config&gt;</code> environment variable.</p>
+</li>
+</ol>
+</li>
+<li>
+<p>In a terminal, run the following command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
+</span></span></code></pre></div></li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    You can also configure <a href="https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app">GitHub App</a>,
+but don&rsquo;t forget to add required permissions.
+<br>In the <strong>Permission</strong> &gt; <strong>Account permissions</strong> &gt; <strong>Email addresses</strong> must be set to <strong>read-only</strong>.
+
+</div>
+
+<h2 id="authentication-with-amazon-cognito">Authentication with Amazon Cognito</h2>
+<p>To enable authentication with Amazon Cognito for your CVAT instance, follow these steps:</p>
+<ol>
+<li>Create an <strong><a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html">Amazon Cognito pool</a></strong>
+(<em>Optional</em>)</li>
+<li>Set up a new app client</li>
+<li>Configure social authentication in CVAT</li>
+</ol>
+<p>Now, let’s dive deeper into how to accomplish these steps.</p>
+<h3 id="amazon-cognito-pool-creation">Amazon Cognito pool creation</h3>
+<p>This step is optional and should only be performed if a user pool has not already been created.
+To create a user pool, follow these instructions:</p>
+<ol>
+<li>Go to the <a href="https://console.aws.amazon.com/console/home">AWS Management Console</a></li>
+<li>Locate <code>Cognito</code> in the list of services</li>
+<li>Click <code>Create user pool</code></li>
+<li>Fill in the required fields</li>
+</ol>
+<h3 id="app-client-creation">App client creation</h3>
+<p>To create a new app client, follow these steps:</p>
+<ol>
+<li>Go to the details page of the created user pool</li>
+<li>Find the <code>App clients</code> item in the menu on the left</li>
+<li>Click <code>Create app client</code></li>
+<li>Fill out the form as shown bellow:
+<img src="/images/cognito_pool_1.png" alt="Create application client form in AWS with assigned parameters">
+<ul>
+<li><code>Application type</code>: <code>Traditional web application</code></li>
+<li><code>Application name</code>: Specify a desired name, or leave the autogenerated one</li>
+<li><code>Return URL</code> (<em>optional</em>): Specify the CVAT redirect URL
+(<code>&lt;http|https&gt;://&lt;cvat_domain&gt;/api/auth/social/amazon-cognito/login/callback/</code>).
+This setting can also be updated or specified later after the app client is created.</li>
+</ul>
+</li>
+<li>Navigate to the <code>Login pages</code> tab of the created app client</li>
+<li>Check the parameters in the <code>Managed login pages configuration</code> section and edit them if needed:
+<img src="/images/cognito_pool_2.png" alt="Managed login pages configuration in AWS with application parameters">
+<ul>
+<li><code>Allowed callback URLs</code>: Must be set to the CVAT redirect URL</li>
+<li><code>Identity providers</code>: Must be specified</li>
+<li><code>OAuth grant types</code>: The <code>Authorization code grant</code> must be selected</li>
+<li><code>OpenID Connect scopes</code>: <code>OpenID</code>, <code>Profile</code>, <code>Email</code> scopes must be selected</li>
+</ul>
+</li>
+</ol>
+<h3 id="setting-up-social-authentication-in-cvat">Setting up social authentication in CVAT</h3>
+<p>To configure social authentication in CVAT, create a configuration file
+(<code>auth_config.yml</code>) with the following content:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">social_account</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">amazon_cognito</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_id</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;client_id&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">client_secret</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;client_secret&gt;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">domain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">&lt;custom-domain&gt; or</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#000">https://&lt;custom-cognito-prefix&gt;.auth.us-east-1.amazoncognito.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>To find the <code>client_id</code> and <code>client_secret</code> values, navigate to the created app client page
+and check the <code>App client information</code> section. To find <code>domain</code>, look for the <code>Domain</code> item in the list on the left.</p>
+<p>Once the configuration file is updated, several environment variables must be exported before running CVAT:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">AUTH_CONFIG_PATH</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;path_to_auth_config&gt;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_HOST</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;cvat_host&gt;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># cvat_port is optional</span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">CVAT_BASE_URL</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;http|https&gt;://</span><span style="color:#4e9a06">${</span><span style="color:#000">CVAT_HOST</span><span style="color:#4e9a06">}</span><span style="color:#4e9a06">:&lt;cvat_port&gt;&#34;</span>
+</span></span></code></pre></div><p>Start the CVAT enterprise instance as usual.
+That&rsquo;s it! On the CVAT login page, you should now see the option <code>Continue with Amazon Cognito</code>.
+<img src="/images/login_page_with_amazon_cognito.png" alt="CVAT login page with social account authentication option"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-29b4a23552f4ee6f32f87f95cad0a27b">7 - Disable registration or password-based login</h1>
+    <div class="lead">Disallow users to create accounts or login using passwords for a Self-hosted solution</div>
+	
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    This is a paid feature available for <a href="https://www.cvat.ai/pricing/on-prem">Enterprise clients</a>.
+
+</div>
+
+<h1 id="update-authentication-config">Update authentication config</h1>
+<p>Please add the following lines to your <code>auth_config.yml</code> (or create such file if it does not exist)
+to prevent registering user accounts and disable password-based login:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">basic</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">registration</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">false</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">login</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">enabled</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">false</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>You may permit login, by changing the corresponding flag to <code>true</code>.</p>
+<h1 id="start-cvat">Start CVAT</h1>
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading">Restart required</h4>
+
+    If CVAT is already running, don&rsquo;t forget to restart the containers to apply authentication configuration.
+
+</div>
+
+<p>Once the configuration file is created/updated, export corresponding environment variable before running CVAT:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#204a87">export</span> <span style="color:#000">AUTH_CONFIG_PATH</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;&lt;path_to_auth_config&gt;&#34;</span>
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/js/prism.js'></script>
+<script src='/js/tabpane-persist.js'></script>
+
+  </body>
+</html>

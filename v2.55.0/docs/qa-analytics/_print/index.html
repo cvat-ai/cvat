@@ -1,0 +1,2446 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/v2.55.0/docs/qa-analytics/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/v2.55.0/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/v2.55.0/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/v2.55.0/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/v2.55.0/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/v2.55.0/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/v2.55.0/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/v2.55.0/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/v2.55.0/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/v2.55.0/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/v2.55.0/favicons/android-192x192.png" sizes="192x192">
+
+<title>QA &amp; Analytics | CVAT</title>
+<meta name="description" content="Learn how to ensure annotation quality with validation tools, Ground Truth jobs, Honeypots, and performance analytics.">
+<meta property="og:title" content="QA &amp; Analytics" />
+<meta property="og:description" content="Learn how to ensure annotation quality with validation tools, Ground Truth jobs, Honeypots, and performance analytics." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/v2.55.0/docs/qa-analytics/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="QA &amp; Analytics">
+<meta itemprop="description" content="Learn how to ensure annotation quality with validation tools, Ground Truth jobs, Honeypots, and performance analytics."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="QA &amp; Analytics"/>
+<meta name="twitter:description" content="Learn how to ensure annotation quality with validation tools, Ground Truth jobs, Honeypots, and performance analytics."/>
+
+
+
+
+<link rel="preload" href="/v2.55.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" as="style">
+<link href="/v2.55.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/v2.55.0/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.55.0/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.55.0/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.55.0/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/v2.55.0/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.55.0/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.55.0</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/../">Latest version</a></li>
+    <li><a class="dropdown-item" href="/../v2.56.1">v2.56.1</a></li>
+    <li><a class="dropdown-item" href="/../v2.55.0">v2.55.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.54.0">v2.54.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.53.0">v2.53.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.52.0">v2.52.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.51.0">v2.51.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/v2.55.0/offline-search-index.579fa831abee4183025add5f5d335950.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/v2.55.0/docs/qa-analytics/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">QA &amp; Analytics</h1>
+<div class="lead">Learn how to ensure annotation quality with validation tools, Ground Truth jobs, Honeypots, and performance analytics.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-7a109af81164ba302bd7d9f2b3d323a4">Quality control</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-16deb49f9681c0078f8579f207aaff4e">Manual QA and Review</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-2d67c04effff1ea9f6b6de6798cd528f">Automated QA, Review &amp; Honeypots</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-f74b38fe8f56b5506a388dbe71b91696">Consensus-based annotation</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-81c57b9360cd31086e2c13c8251ff505">Immediate job feedback</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6: <a href="#pg-69a4d332e7478ba2b813c2cf3a90f542">Analytics</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-7a109af81164ba302bd7d9f2b3d323a4">1 - Quality control</h1>
+    <div class="lead">Overview of quality control features</div>
+	<p>CVAT has the following features for automated quality control of annotations:</p>
+<ul>
+<li><a href="#how-to-enable-quality-control">Validation set configuration for a task</a></li>
+<li>Job validation on job finish (<a href="/v2.55.0/docs/qa-analytics/immediate-feedback/">Immediate feedback</a>)</li>
+<li><a href="#how-to-review-problems-found">Review mode for problems found</a></li>
+<li><a href="#how-to-check-task-quality-metrics">Quality analytics</a></li>
+</ul>
+<p>In this section, we highlight only the key steps in quality estimation.
+Consult the detailed guide on quality estimation in CVAT in the
+<a href="/v2.55.0/docs/qa-analytics/auto-qa/">Advanced section</a>.</p>
+<h2 id="how-to-enable-quality-control">How to enable quality control</h2>
+
+
+
+
+
+
+<ul class="nav nav-tabs" id="tabs-2" role="tablist">
+  <li class="nav-item">
+      <button class="nav-link active"
+          id="tabs-02-00-tab" data-bs-toggle="tab" data-bs-target="#tabs-02-00" role="tab"
+          aria-controls="tabs-02-00" aria-selected="true">
+        In a new task
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-02-01-tab" data-bs-toggle="tab" data-bs-target="#tabs-02-01" role="tab"
+          aria-controls="tabs-02-01" aria-selected="false">
+        In an existing task
+      </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs-2-content">
+    <div class="tab-body tab-pane fade show active"
+        id="tabs-02-00" role="tabpanel" aria-labelled-by="tabs-02-00-tab" tabindex="2">
+        <ol>
+<li>
+<p>Go to task creation</p>
+</li>
+<li>
+<p>Select the source media, configure other task parameters</p>
+</li>
+<li>
+<p>Scroll down to the <strong>Quality Control</strong> section</p>
+</li>
+<li>
+<p>Select one of the
+<a href="/v2.55.0/docs/qa-analytics/auto-qa/#validation-modes">validation modes</a> available</p>
+<p><img src="/images/honeypot09.jpg" alt="Create task with validation mode"></p>
+</li>
+<li>
+<p>Create the task</p>
+</li>
+<li>
+<p>Upload or create Ground Truth annotations in the Ground Truth job in the task</p>
+</li>
+<li>
+<p>Switch the Ground Truth job into the <code>acceptance</code> stage and <code>completed</code> state</p>
+</li>
+</ol>
+<p><img src="/images/honeypot10.jpg" alt="Set job status"></p>
+
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-02-01" role="tabpanel" aria-labelled-by="tabs-02-01-tab" tabindex="2">
+        <div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+<pre><code>For already existing tasks only the Ground Truth validation mode is available. If you want
+</code></pre>
+<p>to use Honeypots for your task, you will need to recreate the task.</p>
+</div>
+<ol>
+<li>
+<p>Open the task page</p>
+</li>
+<li>
+<p>Select the <code>+</code> button next to the job list</p>
+<p><img src="/images/honeypot01.jpg" alt="Create job"></p>
+</li>
+<li>
+<p>Select Job Type <strong>Ground truth</strong> and configure the job parameters</p>
+<p><img src="/images/honeypot02.jpg" alt="Configure job parameters"></p>
+</li>
+<li>
+<p>Upload or create Ground Truth annotations in the Ground Truth job in the task</p>
+</li>
+<li>
+<p>Switch the Ground Truth job into the <code>acceptance</code>stage and <code>completed</code> state</p>
+<p><img src="/images/honeypot10.jpg" alt="Set job status"></p>
+</li>
+</ol>
+
+    </div>
+</div>
+
+<h2 id="how-to-enable-immediate-job-feedback">How to enable immediate job feedback</h2>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    This feature requires a configured validation set in the task. Learn more
+in <a href="#how-to-enable-quality-control">How to enable quality control</a> and in the
+<a href="/v2.55.0/docs/qa-analytics/auto-qa/#configuring-quality-estimation">full guide</a>.
+
+</div>
+
+<ol>
+<li>
+<p>Open the task <strong>Actions</strong> menu &gt; <strong>Quality control</strong> &gt; <strong>Settings</strong></p>
+</li>
+<li>
+<p>Set <strong>Max validations per job</strong> to above zero. 3 is a good starting number</p>
+<p><img src="/images/immediate-feedback-quality-settings.png" alt="Configure job validations"></p>
+</li>
+<li>
+<p>Save the updated settings</p>
+</li>
+<li>
+<p>Assign an annotator to an annotation job</p>
+</li>
+<li>
+<p>Annotate the job</p>
+</li>
+<li>
+<p>Mark the job finished using the corresponding button in the menu</p>
+</li>
+<li>
+<p>Once the job is completed, you&rsquo;ll see the job validation dialog</p>
+</li>
+</ol>
+  <img src="/images/immediate-feedback-accept.png" style="max-width: 500px;">
+<p>Each assignee gets no more than the specified number of validation attempts.</p>
+<p>Learn more about this functionality in the
+<a href="/v2.55.0/docs/qa-analytics/immediate-feedback/">Immediate Feedback</a> section.</p>
+<h2 id="how-to-check-task-quality-metrics">How to check task quality metrics</h2>
+<ol>
+<li>
+<p>Open the task <strong>Actions</strong> menu &gt; <strong>Quality control</strong></p>
+</li>
+<li>
+<p>(Optional) Request quality metrics computation, and wait for completion</p>
+</li>
+<li>
+<p>Review summaries or detailed reports</p>
+<p><img src="/images/honeypot05.png" alt="Quality Analytics page"></p>
+</li>
+</ol>
+<p>Learn more about this functionality
+<a href="/v2.55.0/docs/qa-analytics/auto-qa/#quality-analytics">here</a>.</p>
+<h2 id="how-to-review-problems-found">How to review problems found</h2>
+<ol>
+<li>Open the task <strong>Actions</strong> menu &gt; <strong>Quality control</strong></li>
+<li>Find an annotation job to be reviewed, it must have at least 1 validation frame</li>
+<li>Select the job link</li>
+<li>Switch to the <strong>Review</strong> mode</li>
+<li>Enable display of Ground Truth annotations and conflicts</li>
+</ol>
+<p><img src="/images/honeypot06.gif" alt="GT conflict"></p>
+<p>Learn more about this functionality
+<a href="/v2.55.0/docs/qa-analytics/auto-qa/#reviewing-gt-conflicts">here</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-16deb49f9681c0078f8579f207aaff4e">2 - Manual QA and Review</h1>
+    <div class="lead">Guidelines on evaluating annotation quality in CVAT manually</div>
+	<p>In the demanding process of annotation, ensuring accuracy is paramount.</p>
+<p>CVAT introduces a specialized <strong>Review mode</strong>, designed to streamline the
+validation of annotations by pinpointing errors or discrepancies in annotation.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The <strong>Review mode</strong> is not applicable for 3D tasks.
+
+</div>
+
+<p>See:</p>
+<ul>
+<li><a href="#review-and-report-issues-review-only-mode">Review and report issues: review only mode</a>
+<ul>
+<li><a href="#assigning-reviewer">Assigning reviewer</a></li>
+<li><a href="#reporting-issues">Reporting issues</a></li>
+<li><a href="#quick-issue">Quick issue</a></li>
+<li><a href="#assigning-corrector">Assigning corrector</a></li>
+<li><a href="#correcting-reported-issues">Correcting reported issues</a></li>
+</ul>
+</li>
+<li><a href="#review-and-report-issues-review-and-correct-mode">Review and report issues: review and correct mode</a></li>
+<li><a href="#issues-navigation-and-interface">Issues navigation and interface</a>
+<ul>
+<li><a href="#issues-tab">Issues tab</a></li>
+<li><a href="#issues-workspace">Issues workspace</a></li>
+<li><a href="#issues-comments">Issues comments</a></li>
+</ul>
+</li>
+<li><a href="#manual-qa-complete-video-tutorial">Manual QA complete video tutorial</a></li>
+</ul>
+<h2 id="review-and-report-issues-review-only-mode">Review and report issues: review only mode</h2>
+<p>Review mode is a user interface (UI) setting where a specialized
+<strong>Issue</strong> tool is available. This tool allows you to identify
+and describe issues with objects or areas within the frame.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    While in review mode, all other tools will be hidden.
+
+</div>
+
+<p><strong>Review</strong> mode screen looks like the following:</p>
+<p><img src="/images/review_mode_screen.jpg" alt="Review mode screen"></p>
+<h3 id="assigning-reviewer">Assigning reviewer</h3>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Reviewers can be assigned by project or task owner, assignee, and maintainer.
+
+</div>
+
+<p>To assign a reviewer to the job, do the following:</p>
+<ol>
+<li>
+<p>Log in to the Owner or Maintainer account.</p>
+</li>
+<li>
+<p>(Optional) If the person you wish to assign as a reviewer
+is not a member of <strong>Organization</strong>, you
+need to <a href="/v2.55.0/docs/account_management/organization/#invite-members-into-organization">Invite this person to the <strong>Organization</strong></a>.</p>
+</li>
+<li>
+<p>Click on the <strong>Assignee</strong> field and select the reviewer.</p>
+</li>
+<li>
+<p>From the <strong>Stage</strong> drop-down list, select <strong>Validation</strong>.</p>
+<p><img src="/images/image194.jpg" alt="Assigning reviewer"></p>
+</li>
+</ol>
+<h3 id="reporting-issues">Reporting issues</h3>
+<p>To report an issue, do the following:</p>
+<ol>
+<li>
+<p>Log in to the reviewer&rsquo;s account.</p>
+</li>
+<li>
+<p>On the <strong>Controls</strong> sidebar, click <strong>Open and issue</strong> (<img src="/images/image195.jpg" alt="Open an issue button">).</p>
+</li>
+<li>
+<p>Click on the area of the frame where the issue is occurring,
+and the <strong>Issue report popup</strong> will appear.</p>
+<p><img src="/images/issue_report.jpg" alt="Issue report window"></p>
+</li>
+<li>
+<p>In the text field of the <strong>Issue report popup</strong>, enter the issue description.</p>
+</li>
+<li>
+<p>Click <strong>Submit</strong>.</p>
+</li>
+</ol>
+<h3 id="quick-issue">Quick issue</h3>
+<p>The <strong>Quick issue</strong> function streamlines the review process.
+It allows reviewers to efficiently select from a list of
+previously created issues or add a new one,
+facilitating a faster and more organized review.</p>
+<p><img src="/images/image231.jpg" alt="Quick issue"></p>
+<p>To create a <strong>Quick issue</strong> do the following:</p>
+<ol>
+<li>
+<p>Right-click on the area of the frame where the issue is occurring.</p>
+</li>
+<li>
+<p>From the popup menu select one of the following:</p>
+<ul>
+<li><strong>Open an issue&hellip;</strong>: to create new issue.</li>
+<li><strong>Quick issue: incorrect position</strong>: to report incorrect position of the label.</li>
+<li><strong>Quick issue: incorrect attribute</strong>: to report incorrect attribute of the label.</li>
+<li><strong>Quick issue&hellip;</strong>: to open the list of issues that were reported by you before.</li>
+</ul>
+</li>
+</ol>
+<h3 id="assigning-corrector">Assigning corrector</h3>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Only project owners and maintainers can assign reviewers.
+
+</div>
+
+<p>To assign a corrector to the job, do the following:</p>
+<ol>
+<li>
+<p>Log in to the Owner or Maintainer account.</p>
+</li>
+<li>
+<p>(Optional) If the person you wish to assign as a corrector
+is not a member of <strong>Organization</strong>, you
+need to <a href="/v2.55.0/docs/account_management/organization/#invite-members-into-organization">Invite this person to the <strong>Organization</strong></a>.</p>
+</li>
+<li>
+<p>Click on the <strong>Assignee</strong> field and select the reviewer.</p>
+</li>
+<li>
+<p>From the <strong>Stage</strong> drop-down list, select <strong>Annotation</strong>.</p>
+<p><img src="/images/image194_1.jpg" alt="Assigning corrector"></p>
+</li>
+</ol>
+<h3 id="correcting-reported-issues">Correcting reported issues</h3>
+<p>To correct the reported issue, do the following:</p>
+<ol>
+<li>
+<p>Log in to the corrector account.</p>
+</li>
+<li>
+<p>Go to the reviewed job and open it.</p>
+</li>
+<li>
+<p>Click on the issue report, to see details of
+what needs to be corrected.</p>
+<p><img src="/images/issue_report_label.jpg" alt="Issue report label"></p>
+</li>
+<li>
+<p>Correct annotation.</p>
+</li>
+<li>
+<p>Add a comment to the issue report and click <strong>Resolve</strong>.</p>
+<p><img src="/images/resolve_issue.jpg" alt="Issue report"></p>
+</li>
+<li>
+<p>After all issues are fixed save work, go to the <strong>Menu</strong> select the <strong>Change the job state</strong> and
+change state to <strong>Complete</strong>.</p>
+<p><img src="/images/image197.jpg" alt="Change job status"></p>
+</li>
+</ol>
+<h2 id="review-and-report-issues-review-and-correct-mode">Review and report issues: review and correct mode</h2>
+<p>The person, assigned as <a href="#assigning-reviewer">assigned as reviewer</a>
+can switch to correction mode and correct all annotation issues.</p>
+<p>To correct annotation issues as a reviewer, do the following:</p>
+<ol>
+<li>
+<p>Log in to the reviewer account.</p>
+</li>
+<li>
+<p>Go to the assigned job and open it.</p>
+</li>
+<li>
+<p>In the top right corner, from the drop-down list,
+select <strong>Standard</strong>.</p>
+<p><img src="/images/switch_to_standard_mode.jpg" alt="Change job status"></p>
+</li>
+</ol>
+<h2 id="issues-navigation-and-interface">Issues navigation and interface</h2>
+<p>This section describes navigation, interface and
+comments section.</p>
+<h3 id="issues-tab">Issues tab</h3>
+<p>The created issue will appear on the <strong>Objects</strong> sidebar, in the <strong>Issues</strong> tab.</p>
+<p><img src="/images/image196_detrac.jpg" alt="Example of &amp;ldquo;Issues&amp;rdquo; tab with highlighted buttons and issue list"></p>
+<p>It has has the following elements:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Arrows</td>
+<td>You can switch between issues by clicking on arrows</td>
+</tr>
+<tr>
+<td>Hide all issues</td>
+<td>Click on the eye icon to hide all issues</td>
+</tr>
+<tr>
+<td>Hide resolved issues</td>
+<td>Click on the check mark to hide only resolved issues</td>
+</tr>
+<tr>
+<td>Ground truth</td>
+<td>Show ground truth annotations and objects</td>
+</tr>
+</tbody>
+</table>
+<h3 id="issues-workspace">Issues workspace</h3>
+<p>In the workspace, you can click on the issue, and add a
+comment on the issue, remove (<strong>Remove</strong>) it, or resolve (<strong>Resolve</strong>) it.</p>
+<p><img src="/images/image232.jpg" alt="Example of &amp;ldquo;Issue&amp;rdquo; window with its settings"></p>
+<p>To reopen the resolved issue, click <strong>Reopen</strong>.</p>
+<p>You can easily access multiple issues created in one
+location by hovering over an issue and scrolling the mouse wheel.</p>
+<p><img src="/images/issues_scroll.gif" alt="Example of scrolling by issues created in one location in interface"></p>
+<h3 id="issues-comments">Issues comments</h3>
+<p>You can add as many comments as needed to the issue.</p>
+<p>In the Objects toolbar, only the first and last comments will be displayed</p>
+<p><img src="/images/issue_comments.png" alt="Issue comment example"></p>
+<p>You can copy and paste comments text.</p>
+<h2 id="manual-qa-complete-video-tutorial">Manual QA complete video tutorial</h2>
+<p>This video demonstrates the process:</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/7HxCpjdQt-c?si=xIho-KJLv4b__tRo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-2d67c04effff1ea9f6b6de6798cd528f">3 - Automated QA, Review &amp; Honeypots</h1>
+    <div class="lead">Guidelines for assessing annotation quality in CVAT automatically</div>
+	<p>In CVAT, it&rsquo;s possible to evaluate the quality of annotation through the creation
+of a validation subset of images. To estimate the task quality, CVAT compares
+all other jobs in the task against the established <strong>Ground truth</strong> job,
+and calculates annotation quality based on this comparison.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Quality estimation only supports
+2d tasks. It supports all the annotation types except 2d cuboids.
+
+</div>
+
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Quality estimation is available for projects, tasks, and jobs.
+
+</div>
+
+<p>CVAT has the following features for automated quality control of annotations:</p>
+<ul>
+<li>Validation set configuration for a task</li>
+<li>Job validation on job finish (&ldquo;<a href="/v2.55.0/docs/qa-analytics/immediate-feedback/">Immediate feedback</a>&rdquo;)</li>
+<li>Review mode for problems found</li>
+<li>Quality analytics</li>
+</ul>
+<h2 id="basics">Basics</h2>
+<p>There are several approaches to quality estimation used in the industry. In CVAT,
+we can use a method known as Ground Truth or Honeypots. The method assumes there are
+Ground Truth annotations for images in the dataset. This method is statistical,
+which means that we can use only a small portion of the whole dataset to
+estimate quality on the full dataset, so we don&rsquo;t need to annotate the whole dataset twice.
+Here we assume that the images in the dataset are similar (represent the same task).</p>
+<p>We will call the validation portion of the whole dataset (or a task in CVAT) a validation set.
+In practice, it is typically expected that annotations in the validation set are carefully
+validated and curated. It means that they are more expensive - creating them might require
+expert annotators or just several iterations of annotation and validation. It means that it&rsquo;s
+desirable to keep the validation set small enough. At the same time, it must be representative
+enough to provide reliable estimations. To achieve this, it&rsquo;s advised that the validation set
+images are sampled randomly and independently from the full dataset.
+That is, for the quality assurance to function correctly, the validation set must
+have some portion of the task frames, and the frames must be chosen randomly.</p>
+<p>Depending on the dataset size, data variance, and task complexity,
+<strong>5-15% of the data is typically good enough</strong> for quality estimation,
+while keeping extra annotation overhead for the Ground Truth acceptable.</p>
+<p>For example, in a typical <strong>task with 2000 frames</strong>, selecting <strong>just 5%</strong>,
+which is 100 extra frames to annotate, <strong>is enough</strong> to estimate the
+annotation quality. If the task contains <strong>only 30 frames</strong>, it&rsquo;s advisable to
+select <strong>8-10 frames</strong>, which is <strong>about 30%</strong>. It is more than 15%,
+but in the case of smaller datasets, we need more samples to estimate quality reliably,
+as data variance is higher.</p>
+<h2 id="ground-truth-jobs">Ground truth jobs</h2>
+<p>A <strong>Ground Truth job</strong> (GT job) is a way to represent the validation set in a CVAT task.
+This job is similar to regular annotation jobs - you can edit the annotations manually,
+use auto-annotation features, and import annotations in this job. There can be no more
+than 1 Ground Truth job in a task.</p>
+<p>To enable quality estimation in a task, you need to create a Ground truth job in the task,
+annotate it, switch the job stage to <code>acceptance</code>, and set the job state to <code>completed</code>.
+Once the Ground Truth job is configured, CVAT will start using this job for quality estimation.</p>
+<p>Read more about Ground Truth management <a href="#ground-truth-job-management">here</a>.</p>
+<h2 id="configuring-quality-estimation">Configuring quality estimation</h2>
+<p>There are 2 key components related to quality estimation configuration:
+Ground Truth jobs and Quality settings. Ground Truth jobs are configured at the Task level.
+In this section, we explain how to set up a Ground Truth job.
+Read more about quality settings <a href="#annotation-quality-settings">here</a>.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    A <strong>Ground truth</strong> job is considered <strong>configured</strong>
+if it is at the <strong>acceptance</strong> stage and in the <strong>completed</strong> state.
+
+</div>
+
+<p>A <em>configured</em> Ground Truth job is required for all quality computations in CVAT.</p>
+
+
+
+
+
+
+<ul class="nav nav-tabs" id="tabs-4" role="tablist">
+  <li class="nav-item">
+      <button class="nav-link active"
+          id="tabs-04-00-tab" data-bs-toggle="tab" data-bs-target="#tabs-04-00" role="tab"
+          aria-controls="tabs-04-00" aria-selected="true">
+        In a new task
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-04-01-tab" data-bs-toggle="tab" data-bs-target="#tabs-04-01" role="tab"
+          aria-controls="tabs-04-01" aria-selected="false">
+        In an existing task
+      </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs-4-content">
+    <div class="tab-body tab-pane fade show active"
+        id="tabs-04-00" role="tabpanel" aria-labelled-by="tabs-04-00-tab" tabindex="4">
+        <ol>
+<li>Go to the <a href="/v2.55.0/docs/workspace/tasks-page/#create-annotation-task">task creation</a> page</li>
+<li>Configure basic and advanced parameters according to your requirements, and attach a dataset to be annotated</li>
+<li>Scroll down to the <strong>Quality Control</strong> section below</li>
+<li>Select one of the <a href="#validation-modes">validation modes</a> available</li>
+</ol>
+<p><img src="/images/honeypot09.jpg" alt="Create task with validation mode"></p>
+<ol start="5">
+<li>Create the task and open the task page</li>
+<li>Upload or create Ground Truth annotations in the Ground Truth job in the task</li>
+<li>Switch the Ground Truth job into the <code>acceptance</code> stage and <code>completed</code> state</li>
+</ol>
+<p><img src="/images/honeypot10.jpg" alt="Set job status"></p>
+
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-04-01" role="tabpanel" aria-labelled-by="tabs-04-01-tab" tabindex="4">
+        <div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+<pre><code>For already existing tasks only the Ground Truth validation mode is available. If you want
+</code></pre>
+<p>to use Honeypots for your task, you will need to recreate the task.</p>
+</div>
+<ol>
+<li>Open the task page</li>
+<li>Click <strong>+</strong>.</li>
+</ol>
+<p><img src="/images/honeypot01.jpg" alt="Create job"></p>
+<ol start="3">
+<li>In the <strong>Add new job</strong> window, fill in the following fields:</li>
+</ol>
+<p><img src="/images/honeypot02.jpg" alt="Configure job parameters"></p>
+<ul>
+<li><strong>Job type</strong>: Use the default parameter <strong>Ground truth</strong>.</li>
+<li><strong>Frame selection method</strong>: Use the default parameter <strong>Random</strong>.</li>
+<li><strong>Quantity %</strong>: Set the desired percentage of frames for the Ground truth job.
+<br><strong>Note</strong> that when you use <strong>Quantity %</strong>, the <strong>Frames</strong> field will be autofilled.</li>
+<li><strong>Frame count</strong>: Set the desired number of frames for the Ground truth job.
+<br><strong>Note</strong> that when you use <strong>Frames</strong>, the <strong>Quantity %</strong> field will be autofilled.</li>
+<li><strong>Seed</strong>: (Optional) If you need to make the random selection reproducible, specify this number.
+It can be any integer number, the same value will yield the same random selection (given that the
+frame number is unchanged). <br> <strong>Note</strong> that if you want to use a
+custom frame sequence, you can do this using the server API instead,
+see <a href="/v2.55.0/docs/api_sdk/sdk/reference/apis/jobs-api/#create">Job API create()</a>.</li>
+</ul>
+<ol start="4">
+<li>Click <strong>Submit</strong>.</li>
+</ol>
+<p>The <strong>Ground truth</strong> job will appear in the jobs list.</p>
+<p><img src="/images/honeypot03.jpg" alt="Ground Truth job"></p>
+<ol start="5">
+<li>Annotate frames and save your work or upload annotations.</li>
+<li>Switch the Ground Truth job into the <code>acceptance</code> stage and <code>completed</code> state</li>
+</ol>
+<p><img src="/images/honeypot10.jpg" alt="Set job status"></p>
+
+    </div>
+</div>
+
+<h2 id="validation-modes">Validation modes</h2>
+<p>Currently, there are 2 validation modes available for tasks: <strong>Ground Truth</strong> and <strong>Honeypots</strong>.
+These names are often used interchangeably, but in CVAT they have some differences.
+Both modes rely on the use of Ground Truth annotations in a task,
+stored in a <a href="#ground-truth-jobs">Ground Truth job</a>, where they can be managed.</p>
+<h3 id="ground-truth">Ground Truth</h3>
+<p>In this mode some of the task frames are selected into the validation set, represented as a
+separate Ground Truth job. The regular annotation jobs in the task are not affected in any way.</p>
+<p>Ground Truth jobs can be created at the task creation automatically or
+manually at any moment later. They can also be removed manually at any moment.
+This validation mode is available for any tasks and annotations.</p>
+<p>This is a flexible mode that can be enabled or disabled at any moment without any disruptions
+to the annotation process.</p>
+<h4 id="frame-selection">Frame selection</h4>
+<p>This validation mode can use several frame selection methods.</p>
+<h5 id="random">Random</h5>
+<p>This is a simple method that selects frames into the validation set randomly,
+representing the <a href="#basics">basic approach</a>, described above.</p>
+<p>Parameters:</p>
+<ul>
+<li>frame count - the number or percent of the task frames to be used for validation.
+Can be specified as an absolute number in the <code>Frame count</code> field or a percent in the <code>Quantity</code>
+field. If there are both fields on the page, they are linked, which means changing one of them
+will adjust the other one automatically.</li>
+<li>random seed - a number to be used to initialize the random number generator. Can be useful if
+you want to create a reproducible sequence of frames.</li>
+</ul>
+<h5 id="random-per-job">Random per job</h5>
+<p>This method selects frames into the validation set randomly from each annotation job in the task.</p>
+<p>It solves one of the issues with the simple Random method that some of the jobs can get
+no validation frames, which makes it impossible to estimate quality in such jobs. Note
+that using this method can result in increased total size of the validation set.</p>
+<p>Parameters:</p>
+<ul>
+<li>frame count per job - the percent of the job frames to be used for validation.
+This method uses segment size of the task to select the same number of validation frames
+in each job, if possible. Can be specified as an absolute number in the <code>Frame count</code>
+field or a percent in the <code>Quantity per job</code> field. If there are both fields on the page,
+they are linked, which means changing one of them will adjust the other one automatically.</li>
+<li>random seed - a number to be used to initialize the random number generator. Can be useful if
+you want to create a reproducible sequence of frames.</li>
+</ul>
+<h3 id="honeypots">Honeypots</h3>
+<p>In this mode some random frames of the task are selected into the validation set.
+Then, validation frames are randomly mixed into regular annotation jobs.
+This mode can also be called &ldquo;Ground Truth pool&rdquo;, reflecting the way validation frames are used.
+This mode can only be used at task creation and cannot be changed later.</p>
+<p>The mode has some limitations on the compatible tasks:</p>
+<ul>
+<li>It&rsquo;s not possible to use it for an already existing task, the task has to be recreated.</li>
+<li>This mode assumes random frame ordering, so it is only available for image annotation tasks
+and not for ordered sequences like videos.</li>
+<li>Tracks are not supported in such tasks.</li>
+</ul>
+<p>The validation set can be managed after the task is created - annotations can be edited,
+frames can be excluded and restored, and honeypot frames in the regular jobs can be changed.
+However, it&rsquo;s not possible to select new validation frames after the task is created.
+The Ground truth job created for this validation mode cannot be deleted.</p>
+<p>Parameters:</p>
+<ul>
+<li>frame count per job (%) - the percent of job frames (segment size) to be <strong>added</strong> into each
+annotation job from the validation set. Can be specified in the <code>Overhead per job</code> field.</li>
+<li>total frame count (%) - the percent of the task frames to be included into the validation set.
+This value must result in at least <code>frame count per job</code> * <code>segment size</code> frames. Can be specified
+in the <code>Total honeypots</code> field.</li>
+</ul>
+<h3 id="mode-summary">Mode summary</h3>
+<p>Here is a brief comparison of the validation modes:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Aspect</strong></th>
+<th><strong>Ground Truth</strong></th>
+<th><strong>Honeypots</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>When can be used</td>
+<td>any time</td>
+<td>at task creation only</td>
+</tr>
+<tr>
+<td>Frame management options</td>
+<td>exclude, restore</td>
+<td>exclude, restore, change honeypots in jobs</td>
+</tr>
+<tr>
+<td>Ground Truth job management options</td>
+<td>create, delete</td>
+<td>create</td>
+</tr>
+<tr>
+<td>Task frame requirements</td>
+<td>-</td>
+<td>random ordering only</td>
+</tr>
+<tr>
+<td>Annotations</td>
+<td>any</td>
+<td>tracks are not supported</td>
+</tr>
+<tr>
+<td>Minimum validation frames count</td>
+<td>- <code>manual</code> and <code>random_uniform</code> - any</br> (but some jobs can get no validation frames)</br>- <code>random_per_job</code> - jobs count * GT frames per job</td>
+<td>not less than honeypots count per job</td>
+</tr>
+<tr>
+<td>Task annotation import</td>
+<td>GT annotations and regular annotations do not affect each other</td>
+<td>Annotations are imported both into the GT job and regular jobs. Annotations for validation frames are copied into corresponding honeypot frames.</td>
+</tr>
+<tr>
+<td>Task annotation export</td>
+<td>GT annotations and regular annotations do not affect each other</td>
+<td>Annotations for non-validation frames are exported as is. Annotations for validation frames are taken from the GT frames. Honeypot frames are skipped.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="choosing-the-right-mode">Choosing the right mode</h3>
+<p>Here are some examples on how to choose between these options. The general advice is to use
+Ground Truth for better flexibility, but keep in mind that it can require more resources for
+validation set annotation. Honeypots, on the other hand, can be beneficial if you want to
+minimize the number of validation images required, but the downside here is that there are some
+limitations on where this mode can be used.</p>
+<p>Example: a video annotation with tracks. In this case there is only 1 option -
+the Ground Truth mode, so just use it.</p>
+<p>Example: an image dataset annotation, image order is not important. Here you can use both options.
+You can choose Ground Truth for better flexibility in validation. This way, you will have the
+full control of validation frames in the task, annotation options won&rsquo;t be limited, and the
+regular jobs will not be affected in any way. However, if you have a limited budget
+for the validation (for instance, you have only a small number of validation frames) or you want
+to allow more scalability (with this approach the number of validation frames doesn&rsquo;t depend on
+the number of regular annotation jobs), it makes sense to consider using Honeypots instead.</p>
+<h2 id="quality-management">Quality management</h2>
+<p>If a task has a validation configured, there are several options to manage validation set images.
+With any of the validation modes, there will be a special Ground Truth (GT) job in the task.</p>
+<h3 id="validation-set-management">Validation set management</h3>
+<p>Validation frames can be managed on the task Quality Management page. Here it&rsquo;s possible to
+check the number of validation frames, current validation mode and review the frame details.
+For each frame you can see the number of uses in the task. When in the Ground Truth mode, this
+number will be 1 for all frames. With Honeypots, these numbers can be 0, 1 or more.</p>
+<h4 id="frame-changes">Frame changes</h4>
+<p>In both validation modes it&rsquo;s possible to exclude some of the validation frames
+from being used for validation. This can be useful if you find that some
+of the validation frames are &ldquo;bad&rdquo;, extra, or if they have incorrect annotations,
+which you don&rsquo;t want to fix. Once a frame is marked &ldquo;excluded&rdquo;, it will not be used
+for validation. There is also an option to restore a previously excluded frame if you decide so.</p>
+<p>There is an option to exclude or restore frames in bulk mode. To use it, select the frames needed
+using checkboxes, and click one of the buttons next to the table header.</p>
+<h4 id="ground-truth-job-management">Ground Truth job management</h4>
+<p>In the Ground Truth validation mode, there will be an option to remove the <a href="#ground-truth-jobs">Ground Truth job</a>
+from the task. It can be useful if you want to change validation set frames completely,
+add more frames, or remove some of the frames for any reason. This is available in the job
+Actions menu.</p>
+<p>In the Honeypots mode, it&rsquo;s not possible to add or remove the GT job, so it&rsquo;s not possible to
+add more validation frames.</p>
+<p><img src="/images/honeypot04.jpg" alt="Ground truth job actions"></p>
+<h3 id="create">Create</h3>
+<p>A Ground Truth job can be <a href="#configuring-quality-estimation">added manually</a>
+in a task without a selected validation mode or in a task with the Ground Truth validation mode,
+after the existing Ground Truth job is <a href="#delete">deleted manually</a>.</p>
+<h3 id="delete">Delete</h3>
+<p>To delete the Ground Truth job, do the following:</p>
+<ol>
+<li>Open the task and find the Ground Truth job in the jobs list.</li>
+<li>Click on three dots to open the menu.</li>
+<li>From the menu, select <strong>Delete</strong>.</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The Ground truth job in the &ldquo;Honeypots&rdquo; task validation mode cannot be deleted.
+
+</div>
+
+<h3 id="import-annotations">Import annotations</h3>
+<p>If you want to import annotations into the Ground truth job, do the following:</p>
+<ol>
+<li>Open the task and find the Ground truth job in the jobs list.</li>
+<li>Click on three dots to open the menu.</li>
+<li>From the menu, select <strong>Import annotations</strong>.</li>
+<li>Select import format and select file.</li>
+<li>Click <strong>OK</strong>.</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    If there are imported annotations for the frames that exist in the task,
+but are not included in the <strong>Ground truth</strong> job, they will be ignored.
+This way, you don&rsquo;t need to worry about &ldquo;cleaning up&rdquo; your Ground truth
+annotations for the whole dataset before importing them.
+Importing annotations for the frames that are not known in the task still raises errors.
+
+</div>
+
+<h3 id="export-annotations">Export annotations</h3>
+<p>To export annotations from the Ground Truth job, do the following:</p>
+<ol>
+<li>Open the task and find a job in the jobs list.</li>
+<li>Click on three dots to open the menu.</li>
+<li>From the menu, select <strong>Export annotations</strong>.</li>
+</ol>
+<h3 id="annotation-management">Annotation management</h3>
+<p>Annotations for validation frames can be displayed and edited in a special
+<a href="#ground-truth-jobs">Ground Truth job</a> in the task. You can edit the annotations manually,
+use auto-annotation features, import and export annotations in this job.</p>
+<p>In the Ground Truth task validation mode, annotations of the ground Truth job do not affect
+other jobs in any way. The Ground Truth job is just a separate job, which can only be
+changed directly. Annotations from <strong>Ground truth</strong> jobs are not included in the dataset
+export, they also cannot be imported during task annotations import
+or with automatic annotation for the task.</p>
+<p>In the Honeypots task validation mode, the annotations of the GT job also do not affect other
+jobs in any way. However, import and export of <strong>task</strong> annotations works differently.
+When importing <strong>task</strong> annotations, annotations for validation frames will be copied
+both into GT job frames and into corresponding honeypot frames in annotation jobs.
+When exporting <strong>task</strong> annotations, honeypot frames in annotation jobs will be ignored,
+and validation frames in the resulting dataset will get annotations from the GT job.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    That it means that exporting from a task with honeypots and importing the results back
+will result in changed annotations on the honeypot frames. If you want to backup annotations,
+use a task backup or export job annotations instead.
+
+</div>
+
+<p>Import and export of Ground Truth <strong>job</strong> annotations works the same way in both modes.</p>
+<p>Ground Truth jobs are included in task backups, so can be saved and restored this way.</p>
+<p>Import, Export, and Delete options are available from the Ground Truth job Actions menu.
+<a href="#ground-truth-job-management">Read more</a>.</p>
+<h3 id="annotation-quality-settings">Annotation quality settings</h3>
+<p>Quality settings provide options to tweak some aspects of annotation comparisons and
+quality estimation in general. For instance, you can configure which annotation overlap
+should be considered good enough or how specific annotation types must be compared.</p>
+<p>Quality settings can be set up at the Task or the Project level.
+If a task is not bound to a project, it uses its own quality settings.
+Tasks inside a project can use individual quality settings or inherit settings
+from the project they belong to. Read more about quality settings in projects
+<a href="#project-quality-settings">here</a>.</p>
+<p>To set up quality settings, open the <strong>Quality Settings</strong> tab on the <strong>Quality Control</strong> page
+for a task or project, available in the <strong>Actions</strong> menu.</p>
+<p><img src="/images/quality-control-actions-button.png" alt="Quality control button in the task actions menu"></p>
+<p>There is a number of parameters available for configuration.
+Hover the mouse over a <strong>?</strong> mark to display a description for a setting.</p>
+<p><img src="/images/quality-settings-overview.png" alt="Quality settings page"></p>
+<p>After the settings are updated, remember to save the values using the <strong>Save</strong> button.
+The updated settings will take effect on the next quality update.</p>
+<p>Annotation quality settings have the following parameters:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Parameter</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>General reporting</em></td>
+<td></td>
+</tr>
+<tr>
+<td>Target metric</td>
+<td>The primary metric used for quality estimation. It affects which metric is displayed in the UI and used for overall quality estimation.</td>
+</tr>
+<tr>
+<td>Job selection filter</td>
+<td>The filter for the jobs included in quality computation. Only jobs matching the filter criteria will be included in the quality results.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Immediate feedback</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Max validations per job</td>
+<td>Configures maximum job validations per assignment for the <a href="/v2.55.0/docs/qa-analytics/immediate-feedback/">Immediate feedback</a> feature.</td>
+</tr>
+<tr>
+<td>Target metric threshold</td>
+<td>Defines the minimal quality requirements in terms of the selected target metric. Serves as an acceptance threshold for the <a href="/v2.55.0/docs/qa-analytics/immediate-feedback/">Immediate feedback</a> feature.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Shape matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Min overlap threshold</td>
+<td>Min overlap threshold used for the distinction between matched and unmatched shapes. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks.</td>
+</tr>
+<tr>
+<td>Low overlap threshold</td>
+<td>Low overlap threshold used for the distinction between strong and weak matches. Only affects <em>Low overlap</em> warnings. It&rsquo;s supposed that <em>Min similarity threshold</em> &lt;= <em>Low overlap threshold</em>.</td>
+</tr>
+<tr>
+<td>Empty frames are annotated</td>
+<td>Consider frames annotated as &ldquo;empty&rdquo; if there are no annotations on a frame. If a frame is empty in both GT and job annotations, it will be considered a matching annotation.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Point and Skeleton matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OKS Sigma</td>
+<td>Relative size of points. The percent of the bbox side, used as the radius of the circle around the GT point, where the checked point is expected to be. For boxes with different width and height, the &ldquo;side&rdquo; is computed as a geometric mean of the width and height.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Point matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Point size base</td>
+<td>When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines a matching area for each GT point based on the object size. The point size base parameter allows configuring how to determine the object size. If set to <em>image_size</em>, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to <em>group_bbox_size</em>, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Polyline matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Relative thickness</td>
+<td>Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be.</td>
+</tr>
+<tr>
+<td>Check orientation</td>
+<td>Indicates that polylines have direction. Used to produce <em>Mismatching direction</em> warnings</td>
+</tr>
+<tr>
+<td>Min similarity gain (%)</td>
+<td>The minimal gain in IoU between the given and reversed line directions to consider the line inverted. Only useful with the <em>Check orientation</em> parameter.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Group matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compare groups</td>
+<td>Enables or disables annotation group checks. This check will produce <em>Group mismatch</em> warnings for grouped annotations, if the annotation groups do not match with the specified threshold. Each annotation within a group is expected to match with a corresponding annotation in a GT group.</td>
+</tr>
+<tr>
+<td>Min group match threshold</td>
+<td>Minimal IoU for groups to be considered matching, used when <em>Compare groups</em> is enabled.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Mask and polygon matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check object visibility</td>
+<td>Check for partially-covered annotations. Masks and polygons will be compared to each other.</td>
+</tr>
+<tr>
+<td>Min visibility threshold</td>
+<td>Minimal visible area percent of the mask annotations (polygons, masks). Used for reporting <em>Covered annotation</em> warnings, useful with the <em>Check object visibility</em> option.</td>
+</tr>
+<tr>
+<td>Match only visible parts</td>
+<td>Use only the visible part of the masks and polygons in comparisons.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="project-quality-settings">Project quality settings</h3>
+<p>In CVAT, it is possible to group tasks into projects to share common configurations or establish
+a logical grouping for datasets. In this section, we explain options for quality management
+inside projects.</p>
+<p>When tasks are inside a project, it can be convenient to reuse the same quality setup for
+all the project tasks. There is an option to use quality settings from the parent project
+for all or only for specific tasks inside a project. This is controlled by the corresponding
+toggle on the <strong>Quality control</strong> page of the task:</p>
+<p><img src="/images/quality-settings-inherit.png" alt="Task quality settings - inherit project settings"></p>
+<p>If some of the project tasks have individual settings, a notification is displayed
+on the project settings page. You can enforce project settings for all the project tasks
+by clicking the <strong>Force project settings</strong> button.</p>
+<p><img src="/images/quality-settings-force-project-settings-button.png" alt="Force projects settings button"></p>
+<p>By default, new tasks inside a project inherit the quality settings of the project.
+You can freely switch between these 2 modes without losing the individual configuration
+for the task.</p>
+<p>Updating project quality includes quality computation for all the nested tasks. If the task
+quality is updated in a specific task manually, project quality has to be recomputed to display
+relevant values.</p>
+<h3 id="job-filtering">Job filtering</h3>
+<p>Depending on the situation, you may need or don&rsquo;t need to include specific jobs in
+the quality report. For example, your workflow may require quality checks only for
+completed jobs or maybe you want to exclude jobs from a specific task from
+a project quality report. There is an option to filter which jobs are included in quality
+computations. You can configure this by changing the <em>Job selection filter</em>
+in quality settings. Only jobs matching the filter criteria will be included
+in the quality results. If a filter is changed, quality must be recomputed for the filter
+to take effect.</p>
+<p><img src="/images/quality-settings-job-selection.png" alt="Job selection filter"></p>
+<h2 id="comparisons">Comparisons</h2>
+<h3 id="tags">Tags</h3>
+<p>The equality is used for matching.</p>
+<h3 id="shapes">Shapes</h3>
+<p>A pair of shapes is considered matching, if both their shapes and labels match.
+For each shape, spatial parameters are matched first, then labels are matched.</p>
+<p>Each shape type can have their own spatial matching details. Specifically:</p>
+<ul>
+<li>
+<p>bounding box - <a href="https://en.wikipedia.org/wiki/Jaccard_index">IoU</a> (including rotation).
+For example, for a pair of bounding boxes it can be visualized this way:</p>
+<p><img src="/images/quality_comparison_bbox1.svg" alt="Bbox IoU"></p>
+<p></br><code>IoU = intersection area / union area</code>.</br>
+The green part is the intersection, and green, yellow and red ones together are the union.</p>
+</li>
+<li>
+<p>polygons, masks - IoU. Polygons and masks are considered interchangeable,
+which means a mask can be matched with a polygon and vice versa. Polygons and masks in groups
+are merged into a single object first.
+If the <a href="#annotation-quality-settings"><em>Match only visible parts</em></a> option is enabled,
+objects will be cut to only the visible (non-covered) parts only, which is determined by the
+shape z order.</p>
+</li>
+<li>
+<p>skeletons - The OKS metric <a href="https://cocodataset.org/#keypoints-eval">from the COCO</a>
+dataset is used. Briefly, each skeleton point gets a circular area around,
+determined by the <em>object size</em> (bounding box side) and <em>relative point size</em> (<em>sigma</em>) values,
+where this point can be matched with the specified probability. If a bounding box is grouped
+with the skeleton, it is used for object size computation, otherwise a bounding box of
+visible points of the skeleton is used.</p>
+<p>For example, consider a skeleton with 6 points and a square bounding box attached:</p>
+<p><img src="/images/quality_comparison_skeleton1.svg" alt="Skeleton OKS"></p>
+<p>In this example, the <em>Sigma</em> parameter is <code>0.05</code> (5%) of the bbox side.
+Areas shown in the green color cover ~68.2% (1 sigma) of the points,
+corresponding to each GT point. A point on the boundary of such an area will have ~88% of
+probability to be correct. The blue-colored zone contains ~95% (2 sigma) of the correct points
+for the corresponding GT point. A point on the boundary of such an area will have ~60% of
+probability to be correct. These probabilities are then averaged over the visible points of the
+skeleton, and the resulting values are compared against the <em>Min similarity threshold</em>
+to determine whether the skeletons are matching. <em>Sigma</em> corresponds to one
+from the <a href="https://en.wikipedia.org/wiki/Normal_distribution">normal distribution</a>.</p>
+</li>
+<li>
+<p>points - The OKS metric is used for each point group annotation. Same as for skeletons,
+<em>OKS Sigma</em> determines relative point sizes. The <em>Point size base</em> setting allows
+configuring whether points in point groups should use the group bounding box or the image space.
+Using image space for object size can be useful if you want to treat each point
+as a separate annotation.</p>
+</li>
+<li>
+<p>polylines - A pair of lines is considered matching if all the points of one line lie within
+a &ldquo;hull&rdquo; of the other one. The &ldquo;hull&rdquo; is determined as the area around the polyline, such as
+if the line had some &ldquo;thickness&rdquo;. For example, the black polyline can have a hull shown in
+the green color:</p>
+<p><img src="/images/quality_comparison_polylines1.png" alt="Polyline thickness and hull"></p>
+<p>The line thickness can be configured via the <em>Relative thickness</em> setting.
+The value is relative to the image side and determines a half of the hull width.</p>
+</li>
+<li>
+<p>ellipses - IoU, described in more detail above.</p>
+</li>
+</ul>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    2D cuboids are not supported.
+
+</div>
+
+<h3 id="tracks">Tracks</h3>
+<p>Tracks are split into separate shapes and compared on the per-frame basis with other tracks
+and shapes.</p>
+<h2 id="quality-analytics">Quality Analytics</h2>
+<p>Once the quality estimation is <a href="#configuring-quality-estimation">enabled in a task</a>
+and the Ground Truth job is configured, quality analytics becomes available
+for the task and its jobs.</p>
+<p>When you open the Quality Analytics page, it displays quality metrics from the most recent quality estimation.
+If it&rsquo;s your first time accessing the page, no quality report will be available yet.
+The date of the last computation is shown next to the report download button.</p>
+<p>If you want to request updating of quality metrics in a task (e.g. after the settings were changed),
+you can do this by pressing the <strong>Refresh</strong> button on the
+task <strong>Quality Management</strong> &gt; <strong>Analytics</strong> page.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The process of quality calculation may take up to several hours, depending on
+the amount of data and labeled objects, and is <strong>not updated immediately</strong> after task updates.
+
+</div>
+
+<p><img src="/images/honeypot11.jpg" alt="Quality Analytics page - refresh button"></p>
+<p>Once quality metrics are computed, they are available for detailed review on this page.
+Conflicts can be reviewed in the <a href="#reviewing-gt-conflicts">Review mode of jobs</a>.
+A job must have at least 1 validation frame (shown in the <strong>Frame intersection</strong> column) to
+be included in quality computation.</p>
+<h3 id="analytics-page-contents">Analytics page contents</h3>
+<p>The Analytics page has the following elements:</p>
+<p><img src="/images/honeypot05.png" alt="Quality Analytics page"></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mean annotation quality</td>
+<td>Displays the average quality of annotations, which includes: counts of the accurate annotations, total task annotations, ground truth annotations, accuracy, precision, and recall. The currently selected <em>Target metric</em> is displayed as the primary score.</td>
+</tr>
+<tr>
+<td>GT Conflicts</td>
+<td>Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the <strong>?</strong> icon for a detailed conflict report on your dataset.</td>
+</tr>
+<tr>
+<td>Issues</td>
+<td>Number of <a href="/v2.55.0/docs/qa-analytics/manual-qa/">opened issues</a>. If no issues were reported, 0 will be shown.</td>
+</tr>
+<tr>
+<td>Quality report</td>
+<td>Quality report in JSON format.</td>
+</tr>
+<tr>
+<td>Ground truth job data</td>
+<td>Information about ground truth job, including date, time, and number of issues.</td>
+</tr>
+<tr>
+<td>List of jobs</td>
+<td>List of all the jobs in the task</td>
+</tr>
+</tbody>
+</table>
+<p><img src="/images/honeypot12.jpg" alt="Jobs list"></p>
+<h3 id="problem-reporting">Problem Reporting</h3>
+<p>CVAT reports 2 possible error types: errors and warnings. Errors affect the resulting quality
+scores and highlight significant problems in annotations. Warnings do not affect the resulting
+quality metrics, but they still can highlight significant problems, depending on the project
+requirements.</p>
+<table>
+<thead>
+<tr>
+<th><strong>Problem</strong></th>
+<th><strong>Type</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Missing annotation</td>
+<td>error</td>
+<td>No matching annotation found in the regular job annotations. <a href="#annotation-quality-settings">Configured</a> by <em>Min overlap threshold</em> and shape type-specific parameters.</td>
+</tr>
+<tr>
+<td>Extra annotation</td>
+<td>error</td>
+<td>No matching annotation found in the GT job annotations. <a href="#annotation-quality-settings">Configured</a> by <em>Min overlap threshold</em> and shape type-specific parameters.</td>
+</tr>
+<tr>
+<td>Mismatching label</td>
+<td>error</td>
+<td>A GT and a regular job annotations match, but their labels are different.</td>
+</tr>
+<tr>
+<td>Low overlap</td>
+<td>warning</td>
+<td>A GT and a regular job annotations match, but the similarity is low. <a href="#annotation-quality-settings">Configured</a> by <em>Low overlap threshold</em>.</td>
+</tr>
+<tr>
+<td>Mismatching direction</td>
+<td>warning</td>
+<td>A GT and a regular lines match, but the lines have different direction. <a href="#annotation-quality-settings">Configured</a> by <em>Compare orientation</em>.</td>
+</tr>
+<tr>
+<td>Mismatching attributes</td>
+<td>warning</td>
+<td>A GT and a regular annotations match, but their attributes are different. <a href="#annotation-quality-settings">Configured</a> by <em>Compare attributes</em>.</td>
+</tr>
+<tr>
+<td>Mismatching groups</td>
+<td>warning</td>
+<td>A GT and a regular annotation groups do not match. <a href="#annotation-quality-settings">Configured</a> by <em>Compare groups</em>.</td>
+</tr>
+<tr>
+<td>Covered annotation</td>
+<td>warning</td>
+<td>The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified <em>z order</em>. <a href="#annotation-quality-settings">Configured</a> by <em>Check object visibility</em>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="quality-reports">Quality Reports</h3>
+<p>For each job included in quality computation there is a quality report downloading button on
+the <a href="#analytics-page-contents">Analytics page</a>. There is also a button to download the aggregated
+task quality report. These buttons provide an option to download a Quality Report for a task or job
+in JSON format. Such reports can be useful if you want to process quality reported by CVAT
+automatically in your scripts etc.</p>
+<p><img src="/images/quality_download_report.png" alt="Download report"></p>
+<p>Quality Reports contain quality metrics and conflicts, and include all the information
+available on the quality analytics page. You can find additional quality metrics in these reports,
+such as <em>mean_iou</em> for shapes, confusion matrices, per-label and per-frame quality estimations.</p>
+<p>Additional information on how to compute and use various metrics for dataset
+quality estimation is available <a href="https://en.wikipedia.org/wiki/Confusion_matrix">here</a>.</p>
+<h3 id="reviewing-gt-conflicts">Reviewing GT conflicts</h3>
+<p>To see GT Conflicts in the CVAT interface, go to <strong>Review</strong> &gt;
+<strong>Issues</strong> &gt; <strong>Show ground truth annotations and conflicts</strong>.</p>
+<p><img src="/images/honeypot06.gif" alt="GT conflicts review - enable"></p>
+<p>Ground Truth annotations are displayed with a dotted-line border.
+The associated label and the <code>(Ground Truth)</code> marker are shown on hovering.</p>
+<p>Upon hovering over an issue on the right-side panel with your mouse,
+the corresponding annotations are highlighted.</p>
+<p>Use arrows in the Issue toolbar to move between GT conflicts.</p>
+<p>To create an issue related to the conflict, right-click on the bounding box and from the
+menu select the type of issue you want to create.</p>
+<p><img src="/images/honeypot07.jpg" alt="GT conflicts review - create issue"></p>
+<h2 id="annotation-quality--honeypot-video-tutorial">Annotation quality &amp; Honeypot video tutorial</h2>
+<p>This video demonstrates the process:</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/0HtBnr_CZAM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f74b38fe8f56b5506a388dbe71b91696">4 - Consensus-based annotation</h1>
+    <div class="lead">Annotate the same data several times to get better annotations</div>
+	<p>With CVAT you can annotate the same data several times and then
+merge annotations automatically to obtain more reliable annotations.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Consensus merging only supports 2D tasks.
+It supports all annotation types except cuboids.
+
+</div>
+
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Consensus merging is currently available only for tasks and jobs.
+Projects are not supported.
+
+</div>
+
+<p>CVAT has the following features related to consensus-based annotation:</p>
+<ul>
+<li>Creation of <strong>consensus replica</strong> jobs for regular annotation jobs in a task</li>
+<li>Automatic merging for annotations inside <strong>consensus replica</strong> jobs</li>
+</ul>
+<h2 id="basics">Basics</h2>
+<p>If you want to improve the quality of your annotations, there are several widespread ways
+to achieve this. One of the methods is called <em>consensus-based annotation</em> or just <em>consensus</em>.
+In this method, the same data is annotated several times. Once there are several different
+annotations (&ldquo;opinions&rdquo;) for the same objects, they can be merged in order to obtain
+annotations of higher quality.</p>
+<p>Let&rsquo;s consider an explanatory example. Imagine there is a group of people and
+you want to learn whether something is true or not from them.
+To accomplish this, you decided to ask everyone and pick the most popular answer in the end.
+With such an idea, you can get many possible combinations of votes, including unanimous ones.
+This strategy is called <em>majority voting</em> - and it requires such a majority to exist.
+If there is an even number of votes for both options,
+you don&rsquo;t have enough information to prefer one of the options to the other,
+so, in general, it&rsquo;s desirable to have an odd number of people in the group.
+With larger groups the method becomes less sensitive to this requirement,
+as when the voters are independent and the question is meaningful,
+the answers are less likely to separate evenly between the possible options.
+This method can also be used if the question has more than 2 possible answers. In this case,
+there are more possible distributions of the votes, but the same logic can be applied.</p>
+<p>Returning back to datasets, consensus annotation works very similar to the example above.
+Each image is annotated several times, typically by different persons, then the resulting
+annotations are compared between each other and merged, using majority voting or
+a different strategy. The key advantage of consensus annotation is that it helps to reduce
+personal annotator bias in annotation. This improves the quality of annotation by filtering out
+errors, noise (variance) and outliers in the annotation, leaving only the most representative
+ones.</p>
+<p>Datasets, typically, have a large number of images and objects. This method of annotation
+requires several different annotations for the whole dataset, so it is expected to have
+several times of the annotation costs compared to the simple single-annotation approach.
+Depending on the annotation resources available, budget, and requirements,
+consensus annotation may or may not be feasible in a particular task.</p>
+<p>One application for this approach that can be recommended is Ground Truth annotation.
+This type of annotation typically requires especially high quality annotations, because
+it is used to validate model or annotator answers. Ground Truth is typically limited
+only to a small portion of the whole dataset images, for example 3%.
+If a 3- or 5-fold <em>consensus</em> is applied to GT annotations, it is possible to obtain
+more reliable GT annotations for 10-15% of the full dataset annotation cost.
+Once there is such a reliable GT dataset, it can be used for
+<a href="/v2.55.0/docs/qa-analytics/auto-qa/">annotator validation</a>,
+on the remaining dataset ensuring the quality metrics are representative and objective.</p>
+<h2 id="consensus-replica-jobs">Consensus replica jobs</h2>
+<p>A <strong>Consensus Replica job</strong> (<em>replica</em>) is the way to represent one of
+the annotator &ldquo;opinions&rdquo; in CVAT. <em>Consensus replicas</em> work similarly to regular
+annotation jobs - they can be assigned, annotated, imported and exported.
+When you decide to merge annotations from replicas, the results will be written to the
+parent annotation job.</p>
+<p>Key properties of consensus replica jobs:</p>
+<ul>
+<li><em>Replicas</em> are connected to annotation jobs. Each annotation job can have
+several related <em>replicas</em>.</li>
+<li>Only annotation jobs can have replicas. Ground Truth jobs cannot have replicas.</li>
+<li>Replicas use the same frame range as their parent annotation jobs.</li>
+<li>Annotations in replicas and parent jobs are independent from each other.
+Modifying a replica doesn&rsquo;t affect the parent job or other replicas and vice versa.
+Removing annotations in a parent job doesn&rsquo;t change annotations in its replicas.</li>
+<li>Replicas are not included in <em>task</em> annotation import or export.
+<em>Per-job</em> import and export still work for all job types, including replicas.</li>
+</ul>
+<p>Read more about merging <a href="#how-to-merge-all-replicas-in-a-task">here</a>.</p>
+<h2 id="workflow">Workflow</h2>
+<p>When annotating with consensus, the typical workflow looks this way:</p>
+<ol>
+<li>Create a task with consensus enabled. Optionally,
+<a href="/v2.55.0/docs/workspace/tasks-page/#create-annotation-task">configure validation</a></li>
+<li>Assign annotators to consensus replicas, wait until all the jobs are completed</li>
+<li>Once all replicas in a parent job are completed, merge annotations</li>
+<li>Review and resolve problems in the parent jobs</li>
+</ol>
+<h3 id="how-to-enable-consensus-in-a-task">How to enable consensus in a task</h3>
+<p>Consensus annotation is configured at the Task level. It can only be specified at task creation.
+If you want to enable consensus for one of your existing tasks, you&rsquo;ll need to recreate the task.</p>
+<ol>
+<li>Go to the <a href="/v2.55.0/docs/workspace/tasks-page/#create-annotation-task">task creation</a> page</li>
+<li>Configure basic and advanced parameters according to your requirements,
+and attach a dataset to be annotated.</li>
+<li>To enable consensus for the task, open the <strong>Advanced</strong> section and
+set <strong>Consensus Replicas</strong> to a value greater than 1.</li>
+</ol>
+<p><img src="/images/consensus-replicas-task-parameter.png" alt="Consensus replicas parameter image"></p>
+<ol>
+<li>Create the task and open the task page</li>
+</ol>
+<p>If a task has consensus enabled, you&rsquo;ll see the <strong>Consensus</strong> tag in the task summary.
+Existing <strong>Consensus replica</strong> jobs will be displayed in the job list under their parent
+annotation jobs.</p>
+<p><img src="/images/consensus-replicas-list-task.png" alt="Consensus replica jobs in the task job list"></p>
+<h3 id="merging">Merging</h3>
+<p>For a given parent job with related annotated consensus jobs, merging will
+match annotations between the replicas and save merged annotations into the parent job.</p>
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading">Warning</h4>
+
+    Please note that <strong>merging overrides annotations in the parent job</strong>.
+This operation cannot be undone. Please make sure that the parent job
+is ready for merging and backup annotations if needed.
+
+</div>
+
+<p>There are 2 merging options available:</p>
+<ul>
+<li>merge replicas in all available parent jobs in a task</li>
+<li>merge replicas in a specific parent job</li>
+</ul>
+<p>Merging is only available for a parent job if it is in the <strong>annotation</strong> stage and
+it has at least 1 replica not in the <strong>annotation</strong> - <strong>new</strong> stage and state.
+For simplicity, this can be read as &ldquo;if there are any annotated replicas in the parent job&rdquo;.</p>
+<p>After merging, parent jobs are switched to the <strong>completed</strong> state automatically.
+If you prefer merging at the task level, it is recommended to switch merged
+parent jobs to the <strong>validation</strong> stage after they are merged to exclude them from
+the next merging and avoid losing the reviewed annotations.</p>
+<h3 id="how-to-merge-all-replicas-in-a-task">How to merge all replicas in a task</h3>
+<ol>
+<li>Open the task <strong>Actions</strong> menu</li>
+<li>Click <strong>Merge consensus jobs</strong></li>
+</ol>
+<p><img src="/images/consensus-merge-task-jobs-button.png" alt="Task actions menu"></p>
+<ol>
+<li>Click <strong>Merge</strong> in the dialog window</li>
+</ol>
+<p><img src="/images/consensus-merge-task-dialog.png" alt="Consensus merge dialog"></p>
+<p>The operation can take some time to be completed. Once it is completed, you will
+receive a status notification in the top right corner.</p>
+<h3 id="how-to-merge-replicas-in-a-specific-parent-job">How to merge replicas in a specific parent job</h3>
+<ol>
+<li>Open the job <strong>Actions</strong> menu</li>
+<li>Click <strong>Merge consensus job</strong></li>
+</ol>
+<p><img src="/images/consensus-merge-job-actions.png" alt="Job actions menu"></p>
+<ol>
+<li>Click <strong>Merge</strong> in the dialog window</li>
+</ol>
+<p><img src="/images/consensus-merge-job-dialog.png" alt="Consensus merge dialog"></p>
+<p>The operation can take some time to be completed. Once it is completed, you will
+receive a status notification in the top right corner.</p>
+<h2 id="configuration">Configuration</h2>
+<h3 id="merging-settings">Merging settings</h3>
+<p>If you want to tweak some aspects of merging, you can do this on the
+<strong>Consensus Management</strong> page. It is available in the task <strong>Actions</strong> menu.
+Hover over the <strong>?</strong> marks to understand what each field represents.</p>
+<p>After you set values for the parameters, click the <strong>Save</strong> button.
+The updated settings will take effect on the next merging.</p>
+<p><img src="/images/consensus-settings.png" alt="Consensus settings page"></p>
+<p>The following parameters are available:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Parameter</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>General</em></td>
+<td></td>
+</tr>
+<tr>
+<td>Quorum</td>
+<td>The minimum percentage of replicas that must contain an annotation for it to be included in the results. The number is rounded up to get the job count. For instance, if there are 5 replicas in a parent job and quorum is 70%, an annotation will be included in the results only if it has ceil(5 * 0.7) = 4 votes from replicas.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Shape matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Min overlap</td>
+<td>Min overlap threshold used for the distinction between matched and unmatched annotations. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. Read more about annotation matching <a href="/v2.55.0/docs/qa-analytics/auto-qa/#comparisons">here</a>. Keep in mind that quality settings do not affect consensus merging.</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-81c57b9360cd31086e2c13c8251ff505">5 - Immediate job feedback</h1>
+    <div class="lead">Quick responses about job annotation quality</div>
+	<h2 id="overview">Overview</h2>
+<p>The basic idea behind this feature is to provide annotators with quick feedback on their
+performance in a job. When an annotator finishes a job, a dialog is displayed showing the
+quality of their annotations. The annotator can either agree or disagree with the feedback.
+If they disagree, they have the option to re-annotate the job and request feedback again.</p>
+<p>To ensure transparency with the annotator, the immediate feedback shows the computed score and
+the minimum required score. Information about the specific errors or frames that have errors is
+not available to annotators.</p>
+<p>Feedback is only available a limited number of times for each assignment, to prevent
+Ground Truth revealing by annotators. This is controlled by a configurable parameter, so
+it can be adjusted to the requirements of each project.</p>
+<h2 id="how-to-configure">How to configure</h2>
+<p>Immediate feedback settings, such as <code>Target metric</code>, <code>Target metric threshold</code>,
+<code>Max validations per job</code> and others, can be configured on the quality settings page.</p>
+<p>This feature is considered enabled if the <code>Max validations per job</code> is above 0. You can change
+the parameters any time.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    This feature requires a configured validation set in the task. Read more
+in the
+<a href="/v2.55.0/docs/qa-analytics/quality-control/#how-to-enable-quality-control">quality overview</a>
+section or in the
+<a href="/v2.55.0/docs/qa-analytics/auto-qa/#configuring-quality-estimation">full guide</a>.
+
+</div>
+
+<ol>
+<li>Open the task <strong>Actions</strong> menu &gt; <strong>Quality control</strong> &gt; <strong>Settings</strong></li>
+</ol>
+<p><img src="/images/immediate-feedback-quality-settings.png" alt="Configure job validations"></p>
+<ol start="2">
+<li>Set the <code>Target metric</code> and <code>Target metric threshold</code> values to what is required in your project.</li>
+<li>Set <strong>Max validations per job</strong> to above zero. 3 is a good starting number.</li>
+<li>Save the updated settings</li>
+</ol>
+<h2 id="how-to-receive-a-feedback">How to receive a feedback</h2>
+<ol>
+<li>Assign an annotator to an annotation job</li>
+<li>Annotate the job</li>
+<li>Mark the job finished using the corresponding button in the menu</li>
+<li>Once the job is completed, you&rsquo;ll see the job validation dialog</li>
+</ol>
+  <img src="/images/immediate-feedback-accept.png" style="max-width: 500px;">
+<p>Each assignee gets no more than the specified number of validation attempts.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    This functionality is only available in regular annotation jobs. For instance,
+it&rsquo;s not possible to use it in Ground Truth jobs.
+
+</div>
+
+<h3 id="available-feedbacks">Available feedbacks</h3>
+<p>There are three types of feedbacks available for different cases:</p>
+<ul>
+<li>Accepted</li>
+<li>Rejected, with an option to fix mistakes</li>
+<li>Finally rejected when the number of attempts is exhausted</li>
+</ul>
+<img src="/images/immediate-feedback-accept.png" style="max-width: 300px;">
+<img src="/images/immediate-feedback-reject.png" style="max-width: 300px;">
+<img src="/images/immediate-feedback-final-reject.png" style="max-width: 300px;">
+<h2 id="additional-details">Additional details</h2>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    <p>Immediate feedback has a default timeout of 20 seconds.
+Feedback may be unavailable for large jobs or when there are too many immediate feedback requests.
+In this case annotators do not see any feedback dialogs and annotate jobs as
+if the feature was disabled.</p>
+<p>The number of attempts does not decrease for staff members who have access to a job
+with ground truth annotations. For instance, if you&rsquo;re trying to test this feature as the task
+owner, you may be confused if you see the number of attempts doesn&rsquo;t decrease.</p>
+<p>The number of attempts resets when the job assignee is updated.</p>
+
+
+</div>
+
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-69a4d332e7478ba2b813c2cf3a90f542">6 - Analytics</h1>
+    <div class="lead">Learn how to access and analyze detailed data and metrics in CVAT Online and Enterprise.</div>
+	<p>CVAT provides analytics data for projects, tasks, and jobs to help
+you to track annotation progress and performance metrics at every level.
+Analytics support a wide range of use cases, including:</p>
+<ul>
+<li>Defining the working time a user spent on a job during a specific period.</li>
+<li>Tracking time spent in each job stage.</li>
+<li>Calculating the total number of ground truth objects in a project.</li>
+<li>Determining the number of ground truth images in a project.</li>
+<li>Checking interpolation rates to assess annotator efficiency.</li>
+<li>Identifying how many objects of a specific label were annotated in a resource.</li>
+<li>Calculating the average annotation speed of a user in a project or task.</li>
+<li>Analyzing how many objects or images were present in removed resources.</li>
+</ul>
+<p>Analytics is a paid feature available in CVAT Online (paid tiers) and CVAT Enterprise.</p>
+<p>In personal workspaces, analytics are available only to the workspace owner.
+In organizations, access depends on the user&rsquo;s
+<a href="/v2.55.0/docs/account_management/user-roles/#organization-roles-in-cvat">organizational role</a>:</p>
+<ul>
+<li><strong>Owners</strong> and <strong>Maintainers</strong>: Full access to all analytics.</li>
+<li><strong>Supervisors</strong>: Access only to analytics for visible projects, tasks, and jobs.</li>
+<li><strong>Workers</strong>: Access only to analytics for tasks and jobs assigned to them.
+Workers cannot update the analytics data.</li>
+</ul>
+<h2 id="access">Access</h2>
+<p>To open analytics:</p>
+
+
+
+
+
+
+
+
+<ul class="nav nav-tabs" id="tabs-1" role="tablist">
+  <li class="nav-item">
+      <button class="nav-link active"
+          id="tabs-01-00-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-00" role="tab"
+          aria-controls="tabs-01-00" aria-selected="true">
+        For a project
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-01-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-01" role="tab"
+          aria-controls="tabs-01-01" aria-selected="false">
+        For a task
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-02-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-02" role="tab"
+          aria-controls="tabs-01-02" aria-selected="false">
+        For a job
+      </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs-1-content">
+    <div class="tab-body tab-pane fade show active"
+        id="tabs-01-00" role="tabpanel" aria-labelled-by="tabs-01-00-tab" tabindex="1">
+        <ol>
+<li>Open <strong>Projects</strong>.</li>
+<li>Open the project menu using <img src="/images/openmenu.jpg" alt="Open menu">
+or open a project and select <strong>Actions</strong>.</li>
+<li>Select <strong>View analytics</strong>.</li>
+</ol>
+
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-01" role="tabpanel" aria-labelled-by="tabs-01-01-tab" tabindex="1">
+        <p>You can open analytics for a task using the <strong>Tasks</strong> or <strong>Projects</strong> pages.
+To open a task analytics on the <strong>Tasks</strong> page:</p>
+<ol>
+<li>Open <strong>Tasks</strong>.</li>
+<li>Open the <strong>Actions</strong> menu for a task, or open a task and select <strong>Actions</strong>.</li>
+<li>Select <strong>View analytics</strong>.</li>
+</ol>
+<p>To open a task analytics from a project:</p>
+<ol>
+<li>Open <strong>Projects</strong></li>
+<li>Open a project</li>
+<li>Open the <strong>Actions</strong> menu for a task.</li>
+<li>Select <strong>View analytics</strong>.</li>
+</ol>
+
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-02" role="tabpanel" aria-labelled-by="tabs-01-02-tab" tabindex="1">
+        <p>You can open analytics for a job using the <strong>Jobs</strong> or <strong>Tasks</strong> pages.
+To open a job analytics on the <strong>Jobs</strong> page:</p>
+<ol>
+<li>Open <strong>Jobs</strong>.</li>
+<li>Open the job menu using <img src="/images/openmenu.jpg" alt="Open menu"> button.</li>
+<li>Select <strong>View analytics</strong>.</li>
+</ol>
+<p>To open a job analytics from a task:</p>
+<ol>
+<li>Open <strong>Tasks</strong>.</li>
+<li>Open a task.</li>
+<li>Open the job menu using <img src="/images/openmenu.jpg" alt="Open menu"> button.</li>
+<li>Select <strong>View analytics</strong>.</li>
+</ol>
+
+    </div>
+</div>
+
+<h2 id="analytics-page">Analytics page</h2>
+<p>The <strong>Analytics</strong> page displays the data relevant to the specific resource (project, task, or job).
+Use the link in the page title to return to the corresponding project, task, or job.</p>
+<p>Analytics data is not fetched automatically. When you first open the <strong>Analytics</strong> page, it will be empty.
+To fetch and display the analytical data, select the <strong>Request</strong> button.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The analytical data is fetched for all resource children.
+So, when you request data for a task, the data for all task jobs is also fetched.
+
+</div>
+
+<p>Once the data is fetched and displayed on the page, you can check its relevance under the page title.
+A warning icon <img src="/images/warning-icon.svg" alt="Warning icon"> indicates
+that the resource was updated after the last analytics update.</p>
+<p>To update the data, select <img src="/images/fetch-data-button.svg" alt="Fetch analytics button"> button.</p>
+<p>The <strong>Analytics</strong> page includes:</p>
+<ul>
+<li><a href="#summary-tab"><strong>Summary</strong></a> tab.</li>
+<li><a href="#annotations-tab"><strong>Annotations</strong></a> tab.</li>
+<li><a href="#events"><strong>Events</strong></a> tab.</li>
+<li>Date filter.</li>
+<li><strong>Export events</strong> button.</li>
+</ul>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The date filter is applied to the <a href="#summary-tab"><strong>Summary</strong></a>
+and <a href="#events-tab"><strong>Events</strong></a> tabs.
+
+</div>
+
+<p>The <strong>Summary</strong> tab provides a statistics overview, while the <strong>Annotations</strong> and <strong>Events</strong> tabs
+contain the detailed data in table form.</p>
+<p>To download a CSV file with all event data, select the <strong>Export events</strong> button.</p>
+<h3 id="summary-tab">Summary tab</h3>
+<p><img src="/images/analytics/summary-tab.jpg" alt="Summary tab in Analytics"></p>
+<p>The <strong>Summary</strong> tab displays the quantitative metrics:</p>
+<ul>
+<li><strong>Objects diff</strong>: Difference between created and deleted objects in the selected time period.
+The value may be negative, if the number of the deleted objects exceeds the number of the
+created objects during the selected time period.</li>
+<li><strong>Total working time</strong>: Total hours spent across all users, based on annotation-related events.</li>
+<li><strong>Avg. annotation speed</strong>: Average number of objects annotated per hour.
+The value may be negative, if the number of the deleted objects exceeds the number of the
+created objects during the selected time period.</li>
+</ul>
+<p>The <strong>Summary</strong> tab includes charts for object statistics, annotation speed, and diagrams
+for annotation distribution by labels and types. Hover over a chart or diagram to display tooltips.</p>
+<h3 id="annotations-tab">Annotations tab</h3>
+<p><img src="/images/analytics/annotation-tab-detection.jpg" alt="Annotation tab in Analytics"></p>
+<p>The <strong>Annotations</strong> tab shows annotation statistics for:</p>
+<ul>
+<li><a href="/v2.55.0/docs/annotation/manual-annotation/shapes/shape-mode-basics/">Shape mode</a> (the <strong>Detections</strong> tab).</li>
+<li><a href="/v2.55.0/docs/annotation/manual-annotation/shapes/track-mode-basics/">Track mode</a> (the <strong>Tracking</strong> tab).</li>
+</ul>
+<p>Both tabs always reflect the current state of the resource.
+Each tab includes a filterable, customizable table
+(learn <a href="#working-with-tables">how to work with tables</a>).</p>
+<p>You can search entries by the <strong>Label name</strong> column:</p>
+<ol>
+<li>In the search box, enter the value or part of the value to find.</li>
+<li>Select <img src="/images/search-button.svg" alt="Search button"> button or press <em>Enter</em>.</li>
+</ol>
+<p>The <strong>Detection</strong> tab table contains the columns:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Column name</strong></th>
+<th><strong>Content</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Label ID</strong></td>
+<td>The ID of the label.</td>
+</tr>
+<tr>
+<td><strong>Label name</strong></td>
+<td>The name of the label.</td>
+</tr>
+<tr>
+<td>Columns with <a href="/v2.55.0/docs/annotation/manual-annotation/shapes/types-of-shapes/">label types names</a></td>
+<td>The number of objects per label type. By default, the columns with zero values are hidden.</td>
+</tr>
+<tr>
+<td><strong>Total shapes</strong></td>
+<td>The total number of all label shapes.</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>Tracking</strong> tab table contains the columns:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Column name</strong></th>
+<th><strong>Content</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Label ID</strong></td>
+<td>The ID of the label.</td>
+</tr>
+<tr>
+<td><strong>Label name</strong></td>
+<td>The name of the label.</td>
+</tr>
+<tr>
+<td>Columns with <a href="/v2.55.0/docs/annotation/manual-annotation/shapes/types-of-shapes/">label type names</a></td>
+<td>The number of objects per label type. By default, the columns with zero values are hidden.</td>
+</tr>
+<tr>
+<td><strong>Keyframes</strong></td>
+<td>The number of the label keyframes.</td>
+</tr>
+<tr>
+<td><strong>Interpolated</strong></td>
+<td>The number of <a href="/v2.55.0/docs/getting_started/vocabulary/#interpolation">interpolated frames</a> with the label.</td>
+</tr>
+<tr>
+<td><strong>Tracks</strong></td>
+<td>The number of the label <a href="/v2.55.0/docs/getting_started/vocabulary/#track">tracks</a>.</td>
+</tr>
+<tr>
+<td><strong>Total objects</strong></td>
+<td>The total number of all label objects.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="events-tab">Events tab</h3>
+<p><img src="/images/analytics/events-tab.jpg" alt="Events tab in Analytics"></p>
+<p>The <strong>Events</strong> tab displays the following metrics:</p>
+<ul>
+<li><strong>Total objects</strong>: Total number of objects in the filtered jobs.</li>
+<li><strong>Total images</strong>: Total number of images in the filtered jobs.</li>
+<li><strong>Total working time</strong>: Total user time spent.</li>
+<li><strong>Avg. annotation speed</strong>: : Average number of objects annotated per hour.</li>
+</ul>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    All metrics are recalculated when you apply the date or table filter.
+
+</div>
+
+<p>The <strong>Events</strong> tab table contains the aggregated events for the selected resource.
+Each event is defined by a unique status signature, which is a combination of the
+job’s assignee, stage, state, and the user who performed the action.
+As long as this status signature stays the same, all events are combined into one row.
+For example, if the same user creates two objects in the same job,
+the <strong>Events</strong> table will display one event that includes both actions.</p>
+<p>However, if the job’s status signature changes (for example, due to an action
+performed by a different user) the analytics register a new event. As a result,
+actions that might otherwise be aggregated are instead recorded as separate events in the table.</p>
+<p>You can filter the events by date range:</p>
+<ol>
+<li>Select the date filter near the page title.</li>
+<li>Select the first and last dates or enter them in <code>YYYY-MM-DD</code> format.</li>
+</ol>
+<p>If the date filter is empty, the <strong>Events</strong> tab shows the metrics and events
+for the lifetime of the project, task, or job.</p>
+<p>To reset the date range, select <img src="/images/clear-filter-button.svg" alt="Clear filter button">
+button in the date filter.</p>
+<p>You can search the table entries by values in <strong>Task name</strong>, <strong>Assignee</strong>, <strong>Stage</strong>, <strong>State</strong>, <strong>User</strong> columns:</p>
+<ol>
+<li>In the search box, enter the value or part of the value to find.</li>
+<li>Select <img src="/images/search-button.svg" alt="Search button"> button or press <em>Enter</em>.</li>
+</ol>
+<p>Other common operations with tables are described in the <a href="#working-with-tables"><strong>Working with tables</strong></a> paragraph.</p>
+<p>The events table columns:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Column name</strong></th>
+<th><strong>Content</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Task ID</strong></td>
+<td>The ID of the task. If the task exists (the <strong>Exists</strong> column has the value <code>true</code>), you can select the value to open the task.</td>
+</tr>
+<tr>
+<td><strong>Task name</strong></td>
+<td>The task name. By default, the column is hidden. Select the value to open the task.</td>
+</tr>
+<tr>
+<td><strong>Job ID</strong></td>
+<td>The ID of the job. If the job exists (the <strong>Exists</strong> column has the value <code>true</code>), you can select the value to open the job.</td>
+</tr>
+<tr>
+<td><strong>Type</strong></td>
+<td>The job (<strong>Job ID</strong>) type. Possible values: <code>Annotation</code>, <code>Ground truth</code>, <code>Consensus replica</code>.</td>
+</tr>
+<tr>
+<td><strong>Frame Count</strong></td>
+<td>The total number of frames in the job (<strong>Job ID</strong>)</td>
+</tr>
+<tr>
+<td><strong>Exists</strong></td>
+<td>Indicates if the job (<strong>Job ID</strong>) existed at the last data fetch.</td>
+</tr>
+<tr>
+<td><strong>Objects</strong></td>
+<td>The total number of existing objects on the job (<strong>Job ID</strong>) frames</td>
+</tr>
+<tr>
+<td><strong>Assignee</strong></td>
+<td>The job (<strong>Job ID</strong>) assignee when the event occurred.</td>
+</tr>
+<tr>
+<td><strong>Stage</strong></td>
+<td>The stage of the job (<strong>Job ID</strong>) when the event occurred.</td>
+</tr>
+<tr>
+<td><strong>State</strong></td>
+<td>The state of the job (<strong>Job ID</strong>) when the event occurred.</td>
+</tr>
+<tr>
+<td><strong>User</strong></td>
+<td>The name of the user who triggered the event.</td>
+</tr>
+<tr>
+<td><strong>Working time</strong></td>
+<td>Displays the total time in milliseconds spent during the events. By default, the column is hidden.</td>
+</tr>
+<tr>
+<td><strong>Start UTC time</strong></td>
+<td>UTC time when the event started.</td>
+</tr>
+<tr>
+<td><strong>End UTC time</strong></td>
+<td>UTC time when the event finished. By default, the column is hidden.</td>
+</tr>
+<tr>
+<td><strong>Created objects</strong></td>
+<td>The total number of created objects. By default, the column is hidden.</td>
+</tr>
+<tr>
+<td><strong>Updated objects</strong></td>
+<td>The total number of updated objects. By default, the column is hidden.</td>
+</tr>
+<tr>
+<td><strong>Deleted objects</strong></td>
+<td>The total number of deleted objects. By default, the column is hidden.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="working-with-tables">Working with tables</h2>
+<p>The tables in the <strong>Annotations</strong> and <strong>Events</strong> tabs support:</p>
+<ol>
+<li>
+<p>Exporting the data: select <img src="/images/export-button.svg" alt="Export button"> button.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Visible columns do not affect the file with exported data.
+It always contains the complete table with all columns and rows.
+
+</div>
+
+</li>
+<li>
+<p>Filtering entries by a custom rule: select <strong>Filter</strong>, and set filtering criteria.
+To learn more about how to set a filter, refer to the <strong><a href="/v2.55.0/docs/annotation/manual-annotation/utilities/filter/">Filter</a></strong>
+article.</p>
+</li>
+<li>
+<p>Clearing filters: select <strong>Clear filters</strong>.</p>
+</li>
+<li>
+<p>Customizing columns:</p>
+<ol>
+<li>Select <img src="/images/menu-button-vertical.svg" alt="Menu button"> above the right side of the table.</li>
+<li>Toggle the checkboxes for the columns to display or hide them in the table.</li>
+</ol>
+</li>
+<li>
+<p>Sorting entries: select the column name to apply sorting.
+The arrows near the column name indicate the applied sorting order. The arrow up indicates
+ascending order, the arrow down indicates descending order.
+You can sort the entries by one column only.</p>
+</li>
+</ol>
+<p>Large tables are split into pages. You can find the pagination controls under the table.
+You can also change the number of entries per page.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/v2.55.0/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/v2.55.0/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/v2.55.0/js/prism.js'></script>
+<script src='/v2.55.0/js/tabpane-persist.js'></script>
+
+  </body>
+</html>

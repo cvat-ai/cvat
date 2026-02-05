@@ -1,0 +1,1845 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<meta name="robots" content="index, follow">
+
+
+<link rel="shortcut icon" href="/v2.53.0/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/v2.53.0/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/v2.53.0/favicons/android-192x192.png" sizes="192x192">
+
+<title>Automated QA, Review &amp; Honeypots | CVAT</title>
+<meta name="description" content="Guidelines for assessing annotation quality in CVAT automatically">
+<meta property="og:title" content="Automated QA, Review &amp; Honeypots" />
+<meta property="og:description" content="Guidelines for assessing annotation quality in CVAT automatically" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://docs.cvat.ai/v2.53.0/docs/qa-analytics/auto-qa/" /><meta property="article:section" content="docs" />
+
+<meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Automated QA, Review &amp; Honeypots">
+<meta itemprop="description" content="Guidelines for assessing annotation quality in CVAT automatically">
+
+<meta itemprop="wordCount" content="5072">
+<meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Automated QA, Review &amp; Honeypots"/>
+<meta name="twitter:description" content="Guidelines for assessing annotation quality in CVAT automatically"/>
+
+
+
+
+<link rel="preload" href="/v2.53.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" as="style">
+<link href="/v2.53.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/v2.53.0/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-page">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.53.0/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.53.0/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.53.0/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/v2.53.0/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.53.0/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.53.0</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/../">Latest version</a></li>
+    <li><a class="dropdown-item" href="/../v2.56.1">v2.56.1</a></li>
+    <li><a class="dropdown-item" href="/../v2.55.0">v2.55.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.54.0">v2.54.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.53.0">v2.53.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.52.0">v2.52.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.51.0">v2.51.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/v2.53.0/offline-search-index.d48a47be58be9f41445f03ca06c95588.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+            <div id="td-sidebar-menu" class="td-sidebar__inner">
+  <div id="content-mobile">
+  <form class="td-sidebar__search d-flex align-items-center">
+    <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/v2.53.0/offline-search-index.d48a47be58be9f41445f03ca06c95588.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+    <button class="btn btn-link td-sidebar__toggle d-md-none p-0 ms-3 fas fa-bars" type="button" data-bs-toggle="collapse" data-bs-target="#td-section-nav" aria-controls="td-section-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    </button>
+  </form>
+  </div>
+  <div id="content-desktop"></div>
+  <nav class="collapse td-sidebar-nav" id="td-section-nav">
+    <ul class="td-sidebar-nav__section pe-md-3 ul-0">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-v2530docs-li">
+  <a href="/v2.53.0/docs/" title="CVAT Documentation" class="align-left ps-0 td-sidebar-link td-sidebar-link__section tree-root" id="m-v2530docs"><span class="">Home</span></a>
+  <ul class="ul-1">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsgetting_started-li">
+  <a href="/v2.53.0/docs/getting_started/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsgetting_started"><span class="">Getting Started</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsgetting_startedoverview-li">
+  <a href="/v2.53.0/docs/getting_started/overview/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsgetting_startedoverview"><span class="">CVAT Overview</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsgetting_startedvocabulary-li">
+  <a href="/v2.53.0/docs/getting_started/vocabulary/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsgetting_startedvocabulary"><span class="">Vocabulary</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsgetting_startedshortcuts-li">
+  <a href="/v2.53.0/docs/getting_started/shortcuts/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsgetting_startedshortcuts"><span class="">Shortcuts</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsproducts-li">
+  <a href="/v2.53.0/docs/products/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsproducts"><span class="">Products</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsproductsonline-li">
+  <a href="/v2.53.0/docs/products/online/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsproductsonline"><span class="">CVAT Online</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsproductsenterprise-li">
+  <a href="/v2.53.0/docs/products/enterprise/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsproductsenterprise"><span class="">CVAT Enterprise</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsproductscommunity-li">
+  <a href="/v2.53.0/docs/products/community/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsproductscommunity"><span class="">CVAT Community</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsworkspace-li">
+  <a href="/v2.53.0/docs/workspace/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsworkspace"><span class="">Workspace</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsworkspaceprojects-li">
+  <a href="/v2.53.0/docs/workspace/projects/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsworkspaceprojects"><span class="">Projects</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsworkspacetasks-page-li">
+  <a href="/v2.53.0/docs/workspace/tasks-page/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsworkspacetasks-page"><span class="">Tasks</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsworkspacejobs-page-li">
+  <a href="/v2.53.0/docs/workspace/jobs-page/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsworkspacejobs-page"><span class="">Jobs</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsworkspacecloud-storages-li">
+  <a href="/v2.53.0/docs/workspace/cloud-storages/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsworkspacecloud-storages"><span class="">Cloud storages</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsworkspaceattach-cloud-storage-li">
+  <a href="/v2.53.0/docs/workspace/attach-cloud-storage/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsworkspaceattach-cloud-storage"><span class="">Attach cloud storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsworkspacerequests-page-li">
+  <a href="/v2.53.0/docs/workspace/requests-page/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsworkspacerequests-page"><span class="">Requests</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsworkspacemodels-li">
+  <a href="/v2.53.0/docs/workspace/models/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsworkspacemodels"><span class="">Models</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsworkspacebulk-actions-li">
+  <a href="/v2.53.0/docs/workspace/bulk-actions/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsworkspacebulk-actions"><span class="">Bulk actions</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsworkspacesearch-li">
+  <a href="/v2.53.0/docs/workspace/search/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsworkspacesearch"><span class="">Search</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsaccount_management-li">
+  <a href="/v2.53.0/docs/account_management/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsaccount_management"><span class="">Account Management</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsaccount_managementregistration-li">
+  <a href="/v2.53.0/docs/account_management/registration/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsaccount_managementregistration"><span class="">Registration &amp; account access</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsaccount_managementuser-roles-li">
+  <a href="/v2.53.0/docs/account_management/user-roles/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsaccount_managementuser-roles"><span class="">User roles</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsaccount_managementorganization-li">
+  <a href="/v2.53.0/docs/account_management/organization/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsaccount_managementorganization"><span class="">Organization</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsaccount_managementsubscription-management-li">
+  <a href="/v2.53.0/docs/account_management/subscription-management/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsaccount_managementsubscription-management"><span class="">Subscription management</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsaccount_managementsso-li">
+  <a href="/v2.53.0/docs/account_management/sso/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsaccount_managementsso"><span class="">SSO configuration</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsaccount_managementsocial-accounts-configuration-li">
+  <a href="/v2.53.0/docs/account_management/social-accounts-configuration/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsaccount_managementsocial-accounts-configuration"><span class="">Social auth configuration</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsdataset_management-li">
+  <a href="/v2.53.0/docs/dataset_management/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsdataset_management"><span class="">Dataset Management</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsdataset_managementformats-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsdataset_managementformats"><span class="">Dataset formats</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-cvat-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-cvat/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-cvat"><span class="">CVAT for image</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-datumaro-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-datumaro/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-datumaro"><span class="">Datumaro</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-labelme-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-labelme/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-labelme"><span class="">LabelMe</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-mot-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-mot/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-mot"><span class="">MOT</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-mots-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-mots/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-mots"><span class="">MOTS</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-coco-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-coco/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-coco"><span class="">COCO</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-coco-keypoints-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-coco-keypoints/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-coco-keypoints"><span class="">COCO Keypoints</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-voc-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-voc/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-voc"><span class="">Pascal VOC</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-smask-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-smask/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-smask"><span class="">Segmentation Mask</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-yolo-ultralytics-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-yolo-ultralytics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-yolo-ultralytics"><span class="">Ultralytics YOLO</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-yolo-ultralytics-classification-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-yolo-ultralytics-classification/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-yolo-ultralytics-classification"><span class="">Ultralytics-YOLO-Classification</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-yolo-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-yolo/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-yolo"><span class="">YOLO</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-imagenet-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-imagenet/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-imagenet"><span class="">ImageNet</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-widerface-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-widerface/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-widerface"><span class="">Wider Face</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-camvid-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-camvid/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-camvid"><span class="">CamVid</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-vggface2-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-vggface2/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-vggface2"><span class="">VGGFace2</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-market1501-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-market1501/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-market1501"><span class="">Market-1501</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-icdar-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-icdar/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-icdar"><span class="">ICDAR13/15</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-openimages-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-openimages/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-openimages"><span class="">Open Images</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-cityscapes-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-cityscapes/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-cityscapes"><span class="">Cityscapes</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-kitti-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-kitti/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-kitti"><span class="">KITTI</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsdataset_managementformatsformat-lfw-li">
+  <a href="/v2.53.0/docs/dataset_management/formats/format-lfw/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementformatsformat-lfw"><span class="">LFW</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsdataset_managementimport-datasets-li">
+  <a href="/v2.53.0/docs/dataset_management/import-datasets/" title="Import annotations and data to CVAT" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementimport-datasets"><span class="">Import data to CVAT</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsdataset_managementexport-datasets-li">
+  <a href="/v2.53.0/docs/dataset_management/export-datasets/" title="Export annotations and data from CVAT" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementexport-datasets"><span class="">Export data from CVAT</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsdataset_managementbackup-li">
+  <a href="/v2.53.0/docs/dataset_management/backup/" title="Backup Task and Project" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementbackup"><span class="">Backup</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsdataset_managementdataset_manifest-li">
+  <a href="/v2.53.0/docs/dataset_management/dataset_manifest/" title="Dataset Manifest" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementdataset_manifest"><span class="">Dataset manifest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsdataset_managementdata-on-fly-li">
+  <a href="/v2.53.0/docs/dataset_management/data-on-fly/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsdataset_managementdata-on-fly"><span class="">Data preparation on the fly</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsannotation-li">
+  <a href="/v2.53.0/docs/annotation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotation"><span class="">Annotation</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsannotationannotation-editor-li">
+  <a href="/v2.53.0/docs/annotation/annotation-editor/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotationannotation-editor"><span class="">Editor</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationannotation-editornavbar-li">
+  <a href="/v2.53.0/docs/annotation/annotation-editor/navbar/" title="Menu and Navigation Bar" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationannotation-editornavbar"><span class="">Menu and Navbar</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationannotation-editormain-screen-li">
+  <a href="/v2.53.0/docs/annotation/annotation-editor/main-screen/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationannotation-editormain-screen"><span class="">Workspace</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationannotation-editorobjects-sidebar-li">
+  <a href="/v2.53.0/docs/annotation/annotation-editor/objects-sidebar/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationannotation-editorobjects-sidebar"><span class="">Objects sidebar</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationannotation-editorcontrols-sidebar-li">
+  <a href="/v2.53.0/docs/annotation/annotation-editor/controls-sidebar/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationannotation-editorcontrols-sidebar"><span class="">Controls sidebar</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationannotation-editorsettings-li">
+  <a href="/v2.53.0/docs/annotation/annotation-editor/settings/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationannotation-editorsettings"><span class="">Settings</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationannotation-editor3d-task-workspace-li">
+  <a href="/v2.53.0/docs/annotation/annotation-editor/3d-task-workspace/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationannotation-editor3d-task-workspace"><span class="">3D task workspace</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsannotationmanual-annotation-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotationmanual-annotation"><span class="">Manual Annotation</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsannotationmanual-annotationmodes-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/modes/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotationmanual-annotationmodes"><span class="">Annotation modes</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationmodessingle-shape-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/modes/single-shape/" title="Single shape" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationmodessingle-shape"><span class="">Single shape mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationmodestrack-mode-basics-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/modes/track-mode-basics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationmodestrack-mode-basics"><span class="">Track mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationmodesattribute-annotation-mode-basics-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/modes/attribute-annotation-mode-basics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationmodesattribute-annotation-mode-basics"><span class="">Attribute annotation mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationmodes3d-object-annotation-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/modes/3d-object-annotation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationmodes3d-object-annotation"><span class="">3D object annotation</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationmodesannotation-with-tags-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/modes/annotation-with-tags/" title="Annotation with tags" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationmodesannotation-with-tags"><span class="">Tags</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsannotationmanual-annotationshapes-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotationmanual-annotationshapes"><span class="">Annotation with shapes</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-rectangles-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-rectangles/" title="Annotation with rectangles" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-rectangles"><span class="">Rectangles</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesshape-mode-basics-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/shape-mode-basics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesshape-mode-basics"><span class="">Shape mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygons-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/" title="Annotation with polygons" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygons"><span class="">Polygons</span></a>
+  <ul class="ul-5 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonsmanual-drawing-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/manual-drawing/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonsmanual-drawing"><span class="">Manual drawing</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonsautomatic-borders-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/automatic-borders/" title="Drawing using automatic borders" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonsautomatic-borders"><span class="">Automatic borders</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonsedit-polygon-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/edit-polygon/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonsedit-polygon"><span class="">Edit polygon</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonstrack-mode-with-polygons-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/track-mode-with-polygons/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonstrack-mode-with-polygons"><span class="">Track mode with polygons</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonscreating-mask-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-polygons/creating-mask/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polygonscreating-mask"><span class="">Creating masks</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polylines-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-polylines/" title="Annotation with polylines" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-polylines"><span class="">Polylines</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapestrack-mode-basics-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/track-mode-basics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapestrack-mode-basics"><span class="">Track mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-points-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-points/" title="Annotation with points" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotationmanual-annotationshapesannotation-with-points"><span class="">Points</span></a>
+  <ul class="ul-5 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-pointspoints-in-shape-mode-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-points/points-in-shape-mode/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-pointspoints-in-shape-mode"><span class="">Points in shape mode</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-pointsliner-interpolation-with-one-point-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-points/liner-interpolation-with-one-point/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-pointsliner-interpolation-with-one-point"><span class="">Linear interpolation with one point</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-ellipses-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-ellipses/" title="Annotation with ellipses" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-ellipses"><span class="">Ellipses</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-cuboids-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-cuboids/" title="Annotation with cuboids" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotationmanual-annotationshapesannotation-with-cuboids"><span class="">Cuboids</span></a>
+  <ul class="ul-5 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-cuboidscreating-the-cuboid-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-cuboids/creating-the-cuboid/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-cuboidscreating-the-cuboid"><span class="">Creating the cuboid</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-cuboidsediting-the-cuboid-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-cuboids/editing-the-cuboid/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-cuboidsediting-the-cuboid"><span class="">Editing the cuboid</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesskeletons-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/skeletons/" title="Annotation with skeletons" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesskeletons"><span class="">Skeletons</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesannotation-with-brush-tool-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/annotation-with-brush-tool/" title="Annotation with brush tool" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesannotation-with-brush-tool"><span class="">Brush tool</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapestypes-of-shapes-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/types-of-shapes/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapestypes-of-shapes"><span class="">Types of shapes</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationshapesshape-grouping-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/shapes/shape-grouping/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationshapesshape-grouping"><span class="">Shape grouping</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsannotationmanual-annotationutilities-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/utilities/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotationmanual-annotationutilities"><span class="">Editing &amp; Utility Tools</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationutilitiesslice-and-join-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/utilities/slice-and-join/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationutilitiesslice-and-join"><span class="">Join and slice tools</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationutilitiesshapes-converter-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/utilities/shapes-converter/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationutilitiesshapes-converter"><span class="">Shapes converter</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationutilitiescontextual-images-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/utilities/contextual-images/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationutilitiescontextual-images"><span class="">Contextual images</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationmanual-annotationutilitiesfilter-li">
+  <a href="/v2.53.0/docs/annotation/manual-annotation/utilities/filter/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationmanual-annotationutilitiesfilter"><span class="">Filter</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsannotationspecification-li">
+  <a href="/v2.53.0/docs/annotation/specification/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationspecification"><span class="">Specification for annotators</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsannotationauto-annotation-li">
+  <a href="/v2.53.0/docs/annotation/auto-annotation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsannotationauto-annotation"><span class="">Automated Annotation</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationauto-annotationautomatic-annotation-li">
+  <a href="/v2.53.0/docs/annotation/auto-annotation/automatic-annotation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationauto-annotationautomatic-annotation"><span class="">Overview</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationauto-annotationsegment-anything-2-tracker-li">
+  <a href="/v2.53.0/docs/annotation/auto-annotation/segment-anything-2-tracker/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationauto-annotationsegment-anything-2-tracker"><span class="">Segment Anything 2 Tracker</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsannotationauto-annotationai-tools-li">
+  <a href="/v2.53.0/docs/annotation/auto-annotation/ai-tools/" title="AI Tools" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsannotationauto-annotationai-tools"><span class="">AI tools</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsguides-li">
+  <a href="/v2.53.0/docs/guides/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsguides"><span class="">Guides</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsguidesworkflow-org-li">
+  <a href="/v2.53.0/docs/guides/workflow-org/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsguidesworkflow-org"><span class="">Complete workflow guide for organizations</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsguidesserverless-tutorial-li">
+  <a href="/v2.53.0/docs/guides/serverless-tutorial/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsguidesserverless-tutorial"><span class="">Serverless tutorial</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-v2530docsqa-analytics-li">
+  <a href="/v2.53.0/docs/qa-analytics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsqa-analytics"><span class="">QA &amp; Analytics</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsqa-analyticsquality-control-li">
+  <a href="/v2.53.0/docs/qa-analytics/quality-control/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsqa-analyticsquality-control"><span class="">Quality control</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsqa-analyticsmanual-qa-li">
+  <a href="/v2.53.0/docs/qa-analytics/manual-qa/" title="Manual QA and Review" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsqa-analyticsmanual-qa"><span class="">Manual QA</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id="m-v2530docsqa-analyticsauto-qa-li">
+  <a href="/v2.53.0/docs/qa-analytics/auto-qa/" title="Automated QA, Review &amp; Honeypots" class="align-left ps-0 active td-sidebar-link td-sidebar-link__page" id="m-v2530docsqa-analyticsauto-qa"><span class="td-sidebar-nav-active-item">Automated QA</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsqa-analyticsconsensus-li">
+  <a href="/v2.53.0/docs/qa-analytics/consensus/" title="Consensus-based annotation" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsqa-analyticsconsensus"><span class="">Consensus</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsqa-analyticsimmediate-feedback-li">
+  <a href="/v2.53.0/docs/qa-analytics/immediate-feedback/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsqa-analyticsimmediate-feedback"><span class="">Immediate job feedback</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsqa-analyticsanalytics-li">
+  <a href="/v2.53.0/docs/qa-analytics/analytics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsqa-analyticsanalytics"><span class="">Analytics</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsintegration-li">
+  <a href="/v2.53.0/docs/integration/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsintegration"><span class="">Integrations</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsintegrationfiftyone-li">
+  <a href="/v2.53.0/docs/integration/fiftyone/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsintegrationfiftyone"><span class="">FiftyOne</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsintegrationhuman-protocol-li">
+  <a href="/v2.53.0/docs/integration/human-protocol/" title="CVAT and Human Protocol" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsintegrationhuman-protocol"><span class="">Human Protocol</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsadministration-li">
+  <a href="/v2.53.0/docs/administration/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsadministration"><span class="">System Administration</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsadministrationcommunity-li">
+  <a href="/v2.53.0/docs/administration/community/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsadministrationcommunity"><span class="">Community Deployment</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsadministrationcommunitybasics-li">
+  <a href="/v2.53.0/docs/administration/community/basics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsadministrationcommunitybasics"><span class="">Basics</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunitybasicsinstallation-li">
+  <a href="/v2.53.0/docs/administration/community/basics/installation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunitybasicsinstallation"><span class="">Installation Guide</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunitybasicsadmin-account-li">
+  <a href="/v2.53.0/docs/administration/community/basics/admin-account/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunitybasicsadmin-account"><span class="">Superuser registration</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunitybasicsaws-deployment-guide-li">
+  <a href="/v2.53.0/docs/administration/community/basics/aws-deployment-guide/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunitybasicsaws-deployment-guide"><span class="">AWS-Deployment Guide</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsadministrationcommunityadvanced-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsadministrationcommunityadvanced"><span class="">Advanced</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedcvat-architecture-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/cvat-architecture/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedcvat-architecture"><span class="">CVAT Architecture</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedk8s_deployment_with_helm-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/k8s_deployment_with_helm/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedk8s_deployment_with_helm"><span class="">CVAT deployment on Kubernetes with Helm</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedinstallation_automatic_annotation-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/installation_automatic_annotation/" title="Semi-automatic and Automatic Annotation" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedinstallation_automatic_annotation"><span class="">Installation Auto Annotation</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedanalytics-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/analytics/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedanalytics"><span class="">CVAT Analytics and monitoring</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedmounting_cloud_storages-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/mounting_cloud_storages/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedmounting_cloud_storages"><span class="">Mounting cloud storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedldap-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/ldap/" title="LDAP Backed Authentication" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedldap"><span class="">LDAP Login</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedbackup_guide-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/backup_guide/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedbackup_guide"><span class="">Backup guide</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedupgrade_guide-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/upgrade_guide/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedupgrade_guide"><span class="">Upgrade guide</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedwebhooks-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/webhooks/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedwebhooks"><span class="">Webhooks</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationcommunityadvancedcustom_certificates-li">
+  <a href="/v2.53.0/docs/administration/community/advanced/custom_certificates/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationcommunityadvancedcustom_certificates"><span class="">Custom Certificates</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsadministrationenterprise-li">
+  <a href="/v2.53.0/docs/administration/enterprise/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsadministrationenterprise"><span class="">Enterprise Deployment</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationenterprisedocker-li">
+  <a href="/v2.53.0/docs/administration/enterprise/docker/" title="Deployment with Docker Compose" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationenterprisedocker"><span class="">Docker Compose Deployment</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsadministrationenterprisekubernetes-li">
+  <a href="/v2.53.0/docs/administration/enterprise/kubernetes/" title="Deployment on Kubernetes" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsadministrationenterprisekubernetes"><span class="">Kubernetes Deployment</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsapi_sdk-li">
+  <a href="/v2.53.0/docs/api_sdk/" title="Developer Documentation" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsapi_sdk"><span class="">Developers</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsapi_sdkapi-li">
+  <a href="/v2.53.0/docs/api_sdk/api/" title="Server API" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsapi_sdkapi"><span class="">API</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docsapi_sdksdk-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/" title="CVAT Python SDK" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsapi_sdksdk"><span class="">SDK</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsapi_sdksdkreference-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/" title="SDK API Reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsapi_sdksdkreference"><span class="">API Reference</span></a>
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsapi_sdksdkreferenceapis-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsapi_sdksdkreferenceapis"><span class="">APIs</span></a>
+  <ul class="ul-5 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisassets-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/assets-api/" title="AssetsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisassets-api"><span class="">AssetsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisauth-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/auth-api/" title="AuthApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisauth-api"><span class="">AuthApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapiscloudstorages-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/cloudstorages-api/" title="CloudstoragesApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapiscloudstorages-api"><span class="">CloudstoragesApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapiscomments-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/comments-api/" title="CommentsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapiscomments-api"><span class="">CommentsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisconsensus-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/consensus-api/" title="ConsensusApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisconsensus-api"><span class="">ConsensusApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisevents-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/events-api/" title="EventsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisevents-api"><span class="">EventsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisguides-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/guides-api/" title="GuidesApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisguides-api"><span class="">GuidesApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisinvitations-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/invitations-api/" title="InvitationsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisinvitations-api"><span class="">InvitationsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisissues-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/issues-api/" title="IssuesApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisissues-api"><span class="">IssuesApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisjobs-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/jobs-api/" title="JobsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisjobs-api"><span class="">JobsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapislabels-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/labels-api/" title="LabelsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapislabels-api"><span class="">LabelsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapislambda-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/lambda-api/" title="LambdaApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapislambda-api"><span class="">LambdaApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapismemberships-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/memberships-api/" title="MembershipsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapismemberships-api"><span class="">MembershipsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisorganizations-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/organizations-api/" title="OrganizationsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisorganizations-api"><span class="">OrganizationsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisprojects-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/projects-api/" title="ProjectsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisprojects-api"><span class="">ProjectsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisquality-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/quality-api/" title="QualityApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisquality-api"><span class="">QualityApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisrequests-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/requests-api/" title="RequestsApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisrequests-api"><span class="">RequestsApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisschema-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/schema-api/" title="SchemaApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisschema-api"><span class="">SchemaApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisserver-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/server-api/" title="ServerApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisserver-api"><span class="">ServerApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapistasks-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/tasks-api/" title="TasksApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapistasks-api"><span class="">TasksApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapisusers-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/users-api/" title="UsersApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapisusers-api"><span class="">UsersApi</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferenceapiswebhooks-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/webhooks-api/" title="WebhooksApi class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferenceapiswebhooks-api"><span class="">WebhooksApi</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child collapse" id="m-v2530docsapi_sdksdkreferencemodels-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsapi_sdksdkreferencemodels"><span class="">Models</span></a>
+  <ul class="ul-5 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsabout-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/about/" title="About class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsabout"><span class="">About</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsaccept-invitation-read-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/accept-invitation-read/" title="AcceptInvitationRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsaccept-invitation-read"><span class="">AcceptInvitationRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsaccess-token-read-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/access-token-read/" title="AccessTokenRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsaccess-token-read"><span class="">AccessTokenRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsaccess-token-write-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/access-token-write-request/" title="AccessTokenWriteRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsaccess-token-write-request"><span class="">AccessTokenWriteRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsannotation-conflict-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/annotation-conflict/" title="AnnotationConflict class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsannotation-conflict"><span class="">AnnotationConflict</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsannotation-conflict-annotation-type-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/annotation-conflict-annotation-type/" title="AnnotationConflictAnnotationType class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsannotation-conflict-annotation-type"><span class="">AnnotationConflictAnnotationType</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsannotation-conflict-severity-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/annotation-conflict-severity/" title="AnnotationConflictSeverity class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsannotation-conflict-severity"><span class="">AnnotationConflictSeverity</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsannotation-conflict-type-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/annotation-conflict-type/" title="AnnotationConflictType class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsannotation-conflict-type"><span class="">AnnotationConflictType</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsannotation-file-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/annotation-file-request/" title="AnnotationFileRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsannotation-file-request"><span class="">AnnotationFileRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsannotation-guide-read-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/annotation-guide-read/" title="AnnotationGuideRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsannotation-guide-read"><span class="">AnnotationGuideRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsannotation-guide-write-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/annotation-guide-write-request/" title="AnnotationGuideWriteRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsannotation-guide-write-request"><span class="">AnnotationGuideWriteRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsannotation-id-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/annotation-id/" title="AnnotationId class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsannotation-id"><span class="">AnnotationId</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsannotation-id-shape-type-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/annotation-id-shape-type/" title="AnnotationIdShapeType class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsannotation-id-shape-type"><span class="">AnnotationIdShapeType</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsasset-read-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/asset-read/" title="AssetRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsasset-read"><span class="">AssetRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsattribute-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/attribute/" title="Attribute class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsattribute"><span class="">Attribute</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsattribute-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/attribute-request/" title="AttributeRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsattribute-request"><span class="">AttributeRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsattribute-val-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/attribute-val/" title="AttributeVal class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsattribute-val"><span class="">AttributeVal</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsattribute-val-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/attribute-val-request/" title="AttributeValRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsattribute-val-request"><span class="">AttributeValRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsbasic-organization-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/basic-organization/" title="BasicOrganization class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsbasic-organization"><span class="">BasicOrganization</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsbasic-user-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/basic-user/" title="BasicUser class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsbasic-user"><span class="">BasicUser</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsbasic-user-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/basic-user-request/" title="BasicUserRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsbasic-user-request"><span class="">BasicUserRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelschapter-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/chapter/" title="Chapter class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelschapter"><span class="">Chapter</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelschapter-metadata-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/chapter-metadata/" title="ChapterMetadata class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelschapter-metadata"><span class="">ChapterMetadata</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelschunk-type-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/chunk-type/" title="ChunkType class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelschunk-type"><span class="">ChunkType</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsclient-events-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/client-events/" title="ClientEvents class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsclient-events"><span class="">ClientEvents</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsclient-events-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/client-events-request/" title="ClientEventsRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsclient-events-request"><span class="">ClientEventsRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsclient-events-request-previous-event-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/client-events-request-previous-event/" title="ClientEventsRequestPreviousEvent class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsclient-events-request-previous-event"><span class="">ClientEventsRequestPreviousEvent</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelscloud-storage-content-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/cloud-storage-content/" title="CloudStorageContent class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelscloud-storage-content"><span class="">CloudStorageContent</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelscloud-storage-read-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/cloud-storage-read/" title="CloudStorageRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelscloud-storage-read"><span class="">CloudStorageRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelscloud-storage-read-owner-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/cloud-storage-read-owner/" title="CloudStorageReadOwner class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelscloud-storage-read-owner"><span class="">CloudStorageReadOwner</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelscloud-storage-write-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/cloud-storage-write-request/" title="CloudStorageWriteRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelscloud-storage-write-request"><span class="">CloudStorageWriteRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelscomment-read-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/comment-read/" title="CommentRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelscomment-read"><span class="">CommentRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelscomments-summary-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/comments-summary/" title="CommentsSummary class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelscomments-summary"><span class="">CommentsSummary</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelscomment-write-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/comment-write-request/" title="CommentWriteRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelscomment-write-request"><span class="">CommentWriteRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsconsensus-merge-create-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/consensus-merge-create-request/" title="ConsensusMergeCreateRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsconsensus-merge-create-request"><span class="">ConsensusMergeCreateRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsconsensus-settings-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/consensus-settings/" title="ConsensusSettings class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsconsensus-settings"><span class="">ConsensusSettings</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelscredentials-type-enum-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/credentials-type-enum/" title="CredentialsTypeEnum class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelscredentials-type-enum"><span class="">CredentialsTypeEnum</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsdata-meta-read-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/data-meta-read/" title="DataMetaRead class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsdata-meta-read"><span class="">DataMetaRead</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsdata-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/data-request/" title="DataRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsdata-request"><span class="">DataRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsdata-request-validation-params-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/data-request-validation-params/" title="DataRequestValidationParams class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsdata-request-validation-params"><span class="">DataRequestValidationParams</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsdata-response-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/data-response/" title="DataResponse class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsdata-response"><span class="">DataResponse</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsdataset-file-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/dataset-file-request/" title="DatasetFileRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsdataset-file-request"><span class="">DatasetFileRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsdataset-format-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/dataset-format/" title="DatasetFormat class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsdataset-format"><span class="">DatasetFormat</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsdataset-formats-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/dataset-formats/" title="DatasetFormats class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsdataset-formats"><span class="">DatasetFormats</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsevent-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/event/" title="Event class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsevent"><span class="">Event</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsevent-request-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/event-request/" title="EventRequest class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsevent-request"><span class="">EventRequest</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsevents-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/events/" title="Events class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsevents"><span class="">Events</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsevents-enum-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/events-enum/" title="EventsEnum class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsevents-enum"><span class="">EventsEnum</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsfile-info-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/file-info/" title="FileInfo class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsfile-info"><span class="">FileInfo</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkreferencemodelsfile-info-type-enum-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/reference/models/file-info-type-enum/" title="FileInfoTypeEnum class reference" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkreferencemodelsfile-info-type-enum"><span class="">FileInfoTypeEnum</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdklowlevel-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/lowlevel-api/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdklowlevel-api"><span class="">Low-level API</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkhighlevel-api-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/highlevel-api/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkhighlevel-api"><span class="">High-level API</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkpytorch-adapter-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/pytorch-adapter/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkpytorch-adapter"><span class="">PyTorch adapter</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkauto-annotation-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/auto-annotation/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkauto-annotation"><span class="">Auto-annotation API</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child collapse" id="m-v2530docsapi_sdksdkdeveloper-guide-li">
+  <a href="/v2.53.0/docs/api_sdk/sdk/developer-guide/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdksdkdeveloper-guide"><span class="">Developer guide</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsapi_sdkcli-li">
+  <a href="/v2.53.0/docs/api_sdk/cli/" title="Command line interface (CLI)" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsapi_sdkcli"><span class="">CLI</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsapi_sdkaccess_tokens-li">
+  <a href="/v2.53.0/docs/api_sdk/access_tokens/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docsapi_sdkaccess_tokens"><span class="">Access Tokens</span></a>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docsfaq-li">
+  <a href="/v2.53.0/docs/faq/" title="Frequently asked questions" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docsfaq"><span class="">FAQ</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-v2530docscontributing-li">
+  <a href="/v2.53.0/docs/contributing/" title="Contributing to CVAT Community" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-v2530docscontributing"><span class="">Contribution</span></a>
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingdevelopment-environment-li">
+  <a href="/v2.53.0/docs/contributing/development-environment/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingdevelopment-environment"><span class="">Development environment</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingsetup-additional-components-li">
+  <a href="/v2.53.0/docs/contributing/setup-additional-components/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingsetup-additional-components"><span class="">Setup additional components in development environment</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingcoding-style-li">
+  <a href="/v2.53.0/docs/contributing/coding-style/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingcoding-style"><span class="">Coding style</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingbranching-model-li">
+  <a href="/v2.53.0/docs/contributing/branching-model/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingbranching-model"><span class="">Branching model</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingusing-the-issue-tracker-li">
+  <a href="/v2.53.0/docs/contributing/using-the-issue-tracker/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingusing-the-issue-tracker"><span class="">Using the issue tracker</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingbug-reports-li">
+  <a href="/v2.53.0/docs/contributing/bug-reports/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingbug-reports"><span class="">Bug reports</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingfeature-requests-li">
+  <a href="/v2.53.0/docs/contributing/feature-requests/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingfeature-requests"><span class="">Feature requests</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingpull-requests-li">
+  <a href="/v2.53.0/docs/contributing/pull-requests/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingpull-requests"><span class="">Pull requests</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingnew-annotation-format-li">
+  <a href="/v2.53.0/docs/contributing/new-annotation-format/" title="How to add a new annotation format support" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingnew-annotation-format"><span class="">New annotation format support</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingserver-profiling-li">
+  <a href="/v2.53.0/docs/contributing/server-profiling/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingserver-profiling"><span class="">Server Profiling</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingrunning-tests-li">
+  <a href="/v2.53.0/docs/contributing/running-tests/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingrunning-tests"><span class="">Running tests</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-v2530docscontributingrepo-structure-li">
+  <a href="/v2.53.0/docs/contributing/repo-structure/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-v2530docscontributingrepo-structure"><span class="">Repository structure</span></a>
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+    </ul>
+  </nav>
+</div>
+
+          </aside>
+          <aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
+            
+<div class="td-page-meta ms-2 pb-1 pt-2 mb-0">
+<a href="https://github.com/cvat-ai/cvat/tree/develop/site/content/en/docs/qa-analytics/auto-qa.md" class="td-page-meta--view" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines fa-fw"></i> View page source</a>
+  <a href="https://github.com/cvat-ai/cvat/edit/develop/site/content/en/docs/qa-analytics/auto-qa.md" class="td-page-meta--edit" target="_blank" rel="noopener"><i class="fa-solid fa-pen-to-square fa-fw"></i> Edit this page</a>
+  <a href="https://github.com/cvat-ai/cvat/new/develop/site/content/en/docs/qa-analytics/auto-qa.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" class="td-page-meta--child" target="_blank" rel="noopener"><i class="fa-solid fa-pen-to-square fa-fw"></i> Create child page</a>
+  <a href="https://github.com/cvat-ai/cvat/issues/new?title=Automated%20QA,%20Review%20&amp;%20Honeypots" class="td-page-meta--issue" target="_blank" rel="noopener"><i class="fa-solid fa-list-check fa-fw"></i> Create documentation issue</a>
+  <a href="https://github.com/cvat-ai/cvat/issues/new" class="td-page-meta--project-issue" target="_blank" rel="noopener"><i class="fa-solid fa-list-check fa-fw"></i> Create project issue</a>
+  <a id="print" href="https://docs.cvat.ai/v2.53.0/docs/qa-analytics/_print/"><i class="fa-solid fa-print fa-fw"></i> Print entire section</a>
+
+</div>
+
+            <div class="td-toc">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#basics">Basics</a></li>
+    <li><a href="#ground-truth-jobs">Ground truth jobs</a></li>
+    <li><a href="#configuring-quality-estimation">Configuring quality estimation</a></li>
+    <li><a href="#validation-modes">Validation modes</a>
+      <ul>
+        <li><a href="#ground-truth">Ground Truth</a></li>
+        <li><a href="#honeypots">Honeypots</a></li>
+        <li><a href="#mode-summary">Mode summary</a></li>
+        <li><a href="#choosing-the-right-mode">Choosing the right mode</a></li>
+      </ul>
+    </li>
+    <li><a href="#quality-management">Quality management</a>
+      <ul>
+        <li><a href="#validation-set-management">Validation set management</a></li>
+        <li><a href="#create">Create</a></li>
+        <li><a href="#delete">Delete</a></li>
+        <li><a href="#import-annotations">Import annotations</a></li>
+        <li><a href="#export-annotations">Export annotations</a></li>
+        <li><a href="#annotation-management">Annotation management</a></li>
+        <li><a href="#annotation-quality-settings">Annotation quality settings</a></li>
+        <li><a href="#project-quality-settings">Project quality settings</a></li>
+        <li><a href="#job-filtering">Job filtering</a></li>
+      </ul>
+    </li>
+    <li><a href="#comparisons">Comparisons</a>
+      <ul>
+        <li><a href="#tags">Tags</a></li>
+        <li><a href="#shapes">Shapes</a></li>
+        <li><a href="#tracks">Tracks</a></li>
+      </ul>
+    </li>
+    <li><a href="#quality-analytics">Quality Analytics</a>
+      <ul>
+        <li><a href="#analytics-page-contents">Analytics page contents</a></li>
+        <li><a href="#problem-reporting">Problem Reporting</a></li>
+        <li><a href="#quality-reports">Quality Reports</a></li>
+        <li><a href="#reviewing-gt-conflicts">Reviewing GT conflicts</a></li>
+      </ul>
+    </li>
+    <li><a href="#annotation-quality--honeypot-video-tutorial">Annotation quality &amp; Honeypot video tutorial</a></li>
+  </ul>
+</nav>
+      </div>
+    
+            
+
+          </aside>
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+  
+
+            <nav aria-label="breadcrumb" class="td-breadcrumbs">
+  <ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="https://docs.cvat.ai/v2.53.0/docs/">Home</a></li>
+  <li class="breadcrumb-item">
+    <a href="https://docs.cvat.ai/v2.53.0/docs/qa-analytics/">QA &amp; Analytics</a></li>
+  <li class="breadcrumb-item active" aria-current="page">
+    Automated QA</li>
+  </ol>
+</nav>
+            
+
+<article class="td-content">
+
+  <header>
+    <h1>Automated QA, Review &amp; Honeypots</h1>
+  </header>
+
+  
+
+
+  <hr class="product-tags-separator">
+
+  <div class="content">
+    <p>In CVAT, it&rsquo;s possible to evaluate the quality of annotation through the creation
+of a validation subset of images. To estimate the task quality, CVAT compares
+all other jobs in the task against the established <strong>Ground truth</strong> job,
+and calculates annotation quality based on this comparison.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Quality estimation only supports
+2d tasks. It supports all the annotation types except 2d cuboids.
+
+</div>
+
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Quality estimation is available for projects, tasks, and jobs.
+
+</div>
+
+<p>CVAT has the following features for automated quality control of annotations:</p>
+<ul>
+<li>Validation set configuration for a task</li>
+<li>Job validation on job finish (&ldquo;<a href="/v2.53.0/docs/qa-analytics/immediate-feedback/">Immediate feedback</a>&rdquo;)</li>
+<li>Review mode for problems found</li>
+<li>Quality analytics</li>
+</ul>
+<h2 id="basics">Basics</h2>
+<p>There are several approaches to quality estimation used in the industry. In CVAT,
+we can use a method known as Ground Truth or Honeypots. The method assumes there are
+Ground Truth annotations for images in the dataset. This method is statistical,
+which means that we can use only a small portion of the whole dataset to
+estimate quality on the full dataset, so we don&rsquo;t need to annotate the whole dataset twice.
+Here we assume that the images in the dataset are similar (represent the same task).</p>
+<p>We will call the validation portion of the whole dataset (or a task in CVAT) a validation set.
+In practice, it is typically expected that annotations in the validation set are carefully
+validated and curated. It means that they are more expensive - creating them might require
+expert annotators or just several iterations of annotation and validation. It means that it&rsquo;s
+desirable to keep the validation set small enough. At the same time, it must be representative
+enough to provide reliable estimations. To achieve this, it&rsquo;s advised that the validation set
+images are sampled randomly and independently from the full dataset.
+That is, for the quality assurance to function correctly, the validation set must
+have some portion of the task frames, and the frames must be chosen randomly.</p>
+<p>Depending on the dataset size, data variance, and task complexity,
+<strong>5-15% of the data is typically good enough</strong> for quality estimation,
+while keeping extra annotation overhead for the Ground Truth acceptable.</p>
+<p>For example, in a typical <strong>task with 2000 frames</strong>, selecting <strong>just 5%</strong>,
+which is 100 extra frames to annotate, <strong>is enough</strong> to estimate the
+annotation quality. If the task contains <strong>only 30 frames</strong>, it&rsquo;s advisable to
+select <strong>8-10 frames</strong>, which is <strong>about 30%</strong>. It is more than 15%,
+but in the case of smaller datasets, we need more samples to estimate quality reliably,
+as data variance is higher.</p>
+<h2 id="ground-truth-jobs">Ground truth jobs</h2>
+<p>A <strong>Ground Truth job</strong> (GT job) is a way to represent the validation set in a CVAT task.
+This job is similar to regular annotation jobs - you can edit the annotations manually,
+use auto-annotation features, and import annotations in this job. There can be no more
+than 1 Ground Truth job in a task.</p>
+<p>To enable quality estimation in a task, you need to create a Ground truth job in the task,
+annotate it, switch the job stage to <code>acceptance</code>, and set the job state to <code>completed</code>.
+Once the Ground Truth job is configured, CVAT will start using this job for quality estimation.</p>
+<p>Read more about Ground Truth management <a href="#ground-truth-job-management">here</a>.</p>
+<h2 id="configuring-quality-estimation">Configuring quality estimation</h2>
+<p>There are 2 key components related to quality estimation configuration:
+Ground Truth jobs and Quality settings. Ground Truth jobs are configured at the Task level.
+In this section, we explain how to set up a Ground Truth job.
+Read more about quality settings <a href="#annotation-quality-settings">here</a>.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    A <strong>Ground truth</strong> job is considered <strong>configured</strong>
+if it is at the <strong>acceptance</strong> stage and in the <strong>completed</strong> state.
+
+</div>
+
+<p>A <em>configured</em> Ground Truth job is required for all quality computations in CVAT.</p>
+
+
+
+
+
+
+<ul class="nav nav-tabs" id="tabs-4" role="tablist">
+  <li class="nav-item">
+      <button class="nav-link active"
+          id="tabs-04-00-tab" data-bs-toggle="tab" data-bs-target="#tabs-04-00" role="tab"
+          aria-controls="tabs-04-00" aria-selected="true">
+        In a new task
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-04-01-tab" data-bs-toggle="tab" data-bs-target="#tabs-04-01" role="tab"
+          aria-controls="tabs-04-01" aria-selected="false">
+        In an existing task
+      </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs-4-content">
+    <div class="tab-body tab-pane fade show active"
+        id="tabs-04-00" role="tabpanel" aria-labelled-by="tabs-04-00-tab" tabindex="4">
+        <ol>
+<li>Go to the <a href="/v2.53.0/docs/workspace/tasks-page/#create-annotation-task">task creation</a> page</li>
+<li>Configure basic and advanced parameters according to your requirements, and attach a dataset to be annotated</li>
+<li>Scroll down to the <strong>Quality Control</strong> section below</li>
+<li>Select one of the <a href="#validation-modes">validation modes</a> available</li>
+</ol>
+<p><img src="/images/honeypot09.jpg" alt="Create task with validation mode"></p>
+<ol start="5">
+<li>Create the task and open the task page</li>
+<li>Upload or create Ground Truth annotations in the Ground Truth job in the task</li>
+<li>Switch the Ground Truth job into the <code>acceptance</code> stage and <code>completed</code> state</li>
+</ol>
+<p><img src="/images/honeypot10.jpg" alt="Set job status"></p>
+
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-04-01" role="tabpanel" aria-labelled-by="tabs-04-01-tab" tabindex="4">
+        <div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+<pre><code>For already existing tasks only the Ground Truth validation mode is available. If you want
+</code></pre>
+<p>to use Honeypots for your task, you will need to recreate the task.</p>
+</div>
+<ol>
+<li>Open the task page</li>
+<li>Click <strong>+</strong>.</li>
+</ol>
+<p><img src="/images/honeypot01.jpg" alt="Create job"></p>
+<ol start="3">
+<li>In the <strong>Add new job</strong> window, fill in the following fields:</li>
+</ol>
+<p><img src="/images/honeypot02.jpg" alt="Configure job parameters"></p>
+<ul>
+<li><strong>Job type</strong>: Use the default parameter <strong>Ground truth</strong>.</li>
+<li><strong>Frame selection method</strong>: Use the default parameter <strong>Random</strong>.</li>
+<li><strong>Quantity %</strong>: Set the desired percentage of frames for the Ground truth job.
+<br><strong>Note</strong> that when you use <strong>Quantity %</strong>, the <strong>Frames</strong> field will be autofilled.</li>
+<li><strong>Frame count</strong>: Set the desired number of frames for the Ground truth job.
+<br><strong>Note</strong> that when you use <strong>Frames</strong>, the <strong>Quantity %</strong> field will be autofilled.</li>
+<li><strong>Seed</strong>: (Optional) If you need to make the random selection reproducible, specify this number.
+It can be any integer number, the same value will yield the same random selection (given that the
+frame number is unchanged). <br> <strong>Note</strong> that if you want to use a
+custom frame sequence, you can do this using the server API instead,
+see <a href="/v2.53.0/docs/api_sdk/sdk/reference/apis/jobs-api/#create">Job API create()</a>.</li>
+</ul>
+<ol start="4">
+<li>Click <strong>Submit</strong>.</li>
+</ol>
+<p>The <strong>Ground truth</strong> job will appear in the jobs list.</p>
+<p><img src="/images/honeypot03.jpg" alt="Ground Truth job"></p>
+<ol start="5">
+<li>Annotate frames and save your work or upload annotations.</li>
+<li>Switch the Ground Truth job into the <code>acceptance</code> stage and <code>completed</code> state</li>
+</ol>
+<p><img src="/images/honeypot10.jpg" alt="Set job status"></p>
+
+    </div>
+</div>
+
+<h2 id="validation-modes">Validation modes</h2>
+<p>Currently, there are 2 validation modes available for tasks: <strong>Ground Truth</strong> and <strong>Honeypots</strong>.
+These names are often used interchangeably, but in CVAT they have some differences.
+Both modes rely on the use of Ground Truth annotations in a task,
+stored in a <a href="#ground-truth-jobs">Ground Truth job</a>, where they can be managed.</p>
+<h3 id="ground-truth">Ground Truth</h3>
+<p>In this mode some of the task frames are selected into the validation set, represented as a
+separate Ground Truth job. The regular annotation jobs in the task are not affected in any way.</p>
+<p>Ground Truth jobs can be created at the task creation automatically or
+manually at any moment later. They can also be removed manually at any moment.
+This validation mode is available for any tasks and annotations.</p>
+<p>This is a flexible mode that can be enabled or disabled at any moment without any disruptions
+to the annotation process.</p>
+<h4 id="frame-selection">Frame selection</h4>
+<p>This validation mode can use several frame selection methods.</p>
+<h5 id="random">Random</h5>
+<p>This is a simple method that selects frames into the validation set randomly,
+representing the <a href="#basics">basic approach</a>, described above.</p>
+<p>Parameters:</p>
+<ul>
+<li>frame count - the number or percent of the task frames to be used for validation.
+Can be specified as an absolute number in the <code>Frame count</code> field or a percent in the <code>Quantity</code>
+field. If there are both fields on the page, they are linked, which means changing one of them
+will adjust the other one automatically.</li>
+<li>random seed - a number to be used to initialize the random number generator. Can be useful if
+you want to create a reproducible sequence of frames.</li>
+</ul>
+<h5 id="random-per-job">Random per job</h5>
+<p>This method selects frames into the validation set randomly from each annotation job in the task.</p>
+<p>It solves one of the issues with the simple Random method that some of the jobs can get
+no validation frames, which makes it impossible to estimate quality in such jobs. Note
+that using this method can result in increased total size of the validation set.</p>
+<p>Parameters:</p>
+<ul>
+<li>frame count per job - the percent of the job frames to be used for validation.
+This method uses segment size of the task to select the same number of validation frames
+in each job, if possible. Can be specified as an absolute number in the <code>Frame count</code>
+field or a percent in the <code>Quantity per job</code> field. If there are both fields on the page,
+they are linked, which means changing one of them will adjust the other one automatically.</li>
+<li>random seed - a number to be used to initialize the random number generator. Can be useful if
+you want to create a reproducible sequence of frames.</li>
+</ul>
+<h3 id="honeypots">Honeypots</h3>
+<p>In this mode some random frames of the task are selected into the validation set.
+Then, validation frames are randomly mixed into regular annotation jobs.
+This mode can also be called &ldquo;Ground Truth pool&rdquo;, reflecting the way validation frames are used.
+This mode can only be used at task creation and cannot be changed later.</p>
+<p>The mode has some limitations on the compatible tasks:</p>
+<ul>
+<li>It&rsquo;s not possible to use it for an already existing task, the task has to be recreated.</li>
+<li>This mode assumes random frame ordering, so it is only available for image annotation tasks
+and not for ordered sequences like videos.</li>
+<li>Tracks are not supported in such tasks.</li>
+</ul>
+<p>The validation set can be managed after the task is created - annotations can be edited,
+frames can be excluded and restored, and honeypot frames in the regular jobs can be changed.
+However, it&rsquo;s not possible to select new validation frames after the task is created.
+The Ground truth job created for this validation mode cannot be deleted.</p>
+<p>Parameters:</p>
+<ul>
+<li>frame count per job (%) - the percent of job frames (segment size) to be <strong>added</strong> into each
+annotation job from the validation set. Can be specified in the <code>Overhead per job</code> field.</li>
+<li>total frame count (%) - the percent of the task frames to be included into the validation set.
+This value must result in at least <code>frame count per job</code> * <code>segment size</code> frames. Can be specified
+in the <code>Total honeypots</code> field.</li>
+</ul>
+<h3 id="mode-summary">Mode summary</h3>
+<p>Here is a brief comparison of the validation modes:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Aspect</strong></th>
+<th><strong>Ground Truth</strong></th>
+<th><strong>Honeypots</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>When can be used</td>
+<td>any time</td>
+<td>at task creation only</td>
+</tr>
+<tr>
+<td>Frame management options</td>
+<td>exclude, restore</td>
+<td>exclude, restore, change honeypots in jobs</td>
+</tr>
+<tr>
+<td>Ground Truth job management options</td>
+<td>create, delete</td>
+<td>create</td>
+</tr>
+<tr>
+<td>Task frame requirements</td>
+<td>-</td>
+<td>random ordering only</td>
+</tr>
+<tr>
+<td>Annotations</td>
+<td>any</td>
+<td>tracks are not supported</td>
+</tr>
+<tr>
+<td>Minimum validation frames count</td>
+<td>- <code>manual</code> and <code>random_uniform</code> - any</br> (but some jobs can get no validation frames)</br>- <code>random_per_job</code> - jobs count * GT frames per job</td>
+<td>not less than honeypots count per job</td>
+</tr>
+<tr>
+<td>Task annotation import</td>
+<td>GT annotations and regular annotations do not affect each other</td>
+<td>Annotations are imported both into the GT job and regular jobs. Annotations for validation frames are copied into corresponding honeypot frames.</td>
+</tr>
+<tr>
+<td>Task annotation export</td>
+<td>GT annotations and regular annotations do not affect each other</td>
+<td>Annotations for non-validation frames are exported as is. Annotations for validation frames are taken from the GT frames. Honeypot frames are skipped.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="choosing-the-right-mode">Choosing the right mode</h3>
+<p>Here are some examples on how to choose between these options. The general advice is to use
+Ground Truth for better flexibility, but keep in mind that it can require more resources for
+validation set annotation. Honeypots, on the other hand, can be beneficial if you want to
+minimize the number of validation images required, but the downside here is that there are some
+limitations on where this mode can be used.</p>
+<p>Example: a video annotation with tracks. In this case there is only 1 option -
+the Ground Truth mode, so just use it.</p>
+<p>Example: an image dataset annotation, image order is not important. Here you can use both options.
+You can choose Ground Truth for better flexibility in validation. This way, you will have the
+full control of validation frames in the task, annotation options won&rsquo;t be limited, and the
+regular jobs will not be affected in any way. However, if you have a limited budget
+for the validation (for instance, you have only a small number of validation frames) or you want
+to allow more scalability (with this approach the number of validation frames doesn&rsquo;t depend on
+the number of regular annotation jobs), it makes sense to consider using Honeypots instead.</p>
+<h2 id="quality-management">Quality management</h2>
+<p>If a task has a validation configured, there are several options to manage validation set images.
+With any of the validation modes, there will be a special Ground Truth (GT) job in the task.</p>
+<h3 id="validation-set-management">Validation set management</h3>
+<p>Validation frames can be managed on the task Quality Management page. Here it&rsquo;s possible to
+check the number of validation frames, current validation mode and review the frame details.
+For each frame you can see the number of uses in the task. When in the Ground Truth mode, this
+number will be 1 for all frames. With Honeypots, these numbers can be 0, 1 or more.</p>
+<h4 id="frame-changes">Frame changes</h4>
+<p>In both validation modes it&rsquo;s possible to exclude some of the validation frames
+from being used for validation. This can be useful if you find that some
+of the validation frames are &ldquo;bad&rdquo;, extra, or if they have incorrect annotations,
+which you don&rsquo;t want to fix. Once a frame is marked &ldquo;excluded&rdquo;, it will not be used
+for validation. There is also an option to restore a previously excluded frame if you decide so.</p>
+<p>There is an option to exclude or restore frames in bulk mode. To use it, select the frames needed
+using checkboxes, and click one of the buttons next to the table header.</p>
+<h4 id="ground-truth-job-management">Ground Truth job management</h4>
+<p>In the Ground Truth validation mode, there will be an option to remove the <a href="#ground-truth-jobs">Ground Truth job</a>
+from the task. It can be useful if you want to change validation set frames completely,
+add more frames, or remove some of the frames for any reason. This is available in the job
+Actions menu.</p>
+<p>In the Honeypots mode, it&rsquo;s not possible to add or remove the GT job, so it&rsquo;s not possible to
+add more validation frames.</p>
+<p><img src="/images/honeypot04.jpg" alt="Ground truth job actions"></p>
+<h3 id="create">Create</h3>
+<p>A Ground Truth job can be <a href="#configuring-quality-estimation">added manually</a>
+in a task without a selected validation mode or in a task with the Ground Truth validation mode,
+after the existing Ground Truth job is <a href="#delete">deleted manually</a>.</p>
+<h3 id="delete">Delete</h3>
+<p>To delete the Ground Truth job, do the following:</p>
+<ol>
+<li>Open the task and find the Ground Truth job in the jobs list.</li>
+<li>Click on three dots to open the menu.</li>
+<li>From the menu, select <strong>Delete</strong>.</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The Ground truth job in the &ldquo;Honeypots&rdquo; task validation mode cannot be deleted.
+
+</div>
+
+<h3 id="import-annotations">Import annotations</h3>
+<p>If you want to import annotations into the Ground truth job, do the following:</p>
+<ol>
+<li>Open the task and find the Ground truth job in the jobs list.</li>
+<li>Click on three dots to open the menu.</li>
+<li>From the menu, select <strong>Import annotations</strong>.</li>
+<li>Select import format and select file.</li>
+<li>Click <strong>OK</strong>.</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    If there are imported annotations for the frames that exist in the task,
+but are not included in the <strong>Ground truth</strong> job, they will be ignored.
+This way, you don&rsquo;t need to worry about &ldquo;cleaning up&rdquo; your Ground truth
+annotations for the whole dataset before importing them.
+Importing annotations for the frames that are not known in the task still raises errors.
+
+</div>
+
+<h3 id="export-annotations">Export annotations</h3>
+<p>To export annotations from the Ground Truth job, do the following:</p>
+<ol>
+<li>Open the task and find a job in the jobs list.</li>
+<li>Click on three dots to open the menu.</li>
+<li>From the menu, select <strong>Export annotations</strong>.</li>
+</ol>
+<h3 id="annotation-management">Annotation management</h3>
+<p>Annotations for validation frames can be displayed and edited in a special
+<a href="#ground-truth-jobs">Ground Truth job</a> in the task. You can edit the annotations manually,
+use auto-annotation features, import and export annotations in this job.</p>
+<p>In the Ground Truth task validation mode, annotations of the ground Truth job do not affect
+other jobs in any way. The Ground Truth job is just a separate job, which can only be
+changed directly. Annotations from <strong>Ground truth</strong> jobs are not included in the dataset
+export, they also cannot be imported during task annotations import
+or with automatic annotation for the task.</p>
+<p>In the Honeypots task validation mode, the annotations of the GT job also do not affect other
+jobs in any way. However, import and export of <strong>task</strong> annotations works differently.
+When importing <strong>task</strong> annotations, annotations for validation frames will be copied
+both into GT job frames and into corresponding honeypot frames in annotation jobs.
+When exporting <strong>task</strong> annotations, honeypot frames in annotation jobs will be ignored,
+and validation frames in the resulting dataset will get annotations from the GT job.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    That it means that exporting from a task with honeypots and importing the results back
+will result in changed annotations on the honeypot frames. If you want to backup annotations,
+use a task backup or export job annotations instead.
+
+</div>
+
+<p>Import and export of Ground Truth <strong>job</strong> annotations works the same way in both modes.</p>
+<p>Ground Truth jobs are included in task backups, so can be saved and restored this way.</p>
+<p>Import, Export, and Delete options are available from the Ground Truth job Actions menu.
+<a href="#ground-truth-job-management">Read more</a>.</p>
+<h3 id="annotation-quality-settings">Annotation quality settings</h3>
+<p>Quality settings provide options to tweak some aspects of annotation comparisons and
+quality estimation in general. For instance, you can configure which annotation overlap
+should be considered good enough or how specific annotation types must be compared.</p>
+<p>Quality settings can be set up at the Task or the Project level.
+If a task is not bound to a project, it uses its own quality settings.
+Tasks inside a project can use individual quality settings or inherit settings
+from the project they belong to. Read more about quality settings in projects
+<a href="#project-quality-settings">here</a>.</p>
+<p>To set up quality settings, open the <strong>Quality Settings</strong> tab on the <strong>Quality Control</strong> page
+for a task or project, available in the <strong>Actions</strong> menu.</p>
+<p><img src="/images/quality-control-actions-button.png" alt="Quality control button in the task actions menu"></p>
+<p>There is a number of parameters available for configuration.
+Hover the mouse over a <strong>?</strong> mark to display a description for a setting.</p>
+<p><img src="/images/quality-settings-overview.png" alt="Quality settings page"></p>
+<p>After the settings are updated, remember to save the values using the <strong>Save</strong> button.
+The updated settings will take effect on the next quality update.</p>
+<p>Annotation quality settings have the following parameters:</p>
+<table>
+<thead>
+<tr>
+<th><strong>Parameter</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>General reporting</em></td>
+<td></td>
+</tr>
+<tr>
+<td>Target metric</td>
+<td>The primary metric used for quality estimation. It affects which metric is displayed in the UI and used for overall quality estimation.</td>
+</tr>
+<tr>
+<td>Job selection filter</td>
+<td>The filter for the jobs included in quality computation. Only jobs matching the filter criteria will be included in the quality results.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Immediate feedback</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Max validations per job</td>
+<td>Configures maximum job validations per assignment for the <a href="/v2.53.0/docs/qa-analytics/immediate-feedback/">Immediate feedback</a> feature.</td>
+</tr>
+<tr>
+<td>Target metric threshold</td>
+<td>Defines the minimal quality requirements in terms of the selected target metric. Serves as an acceptance threshold for the <a href="/v2.53.0/docs/qa-analytics/immediate-feedback/">Immediate feedback</a> feature.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Shape matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Min overlap threshold</td>
+<td>Min overlap threshold used for the distinction between matched and unmatched shapes. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks.</td>
+</tr>
+<tr>
+<td>Low overlap threshold</td>
+<td>Low overlap threshold used for the distinction between strong and weak matches. Only affects <em>Low overlap</em> warnings. It&rsquo;s supposed that <em>Min similarity threshold</em> &lt;= <em>Low overlap threshold</em>.</td>
+</tr>
+<tr>
+<td>Empty frames are annotated</td>
+<td>Consider frames annotated as &ldquo;empty&rdquo; if there are no annotations on a frame. If a frame is empty in both GT and job annotations, it will be considered a matching annotation.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Point and Skeleton matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OKS Sigma</td>
+<td>Relative size of points. The percent of the bbox side, used as the radius of the circle around the GT point, where the checked point is expected to be. For boxes with different width and height, the &ldquo;side&rdquo; is computed as a geometric mean of the width and height.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Point matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Point size base</td>
+<td>When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines a matching area for each GT point based on the object size. The point size base parameter allows configuring how to determine the object size. If set to <em>image_size</em>, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to <em>group_bbox_size</em>, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Polyline matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Relative thickness</td>
+<td>Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be.</td>
+</tr>
+<tr>
+<td>Check orientation</td>
+<td>Indicates that polylines have direction. Used to produce <em>Mismatching direction</em> warnings</td>
+</tr>
+<tr>
+<td>Min similarity gain (%)</td>
+<td>The minimal gain in IoU between the given and reversed line directions to consider the line inverted. Only useful with the <em>Check orientation</em> parameter.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Group matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compare groups</td>
+<td>Enables or disables annotation group checks. This check will produce <em>Group mismatch</em> warnings for grouped annotations, if the annotation groups do not match with the specified threshold. Each annotation within a group is expected to match with a corresponding annotation in a GT group.</td>
+</tr>
+<tr>
+<td>Min group match threshold</td>
+<td>Minimal IoU for groups to be considered matching, used when <em>Compare groups</em> is enabled.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><em>Mask and polygon matching</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check object visibility</td>
+<td>Check for partially-covered annotations. Masks and polygons will be compared to each other.</td>
+</tr>
+<tr>
+<td>Min visibility threshold</td>
+<td>Minimal visible area percent of the mask annotations (polygons, masks). Used for reporting <em>Covered annotation</em> warnings, useful with the <em>Check object visibility</em> option.</td>
+</tr>
+<tr>
+<td>Match only visible parts</td>
+<td>Use only the visible part of the masks and polygons in comparisons.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="project-quality-settings">Project quality settings</h3>
+<p>In CVAT, it is possible to group tasks into projects to share common configurations or establish
+a logical grouping for datasets. In this section, we explain options for quality management
+inside projects.</p>
+<p>When tasks are inside a project, it can be convenient to reuse the same quality setup for
+all the project tasks. There is an option to use quality settings from the parent project
+for all or only for specific tasks inside a project. This is controlled by the corresponding
+toggle on the <strong>Quality control</strong> page of the task:</p>
+<p><img src="/images/quality-settings-inherit.png" alt="Task quality settings - inherit project settings"></p>
+<p>If some of the project tasks have individual settings, a notification is displayed
+on the project settings page. You can enforce project settings for all the project tasks
+by clicking the <strong>Force project settings</strong> button.</p>
+<p><img src="/images/quality-settings-force-project-settings-button.png" alt="Force projects settings button"></p>
+<p>By default, new tasks inside a project inherit the quality settings of the project.
+You can freely switch between these 2 modes without losing the individual configuration
+for the task.</p>
+<p>Updating project quality includes quality computation for all the nested tasks. If the task
+quality is updated in a specific task manually, project quality has to be recomputed to display
+relevant values.</p>
+<h3 id="job-filtering">Job filtering</h3>
+<p>Depending on the situation, you may need or don&rsquo;t need to include specific jobs in
+the quality report. For example, your workflow may require quality checks only for
+completed jobs or maybe you want to exclude jobs from a specific task from
+a project quality report. There is an option to filter which jobs are included in quality
+computations. You can configure this by changing the <em>Job selection filter</em>
+in quality settings. Only jobs matching the filter criteria will be included
+in the quality results. If a filter is changed, quality must be recomputed for the filter
+to take effect.</p>
+<p><img src="/images/quality-settings-job-selection.png" alt="Job selection filter"></p>
+<h2 id="comparisons">Comparisons</h2>
+<h3 id="tags">Tags</h3>
+<p>The equality is used for matching.</p>
+<h3 id="shapes">Shapes</h3>
+<p>A pair of shapes is considered matching, if both their shapes and labels match.
+For each shape, spatial parameters are matched first, then labels are matched.</p>
+<p>Each shape type can have their own spatial matching details. Specifically:</p>
+<ul>
+<li>
+<p>bounding box - <a href="https://en.wikipedia.org/wiki/Jaccard_index">IoU</a> (including rotation).
+For example, for a pair of bounding boxes it can be visualized this way:</p>
+<p><img src="/images/quality_comparison_bbox1.svg" alt="Bbox IoU"></p>
+<p></br><code>IoU = intersection area / union area</code>.</br>
+The green part is the intersection, and green, yellow and red ones together are the union.</p>
+</li>
+<li>
+<p>polygons, masks - IoU. Polygons and masks are considered interchangeable,
+which means a mask can be matched with a polygon and vice versa. Polygons and masks in groups
+are merged into a single object first.
+If the <a href="#annotation-quality-settings"><em>Match only visible parts</em></a> option is enabled,
+objects will be cut to only the visible (non-covered) parts only, which is determined by the
+shape z order.</p>
+</li>
+<li>
+<p>skeletons - The OKS metric <a href="https://cocodataset.org/#keypoints-eval">from the COCO</a>
+dataset is used. Briefly, each skeleton point gets a circular area around,
+determined by the <em>object size</em> (bounding box side) and <em>relative point size</em> (<em>sigma</em>) values,
+where this point can be matched with the specified probability. If a bounding box is grouped
+with the skeleton, it is used for object size computation, otherwise a bounding box of
+visible points of the skeleton is used.</p>
+<p>For example, consider a skeleton with 6 points and a square bounding box attached:</p>
+<p><img src="/images/quality_comparison_skeleton1.svg" alt="Skeleton OKS"></p>
+<p>In this example, the <em>Sigma</em> parameter is <code>0.05</code> (5%) of the bbox side.
+Areas shown in the green color cover ~68.2% (1 sigma) of the points,
+corresponding to each GT point. A point on the boundary of such an area will have ~88% of
+probability to be correct. The blue-colored zone contains ~95% (2 sigma) of the correct points
+for the corresponding GT point. A point on the boundary of such an area will have ~60% of
+probability to be correct. These probabilities are then averaged over the visible points of the
+skeleton, and the resulting values are compared against the <em>Min similarity threshold</em>
+to determine whether the skeletons are matching. <em>Sigma</em> corresponds to one
+from the <a href="https://en.wikipedia.org/wiki/Normal_distribution">normal distribution</a>.</p>
+</li>
+<li>
+<p>points - The OKS metric is used for each point group annotation. Same as for skeletons,
+<em>OKS Sigma</em> determines relative point sizes. The <em>Point size base</em> setting allows
+configuring whether points in point groups should use the group bounding box or the image space.
+Using image space for object size can be useful if you want to treat each point
+as a separate annotation.</p>
+</li>
+<li>
+<p>polylines - A pair of lines is considered matching if all the points of one line lie within
+a &ldquo;hull&rdquo; of the other one. The &ldquo;hull&rdquo; is determined as the area around the polyline, such as
+if the line had some &ldquo;thickness&rdquo;. For example, the black polyline can have a hull shown in
+the green color:</p>
+<p><img src="/images/quality_comparison_polylines1.png" alt="Polyline thickness and hull"></p>
+<p>The line thickness can be configured via the <em>Relative thickness</em> setting.
+The value is relative to the image side and determines a half of the hull width.</p>
+</li>
+<li>
+<p>ellipses - IoU, described in more detail above.</p>
+</li>
+</ul>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    2D cuboids are not supported.
+
+</div>
+
+<h3 id="tracks">Tracks</h3>
+<p>Tracks are split into separate shapes and compared on the per-frame basis with other tracks
+and shapes.</p>
+<h2 id="quality-analytics">Quality Analytics</h2>
+<p>Once the quality estimation is <a href="#configuring-quality-estimation">enabled in a task</a>
+and the Ground Truth job is configured, quality analytics becomes available
+for the task and its jobs.</p>
+<p>When you open the Quality Analytics page, it displays quality metrics from the most recent quality estimation.
+If it&rsquo;s your first time accessing the page, no quality report will be available yet.
+The date of the last computation is shown next to the report download button.</p>
+<p>If you want to request updating of quality metrics in a task (e.g. after the settings were changed),
+you can do this by pressing the <strong>Refresh</strong> button on the
+task <strong>Quality Management</strong> &gt; <strong>Analytics</strong> page.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The process of quality calculation may take up to several hours, depending on
+the amount of data and labeled objects, and is <strong>not updated immediately</strong> after task updates.
+
+</div>
+
+<p><img src="/images/honeypot11.jpg" alt="Quality Analytics page - refresh button"></p>
+<p>Once quality metrics are computed, they are available for detailed review on this page.
+Conflicts can be reviewed in the <a href="#reviewing-gt-conflicts">Review mode of jobs</a>.
+A job must have at least 1 validation frame (shown in the <strong>Frame intersection</strong> column) to
+be included in quality computation.</p>
+<h3 id="analytics-page-contents">Analytics page contents</h3>
+<p>The Analytics page has the following elements:</p>
+<p><img src="/images/honeypot05.png" alt="Quality Analytics page"></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mean annotation quality</td>
+<td>Displays the average quality of annotations, which includes: counts of the accurate annotations, total task annotations, ground truth annotations, accuracy, precision, and recall. The currently selected <em>Target metric</em> is displayed as the primary score.</td>
+</tr>
+<tr>
+<td>GT Conflicts</td>
+<td>Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the <strong>?</strong> icon for a detailed conflict report on your dataset.</td>
+</tr>
+<tr>
+<td>Issues</td>
+<td>Number of <a href="/v2.53.0/docs/qa-analytics/manual-qa/">opened issues</a>. If no issues were reported, 0 will be shown.</td>
+</tr>
+<tr>
+<td>Quality report</td>
+<td>Quality report in JSON format.</td>
+</tr>
+<tr>
+<td>Ground truth job data</td>
+<td>Information about ground truth job, including date, time, and number of issues.</td>
+</tr>
+<tr>
+<td>List of jobs</td>
+<td>List of all the jobs in the task</td>
+</tr>
+</tbody>
+</table>
+<p><img src="/images/honeypot12.jpg" alt="Jobs list"></p>
+<h3 id="problem-reporting">Problem Reporting</h3>
+<p>CVAT reports 2 possible error types: errors and warnings. Errors affect the resulting quality
+scores and highlight significant problems in annotations. Warnings do not affect the resulting
+quality metrics, but they still can highlight significant problems, depending on the project
+requirements.</p>
+<table>
+<thead>
+<tr>
+<th><strong>Problem</strong></th>
+<th><strong>Type</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Missing annotation</td>
+<td>error</td>
+<td>No matching annotation found in the regular job annotations. <a href="#annotation-quality-settings">Configured</a> by <em>Min overlap threshold</em> and shape type-specific parameters.</td>
+</tr>
+<tr>
+<td>Extra annotation</td>
+<td>error</td>
+<td>No matching annotation found in the GT job annotations. <a href="#annotation-quality-settings">Configured</a> by <em>Min overlap threshold</em> and shape type-specific parameters.</td>
+</tr>
+<tr>
+<td>Mismatching label</td>
+<td>error</td>
+<td>A GT and a regular job annotations match, but their labels are different.</td>
+</tr>
+<tr>
+<td>Low overlap</td>
+<td>warning</td>
+<td>A GT and a regular job annotations match, but the similarity is low. <a href="#annotation-quality-settings">Configured</a> by <em>Low overlap threshold</em>.</td>
+</tr>
+<tr>
+<td>Mismatching direction</td>
+<td>warning</td>
+<td>A GT and a regular lines match, but the lines have different direction. <a href="#annotation-quality-settings">Configured</a> by <em>Compare orientation</em>.</td>
+</tr>
+<tr>
+<td>Mismatching attributes</td>
+<td>warning</td>
+<td>A GT and a regular annotations match, but their attributes are different. <a href="#annotation-quality-settings">Configured</a> by <em>Compare attributes</em>.</td>
+</tr>
+<tr>
+<td>Mismatching groups</td>
+<td>warning</td>
+<td>A GT and a regular annotation groups do not match. <a href="#annotation-quality-settings">Configured</a> by <em>Compare groups</em>.</td>
+</tr>
+<tr>
+<td>Covered annotation</td>
+<td>warning</td>
+<td>The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified <em>z order</em>. <a href="#annotation-quality-settings">Configured</a> by <em>Check object visibility</em>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="quality-reports">Quality Reports</h3>
+<p>For each job included in quality computation there is a quality report downloading button on
+the <a href="#analytics-page-contents">Analytics page</a>. There is also a button to download the aggregated
+task quality report. These buttons provide an option to download a Quality Report for a task or job
+in JSON format. Such reports can be useful if you want to process quality reported by CVAT
+automatically in your scripts etc.</p>
+<p><img src="/images/quality_download_report.png" alt="Download report"></p>
+<p>Quality Reports contain quality metrics and conflicts, and include all the information
+available on the quality analytics page. You can find additional quality metrics in these reports,
+such as <em>mean_iou</em> for shapes, confusion matrices, per-label and per-frame quality estimations.</p>
+<p>Additional information on how to compute and use various metrics for dataset
+quality estimation is available <a href="https://en.wikipedia.org/wiki/Confusion_matrix">here</a>.</p>
+<h3 id="reviewing-gt-conflicts">Reviewing GT conflicts</h3>
+<p>To see GT Conflicts in the CVAT interface, go to <strong>Review</strong> &gt;
+<strong>Issues</strong> &gt; <strong>Show ground truth annotations and conflicts</strong>.</p>
+<p><img src="/images/honeypot06.gif" alt="GT conflicts review - enable"></p>
+<p>Ground Truth annotations are displayed with a dotted-line border.
+The associated label and the <code>(Ground Truth)</code> marker are shown on hovering.</p>
+<p>Upon hovering over an issue on the right-side panel with your mouse,
+the corresponding annotations are highlighted.</p>
+<p>Use arrows in the Issue toolbar to move between GT conflicts.</p>
+<p>To create an issue related to the conflict, right-click on the bounding box and from the
+menu select the type of issue you want to create.</p>
+<p><img src="/images/honeypot07.jpg" alt="GT conflicts review - create issue"></p>
+<h2 id="annotation-quality--honeypot-video-tutorial">Annotation quality &amp; Honeypot video tutorial</h2>
+<p>This video demonstrates the process:</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/0HtBnr_CZAM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+  </div>
+
+</article>
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/v2.53.0/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/v2.53.0/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/v2.53.0/js/prism.js'></script>
+<script src='/v2.53.0/js/tabpane-persist.js'></script>
+
+  </body>
+</html>

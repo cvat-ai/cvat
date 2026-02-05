@@ -1,0 +1,1060 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/v2.54.0/docs/annotation/manual-annotation/utilities/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/v2.54.0/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/v2.54.0/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/v2.54.0/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/v2.54.0/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/v2.54.0/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/v2.54.0/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/v2.54.0/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/v2.54.0/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/v2.54.0/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/v2.54.0/favicons/android-192x192.png" sizes="192x192">
+
+<title>Editing &amp; Utility Tools | CVAT</title>
+<meta name="description" content="Tools for modifying, grouping, filtering, and managing annotations.">
+<meta property="og:title" content="Editing &amp; Utility Tools" />
+<meta property="og:description" content="Tools for modifying, grouping, filtering, and managing annotations." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/v2.54.0/docs/annotation/manual-annotation/utilities/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Editing &amp; Utility Tools">
+<meta itemprop="description" content="Tools for modifying, grouping, filtering, and managing annotations."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Editing &amp; Utility Tools"/>
+<meta name="twitter:description" content="Tools for modifying, grouping, filtering, and managing annotations."/>
+
+
+
+
+<link rel="preload" href="/v2.54.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" as="style">
+<link href="/v2.54.0/scss/main.min.6a2b8c5c503f2ae1f03c0ffdfd2621b9edb0d4fd46b36f4be8c40d7eeb7b6a86.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/v2.54.0/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.54.0/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.54.0/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.54.0/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/v2.54.0/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/v2.54.0/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">v2.54.0</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/../">Latest version</a></li>
+    <li><a class="dropdown-item" href="/../v2.56.1">v2.56.1</a></li>
+    <li><a class="dropdown-item" href="/../v2.55.0">v2.55.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.54.0">v2.54.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.53.0">v2.53.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.52.0">v2.52.0</a></li>
+    <li><a class="dropdown-item" href="/../v2.51.0">v2.51.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/v2.54.0/offline-search-index.426f6cb92273e963924f1224e97e637f.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/v2.54.0/docs/annotation/manual-annotation/utilities/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Editing &amp; Utility Tools</h1>
+<div class="lead">Tools for modifying, grouping, filtering, and managing annotations.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-3a0617868795ef9848cad38985c86332">Join and slice tools</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-73f32ce78d9ee72130b224ff734dcd09">Shapes converter</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-e1e9c706c043636f7093cbd54492debb">Contextual images</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-ab7fac07de5140bb0bf4a000837e3db4">Filter</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>This section covers tools that help modify shapes, manage large annotations, and streamline the annotation workflow.</p>
+<p>Use these guides to learn how to join or split shapes, group them, filter objects, and work with contextual images and frame operations.</p>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-3a0617868795ef9848cad38985c86332">1 - Join and slice tools</h1>
+    <div class="lead">This section explains how to slice or join several labels</div>
+	<p>In CVAT you can modify shapes by either joining multiple shapes into
+a single label or slicing a single label into several shapes.</p>
+<p>This document provides guidance on how to perform these operations effectively.</p>
+<p>See:</p>
+<ul>
+<li><a href="#joining-masks">Joining masks</a></li>
+<li><a href="#slicing-polygons-and-masks">Slicing polygons and masks</a></li>
+</ul>
+<h2 id="joining-masks">Joining masks</h2>
+<p>The <strong>Join masks</strong> tool (<img src="/images/join-masks-icon.jpg" alt="Join masks tool icon">),
+is specifically designed to work with mask annotations.</p>
+<p>This tool is useful in scenarios where a single object
+in an image is annotated with multiple shapes,
+and there is a need to merge these shapes into a single one.</p>
+<p><img src="/images/joining-tool-01.jpg" alt="Join masks"></p>
+<p>To join masks, do the following:</p>
+<ol>
+<li>From the <a href="/v2.54.0/docs/annotation/annotation-editor/controls-sidebar/#edit"><strong>Edit</strong></a> block,
+select <strong>Join masks</strong> <img src="/images/join-masks-icon.jpg" alt="Join masks tool icon">.</li>
+<li>Click on the canvas area, to select masks that you want to join.</li>
+<li>(Optional) To remove the selection click the mask one more time.</li>
+<li>Click again on <strong>Join masks</strong><img src="/images/join-masks-icon.jpg" alt="Join masks tool icon">
+(<strong>J</strong>) to execute the join operation.</li>
+</ol>
+<p>Upon completion, the selected masks will be joined into a single mask.</p>
+<p><img src="/images/joining-tool-02.gif" alt="Join masks gif"></p>
+<h2 id="slicing-polygons-and-masks">Slicing polygons and masks</h2>
+<p>The <strong>Slice mask/polygon</strong> (<img src="/images/slicing-tool-icon.jpg" alt="Slicing tool icon">)
+is compatible with both mask and polygon annotations.</p>
+<p>This tool is useful in scenarios where multiple objects in an image
+are annotated with one shape,
+and there is a need to slice this shape into multiple parts.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The shape can be sliced only in two parts
+at a time. Use the slice tool several times
+to split a shape to as many parts as you need.
+
+</div>
+
+<p><img src="/images/slicing-tool-01.jpg" alt="Slicing tool"></p>
+<p>To slice mask or polygon, do the following:</p>
+<ol>
+<li>From the <a href="/v2.54.0/docs/annotation/annotation-editor/controls-sidebar/#edit"><strong>Edit</strong></a> block,
+select <strong>Slice mask/polygon</strong> <img src="/images/slicing-tool-icon.jpg" alt="Slicing tool icon">.</li>
+<li>Click on the shape you intend to slice.
+A black contour will appear around the selected shape.</li>
+<li>Set an initial point for slicing by clicking on the contour.</li>
+<li>Draw a line across the shape to define the slicing path.
+<br>Hold Shift to add points automatically on cursor movement.
+<br> <strong>Note</strong>: The line cannot cross itself.
+<br> <strong>Note</strong>: The line cannot cross the contour more than twice.</li>
+<li>(Optional)&gt; Right-click to cancel the latest point.</li>
+<li>Click on the contour (<strong>Alt</strong>+<strong>J</strong>) (outside the contour) to finalize the slicing.</li>
+</ol>
+<p><img src="/images/slicing-tool-02.gif" alt="Slicing tool"></p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-73f32ce78d9ee72130b224ff734dcd09">2 - Shapes converter</h1>
+    <div class="lead">How to perform bulk actions on filtered shapes</div>
+	<p>The shapes converter is a feature that enables bulk actions on filtered <strong>shapes</strong>. It allows you to perform mutual
+conversion between masks, polygons and rectangles.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    All shapes converter work only when the filter is set up.
+
+</div>
+
+<p>See:</p>
+<ul>
+<li><a href="#run-actions-menu">Run actions menu</a></li>
+<li><a href="#convert-shapes">Convert shapes</a></li>
+<li><a href="#convert-shapes-video-tutorial">Convert shapes video tutorial</a></li>
+</ul>
+<h2 id="run-actions-menu">Run actions menu</h2>
+<p>Annotations actions can be accessed from the annotation menu.
+To access it, click on the burger icon
+and then select <strong>Run actions</strong>.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    All <strong>Shapes converter</strong> functions work in alignment with set up filter.
+
+</div>
+
+<p><img src="/images/run-actions-menu.jpg" alt="Run actions menu open in annotation"></p>
+<p>You will see the following dialog:</p>
+<p><img src="/images/shapes-converter-dialog.jpg" alt="Dialog for removing filtered shapes"></p>
+<p>With the following fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Select action</strong></td>
+<td>Drop-down list with available actions: <br><li><strong>Remove filtered shapes</strong> - removes all shapes in alignment with the set-up filter. Doesn&rsquo;t work with tracks.</li><li><strong>Propagate shapes</strong> - propagates all the filtered shapes from the current frame to the target frame.</li><li><strong>Shapes converter: masks to polygons</strong> - converts all masks to polygons.</li><li><strong>Shapes converter: masks to rectangles</strong> - converts all masks to rectangles in alignment with the set-up filter.</li><li><strong>Shapes converter: polygon to masks</strong> - converts all polygons to masks.</li><li><strong>Shapes converter: polygon to rectangles</strong> - converts all polygons to rectangles.</li><li><strong>Shapes converter: rectangles to masks</strong> - converts all rectangles to masks.</li><li><strong>Shapes converter: rectangles to polygons</strong> - converts all rectangles to polygons.</li><br><strong>Note:</strong> only <strong>Propagate shapes</strong> and <strong>Remove filtered shapes</strong> is available in the community version.</td>
+</tr>
+<tr>
+<td><strong>Specify frames to run action</strong></td>
+<td>Field where you can specify the frame range for the selected action. Enter the starting frame in the <strong>Starting from frame:</strong> field, and the ending frame in the <strong>up to frame</strong> field. <br><br>If nothing is selected here or in <strong>Choose one of the predefined options</strong> section, the action will be applied to all fields.</td>
+</tr>
+<tr>
+<td><strong>Choose one of the predefined options</strong></td>
+<td>Predefined options to apply to frames. Selection here is mutually exclusive with <strong>Specify frames to run action</strong>. <br><br>If nothing is selected here or in <strong>Specify frames to run action</strong> section, the action will be applied to all fields.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="convert-shapes">Convert shapes</h2>
+<p><strong>Recommended Precautions Before Running Annotation Actions</strong></p>
+<ul>
+<li>
+<p><strong>Saving changes:</strong> It is recommended to save all changes prior to initiating the annotation action.
+If unsaved changes are detected, a prompt will advise to save these changes
+to avoid any potential loss of data.</p>
+</li>
+<li>
+<p><strong>Disable auto-save:</strong> Prior to running the annotation action, disabling the auto-save feature
+is advisable. A notification will suggest this action if auto-save is currently active.</p>
+</li>
+<li>
+<p><strong>Committing changes:</strong> Changes applied during the annotation session
+will not be committed to the server until the saving process is manually
+initiated. This can be done either by the user or through the
+auto-save feature, should it be enabled.</p>
+</li>
+</ul>
+<p>To convert shapes, do the following:</p>
+<ol>
+<li>
+<p>Annotate your dataset.</p>
+<p><img src="/images/shapes-converter-annotated-dataset.jpg" alt="Example of annotated dataset with different shapes"></p>
+</li>
+<li>
+<p>Set up <a href="/v2.54.0/docs/annotation/manual-annotation/utilities/filter/">filters</a>.</p>
+<p><img src="/images/shapes-converter-setup-filter.png" alt="Example of a filter for shapes"></p>
+</li>
+<li>
+<p>From the burger menu, select <strong>Run actions</strong>.</p>
+</li>
+<li>
+<p>Choose the action you need from the <strong>Select action</strong> drop-down list.</p>
+</li>
+<li>
+<p>(Optional) In the <strong>Starting from frame</strong> field, enter the frame number where the action should begin,
+and in the <strong>up to frame</strong> field, specify the frame number where the action should end.</p>
+</li>
+<li>
+<p>(Optional) Select an option from <strong>Or choose one of the predefined options</strong> to apply the action.</p>
+</li>
+<li>
+<p>Click <strong>Run</strong>. <br> A progress bar will appear. You may abort the process by clicking <strong>Cancel</strong> until the process commits modified objects at the end of pipeline.</p>
+<p><img src="/images/shapes-converter-action-run.jpg" alt="Progress bar for shapes converter with defined parameters"></p>
+</li>
+</ol>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    Once the action is applied, it cannot be undone.
+
+</div>
+
+<h2 id="convert-shapes-video-tutorial">Convert shapes video tutorial</h2>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/sAVEdjmw0C0?si=ZhRuwdAMSNrdieBp" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e1e9c706c043636f7093cbd54492debb">3 - Contextual images</h1>
+    <div class="lead">Contextual images of the task</div>
+	<p>Contextual images (or related images) are additional images that provide
+context or additional information related to the primary image.</p>
+<p>Use them to add extra contextual about the object to improve the accuracy of annotation.</p>
+<p>Contextual images are available for 2D and 3D tasks.</p>
+<p>See:</p>
+<ul>
+<li><a href="#folder-structure">Folder structure</a></li>
+<li><a href="#contextual-images">Contextual images</a></li>
+</ul>
+<h2 id="folder-structure">Folder structure</h2>
+<p>To add contextual images to the task, you need to organize the images folder into one of
+the supported file layouts. A task with contextual images can be created both from an archive
+or from raw files.</p>
+<p>Example for 2D tasks:</p>
+<ol>
+<li>In the folder with the images for annotation, create a folder: <code>related_images</code>.</li>
+<li>Add to the <code>related_images</code> a subfolder with the same name
+as the primary image to which it should be linked.</li>
+<li>Place the contextual image(s) within the subfolder created in step 2.</li>
+<li>Add folder to the archive.</li>
+<li><a href="/v2.54.0/docs/workspace/tasks-page/#create-annotation-task">Create task</a>.</li>
+</ol>
+<p>Supported file layouts for 2D and 3D tasks:</p>
+
+
+
+
+
+
+<ul class="nav nav-tabs" id="tabs-1" role="tablist">
+  <li class="nav-item">
+      <button class="nav-link active"
+          id="tabs-01-00-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-00" role="tab"
+          aria-controls="tabs-01-00" aria-selected="true">
+        2D task
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-01-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-01" role="tab"
+          aria-controls="tabs-01-01" aria-selected="false">
+        3D option 1
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-02-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-02" role="tab"
+          aria-controls="tabs-01-02" aria-selected="false">
+        3D option 2
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-03-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-03" role="tab"
+          aria-controls="tabs-01-03" aria-selected="false">
+        3D task KITTI format
+      </button>
+    </li><li class="nav-item">
+      <button class="nav-link"
+          id="tabs-01-04-tab" data-bs-toggle="tab" data-bs-target="#tabs-01-04" role="tab"
+          aria-controls="tabs-01-04" aria-selected="false">
+        3D task Supervisely format
+      </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tabs-1-content">
+    <div class="tab-body tab-pane fade show active"
+        id="tabs-01-00" role="tabpanel" aria-labelled-by="tabs-01-00-tab" tabindex="1">
+        <pre tabindex="0"><code>root_directory/
+  image_1_to_be_annotated.jpg
+  image_2_to_be_annotated.jpg
+  related_images/
+    image_1_to_be_annotated_jpg/
+      context_image_for_image_1.jpg
+    image_2_to_be_annotated_jpg/
+      context_image_for_image_2.jpg
+    subdirectory_example/
+      image_3_to_be_annotated.jpg
+        related_images/
+        image_3_to_be_annotated_jpg/
+            context_image_for_image_3.jpg
+</code></pre>
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-01" role="tabpanel" aria-labelled-by="tabs-01-01-tab" tabindex="1">
+        <p>Point clouds and related images are put into the same directory. Related files must have the same
+names as the corresponding point clouds. This format is limited by only 1 related image
+per point cloud.</p>
+<pre tabindex="0"><code>root_directory/
+  pointcloud1.pcd
+  pointcloud1.jpg
+  pointcloud2.pcd
+  pointcloud2.png
+  ...
+</code></pre>
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-02" role="tabpanel" aria-labelled-by="tabs-01-02-tab" tabindex="1">
+        <p>Each point cloud is put into a separate directory with matching file name. Related images
+are put next to the corresponding point cloud, the file names and extensions can be arbitrary.</p>
+<pre tabindex="0"><code>root_directory/
+  pointcloud1/
+    pointcloud1.pcd
+    pointcloud1_ri1.png
+    pointcloud1_ri2.jpg
+    ...
+  pointcloud2/
+    pointcloud2.pcd
+    pointcloud2_ri1.bmp
+</code></pre>
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-03" role="tabpanel" aria-labelled-by="tabs-01-03-tab" tabindex="1">
+        <p>Context images are placed in the <code>image_00/</code>, <code>image_01/</code>, <code>image_N/</code> (<code>N</code> is any number)
+directories. Their file names must correspond to the point cloud files in the <code>data/</code> directory.</p>
+<pre tabindex="0"><code>image_00/
+  data/
+    0000000000.png
+    0000000001.png
+    0000000002.png
+    0000000003.png
+image_01/
+  data/
+    0000000000.png
+    0000000001.png
+    0000000002.png
+    0000000003.png
+image_N/
+  data/
+    0000000000.png
+    0000000001.png
+    0000000002.png
+    0000000003.png
+velodyne_points/
+  data/
+    0000000000.bin
+    0000000001.bin
+    0000000002.bin
+    0000000003.bin
+</code></pre>
+    </div>
+    <div class="tab-body tab-pane fade"
+        id="tabs-01-04" role="tabpanel" aria-labelled-by="tabs-01-04-tab" tabindex="1">
+        <pre tabindex="0"><code>root_directory/
+  pointcloud/
+    pointcloud1.pcd
+    pointcloud2.pcd
+  related_images/
+    pointcloud1_pcd/
+      context_image_for_pointclud1.jpg
+    pointcloud2_pcd/
+      context_image_for_pointcloud2.jpg
+</code></pre>
+    </div>
+</div>
+
+<p>For more general information about 3D data formats,
+see <a href="/v2.54.0/docs/workspace/tasks-page/#data-formats-for-a-3d-task">3D data formats</a>.</p>
+<h2 id="contextual-images">Contextual images</h2>
+<p>The maximum amount of contextual images is twelve.</p>
+<p>By default they will be positioned on the right side of the main image.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    By default, only three contextual images will be visible.
+
+</div>
+
+<p><img src="/images/context_img_01.jpg" alt="context_images_1"></p>
+<p>When you add contextual images to the set,
+small toolbar will appear on the top of the screen, with the following elements:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/images/context_img_04.jpg" alt="context_images_4"></td>
+<td><strong>Fit views</strong>. Click to restore the layout to its original appearance. <p>If you&rsquo;ve expanded any images in the layout, they will returned to their original size. <p>This won&rsquo;t affect the number of context images on the screen.</td>
+</tr>
+<tr>
+<td><img src="/images/context_img_05.jpg" alt="context_images_5"></td>
+<td><strong>Add new image</strong>. Click to add context image to the layout.</td>
+</tr>
+<tr>
+<td><img src="/images/context_img_06.jpg" alt="context_images_6"></td>
+<td><strong>Reload layout</strong>. Click to reload layout to the default view. <p>Note, that this action can change the number of context images resetting them back to three.</td>
+</tr>
+</tbody>
+</table>
+<p>Each context image has the following elements:</p>
+<p><img src="/images/context_img_02.jpg" alt="context_images_2"></p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Full screen</strong>. Click to expand the contextual image in to the full screen mode. <p>Click again to revert contextual image to windowed mode.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Move contextual image</strong>. Hold and move contextual image to the other place on the screen. <p><img src="/images/context_img_03.gif" alt="context_images_3"></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Name</strong>. Unique contextual image name</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Select contextual image</strong>. Click to open a horizontal listview of all available contextual images. <p>Click on one to select.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Close</strong>. Click to remove image from contextual images menu.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Extend</strong> Hold and pull to extend the image.</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-ab7fac07de5140bb0bf4a000837e3db4">4 - Filter</h1>
+    <div class="lead">Guide to using the Filter feature in CVAT.</div>
+	<p>There are some reasons to use the feature:</p>
+<ol>
+<li>When you use a filter, objects that don&rsquo;t match the filter will be hidden.</li>
+<li>The fast navigation between frames which have an object of interest.
+Use the <code>Left Arrow</code> / <code>Right Arrow</code> keys for this purpose
+or customize the UI buttons by right-clicking and select <code>switching by filter</code>.
+If there are no objects which correspond to the filter,
+you will go to the previous / next frame which contains any annotated objects.</li>
+</ol>
+<p>To apply filters you need to click on the button on the top panel.</p>
+<p><img src="/images/image059.jpg" alt="Filter button in user interface"></p>
+<h2 id="create-a-filter">Create a filter</h2>
+<p>It will open a window for filter input. Here you will find two buttons: <code>Add rule</code> and <code>Add group</code>.</p>
+<p><img src="/images/image202.jpg" alt="Filter window with highlighted &amp;ldquo;Add rule&amp;rdquo; and &amp;ldquo;Add group&amp;rdquo; buttons"></p>
+<h3 id="rules">Rules</h3>
+<p>The <code>Add rule</code> button adds a rule for objects display. A rule may use the following properties:</p>
+<p><img src="/images/image204.jpg" alt="Available objects, operators, and values for filter rules"></p>
+<h3 id="supported-properties-for-annotation">Supported properties for annotation</h3>
+<table>
+<thead>
+<tr>
+<th>Properties</th>
+<th>Supported values</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Label</code></td>
+<td>all the label names that are in the task</td>
+<td>label name</td>
+</tr>
+<tr>
+<td><code>Type</code></td>
+<td>shape, track or tag</td>
+<td>type of object</td>
+</tr>
+<tr>
+<td><code>Shape</code></td>
+<td>all shape types</td>
+<td>type of shape</td>
+</tr>
+<tr>
+<td><code>Occluded</code></td>
+<td>true or false</td>
+<td>occluded (<a href="/v2.54.0/docs/annotation/manual-annotation/shapes/shape-mode-basics/#occluded">read more</a>)</td>
+</tr>
+<tr>
+<td><code>Width</code></td>
+<td>number of px or field</td>
+<td>shape width</td>
+</tr>
+<tr>
+<td><code>Height</code></td>
+<td>number of px or field</td>
+<td>shape height</td>
+</tr>
+<tr>
+<td><code>ServerID</code></td>
+<td>number or field</td>
+<td>ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu)</td>
+</tr>
+<tr>
+<td><code>ObjectID</code></td>
+<td>number or field</td>
+<td>ID of the object in your client <br>(indicated on the objects sidebar)</td>
+</tr>
+<tr>
+<td><code>Attributes</code></td>
+<td>some other fields including attributes with a <br>similar type or a specific attribute value</td>
+<td>any fields specified by a label</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<a href="/v2.54.0/docs/workspace/projects/#supported-properties-for-projects-list">Supported properties for projects list</a>
+</li>
+<li>
+<a href="/v2.54.0/docs/workspace/tasks-page/#supported-properties-for-tasks-list">Supported properties for tasks list</a>
+</li>
+<li>
+<a href="/v2.54.0/docs/workspace/jobs-page/#supported-properties-for-jobs-list">Supported properties for jobs list</a>
+</li>
+<li>
+<a href="/v2.54.0/docs/workspace/cloud-storages/#supported-properties-for-cloud-storages-list">Supported properties for cloud storages list</a>
+</li>
+</ul>
+<h3 id="supported-operators-for-properties">Supported operators for properties</h3>
+<p><code>==</code> - Equally; <code>!=</code> - Not equal; <code>&gt;</code> - More; <code>&gt;=</code> - More or equal; <code>&lt;</code> - Less; <code>&lt;=</code> - Less or equal;</p>
+<p><code>Any in</code>; <code>Not in</code> - these operators allow you to set multiple values in one rule;</p>
+<p><img src="/images/image203.jpg" alt="Example of &amp;ldquo;any in&amp;rdquo; filter"></p>
+<p><code>Is empty</code>; <code>is not empty</code> – these operators don&rsquo;t require to input a value.</p>
+<p><code>Between</code>; <code>Not between</code> – these operators allow you to choose a range between two values.</p>
+<p><code>Like</code> - this operator indicate that the property must contain a value.</p>
+<p><code>Starts with</code>; <code>Ends with</code> - filter by beginning or end.</p>
+<p>Some properties support two types of values that you can choose:</p>
+<p><img src="/images/image205.jpg" alt="Choosing value type in a filter property"></p>
+<p>You can add multiple rules, to do so click the add rule button and set another rule.
+Once you&rsquo;ve set a new rule, you&rsquo;ll be able to choose which operator they will be connected by: <code>And</code> or <code>Or</code>.</p>
+<p><img src="/images/image206.jpg" alt="Filter window with highlighted operators"></p>
+<p>All subsequent rules will be joined by the chosen operator.
+Click <code>Submit</code> to apply the filter or if you want multiple rules to be connected by different operators, use groups.</p>
+<h3 id="groups">Groups</h3>
+<p>To add a group, click the <code>Add group</code> button. Inside the group you can create rules or groups.</p>
+<p><img src="/images/image207.jpg" alt="Filter window with highlighted group and &amp;ldquo;Add group&amp;rdquo; button"></p>
+<p>If there is more than one rule in the group, they can be connected by <code>And</code> or <code>Or</code> operators.
+The rule group will work as well as a separate rule outside the group and will be joined by an
+operator outside the group.
+You can create groups within other groups, to do so you need to click the add group button within the group.</p>
+<p>You can move rules and groups. To move the rule or group, drag it by the button.
+To remove the rule or group, click on the <code>Delete</code> button.</p>
+<p><img src="/images/image208.jpg" alt="Part of the filter window with highlighted buttons for moving and deleting groups and rules"></p>
+<p>If you activate the <code>Not</code> button, objects that don&rsquo;t match the group will be filtered out.
+Click <code>Submit</code> to apply the filter.
+The <code>Cancel</code> button undoes the filter. The <code>Clear filter</code> button removes the filter.</p>
+<p>Once applied filter automatically appears in <code>Recent used</code> list. Maximum length of the list is 10.</p>
+<hr>
+<h2 id="sort-and-filter-lists">Sort and filter lists</h2>
+<p>On the <a href="/v2.54.0/docs/workspace/projects/#projects-page">projects</a>, task list on the project page,
+<a href="/v2.54.0/docs/workspace/tasks-page/">tasks</a>, <a href="/v2.54.0/docs/workspace/jobs-page/">jobs</a>,
+and <a href="/v2.54.0/docs/workspace/cloud-storages/">cloud storage</a> pages, you can use sorting and filters.</p>
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading">Note</h4>
+
+    The applied filter and sorting will be displayed in the URL of your browser,
+Thus, you can share the page with sorting and filter applied.
+
+</div>
+
+<h3 id="sort-by">Sort by</h3>
+<p>You can sort by the following parameters:</p>
+<ul>
+<li>Jobs list: ID, assignee, updated date, <a href="/v2.54.0/docs/getting_started/vocabulary/#stage">stage</a>,
+<a href="/v2.54.0/docs/getting_started/vocabulary/#state">state</a>, task ID, project ID,
+task name, project name.</li>
+<li>Tasks list or tasks list on project page: ID, owner, status, assignee, updated date,
+<a href="/v2.54.0/docs/getting_started/vocabulary/#subset">subset</a>,
+<a href="/v2.54.0/docs/getting_started/vocabulary/#mode">mode</a>,
+<a href="/v2.54.0/docs/getting_started/vocabulary/#dimension">dimension</a>, project ID, name, project name.</li>
+<li>Projects list: ID, assignee, owner, status, name, updated date.</li>
+<li>Cloud storages list: ID, provider type, updated date, display name,
+<a href="/v2.54.0/docs/getting_started/vocabulary/#resource">resource</a>,
+<a href="/v2.54.0/docs/getting_started/vocabulary/#credentials">credentials</a>, owner, description.</li>
+</ul>
+<p>To apply sorting, drag the parameter to the top area above the horizontal bar.
+The parameters below the horizontal line will not be applied.
+By moving the parameters you can change the priority,
+first of all sorting will occur according to the parameters that are above.</p>
+<p>Pressing the <code>Sort button</code> switches <code>Ascending sort</code>/<code>Descending sort</code>.</p>
+<h3 id="quick-filters">Quick filters</h3>
+<p>Quick Filters contain several frequently used filters:</p>
+<ul>
+<li><code>Assigned to me</code> - show only those projects, tasks or jobs that are assigned to you.</li>
+<li><code>Owned by me</code> -  show only those projects or tasks that are owned by you.</li>
+<li><code>Not completed</code> - show only those projects, tasks or jobs that have a status other than completed.</li>
+<li><code>AWS storages</code> - show only AWS cloud storages</li>
+<li><code>Azure storages</code> - show only Azure cloud storages</li>
+<li><code>Google cloud storages</code> - show only Google cloud storages</li>
+</ul>
+<h4 id="date-and-time-selection">Date and time selection</h4>
+<p>When creating a <code>Last updated</code> rule, you can select the date and time by using the selection window.</p>
+<p><img src="/images/image244_detrac.jpg" alt="Filter window with opened date and time filter and marked elements"></p>
+<p>You can select the year and month using the arrows or by clicking on the year and month.
+To select a day, click on it in the calendar,
+To select the time, you can select the hours and minutes using the scrolling list.
+Or you can select the current date and time by clicking the <code>Now</code> button.
+To apply, click <code>Ok</code>.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/v2.54.0/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/v2.54.0/js/main.min.99abe30f7fb05785a480d405ee1665ebd520cec6bbadffe966b7737e103675b8.js" integrity="sha256-mavjD3&#43;wV4WkgNQF7hZl69Ugzsa7rf/pZrdzfhA2dbg=" crossorigin="anonymous"></script>
+<script src='/v2.54.0/js/prism.js'></script>
+<script src='/v2.54.0/js/tabpane-persist.js'></script>
+
+  </body>
+</html>
