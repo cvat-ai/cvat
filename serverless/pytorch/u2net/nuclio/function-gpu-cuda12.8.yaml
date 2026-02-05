@@ -16,7 +16,7 @@ spec:
   eventTimeout: 3000s
 
   build:
-    image: cvat.pth.unified:cuda12.8
+    image: cvat.pth.u2net:cuda12.8
     baseImage: pytorch-unified:cuda12.8
 
     directives:

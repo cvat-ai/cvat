@@ -56,6 +56,9 @@ RUN pip install --no-cache-dir \
     pyyaml \
     tqdm
 
+# Install Segment Anything (SAM) from Facebook Research
+RUN pip install --no-cache-dir git+https://github.com/facebookresearch/segment-anything.git
+
 # Clean up pip cache
 RUN pip cache purge && \
     rm -rf /root/.cache/pip
@@ -66,6 +69,11 @@ WORKDIR /opt/nuclio
 # Clone U2Net repository (for U2Net model)
 RUN git clone --depth 1 https://github.com/xuebinqin/U-2-Net.git u2net && \
     rm -rf u2net/.git
+
+# Download SAM model weights
+RUN mkdir -p /opt/nuclio/sam && \
+    curl -L -o /opt/nuclio/sam/sam_vit_h_4b8939.pth \
+    https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
 
 # Copy ALL PyTorch model code into the image
 # This allows all models to share the same image

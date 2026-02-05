@@ -26,7 +26,7 @@ spec:
       value: /opt/nuclio/sam
 
   build:
-    image:  cvat.pth.unified:cuda12.8
+    image:  cvat.pth.sam:cuda12.8
     baseImage: pytorch-unified:cuda12.8
     noBaseImagesPull: true
 
