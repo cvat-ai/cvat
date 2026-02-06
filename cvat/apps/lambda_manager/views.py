@@ -242,6 +242,7 @@ class LambdaFunction:
         self.min_neg_points = int(meta_anno.get("min_neg_points", -1))
         self.startswith_box = bool(meta_anno.get("startswith_box", False))
         self.startswith_box_optional = bool(meta_anno.get("startswith_box_optional", False))
+        self.is_promptable = bool(meta_anno.get("is_promptable", False))
         self.animated_gif = meta_anno.get("animated_gif", "")
         self.version = int(meta_anno.get("version", "1"))
         self.help_message = meta_anno.get("help_message", "")
@@ -290,6 +291,12 @@ class LambdaFunction:
                     "supported_shape_types": self.supported_shape_types or ["rectangle"],
                 }
             )
+        elif self.kind is FunctionKind.DETECTOR:
+            response.update(
+                {
+                    "is_promptable": self.is_promptable,
+                }
+            )
 
         return response
 
@@ -325,6 +332,9 @@ class LambdaFunction:
         threshold = data.get("threshold")
         if threshold:
             payload.update({"threshold": threshold})
+        prompt = data.get("prompt")
+        if prompt:
+            payload.update({"prompt": prompt})
         mapping = data.get("mapping", {})
 
         model_labels = self.labels
@@ -680,6 +690,7 @@ class LambdaQueue:
         cleanup,
         conv_mask_to_poly,
         max_distance,
+        prompt,
         request,
         *,
         job: int | None = None,
@@ -729,6 +740,7 @@ class LambdaQueue:
                         "conv_mask_to_poly": conv_mask_to_poly,
                         "mapping": mapping,
                         "max_distance": max_distance,
+                        "prompt": prompt,
                     },
                     depends_on=define_dependent_job(queue, user_id),
                     result_ttl=self.RESULT_TTL.total_seconds(),
@@ -984,6 +996,7 @@ class LambdaJob:
         threshold: float,
         mapping: dict[str, str] | None,
         conv_mask_to_poly: bool,
+        prompt: str,
         *,
         db_job: Job | None = None,
     ):
@@ -1005,6 +1018,7 @@ class LambdaJob:
                     "mapping": mapping,
                     "threshold": threshold,
                     "conv_mask_to_poly": conv_mask_to_poly,
+                    "prompt": prompt,
                 },
                 converter=converter,
             )
@@ -1179,6 +1193,7 @@ class LambdaJob:
                 kwargs.get("threshold"),
                 kwargs.get("mapping"),
                 kwargs.get("conv_mask_to_poly"),
+                kwargs.get("prompt"),
                 db_job=db_job,
             )
         elif function.kind == FunctionKind.REID:
@@ -1408,6 +1423,7 @@ class RequestViewSet(viewsets.ViewSet):
             conv_mask_to_poly = request_data.get("conv_mask_to_poly", False)
             mapping = request_data.get("mapping")
             max_distance = request_data.get("max_distance")
+            prompt = request_data.get("prompt")
         except KeyError as err:
             raise ValidationError(
                 "`{}` lambda function was run ".format(request_data.get("function", "undefined"))
@@ -1426,6 +1442,7 @@ class RequestViewSet(viewsets.ViewSet):
             cleanup,
             conv_mask_to_poly,
             max_distance,
+            prompt,
             request,
             job=job,
         )
