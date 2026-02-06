@@ -49,7 +49,7 @@ import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-col
 import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
 import { Request, RequestOperation } from 'cvat-core/src/request';
 import AboutData from 'cvat-core/src/about';
-import { MinimalShape, TrackerResults, InteractorResults } from 'cvat-core/src/lambda-manager';
+import { MinimalShape, TrackerResults, InteractorResults, AutoClassifierResultItem } from 'cvat-core/src/lambda-manager';
 
 const cvat: CVATCore = _cvat;
 
@@ -141,6 +141,7 @@ export type {
     AnalyticsEventsFilter,
     MinimalShape,
     InteractorResults,
+    AutoClassifierResultItem,
     TrackerResults,
     ApiTokenModifiableFields,
     ApiTokensFilter,

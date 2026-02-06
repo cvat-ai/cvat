@@ -9,5 +9,6 @@ import django.db.models as models
 class FunctionKind(models.TextChoices):
     DETECTOR = "detector"
     INTERACTOR = "interactor"
+    AUTOCLASSIFIER = "autoClassifier"
     REID = "reid"
     TRACKER = "tracker"

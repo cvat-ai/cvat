@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import io
 import textwrap
 from copy import deepcopy
 from datetime import timedelta
@@ -18,6 +19,7 @@ import datumaro.util.mask_tools as mask_tools
 import django_rq
 import numpy as np
 import requests
+import cv2
 import rq
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -35,7 +37,7 @@ from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.task import PatchAction
-from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameOutputType
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
     Job,
@@ -442,6 +444,21 @@ class LambdaFunction:
                         mapping_item["sublabels"], md_label["sublabels"], db_label.sublabels.all()
                     )
 
+        def image2base64(im, fmt="JPEG"):
+            """convert PIL.Image/np.ndarray(cv2.Mat) to base64"""
+            if isinstance(im, np.ndarray):  # opencv format
+                buffer = io.BytesIO(im.tobytes())
+            else:  # PIL Image format
+                buffer = io.BytesIO()
+                im.save(buffer, format=fmt)
+            return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+        def translate_points(obj: dict, xy: tuple[int, int]):
+            """translate points xy value from absolute to relative"""
+            if obj["shapeType"] in ("polygon", "rectangle", "cuboid", "ellipse"):
+                obj["points"] = (np.array(obj["points"]).reshape(-1, 2) - xy).reshape(-1).tolist()
+            return obj
+
         if not mapping:
             mapping = make_default_mapping(model_labels, task_labels)
         else:
@@ -467,6 +484,54 @@ class LambdaFunction:
 
         if self.kind == FunctionKind.DETECTOR:
             payload.update({"image": self._get_image(db_task, mandatory_arg("frame"))})
+        elif self.kind == FunctionKind.AUTOCLASSIFIER:
+            _SUPPORT_TYPES = ("polygon", "rectangle", "cuboid", "mask", "ellipse")
+
+            # Calculate all objects which matching support types areas
+            total_area = 0
+            for i in range(len(mandatory_arg("objects"))):
+                shape = mandatory_arg("objects")[i]
+                if shape["shapeType"] in ("polygon", "rectangle", "cuboid", "ellipse"):
+                    # decode points
+                    if shape["shapeType"] == "ellipse":
+                        cx, cy, rx, ry = shape["points"]
+                        x0, y0, x1, y1 = cx - (rx - cx), ry, rx, cy + (cy - ry)
+                    else:
+                        points = np.array(shape["points"]).reshape(-1, 2)
+                        x0, y0 = np.min(points, axis=0).tolist()
+                        x1, y1 = np.max(points, axis=0).tolist()
+                    # rotate attribute
+                    if shape["shapeType"] in ("rectangle", "ellipse") and shape.get("rotation", 0):
+                        cx, cy, bw, bh = (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (y1 - y0)
+                        box = cv2.boxPoints(((cx, cy), (bw, bh), shape["rotation"]))
+                        x0, y0 = np.min(box, axis=0).tolist()
+                        x1, y1 = np.max(box, axis=0).tolist()
+                    total_area += round((x1 - x0 + 1) * (y1 - y0 + 1))
+                    shape.update({"xyxy": (x0, y0, x1, y1)})
+                elif shape["shapeType"] == "mask":
+                    x0, y0, x1, y1 = shape["points"][-4:]
+                    total_area += round((x1 - x0 + 1) * (y1 - y0 + 1))
+                    shape.update({"xyxy": (x0, y0, x1, y1)})
+
+            frame_provider = TaskFrameProvider(db_task)
+            image = frame_provider.get_frame(mandatory_arg("frame"), out_type=FrameOutputType.PIL)
+            image = image.data  # get data from DataWithMeta
+
+            # Objects filter
+            objects = [obj for obj in mandatory_arg("objects") if obj["shapeType"] in _SUPPORT_TYPES]
+            if total_area > (image.width * image.height) * 0.8:  # compressed when area more than 0.8 x origin size
+                payload.update({
+                    "image": image2base64(image),
+                    "objects": objects,
+                })
+            else:
+                payload.update({
+                    "image": None,
+                    "objects": [{
+                        **translate_points(o, o["xyxy"][:2]),
+                        "image": image2base64(image.crop((o["xyxy"] + np.array([0, 0, 1, 1])).tolist()))
+                    } for o in objects],
+                })
         elif self.kind == FunctionKind.INTERACTOR:
             payload.update(
                 {
