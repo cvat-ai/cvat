@@ -281,6 +281,7 @@ class CVAT_QUEUES(Enum):
 redis_inmem_host = os.getenv("CVAT_REDIS_INMEM_HOST", "localhost")
 redis_inmem_port = os.getenv("CVAT_REDIS_INMEM_PORT", 6379)
 redis_inmem_password = os.getenv("CVAT_REDIS_INMEM_PASSWORD", "")
+redis_inmem_ssl = to_bool(os.getenv("CVAT_REDIS_INMEM_SSL", False))
 
 
 class REDIS_INMEM_DATABASES(IntEnum):
@@ -293,6 +294,8 @@ REDIS_INMEM_SETTINGS = {
     "PORT": redis_inmem_port,
     "DB": REDIS_INMEM_DATABASES.RQ,
     "PASSWORD": redis_inmem_password,
+    "SSL": redis_inmem_ssl,
+    "SSL_CERT_REQS": None,
 }
 
 RQ_QUEUES = {
@@ -571,7 +574,7 @@ CVAT_PREVIEW_CACHE_TTL = 3600 * 24 * 7  # 7 days
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": f"redis://:{urllib.parse.quote(redis_inmem_password)}@{redis_inmem_host}:{redis_inmem_port}/{REDIS_INMEM_DATABASES.CACHE}",
+        "LOCATION": f"{'rediss' if redis_inmem_ssl else 'redis'}://:{urllib.parse.quote(redis_inmem_password)}@{redis_inmem_host}:{redis_inmem_port}/{REDIS_INMEM_DATABASES.CACHE}",
     },
     "media": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
