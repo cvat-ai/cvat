@@ -6,7 +6,14 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import {
-    Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils, AntdConfig, AntdWidgets,
+    Builder,
+    Config,
+    ImmutableTree,
+    JsonLogicTree,
+    Query,
+    Utils as QbUtils,
+    AntdConfig,
+    AntdWidgets,
 } from '@react-awesome-query-builder/antd';
 
 import { omit } from 'lodash';
@@ -68,6 +75,46 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
                 };
             }
         });
+
+        if (label.type === 'skeleton' && label.structure?.sublabels) {
+            label.structure.sublabels.forEach((sublabel: any): void => {
+                const adjustedSublabelName = adjustName(sublabel.name);
+                labelSubfields[adjustedSublabelName] = {
+                    type: '!struct',
+                    label: sublabel.name,
+                    subfields: {},
+                };
+
+                const sublabelSubfields = labelSubfields[adjustedSublabelName].subfields;
+
+                // Add built-in properties for skeleton sublabels
+                sublabelSubfields.occluded = {
+                    label: 'Occluded',
+                    type: 'boolean',
+                };
+                sublabelSubfields.outside = {
+                    label: 'Outside',
+                    type: 'boolean',
+                };
+
+                // Add custom attributes for the sublabel
+                sublabel.attributes.forEach((attr: any): void => {
+                    const adjustedAttrName = adjustName(attr.name);
+                    sublabelSubfields[adjustedAttrName] = {
+                        label: attr.name,
+                        type: getConvertedInputType(attr.inputType),
+                    };
+                    if (sublabelSubfields[adjustedAttrName].type === 'select') {
+                        sublabelSubfields[adjustedAttrName] = {
+                            ...sublabelSubfields[adjustedAttrName],
+                            fieldSettings: {
+                                listValues: attr.values,
+                            },
+                        };
+                    }
+                });
+            });
+        }
     });
 
     return subfields;
@@ -95,7 +142,7 @@ function FiltersModalComponent(): JSX.Element {
                 label: {
                     label: 'Label',
                     type: 'select',
-                    valueSources: ['value'] as ('value')[],
+                    valueSources: ['value'] as 'value'[],
                     fieldSettings: {
                         listValues: labels.map((label: any) => ({
                             value: label.name,
@@ -172,14 +219,21 @@ function FiltersModalComponent(): JSX.Element {
                     subfields: getAttributesSubfields(labels),
                     fieldSettings: {
                         treeSelectOnlyLeafs: true,
+                        treeDefaultExpandAll: false,
+                        treeNodeFilterProp: 'title',
                     },
                 },
             },
             settings: {
                 ...AntdConfig.settings,
-                renderField: (_props: any) => (
-                    <FieldDropdown {...omit(_props)} customProps={omit(_props.customProps, 'showSearch')} />
-                ),
+                renderField: (_props: any) => {
+                    const customProps = {
+                        ...omit(_props.customProps, 'showSearch'),
+                        dropdownMatchSelectWidth: false,
+                        treeDefaultExpandAll: false,
+                    };
+                    return <FieldDropdown {..._props} customProps={customProps} />;
+                },
                 // using FieldDropdown because we cannot use antd because of antd-related bugs
                 // https://github.com/ukrbublik/react-awesome-query-builder/issues/224
             },
@@ -236,10 +290,9 @@ function FiltersModalComponent(): JSX.Element {
         applyFilters([currentFilter.logic]);
     };
 
-    const isModalConfirmable = (): boolean => (
-        (QbUtils.queryString(immutableTree, config) || '')
-            .trim().length > 0 && QbUtils.isValidTree(immutableTree, config)
-    );
+    const isModalConfirmable = (): boolean =>
+        (QbUtils.queryString(immutableTree, config) || '').trim().length > 0 &&
+        QbUtils.isValidTree(immutableTree, config);
 
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
@@ -329,17 +382,12 @@ function FiltersModalComponent(): JSX.Element {
                     overlayClassName='cvat-recently-used-filters-dropdown'
                     content={menu}
                 >
-                    <Button
-                        type='text'
-                        className='cvat-filters-modal-recently-used-button'
-                    >
-                        Recently used
-                        {' '}
-                        <DownOutlined />
+                    <Button type='text' className='cvat-filters-modal-recently-used-button'>
+                        Recently used <DownOutlined />
                     </Button>
                 </Popover>
             </div>
-            { !!config.fields && (
+            {!!config.fields && (
                 <Query
                     {...config}
                     value={immutableTree as ImmutableTree}
