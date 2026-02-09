@@ -50,7 +50,7 @@ export default function JobActionsItems(
     const isBulkMode = selectedIds.length > 1;
     const bulkAllowedKeys = [
         'edit_assignee', 'edit_state', 'edit_stage', 'export_job', 'delete',
-        'go-to-parent', 'go-to-replicas',
+        'go_to_parent', 'go_to_replicas',
     ];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
     const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);

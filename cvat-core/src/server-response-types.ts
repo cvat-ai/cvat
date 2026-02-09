@@ -163,7 +163,7 @@ export interface SerializedJob {
     source_storage: SerializedStorage | null;
     target_storage: SerializedStorage | null;
     parent_job_id: number | null;
-    replicasCount: number;
+    replicas_count: number;
 }
 
 export type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
