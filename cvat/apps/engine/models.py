@@ -420,28 +420,35 @@ class FrameQuality(IntEnum):
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
+    # Content descriptors
     content_size = models.PositiveBigIntegerField(null=True)
-    chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
-    image_quality = models.PositiveSmallIntegerField(default=50)
     start_frame = models.PositiveIntegerField(default=0)
     stop_frame = models.PositiveIntegerField(default=0)
     frame_filter = models.CharField(max_length=256, default="", blank=True)
+    deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
+    validation_layout: MaybeUndefined[ValidationLayout]
+
+    # Media descriptors
+    images: models.manager.RelatedManager[Image]
+    video: MaybeUndefined[Video]
+    related_files: models.manager.RelatedManager[RelatedFile]
+
+    # Cache descriptors
+    chunk_size = models.PositiveIntegerField(null=True)
+    image_quality = models.PositiveSmallIntegerField(default=50)
     compressed_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         default=DataChoice.IMAGESET)
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         default=DataChoice.IMAGESET)
+
+    # Storage descriptors
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
     storage = models.CharField(max_length=15, choices=StorageChoice.choices(), default=StorageChoice.LOCAL)
     cloud_storage = models.ForeignKey(CloudStorage, on_delete=models.SET_NULL, null=True, related_name='data')
+
+    # Task creation parameters
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
-    deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
-
-    images: models.manager.RelatedManager[Image]
-    video: MaybeUndefined[Video]
-    related_files: models.manager.RelatedManager[RelatedFile]
-    validation_layout: MaybeUndefined[ValidationLayout]
-
     client_files: models.manager.RelatedManager[ClientFile]
     server_files: models.manager.RelatedManager[ServerFile]
     remote_files: models.manager.RelatedManager[RemoteFile]
