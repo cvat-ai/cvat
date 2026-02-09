@@ -17,7 +17,7 @@ from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from logging import Logger
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, ClassVar
 from zipfile import ZipFile
 
@@ -521,9 +521,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
                 files_for_local_copy = []
 
-                media_files_to_download = []
+                media_files_to_download: list[PurePath] = []
                 for media_file in self._db_data.related_files.all():
-                    media_path = os.path.relpath(str(media_file.path), data_dir)
+                    media_path = Path(media_file.path).relative_to(data_dir)
 
                     local_path = os.path.join(data_dir, media_path)
                     if os.path.exists(local_path):
@@ -547,7 +547,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     storage_client = db_storage_to_storage_instance(self._db_data.cloud_storage)
                     with tempfile.TemporaryDirectory() as tmp_dir:
                         storage_client.bulk_download_to_dir(
-                            files=media_files_to_download, upload_dir=tmp_dir
+                            files=media_files_to_download, upload_dir=Path(tmp_dir)
                         )
 
                         self._write_files(
