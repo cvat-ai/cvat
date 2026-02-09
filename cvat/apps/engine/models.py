@@ -47,8 +47,9 @@ class SafeCharField(models.CharField):
 
 
 class DimensionType(str, Enum):
-    DIM_3D = '3d'
+    DIM_1D = '1d'
     DIM_2D = '2d'
+    DIM_3D = '3d'
 
     @classmethod
     def choices(cls):
@@ -432,6 +433,7 @@ class Data(models.Model):
     # Media descriptors
     images: models.manager.RelatedManager[Image]
     video: MaybeUndefined[Video]
+    audio: MaybeUndefined[Audio]
     related_files: models.manager.RelatedManager[RelatedFile]
 
     # Cache descriptors
@@ -546,6 +548,15 @@ class Video(models.Model):
     path = models.CharField(max_length=1024, default='')
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
+
+    class Meta:
+        default_permissions = ()
+
+
+class Audio(models.Model):
+    data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
+    path = models.CharField(max_length=1024, default='')
+    sampling_rate = models.PositiveIntegerField()
 
     class Meta:
         default_permissions = ()
@@ -1267,8 +1278,9 @@ class ShapeType(str, Enum):
     POINTS = 'points'       # (x0, y0, ..., xn, yn)
     ELLIPSE = 'ellipse'     # (cx, cy, rx, ty)
     CUBOID = 'cuboid'       # (x0, y0, ..., x7, y7)
-    MASK = 'mask'       # (rle mask, left, top, right, bottom)
+    MASK = 'mask'           # (rle mask, left, top, right, bottom)
     SKELETON = 'skeleton'
+    TAG = 'tag'             # ()
 
     @classmethod
     def choices(cls):
