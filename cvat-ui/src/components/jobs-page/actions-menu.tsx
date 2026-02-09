@@ -126,9 +126,9 @@ function JobActionsComponent(
                 type: 'primary',
                 danger: true,
             },
-            okText: isBulk ? 'Delete selected' : 'Delete',
+            okText: isBulkMode ? 'Delete selected' : 'Delete',
         });
-    }, [jobInstance, jobsToAct, dispatch]);
+    }, [jobInstance, isBulkMode, jobsToAct, dispatch]);
 
     const onGoToParent = useCallback(() => {
         if (onApplyFilter) {
