@@ -17,6 +17,7 @@ import { importActions } from 'actions/import-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
+import { selectionActions } from 'actions/selection-actions';
 
 import UserSelector from 'components/task-page/user-selector';
 import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
@@ -137,8 +138,9 @@ function JobActionsComponent(
                 or: parentIds.map((id) => ({ '==': [{ var: 'id' }, id] })),
             });
             onApplyFilter(logic);
+            dispatch(selectionActions.clearSelectedResources());
         }
-    }, [jobInstance, onApplyFilter, allJobs, selectedIds]);
+    }, [jobInstance, allJobs, selectedIds]);
 
     const onGoToReplicas = useCallback(() => {
         if (onApplyFilter) {
@@ -147,8 +149,9 @@ function JobActionsComponent(
                 or: jobIds.map((id) => ({ '==': [{ var: 'parent_job_id' }, id] })),
             });
             onApplyFilter(logic);
+            dispatch(selectionActions.clearSelectedResources());
         }
-    }, [jobInstance.id, onApplyFilter, selectedIds]);
+    }, [jobInstance.id, selectedIds]);
 
     const onUpdateJobField = useCallback((
         fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>,
