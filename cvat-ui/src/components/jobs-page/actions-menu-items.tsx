@@ -8,6 +8,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { LabelWithCountHOF } from 'components/common/label-with-count';
+import { Job, JobType } from 'cvat-core-wrapper';
 
 interface MenuItemsData {
     jobId: number;
@@ -23,7 +24,7 @@ interface MenuItemsData {
     onGoToParent: (() => void) | null;
     onGoToReplicas: (() => void) | null;
     startEditField: (key: string) => void;
-    selectedIds: number[];
+    jobsToAct: Job[];
 }
 
 export default function JobActionsItems(
@@ -42,18 +43,32 @@ export default function JobActionsItems(
         onExportAnnotations,
         onMergeConsensusJob,
         onDeleteJob,
-        selectedIds = [],
+        jobsToAct,
         onGoToParent,
         onGoToReplicas,
     } = menuItemsData;
 
-    const isBulkMode = selectedIds.length > 1;
+    const isBulkMode = jobsToAct.length > 1;
     const bulkAllowedKeys = [
         'edit_assignee', 'edit_state', 'edit_stage', 'export_job', 'delete',
         'go_to_parent', 'go_to_replicas',
     ];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
-    const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
+
+    const jobsToActWithParents = jobsToAct.filter((j) => j.parentJobId != null);
+    const jobsToActWithReplicas = jobsToAct.filter((j) => j.replicasCount > 0);
+
+    const actionsApplicable = {
+        edit_assignee: jobsToAct,
+        edit_state: jobsToAct,
+        edit_stage: jobsToAct,
+        export_job: jobsToAct,
+        delete: jobsToAct.filter((j) => j.type === JobType.GROUND_TRUTH),
+        go_to_parent: jobsToActWithParents,
+        go_to_replicas: jobsToActWithReplicas,
+    };
+
+    const withCount = LabelWithCountHOF(jobsToAct, bulkAllowedKeys, actionsApplicable);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
@@ -63,7 +78,7 @@ export default function JobActionsItems(
         disabled: isDisabled('task'),
     }, 0]);
 
-    if (onGoToParent) {
+    if (jobsToActWithParents.length) {
         menuItems.push([{
             key: 'go_to_parent',
             onClick: onGoToParent,
@@ -71,7 +86,7 @@ export default function JobActionsItems(
             disabled: isDisabled('go_to_parent'),
         }, 10]);
     }
-    if (onGoToReplicas) {
+    if (jobsToActWithReplicas.length) {
         menuItems.push([{
             key: 'go_to_replicas',
             onClick: onGoToReplicas,
