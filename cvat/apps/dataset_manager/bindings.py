@@ -1629,7 +1629,7 @@ class MediaProvider3D(MediaProvider):
 
             frame_related_images = {
                 ri_path: Path(ri_realpath).read_bytes()
-                for _, (ri_realpath, ri_path, _) in cache.read_raw_context_images(
+                for _, (ri_realpath, ri_path) in cache.read_raw_context_images(
                     self._sources[self._current_source_id].db_task.data,
                     frame_ids=[frame_id],
                     truncate_common_filename_prefix=False,
