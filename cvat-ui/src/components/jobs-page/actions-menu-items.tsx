@@ -63,12 +63,29 @@ export default function JobActionsItems(
         disabled: isDisabled('task'),
     }, 0]);
 
+    if (onGoToParent) {
+        menuItems.push([{
+            key: 'go_to_parent',
+            onClick: onGoToParent,
+            label: withCount('Go to parent', 'go_to_parent'),
+            disabled: isDisabled('go_to_parent'),
+        }, 10]);
+    }
+    if (onGoToReplicas) {
+        menuItems.push([{
+            key: 'go_to_replicas',
+            onClick: onGoToReplicas,
+            label: withCount('Go to replicas', 'go_to_replicas'),
+            disabled: isDisabled('go_to_replicas'),
+        }, 20]);
+    }
+
     if (projectId) {
         menuItems.push([{
             key: 'project',
             label: withCount('Go to the project', 'project', `/projects/${projectId}`),
             disabled: isDisabled('project'),
-        }, 10]);
+        }, 30]);
     }
 
     if (onOpenBugTracker) {
@@ -77,7 +94,7 @@ export default function JobActionsItems(
             onClick: onOpenBugTracker,
             label: withCount('Go to the bug tracker', 'bug_tracker'),
             disabled: isDisabled('bug_tracker'),
-        }, 20]);
+        }, 40]);
     }
 
     menuItems.push([{
@@ -85,14 +102,14 @@ export default function JobActionsItems(
         onClick: onImportAnnotations,
         label: withCount('Import annotations', 'import_job'),
         disabled: isDisabled('import_job'),
-    }, 30]);
+    }, 50]);
 
     menuItems.push([{
         key: 'export_job',
         onClick: onExportAnnotations,
         label: withCount('Export annotations', 'export_job'),
         disabled: isDisabled('export_job'),
-    }, 40]);
+    }, 60]);
 
     if (onMergeConsensusJob) {
         menuItems.push([{
@@ -101,7 +118,7 @@ export default function JobActionsItems(
             label: withCount('Merge consensus job', 'merge_specific_consensus_jobs'),
             disabled: isMergingConsensusEnabled || isDisabled('merge_specific_consensus_jobs'),
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
-        }, 50]);
+        }, 70]);
     }
 
     menuItems.push([{
@@ -109,53 +126,36 @@ export default function JobActionsItems(
         onClick: () => startEditField('assignee'),
         label: <CVATMenuEditLabel>{withCount('Assignee', 'edit_assignee')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_assignee'),
-    }, 60]);
+    }, 80]);
 
     menuItems.push([{
         key: 'edit_state',
         onClick: () => startEditField('state'),
         label: <CVATMenuEditLabel>{withCount('State', 'edit_state')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_state'),
-    }, 70]);
+    }, 90]);
 
     menuItems.push([{
         key: 'edit_stage',
         onClick: () => startEditField('stage'),
         label: <CVATMenuEditLabel>{withCount('Stage', 'edit_stage')}</CVATMenuEditLabel>,
         disabled: isDisabled('edit_stage'),
-    }, 80]);
+    }, 100]);
 
     menuItems.push([{
         key: 'view-analytics',
         label: withCount('View analytics', 'view-analytics', `/tasks/${taskId}/jobs/${jobId}/analytics`),
         disabled: isDisabled('view-analytics'),
-    }, 90]);
+    }, 110]);
 
     if (onDeleteJob) {
-        menuItems.push([{ type: 'divider' }, 99]);
+        menuItems.push([{ type: 'divider' }, 119]);
         menuItems.push([{
             key: 'delete',
             onClick: onDeleteJob,
             label: withCount('Delete', 'delete'),
             disabled: isDisabled('delete'),
-        }, 100]);
-    }
-
-    if (onGoToParent) {
-        menuItems.push([{
-            key: 'go-to-parent',
-            onClick: onGoToParent,
-            label: withCount('Go to parent', 'go-to-parent'),
-            disabled: isDisabled('go-to-parent'),
-        }, 200]);
-    }
-    if (onGoToReplicas) {
-        menuItems.push([{
-            key: 'go-to-replicas',
-            onClick: onGoToReplicas,
-            label: withCount('Go to replicas', 'go-to-replicas'),
-            disabled: isDisabled('go-to-replicas'),
-        }, 210]);
+        }, 120]);
     }
 
     menuItems.push(
