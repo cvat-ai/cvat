@@ -13,7 +13,7 @@ RUN apt-get update && \
         libgeos-dev \
         libhdf5-dev \
         libldap2-dev \
-        libopus-dev \
+        libmp3lame-dev \
         libsasl2-dev \
         libxml2-dev \
         libxmlsec1-dev \
@@ -123,7 +123,7 @@ RUN apt-get update && \
         libgl1 \
         libgomp1 \
         libldap-2.5-0 \
-        libopus0 \
+        libmp3lame0 \
         libpython3.10 \
         libsasl2-2 \
         libxml2 \
