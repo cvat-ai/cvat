@@ -16,7 +16,7 @@ from enum import Enum
 from io import BytesIO
 from pathlib import Path, PurePath
 from queue import Queue
-from typing import Any, BinaryIO, TypeVar
+from typing import Any, BinaryIO, Concatenate, ParamSpec, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
@@ -1148,17 +1148,18 @@ def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudSto
     return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
 
 
-T = TypeVar("T", Callable[[str, int, int], int], Callable[[str, int, str, bool], None])
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 def import_resource_from_cloud_storage(
     filename: str,
     db_storage: CloudStorage,
     key: str,
-    import_func: T,
-    *args,
-    **kwargs,
-) -> Any:
+    import_func: Callable[Concatenate[str, P], T],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> T:
     storage = db_storage_to_storage_instance(db_storage)
     storage.download_file(key, Path(filename))
 
@@ -1167,9 +1168,9 @@ def import_resource_from_cloud_storage(
 
 def export_resource_to_cloud_storage(
     db_storage: CloudStorage,
-    func: Callable[[int, str | None, str | None], str],
-    *args,
-    **kwargs,
+    func: Callable[P, str],
+    *args: P.args,
+    **kwargs: P.kwargs,
 ) -> str:
     rq_job = get_current_job()
     assert rq_job, "func can be executed only from a background job"
