@@ -227,7 +227,7 @@ def _create_segments_and_jobs(
     db_task.save()
 
 
-def _count_files(data):
+def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
     share_root = settings.SHARE_ROOT
     server_files = []
 
@@ -1215,6 +1215,9 @@ def create_thread(
     media, task_mode = _validate_data(media, manifest_files)
     is_media_sorted = False
 
+    if job_file_mapping is not None and task_mode != "annotation":
+        raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
+
     manifest = None
     if is_data_in_cloud:
         is_packed_media = any(v for k, v in media.items() if k != "image")
@@ -1238,9 +1241,6 @@ def create_thread(
                 db_data.storage = models.StorageChoice.LOCAL
         else:
             manifest = ImageManifestManager(db_data.get_manifest_path())
-
-    if job_file_mapping is not None and task_mode != "annotation":
-        raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
     if data["server_files"]:
         if db_data.storage == models.StorageChoice.LOCAL and not db_data.cloud_storage:
