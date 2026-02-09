@@ -418,6 +418,17 @@ class FrameQuality(IntEnum):
     ORIGINAL = 100
 
 
+class MediaType(TextChoices):
+    IMAGE = "image"
+    VIDEO = "video"
+    POINT_CLOUD = "point_cloud"
+    AUDIO = "audio"
+
+class Domain(TextChoices):
+    VISION = "vision"
+    AUDIO = "audio"
+
+
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
@@ -746,21 +757,27 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
     name = SafeCharField(max_length=256)
-    mode = models.CharField(max_length=32)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
-
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
+    status = models.CharField(max_length=32, choices=StatusChoice.choices(),
+                              default=StatusChoice.ANNOTATION)
+
     overlap = models.PositiveIntegerField(null=True)
+
     # Zero means that there are no limits (default)
     # Note that the files can be split into jobs in a custom way in this case
     segment_size = models.PositiveIntegerField(default=0)
-    status = models.CharField(max_length=32, choices=StatusChoice.choices(),
-                              default=StatusChoice.ANNOTATION)
+    segment_set: models.manager.RelatedManager[Segment]
+
     data = models.ForeignKey(
         Data, on_delete=models.CASCADE, null=True, related_name="tasks", related_query_name="task"
     )
+    mode = models.CharField(max_length=32)
     dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
+    domain = models.CharField(max_length=16, null=False, blank=False, choices=Domain.choices(), default=Domain.VISION) # TODO: replace with 1-off default
+    media_type = models.CharField(max_length=16, null=False, blank=True, choices=MediaType.choices(), default="") # TODO: add data migration
+
     subset = models.CharField(max_length=64, blank=True, default="")
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
@@ -771,7 +788,6 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     consensus_replicas = models.IntegerField(default=0)
     "Per job consensus replica count"
 
-    segment_set: models.manager.RelatedManager[Segment]
 
     # Extend default permission model
     class Meta:
