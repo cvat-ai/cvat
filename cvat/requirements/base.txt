@@ -13,7 +13,7 @@ attrs==21.4.0
     #   -r cvat/requirements/base.in
     #   datumaro
     #   jsonschema
-azure-core==1.34.0
+azure-core==1.38.0
     # via
     #   azure-storage-blob
     #   msrest
@@ -227,7 +227,7 @@ psycopg2-binary==2.9.5
     # via -r cvat/requirements/base.in
 pyarrow==20.0.0
     # via datumaro
-pyasn1==0.6.1
+pyasn1==0.6.2
     # via
     #   pyasn1-modules
     #   python-ldap
@@ -353,7 +353,7 @@ tzdata==2025.2
     # via pandas
 uritemplate==4.2.0
     # via drf-spectacular
-urllib3==2.6.0
+urllib3==2.6.3
     # via
     #   botocore
     #   clickhouse-connect

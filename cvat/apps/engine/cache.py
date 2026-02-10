@@ -17,7 +17,7 @@ from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, TypeAlias, overload
 
 import attrs
@@ -601,18 +601,19 @@ class MediaCache:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
                 storage_client = db_storage_to_storage_instance(db_cloud_storage)
 
-                tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
-                files_to_download: list[tuple[str, str]] = []  # (storage filename, output filename)
+                tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
+                # (storage filename, output filename)
+                files_to_download: list[tuple[str, PurePath]] = []
                 checksums = []
                 media = []
                 for item in reader.iterate_frames(frame_ids):
                     task_filename = f"{item['name']}{item['extension']}"
                     storage_filename = item.get("meta", {}).get("original_name", task_filename)
-                    fs_filename = os.path.join(tmp_dir, task_filename)
+                    fs_filename = tmp_dir / task_filename
                     files_to_download.append((storage_filename, fs_filename))
 
                     checksums.append(item.get("checksum", None))
-                    media.append((fs_filename, fs_filename))
+                    media.append((fs_filename, os.fspath(fs_filename)))
 
                 storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
@@ -687,11 +688,11 @@ class MediaCache:
     ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str]], None, None]:
         raw_data_dir = db_data.get_raw_data_dirname()
 
-        def _validate_ri_path(path: str) -> str:
+        def _validate_ri_path(path: str) -> PurePath:
             abs_path = (raw_data_dir / path).resolve()
 
             try:
-                return os.fspath(abs_path.relative_to(raw_data_dir))
+                return abs_path.relative_to(raw_data_dir)
             except ValueError as ex:
                 raise Exception("Invalid related image path") from ex
 
@@ -711,8 +712,8 @@ class MediaCache:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
                 storage_client = db_storage_to_storage_instance(db_cloud_storage)
 
-                tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
-                files_to_download = []
+                tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
+                files_to_download: list[PurePath] = []
                 for frame_id, frame in zip(
                     frame_ids, reader.iterate_frames(frame_ids), strict=True
                 ):
@@ -723,7 +724,7 @@ class MediaCache:
                         ri_realpath = os.path.join(tmp_dir, ri_filename)
 
                         files_to_download.append(ri_filename)
-                        frame_media.append((ri_realpath, ri_filename))
+                        frame_media.append((ri_realpath, os.fspath(ri_filename)))
 
                     media.append((frame_id, frame_media))
 
@@ -746,7 +747,7 @@ class MediaCache:
                     for _, ri_path in frame_ris:
                         ri_filename = _validate_ri_path(ri_path)
                         ri_realpath = os.path.join(raw_data_dir, ri_filename)
-                        frame_media.append((ri_realpath, ri_filename, None))
+                        frame_media.append((ri_realpath, os.fspath(ri_filename)))
 
                     media.append((frame_id, frame_media))
 
@@ -768,7 +769,7 @@ class MediaCache:
     @staticmethod
     def _read_raw_frames(
         db_task: models.Task | int, frame_ids: Sequence[int]
-    ) -> Generator[tuple[av.VideoFrame | PIL.Image.Image | str, str], None, None]:
+    ) -> Generator[tuple[av.VideoFrame | PIL.Image.Image | str, str | None], None, None]:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
@@ -780,7 +781,7 @@ class MediaCache:
         db_data = db_task.require_data()
 
         if hasattr(db_data, "video"):
-            source_path = os.path.join(db_data.get_raw_data_dirname(), db_data.video.path)
+            source_path = db_data.get_raw_data_dirname() / db_data.video.path
 
             manifest_path = db_data.get_manifest_path()
             reader = VideoReaderWithManifest(
@@ -790,7 +791,7 @@ class MediaCache:
             )
             if not os.path.isfile(manifest_path):
                 try:
-                    reader.manifest.link(Path(source_path), force=True)
+                    reader.manifest.link(source_path, force=True)
                     reader.manifest.create()
                 except Exception as e:
                     slogger.task[db_task.id].warning(
@@ -800,7 +801,7 @@ class MediaCache:
 
             if reader:
                 for frame in reader.iterate_frames(frame_filter=frame_ids):
-                    yield (frame, source_path)
+                    yield (frame, None)
             else:
                 reader = VideoReader([source_path], allow_threading=False)
 
@@ -1024,11 +1025,9 @@ class MediaCache:
         for db_manifest in db_storage.manifests.all():
             manifest_prefix = os.path.dirname(db_manifest.filename)
 
-            full_manifest_path = os.path.join(
-                db_storage.get_storage_dirname(), db_manifest.filename
-            )
-            if not os.path.exists(full_manifest_path) or datetime.fromtimestamp(
-                os.path.getmtime(full_manifest_path), tz=timezone.utc
+            full_manifest_path = db_storage.get_storage_dirname() / db_manifest.filename
+            if not full_manifest_path.exists() or datetime.fromtimestamp(
+                full_manifest_path.stat().st_mtime, tz=timezone.utc
             ) < storage.get_file_last_modified(db_manifest.filename):
                 storage.download_file(db_manifest.filename, full_manifest_path)
 

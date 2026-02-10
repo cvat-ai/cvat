@@ -9,14 +9,13 @@ import Collapse from 'antd/lib/collapse';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { ColorBy, Workspace } from 'reducers';
+import { ColorBy } from 'reducers';
 import { ObjectType, ShapeType } from 'cvat-core-wrapper';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
 interface Props {
     normalizedKeyMap: Record<string, string>;
-    readonly: boolean;
     activated: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
@@ -31,14 +30,16 @@ interface Props {
     labels: any[];
     attributes: any[];
     jobInstance: any;
-    workspace: Workspace;
     activate(activeElementID?: number): void;
+    focusAndExpand(): void;
     copy(): void;
     propagate(): void;
     switchOrientation(): void;
     createURL(): void;
     toBackground(): void;
     toForeground(): void;
+    toOneLayerBackward(): void;
+    toOneLayerForward(): void;
     remove(): void;
     changeLabel(label: any): void;
     changeColor(color: string): void;
@@ -51,7 +52,6 @@ interface Props {
 function ObjectItemComponent(props: Props): JSX.Element {
     const {
         activated,
-        readonly,
         objectType,
         shapeType,
         clientID,
@@ -61,17 +61,19 @@ function ObjectItemComponent(props: Props): JSX.Element {
         color,
         colorBy,
         elements,
-        attributes,
         labels,
         normalizedKeyMap,
         isGroundTruth,
         activate,
+        focusAndExpand,
         copy,
         propagate,
         createURL,
         switchOrientation,
         toBackground,
         toForeground,
+        toOneLayerForward,
+        toOneLayerBackward,
         remove,
         changeLabel,
         changeColor,
@@ -80,7 +82,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
         edit,
         slice,
         jobInstance,
-        workspace,
     } = props;
 
     const type =
@@ -96,19 +97,17 @@ function ObjectItemComponent(props: Props): JSX.Element {
         activate();
     }, []);
 
-    const sizeControlsVisible = shapeType === ShapeType.CUBOID && workspace === Workspace.STANDARD3D;
-
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div
                 onMouseEnter={activateState}
+                onDoubleClick={focusAndExpand}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
                 className={className}
                 style={{ '--state-item-background': `${color}` } as React.CSSProperties}
             >
                 <ItemBasics
                     jobInstance={jobInstance}
-                    readonly={readonly}
                     serverID={serverID}
                     clientID={clientID}
                     labelID={labelID}
@@ -125,6 +124,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}
                     toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
+                    toOneLayerBackwardShortcut={normalizedKeyMap.TO_ONE_LAYER_BACKWARD}
+                    toOneLayerForwardShortcut={normalizedKeyMap.TO_ONE_LAYER_FORWARD}
                     removeShortcut={normalizedKeyMap.DELETE_OBJECT_STANDARD_WORKSPACE}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}
@@ -138,19 +139,19 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     switchOrientation={switchOrientation}
                     toBackground={toBackground}
                     toForeground={toForeground}
+                    toOneLayerBackward={toOneLayerBackward}
+                    toOneLayerForward={toOneLayerForward}
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
                     slice={slice}
                     runAnnotationAction={runAnnotationAction}
                 />
-                <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
-                {(!!attributes.length || sizeControlsVisible) && (
-                    <ItemDetailsContainer
-                        readonly={readonly || locked}
-                        clientID={clientID}
-                        parentID={null}
-                    />
-                )}
+                <ObjectButtonsContainer clientID={clientID} />
+                <ItemDetailsContainer
+                    readonly={locked}
+                    clientID={clientID}
+                    parentID={null}
+                />
                 {!!elements.length && (
                     <Collapse
                         className='cvat-objects-sidebar-state-item-elements-collapse'
@@ -160,7 +161,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                             children: elements.map((element: number) => (
                                 <ObjectItemElementComponent
                                     key={element}
-                                    readonly={readonly}
                                     parentID={clientID}
                                     clientID={element}
                                     onMouseLeave={activateState}

@@ -151,7 +151,7 @@ class TestJobUsecases(TestDatasetExport):
 
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_jobs()[0].get_preview()
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
@@ -159,7 +159,7 @@ class TestJobUsecases(TestDatasetExport):
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     def test_can_download_frame(self, fxt_new_task: Task, quality: str):
         frame_encoded = fxt_new_task.get_jobs()[0].get_frame(0, quality=quality)
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""

@@ -20,7 +20,6 @@ extend-exclude = """
         mixins.py
         |models.py
         |serializers.py
-        |task.py
         |views.py
     )
 )

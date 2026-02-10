@@ -84,16 +84,14 @@ def configure_common_arguments(parser: argparse.ArgumentParser) -> None:
         type=get_auth_factory,
         metavar="USER[:PASS]",
         default=default_auth_factory(),
-        help=textwrap.dedent(
-            """\
+        help=textwrap.dedent("""\
             User and password to use for authentication;
             defaults to the current user and supports the PASS
             environment variable or password prompt.
             A Personal Access Token (PAT) can be generated on the server
             and specified in the {} environment variable instead.
             (default user: {}).
-        """
-        ).format(CVAT_ACCESS_TOKEN_ENV_VAR, getpass.getuser()),
+        """).format(CVAT_ACCESS_TOKEN_ENV_VAR, getpass.getuser()),
     )
     parser.add_argument(
         "--server-host", type=str, default="http://localhost", help="host (default: %(default)s)"
