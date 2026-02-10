@@ -997,21 +997,12 @@ def _filter_cloud_storage_files(
     data: dict[str, Any],
     *,
     job_file_mapping: JobFileMapping | None,
-    manifest_file: str | None,
-) -> tuple[ImageManifestManager | None, str | None]:
+    cloud_storage_manifest_prefix: str | None,
+    cloud_storage_manifest: ImageManifestManager | None,
+) -> None:
     cloud_storage_instance = db_storage_to_storage_instance(cloud_storage)
 
-    cloud_storage_manifest = None
-    cloud_storage_manifest_prefix = None
-    if manifest_file:
-        cloud_storage_manifest = ImageManifestManager(
-            cloud_storage.get_storage_dirname() / manifest_file,
-            cloud_storage.get_storage_dirname(),
-        )
-        cloud_storage_manifest.set_index()
-        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
-
-    if manifest_file and not data["server_files"] and not data["filename_pattern"]:
+    if cloud_storage_manifest and not data["server_files"] and not data["filename_pattern"]:
         # only manifest file was specified in server files by the user
         data["filename_pattern"] = "*"
 
@@ -1020,7 +1011,7 @@ def _filter_cloud_storage_files(
         copy_of_server_files = data["server_files"].copy()
         copy_of_dirs = dirs.copy()
         additional_files = []
-        if manifest_file:
+        if cloud_storage_manifest:
             for directory in dirs:
                 if cloud_storage_manifest_prefix:
                     # cloud_storage_manifest_prefix is a dirname of manifest,
@@ -1078,7 +1069,7 @@ def _filter_cloud_storage_files(
     if data["filename_pattern"]:
         additional_files = []
 
-        if not manifest_file:
+        if not cloud_storage_manifest:
             # NOTE: we cannot list files with specified pattern on the providers page,
             # because they don't provide such function
             dirs = []
@@ -1125,8 +1116,6 @@ def _filter_cloud_storage_files(
             filtered_files.append(f)
 
         data["server_files"] = filtered_files
-
-    return cloud_storage_manifest, cloud_storage_manifest_prefix
 
 
 @transaction.atomic
@@ -1203,11 +1192,22 @@ def create_thread(
     )
 
     if is_data_in_cloud and not is_backup_restore:
-        cloud_storage_manifest, cloud_storage_manifest_prefix = _filter_cloud_storage_files(
+        cloud_storage_manifest: ImageManifestManager | None = None
+        cloud_storage_manifest_prefix: str | None = None
+        if manifest_file:
+            cloud_storage_manifest = ImageManifestManager(
+                db_data.cloud_storage.get_storage_dirname() / manifest_file,
+                db_data.cloud_storage.get_storage_dirname(),
+            )
+            cloud_storage_manifest.set_index()
+            cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+
+        _filter_cloud_storage_files(
             db_data.cloud_storage,
             data,
             job_file_mapping=job_file_mapping,
-            manifest_file=manifest_file,
+            cloud_storage_manifest=cloud_storage_manifest,
+            cloud_storage_manifest_prefix=cloud_storage_manifest_prefix,
         )
 
     # count and validate uploaded files
