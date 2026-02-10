@@ -424,10 +424,6 @@ class MediaType(TextChoices):
     POINT_CLOUD = "point_cloud"
     AUDIO = "audio"
 
-class Domain(TextChoices):
-    VISION = "vision"
-    AUDIO = "audio"
-
 
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
@@ -775,7 +771,6 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     )
     mode = models.CharField(max_length=32)
     dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
-    domain = models.CharField(max_length=16, null=False, blank=False, choices=Domain.choices(), default=Domain.VISION) # TODO: replace with 1-off default
     media_type = models.CharField(max_length=16, null=False, blank=True, choices=MediaType.choices(), default="") # TODO: add data migration
 
     subset = models.CharField(max_length=64, blank=True, default="")
