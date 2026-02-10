@@ -348,6 +348,8 @@ def get_serializer_cleaned_up_for_update(instance):
         serializer.fields.pop("labels", None)
         if isinstance(instance, Job):
             serializer.fields.pop("issues", None)
+            serializer.fields.pop("consensus_replicas", None)
+            serializer.fields.pop("replicas_count", None)
     return serializer
 
 
