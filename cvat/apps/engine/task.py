@@ -419,7 +419,7 @@ def _validate_manifest(
     root_dir: Path,
     *,
     is_in_cloud: bool,
-    db_cloud_storage: Any | None,
+    db_cloud_storage: models.CloudStorage | None,
     is_backup_restore: bool,
 ) -> str | None:
     if not manifests:
