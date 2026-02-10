@@ -36,7 +36,7 @@ from botocore.exceptions import ClientError, EndpointConnectionError
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import FileResponse, HttpResponse
-from django.test import override_settings
+from django.test import SimpleTestCase, override_settings
 from pdf2image import convert_from_bytes
 from PIL import Image
 from pycocotools import coco as coco_loader
@@ -1843,6 +1843,16 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
 class _CloudStorageTestBase(ApiTestBase):
     @classmethod
+    def setUpClass(cls) -> None:
+        cls.mock_aws = cls._start_aws_patch()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls._stop_aws_patch()
+
+    @classmethod
     def _start_aws_patch(cls):
         class MockS3(S3CloudStorage):
             _files = {}
@@ -1903,7 +1913,6 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
     def setUpTestData(cls):
         create_db_users(cls)
         cls.client = APIClient()
-        cls.mock_aws = cls._start_aws_patch()
         cls.cloud_storage_id = cls._create_cloud_storage()
         cls._create_media()
         cls._create_projects()
@@ -1915,11 +1924,6 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
                 raise RuntimeError("Disabled!")
 
             cls.mock_aws._download_fileobj_to_stream = disabled
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._stop_aws_patch()
-        super().tearDownClass()
 
     def _compare_tasks(self, original_task, imported_task):
         super()._compare_tasks(original_task, imported_task)
@@ -7784,14 +7788,8 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
     def setUpTestData(cls):
         create_db_users(cls)
         cls.client = APIClient()
-        cls.mock_aws = cls._start_aws_patch()
         cls.cloud_storage_id_1 = cls._create_cloud_storage()
         cls.cloud_storage_id_2 = cls._create_cloud_storage()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._stop_aws_patch()
-        super().tearDownClass()
 
     def _create_cloud_task(self):
         data = {
@@ -8049,7 +8047,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         self.assertEqual(job_count, 0)
 
 
-class TestCloudStorageS3Status(_CloudStorageTestBase):
+class TestCloudStorageS3Status(SimpleTestCase):
     def setUp(self):
         self.storage = S3CloudStorage(
             bucket="test-bucket",
@@ -8088,7 +8086,7 @@ class TestCloudStorageS3Status(_CloudStorageTestBase):
         self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
 
 
-class TestCloudStorageAzureStatus(_CloudStorageTestBase):
+class TestCloudStorageAzureStatus(SimpleTestCase):
     def setUp(self):
         self.storage = AzureBlobCloudStorage(
             container="test-container",
