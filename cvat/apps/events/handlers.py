@@ -31,7 +31,7 @@ from cvat.apps.engine.serializers import (
     CloudStorageReadSerializer,
     CommentReadSerializer,
     IssueReadSerializer,
-    JobReadForEventSerializer,
+    JobReadSerializer,
     LabelSerializer,
     ProjectReadSerializer,
     TaskReadSerializer,
@@ -199,11 +199,8 @@ def organization_slug(instance):
 
 
 def get_instance_diff(old_data, data):
-    ignore_related_fields = ("labels",)
     diff = {}
     for prop, value in data.items():
-        if prop in ignore_related_fields:
-            continue
         old_value = old_data.get(prop)
         if old_value != value:
             diff[prop] = {
@@ -275,7 +272,7 @@ SERIALIZERS = [
     (Organization, OrganizationReadSerializer),
     (Project, ProjectReadSerializer),
     (Task, TaskReadSerializer),
-    (Job, JobReadForEventSerializer),
+    (Job, JobReadSerializer),
     (User, BasicUserSerializer),
     (CloudStorage, CloudStorageReadSerializer),
     (Issue, IssueReadSerializer),
@@ -345,6 +342,15 @@ def handle_create(scope, instance, **kwargs):
     )
 
 
+def get_serializer_cleaned_up_for_update(instance):
+    serializer = get_serializer_without_url(instance=instance)
+    if serializer:
+        serializer.fields.pop("labels", None)
+        if isinstance(instance, Job):
+            serializer.fields.pop("issues", None)
+    return serializer
+
+
 def handle_update(scope, instance, old_instance, **kwargs):
     oid = organization_id(instance)
     oslug = organization_slug(instance)
@@ -355,8 +361,8 @@ def handle_update(scope, instance, old_instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    old_serializer = get_serializer_without_url(instance=old_instance)
-    serializer = get_serializer_without_url(instance=instance)
+    old_serializer = get_serializer_cleaned_up_for_update(instance=old_instance)
+    serializer = get_serializer_cleaned_up_for_update(instance=instance)
     diff = get_instance_diff(old_data=old_serializer.data, data=serializer.data)
 
     for prop, change in diff.items():

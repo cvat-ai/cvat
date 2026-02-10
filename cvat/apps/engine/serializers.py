@@ -768,7 +768,8 @@ class JobReadListSerializer(serializers.ListSerializer):
         return super().to_representation(data)
 
 
-class JobReadForEventSerializer(serializers.ModelSerializer):
+@extend_schema_serializer(deprecate_fields=["consensus_replicas"])
+class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="get_task_id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
     guide_id = serializers.ReadOnlyField(source="get_guide_id", allow_null=True)
@@ -785,9 +786,12 @@ class JobReadForEventSerializer(serializers.ModelSerializer):
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
+    issues = IssuesSummarySerializer(source='*')
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     parent_job_id = serializers.ReadOnlyField(allow_null=True)
+    consensus_replicas = serializers.IntegerField(read_only=True)
+    replicas_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = models.Job
@@ -795,16 +799,21 @@ class JobReadForEventSerializer(serializers.ModelSerializer):
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
-            'created_date', 'updated_date', 'labels', 'type', 'organization',
+            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
             'target_storage', 'source_storage', 'assignee_updated_date', 'parent_job_id',
+            'consensus_replicas', 'replicas_count',
         )
         read_only_fields = fields
+        list_serializer_class = JobReadListSerializer
 
     def to_representation(self, instance: models.Job):
         data = super().to_representation(instance)
 
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+
+        data['consensus_replicas'] = instance.child_jobs__count
+        data['replicas_count'] = instance.child_jobs__count
 
         if request := self.context.get('request'):
             can_view_task = getattr(instance, "user_can_view_task", None)
@@ -820,30 +829,6 @@ class JobReadForEventSerializer(serializers.ModelSerializer):
                     data['target_storage'] = StorageSerializer(task_target_storage).data
 
         return data
-
-
-@extend_schema_serializer(deprecate_fields=["consensus_replicas"])
-class JobReadSerializer(JobReadForEventSerializer):
-    consensus_replicas = serializers.IntegerField(read_only=True)
-    issues = IssuesSummarySerializer(source='*')
-    replicas_count = serializers.IntegerField(read_only=True)
-
-    class Meta(JobReadForEventSerializer.Meta):
-        model = models.Job
-        fields = JobReadForEventSerializer.Meta.fields + (
-            'consensus_replicas', 'issues', 'replicas_count',
-        )
-        read_only_fields = fields
-        list_serializer_class = JobReadListSerializer
-
-    def to_representation(self, instance: models.Job):
-        data = super().to_representation(instance)
-
-        data['consensus_replicas'] = instance.child_jobs__count
-        data['replicas_count'] = instance.child_jobs__count
-
-        return data
-
 
 class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
