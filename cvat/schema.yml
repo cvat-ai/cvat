@@ -8316,6 +8316,8 @@ components:
           type: string
           format: date-time
           readOnly: true
+        issues:
+          $ref: '#/components/schemas/IssuesSummary'
         labels:
           $ref: '#/components/schemas/LabelsSummary'
         type:
@@ -8346,8 +8348,6 @@ components:
         consensus_replicas:
           type: integer
           readOnly: true
-        issues:
-          $ref: '#/components/schemas/IssuesSummary'
       required:
       - issues
       - labels
