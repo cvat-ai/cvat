@@ -19,6 +19,7 @@ from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from fractions import Fraction
+from functools import cached_property
 from pathlib import Path, PurePath
 from random import shuffle
 from typing import Any, ClassVar, Protocol, TypeAlias, TypedDict, TypeVar
@@ -802,11 +803,19 @@ class VideoReaderWithManifest:
 
 
 class AudioReader(IMediaReader):
-    def __init__(self, source_path: Openable | io.BytesIO, start: int = 0, stop: int | None = None):
+    def __init__(
+        self,
+        source_path: Openable | io.BytesIO,
+        start: int = 0,
+        stop: int | None = None,
+        *,
+        allow_threading: bool = False,
+    ):
         super().__init__(
             step=1,
             start=start,
             stop=stop + 1 if stop is not None else stop,
+            dimension=DimensionType.DIM_1D,
         )
 
         if isinstance(source_path, io.BytesIO):
@@ -815,6 +824,8 @@ class AudioReader(IMediaReader):
             self._source_path = source_path
 
         self._frame_count: int | None = None
+
+        self.allow_threading = allow_threading
 
     def _has_frame(self, i: int) -> bool:
         if i >= self._start:
@@ -827,7 +838,11 @@ class AudioReader(IMediaReader):
     def __iter__(self) -> Iterable[IMediaReader.AudioFrame]:
         with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
             stream = container.streams.audio[0]
-            stream.thread_type = "AUTO"  # TODO
+
+            if self.allow_threading:
+                stream.thread_type = "AUTO"
+            else:
+                stream.thread_type = "NONE"
 
             frame_count = 0
             for frame in container.decode():
@@ -838,18 +853,36 @@ class AudioReader(IMediaReader):
         if self._frame_count is None:
             self._frame_count = frame_count
 
-    def get_progress(self, pos: int) -> float:
-        frame_count = self._get_frame_count()
-        return min(1, pos / frame_count) if frame_count else None
 
-    def get_image_size(self, i) -> tuple[int, int]:
-        raise NotImplementedError
+    @cached_property
+    def sampling_rate(self) -> int:
+        with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
+            stream = container.streams.audio[0]
+            return stream.sample_rate
 
-    def _get_frame_count(self) -> int:
+    @cached_property
+    def duration(self) -> float:
+        "Returns the duration in milliseconds"
+
         with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
             stream = container.streams.audio[0]
 
-            frame_count = None
+            if stream.duration and stream.time_base:
+                duration = stream.duration * stream.time_base
+            elif duration_str := stream.metadata.get("DURATION", None):
+                # may have a DURATION in format like "01:16:45.935000000"
+                h, m, s = duration_str.split(":")
+                duration = 60 * 60 * float(h) + 60 * float(m) + float(s)
+            else:
+                raise RuntimeError("Can not determine duration of the audio file")
+
+            return round(duration, 3)
+
+    def get_frame_count(self) -> int:
+        with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
+            stream = container.streams.audio[0]
+
+            frame_count = self._frame_count
             if stream.frames:
                 frame_count = stream.frames
 
@@ -859,9 +892,6 @@ class AudioReader(IMediaReader):
                 frame_count = self._frame_count
 
             return frame_count
-
-    def get_preview(self, frame):
-        raise NotImplementedError
 
 
 class IChunkWriter(ABC):
