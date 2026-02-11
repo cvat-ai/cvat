@@ -30,8 +30,9 @@ class TestGetCleanedUpSerializer(unittest.TestCase):
         super().tearDown()
 
     def test_always_removes_url_field(self):
+        assert "url" in self.serializer_class({}).data
         serializer = handlers.get_cleaned_up_serializer({})
-        assert serializer.data == {"foo": "222", "bar": "333"}, serializer.data
+        assert "url" not in serializer.data, serializer.data
 
     def test_removes_specified_fields(self):
         for fields_to_clean in [[], ["foo"], ["bar"], ["foo", "bar"]]:
@@ -54,7 +55,7 @@ class TestCleanUp(unittest.TestCase):
 
                 summary_fields = [
                     field_name
-                    for field_name in serializer.fields
+                    for field_name in serializer.fields.keys()
                     if "summary" in str(type(serializer.fields[field_name])).lower()
                 ]
 
