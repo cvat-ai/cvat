@@ -299,7 +299,7 @@ SERIALIZER_CLEAN_UP_FIELDS = [
     (ProjectReadSerializer, ["tasks", "labels"]),
     (TaskReadSerializer, ["jobs", "labels"]),
     (JobReadSerializer, ["labels", "issues"]),
-    (IssueReadSerializer, ["comments"])
+    (IssueReadSerializer, ["comments"]),
 ]
 
 

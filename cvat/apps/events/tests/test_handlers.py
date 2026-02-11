@@ -22,7 +22,7 @@ class TestGetCleanedUpSerializer(unittest.TestCase):
 
         self.serializer_class = DummySerializer
 
-        self._patch = patch.object(handlers, 'SERIALIZERS', [(dict, DummySerializer)])
+        self._patch = patch.object(handlers, "SERIALIZERS", [(dict, DummySerializer)])
         self._patch.start()
 
     def tearDown(self):
@@ -38,7 +38,7 @@ class TestGetCleanedUpSerializer(unittest.TestCase):
             with self.subTest(fields_to_clean=fields_to_clean):
                 with patch.object(
                     handlers,
-                    'SERIALIZER_CLEAN_UP_FIELDS',
+                    "SERIALIZER_CLEAN_UP_FIELDS",
                     [(self.serializer_class, fields_to_clean)],
                 ):
                     serializer = handlers.get_cleaned_up_serializer({})
@@ -59,10 +59,11 @@ class TestCleanUp(unittest.TestCase):
                 ]
 
                 if summary_fields:
-                    fields_to_skip = dict(handlers.SERIALIZER_CLEAN_UP_FIELDS).get(serializer_class, [])
+                    fields_to_skip = dict(handlers.SERIALIZER_CLEAN_UP_FIELDS).get(
+                        serializer_class, []
+                    )
                     for summary_field in summary_fields:
                         assert summary_field in fields_to_skip, (
                             f"Summary field '{summary_field}' in serializer '{serializer_class.__name__}' "
                             f"should be included in SERIALIZER_CLEAN_UP_FIELDS to be cleaned up."
                         )
-
