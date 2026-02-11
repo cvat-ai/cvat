@@ -812,8 +812,9 @@ class JobReadSerializer(serializers.ModelSerializer):
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
 
-        data['consensus_replicas'] = instance.child_jobs__count
-        data['replicas_count'] = instance.child_jobs__count
+        if 'replicas_count' in self.fields:
+            data['replicas_count'] = getattr(instance, "child_jobs__count", 0)
+            data['consensus_replicas'] = data['replicas_count']
 
         if request := self.context.get('request'):
             can_view_task = getattr(instance, "user_can_view_task", None)
