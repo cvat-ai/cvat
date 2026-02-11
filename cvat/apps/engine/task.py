@@ -13,7 +13,7 @@ from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path, PurePath, PurePosixPath
-from typing import Any, NamedTuple, TypeAlias
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -53,6 +53,10 @@ from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manif
 from utils.dataset_manifest.utils import find_related_images
 
 from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_instance
+
+if TYPE_CHECKING:
+    from cvat.apps.engine.media_extractors import AudioReader, ImageListReader, VideoReader
+
 
 slogger = ServerLogManager(__name__)
 
@@ -861,7 +865,11 @@ def _create_validation_jobs(
 ) -> None:
     db_data = db_task.require_data()
 
-    if validation_params and validation_params["mode"] == models.ValidationMode.GT:
+    if (
+        db_task.media_type != models.MediaType.AUDIO
+        and validation_params
+        and validation_params["mode"] == models.ValidationMode.GT
+    ):
 
         def _to_rel_frame(abs_frame: int) -> int:
             return (abs_frame - db_data.start_frame) // db_data.get_frame_step()
@@ -1118,6 +1126,252 @@ def _filter_cloud_storage_files(
         data["server_files"] = filtered_files
 
 
+def _detect_media_type_and_dimension(
+    extractor: IMediaReader, *, source_dir: Path, db_data: models.Data
+) -> tuple[models.MediaType, models.DimensionType]:
+    if isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
+        detected_media_type = models.MediaType.VIDEO
+        detected_dimension = models.DimensionType.DIM_2D
+    elif isinstance(extractor, MEDIA_TYPES["audio"]["extractor"]):
+        # TODO: support audio reading from video?
+        detected_media_type = models.MediaType.AUDIO
+        detected_dimension = models.DimensionType.DIM_1D
+    else:
+        validate_dimension = ValidateDimension()
+        if db_data.storage == models.StorageChoice.LOCAL or (
+            db_data.storage == models.StorageChoice.SHARE
+            and isinstance(
+                extractor, (MEDIA_TYPES["archive"]["extractor"], MEDIA_TYPES["zip"]["extractor"])
+            )
+        ):
+            validate_dimension.validate(source_dir)
+        else:
+            validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
+
+        detected_dimension = validate_dimension.dimension
+
+        if detected_dimension == models.DimensionType.DIM_2D:
+            detected_media_type = models.MediaType.IMAGE
+        elif detected_dimension == models.DimensionType.DIM_3D:
+            detected_media_type = models.MediaType.POINT_CLOUD
+        else:
+            assert False
+
+    return detected_media_type, detected_dimension
+
+
+def _validate_project_media_types(
+    db_project: models.Project, *, detected_media_type: models.MediaType
+):
+    existing_task = db_project.tasks.exclude(media_type__isnull=True).first()
+    if not existing_task:
+        return
+
+    project_media_type = existing_task.media_type
+
+    combined_media_types = {project_media_type, detected_media_type}
+    if len(combined_media_types) > 1 and combined_media_types.intersection(
+        [models.MediaType.AUDIO, models.MediaType.POINT_CLOUD]
+    ):
+        raise ValidationError(
+            f"Media types in a project are not compatible: "
+            f"existing media type: {project_media_type}, new: {detected_media_type}."
+        )
+
+
+def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
+    db_data = db_task.require_data()
+
+    if db_task.media_type == models.MediaType.AUDIO:
+        db_data.compressed_chunk_type = models.DataChoice.AUDIO_MP3
+        db_data.original_chunk_type = models.DataChoice.AUDIO_MP3
+    elif db_task.media_type == models.MediaType.VIDEO:
+        db_data.compressed_chunk_type = (
+            models.DataChoice.VIDEO
+            if db_task.mode == "interpolation" and not data["use_zip_chunks"]
+            else models.DataChoice.IMAGESET
+        )
+        db_data.original_chunk_type = models.DataChoice.VIDEO
+    elif db_task.media_type == [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
+        db_data.compressed_chunk_type = models.DataChoice.IMAGESET
+        db_data.original_chunk_type = models.DataChoice.IMAGESET
+    else:
+        assert False, f"Unexpected media type {db_task.media_type}"
+
+
+def _create_video_dataset_descriptors(
+    extractor: "VideoReader",
+    video_path: Path,
+    *,
+    db_data: models.Data,
+    data: dict[str, Any],
+    manifest_file: str | None,
+    manifest_frame_alignment: int,
+    upload_dir: Path,
+    update_status: Callable[[str], None],
+) -> tuple[models.Video, int, VideoManifestManager]:
+    if manifest_file:
+        try:
+            update_status("Validating the input manifest file")
+
+            manifest = VideoManifestValidator(
+                source_path=video_path,
+                manifest_path=db_data.get_manifest_path(),
+            )
+            manifest.init_index()
+            manifest.validate_seek_key_frames()
+
+            if not len(manifest):
+                raise ValidationError("No key frames found in the manifest")
+
+        except Exception as ex:
+            manifest.remove()
+            manifest = None
+
+            if isinstance(ex, (ValidationError, AssertionError)):
+                base_msg = f"Invalid manifest file was uploaded: {ex}"
+            else:
+                base_msg = "Failed to parse the uploaded manifest file"
+                slogger.glob.warning(ex, exc_info=True)
+
+            update_status(base_msg)
+    else:
+        manifest = None
+
+    if not manifest:
+        try:
+            update_status("Preparing a manifest file")
+
+            # TODO: maybe generate manifest in a temp directory
+            manifest = VideoManifestManager(db_data.get_manifest_path())
+            manifest.link(
+                media_file=video_path,
+                chunk_size=manifest_frame_alignment,  # TODO: try to remove
+                force=True,
+            )
+            manifest.create()
+
+            update_status("A manifest has been created")
+
+        except Exception as ex:
+            manifest.remove()
+            manifest = None
+
+            if isinstance(ex, AssertionError):
+                base_msg = f": {ex}"
+            else:
+                base_msg = ""
+                slogger.glob.warning(ex, exc_info=True)
+
+            update_status(
+                f"Failed to create manifest for the uploaded video{base_msg}. "
+                "A manifest will not be used in this task"
+            )
+
+    if manifest:
+        video_frame_count = manifest.video_length
+        video_frame_size = manifest.video_resolution
+    else:
+        video_frame_count = extractor.get_frame_count()
+        video_frame_size = extractor.get_image_size(0)
+
+    video_length = len(
+        range(
+            db_data.start_frame,
+            min(
+                data["stop_frame"] + 1 if data["stop_frame"] else video_frame_count,
+                video_frame_count,
+            ),
+            db_data.get_frame_step(),
+        )
+    )
+
+    video = models.Video(
+        data=db_data,
+        path=video_path.relative_to(upload_dir).as_posix(),
+        width=video_frame_size[0],
+        height=video_frame_size[1],
+    )
+
+    return video, video_length, manifest
+
+
+def _create_image_dataset_descriptors(
+    extractor: "ImageListReader",
+    *,
+    db_task: models.Task,
+    upload_dir: Path,
+    is_data_in_cloud: bool,
+    related_images: dict[str, list[str]],
+) -> tuple[list[models.Image], ImageManifestManager]:
+    db_data = db_task.require_data()
+
+    manifest = ImageManifestManager(db_data.get_manifest_path())
+    if not manifest.exists:
+        # TODO: Try to avoid adding manifest entries for images that are not in
+        # extractor.frame_range. In addition to less processing here, it would also allow
+        # us to avoid downloading such images from cloud storage (when using static chunks),
+        # or copying them from the attached share (when using copy_data).
+        manifest.link(
+            sources=extractor.absolute_source_paths,
+            meta={k: {"related_images": related_images[k]} for k in related_images},
+            data_dir=upload_dir,
+            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+        )
+        manifest.create()
+    else:
+        manifest.init_index()
+
+    images: list[models.Image] = []
+    for frame_id in extractor.frame_range:
+        image_path = extractor.get_path(frame_id)
+        image_size = None
+
+        if manifest:
+            image_info = manifest[frame_id]
+
+            # check mapping
+            if not image_path.as_posix().endswith(f"{image_info['name']}{image_info['extension']}"):
+                raise ValidationError("Incorrect file mapping to manifest content")
+
+            if image_info.get("width") is not None and image_info.get("height") is not None:
+                image_size = (image_info["width"], image_info["height"])
+            elif is_data_in_cloud:
+                raise ValidationError(
+                    "Can't find image '{}' width or height info in the manifest".format(
+                        f"{image_info['name']}{image_info['extension']}"
+                    )
+                )
+
+        if not image_size:
+            image_size = extractor.get_image_size(frame_id)
+
+        images.append(
+            models.Image(
+                data=db_data,
+                path=os.path.relpath(image_path, upload_dir),
+                frame=frame_id,
+                width=image_size[0],
+                height=image_size[1],
+            )
+        )
+
+    return images, manifest
+
+
+def _create_audio_dataset_descriptors(
+    extractor: "AudioReader", *, db_data: models.Data, upload_dir: Path, audio_path: Path
+) -> tuple[models.Audio, int]:
+    audio_duration_ms = int(round(extractor.duration, 3) * 1000)
+
+    audio = models.Audio(
+        data=db_data,
+        path=audio_path.relative_to(upload_dir),
+        sampling_rate=extractor.sampling_rate,
+    )
+    return audio, audio_duration_ms
+
+
 @transaction.atomic
 def create_thread(
     db_task: int | models.Task,
@@ -1172,17 +1426,6 @@ def create_thread(
     else:
         assert False, f"Unknown file storage {db_data.storage}"
 
-    if (
-        db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
-        and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
-    ) or (
-        # static cache can not be initialized on lightweight backup restore
-        is_data_in_cloud
-        and is_backup_restore
-        and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
-    ):
-        db_data.storage_method = models.StorageMethodChoice.CACHE
-
     manifest_file = _validate_manifest(
         manifest_files,
         manifest_root,
@@ -1217,6 +1460,25 @@ def create_thread(
 
     if job_file_mapping is not None and task_mode != "annotation":
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
+
+    if (
+        (
+            db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+            and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
+        )
+        or (
+            # static cache can not be initialized on lightweight backup restore
+            is_data_in_cloud
+            and is_backup_restore
+            and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+        )
+        or (
+            # TODO: Not supported yet, maybe implement later
+            db_task.media_type == models.MediaType.AUDIO
+            or media["audio"]
+        )
+    ):
+        db_data.storage_method = models.StorageMethodChoice.CACHE
 
     manifest = None
     if is_data_in_cloud:
@@ -1336,10 +1598,10 @@ def create_thread(
 
         details = {
             "source_paths": source_paths,
-            "step": db_data.get_frame_step(),
             "start": db_data.start_frame,
             "stop": data["stop_frame"],
         }
+
         if (
             media_type in {"archive", "zip", "pdf"}
             and db_data.storage == models.StorageChoice.SHARE
@@ -1347,10 +1609,14 @@ def create_thread(
             details["extract_dir"] = db_data.get_upload_dirname()
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
-        if media_type != "video":
+
+        if MEDIA_TYPES[media_type]["mode"] == "annotation":
             details["sorting_method"] = (
                 data["sorting_method"] if not is_media_sorted else models.SortingMethod.PREDEFINED
             )
+
+        if media_type != "audio":
+            details["step"] = db_data.get_frame_step()
 
         extractor = MEDIA_TYPES[media_type]["extractor"](**details)
 
@@ -1379,30 +1645,25 @@ def create_thread(
     if isinstance(extractor, MEDIA_TYPES["zip"]["extractor"]):
         extractor.extract()
 
-    validate_dimension = ValidateDimension()
-    if db_data.storage == models.StorageChoice.LOCAL or (
-        db_data.storage == models.StorageChoice.SHARE
-        and isinstance(
-            extractor, (MEDIA_TYPES["archive"]["extractor"], MEDIA_TYPES["zip"]["extractor"])
-        )
-    ):
-        validate_dimension.validate(upload_dir)
-    elif not isinstance(extractor, MEDIA_TYPES["video"]["extractor"]):
-        validate_dimension.detect_dimension_for_paths(extractor.absolute_source_paths)
+    detected_media_type, detected_dimension = _detect_media_type_and_dimension(
+        extractor=extractor, source_dir=upload_dir, db_data=db_data
+    )
 
-    if (
-        db_task.project is not None
-        and db_task.project.tasks.count() > 1
-        and db_task.project.tasks.first().dimension != validate_dimension.dimension
-    ):
+    if db_task.media_type is not None and db_task.media_type != detected_media_type:
+        # TODO: maybe not needed yet
         raise ValidationError(
-            f"Dimension ({validate_dimension.dimension}) of the task must be the "
-            f"same as other tasks in project ({db_task.project.tasks.first().dimension})"
+            "Media files do not match the requested media type for the task: "
+            f"requested '{db_task.media_type}', detected '{detected_media_type}'"
         )
 
-    db_task.dimension = validate_dimension.dimension
+    if db_task.project_id is not None:
+        _validate_project_media_types(db_task.project, detected_media_type)
 
-    if validate_dimension.dimension == models.DimensionType.DIM_3D:
+    db_task.media_type = detected_media_type
+    db_task.dimension = detected_dimension  # backward compatibility; TODO: maybe remove
+    db_task.mode = task_mode  # backward compatibility; TODO: maybe change to "sequence"
+
+    if db_task.dimension == models.DimensionType.DIM_3D:
         extractor.reconcile(
             source_paths=[
                 # We always work with .pcd files instead of .bin
@@ -1412,7 +1673,7 @@ def create_thread(
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data["stop_frame"],
-            dimension=validate_dimension.dimension,
+            dimension=db_task.dimension,
         )
 
     related_images = {}
@@ -1421,7 +1682,9 @@ def create_thread(
 
     if job_file_mapping or (
         (
-            not isinstance(extractor, MEDIA_TYPES["video"]["extractor"])
+            not isinstance(
+                extractor, (MEDIA_TYPES["video"]["extractor"], MEDIA_TYPES["audio"]["extractor"])
+            )
             and is_backup_restore
             and db_data.storage_method == models.StorageMethodChoice.CACHE
             and db_data.sorting_method
@@ -1435,7 +1698,10 @@ def create_thread(
                 isinstance(extractor, MEDIA_TYPES["zip"]["extractor"])
                 # Sorting with manifest is optional for non-video
                 or (manifest_file or manifest)
-                and not isinstance(extractor, MEDIA_TYPES["video"]["extractor"])
+                and not isinstance(
+                    extractor,
+                    (MEDIA_TYPES["video"]["extractor"], MEDIA_TYPES["audio"]["extractor"]),
+                )
             )
         )
     ):
@@ -1491,15 +1757,7 @@ def create_thread(
             os.remove(os.path.join(manifest_root, manifest_file))
         manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
-    db_task.mode = task_mode
-    db_data.compressed_chunk_type = (
-        models.DataChoice.VIDEO
-        if task_mode == "interpolation" and not data["use_zip_chunks"]
-        else models.DataChoice.IMAGESET
-    )
-    db_data.original_chunk_type = (
-        models.DataChoice.VIDEO if task_mode == "interpolation" else models.DataChoice.IMAGESET
-    )
+    _configure_chunk_types(db_task, data)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
@@ -1515,148 +1773,40 @@ def create_thread(
         else:
             db_data.chunk_size = 36
 
-    # Create task frames from the metadata collected
-    video_path: str = ""
-    video_frame_size: tuple[int, int] = (0, 0)
+    # Create task media descriptors from the metadata collected
+    if db_task.media_type == models.MediaType.VIDEO:
+        video, video_length, _ = _create_video_dataset_descriptors(
+            extractor=extractor,
+            video_path=upload_dir / media["video"][0],
+            upload_dir=upload_dir,
+            db_data=db_data,
+            data=data,
+            manifest_file=manifest_file,
+            manifest_frame_alignment=db_data.chunk_size,
+            update_status=update_status,
+        )
+        db_data.size = video_length
+    elif db_task.media_type in [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
+        images, manifest = _create_image_dataset_descriptors(
+            extractor=extractor,
+            related_images=related_images,
+            upload_dir=upload_dir,
+            db_task=db_task,
+            is_data_in_cloud=is_data_in_cloud,
+        )
+        db_data.size = len(images)
+    elif db_task.media_type == models.MediaType.AUDIO:
+        audio, audio_duration = _create_audio_dataset_descriptors(
+            extractor=extractor,
+            audio_path=upload_dir / media["audio"][0],
+            upload_dir=upload_dir,
+            db_data=db_data,
+        )
+        db_data.size = audio_duration
+    else:
+        assert False, f"Unexpected media type {db_task.media_type}"
 
-    images: list[models.Image] = []
-
-    for media_type, media_files in media.items():
-        if not media_files:
-            continue
-
-        if task_mode == MEDIA_TYPES["video"]["mode"]:
-            if manifest_file:
-                try:
-                    update_status("Validating the input manifest file")
-
-                    manifest = VideoManifestValidator(
-                        source_path=upload_dir / media_files[0],
-                        manifest_path=db_data.get_manifest_path(),
-                    )
-                    manifest.init_index()
-                    manifest.validate_seek_key_frames()
-
-                    if not len(manifest):
-                        raise ValidationError("No key frames found in the manifest")
-
-                except Exception as ex:
-                    manifest.remove()
-                    manifest = None
-
-                    if isinstance(ex, (ValidationError, AssertionError)):
-                        base_msg = f"Invalid manifest file was uploaded: {ex}"
-                    else:
-                        base_msg = "Failed to parse the uploaded manifest file"
-                        slogger.glob.warning(ex, exc_info=True)
-
-                    update_status(base_msg)
-            else:
-                manifest = None
-
-            if not manifest:
-                try:
-                    update_status("Preparing a manifest file")
-
-                    # TODO: maybe generate manifest in a temp directory
-                    manifest = VideoManifestManager(db_data.get_manifest_path())
-                    manifest.link(
-                        media_file=Path(upload_dir, media_files[0]),
-                        chunk_size=db_data.chunk_size,  # TODO: why it's needed here?
-                        force=True,
-                    )
-                    manifest.create()
-
-                    update_status("A manifest has been created")
-
-                except Exception as ex:
-                    manifest.remove()
-                    manifest = None
-
-                    if isinstance(ex, AssertionError):
-                        base_msg = f": {ex}"
-                    else:
-                        base_msg = ""
-                        slogger.glob.warning(ex, exc_info=True)
-
-                    update_status(
-                        f"Failed to create manifest for the uploaded video{base_msg}. "
-                        "A manifest will not be used in this task"
-                    )
-
-            if manifest:
-                video_frame_count = manifest.video_length
-                video_frame_size = manifest.video_resolution
-            else:
-                video_frame_count = extractor.get_frame_count()
-                video_frame_size = extractor.get_image_size(0)
-
-            db_data.size = len(
-                range(
-                    db_data.start_frame,
-                    min(
-                        data["stop_frame"] + 1 if data["stop_frame"] else video_frame_count,
-                        video_frame_count,
-                    ),
-                    db_data.get_frame_step(),
-                )
-            )
-            video_path = os.path.join(upload_dir, media_files[0])
-        else:  # images, archive, pdf
-            db_data.size = len(extractor)
-
-            manifest = ImageManifestManager(db_data.get_manifest_path())
-            if not manifest.exists:
-                # TODO: Try to avoid adding manifest entries for images that are not in
-                # extractor.frame_range. In addition to less processing here, it would also allow
-                # us to avoid downloading such images from cloud storage (when using static chunks),
-                # or copying them from the attached share (when using copy_data).
-                manifest.link(
-                    sources=extractor.absolute_source_paths,
-                    meta={k: {"related_images": related_images[k]} for k in related_images},
-                    data_dir=upload_dir,
-                    DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-                )
-                manifest.create()
-            else:
-                manifest.init_index()
-
-            for frame_id in extractor.frame_range:
-                image_path = extractor.get_path(frame_id)
-                image_size = None
-
-                if manifest:
-                    image_info = manifest[frame_id]
-
-                    # check mapping
-                    if not image_path.as_posix().endswith(
-                        f"{image_info['name']}{image_info['extension']}"
-                    ):
-                        raise ValidationError("Incorrect file mapping to manifest content")
-
-                    if image_info.get("width") is not None and image_info.get("height") is not None:
-                        image_size = (image_info["width"], image_info["height"])
-                    elif is_data_in_cloud:
-                        raise ValidationError(
-                            "Can't find image '{}' width or height info in the manifest".format(
-                                f"{image_info['name']}{image_info['extension']}"
-                            )
-                        )
-
-                if not image_size:
-                    image_size = extractor.get_image_size(frame_id)
-
-                images.append(
-                    models.Image(
-                        data=db_data,
-                        path=os.path.relpath(image_path, upload_dir),
-                        frame=frame_id,
-                        width=image_size[0],
-                        height=image_size[1],
-                    )
-                )
-
-    if db_task.mode == "annotation":
+    if db_task.media_type in [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
         job_file_mapping, images = _allocate_honeypots(
             db_task,
             validation_params,
@@ -1689,13 +1839,12 @@ def create_thread(
                 for related_file_path in related_images.get(image.path, [])
             ),
         )
+    elif db_task.media_type == models.MediaType.VIDEO:
+        video.save()
+    elif db_task.media_type == models.MediaType.AUDIO:
+        audio.save()
     else:
-        models.Video.objects.create(
-            data=db_data,
-            path=os.path.relpath(video_path, upload_dir),
-            width=video_frame_size[0],
-            height=video_frame_size[1],
-        )
+        assert False, f"Unexpected media type {db_task.media_type}"
 
     # validate stop_frame
     if db_data.stop_frame == 0:
@@ -1705,7 +1854,12 @@ def create_thread(
             db_data.stop_frame, db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
         )
 
-    slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
+    slogger.glob.info(
+        "Saved media for Data #{}: media type {}, {} frames",
+        db_data.id,
+        db_task.media_type,
+        db_data.size,
+    )
 
     _create_segments_and_jobs(
         db_task, job_file_mapping=job_file_mapping, update_status_callback=update_status
