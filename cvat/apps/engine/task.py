@@ -1484,6 +1484,13 @@ def create_thread(
             sorting_method=data["sorting_method"],
         )
 
+    # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
+    if manifest_file and not os.path.exists(db_data.get_manifest_path()):
+        shutil.copyfile(os.path.join(manifest_root, manifest_file), db_data.get_manifest_path())
+        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
+            os.remove(os.path.join(manifest_root, manifest_file))
+        manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
+
     db_task.mode = task_mode
     db_data.compressed_chunk_type = (
         models.DataChoice.VIDEO
@@ -1507,14 +1514,6 @@ def create_thread(
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
         else:
             db_data.chunk_size = 36
-
-    # TODO: try to pull up
-    # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
-    if manifest_file and not os.path.exists(db_data.get_manifest_path()):
-        shutil.copyfile(os.path.join(manifest_root, manifest_file), db_data.get_manifest_path())
-        if manifest_root and manifest_root.is_relative_to(db_data.get_upload_dirname()):
-            os.remove(os.path.join(manifest_root, manifest_file))
-        manifest_file = os.path.relpath(db_data.get_manifest_path(), upload_dir)
 
     # Create task frames from the metadata collected
     video_path: str = ""
