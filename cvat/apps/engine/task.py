@@ -1650,14 +1650,12 @@ def create_thread(
         db_related_files = [
             models.RelatedFile(
                 data=db_data,
-                path=os.path.join(upload_dir, related_file_path),
+                path=related_file_path,
             )
             for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
         ]
         db_related_files = bulk_create(models.RelatedFile, db_related_files)
-        db_related_files_by_path = {
-            os.path.relpath(rf.path.path, upload_dir): rf for rf in db_related_files
-        }
+        db_related_files_by_path = {rf.path: rf for rf in db_related_files}
 
         ThroughModel = models.RelatedFile.images.through
         bulk_create(
