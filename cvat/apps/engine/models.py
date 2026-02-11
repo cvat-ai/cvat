@@ -127,7 +127,8 @@ class StateChoice(str, Enum):
 class DataChoice(str, Enum):
     VIDEO = 'video'
     IMAGESET = 'imageset'
-    LIST = 'list'
+    LIST = 'list' # TODO: check if ever used
+    AUDIO_MP3 = 'audio_mp3'
 
     @classmethod
     def choices(cls):

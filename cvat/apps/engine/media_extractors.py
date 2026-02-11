@@ -853,7 +853,6 @@ class AudioReader(IMediaReader):
         if self._frame_count is None:
             self._frame_count = frame_count
 
-
     @cached_property
     def sampling_rate(self) -> int:
         with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
@@ -862,7 +861,7 @@ class AudioReader(IMediaReader):
 
     @cached_property
     def duration(self) -> float:
-        "Returns the duration in milliseconds"
+        "Returns the duration in seconds"
 
         with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
             stream = container.streams.audio[0]
@@ -876,7 +875,7 @@ class AudioReader(IMediaReader):
             else:
                 raise RuntimeError("Can not determine duration of the audio file")
 
-            return round(duration, 3)
+            return duration
 
     def get_frame_count(self) -> int:
         with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
