@@ -523,7 +523,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
                 media_files_to_download: list[PurePath] = []
                 for media_file in self._db_data.related_files.all():
-                    media_path = Path(media_file.path).relative_to(data_dir)
+                    media_path = PurePath(media_file.path)
 
                     local_path = os.path.join(data_dir, media_path)
                     if os.path.exists(local_path):

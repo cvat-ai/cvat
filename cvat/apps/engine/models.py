@@ -906,8 +906,7 @@ class RelatedFile(models.Model):
         related_name="related_files", related_query_name="related_file",
         default=1, null=True,
     )
-    path = models.FileField(upload_to=upload_path_handler,
-                            max_length=1024, storage=MyFileSystemStorage())
+    path = models.CharField(max_length=1024)
     images = models.ManyToManyField(
         Image, related_name="related_files", related_query_name="related_file"
     )
