@@ -3772,13 +3772,6 @@ class CloudStorageContentSerializer(serializers.Serializer):
         help_text="This token is used to continue listing files in the bucket.")
     content = FileInfoSerializer(many=True)
 
-class RelatedFileSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = models.RelatedFile
-        fields = '__all__'
-        read_only_fields = ('path',)
-
 
 def _update_related_storages(
     instance: models.Project | models.Task,
