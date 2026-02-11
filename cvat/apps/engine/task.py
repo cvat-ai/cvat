@@ -294,7 +294,7 @@ def _find_manifest_files(data):
     return manifest_files
 
 
-def _validate_data(counter, manifest_files=None):
+def _validate_data(counter: dict[str, list[str]], *, manifest_files: list[str] = None):
     unique_entries = 0
     multiple_entries = 0
     for media_type, media_config in MEDIA_TYPES.items():
