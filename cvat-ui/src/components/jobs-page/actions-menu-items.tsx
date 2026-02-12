@@ -84,7 +84,8 @@ export default function JobActionsItems(
         go_to_replicas: jobsToActWithReplicas,
     };
 
-    const withCount = LabelWithCountHOF(jobsToAct, bulkAllowedKeys, actionsApplicable);
+    const idsToAct = jobsToAct.map((j) => j.id);
+    const withCount = LabelWithCountHOF(idsToAct, bulkAllowedKeys, actionsApplicable);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
