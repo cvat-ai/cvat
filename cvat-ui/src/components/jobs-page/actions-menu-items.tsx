@@ -78,7 +78,7 @@ export default function JobActionsItems(
         disabled: isDisabled('task'),
     }, 0]);
 
-    if (jobsToActWithParents.length) {
+    if (jobsToActWithParents.length && onGoToParent) {
         menuItems.push([{
             key: 'go_to_parent',
             onClick: onGoToParent,
@@ -86,7 +86,7 @@ export default function JobActionsItems(
             disabled: isDisabled('go_to_parent'),
         }, 10]);
     }
-    if (jobsToActWithReplicas.length) {
+    if (jobsToActWithReplicas.length && onGoToReplicas) {
         menuItems.push([{
             key: 'go_to_replicas',
             onClick: onGoToReplicas,
