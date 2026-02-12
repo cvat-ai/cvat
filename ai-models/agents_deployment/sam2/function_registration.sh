@@ -95,7 +95,7 @@ CONFIGMAP_DATA=$(cat <<EOF
     "namespace": "${NAMESPACE}"
   },
   "data": {
-    "function_id": "${FUNCTION_ID}"
+    "FUNCTION_ID": "${FUNCTION_ID}"
   }
 }
 EOF
