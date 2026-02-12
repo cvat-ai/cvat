@@ -33,7 +33,7 @@ FUNCTION_FILE_PATH="func.py"
 
 # Get the username associated with the access token
 USERNAME=$(curl "$CVAT_BASE_URL"/api/users/self -s -H "Authorization: Bearer $CVAT_ACCESS_TOKEN" | jq -r '.username')
-if [ -z "$USERNAME" ]; then
+if [ -z "$USERNAME" ] || [ "$USERNAME" = "null" ]; then
     echo "Error: Unable to retrieve username from CVAT API. Check your access token."
     exit 1
 else
@@ -50,6 +50,7 @@ else
     # Register the SAM2 function in CVAT
     if function_id="$(cvat-cli --server-host "$CVAT_BASE_URL" function create-native "$FUNCTION_NAME" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID")"; then
       echo "Successfully created $FUNCTION_NAME function"
+      export FUNCTION_ID="$function_id"
       echo "$function_id" > /shared/FUNCTION_ID
     else
       echo "cvat-cli function create-native failed."
@@ -74,8 +75,9 @@ APISERVER=https://kubernetes.default.svc
 SERVICEACCOUNT=/var/run/secrets/kubernetes.io/serviceaccount
 
 # Read this Pod's namespace
-NAMESPACE=$(cat "${SERVICEACCOUNT}"/namespace)
-
+if [ -z "$NAMESPACE" ]; then
+    NAMESPACE=$(cat "${SERVICEACCOUNT}"/namespace)
+fi
 # Read the ServiceAccount bearer token
 TOKEN=$(cat "${SERVICEACCOUNT}"/token)
 
@@ -83,8 +85,10 @@ TOKEN=$(cat "${SERVICEACCOUNT}"/token)
 CACERT="${SERVICEACCOUNT}"/ca.crt
 
 # ConfigMap data
-CONFIGMAP_NAME="sam2-function-id"
-#TODO add variable check for Helm
+if [ -z "$CONFIGMAP_NAME" ]; then
+    echo "Error: CONFIGMAP_NAME environment variable must be set for K8S deployment."
+    exit 1
+fi
 
 CONFIGMAP_DATA=$(cat <<EOF
 {
