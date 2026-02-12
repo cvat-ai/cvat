@@ -2,20 +2,56 @@
 
 # This script registers the SAM2 model function in the CVAT.
 
-if [ -z "$CVAT_BASE_URL" ] || [ -z "$CVAT_ACCESS_TOKEN" ]; then
-    echo "Error: CVAT_ADDRESS and CVAT_TOKEN environment variables must be set."
+if [ -z "$CVAT_ACCESS_TOKEN" ]; then
+    echo "Error: CVAT_ACCESS_TOKEN environment variable must be set."
     exit 1
+fi
+
+if [ -z "$CVAT_BASE_URL" ]; then
+    echo "Error: CVAT_BASE_URL environment variable is missing, using https://app.cvat.ai as default."
+    export CVAT_BASE_URL="https://app.cvat.ai"
 fi
 
 if [ -z "$MODEL_ID" ]; then
-    echo "Error: MODEL_ID environment variable not found. Default is sam2-hiera-large"
-    export MODEL_ID="sam2-hiera-large"
+    echo "Error: MODEL_ID environment variable not found. Default is facebook/sam2.1-hiera-tiny"
+    export MODEL_ID="facebook/sam2.1-hiera-tiny"
 fi
+
+
+# We need to check that dir for FUNCTION_ID file
+if [ ! -d /shared ]; then
+    mkdir /shared
+fi
+
+#TODO review this condition
+
+counter=1
+while [ -z $FUNCTION_ID ] && [ $counter -le 40 ]; do
+
+    if [ -f /shared/FUNCTION_ID ]; then
+        echo "FUNCTION_ID file found. Reading FUNCTION_ID from /shared/FUNCTION_ID"
+        export FUNCTION_ID="$(cat /shared/FUNCTION_ID)"
+    else
+        echo "FUNCTION_ID file not found. Waiting for it to be created at /shared/FUNCTION_ID"
+        sleep 3
+    fi
+
+    ((counter++))
+
+done
 
 if [ -z "$FUNCTION_ID" ]; then
-    echo -e "Error: FUNCTION_ID environment variable must be set to run agent for this function"
+    echo -e "FUNCTION_ID environment variable not found. In compose it should be available in /shared/FUNCTION_ID file.\nIf this is Helm - something is wrong with function registration\nIf this is local run - please ensure FUNCTION_ID environment variable is set or /shared/FUNCTION_ID file is created with the function id of the function you want to run.\nExiting..."
     exit 1
 fi
+## Local run from cvat/ai-models/agents_deployment/sam2
+#FUNCTION_FILE_PATH="../../tracker/sam2/func.py"
+## Docker container run
+FUNCTION_FILE_PATH="func.py"
 
 echo -e "Running SAM2 function agent for FUNCTION_ID: $FUNCTION_ID with MODEL_ID: $MODEL_ID\n..."
-cvat-cli --server-host "$CVAT_BASE_URL" function run-agent "$FUNCTION_ID" --function-file=ai-models/tracker/sam2/func.py -p model_id=str:"$MODEL_ID"
+## Local run from cvat/ai-models/agents_deployment/sam2
+#cvat-cli --server-host "$CVAT_BASE_URL" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID"
+
+#Docker container run
+cvat-cli --server-host "$CVAT_BASE_URL" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID"

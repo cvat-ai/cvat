@@ -1,0 +1,42 @@
+services:
+  cvat-function-register:
+    image: ${IMAGE_URL}
+    entrypoint: ["/app/function_registration.sh"]
+    volumes:
+      - shared-data:/shared
+    restart: "on-failure"
+    environment:
+      - CVAT_BASE_URL=${CVAT_BASE_URL}
+      - CVAT_ACCESS_TOKEN=${CVAT_ACCESS_TOKEN}
+      - MODEL_ID=${MODEL_ID}
+
+  cvat-agents:
+    image: ${IMAGE_URL}
+    volumes:
+      - shared-data:/shared
+    depends_on:
+      cvat-function-register:
+        condition: service_completed_successfully
+    deploy:
+      replicas: ${AGENTS_COUNT}
+    environment:
+      - CVAT_BASE_URL=${CVAT_BASE_URL}
+      - CVAT_ACCESS_TOKEN=${CVAT_ACCESS_TOKEN}
+      - MODEL_ID=${MODEL_ID}
+
+  #NB! MANUAL RUN!
+  # docker compose run --rm cvat-function-deregister
+  # or
+  # docker compose --profile manual up cvat-function-deregister
+  cvat-function-deregister:
+    image: ${IMAGE_URL}
+    entrypoint: ["/app/function_deregistration.sh"]
+    volumes:
+      - shared-data:/shared
+    profiles:
+      - manual
+    environment:
+      - CVAT_BASE_URL=${CVAT_BASE_URL}
+      - CVAT_ACCESS_TOKEN=${CVAT_ACCESS_TOKEN}
+volumes:
+  shared-data:
