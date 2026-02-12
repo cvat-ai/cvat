@@ -18,27 +18,11 @@ if [ -z "$MODEL_ID" ]; then
 fi
 
 
-# We need to check that dir for FUNCTION_ID file
-if [ ! -d /shared ]; then
-    mkdir /shared
+if [ -f /shared/FUNCTION_ID ]; then
+    echo "FUNCTION_ID file found. Reading FUNCTION_ID from /shared/FUNCTION_ID"
+    export FUNCTION_ID="$(cat /shared/FUNCTION_ID)"
 fi
 
-#TODO review this condition
-
-counter=1
-while [ -z $FUNCTION_ID ] && [ $counter -le 40 ]; do
-
-    if [ -f /shared/FUNCTION_ID ]; then
-        echo "FUNCTION_ID file found. Reading FUNCTION_ID from /shared/FUNCTION_ID"
-        export FUNCTION_ID="$(cat /shared/FUNCTION_ID)"
-    else
-        echo "FUNCTION_ID file not found. Waiting for it to be created at /shared/FUNCTION_ID"
-        sleep 3
-    fi
-
-    ((counter++))
-
-done
 
 if [ -z "$FUNCTION_ID" ]; then
     echo -e "FUNCTION_ID environment variable not found. In compose it should be available in /shared/FUNCTION_ID file.\nIf this is Helm - something is wrong with function registration\nIf this is local run - please ensure FUNCTION_ID environment variable is set or /shared/FUNCTION_ID file is created with the function id of the function you want to run.\nExiting..."
