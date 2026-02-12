@@ -141,7 +141,7 @@ function JobActionsComponent(
             onApplyFilter(logic);
             dispatch(selectionActions.clearSelectedResources());
         }
-    }, [jobsToAct, dispatch]);
+    }, [jobsToAct, onApplyFilter, dispatch]);
 
     const onGoToReplicas = useCallback(() => {
         if (onApplyFilter) {
@@ -152,7 +152,7 @@ function JobActionsComponent(
             onApplyFilter(logic);
             dispatch(selectionActions.clearSelectedResources());
         }
-    }, [jobInstance.id, selectedIds, dispatch]);
+    }, [jobInstance.id, onApplyFilter, selectedIds, dispatch]);
 
     const onUpdateJobField = useCallback((
         fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>,
