@@ -20,7 +20,7 @@ fi
 
 if [ -f /shared/FUNCTION_ID ]; then
     echo "FUNCTION_ID file found. Reading FUNCTION_ID from /shared/FUNCTION_ID"
-    export FUNCTION_ID="$(cat /shared/FUNCTION_ID)"
+    FUNCTION_ID="$(cat /shared/FUNCTION_ID)"
 fi
 
 
