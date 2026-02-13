@@ -38,4 +38,4 @@ echo -e "Running SAM2 function agent for FUNCTION_ID: $FUNCTION_ID with MODEL_ID
 #cvat-cli --server-host "$CVAT_BASE_URL" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID"
 
 #Docker container run
-cvat-cli --server-host "$CVAT_BASE_URL" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID"
+exec cvat-cli --server-host "$CVAT_BASE_URL" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID"
