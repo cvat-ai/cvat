@@ -2145,8 +2145,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -5146,8 +5147,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -7245,11 +7247,13 @@ components:
       - video
       - imageset
       - list
+      - audio_mp3
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
         * `list` - LIST
+        * `audio_mp3` - AUDIO_MP3
     ClientEvents:
       type: object
       properties:
@@ -7556,7 +7560,8 @@ components:
           type: integer
           maximum: 100
           minimum: 0
-          description: Image quality to use during annotation
+          description: Image quality to use during annotation, required for image
+            and video-based tasks
         start_frame:
           type: integer
           maximum: 2147483647
@@ -7712,8 +7717,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ValidationParamsRequest'
           nullable: true
-      required:
-      - image_quality
     DataResponse:
       oneOf:
       - $ref: '#/components/schemas/RqId'
@@ -8280,6 +8283,7 @@ components:
           readOnly: true
         mode:
           type: string
+          nullable: true
           readOnly: true
         frame_count:
           type: integer
@@ -8301,13 +8305,17 @@ components:
           nullable: true
           readOnly: true
         data_compressed_chunk_type:
-          allOf:
-          - $ref: '#/components/schemas/ChunkType'
+          nullable: true
           readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/ChunkType'
+          - $ref: '#/components/schemas/NullEnum'
         data_original_chunk_type:
-          allOf:
-          - $ref: '#/components/schemas/ChunkType'
+          nullable: true
           readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/ChunkType'
+          - $ref: '#/components/schemas/NullEnum'
         created_date:
           type: string
           format: date-time
@@ -11142,6 +11150,7 @@ components:
         mode:
           type: string
           readOnly: true
+          nullable: true
         owner:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -11179,13 +11188,17 @@ components:
           nullable: true
           readOnly: true
         data_original_chunk_type:
-          allOf:
-          - $ref: '#/components/schemas/ChunkType'
+          nullable: true
           readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/ChunkType'
+          - $ref: '#/components/schemas/NullEnum'
         data_compressed_chunk_type:
-          allOf:
-          - $ref: '#/components/schemas/ChunkType'
+          nullable: true
           readOnly: true
+          oneOf:
+          - $ref: '#/components/schemas/ChunkType'
+          - $ref: '#/components/schemas/NullEnum'
         data_cloud_storage_id:
           type: integer
           nullable: true
