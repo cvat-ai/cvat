@@ -108,9 +108,7 @@ EOF
 # Create ConfigMap
 response=$(curl -s -w "\n%{http_code}" --cacert ${CACERT} \
      --header "Authorization: Bearer ${TOKEN}" \
-     --header "Content-Type: application/json" \
-     -X POST \
-     -d "${CONFIGMAP_DATA}" \
+     --json "${CONFIGMAP_DATA}" \
      "${APISERVER}"/api/v1/namespaces/"${NAMESPACE}"/configmaps)
 
 http_code=$(echo "$response" | tail -n 1)
