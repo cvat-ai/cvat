@@ -9,12 +9,12 @@ fi
 
 if [ -z "$CVAT_BASE_URL" ]; then
     echo "Warning: CVAT_BASE_URL environment variable is missing, using https://app.cvat.ai as default."
-    export CVAT_BASE_URL="https://app.cvat.ai"
+    CVAT_BASE_URL="https://app.cvat.ai"
 fi
 
 if [ -z "$MODEL_ID" ]; then
     echo "Warning: MODEL_ID environment variable not found. Default is facebook/sam2.1-hiera-tiny"
-    export MODEL_ID="facebook/sam2.1-hiera-tiny"
+    MODEL_ID="facebook/sam2.1-hiera-tiny"
 fi
 
 # Compose will create this dir, local docker won't so need to create it sometimes.
@@ -42,7 +42,7 @@ fi
 
 # Try to find existing function with the same name and owner
 if request_function_id=$(curl --get --data-urlencode "filter={\"and\":[{\"==\":[{\"var\":\"name\"},\"${FUNCTION_NAME}\"]},{\"==\":[{\"var\":\"owner\"},\"$USERNAME\"]}]}" "$CVAT_BASE_URL"/api/functions -s -H "Authorization: Bearer "$CVAT_ACCESS_TOKEN"" | jq -r '.results[0].id') && [ "$request_function_id" != "null" ]; then
-    export FUNCTION_ID="$request_function_id"
+    FUNCTION_ID="$request_function_id"
     echo "Found existing function with ID: $FUNCTION_ID, new function won't be created."
     echo "$FUNCTION_ID" > /shared/FUNCTION_ID
 else
@@ -50,7 +50,7 @@ else
     # Register the SAM2 function in CVAT
     if function_id="$(cvat-cli --server-host "$CVAT_BASE_URL" function create-native "$FUNCTION_NAME" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID")"; then
       echo "Successfully created $FUNCTION_NAME function"
-      export FUNCTION_ID="$function_id"
+      FUNCTION_ID="$function_id"
       echo "$function_id" > /shared/FUNCTION_ID
     else
       echo "cvat-cli function create-native failed."

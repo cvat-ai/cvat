@@ -14,7 +14,7 @@ fi
 
 if [ -z "$MODEL_ID" ]; then
     echo "Error: MODEL_ID environment variable not found. Default is facebook/sam2.1-hiera-tiny"
-    export MODEL_ID="facebook/sam2.1-hiera-tiny"
+    MODEL_ID="facebook/sam2.1-hiera-tiny"
 fi
 
 
