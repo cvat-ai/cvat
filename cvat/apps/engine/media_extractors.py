@@ -805,7 +805,7 @@ class VideoReaderWithManifest:
 class AudioReader(IMediaReader):
     def __init__(
         self,
-        source_path: Openable | io.BytesIO,
+        source_paths: Sequence[Openable | io.BytesIO],
         start: int = 0,
         stop: int | None = None,
         *,
@@ -818,6 +818,7 @@ class AudioReader(IMediaReader):
             dimension=DimensionType.DIM_1D,
         )
 
+        (source_path,) = source_paths
         if isinstance(source_path, io.BytesIO):
             self._source_path = MemOpenable(source_path.read())
         else:

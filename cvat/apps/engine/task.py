@@ -158,14 +158,16 @@ def _generate_segment_params(
         if segment_size == 0 or segment_size > data_size:
             segment_size = data_size
 
-        overlap = min(
-            (
-                db_task.overlap
-                if db_task.overlap is not None
-                else 5 if db_task.mode == "interpolation" else 0
-            ),
-            segment_size // 2,
-        )
+        overlap = db_task.overlap
+        if overlap is None:
+            if db_task.media_type == models.MediaType.VIDEO:
+                overlap = 5
+            elif db_task.media_type == models.MediaType.AUDIO:
+                overlap = 10000
+            else:
+                overlap = 0
+
+        overlap = min(overlap, segment_size // 2)
         segments_range = range(0, data_size - overlap, segment_size - overlap)
         segments_count = len(segments_range)
 
@@ -1455,7 +1457,7 @@ def create_thread(
 
     # count and validate uploaded files
     media = _count_files(data)
-    media, task_mode = _validate_data(media, manifest_files)
+    media, task_mode = _validate_data(media, manifest_files=manifest_files)
     is_media_sorted = False
 
     if job_file_mapping is not None and task_mode != "annotation":
@@ -1781,6 +1783,7 @@ def create_thread(
         )
 
     # Create task media descriptors from the metadata collected
+    images = []
     if db_task.media_type == models.MediaType.VIDEO:
         video, video_length, _ = _create_video_dataset_descriptors(
             extractor=extractor,
@@ -1862,10 +1865,11 @@ def create_thread(
         )
 
     slogger.glob.info(
-        "Saved media for Data #{}: media type {}, {} frames",
-        db_data.id,
-        db_task.media_type,
-        db_data.size,
+        "Saved media for Data #{}: media type {}, {} frames".format(
+            db_data.id,
+            db_task.media_type,
+            db_data.size,
+        )
     )
 
     _create_segments_and_jobs(
@@ -1882,7 +1886,10 @@ def create_thread(
         _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
     # Prepare the preview image and save it in the cache
-    if not (is_data_in_cloud and is_backup_restore):
+    if (
+        not (is_data_in_cloud and is_backup_restore)
+        and not db_task.media_type == models.MediaType.AUDIO
+    ):  # TODO: support audio
         TaskFrameProvider(db_task=db_task).get_preview()
 
 

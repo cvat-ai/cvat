@@ -2446,6 +2446,17 @@ class TaskReadSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['consensus_enabled'] = self.get_consensus_enabled(instance)
+
+        # TODO: decide about this, backward compatibility breaks if null is returned
+        if "mode" in representation:
+            representation["mode"] = representation["mode"] or ""
+        if "dimension" in representation:
+            representation["dimension"] = representation["dimension"] or ""
+
+        # TODO: decide about point clouds
+        if instance.media_type not in (models.MediaType.IMAGE, models.MediaType.VIDEO):
+            representation.pop("image_quality", None)
+
         return representation
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransferableMixin):
