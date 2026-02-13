@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     && rm -rf /var/lib/apt/lists/*
 
+useradd
+
 WORKDIR /app
 COPY ai-models/tracker/sam2/requirements.txt .
 RUN pip install --no-cache-dir cvat-cli -r requirements.txt
