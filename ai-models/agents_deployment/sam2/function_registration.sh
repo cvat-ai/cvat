@@ -17,7 +17,7 @@ if [ -z "$MODEL_ID" ]; then
     MODEL_ID="facebook/sam2.1-hiera-tiny"
 fi
 
-# Compose will create this dir, local docker won't so need to create it sometimes.
+# We use it for compose but we have same image for Helm.
 if [ ! -d /shared ]; then
     mkdir /shared
 fi
@@ -25,9 +25,6 @@ fi
 # Hardcoded for SAM2
 
 FUNCTION_NAME="SAM2"
-## Local run from cvat/ai-models/agents_deployment/sam2
-#FUNCTION_FILE_PATH="../../tracker/sam2/func.py"
-## Docker container run
 FUNCTION_FILE_PATH="func.py"
 
 
@@ -69,7 +66,6 @@ fi
 ## https://kubernetes.io/docs/tasks/run-application/access-api-from-pod/
 # Point to the internal API server hostname
 APISERVER=https://kubernetes.default.svc
-#TODO add environment variable check for Helm
 
 # Path to ServiceAccount token
 SERVICEACCOUNT=/var/run/secrets/kubernetes.io/serviceaccount

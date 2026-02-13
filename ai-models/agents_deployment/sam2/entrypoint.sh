@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script registers the SAM2 model function in the CVAT.
+# This script runs SAM2 model agent in the CVAT.
 
 if [ -z "$CVAT_ACCESS_TOKEN" ]; then
     echo "Error: CVAT_ACCESS_TOKEN environment variable must be set."
@@ -28,14 +28,9 @@ if [ -z "$FUNCTION_ID" ]; then
     echo -e "FUNCTION_ID environment variable not found. In compose it should be available in /shared/FUNCTION_ID file.\nIf this is Helm - something is wrong with function registration\nIf this is local run - please ensure FUNCTION_ID environment variable is set or /shared/FUNCTION_ID file is created with the function id of the function you want to run.\nExiting..."
     exit 1
 fi
-## Local run from cvat/ai-models/agents_deployment/sam2
-#FUNCTION_FILE_PATH="../../tracker/sam2/func.py"
-## Docker container run
+
 FUNCTION_FILE_PATH="func.py"
 
 echo -e "Running SAM2 function agent for FUNCTION_ID: $FUNCTION_ID with MODEL_ID: $MODEL_ID\n..."
-## Local run from cvat/ai-models/agents_deployment/sam2
-#cvat-cli --server-host "$CVAT_BASE_URL" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID"
 
-#Docker container run
 exec cvat-cli --server-host "$CVAT_BASE_URL" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID"
