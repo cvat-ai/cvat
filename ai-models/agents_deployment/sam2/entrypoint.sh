@@ -9,7 +9,7 @@ fi
 
 if [ -z "$CVAT_BASE_URL" ]; then
     echo "Warning: CVAT_BASE_URL environment variable is missing, using https://app.cvat.ai as default."
-    export CVAT_BASE_URL="https://app.cvat.ai"
+    CVAT_BASE_URL="https://app.cvat.ai"
 fi
 
 if [ -z "$MODEL_ID" ]; then
