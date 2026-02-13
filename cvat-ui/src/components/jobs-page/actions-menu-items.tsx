@@ -75,13 +75,13 @@ export default function JobActionsItems(
     const jobsToActWithReplicas = jobsToAct.filter((j) => j.replicasCount > 0);
 
     const actionsApplicable = {
-        edit_assignee: jobsToAct,
-        edit_state: jobsToAct,
-        edit_stage: jobsToAct,
-        export_job: jobsToAct,
-        delete: jobsToAct.filter((j) => j.type === JobType.GROUND_TRUTH),
-        go_to_parent: jobsToActWithParents,
-        go_to_replicas: jobsToActWithReplicas,
+        [MenuKeys.EDIT_ASSIGNEE]: jobsToAct,
+        [MenuKeys.EDIT_STATE]: jobsToAct,
+        [MenuKeys.EDIT_STAGE]: jobsToAct,
+        [MenuKeys.EXPORT_JOB]: jobsToAct,
+        [MenuKeys.DELETE]: jobsToAct.filter((j) => j.type === JobType.GROUND_TRUTH),
+        [MenuKeys.GO_TO_PARENT]: jobsToActWithParents,
+        [MenuKeys.GO_TO_REPLICAS]: jobsToActWithReplicas,
     };
 
     const idsToAct = jobsToAct.map((j) => j.id);
