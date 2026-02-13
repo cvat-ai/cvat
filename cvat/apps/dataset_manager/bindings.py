@@ -1589,13 +1589,9 @@ class MediaProvider3D(MediaProvider):
     def get_media_for_frame(self, source_id: int, frame_id: int, **image_kwargs) -> dm.PointCloud:
         source = self._sources[source_id]
 
-        upload_dir = source.db_task.data.get_upload_dirname()
         point_cloud_path = image_kwargs['path']
 
-        related_image_paths = [
-            osp.relpath(str(ri_path), upload_dir)
-            for ri_path in self._ri_per_source[source_id].get(frame_id, [])
-        ]
+        related_image_paths = self._ri_per_source[source_id].get(frame_id, [])
 
         def get_pcd_bytes():
             self._load_source(source_id, source)
