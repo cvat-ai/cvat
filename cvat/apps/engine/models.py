@@ -562,7 +562,7 @@ class Video(models.Model):
 
 
 class Audio(models.Model):
-    data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
+    data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="audio", null=True)
     path = models.CharField(max_length=1024, default='')
     sampling_rate = models.PositiveIntegerField()
 
@@ -770,9 +770,9 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     data = models.ForeignKey(
         Data, on_delete=models.CASCADE, null=True, related_name="tasks", related_query_name="task"
     )
-    mode = models.CharField(max_length=32)
-    dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
-    media_type = models.CharField(max_length=16, null=False, blank=True, choices=MediaType.choices(), default="") # TODO: add data migration
+    mode = models.CharField(max_length=32, null=False, blank=True, default="")
+    dimension = models.CharField(max_length=2, null=False, blank=True, choices=DimensionType.choices(), default="")
+    media_type = models.CharField(max_length=16, null=False, blank=True, choices=MediaType.choices, default="") # TODO: add data migration
 
     subset = models.CharField(max_length=64, blank=True, default="")
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
@@ -1292,7 +1292,7 @@ class ShapeType(str, Enum):
     CUBOID = 'cuboid'       # (x0, y0, ..., x7, y7)
     MASK = 'mask'           # (rle mask, left, top, right, bottom)
     SKELETON = 'skeleton'
-    TAG = 'tag'             # ()
+    # TODO: TAG = 'tag'             # ()
 
     @classmethod
     def choices(cls):
