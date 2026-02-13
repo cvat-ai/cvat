@@ -446,7 +446,7 @@ class Data(models.Model):
 
     # Cache descriptors
     chunk_size = models.PositiveIntegerField(null=True)
-    image_quality = models.PositiveSmallIntegerField(default=50)
+    image_quality = models.PositiveSmallIntegerField(default=0)
     compressed_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         default=DataChoice.IMAGESET)
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
