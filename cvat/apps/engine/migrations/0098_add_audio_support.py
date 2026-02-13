@@ -1,5 +1,5 @@
-from django.db import migrations, models
 import django.db.models.deletion
+from django.db import migrations, models
 
 
 def fill_media_type(apps, schema_editor):
@@ -107,5 +107,5 @@ class Migration(migrations.Migration):
                 "default_permissions": (),
             },
         ),
-        migrations.RunPython(fill_media_type, migrations.RunPython.noop)
+        migrations.RunPython(fill_media_type, migrations.RunPython.noop),
     ]
