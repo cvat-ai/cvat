@@ -41,7 +41,7 @@ else
 fi
 
 # Try to find existing function with the same name and owner
-if request_function_id=$(curl ""$CVAT_BASE_URL"/api/functions?filter=%7B%0A%20%20%22and%22%3A%20%5B%0A%7B%22%3D%3D%22%3A%20%5B%7B%22var%22%3A%20%22name%22%7D%2C%20%22"$FUNCTION_NAME"%22%5D%7D%2C%0A%7B%22%3D%3D%22%3A%5B%7B%22var%22%3A%20%22owner%22%7D%2C%22"$USERNAME"%22%5D%7D%0A%20%20%5D%0A%7D" -s -H "Authorization: Bearer "$CVAT_ACCESS_TOKEN"" | jq -r '.results[0].id') && [ "$request_function_id" != "null" ]; then
+if request_function_id=$(curl --get --data-urlencode "filter={\"and\":[{\"==\":[{\"var\":\"name\"},\"${FUNCTION_NAME}\"]},{\"==\":[{\"var\":\"owner\"},\"$USERNAME\"]}]}" "$CVAT_BASE_URL"/api/functions -s -H "Authorization: Bearer "$CVAT_ACCESS_TOKEN"" | jq -r '.results[0].id') && [ "$request_function_id" != "null" ]; then
     export FUNCTION_ID="$request_function_id"
     echo "Found existing function with ID: $FUNCTION_ID, new function won't be created."
     echo "$FUNCTION_ID" > /shared/FUNCTION_ID
