@@ -448,9 +448,9 @@ class Data(models.Model):
     chunk_size = models.PositiveIntegerField(null=True)
     image_quality = models.PositiveSmallIntegerField(default=0)
     compressed_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
-        default=DataChoice.IMAGESET)
+        null=True, default=None)
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
-        default=DataChoice.IMAGESET)
+        null=True, default=None)
 
     # Storage descriptors
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
@@ -563,7 +563,7 @@ class Video(models.Model):
 
 class Audio(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="audio", null=True)
-    path = models.CharField(max_length=1024, default='')
+    path = models.CharField(max_length=1024)
     sampling_rate = models.PositiveIntegerField()
 
     class Meta:
@@ -770,9 +770,9 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     data = models.ForeignKey(
         Data, on_delete=models.CASCADE, null=True, related_name="tasks", related_query_name="task"
     )
-    mode = models.CharField(max_length=32, null=False, blank=True, default="")
-    dimension = models.CharField(max_length=2, null=False, blank=True, choices=DimensionType.choices(), default="")
-    media_type = models.CharField(max_length=16, null=False, blank=True, choices=MediaType.choices, default="") # TODO: add data migration
+    mode = models.CharField(max_length=32, null=True, default=None)
+    dimension = models.CharField(max_length=2, null=True, choices=DimensionType.choices(), default=None)
+    media_type = models.CharField(max_length=32, null=True, choices=MediaType.choices, default=None)
 
     subset = models.CharField(max_length=64, blank=True, default="")
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
