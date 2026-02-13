@@ -32,7 +32,7 @@ services:
     image: ${IMAGE_URL}
     entrypoint: ["/app/function_deregistration.sh"]
     volumes:
-      - shared-data:/shared
+      - shared-data:/shared:ro
     profiles:
       - manual
     environment:
