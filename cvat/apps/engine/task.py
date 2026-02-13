@@ -1773,6 +1773,13 @@ def create_thread(
         else:
             db_data.chunk_size = 36
 
+    if db_task.media_type in [models.MediaType.IMAGE, models.MediaType.VIDEO] and not data.get(
+        "image_quality", db_data.image_quality
+    ):
+        raise ValidationError(
+            "The 'image_quality' parameter is required for image- and video-based tasks"
+        )
+
     # Create task media descriptors from the metadata collected
     if db_task.media_type == models.MediaType.VIDEO:
         video, video_length, _ = _create_video_dataset_descriptors(
