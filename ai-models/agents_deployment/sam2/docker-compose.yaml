@@ -13,7 +13,7 @@ services:
   cvat-agents:
     image: ${IMAGE_URL}
     volumes:
-      - shared-data:/shared
+      - shared-data:/shared:ro
     depends_on:
       cvat-function-register:
         condition: service_completed_successfully
