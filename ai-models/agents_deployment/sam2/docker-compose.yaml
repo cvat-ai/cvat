@@ -18,7 +18,7 @@ services:
       cvat-function-register:
         condition: service_completed_successfully
     deploy:
-      replicas: ${AGENTS_COUNT}
+      replicas: ${AGENTS_COUNT:-1}
     environment:
       - CVAT_BASE_URL=${CVAT_BASE_URL}
       - CVAT_ACCESS_TOKEN=${CVAT_ACCESS_TOKEN}
