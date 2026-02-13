@@ -8,7 +8,7 @@ if [ -z "$CVAT_ACCESS_TOKEN" ]; then
 fi
 
 if [ -z "$CVAT_BASE_URL" ]; then
-    echo "Error: CVAT_BASE_URL environment variable is missing, using https://app.cvat.ai as default."
+    echo "Warning: CVAT_BASE_URL environment variable is missing, using https://app.cvat.ai as default."
     export CVAT_BASE_URL="https://app.cvat.ai"
 fi
 
