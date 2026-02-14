@@ -821,8 +821,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     transform: `translate(${x}px, ${y}px)`,
                 });
 
-                /* eslint-disable-next-line no-unsanitized/property */
-                this.pointsGroup.node.innerHTML = this.drawData.skeletonSVG;
+                this.pointsGroup.node.replaceChildren(...this.drawData.skeletonSVG.cloneNode(true).childNodes);
                 Array.from(this.pointsGroup.node.children).forEach((child: Element) => {
                     const dataType = child.getAttribute('data-type');
                     if (child.tagName === 'circle' && dataType && dataType.includes('element')) {

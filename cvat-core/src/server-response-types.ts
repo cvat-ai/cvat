@@ -377,7 +377,6 @@ export interface SerializedQualityReportData {
 export interface SerializedConsensusSettingsData {
     id?: number;
     task?: number;
-    quorum?: number;
     iou_threshold?: number;
     descriptions?: Record<string, string>;
 }
@@ -423,6 +422,7 @@ export interface SerializedShape {
     group: number;
     frame: number;
     source: Source;
+    score?: number;
     attributes: { spec_id: number; value: string }[];
     elements: Omit<SerializedShape, 'elements'>[];
     occluded: boolean;

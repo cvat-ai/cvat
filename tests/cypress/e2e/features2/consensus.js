@@ -5,25 +5,16 @@
 /// <reference types="cypress" />
 
 import { translatePoints } from '../../support/utils';
+import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Basic manipulations with consensus job replicas', () => {
     const labelName = 'Consensus';
     const taskName = 'Test consensus';
     const serverFiles = ['archive.zip'];
-    const replicas = 4;
-    const taskSpec = {
-        name: taskName,
-        labels: [{
-            name: labelName,
-            attributes: [],
-            type: 'any',
-        }],
-    };
-    const dataSpec = {
-        server_files: serverFiles,
-        image_quality: 70,
-    };
-    const extras = { consensus_replicas: replicas };
+    const consensusReplicas = 4;
+    const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+        serverFiles, labelName, taskName, consensusReplicas,
+    });
 
     before(() => {
         cy.visit('auth/login');
@@ -78,7 +69,7 @@ context('Basic manipulations with consensus job replicas', () => {
             });
             cy.get('.cvat-consensus-job-collapse').should('be.visible')
                 .within(($el) => {
-                    expect($el.text()).to.equal(`${replicas} Replicas`);
+                    expect($el.text()).to.equal(`${consensusReplicas} Replicas`);
                     cy.wrap($el).click();
                 });
         });
@@ -140,7 +131,6 @@ context('Basic manipulations with consensus job replicas', () => {
         });
 
         it('Check consensus management page', () => {
-            const defaultQuorum = 50;
             const defaultIoU = 40;
             cy.contains('button', 'Actions').click();
             cy.contains('Consensus management').should('be.visible').click();
@@ -171,10 +161,8 @@ context('Basic manipulations with consensus job replicas', () => {
                 cy.contains('button', 'Save').click();
                 cy.closeNotification('.cvat-notification-save-consensus-settings-failed');
             }
-            checkFieldValue('#quorum', defaultQuorum).clear();
-            attemptInvalidSaving(1);
             checkFieldValue('#iouThreshold', defaultIoU).clear();
-            attemptInvalidSaving(2);
+            attemptInvalidSaving(1);
             cy.get('.ant-notification-notice').should('not.exist');
 
             // Go back to task page
@@ -185,7 +173,7 @@ context('Basic manipulations with consensus job replicas', () => {
             // Create annotations for job replicas
             const delta = 50;
             const [consensusJobID, ...replicaJobIDs] = jobIDs;
-            for (let i = 0, shape = baseShape; i < replicas; i++) {
+            for (let i = 0, shape = baseShape; i < consensusReplicas; i++) {
                 cy.headlessCreateObjects([shape], jobIDs[i]); // only 'in progress' jobs can be merged
                 cy.headlessUpdateJob(replicaJobIDs[i], { state: 'in progress' });
                 const points = translatePoints(shape.points, delta, 'x');

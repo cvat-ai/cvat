@@ -41,12 +41,10 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
         responses={
             "202": OpenApiResponse(
                 RqIdSerializer,
-                description=textwrap.dedent(
-                    """\
+                description=textwrap.dedent("""\
                     A consensus merge request has been enqueued, the request id is returned.
                     The request status can be checked by using common requests API: GET /api/requests/<rq_id>
-                """
-                ),
+                """),
             ),
             "400": OpenApiResponse(
                 description="Invalid or failed request, check the response data for details"

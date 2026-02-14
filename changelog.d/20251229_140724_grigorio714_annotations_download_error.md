@@ -1,4 +1,0 @@
-### Fixed
-
-- Fixed a AssertionError that occurred during the download of 3D annotations.
-  (<https://github.com/cvat-ai/cvat/pull/10165>)

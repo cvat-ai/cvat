@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import DOMPurify from 'dompurify';
 import {
     AttrInputType, SerializedAttribute, SerializedLabel,
 } from './server-response-types';
@@ -93,7 +94,7 @@ export class Label {
     public readonly type: LabelType;
     public structure: {
         sublabels: Label[];
-        svg: string;
+        svg: SVGSVGElement;
     } | null;
     public deleted: boolean;
     public patched: boolean;
@@ -134,6 +135,7 @@ export class Label {
 
         if (data.type === 'skeleton') {
             data.sublabels = data.sublabels.map((internalLabel) => new Label({ ...internalLabel, has_parent: true }));
+            data.svg = Label.parseUntrustedSvg(`<svg>${data.svg ?? ''}</svg>`);
         }
 
         Object.defineProperties(
@@ -225,10 +227,34 @@ export class Label {
 
         const { structure } = this;
         if (structure) {
-            object.svg = structure.svg;
+            object.svg = structure.svg.innerHTML;
             object.sublabels = structure.sublabels.map((internalLabel) => internalLabel.toJSON());
         }
 
         return object;
+    }
+
+    static parseUntrustedSvg(svgString: string): SVGSVGElement {
+        const frag = DOMPurify.sanitize(svgString, {
+            ALLOWED_TAGS: ['svg', 'line', 'circle', 'desc'],
+            ALLOWED_ATTR: [
+                // circle
+                'cx', 'cy', 'r',
+                'data-type', 'data-element-id', 'data-label-name', 'data-label-id', 'data-node-id',
+                // line
+                'x1', 'y1', 'x2', 'y2',
+                'data-type', 'data-node-from', 'data-node-to',
+                // desc
+                'data-description-type',
+            ],
+            RETURN_DOM_FRAGMENT: true,
+        });
+
+        if (frag.children.length !== 1) throw Error();
+
+        const child = frag.firstElementChild;
+        if (!(child instanceof SVGSVGElement)) throw Error();
+
+        return child;
     }
 }

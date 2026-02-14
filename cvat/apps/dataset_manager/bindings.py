@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 
 slogger = ServerLogManager(__name__)
 
-CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
+CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation', 'source', 'score'}
 
 class InstanceLabelData:
     class Attribute(NamedTuple):
@@ -231,6 +231,7 @@ class CommonData(InstanceLabelData):
         elements: Sequence[CommonData.LabeledShape] = ()
         outside: bool = False
         id: int | None = None
+        score: float = 1.0
 
     class TrackedShape(NamedTuple):
         type: int
@@ -1588,13 +1589,9 @@ class MediaProvider3D(MediaProvider):
     def get_media_for_frame(self, source_id: int, frame_id: int, **image_kwargs) -> dm.PointCloud:
         source = self._sources[source_id]
 
-        upload_dir = source.db_task.data.get_upload_dirname()
         point_cloud_path = image_kwargs['path']
 
-        related_image_paths = [
-            osp.relpath(str(ri_path), upload_dir)
-            for ri_path in self._ri_per_source[source_id].get(frame_id, [])
-        ]
+        related_image_paths = self._ri_per_source[source_id].get(frame_id, [])
 
         def get_pcd_bytes():
             self._load_source(source_id, source)
@@ -1628,7 +1625,7 @@ class MediaProvider3D(MediaProvider):
 
             frame_related_images = {
                 ri_path: Path(ri_realpath).read_bytes()
-                for _, (ri_realpath, ri_path, _) in cache.read_raw_context_images(
+                for _, (ri_realpath, ri_path) in cache.read_raw_context_images(
                     self._sources[self._current_source_id].db_task.data,
                     frame_ids=[frame_id],
                     truncate_common_filename_prefix=False,
@@ -2248,6 +2245,10 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                 if hasattr(ann, 'label') and ann.label is None:
                     raise CvatImportError("annotation has no label")
 
+                score = ann.attributes.pop('score', None)
+                if score is None:
+                    score = 1
+
                 attributes = [
                     instance_data.Attribute(name=n, value=str(v))
                     for n, v in ann.attributes.items()
@@ -2323,6 +2324,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                             rotation=rotation,
                             attributes=attributes,
                             elements=elements,
+                            score=score,
                         ))
                         continue
 
