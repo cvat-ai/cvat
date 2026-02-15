@@ -359,16 +359,15 @@ function FiltersModalComponent(): JSX.Element {
                     renderBuilder={renderBuilder}
                 />
             )}
-            {isModalConfirmable() && (
-                <div className='cvat-filters-modal-navigation-checkbox'>
-                    <Checkbox
-                        checked={navigationType === NavigationType.FILTERED}
-                        onChange={(e) => handleNavigationTypeChange(e.target.checked)}
-                    >
-                        Filter frames only (navigate through filtered frames)
-                    </Checkbox>
-                </div>
-            )}
+            <div className='cvat-filters-modal-navigation-checkbox'>
+                <Checkbox
+                    disabled={!isModalConfirmable() && !activeFilters.length}
+                    checked={navigationType === NavigationType.FILTERED}
+                    onChange={(e) => handleNavigationTypeChange(e.target.checked)}
+                >
+                    Filter frames only (navigate through filtered frames)
+                </Checkbox>
+            </div>
         </Modal>
     );
 }
