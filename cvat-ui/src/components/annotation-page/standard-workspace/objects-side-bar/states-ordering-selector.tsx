@@ -40,6 +40,9 @@ function StatesOrderingSelectorComponent(props: StatesOrderingSelectorComponentP
                 <Select.Option key={StatesOrdering.Z_ORDER} value={StatesOrdering.Z_ORDER}>
                     {StatesOrdering.Z_ORDER}
                 </Select.Option>
+                <Select.Option key={StatesOrdering.LABEL_NAME} value={StatesOrdering.LABEL_NAME}>
+                    {StatesOrdering.LABEL_NAME}
+                </Select.Option>
             </Select>
         </Col>
     );

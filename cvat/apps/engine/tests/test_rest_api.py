@@ -94,14 +94,14 @@ def create_db_users(
     extra: bool = True,
 ):
     if admin:
-        (group_admin, _) = Group.objects.get_or_create(name="admin")
+        group_admin, _ = Group.objects.get_or_create(name="admin")
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
         user_admin.groups.add(group_admin)
         cls.admin = user_admin
 
     if primary:
-        (group_user, _) = Group.objects.get_or_create(name="user")
-        (group_annotator, _) = Group.objects.get_or_create(name="worker")
+        group_user, _ = Group.objects.get_or_create(name="user")
+        group_annotator, _ = Group.objects.get_or_create(name="worker")
         user_owner = User.objects.create_user(username="user1", password="user1")
         user_owner.groups.add(group_user)
         user_assignee = User.objects.create_user(username="user2", password="user2")
@@ -113,7 +113,7 @@ def create_db_users(
         cls.annotator = cls.user3 = user_annotator
 
     if extra:
-        (group_somebody, _) = Group.objects.get_or_create(name="somebody")
+        group_somebody, _ = Group.objects.get_or_create(name="somebody")
         user_somebody = User.objects.create_user(username="user4", password="user4")
         user_somebody.groups.add(group_somebody)
         user_dummy = User.objects.create_user(username="user5", password="user5")
@@ -1416,13 +1416,15 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         }
         image_count = 10
         imagename_pattern = "test_{}.jpg"
+
+        share_root: Path = settings.SHARE_ROOT
+
         for i in range(image_count):
             filename = imagename_pattern.format(i)
-            path = os.path.join(settings.SHARE_ROOT, filename)
+            path = share_root / filename
             cls.media["files"].append(path)
             _, data = generate_random_image_file(filename)
-            with open(path, "wb") as image:
-                image.write(data.read())
+            path.write_bytes(data.read())
 
         cls.media_data.append(
             {
@@ -1441,11 +1443,10 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = "test_video_1.mp4"
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = share_root / filename
         cls.media["files"].append(path)
         _, data = generate_video_file(filename, width=1280, height=720)
-        with open(path, "wb") as video:
-            video.write(data.read())
+        path.write_bytes(data.read())
         cls.media_data.append(
             {
                 "image_quality": 75,
@@ -1458,11 +1459,10 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = os.path.join("test_archive_1.zip")
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = share_root / filename
         cls.media["files"].append(path)
         _, data = generate_zip_archive_file(filename, count=5)
-        with open(path, "wb") as zip_archive:
-            zip_archive.write(data.read())
+        path.write_bytes(data.read())
         cls.media_data.append(
             {
                 "image_quality": 75,
@@ -1471,12 +1471,11 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = os.path.join("videos", "test_video_1.mp4")
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = share_root / filename
         cls.media["dirs"].append(os.path.dirname(path))
         os.makedirs(os.path.dirname(path))
         _, data = generate_video_file(filename, width=1280, height=720)
-        with open(path, "wb") as video:
-            video.write(data.read())
+        path.write_bytes(data.read())
 
         manifest_path = share_root / "videos" / "manifest.jsonl"
         generate_manifest_file(
@@ -2783,6 +2782,7 @@ class TaskMoveAPITestCase(ApiTestBase):
                     "label_id": cls.task.label_set.first().id,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": cls.task.label_set.first().attributespec_set.first().id,
@@ -3132,11 +3132,10 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 )
 
         filename = os.path.join("videos", "test_video_1.mp4")
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        os.makedirs(os.path.dirname(path))
+        path = share_root / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
         _, data = generate_video_file(filename, width=1280, height=720)
-        with open(path, "wb") as video:
-            video.write(data.read())
+        path.write_bytes(data.read())
 
         generate_manifest_file(
             data_type=ManifestDataType.video,
@@ -3554,14 +3553,14 @@ class ManifestDataType(str, Enum):
 def generate_manifest_file(
     data_type: ManifestDataType,
     manifest_path: Path,
-    sources,
+    sources: list[Path],
     *,
     sorting_method=SortingMethod.LEXICOGRAPHICAL,
-    root_dir=None,
+    root_dir: Path | None = None,
 ):
     if data_type == "video":
         manifest = VideoManifestManager(manifest_path, create_index=False)
-        manifest.link(media_file=Path(sources[0]), force=True)
+        manifest.link(media_file=sources[0], force=True)
     else:
         assert root_dir
 
@@ -3569,11 +3568,7 @@ def generate_manifest_file(
 
         manifest = ImageManifestManager(manifest_path, create_index=False)
         manifest.link(
-            sources=[
-                Path(p)
-                for p in sources
-                if (root_dir is not None and os.path.relpath(p, root_dir) or p) in scenes
-            ],
+            sources=[p for p in sources if p.relative_to(root_dir) in scenes],
             sorting_method=sorting_method,
             use_image_hash=True,
             data_dir=root_dir,
@@ -3956,7 +3951,7 @@ class TaskDataAPITestCase(ApiTestBase):
             self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
             self.assertEqual(expected_original_type, task["data_original_chunk_type"])
             self.assertEqual(len(expected_image_sizes), task["size"])
-            db_data = Task.objects.get(pk=task_id).data
+            db_data = Task.objects.get(pk=task_id).require_data()
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
             # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share
@@ -4888,9 +4883,9 @@ class TaskDataAPITestCase(ApiTestBase):
             image_sizes, image_files = generate_random_image_files(
                 "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
             )
-            image_paths = []
+            image_paths: list[Path] = []
             for image in image_files:
-                fp = os.path.join(test_dir, image.name)
+                fp = Path(test_dir, image.name)
                 with open(fp, "wb") as f:
                     f.write(image.getvalue())
                 image_paths.append(fp)
@@ -4905,7 +4900,7 @@ class TaskDataAPITestCase(ApiTestBase):
                     manifest_path,
                     image_paths,
                     sorting_method=SortingMethod.PREDEFINED,
-                    root_dir=test_dir,
+                    root_dir=Path(test_dir),
                 )
 
                 task_data_common["use_cache"] = caching_enabled
@@ -5028,9 +5023,9 @@ class TaskDataAPITestCase(ApiTestBase):
             image_sizes, image_files = generate_random_image_files(
                 "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
             )
-            image_paths = []
+            image_paths: list[Path] = []
             for image in image_files:
-                fp = os.path.join(test_dir, image.name)
+                fp = Path(test_dir, image.name)
                 with open(fp, "wb") as f:
                     f.write(image.getvalue())
                 image_paths.append(fp)
@@ -5736,6 +5731,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -5755,6 +5751,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -5858,6 +5855,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -5877,6 +5875,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -5997,6 +5996,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": 32234234,
@@ -6016,6 +6016,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": 1212121,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6168,6 +6169,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6187,6 +6189,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6290,6 +6293,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6309,6 +6313,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6429,6 +6434,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": 32234234,
@@ -6448,6 +6454,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": 1212121,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6670,6 +6677,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6696,6 +6704,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][2]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][2]["attributes"][0]["id"],
@@ -6726,6 +6735,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [2.0, 2.1, 40, 50.7],
                         "type": "rectangle",
@@ -6743,6 +6753,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
                         "type": "polygon",
@@ -6760,6 +6771,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 1,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6800,6 +6812,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
                         "type": "points",
@@ -6928,6 +6941,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [4, 4, 5, 91, 96, 93, 97, 4],
                         "type": "polygon",
@@ -6940,6 +6954,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [14, 14, 15, 85, 88, 87, 90, 13],
                         "type": "polygon",
@@ -6998,6 +7013,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [
                             -3.62,
@@ -7029,6 +7045,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [
                             23.01,
@@ -7082,6 +7099,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7099,6 +7117,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7120,6 +7139,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7149,6 +7169,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7194,6 +7215,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "group": 0,
                         "frame": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "elements": [
                             {
@@ -7208,6 +7230,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "label_id": task["labels"][0]["sublabels"][0]["id"],
                                 "group": 0,
                                 "source": "manual",
+                                "score": 1.0,
                                 "attributes": [],
                             },
                             {
@@ -7222,6 +7245,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "label_id": task["labels"][0]["sublabels"][1]["id"],
                                 "group": 0,
                                 "source": "manual",
+                                "score": 1.0,
                                 "attributes": [],
                             },
                         ],

@@ -13,8 +13,8 @@ context('Canvas 3D functionality. Make a copy.', () => {
     const cuboidCreationParams = {
         objectType: 'Shape',
         labelName,
-        x: 480,
-        y: 160,
+        x: 360,
+        y: 320,
     };
 
     before(() => {
@@ -35,8 +35,9 @@ context('Canvas 3D functionality. Make a copy.', () => {
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .trigger('mouseout');
             cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Make a copy');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 270);
-            cy.get('.cvat-canvas3d-perspective').dblclick(480, 270);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 270);
+            cy.wait(500); // Waiting for mousemove have effect
+            cy.get('.cvat-canvas3d-perspective').dblclick(360, 270);
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .invoke('attr', 'style')
                 .then((bgColor) => {
@@ -45,12 +46,13 @@ context('Canvas 3D functionality. Make a copy.', () => {
         });
 
         it('Make a copy via hot keys.', () => {
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 270);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 270);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 270);
+            cy.wait(500); // Waiting for mousemove have effect
             cy.get('body').type('{Ctrl}c');
             cy.get('body').type('{Ctrl}v');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 430, 220);
-            cy.get('.cvat-canvas3d-perspective').dblclick(430, 220);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 200);
+            cy.wait(500); // Waiting for mousemove have effect
+            cy.get('.cvat-canvas3d-perspective').dblclick(360, 200);
             cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {
                 expect(sideBarItems.length).to.be.equal(3);
             });
@@ -62,15 +64,16 @@ context('Canvas 3D functionality. Make a copy.', () => {
         });
 
         it('Copy a cuboid to an another frame.', () => {
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 270);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 270);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 270);
+            cy.wait(500); // Waiting for mousemove have effect
             cy.get('#cvat-objects-sidebar-state-item-2').should('have.class', 'cvat-objects-sidebar-state-active-item');
             cy.get('body').type('{Ctrl}c');
             cy.get('.cvat-player-next-button').click();
             cy.wait(1000);
             cy.get('body').type('{Ctrl}v');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 270);
-            cy.get('.cvat-canvas3d-perspective').dblclick(480, 270);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 320);
+            cy.wait(500); // Waiting for mousemove have effect
+            cy.get('.cvat-canvas3d-perspective').dblclick(360, 320);
             cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {
                 expect(sideBarItems.length).to.be.equal(1);
             });

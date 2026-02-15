@@ -27,11 +27,9 @@ class ProjectList(GenericListCommand, GenericProjectCommand):
 
 @COMMANDS.command_class("create")
 class ProjectCreate:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Create a new CVAT project, optionally importing a dataset.
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("name", type=str, help="name of the project")

@@ -489,7 +489,7 @@ class JobAnnotation:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_job.segment.task.dimension, data)
 
-        db_data = self.db_job.segment.task.data
+        db_data = self.db_job.segment.task.require_data()
 
         if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
             # Only tags and shapes can be used in tasks with GT pool
@@ -639,6 +639,7 @@ class JobAnnotation:
                 "frame",
                 "group",
                 "source",
+                "score",
                 "occluded",
                 "outside",
                 "z_order",
@@ -939,7 +940,7 @@ class TaskAnnotation:
         if gt_job is None:
             raise AssertionError(f"Can't find GT job in the task {self.db_task.id}")
 
-        db_data = self.db_task.data
+        db_data = self.db_task.require_data()
         frame_step = db_data.get_frame_step()
 
         def _to_rel_frame(abs_frame: int) -> int:
