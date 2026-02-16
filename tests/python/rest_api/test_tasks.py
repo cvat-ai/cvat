@@ -4294,9 +4294,9 @@ class TestPatchExportFrames(TestTasksBase):
         args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
 
         if media_type == SourceDataType.images:
-            spec, task_id = next(self._image_task_fxt_base(**args))
+            spec, task_id = self._image_task_fxt_base(**args)
         else:
-            spec, task_id = next(self._uploaded_video_task_fxt_base(**args))
+            spec, task_id = self._uploaded_video_task_fxt_base(**args)
 
         with make_sdk_client(self._USERNAME) as client:
             task = client.tasks.retrieve(task_id)

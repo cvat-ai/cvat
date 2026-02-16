@@ -1,8 +1,7 @@
 import io
 import math
 import os
-from collections.abc import Generator, Mapping, Sequence
-from contextlib import closing
+from collections.abc import Mapping, Sequence
 from functools import partial
 from pathlib import Path
 from typing import IO
@@ -49,7 +48,7 @@ class TestTasksBase:
         cloud_storage_id: int | None = None,
         job_replication: int | None = None,
         **data_kwargs,
-    ) -> Generator[tuple[ImagesTaskSpec, int], None, None]:
+    ) -> tuple[ImagesTaskSpec, int]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
@@ -113,25 +112,26 @@ class TestTasksBase:
                 return {os.path.relpath(f.name, common_prefix): f.getvalue() for f in frame_ri}
 
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
-        yield ImagesTaskSpec(
-            models.TaskWriteRequest._from_openapi_data(**task_params),
-            models.DataRequest._from_openapi_data(**data_params),
-            get_frame=get_frame,
-            get_related_files=get_related_files if related_files else None,
-            size=resulting_task_size,
-        ), task_id
+        return (
+            ImagesTaskSpec(
+                models.TaskWriteRequest._from_openapi_data(**task_params),
+                models.DataRequest._from_openapi_data(**data_params),
+                get_frame=get_frame,
+                get_related_files=get_related_files if related_files else None,
+                size=resulting_task_size,
+            ),
+            task_id,
+        )
 
     @pytest.fixture(scope="class")
-    def fxt_uploaded_images_task(
-        self, request: pytest.FixtureRequest
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._image_task_fxt_base(request=request)
+    def fxt_uploaded_images_task(self, request: pytest.FixtureRequest) -> tuple[ITaskSpec, int]:
+        return self._image_task_fxt_base(request=request)
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_images_task_with_segments(
         self, request: pytest.FixtureRequest
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._image_task_fxt_base(request=request, segment_size=4)
+    ) -> tuple[ITaskSpec, int]:
+        return self._image_task_fxt_base(request=request, segment_size=4)
 
     @fixture(scope="class")
     @parametrize("step", [2, 5])
@@ -139,8 +139,8 @@ class TestTasksBase:
     @parametrize("start_frame", [3, 7])
     def fxt_uploaded_images_task_with_segments_start_stop_step(
         self, request: pytest.FixtureRequest, start_frame: int, stop_frame: int | None, step: int
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._image_task_fxt_base(
+    ) -> tuple[ITaskSpec, int]:
+        return self._image_task_fxt_base(
             request=request,
             frame_count=30,
             segment_size=4,
@@ -152,8 +152,8 @@ class TestTasksBase:
     @pytest.fixture(scope="class")
     def fxt_uploaded_images_task_with_segments_and_consensus(
         self, request: pytest.FixtureRequest
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._image_task_fxt_base(request=request, segment_size=4, job_replication=2)
+    ) -> tuple[ITaskSpec, int]:
+        return self._image_task_fxt_base(request=request, segment_size=4, job_replication=2)
 
     def _image_task_with_honeypots_and_segments_base(
         self,
@@ -166,7 +166,7 @@ class TestTasksBase:
         server_files: Sequence[str] | None = None,
         cloud_storage_id: int | None = None,
         **kwargs,
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+    ) -> tuple[ITaskSpec, int]:
         validation_params = models.DataRequestValidationParams._from_openapi_data(
             mode="gt_pool",
             frame_selection_method="random_uniform",
@@ -195,102 +195,97 @@ class TestTasksBase:
         else:
             image_files = generate_image_files(total_frame_count)
 
-        with closing(
-            self._image_task_fxt_base(
-                request=request,
-                frame_count=None,
-                image_files=image_files,
-                segment_size=base_segment_size,
-                sorting_method="random",
-                start_frame=start_frame,
-                step=step,
-                validation_params=validation_params,
-                server_files=server_files,
-                cloud_storage_id=cloud_storage_id,
-                **kwargs,
-            )
-        ) as task_gen:
-            for task_spec, task_id in task_gen:
-                # Get the actual frame order after the task is created
-                with make_api_client(self._USERNAME) as api_client:
-                    task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
-                    frame_map = [
-                        next(i for i, f in enumerate(image_files) if f.name == frame_info.name)
-                        for frame_info in task_meta.frames
-                    ]
+        task_spec, task_id = self._image_task_fxt_base(
+            request=request,
+            frame_count=None,
+            image_files=image_files,
+            segment_size=base_segment_size,
+            sorting_method="random",
+            start_frame=start_frame,
+            step=step,
+            validation_params=validation_params,
+            server_files=server_files,
+            cloud_storage_id=cloud_storage_id,
+            **kwargs,
+        )
 
-                _get_frame = task_spec._get_frame
-                task_spec._get_frame = lambda i: _get_frame(frame_map[i])
+        # Get the actual frame order after the task is created
+        with make_api_client(self._USERNAME) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_map = [
+                next(i for i, f in enumerate(image_files) if f.name == frame_info.name)
+                for frame_info in task_meta.frames
+            ]
 
-                task_spec.size = final_task_size
-                task_spec._params.segment_size = final_segment_size
+        _get_frame = task_spec._get_frame
+        task_spec._get_frame = lambda i: _get_frame(frame_map[i])
 
-                # These parameters are not applicable to the resulting task,
-                # they are only effective during task creation
-                if start_frame or step:
-                    task_spec._data_params.start_frame = 0
-                    task_spec._data_params.stop_frame = task_spec.size
-                    task_spec._data_params.frame_filter = ""
+        task_spec.size = final_task_size
+        task_spec._params.segment_size = final_segment_size
 
-                yield task_spec, task_id
+        # These parameters are not applicable to the resulting task,
+        # they are only effective during task creation
+        if start_frame or step:
+            task_spec._data_params.start_frame = 0
+            task_spec._data_params.stop_frame = task_spec.size
+            task_spec._data_params.frame_filter = ""
+
+        return task_spec, task_id
 
     @fixture(scope="class")
     def fxt_uploaded_images_task_with_honeypots_and_segments(
         self, request: pytest.FixtureRequest
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._image_task_with_honeypots_and_segments_base(request)
+    ) -> tuple[ITaskSpec, int]:
+        return self._image_task_with_honeypots_and_segments_base(request)
 
     @fixture(scope="class")
     @parametrize("start_frame, step", [(2, 3)])
     def fxt_uploaded_images_task_with_honeypots_and_segments_start_step(
         self, request: pytest.FixtureRequest, start_frame: int | None, step: int | None
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._image_task_with_honeypots_and_segments_base(
+    ) -> tuple[ITaskSpec, int]:
+        return self._image_task_with_honeypots_and_segments_base(
             request, start_frame=start_frame, step=step
         )
 
     def _images_task_with_honeypots_and_changed_real_frames_base(
         self, request: pytest.FixtureRequest, **kwargs
     ):
-        with closing(
-            self._image_task_with_honeypots_and_segments_base(
-                request, start_frame=2, step=3, **kwargs
+        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(
+            request, start_frame=2, step=3, **kwargs
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task_id)
+            validation_frames = validation_layout.validation_frames
+
+            new_honeypot_real_frames = [
+                validation_frames[(validation_frames.index(f) + 1) % len(validation_frames)]
+                for f in validation_layout.honeypot_real_frames
+            ]
+            api_client.tasks_api.partial_update_validation_layout(
+                task_id,
+                patched_task_validation_layout_write_request=(
+                    models.PatchedTaskValidationLayoutWriteRequest(
+                        frame_selection_method="manual",
+                        honeypot_real_frames=new_honeypot_real_frames,
+                    )
+                ),
             )
-        ) as gen_iter:
-            task_spec, task_id = next(gen_iter)
 
-            with make_api_client(self._USERNAME) as api_client:
-                validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task_id)
-                validation_frames = validation_layout.validation_frames
+            # Get the new frame order
+            frame_map = dict(zip(validation_layout.honeypot_frames, new_honeypot_real_frames))
 
-                new_honeypot_real_frames = [
-                    validation_frames[(validation_frames.index(f) + 1) % len(validation_frames)]
-                    for f in validation_layout.honeypot_real_frames
-                ]
-                api_client.tasks_api.partial_update_validation_layout(
-                    task_id,
-                    patched_task_validation_layout_write_request=(
-                        models.PatchedTaskValidationLayoutWriteRequest(
-                            frame_selection_method="manual",
-                            honeypot_real_frames=new_honeypot_real_frames,
-                        )
-                    ),
-                )
+            _get_frame = task_spec._get_frame
+            task_spec._get_frame = lambda i: _get_frame(frame_map.get(i, i))
 
-                # Get the new frame order
-                frame_map = dict(zip(validation_layout.honeypot_frames, new_honeypot_real_frames))
-
-                _get_frame = task_spec._get_frame
-                task_spec._get_frame = lambda i: _get_frame(frame_map.get(i, i))
-
-            yield task_spec, task_id
+            return task_spec, task_id
 
     @fixture(scope="class")
     @parametrize("random_seed", [1, 2, 5])
     def fxt_uploaded_images_task_with_honeypots_and_changed_real_frames(
         self, request: pytest.FixtureRequest, random_seed: int
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._images_task_with_honeypots_and_changed_real_frames_base(
+    ) -> tuple[ITaskSpec, int]:
+        return self._images_task_with_honeypots_and_changed_real_frames_base(
             request, random_seed=random_seed
         )
 
@@ -301,7 +296,7 @@ class TestTasksBase:
     )
     def fxt_cloud_images_task_with_honeypots_and_changed_real_frames(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+    ) -> tuple[ITaskSpec, int]:
         cloud_storage = cloud_storages[cloud_storage_id]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
 
@@ -319,7 +314,7 @@ class TestTasksBase:
         for image in image_files:
             image.seek(0)
 
-        yield from self._images_task_with_honeypots_and_changed_real_frames_base(
+        return self._images_task_with_honeypots_and_changed_real_frames_base(
             request,
             image_files=image_files,
             server_files=server_files,
@@ -338,7 +333,7 @@ class TestTasksBase:
         step: int | None = None,
         frame_selection_method: str = "random_uniform",
         job_replication: int | None = None,
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+    ) -> tuple[ITaskSpec, int]:
         used_frames_count = 16
         total_frame_count = (start_frame or 0) + used_frames_count * (step or 1)
         segment_size = 5
@@ -378,7 +373,7 @@ class TestTasksBase:
             **validation_params_kwargs,
         )
 
-        yield from self._image_task_fxt_base(
+        return self._image_task_fxt_base(
             request=request,
             frame_count=None,
             image_files=image_files,
@@ -393,8 +388,8 @@ class TestTasksBase:
     @pytest.fixture(scope="class")
     def fxt_uploaded_images_task_with_gt_and_segments_and_consensus(
         self, request: pytest.FixtureRequest
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._uploaded_images_task_with_gt_and_segments_base(
+    ) -> tuple[ITaskSpec, int]:
+        return self._uploaded_images_task_with_gt_and_segments_base(
             request=request, job_replication=2
         )
 
@@ -405,7 +400,7 @@ class TestTasksBase:
     )
     def fxt_cloud_images_task_with_related_images(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+    ) -> tuple[ITaskSpec, int]:
         cloud_storage = cloud_storages[cloud_storage_id]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
 
@@ -442,7 +437,7 @@ class TestTasksBase:
         for image in image_files:
             image.seek(0)
 
-        yield from self._image_task_fxt_base(
+        return self._image_task_fxt_base(
             request,
             image_files=image_files,
             related_files=dict(enumerate(related_files)),
@@ -457,7 +452,7 @@ class TestTasksBase:
     )
     def fxt_cloud_pcd_task_with_related_images(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+    ) -> tuple[ITaskSpec, int]:
         cloud_storage = cloud_storages[cloud_storage_id]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
 
@@ -490,7 +485,7 @@ class TestTasksBase:
             ri_file.name = os.path.basename(filename)
             related_files.append([ri_file])
 
-        yield from self._image_task_fxt_base(
+        return self._image_task_fxt_base(
             request,
             image_files=pcd_files,
             related_files=dict(enumerate(related_files)),
@@ -502,7 +497,7 @@ class TestTasksBase:
     def fxt_share_images_task_with_related_images(
         self,
         request: pytest.FixtureRequest,
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+    ) -> tuple[ITaskSpec, int]:
         image_files = [
             read_share_file(fn)
             for fn in [
@@ -537,7 +532,7 @@ class TestTasksBase:
             f.name for fs in related_files.values() for f in fs
         ]
 
-        yield from self._image_task_fxt_base(
+        return self._image_task_fxt_base(
             request,
             image_files=image_files,
             related_files=related_files,
@@ -548,7 +543,7 @@ class TestTasksBase:
     def fxt_share_pcd_task_with_related_images(
         self,
         request: pytest.FixtureRequest,
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+    ) -> tuple[ITaskSpec, int]:
         pcd_files = [
             read_share_file(fn)
             for fn in [
@@ -578,7 +573,7 @@ class TestTasksBase:
             f.name for fs in related_files.values() for f in fs
         ]
 
-        yield from self._image_task_fxt_base(
+        return self._image_task_fxt_base(
             request,
             image_files=pcd_files,
             related_files=related_files,
@@ -594,8 +589,8 @@ class TestTasksBase:
         start_frame: int | None,
         step: int | None,
         frame_selection_method: str,
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._uploaded_images_task_with_gt_and_segments_base(
+    ) -> tuple[ITaskSpec, int]:
+        return self._uploaded_images_task_with_gt_and_segments_base(
             request,
             start_frame=start_frame,
             step=step,
@@ -613,7 +608,7 @@ class TestTasksBase:
         step: int | None = None,
         video_file: IO[bytes] | None = None,
         chapters: Sequence[dict] | None = None,
-    ) -> Generator[tuple[VideoTaskSpec, int], None, None]:
+    ) -> tuple[VideoTaskSpec, int]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
@@ -663,36 +658,39 @@ class TestTasksBase:
             return io.BytesIO(video_data)
 
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
-        yield VideoTaskSpec(
-            models.TaskWriteRequest._from_openapi_data(**task_params),
-            models.DataRequest._from_openapi_data(**data_params),
-            get_video_file=get_video_file,
-            size=resulting_task_size,
-            chapters=chapters,
-        ), task_id
+        return (
+            VideoTaskSpec(
+                models.TaskWriteRequest._from_openapi_data(**task_params),
+                models.DataRequest._from_openapi_data(**data_params),
+                get_video_file=get_video_file,
+                size=resulting_task_size,
+                chapters=chapters,
+            ),
+            task_id,
+        )
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_video_task(
         self,
         request: pytest.FixtureRequest,
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._uploaded_video_task_fxt_base(request=request)
+    ) -> tuple[ITaskSpec, int]:
+        return self._uploaded_video_task_fxt_base(request=request)
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_video_task_without_manifest(
         self,
         request: pytest.FixtureRequest,
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
+    ) -> tuple[ITaskSpec, int]:
         video_file = generate_video_file(num_frames=10, invalid_keyframes=True)
-        yield from self._uploaded_video_task_fxt_base(
+        return self._uploaded_video_task_fxt_base(
             request=request, video_file=video_file, chapters=[]
         )
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_video_task_with_segments(
         self, request: pytest.FixtureRequest
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._uploaded_video_task_fxt_base(request=request, segment_size=4)
+    ) -> tuple[ITaskSpec, int]:
+        return self._uploaded_video_task_fxt_base(request=request, segment_size=4)
 
     @fixture(scope="class")
     @parametrize("step", [2, 5])
@@ -700,8 +698,8 @@ class TestTasksBase:
     @parametrize("start_frame", [3, 7])
     def fxt_uploaded_video_task_with_segments_start_stop_step(
         self, request: pytest.FixtureRequest, start_frame: int, stop_frame: int | None, step: int
-    ) -> Generator[tuple[ITaskSpec, int], None, None]:
-        yield from self._uploaded_video_task_fxt_base(
+    ) -> tuple[ITaskSpec, int]:
+        return self._uploaded_video_task_fxt_base(
             request=request,
             frame_count=30,
             segment_size=4,
