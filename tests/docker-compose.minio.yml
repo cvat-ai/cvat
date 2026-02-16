@@ -73,3 +73,5 @@ services:
             done
         done
         $${MC_PATH} policy set public $${MINIO_ALIAS}/public
+
+        $${MC_PATH} mb "$${MINIO_ALIAS}/backingcs"

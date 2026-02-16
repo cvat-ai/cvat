@@ -40,7 +40,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from rest_api._test_base import TestTasksBase
+from rest_api._test_base import SHARE_DIR, TestTasksBase
 from rest_api.utils import (
     DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
@@ -1599,6 +1599,52 @@ class TestTaskBackups:
             )
             == {}
         )
+
+
+@pytest.mark.with_external_services
+@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+class TestTaskBackupsWithBackingCs:
+    @pytest.fixture(autouse=True)
+    def setup(self, tmp_path: Path, admin_user: str) -> None:
+        self.tmp_dir = tmp_path
+        self.user = admin_user
+
+    def test_can_export_and_import_backup(self, request, cloud_storages):
+        # task_id = next(task["id"] for task in tasks if task["dimension"] == "3d")
+        cloud_storage_id = next(cs["id"] for cs in cloud_storages if cs["resource"] == "backingcs")
+
+        with make_sdk_client(self.user) as client:
+            task = client.tasks.create_from_data(
+                models.TaskWriteRequest(name="Canvas3D"),
+                [SHARE_DIR / "test_canvas3d.zip"],
+                data_params={"use_cache": True},
+            )
+
+            container_exec_cvat(
+                request, ["./manage.py", "movetasktobackingcs", str(task.id), str(cloud_storage_id)]
+            )
+
+            backup_path = self.tmp_dir / "backup.zip"
+            task.download_backup(backup_path)
+
+            with zipfile.ZipFile(backup_path) as zip_file:
+                names = zip_file.namelist()
+
+                assert any(name.endswith(".pcd") for name in names)
+                assert any(name.endswith(".png") for name in names)
+
+            new_task = client.tasks.create_from_backup(backup_path)
+
+            assert (
+                DeepDiff(
+                    json.loads(task.api.retrieve_data_meta(task.id)[1].data),
+                    json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data),
+                    exclude_regex_paths=[r"root\['chunks_updated_date'\]"],
+                )
+                == {}
+            )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

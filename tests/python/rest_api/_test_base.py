@@ -14,6 +14,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from rest_api.utils import calc_end_frame, create_task, iter_exclude, unique
+from shared.fixtures.init import container_exec_cvat
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
@@ -493,10 +494,10 @@ class TestTasksBase:
             cloud_storage_id=cloud_storage_id,
         )
 
-    @fixture(scope="class")
-    def fxt_share_images_task_with_related_images(
+    def _share_images_task_with_related_images(
         self,
         request: pytest.FixtureRequest,
+        **data_kwargs,
     ) -> tuple[ITaskSpec, int]:
         image_files = [
             read_share_file(fn)
@@ -537,7 +538,32 @@ class TestTasksBase:
             image_files=image_files,
             related_files=related_files,
             server_files=server_files,
+            **data_kwargs,
         )
+
+    @fixture(scope="class")
+    def fxt_share_images_task_with_related_images(
+        self, request: pytest.FixtureRequest
+    ) -> tuple[ITaskSpec, int]:
+        return self._share_images_task_with_related_images(request)
+
+    @fixture(scope="class")
+    @parametrize(
+        "cloud_storage_id",
+        [pytest.param(5, marks=[pytest.mark.with_external_services])],
+    )
+    def fxt_backing_cs_images_task_with_related_images(
+        self, request: pytest.FixtureRequest, cloud_storage_id: int
+    ) -> tuple[ITaskSpec, int]:
+        # The simplest way to get a task with local storage and subdirectories is to use the share
+        # with copy_data.
+        task_spec, task_id = self._share_images_task_with_related_images(
+            request, copy_data=True, use_cache=True
+        )
+        container_exec_cvat(
+            request, ["./manage.py", "movetasktobackingcs", str(task_id), str(cloud_storage_id)]
+        )
+        return task_spec, task_id
 
     @fixture(scope="class")
     def fxt_share_pcd_task_with_related_images(
@@ -802,6 +828,7 @@ class TestTasksBase:
         fixture_ref("fxt_cloud_pcd_task_with_related_images"),
         fixture_ref("fxt_share_images_task_with_related_images"),
         fixture_ref("fxt_share_pcd_task_with_related_images"),
+        fixture_ref("fxt_backing_cs_images_task_with_related_images"),
     ]
 
     _3d_task_cases = [
