@@ -130,7 +130,7 @@ export function validateParsedLabel(label: SerializedLabel): void {
         const sublabelIds = label.sublabels
             .map((sublabel: SerializedLabel) => sublabel.id)
             .filter((sublabelId: number | undefined) => sublabelId !== undefined);
-        const matches = label.svg.matchAll(/data-label-id=&quot;([\d]+)&quot;/g);
+        const matches = label.svg.matchAll(/data-label-id="([\d]+)"/g);
         for (const match of matches) {
             const refersToId = +match[1];
             if (!sublabelIds.includes(refersToId)) {

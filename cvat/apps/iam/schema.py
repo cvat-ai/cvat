@@ -46,14 +46,12 @@ class TokenAuthenticationScheme(TokenScheme):
     def get_security_definition(self, auto_schema):
         schema = super().get_security_definition(auto_schema)
         schema["x-token-prefix"] = self.target.keyword
-        schema["description"] = textwrap.dedent(
-            f"""\
+        schema["description"] = textwrap.dedent(f"""\
             Deprecated.
 
             You can obtain an API key (the token) from the server response on
             the /api/auth/login/ endpoint.
-        """
-        )
+        """)
         return schema
 
 
@@ -69,13 +67,11 @@ class SessionAuthenticationScheme(SessionScheme):
     def get_security_definition(self, auto_schema):
         sessionid_schema = super().get_security_definition(auto_schema)
 
-        csrf_token_description = textwrap.dedent(
-            """\
+        csrf_token_description = textwrap.dedent("""\
             A CSRF protection token. Can be received in the 'csrftoken' cookie in the
             server response on the /api/auth/login endpoint. The 'Origin' header
             must also be specified in the request.
-        """
-        )
+        """)
 
         csrftoken_cookie_schema = {
             "type": "apiKey",

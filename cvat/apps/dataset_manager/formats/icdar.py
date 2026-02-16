@@ -84,7 +84,7 @@ def _export_recognition(dst_file, temp_dir, instance_data, save_images=False):
 
 
 @importer(name="ICDAR Recognition", ext="ZIP", version="1.0")
-def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+def _import_recognition(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
 
     # We do not run detect_dataset before import because the ICDAR format
@@ -107,7 +107,7 @@ def _export_localization(dst_file, temp_dir, instance_data, save_images=False):
 
 
 @importer(name="ICDAR Localization", ext="ZIP", version="1.0")
-def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+def _import_localization(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
 
     # We do not run detect_dataset before import because the ICDAR format
@@ -135,7 +135,7 @@ def _export_segmentation(dst_file, temp_dir, instance_data, save_images=False):
 
 
 @importer(name="ICDAR Segmentation", ext="ZIP", version="1.0")
-def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+def _import_segmentation(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
 
     # We do not run detect_dataset before import because the ICDAR format

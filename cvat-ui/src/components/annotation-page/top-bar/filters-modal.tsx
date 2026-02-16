@@ -156,6 +156,16 @@ function FiltersModalComponent(): JSX.Element {
                     hideForCompare: true,
                     fieldSettings: { min: 0 },
                 },
+                score: {
+                    label: 'Score',
+                    type: 'number',
+                    fieldSettings: { min: 0, max: 1 },
+                },
+                votes: {
+                    label: 'Votes',
+                    type: 'number',
+                    fieldSettings: { min: 0 },
+                },
                 attr: {
                     label: 'Attributes',
                     type: '!struct',
