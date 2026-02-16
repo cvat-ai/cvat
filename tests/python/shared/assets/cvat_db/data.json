@@ -929,6 +929,562 @@
   }
 },
 {
+  "model": "engine.cloudstorage",
+  "pk": 1,
+  "fields": {
+    "created_date": "2022-03-17T07:22:49.519Z",
+    "updated_date": "2022-03-17T07:22:49.529Z",
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "public",
+    "display_name": "Bucket 1",
+    "owner": [
+      "user1"
+    ],
+    "credentials": "",
+    "credentials_type": "ANONYMOUS_ACCESS",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+    "description": "",
+    "organization": null
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 2,
+  "fields": {
+    "created_date": "2022-03-17T07:23:59.305Z",
+    "updated_date": "2022-07-13T12:46:45.587Z",
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "private",
+    "display_name": "Bucket 2",
+    "owner": [
+      "user8"
+    ],
+    "credentials": "minio_access_key minio_secret_key",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+    "description": "",
+    "organization": 2
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 3,
+  "fields": {
+    "created_date": "2022-06-29T12:56:18.257Z",
+    "updated_date": "2022-06-29T12:56:18.264Z",
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "importexportbucket",
+    "display_name": "Import/Export bucket",
+    "owner": [
+      "admin1"
+    ],
+    "credentials": "minio_access_key minio_secret_key",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+    "description": "Bucket for importing and exporting annotations and backups",
+    "organization": 2
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 4,
+  "fields": {
+    "created_date": "2022-06-29T12:56:18.257Z",
+    "updated_date": "2022-06-29T12:56:18.264Z",
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "importexportbucketwrongendpoint",
+    "display_name": "Import/Export bucket with wrong endpoint",
+    "owner": [
+      "admin1"
+    ],
+    "credentials": "minio_access_key minio_secret_key",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9777",
+    "description": "Bucket with wrong endpoint for testing purposes",
+    "organization": 2
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 1,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage": 3
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 2,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage": 3
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 3,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage": 3
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 4,
+  "fields": {
+    "location": "cloud_storage",
+    "cloud_storage": 3
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 5,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 6,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 7,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 8,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 9,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 10,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 11,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 12,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 13,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 14,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 15,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 16,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 17,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 18,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 19,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 20,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 21,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 22,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 23,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 24,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 25,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 26,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 27,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 28,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 29,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 30,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 31,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 32,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 33,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 34,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 35,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 36,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 37,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 38,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 39,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 40,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 41,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 42,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 43,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 44,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 45,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 46,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 47,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 48,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 49,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 50,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 51,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 52,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 53,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 54,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 55,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 56,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 57,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 58,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 59,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 60,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
   "model": "engine.validationlayout",
   "pk": 1,
   "fields": {
@@ -1010,19 +1566,19 @@
   "pk": 2,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 23,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 22,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1030,19 +1586,19 @@
   "pk": 5,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 25,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 24,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "video",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1050,19 +1606,19 @@
   "pk": 6,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 1,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 0,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1070,19 +1626,19 @@
   "pk": 7,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 11,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 10,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1090,19 +1646,19 @@
   "pk": 8,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 14,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 13,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1110,19 +1666,19 @@
   "pk": 9,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 20,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 19,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1130,19 +1686,19 @@
   "pk": 11,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 11,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 10,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1150,19 +1706,19 @@
   "pk": 12,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 5,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 4,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1170,19 +1726,19 @@
   "pk": 13,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 8,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 7,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1190,19 +1746,19 @@
   "pk": 14,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 25,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 24,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "video",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1210,19 +1766,19 @@
   "pk": 16,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 5,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 4,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1230,19 +1786,19 @@
   "pk": 17,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 2,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 1,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1250,19 +1806,19 @@
   "pk": 18,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 2,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 1,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1270,19 +1826,19 @@
   "pk": 19,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 2,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 1,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1290,19 +1846,19 @@
   "pk": 20,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 10,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 9,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1310,19 +1866,19 @@
   "pk": 21,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 11,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 10,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1330,19 +1886,19 @@
   "pk": 22,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 11,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 10,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1350,19 +1906,19 @@
   "pk": 23,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 1,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 0,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1370,19 +1926,19 @@
   "pk": 24,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 1,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 0,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1390,19 +1946,19 @@
   "pk": 25,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 1,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 0,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1410,19 +1966,19 @@
   "pk": 26,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 1,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 0,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1430,19 +1986,19 @@
   "pk": 27,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 1,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 0,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1450,19 +2006,19 @@
   "pk": 28,
   "fields": {
     "content_size": null,
-    "chunk_size": 3,
     "size": 29,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 28,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 3,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1470,19 +2026,19 @@
   "pk": 29,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 10,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 9,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "random",
-    "deleted_frames": "[]"
+    "sorting_method": "random"
   }
 },
 {
@@ -1490,19 +2046,19 @@
   "pk": 30,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 3,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 2,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1510,19 +2066,19 @@
   "pk": 31,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 4,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 3,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1530,19 +2086,19 @@
   "pk": 32,
   "fields": {
     "content_size": null,
-    "chunk_size": 72,
     "size": 10,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 9,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1550,19 +2106,19 @@
   "pk": 33,
   "fields": {
     "content_size": 1696254,
-    "chunk_size": 72,
     "size": 20,
-    "image_quality": 70,
     "start_frame": 2,
     "stop_frame": 97,
     "frame_filter": "step=5",
+    "deleted_frames": "10",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "video",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "10"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -1570,19 +2126,19 @@
   "pk": 34,
   "fields": {
     "content_size": 0,
-    "chunk_size": 72,
     "size": 2,
-    "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 1,
     "frame_filter": "",
+    "deleted_frames": "[]",
+    "chunk_size": 72,
+    "image_quality": 70,
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
+    "sorting_method": "lexicographical"
   }
 },
 {
@@ -4567,7 +5123,7 @@
     "organization": 1,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4596,7 +5152,7 @@
     "organization": null,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4623,7 +5179,7 @@
     "organization": null,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4652,7 +5208,7 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4681,7 +5237,7 @@
     "organization": null,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4710,7 +5266,7 @@
     "organization": null,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4739,7 +5295,7 @@
     "organization": 2,
     "source_storage": 4,
     "target_storage": 2,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4766,7 +5322,7 @@
     "organization": null,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4795,7 +5351,7 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4822,7 +5378,7 @@
     "organization": 2,
     "source_storage": 7,
     "target_storage": 8,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4849,7 +5405,7 @@
     "organization": null,
     "source_storage": 15,
     "target_storage": 16,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4878,7 +5434,7 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4905,7 +5461,7 @@
     "organization": 2,
     "source_storage": 23,
     "target_storage": 24,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4932,7 +5488,7 @@
     "organization": null,
     "source_storage": 25,
     "target_storage": 26,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4959,7 +5515,7 @@
     "organization": null,
     "source_storage": 29,
     "target_storage": 30,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -4986,7 +5542,7 @@
     "organization": null,
     "source_storage": 33,
     "target_storage": 34,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5013,7 +5569,7 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5040,7 +5596,7 @@
     "organization": null,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5067,7 +5623,7 @@
     "organization": null,
     "source_storage": 37,
     "target_storage": 38,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5094,7 +5650,7 @@
     "organization": null,
     "source_storage": 39,
     "target_storage": 40,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5123,7 +5679,7 @@
     "organization": 2,
     "source_storage": 45,
     "target_storage": 46,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5152,7 +5708,7 @@
     "organization": 2,
     "source_storage": 47,
     "target_storage": 48,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5179,7 +5735,7 @@
     "organization": 2,
     "source_storage": 49,
     "target_storage": 50,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5206,7 +5762,7 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5233,7 +5789,7 @@
     "organization": 2,
     "source_storage": 51,
     "target_storage": 52,
-    "consensus_replicas": 3
+    "initial_replicas": 3
   }
 },
 {
@@ -5260,7 +5816,7 @@
     "organization": null,
     "source_storage": 53,
     "target_storage": 54,
-    "consensus_replicas": 2
+    "initial_replicas": 2
   }
 },
 {
@@ -5287,7 +5843,7 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5314,7 +5870,7 @@
     "organization": 2,
     "source_storage": null,
     "target_storage": null,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5341,7 +5897,7 @@
     "organization": 2,
     "source_storage": 55,
     "target_storage": 56,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -5368,7 +5924,7 @@
     "organization": null,
     "source_storage": 59,
     "target_storage": 60,
-    "consensus_replicas": 0
+    "initial_replicas": 0
   }
 },
 {
@@ -16794,562 +17350,6 @@
   "fields": {
     "filename": "images_with_manifest/manifest.jsonl",
     "cloud_storage": 3
-  }
-},
-{
-  "model": "engine.cloudstorage",
-  "pk": 1,
-  "fields": {
-    "created_date": "2022-03-17T07:22:49.519Z",
-    "updated_date": "2022-03-17T07:22:49.529Z",
-    "provider_type": "AWS_S3_BUCKET",
-    "resource": "public",
-    "display_name": "Bucket 1",
-    "owner": [
-      "user1"
-    ],
-    "credentials": "",
-    "credentials_type": "ANONYMOUS_ACCESS",
-    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
-    "description": "",
-    "organization": null
-  }
-},
-{
-  "model": "engine.cloudstorage",
-  "pk": 2,
-  "fields": {
-    "created_date": "2022-03-17T07:23:59.305Z",
-    "updated_date": "2022-07-13T12:46:45.587Z",
-    "provider_type": "AWS_S3_BUCKET",
-    "resource": "private",
-    "display_name": "Bucket 2",
-    "owner": [
-      "user8"
-    ],
-    "credentials": "minio_access_key minio_secret_key",
-    "credentials_type": "KEY_SECRET_KEY_PAIR",
-    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
-    "description": "",
-    "organization": 2
-  }
-},
-{
-  "model": "engine.cloudstorage",
-  "pk": 3,
-  "fields": {
-    "created_date": "2022-06-29T12:56:18.257Z",
-    "updated_date": "2022-06-29T12:56:18.264Z",
-    "provider_type": "AWS_S3_BUCKET",
-    "resource": "importexportbucket",
-    "display_name": "Import/Export bucket",
-    "owner": [
-      "admin1"
-    ],
-    "credentials": "minio_access_key minio_secret_key",
-    "credentials_type": "KEY_SECRET_KEY_PAIR",
-    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
-    "description": "Bucket for importing and exporting annotations and backups",
-    "organization": 2
-  }
-},
-{
-  "model": "engine.cloudstorage",
-  "pk": 4,
-  "fields": {
-    "created_date": "2022-06-29T12:56:18.257Z",
-    "updated_date": "2022-06-29T12:56:18.264Z",
-    "provider_type": "AWS_S3_BUCKET",
-    "resource": "importexportbucketwrongendpoint",
-    "display_name": "Import/Export bucket with wrong endpoint",
-    "owner": [
-      "admin1"
-    ],
-    "credentials": "minio_access_key minio_secret_key",
-    "credentials_type": "KEY_SECRET_KEY_PAIR",
-    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9777",
-    "description": "Bucket with wrong endpoint for testing purposes",
-    "organization": 2
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 1,
-  "fields": {
-    "location": "cloud_storage",
-    "cloud_storage": 3
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 2,
-  "fields": {
-    "location": "cloud_storage",
-    "cloud_storage": 3
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 3,
-  "fields": {
-    "location": "cloud_storage",
-    "cloud_storage": 3
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 4,
-  "fields": {
-    "location": "cloud_storage",
-    "cloud_storage": 3
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 5,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 6,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 7,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 8,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 9,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 10,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 11,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 12,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 13,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 14,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 15,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 16,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 17,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 18,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 19,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 20,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 21,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 22,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 23,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 24,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 25,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 26,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 27,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 28,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 29,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 30,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 31,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 32,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 33,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 34,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 35,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 36,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 37,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 38,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 39,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 40,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 41,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 42,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 43,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 44,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 45,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 46,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 47,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 48,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 49,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 50,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 51,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 52,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 53,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 54,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 55,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 56,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 57,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 58,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 59,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 60,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
   }
 },
 {

@@ -11,9 +11,9 @@ context('Basic manipulations with consensus job replicas', () => {
     const labelName = 'Consensus';
     const taskName = 'Test consensus';
     const serverFiles = ['archive.zip'];
-    const consensusReplicas = 4;
+    const initialReplicas = 4;
     const { taskSpec, dataSpec, extras } = defaultTaskSpec({
-        serverFiles, labelName, taskName, consensusReplicas,
+        serverFiles, labelName, taskName, initialReplicas,
     });
 
     before(() => {
@@ -34,7 +34,7 @@ context('Basic manipulations with consensus job replicas', () => {
         it('Check allowed number of replicas', () => {
             cy.contains('Advanced configuration').click();
             // 'Consensus Replicas' field cannot equal to 1
-            cy.get('#consensusReplicas').type(`{backspace}${1}`);
+            cy.get('#initialReplicas').type(`{backspace}${1}`);
             cy.get('.ant-form-item-has-error')
                 .should('be.visible')
                 .should('include.text', 'Value can not be equal to 1');
@@ -43,16 +43,16 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.closeNotification('.ant-notification-notice-error');
 
             // 'Consensus Replicas' field cannot be > 10
-            cy.get('#consensusReplicas').clear();
+            cy.get('#initialReplicas').clear();
             cy.get('.ant-form-item-has-error').should('not.exist');
-            cy.get('#consensusReplicas').type(`{backspace}${maxReplicas + 1}`);
+            cy.get('#initialReplicas').type(`{backspace}${maxReplicas + 1}`);
             cy.get('.ant-form-item-has-error')
                 .should('be.visible')
                 .should('include.text', `Value must be less than ${maxReplicas}`);
             cy.contains('button', 'Submit & Continue').click();
             cy.get('.ant-notification-notice-error').should('exist').and('be.visible');
             cy.closeNotification('.ant-notification-notice-error');
-            cy.get('#consensusReplicas').clear();
+            cy.get('#initialReplicas').clear();
         });
 
         it('Check new consensus task has correct tags and replicas', () => {
@@ -182,7 +182,7 @@ context('Basic manipulations with consensus job replicas', () => {
             // Create annotations for job replicas
             const delta = 50;
             const [consensusJobID, ...replicaJobIDs] = jobIDs;
-            for (let i = 0, shape = baseShape; i < consensusReplicas; i++) {
+            for (let i = 0, shape = baseShape; i < initialReplicas; i++) {
                 cy.headlessCreateObjects([shape], jobIDs[i]); // only 'in progress' jobs can be merged
                 cy.headlessUpdateJob(replicaJobIDs[i], { state: 'in progress' });
                 const points = translatePoints(shape.points, delta, 'x');

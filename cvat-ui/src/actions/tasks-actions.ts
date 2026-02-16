@@ -265,8 +265,8 @@ ThunkAction {
         if (data.cloudStorageId) {
             description.data_cloud_storage_id = data.cloudStorageId;
         }
-        if (data.advanced.consensusReplicas) {
-            description.consensus_replicas = +data.advanced.consensusReplicas;
+        if (data.advanced.initialReplicas) {
+            description.initial_replicas = +data.advanced.initialReplicas;
         }
 
         const extras: Record<string, any> = {};
@@ -280,8 +280,8 @@ ThunkAction {
             };
         }
 
-        if (data.advanced.consensusReplicas) {
-            extras.consensus_replicas = description.consensus_replicas;
+        if (data.advanced.initialReplicas) {
+            extras.initial_replicas = description.initial_replicas;
         }
 
         const taskInstance = new cvat.classes.Task(description);

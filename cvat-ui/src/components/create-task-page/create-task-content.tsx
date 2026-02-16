@@ -85,7 +85,7 @@ const defaultState: State = {
         },
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
-        consensusReplicas: 0,
+        initialReplicas: 0,
     },
     quality: {
         validationMode: ValidationMode.NONE,

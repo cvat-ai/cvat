@@ -599,7 +599,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             serialized_task = task_serializer.data
             if serialized_task.pop("consensus_enabled", False):
-                serialized_task["consensus_replicas"] = self._db_task.consensus_replicas
+                serialized_task["consensus_replicas"] = self._db_task.initial_replicas
 
             task = self._prepare_task_meta(serialized_task)
             task["labels"] = [

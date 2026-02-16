@@ -757,8 +757,8 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-    consensus_replicas = models.IntegerField(default=0)
-    "Per job consensus replica count"
+    initial_replicas = models.IntegerField(default=0)
+    "Per job replica count on task creation"
 
     segment_set: models.manager.RelatedManager[Segment]
 

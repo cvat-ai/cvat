@@ -1723,7 +1723,7 @@ class TestPostTaskData:
             "name": request.node.name,
             "labels": [{"name": "a"}],
             "segment_size": segment_size,
-            "consensus_replicas": replication,
+            "initial_replicas": replication,
         }
 
         data_params = {
@@ -2140,7 +2140,7 @@ class TestTaskData(TestTasksBase):
             annotation_jobs = [j for j in jobs if j.type == "annotation"]
             assert (
                 len([j for j in jobs if j.type == "consensus_replica"])
-                == len(annotation_jobs) * task_spec.consensus_replicas
+                == len(annotation_jobs) * task_spec.initial_replicas
             )
 
             for job in annotation_jobs:
@@ -2151,7 +2151,7 @@ class TestTaskData(TestTasksBase):
                 replicas = [
                     j for j in jobs if j.type == "consensus_replica" if j.parent_job_id == job.id
                 ]
-                assert len(replicas) == task_spec.consensus_replicas
+                assert len(replicas) == task_spec.initial_replicas
 
                 for replica_job in replicas:
                     replica_job_meta = json.loads(
