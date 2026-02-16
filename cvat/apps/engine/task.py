@@ -1278,7 +1278,7 @@ def create_thread(
             [
                 os.path.relpath(image, upload_dir)
                 for image in MEDIA_TYPES["directory"]["extractor"](
-                    source_paths=[os.path.join(upload_dir, f) for f in media["directory"]],
+                    source_paths=[upload_dir / f for f in media["directory"]],
                 ).absolute_source_paths
             ]
         )
