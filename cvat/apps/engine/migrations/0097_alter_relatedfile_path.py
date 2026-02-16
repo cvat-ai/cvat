@@ -4,27 +4,40 @@ from django.conf import settings
 from django.db import migrations, models
 from django.db.models.functions import Concat, Length, Substr
 
-path_prefix = Concat(
-    models.Value(settings.MEDIA_DATA_ROOT.as_posix() + "/"), "data_id", models.Value("/raw/")
-)
+
+def path_prefix(apps):
+    Data = apps.get_model("engine", "Data")
+
+    return models.Case(
+        models.When(
+            models.Exists(Data.objects.filter(id=models.OuterRef("data_id"), storage="share")),
+            then=models.Value(settings.SHARE_ROOT.as_posix() + "/"),
+        ),
+        default=Concat(
+            models.Value(settings.MEDIA_DATA_ROOT.as_posix() + "/"),
+            "data_id",
+            models.Value("/raw/"),
+            output_field=models.CharField(),
+        ),
+    )
 
 
 def make_path_relative(apps, schema_editor):
     RelatedFile = apps.get_model("engine", "RelatedFile")
 
     # Before we chop off the prefix, let's make sure it's actually there.
-    if files_without_prefix := RelatedFile.objects.exclude(path__startswith=path_prefix)[:10]:
+    if files_without_prefix := RelatedFile.objects.exclude(path__startswith=path_prefix(apps))[:10]:
         raise RuntimeError(
             "Found RelatedFile objects with unexpected paths. Example IDs: "
             + " ".join(str(f.id) for f in files_without_prefix)
         )
 
-    RelatedFile.objects.update(path=Substr("path", Length(path_prefix) + 1))
+    RelatedFile.objects.update(path=Substr("path", Length(path_prefix(apps)) + 1))
 
 
 def make_path_absolute(apps, schema_editor):
     RelatedFile = apps.get_model("engine", "RelatedFile")
-    RelatedFile.objects.update(path=Concat(path_prefix, "path"))
+    RelatedFile.objects.update(path=Concat(path_prefix(apps), "path"))
 
 
 class Migration(migrations.Migration):
