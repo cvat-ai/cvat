@@ -696,8 +696,6 @@ class MediaCache:
             except ValueError as ex:
                 raise Exception("Invalid related image path") from ex
 
-        manifest_path = db_data.get_manifest_path()
-
         with ExitStack() as es:
             ThroughModel = models.RelatedFile.images.through
 
@@ -712,10 +710,7 @@ class MediaCache:
                 for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0])
             ]
 
-            if (
-                os.path.isfile(manifest_path)
-                and db_data.storage == models.StorageChoice.CLOUD_STORAGE
-            ):
+            if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
                 db_cloud_storage = db_data.cloud_storage
                 if not db_cloud_storage:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
