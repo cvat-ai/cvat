@@ -18,6 +18,7 @@ import {
     createCuboidEdges, removeCuboidEdges, CuboidModel, makeCornerPointsMatrix,
 } from './cuboid';
 import { ObjectState, ObjectType } from '.';
+import { disposeObject3D, disposeScene } from './utils';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
@@ -127,6 +128,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
+    private pointClouds: {
+        [key in ViewType]?: THREE.Points;
+    };
 
     private action: {
         translation: any;
@@ -178,6 +182,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.activatedElementID = null;
         this.sideViewsZoomMemory = {};
         this.drawnObjects = {};
+        this.pointClouds = {};
         this.model = model;
         this.sceneBBox = new THREE.Box3();
         this.cameraSettings = {
@@ -1605,9 +1610,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private clearScene(): void {
         this.drawnObjects = {};
         this.activatedElementID = null;
+
         Object.keys(this.views).forEach((view: string): void => {
-            this.views[view as keyof Views].scene.children = [];
+            const viewData = this.views[view as keyof Views];
+            disposeScene(viewData.scene);
         });
+
+        this.pointClouds = {};
     }
 
     private updateRotationHelperPos(): void {
@@ -1706,6 +1715,15 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private onSceneImageLoaded(points: any): void {
+        // Dispose old point clouds before creating new ones
+        Object.keys(this.pointClouds).forEach((view) => {
+            const cloud = this.pointClouds[view as ViewType];
+            if (cloud) {
+                disposeObject3D(cloud);
+            }
+        });
+        this.pointClouds = {};
+
         const getCameraSettingsToFitScene = (
             camera: THREE.PerspectiveCamera,
             boundingBox: THREE.Box3,
@@ -1762,7 +1780,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.cameraSettings.perspective.position = position;
         this.sceneBBox = new THREE.Box3().setFromObject(points);
-        this.views.perspective.scene.add(points.clone());
+        const perspectiveCloud = points.clone();
+        this.views.perspective.scene.add(perspectiveCloud);
+        this.pointClouds[ViewType.PERSPECTIVE] = perspectiveCloud;
 
         const origin = new THREE.Vector3(0, 0, 0);
         const isOriginInScene = this.sceneBBox.containsPoint(origin);
@@ -1797,7 +1817,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // eslint-disable-next-line no-param-reassign
         points.material = material;
         material.size = 0.5;
-        this.views.top.scene.add(points.clone());
+        const topCloud = points.clone();
+        this.views.top.scene.add(topCloud);
+        this.pointClouds[ViewType.TOP] = topCloud;
         this.views.top.scene.add(topScenePlane);
         // Setup Side View
         const canvasSideView = this.views.side.renderer.domElement;
@@ -1819,7 +1841,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         sideScenePlane.name = Planes.SIDE;
         (sideScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
         (sideScenePlane as any).verticesNeedUpdate = true;
-        this.views.side.scene.add(points.clone());
+        const sideCloud = points.clone();
+        this.views.side.scene.add(sideCloud);
+        this.pointClouds[ViewType.SIDE] = sideCloud;
         this.views.side.scene.add(sideScenePlane);
         // Setup front View
         const canvasFrontView = this.views.front.renderer.domElement;
@@ -1840,7 +1864,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         frontScenePlane.name = Planes.FRONT;
         (frontScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
         (frontScenePlane as any).verticesNeedUpdate = true;
-        this.views.front.scene.add(points.clone());
+        const frontCloud = points.clone();
+        this.views.front.scene.add(frontCloud);
+        this.pointClouds[ViewType.FRONT] = frontCloud;
         this.views.front.scene.add(frontScenePlane);
 
         if (this.mode === Mode.DRAW) {
