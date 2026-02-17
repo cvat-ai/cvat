@@ -546,13 +546,6 @@ def session_finish(session):
         if os.environ.get("COVERAGE_PROCESS_START"):
             collect_code_coverage_from_containers()
 
-        docker_restore_db()
-        docker_exec(Container.DB, "dropdb test_db")
-
-        docker_exec(Container.DB, "dropdb --if-exists cvat")
-        docker_exec(Container.DB, "createdb cvat")
-        docker_exec_cvat("python manage.py migrate")
-
 
 def collect_code_coverage_from_containers():
     for container in Container.covered():
