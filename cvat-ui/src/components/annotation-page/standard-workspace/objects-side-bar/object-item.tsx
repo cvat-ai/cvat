@@ -38,6 +38,8 @@ interface Props {
     createURL(): void;
     toBackground(): void;
     toForeground(): void;
+    toOneLayerBackward(): void;
+    toOneLayerForward(): void;
     remove(): void;
     changeLabel(label: any): void;
     changeColor(color: string): void;
@@ -70,6 +72,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         switchOrientation,
         toBackground,
         toForeground,
+        toOneLayerForward,
+        toOneLayerBackward,
         remove,
         changeLabel,
         changeColor,
@@ -120,6 +124,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}
                     toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
+                    toOneLayerBackwardShortcut={normalizedKeyMap.TO_ONE_LAYER_BACKWARD}
+                    toOneLayerForwardShortcut={normalizedKeyMap.TO_ONE_LAYER_FORWARD}
                     removeShortcut={normalizedKeyMap.DELETE_OBJECT_STANDARD_WORKSPACE}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}
@@ -133,6 +139,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     switchOrientation={switchOrientation}
                     toBackground={toBackground}
                     toForeground={toForeground}
+                    toOneLayerBackward={toOneLayerBackward}
+                    toOneLayerForward={toOneLayerForward}
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
                     slice={slice}

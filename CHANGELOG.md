@@ -16,6 +16,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.57.0'></a>
+## \[2.57.0\] - 2026-02-17
+
+### Added
+
+- Ability to change zOrder of an object one by one, using corresponding buttons in object menu or shortcuts
+  (<https://github.com/cvat-ai/cvat/pull/9063>)
+
+### Fixed
+
+- Creation of extra "create" and "update" events on children summary field
+  updates and inclusion of invalid data in the events for these fields
+  (<https://github.com/cvat-ai/cvat/pull/10257>)
+
+- Fixed a crash on fetching an empty related image chunk
+  of a task in cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10277>)
+
+- Fixed creating a task from an attached file share in the case where
+  at least one image and one directory are specified
+  (<https://github.com/cvat-ai/cvat/pull/10281>)
+
 <a id='changelog-2.56.1'></a>
 ## \[2.56.1\] - 2026-02-03
 

@@ -17,6 +17,7 @@ from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
+from pathlib import Path, PurePath
 from typing import Any, TypeAlias, overload
 
 import attrs
@@ -600,18 +601,19 @@ class MediaCache:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
                 storage_client = db_storage_to_storage_instance(db_cloud_storage)
 
-                tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
-                files_to_download: list[tuple[str, str]] = []  # (storage filename, output filename)
+                tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
+                # (storage filename, output filename)
+                files_to_download: list[tuple[str, PurePath]] = []
                 checksums = []
                 media = []
                 for item in reader.iterate_frames(frame_ids):
                     task_filename = f"{item['name']}{item['extension']}"
                     storage_filename = item.get("meta", {}).get("original_name", task_filename)
-                    fs_filename = os.path.join(tmp_dir, task_filename)
+                    fs_filename = tmp_dir / task_filename
                     files_to_download.append((storage_filename, fs_filename))
 
                     checksums.append(item.get("checksum", None))
-                    media.append((fs_filename, fs_filename))
+                    media.append((fs_filename, os.fspath(fs_filename)))
 
                 storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
@@ -686,79 +688,59 @@ class MediaCache:
     ) -> Generator[tuple[int, tuple[PIL.Image.Image | str, str]], None, None]:
         raw_data_dir = db_data.get_raw_data_dirname()
 
-        def _validate_ri_path(path: str) -> str:
+        def _validate_ri_path(path: str) -> PurePath:
             abs_path = (raw_data_dir / path).resolve()
 
             try:
-                return os.fspath(abs_path.relative_to(raw_data_dir))
+                return abs_path.relative_to(raw_data_dir)
             except ValueError as ex:
                 raise Exception("Invalid related image path") from ex
 
-        manifest_path = db_data.get_manifest_path()
-
         with ExitStack() as es:
-            media = []
+            ThroughModel = models.RelatedFile.images.through
 
-            if (
-                os.path.isfile(manifest_path)
-                and db_data.storage == models.StorageChoice.CLOUD_STORAGE
-            ):
-                reader = ImageReaderWithManifest(manifest_path)
+            db_related_files = (
+                ThroughModel.objects.filter(relatedfile__data=db_data, image__frame__in=frame_ids)
+                .order_by("image__frame", "relatedfile__path")
+                .values_list("image__frame", "relatedfile__path")
+            )
 
+            media = [
+                (frame_id, [_validate_ri_path(ri_path) for _, ri_path in frame_ris])
+                for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0])
+            ]
+
+            if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
                 db_cloud_storage = db_data.cloud_storage
                 if not db_cloud_storage:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
                 storage_client = db_storage_to_storage_instance(db_cloud_storage)
 
-                tmp_dir = es.enter_context(tempfile.TemporaryDirectory(prefix="cvat"))
-                files_to_download = []
-                for frame_id, frame in zip(
-                    frame_ids, reader.iterate_frames(frame_ids), strict=True
-                ):
-                    frame_media = []
-
-                    for ri_filename in frame.get("meta", {}).get("related_images", []):
-                        ri_filename = _validate_ri_path(ri_filename)
-                        ri_realpath = os.path.join(tmp_dir, ri_filename)
-
-                        files_to_download.append(ri_filename)
-                        frame_media.append((ri_realpath, ri_filename))
-
-                    media.append((frame_id, frame_media))
+                tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
+                files_to_download: list[PurePath] = []
+                for _, frame_media in media:
+                    files_to_download.extend(frame_media)
 
                 storage_client.bulk_download_to_dir(files_to_download, upload_dir=tmp_dir)
+                media_base_dir = tmp_dir
             else:
-                ThroughModel = models.RelatedFile.images.through
-
-                db_related_files = (
-                    ThroughModel.objects.filter(
-                        relatedfile__data=db_data, image__frame__in=frame_ids
-                    )
-                    .order_by("image__frame", "relatedfile__path")
-                    .values_list("image__frame", "relatedfile__path")
-                )
-
-                media = []
-                for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0]):
-                    frame_media = []
-
-                    for _, ri_path in frame_ris:
-                        ri_filename = _validate_ri_path(ri_path)
-                        ri_realpath = os.path.join(raw_data_dir, ri_filename)
-                        frame_media.append((ri_realpath, ri_filename, None))
-
-                    media.append((frame_id, frame_media))
+                media_base_dir = raw_data_dir
 
             for frame_id, frame_media in media:
                 if truncate_common_filename_prefix:
                     # Truncate RI prefixes on the per-frame basis
-                    common_prefix = os.path.commonpath(os.path.dirname(m[1]) for m in frame_media)
+                    common_prefix = os.path.commonpath(os.path.dirname(m) for m in frame_media)
 
-                    frame_media = [
-                        (m[0], os.path.relpath(m[1], common_prefix)) for m in frame_media
+                    frame_media_tuples = [
+                        (os.path.join(media_base_dir, m), os.path.relpath(m, common_prefix))
+                        for m in frame_media
+                    ]
+                else:
+                    frame_media_tuples = [
+                        (os.path.join(media_base_dir, m), os.fspath(m)) for m in frame_media
                     ]
 
-                for m in frame_media:
+                for m in frame_media_tuples:
                     if decode:
                         m = load_image(m)
 
@@ -1023,11 +1005,9 @@ class MediaCache:
         for db_manifest in db_storage.manifests.all():
             manifest_prefix = os.path.dirname(db_manifest.filename)
 
-            full_manifest_path = os.path.join(
-                db_storage.get_storage_dirname(), db_manifest.filename
-            )
-            if not os.path.exists(full_manifest_path) or datetime.fromtimestamp(
-                os.path.getmtime(full_manifest_path), tz=timezone.utc
+            full_manifest_path = db_storage.get_storage_dirname() / db_manifest.filename
+            if not full_manifest_path.exists() or datetime.fromtimestamp(
+                full_manifest_path.stat().st_mtime, tz=timezone.utc
             ) < storage.get_file_last_modified(db_manifest.filename):
                 storage.download_file(db_manifest.filename, full_manifest_path)
 
