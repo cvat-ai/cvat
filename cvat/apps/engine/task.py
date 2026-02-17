@@ -637,6 +637,498 @@ def _find_and_filter_related_images(
     }
 
 
+def _allocate_honeypots(
+    db_task: models.Task,
+    validation_params: dict[str, Any] | None,
+    *,
+    images: list[models.Image],
+    manifest: ImageManifestManager,
+    job_file_mapping: JobFileMapping | None,
+    is_backup_restore: bool,
+) -> tuple[JobFileMapping | None, list[models.Image]]:
+    if not validation_params or validation_params["mode"] != models.ValidationMode.GT_POOL:
+        return job_file_mapping, images
+
+    db_data = db_task.require_data()
+
+    if is_backup_restore:
+        # Validation frames must be in the end of the images list. Collect their ids
+        frame_idx_map: dict[str, int] = {}
+        for i, frame_filename in enumerate(validation_params["frames"]):
+            image = images[-len(validation_params["frames"]) + i]
+            assert frame_filename == image.path
+            frame_idx_map[image.path] = image.frame
+
+        # Store information about the real frame placement in validation frames in jobs
+        for image in images[: -len(validation_params["frames"])]:
+            real_frame = frame_idx_map.get(image.path)
+            if real_frame is not None:
+                image.is_placeholder = True
+                image.real_frame = real_frame
+
+        # Exclude the previous GT job from the list of jobs to be created with normal segments
+        # It must be the last one
+        assert job_file_mapping[-1] == validation_params["frames"]
+        job_file_mapping.pop(-1)
+
+        db_data.update_validation_layout(
+            models.ValidationLayout(
+                mode=models.ValidationMode.GT_POOL,
+                frames=list(frame_idx_map.values()),
+                frames_per_job_count=validation_params["frames_per_job_count"],
+            )
+        )
+    else:
+        if db_task.mode != "annotation":
+            raise ValidationError(
+                f"validation mode '{models.ValidationMode.GT_POOL}' can only be used "
+                "with 'annotation' mode tasks"
+            )
+
+        # 1. select pool frames
+        all_frames = range(len(images))
+
+        # The RNG backend must not change to yield reproducible frame picks,
+        # so here we specify it explicitly
+        from numpy import random
+
+        seed = validation_params.get("random_seed")
+        rng = random.Generator(random.MT19937(seed=seed))
+
+        # Sort the images to be able to create reproducible results
+        images = sort(images, sorting_method=models.SortingMethod.NATURAL, func=lambda i: i.path)
+        for i, image in enumerate(images):
+            image.frame = i
+
+        pool_frames: list[int] = []
+        match validation_params["frame_selection_method"]:
+            case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                if frame_count := validation_params.get("frame_count"):
+                    if len(images) <= frame_count:
+                        raise ValidationError(
+                            f"The number of validation frames requested ({frame_count}) "
+                            f"must be less than the number of task frames ({len(images)})"
+                        )
+                elif frame_share := validation_params.get("frame_share"):
+                    frame_count = max(1, int(len(images) * frame_share))
+                else:
+                    raise ValidationError("The number of validation frames is not specified")
+
+                pool_frames = rng.choice(
+                    all_frames, size=frame_count, shuffle=False, replace=False
+                ).tolist()
+            case models.JobFrameSelectionMethod.MANUAL:
+                known_frame_names = {frame.path: frame.frame for frame in images}
+                unknown_requested_frames = []
+                for frame_filename in validation_params["frames"]:
+                    frame_id = known_frame_names.get(frame_filename)
+                    if frame_id is None:
+                        unknown_requested_frames.append(frame_filename)
+                        continue
+
+                    pool_frames.append(frame_id)
+
+                if unknown_requested_frames:
+                    raise ValidationError(
+                        "Unknown validation frames requested: {}".format(
+                            format_list(sorted(unknown_requested_frames))
+                        )
+                    )
+            case _:
+                assert False
+
+        if len(all_frames) - len(pool_frames) < 1:
+            raise ValidationError(
+                "Cannot create task: "
+                "too few non-honeypot frames left after selecting validation frames"
+            )
+
+        # Even though the sorting is random overall,
+        # it's convenient to be able to reasonably navigate in the GT job
+        pool_frames = sort(
+            pool_frames,
+            sorting_method=models.SortingMethod.NATURAL,
+            func=lambda frame: images[frame].path,
+        )
+
+        # 2. distribute pool frames
+        if frames_per_job_count := validation_params.get("frames_per_job_count"):
+            if len(pool_frames) < frames_per_job_count and validation_params.get("frame_count"):
+                raise ValidationError(
+                    f"The requested number of validation frames per job ({frames_per_job_count}) "
+                    f"is greater than the validation pool size ({len(pool_frames)})"
+                )
+        elif frames_per_job_share := validation_params.get("frames_per_job_share"):
+            frames_per_job_count = max(1, int(frames_per_job_share * db_task.segment_size))
+        else:
+            raise ValidationError("The number of validation frames is not specified")
+
+        frames_per_job_count = min(len(pool_frames), frames_per_job_count)
+
+        non_pool_frames = sorted(
+            # set() doesn't guarantee ordering,
+            # so sort additionally before shuffling to make results reproducible
+            set(all_frames).difference(pool_frames)
+        )
+        rng.shuffle(non_pool_frames)
+
+        validation_frame_counts = {f: 0 for f in pool_frames}
+        frame_selector = HoneypotFrameSelector(validation_frame_counts, rng=rng)
+
+        # Don't use the same rng as for frame ordering to simplify random_seed maintenance in future
+        # We still use the same seed, but in this case the frame selection rng is separate
+        # from job frame ordering rng
+        job_frame_ordering_rng = random.Generator(random.MT19937(seed=seed))
+
+        # Allocate frames for jobs
+        job_file_mapping: JobFileMapping = []
+        new_db_images: list[models.Image] = []
+        validation_frames: list[int] = []
+        frame_idx_map: dict[int, int] = {}  # new to original id
+        for job_frames in take_by(non_pool_frames, chunk_size=db_task.segment_size or db_data.size):
+            job_validation_frames = list(frame_selector.select_next_frames(frames_per_job_count))
+            job_frames += job_validation_frames
+
+            job_frame_ordering_rng.shuffle(job_frames)
+
+            job_images = []
+            for job_frame in job_frames:
+                # Insert placeholder frames into the frame sequence and shift frame ids
+                image = images[job_frame]
+                image = models.Image(
+                    data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
+                )
+                image.frame = len(new_db_images)
+
+                if job_frame in job_validation_frames:
+                    image.is_placeholder = True
+                    image.real_frame = job_frame
+                    validation_frames.append(image.frame)
+
+                job_images.append(image.path)
+                new_db_images.append(image)
+                frame_idx_map[image.frame] = job_frame
+
+            job_file_mapping.append(job_images)
+
+        # Append pool frames in the end, shift their ids, establish placeholder pointers
+        frame_id_map: dict[int, int] = {}  # original to new id
+        for pool_frame in pool_frames:
+            # Insert placeholder frames into the frame sequence and shift frame ids
+            image = images[pool_frame]
+            image = models.Image(data=db_data, **deepcopy(model_to_dict(image, exclude=["data"])))
+            new_frame_id = len(new_db_images)
+            image.frame = new_frame_id
+
+            frame_id_map[pool_frame] = new_frame_id
+
+            new_db_images.append(image)
+            frame_idx_map[image.frame] = pool_frame
+
+        pool_frames = [frame_id_map[i] for i in pool_frames if i in frame_id_map]
+
+        # Store information about the real frame placement in the validation frames
+        for validation_frame in validation_frames:
+            image = new_db_images[validation_frame]
+            assert image.is_placeholder
+            image.real_frame = frame_id_map[image.real_frame]
+
+        # Update manifest
+        manifest.reorder([images[frame_idx_map[image.frame]].path for image in new_db_images])
+
+        images = new_db_images
+        db_data.size = len(images)
+        db_data.start_frame = 0
+        db_data.stop_frame = 0
+        db_data.frame_filter = ""
+
+        db_data.update_validation_layout(
+            models.ValidationLayout(
+                mode=models.ValidationMode.GT_POOL,
+                frames=pool_frames,
+                frames_per_job_count=frames_per_job_count,
+            )
+        )
+
+    return job_file_mapping, images
+
+
+def _create_validation_jobs(
+    db_task: models.Task,
+    validation_params: dict[str, Any] | None,
+    *,
+    images: list[models.Image] | None,
+) -> None:
+    db_data = db_task.require_data()
+
+    if validation_params and validation_params["mode"] == models.ValidationMode.GT:
+
+        def _to_rel_frame(abs_frame: int) -> int:
+            return (abs_frame - db_data.start_frame) // db_data.get_frame_step()
+
+        # The RNG backend must not change to yield reproducible frame picks,
+        # so here we specify it explicitly
+        from numpy import random
+
+        seed = validation_params.get("random_seed")
+        rng = random.Generator(random.MT19937(seed=seed))
+
+        match validation_params["frame_selection_method"]:
+            case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                all_frames = range(db_data.size)
+
+                if frame_count := validation_params.get("frame_count"):
+                    if db_data.size < frame_count:
+                        raise ValidationError(
+                            f"The number of validation frames requested ({frame_count}) "
+                            f"is greater that the number of task frames ({db_data.size})"
+                        )
+                elif frame_share := validation_params.get("frame_share"):
+                    frame_count = max(1, int(frame_share * len(all_frames)))
+                else:
+                    raise ValidationError("The number of validation frames is not specified")
+
+                validation_frames = rng.choice(
+                    all_frames, size=frame_count, shuffle=False, replace=False
+                ).tolist()
+            case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+                if frame_count := validation_params.get("frames_per_job_count"):
+                    if db_task.segment_size < frame_count:
+                        raise ValidationError(
+                            "The requested number of GT frames per job must be less "
+                            f"than task segment size ({db_task.segment_size})"
+                        )
+                elif frame_share := validation_params.get("frames_per_job_share"):
+                    frame_count = min(max(1, int(frame_share * db_task.segment_size)), db_data.size)
+                else:
+                    raise ValidationError("The number of validation frames is not specified")
+
+                validation_frames: list[int] = []
+                overlap = db_task.overlap
+                for segment in db_task.segment_set.all():
+                    segment_frames = set(map(_to_rel_frame, segment.frame_set))
+                    selected_frames = segment_frames.intersection(validation_frames)
+                    selected_count = len(selected_frames)
+
+                    missing_count = min(len(segment_frames), frame_count) - selected_count
+                    if missing_count <= 0:
+                        continue
+
+                    selectable_segment_frames = set(
+                        sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
+                    ).difference(selected_frames)
+
+                    validation_frames.extend(
+                        rng.choice(
+                            tuple(selectable_segment_frames), size=missing_count, replace=False
+                        ).tolist()
+                    )
+            case models.JobFrameSelectionMethod.MANUAL:
+                if not images:
+                    raise ValidationError(
+                        "{} validation frame selection method at task creation "
+                        "is only available for image-based tasks. "
+                        "Please create the GT job after the task is created.".format(
+                            models.JobFrameSelectionMethod.MANUAL
+                        )
+                    )
+
+                validation_frames: list[int] = []
+                known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
+                unknown_requested_frames = []
+                for frame_filename in validation_params["frames"]:
+                    frame_id = known_frame_names.get(frame_filename)
+                    if frame_id is None:
+                        unknown_requested_frames.append(frame_filename)
+                        continue
+
+                    validation_frames.append(frame_id)
+
+                if unknown_requested_frames:
+                    raise ValidationError(
+                        "Unknown validation frames requested: {}".format(
+                            format_list(sorted(unknown_requested_frames))
+                        )
+                    )
+            case _:
+                assert (
+                    False
+                ), f'Unknown frame selection method {validation_params["frame_selection_method"]}'
+
+        db_data.update_validation_layout(
+            models.ValidationLayout(
+                mode=models.ValidationMode.GT,
+                frames=sorted(validation_frames),
+            )
+        )
+
+    if hasattr(db_data, "validation_layout"):
+        if db_data.validation_layout.mode == models.ValidationMode.GT:
+
+            def _to_abs_frame(rel_frame: int) -> int:
+                return rel_frame * db_data.get_frame_step() + db_data.start_frame
+
+            db_gt_segment = models.Segment(
+                task=db_task,
+                start_frame=0,
+                stop_frame=db_data.size - 1,
+                frames=list(map(_to_abs_frame, db_data.validation_layout.frames)),
+                type=models.SegmentType.SPECIFIC_FRAMES,
+            )
+        elif db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
+            db_gt_segment = models.Segment(
+                task=db_task,
+                start_frame=min(db_data.validation_layout.frames),
+                stop_frame=max(db_data.validation_layout.frames),
+                type=models.SegmentType.RANGE,
+            )
+        else:
+            assert False
+
+        db_gt_segment.save()
+
+        db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
+        db_gt_job.save()
+        db_gt_job.make_dirs()
+
+
+def _filter_cloud_storage_files(
+    cloud_storage: models.CloudStorage,
+    data: dict[str, Any],
+    *,
+    job_file_mapping: JobFileMapping | None,
+    manifest_file: str | None,
+) -> tuple[ImageManifestManager | None, str | None]:
+    cloud_storage_instance = db_storage_to_storage_instance(cloud_storage)
+
+    cloud_storage_manifest = None
+    cloud_storage_manifest_prefix = None
+    if manifest_file:
+        cloud_storage_manifest = ImageManifestManager(
+            cloud_storage.get_storage_dirname() / manifest_file,
+            cloud_storage.get_storage_dirname(),
+        )
+        cloud_storage_manifest.set_index()
+        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+
+    if manifest_file and not data["server_files"] and not data["filename_pattern"]:
+        # only manifest file was specified in server files by the user
+        data["filename_pattern"] = "*"
+
+    # update the server_files list with files from the specified directories
+    if dirs := list(filter(lambda x: x.endswith("/"), data["server_files"])):
+        copy_of_server_files = data["server_files"].copy()
+        copy_of_dirs = dirs.copy()
+        additional_files = []
+        if manifest_file:
+            for directory in dirs:
+                if cloud_storage_manifest_prefix:
+                    # cloud_storage_manifest_prefix is a dirname of manifest,
+                    # it doesn't end with a slash
+                    directory = directory[len(cloud_storage_manifest_prefix) + 1 :]
+
+                additional_files.extend(
+                    [
+                        x[1].full_name
+                        for x in filter(
+                            lambda x: x[1].full_name.startswith(directory),
+                            cloud_storage_manifest,
+                        )
+                    ]
+                    if directory
+                    else [x[1].full_name for x in cloud_storage_manifest]
+                )
+
+            if cloud_storage_manifest_prefix:
+                additional_files = [
+                    os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files
+                ]
+        else:
+            while len(dirs):
+                directory = dirs.pop()
+                for f in cloud_storage_instance.list_files(
+                    prefix=directory, _use_flat_listing=True
+                ):
+                    if f["type"] == "REG":
+                        additional_files.append(f["name"])
+                    else:
+                        dirs.append(f["name"])
+
+        data["server_files"] = []
+        for f in copy_of_server_files:
+            if f not in copy_of_dirs:
+                data["server_files"].append(f)
+            else:
+                data["server_files"].extend(
+                    list(filter(lambda x: x.startswith(f), additional_files))
+                )
+
+        del additional_files
+
+    if server_files_exclude := data.get("server_files_exclude"):
+        data["server_files"] = list(
+            filter(
+                lambda x: x not in server_files_exclude
+                and all([f"{i}/" not in server_files_exclude for i in Path(x).parents]),
+                data["server_files"],
+            )
+        )
+
+    # update list with server files if task creation approach with pattern and manifest file is used
+    if data["filename_pattern"]:
+        additional_files = []
+
+        if not manifest_file:
+            # NOTE: we cannot list files with specified pattern on the providers page,
+            # because they don't provide such function
+            dirs = []
+            prefix = ""
+
+            while True:
+                for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
+                    if f["type"] == "REG":
+                        additional_files.append(f["name"])
+                    else:
+                        dirs.append(f["name"])
+                if not dirs:
+                    break
+                prefix = dirs.pop()
+
+            if not data["filename_pattern"] == "*":
+                additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
+        else:
+            additional_files = (
+                list(cloud_storage_manifest.data)
+                if not cloud_storage_manifest_prefix
+                else [
+                    os.path.join(cloud_storage_manifest_prefix, f)
+                    for f in cloud_storage_manifest.data
+                ]
+            )
+            if not data["filename_pattern"] == "*":
+                additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
+
+        data["server_files"].extend(additional_files)
+
+    if cloud_storage_instance.prefix:
+        # filter server_files based on default prefix
+        data["server_files"] = list(
+            filter(lambda x: x.startswith(cloud_storage_instance.prefix), data["server_files"])
+        )
+
+    if job_file_mapping is not None:
+        # We only need to process the files specified in job_file_mapping
+        filtered_files = []
+        for f in itertools.chain.from_iterable(job_file_mapping):
+            if f not in data["server_files"]:
+                raise ValidationError(f"Job mapping file {f} is not specified in input files")
+            filtered_files.append(f)
+
+        data["server_files"] = filtered_files
+
+    return cloud_storage_manifest, cloud_storage_manifest_prefix
+
+
 @transaction.atomic
 def create_thread(
     db_task: int | models.Task,
@@ -710,135 +1202,20 @@ def create_thread(
         is_backup_restore=is_backup_restore,
     )
 
-    manifest = None
     if is_data_in_cloud and not is_backup_restore:
-        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
-
-        if manifest_file:
-            cloud_storage_manifest = ImageManifestManager(
-                db_data.cloud_storage.get_storage_dirname() / manifest_file,
-                db_data.cloud_storage.get_storage_dirname(),
-            )
-            cloud_storage_manifest.set_index()
-            cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
-
-        if manifest_file and not data["server_files"] and not data["filename_pattern"]:
-            # only manifest file was specified in server files by the user
-            data["filename_pattern"] = "*"
-
-        # update the server_files list with files from the specified directories
-        if dirs := list(filter(lambda x: x.endswith("/"), data["server_files"])):
-            copy_of_server_files = data["server_files"].copy()
-            copy_of_dirs = dirs.copy()
-            additional_files = []
-            if manifest_file:
-                for directory in dirs:
-                    if cloud_storage_manifest_prefix:
-                        # cloud_storage_manifest_prefix is a dirname of manifest, it doesn't end with a slash
-                        directory = directory[len(cloud_storage_manifest_prefix) + 1 :]
-                    additional_files.extend(
-                        [
-                            x[1].full_name
-                            for x in filter(
-                                lambda x: x[1].full_name.startswith(directory),
-                                cloud_storage_manifest,
-                            )
-                        ]
-                        if directory
-                        else [x[1].full_name for x in cloud_storage_manifest]
-                    )
-                if cloud_storage_manifest_prefix:
-                    additional_files = [
-                        os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files
-                    ]
-            else:
-                while len(dirs):
-                    directory = dirs.pop()
-                    for f in cloud_storage_instance.list_files(
-                        prefix=directory, _use_flat_listing=True
-                    ):
-                        if f["type"] == "REG":
-                            additional_files.append(f["name"])
-                        else:
-                            dirs.append(f["name"])
-
-            data["server_files"] = []
-            for f in copy_of_server_files:
-                if f not in copy_of_dirs:
-                    data["server_files"].append(f)
-                else:
-                    data["server_files"].extend(
-                        list(filter(lambda x: x.startswith(f), additional_files))
-                    )
-
-            del additional_files
-
-        if server_files_exclude := data.get("server_files_exclude"):
-            data["server_files"] = list(
-                filter(
-                    lambda x: x not in server_files_exclude
-                    and all([f"{i}/" not in server_files_exclude for i in Path(x).parents]),
-                    data["server_files"],
-                )
-            )
-
-        # update list with server files if task creation approach with pattern and manifest file is used
-        if data["filename_pattern"]:
-            additional_files = []
-
-            if not manifest_file:
-                # NOTE: we cannot list files with specified pattern on the providers page because they don't provide such function
-                dirs = []
-                prefix = ""
-
-                while True:
-                    for f in cloud_storage_instance.list_files(
-                        prefix=prefix, _use_flat_listing=True
-                    ):
-                        if f["type"] == "REG":
-                            additional_files.append(f["name"])
-                        else:
-                            dirs.append(f["name"])
-                    if not dirs:
-                        break
-                    prefix = dirs.pop()
-
-                if not data["filename_pattern"] == "*":
-                    additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
-            else:
-                additional_files = (
-                    list(cloud_storage_manifest.data)
-                    if not cloud_storage_manifest_prefix
-                    else [
-                        os.path.join(cloud_storage_manifest_prefix, f)
-                        for f in cloud_storage_manifest.data
-                    ]
-                )
-                if not data["filename_pattern"] == "*":
-                    additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
-
-            data["server_files"].extend(additional_files)
-
-        if cloud_storage_instance.prefix:
-            # filter server_files based on default prefix
-            data["server_files"] = list(
-                filter(lambda x: x.startswith(cloud_storage_instance.prefix), data["server_files"])
-            )
-
-        # We only need to process the files specified in job_file_mapping
-        if job_file_mapping is not None:
-            filtered_files = []
-            for f in itertools.chain.from_iterable(job_file_mapping):
-                if f not in data["server_files"]:
-                    raise ValidationError(f"Job mapping file {f} is not specified in input files")
-                filtered_files.append(f)
-            data["server_files"] = filtered_files
+        cloud_storage_manifest, cloud_storage_manifest_prefix = _filter_cloud_storage_files(
+            db_data.cloud_storage,
+            data,
+            job_file_mapping=job_file_mapping,
+            manifest_file=manifest_file,
+        )
 
     # count and validate uploaded files
     media = _count_files(data)
     media, task_mode = _validate_data(media, manifest_files)
     is_media_sorted = False
 
+    manifest = None
     if is_data_in_cloud:
         is_packed_media = any(v for k, v in media.items() if k != "image")
         if (
@@ -923,7 +1300,7 @@ def create_thread(
             [
                 os.path.relpath(image, upload_dir)
                 for image in MEDIA_TYPES["directory"]["extractor"](
-                    source_paths=[os.path.join(upload_dir, f) for f in media["directory"]],
+                    source_paths=[upload_dir / f for f in media["directory"]],
                 ).absolute_source_paths
             ]
         )
@@ -1280,223 +1657,27 @@ def create_thread(
                     )
                 )
 
-    # TODO: refactor
-    # Prepare jobs
-    if validation_params and (
-        validation_params["mode"] == models.ValidationMode.GT_POOL and is_backup_restore
-    ):
-        # Validation frames must be in the end of the images list. Collect their ids
-        frame_idx_map: dict[str, int] = {}
-        for i, frame_filename in enumerate(validation_params["frames"]):
-            image = images[-len(validation_params["frames"]) + i]
-            assert frame_filename == image.path
-            frame_idx_map[image.path] = image.frame
-
-        # Store information about the real frame placement in validation frames in jobs
-        for image in images[: -len(validation_params["frames"])]:
-            real_frame = frame_idx_map.get(image.path)
-            if real_frame is not None:
-                image.is_placeholder = True
-                image.real_frame = real_frame
-
-        # Exclude the previous GT job from the list of jobs to be created with normal segments
-        # It must be the last one
-        assert job_file_mapping[-1] == validation_params["frames"]
-        job_file_mapping.pop(-1)
-
-        db_data.update_validation_layout(
-            models.ValidationLayout(
-                mode=models.ValidationMode.GT_POOL,
-                frames=list(frame_idx_map.values()),
-                frames_per_job_count=validation_params["frames_per_job_count"],
-            )
-        )
-    elif validation_params and validation_params["mode"] == models.ValidationMode.GT_POOL:
-        if db_task.mode != "annotation":
-            raise ValidationError(
-                f"validation mode '{models.ValidationMode.GT_POOL}' can only be used "
-                "with 'annotation' mode tasks"
-            )
-
-        # 1. select pool frames
-        all_frames = range(len(images))
-
-        # The RNG backend must not change to yield reproducible frame picks,
-        # so here we specify it explicitly
-        from numpy import random
-
-        seed = validation_params.get("random_seed")
-        rng = random.Generator(random.MT19937(seed=seed))
-
-        # Sort the images to be able to create reproducible results
-        images = sort(images, sorting_method=models.SortingMethod.NATURAL, func=lambda i: i.path)
-        for i, image in enumerate(images):
-            image.frame = i
-
-        pool_frames: list[int] = []
-        match validation_params["frame_selection_method"]:
-            case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                if frame_count := validation_params.get("frame_count"):
-                    if len(images) <= frame_count:
-                        raise ValidationError(
-                            f"The number of validation frames requested ({frame_count}) "
-                            f"must be less than the number of task frames ({len(images)})"
-                        )
-                elif frame_share := validation_params.get("frame_share"):
-                    frame_count = max(1, int(len(images) * frame_share))
-                else:
-                    raise ValidationError("The number of validation frames is not specified")
-
-                pool_frames = rng.choice(
-                    all_frames, size=frame_count, shuffle=False, replace=False
-                ).tolist()
-            case models.JobFrameSelectionMethod.MANUAL:
-                known_frame_names = {frame.path: frame.frame for frame in images}
-                unknown_requested_frames = []
-                for frame_filename in validation_params["frames"]:
-                    frame_id = known_frame_names.get(frame_filename)
-                    if frame_id is None:
-                        unknown_requested_frames.append(frame_filename)
-                        continue
-
-                    pool_frames.append(frame_id)
-
-                if unknown_requested_frames:
-                    raise ValidationError(
-                        "Unknown validation frames requested: {}".format(
-                            format_list(sorted(unknown_requested_frames))
-                        )
-                    )
-            case _:
-                assert False
-
-        if len(all_frames) - len(pool_frames) < 1:
-            raise ValidationError(
-                "Cannot create task: "
-                "too few non-honeypot frames left after selecting validation frames"
-            )
-
-        # Even though the sorting is random overall,
-        # it's convenient to be able to reasonably navigate in the GT job
-        pool_frames = sort(
-            pool_frames,
-            sorting_method=models.SortingMethod.NATURAL,
-            func=lambda frame: images[frame].path,
-        )
-
-        # 2. distribute pool frames
-        if frames_per_job_count := validation_params.get("frames_per_job_count"):
-            if len(pool_frames) < frames_per_job_count and validation_params.get("frame_count"):
-                raise ValidationError(
-                    f"The requested number of validation frames per job ({frames_per_job_count}) "
-                    f"is greater than the validation pool size ({len(pool_frames)})"
-                )
-        elif frames_per_job_share := validation_params.get("frames_per_job_share"):
-            frames_per_job_count = max(1, int(frames_per_job_share * db_task.segment_size))
-        else:
-            raise ValidationError("The number of validation frames is not specified")
-
-        frames_per_job_count = min(len(pool_frames), frames_per_job_count)
-
-        non_pool_frames = sorted(
-            # set() doesn't guarantee ordering,
-            # so sort additionally before shuffling to make results reproducible
-            set(all_frames).difference(pool_frames)
-        )
-        rng.shuffle(non_pool_frames)
-
-        validation_frame_counts = {f: 0 for f in pool_frames}
-        frame_selector = HoneypotFrameSelector(validation_frame_counts, rng=rng)
-
-        # Don't use the same rng as for frame ordering to simplify random_seed maintenance in future
-        # We still use the same seed, but in this case the frame selection rng is separate
-        # from job frame ordering rng
-        job_frame_ordering_rng = random.Generator(random.MT19937(seed=seed))
-
-        # Allocate frames for jobs
-        job_file_mapping: JobFileMapping = []
-        new_db_images: list[models.Image] = []
-        validation_frames: list[int] = []
-        frame_idx_map: dict[int, int] = {}  # new to original id
-        for job_frames in take_by(non_pool_frames, chunk_size=db_task.segment_size or db_data.size):
-            job_validation_frames = list(frame_selector.select_next_frames(frames_per_job_count))
-            job_frames += job_validation_frames
-
-            job_frame_ordering_rng.shuffle(job_frames)
-
-            job_images = []
-            for job_frame in job_frames:
-                # Insert placeholder frames into the frame sequence and shift frame ids
-                image = images[job_frame]
-                image = models.Image(
-                    data=db_data, **deepcopy(model_to_dict(image, exclude=["data"]))
-                )
-                image.frame = len(new_db_images)
-
-                if job_frame in job_validation_frames:
-                    image.is_placeholder = True
-                    image.real_frame = job_frame
-                    validation_frames.append(image.frame)
-
-                job_images.append(image.path)
-                new_db_images.append(image)
-                frame_idx_map[image.frame] = job_frame
-
-            job_file_mapping.append(job_images)
-
-        # Append pool frames in the end, shift their ids, establish placeholder pointers
-        frame_id_map: dict[int, int] = {}  # original to new id
-        for pool_frame in pool_frames:
-            # Insert placeholder frames into the frame sequence and shift frame ids
-            image = images[pool_frame]
-            image = models.Image(data=db_data, **deepcopy(model_to_dict(image, exclude=["data"])))
-            new_frame_id = len(new_db_images)
-            image.frame = new_frame_id
-
-            frame_id_map[pool_frame] = new_frame_id
-
-            new_db_images.append(image)
-            frame_idx_map[image.frame] = pool_frame
-
-        pool_frames = [frame_id_map[i] for i in pool_frames if i in frame_id_map]
-
-        # Store information about the real frame placement in the validation frames
-        for validation_frame in validation_frames:
-            image = new_db_images[validation_frame]
-            assert image.is_placeholder
-            image.real_frame = frame_id_map[image.real_frame]
-
-        # Update manifest
-        manifest.reorder([images[frame_idx_map[image.frame]].path for image in new_db_images])
-
-        images = new_db_images
-        db_data.size = len(images)
-        db_data.start_frame = 0
-        db_data.stop_frame = 0
-        db_data.frame_filter = ""
-
-        db_data.update_validation_layout(
-            models.ValidationLayout(
-                mode=models.ValidationMode.GT_POOL,
-                frames=pool_frames,
-                frames_per_job_count=frames_per_job_count,
-            )
-        )
-
     if db_task.mode == "annotation":
+        job_file_mapping, images = _allocate_honeypots(
+            db_task,
+            validation_params,
+            images=images,
+            manifest=manifest,
+            job_file_mapping=job_file_mapping,
+            is_backup_restore=is_backup_restore,
+        )
+
         images = bulk_create(models.Image, images)
 
         db_related_files = [
             models.RelatedFile(
                 data=db_data,
-                path=os.path.join(upload_dir, related_file_path),
+                path=related_file_path,
             )
             for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
         ]
         db_related_files = bulk_create(models.RelatedFile, db_related_files)
-        db_related_files_by_path = {
-            os.path.relpath(rf.path.path, upload_dir): rf for rf in db_related_files
-        }
+        db_related_files_by_path = {rf.path: rf for rf in db_related_files}
 
         ThroughModel = models.RelatedFile.images.through
         bulk_create(
@@ -1530,136 +1711,7 @@ def create_thread(
     _create_segments_and_jobs(
         db_task, job_file_mapping=job_file_mapping, update_status_callback=update_status
     )
-
-    if validation_params and validation_params["mode"] == models.ValidationMode.GT:
-        # The RNG backend must not change to yield reproducible frame picks,
-        # so here we specify it explicitly
-        from numpy import random
-
-        seed = validation_params.get("random_seed")
-        rng = random.Generator(random.MT19937(seed=seed))
-
-        def _to_rel_frame(abs_frame: int) -> int:
-            return (abs_frame - db_data.start_frame) // db_data.get_frame_step()
-
-        match validation_params["frame_selection_method"]:
-            case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                all_frames = range(db_data.size)
-
-                if frame_count := validation_params.get("frame_count"):
-                    if db_data.size < frame_count:
-                        raise ValidationError(
-                            f"The number of validation frames requested ({frame_count}) "
-                            f"is greater that the number of task frames ({db_data.size})"
-                        )
-                elif frame_share := validation_params.get("frame_share"):
-                    frame_count = max(1, int(frame_share * len(all_frames)))
-                else:
-                    raise ValidationError("The number of validation frames is not specified")
-
-                validation_frames = rng.choice(
-                    all_frames, size=frame_count, shuffle=False, replace=False
-                ).tolist()
-            case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
-                if frame_count := validation_params.get("frames_per_job_count"):
-                    if db_task.segment_size < frame_count:
-                        raise ValidationError(
-                            "The requested number of GT frames per job must be less "
-                            f"than task segment size ({db_task.segment_size})"
-                        )
-                elif frame_share := validation_params.get("frames_per_job_share"):
-                    frame_count = min(max(1, int(frame_share * db_task.segment_size)), db_data.size)
-                else:
-                    raise ValidationError("The number of validation frames is not specified")
-
-                validation_frames: list[int] = []
-                overlap = db_task.overlap
-                for segment in db_task.segment_set.all():
-                    segment_frames = set(map(_to_rel_frame, segment.frame_set))
-                    selected_frames = segment_frames.intersection(validation_frames)
-                    selected_count = len(selected_frames)
-
-                    missing_count = min(len(segment_frames), frame_count) - selected_count
-                    if missing_count <= 0:
-                        continue
-
-                    selectable_segment_frames = set(
-                        sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
-                    ).difference(selected_frames)
-
-                    validation_frames.extend(
-                        rng.choice(
-                            tuple(selectable_segment_frames), size=missing_count, replace=False
-                        ).tolist()
-                    )
-            case models.JobFrameSelectionMethod.MANUAL:
-                if not images:
-                    raise ValidationError(
-                        "{} validation frame selection method at task creation "
-                        "is only available for image-based tasks. "
-                        "Please create the GT job after the task is created.".format(
-                            models.JobFrameSelectionMethod.MANUAL
-                        )
-                    )
-
-                validation_frames: list[int] = []
-                known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
-                unknown_requested_frames = []
-                for frame_filename in validation_params["frames"]:
-                    frame_id = known_frame_names.get(frame_filename)
-                    if frame_id is None:
-                        unknown_requested_frames.append(frame_filename)
-                        continue
-
-                    validation_frames.append(frame_id)
-
-                if unknown_requested_frames:
-                    raise ValidationError(
-                        "Unknown validation frames requested: {}".format(
-                            format_list(sorted(unknown_requested_frames))
-                        )
-                    )
-            case _:
-                assert (
-                    False
-                ), f'Unknown frame selection method {validation_params["frame_selection_method"]}'
-
-        db_data.update_validation_layout(
-            models.ValidationLayout(
-                mode=models.ValidationMode.GT,
-                frames=sorted(validation_frames),
-            )
-        )
-
-    # TODO: refactor
-    if hasattr(db_data, "validation_layout"):
-        if db_data.validation_layout.mode == models.ValidationMode.GT:
-
-            def _to_abs_frame(rel_frame: int) -> int:
-                return rel_frame * db_data.get_frame_step() + db_data.start_frame
-
-            db_gt_segment = models.Segment(
-                task=db_task,
-                start_frame=0,
-                stop_frame=db_data.size - 1,
-                frames=list(map(_to_abs_frame, db_data.validation_layout.frames)),
-                type=models.SegmentType.SPECIFIC_FRAMES,
-            )
-        elif db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
-            db_gt_segment = models.Segment(
-                task=db_task,
-                start_frame=min(db_data.validation_layout.frames),
-                stop_frame=max(db_data.validation_layout.frames),
-                type=models.SegmentType.RANGE,
-            )
-        else:
-            assert False
-
-        db_gt_segment.save()
-
-        db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
-        db_gt_job.save()
-        db_gt_job.make_dirs()
+    _create_validation_jobs(db_task, validation_params, images=images)
 
     db_task.save()
 
