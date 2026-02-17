@@ -789,6 +789,7 @@ export enum StatesOrdering {
     ID_ASCENT = 'ID - ascent',
     UPDATED = 'Updated time',
     Z_ORDER = 'Z Order',
+    LABEL_NAME = 'Label name',
 }
 
 export enum ContextMenuType {

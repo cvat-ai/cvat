@@ -37,7 +37,7 @@ class _PermissionTestBase:
         assert task_id is not None or project_id is not None
 
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.create_report(
+            _, response = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(
                     **{"task_id": task_id} if task_id else {},
                     **{"project_id": project_id} if project_id else {},
@@ -60,10 +60,10 @@ class _PermissionTestBase:
 
     def create_gt_job(self, user: str, task_id: int, *, complete: bool = True) -> models.IJobRead:
         with make_api_client(user) as api_client:
-            (meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             start_frame = meta.start_frame
 
-            (job, _) = api_client.jobs_api.create(
+            job, _ = api_client.jobs_api.create(
                 models.JobWriteRequest(
                     type="ground_truth",
                     task_id=task_id,
@@ -73,7 +73,7 @@ class _PermissionTestBase:
             )
 
             if complete:
-                (labels, _) = api_client.labels_api.list(
+                labels, _ = api_client.labels_api.list(
                     **({"project_id": job.project_id} if job.project_id else {"task_id": task_id})
                 )
 
@@ -324,7 +324,7 @@ class TestListQualityReports(_PermissionTestBase):
 
     def _test_list_reports_403(self, user, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.list_reports(
+            _, response = api_client.quality_api.list_reports(
                 **kwargs, _parse_response=False, _check_status=False
             )
 
@@ -433,7 +433,7 @@ class TestGetQualityReports(_PermissionTestBase):
         self, user: str, obj_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report(obj_id, **kwargs)
+            _, response = api_client.quality_api.retrieve_report(obj_id, **kwargs)
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
@@ -443,7 +443,7 @@ class TestGetQualityReports(_PermissionTestBase):
 
     def _test_get_report_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report(
+            _, response = api_client.quality_api.retrieve_report(
                 obj_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -492,7 +492,7 @@ class TestGetQualityReportData(_PermissionTestBase):
         self, user: str, obj_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report_data(obj_id, **kwargs)
+            _, response = api_client.quality_api.retrieve_report_data(obj_id, **kwargs)
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
@@ -502,7 +502,7 @@ class TestGetQualityReportData(_PermissionTestBase):
 
     def _test_get_report_data_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report_data(
+            _, response = api_client.quality_api.retrieve_report_data(
                 obj_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -729,7 +729,7 @@ class TestPostQualityReports(_PermissionTestBase):
 
     def _test_create_report_403(self, user: str, task_id: int):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.create_report(
+            _, response = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
                 _parse_response=False,
                 _check_status=False,
@@ -772,7 +772,7 @@ class TestPostQualityReports(_PermissionTestBase):
     @staticmethod
     def _initialize_report_creation(task_id: int, user: str) -> str:
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.create_report(
+            _, response = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
                 _parse_response=False,
             )
@@ -791,7 +791,7 @@ class TestPostQualityReports(_PermissionTestBase):
         another_user_status: int = HTTPStatus.FORBIDDEN,
     ):
         with make_api_client(another_user) as api_client:
-            (_, response) = api_client.requests_api.retrieve(
+            _, response = api_client.requests_api.retrieve(
                 rq_id, _parse_response=False, _check_status=False
             )
             assert response.status == another_user_status
@@ -1007,7 +1007,7 @@ class TestListQualityConflicts(_PermissionTestBase):
 
     def _test_list_conflicts_403(self, user, report_id, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.list_conflicts(
+            _, response = api_client.quality_api.list_conflicts(
                 report_id=report_id, **kwargs, _parse_response=False, _check_status=False
             )
 
@@ -1295,7 +1295,7 @@ class TestListSettings(_PermissionTestBase):
 
     def _test_list_settings_403(self, user: str, task_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.list_settings(
+            _, response = api_client.quality_api.list_settings(
                 task_id=task_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -1345,7 +1345,7 @@ class TestGetSettings(_PermissionTestBase):
         self, user: str, obj_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(obj_id, **kwargs)
+            _, response = api_client.quality_api.retrieve_settings(obj_id, **kwargs)
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
@@ -1355,7 +1355,7 @@ class TestGetSettings(_PermissionTestBase):
 
     def _test_get_settings_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(
+            _, response = api_client.quality_api.retrieve_settings(
                 obj_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -1413,7 +1413,7 @@ class TestPatchSettings(_PermissionTestBase):
         **kwargs,
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.partial_update_settings(
+            _, response = api_client.quality_api.partial_update_settings(
                 obj_id, patched_quality_settings_request=data, **kwargs
             )
             assert response.status == HTTPStatus.OK
@@ -1433,7 +1433,7 @@ class TestPatchSettings(_PermissionTestBase):
 
     def _test_patch_settings_403(self, user: str, obj_id: int, data: dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.partial_update_settings(
+            _, response = api_client.quality_api.partial_update_settings(
                 obj_id,
                 patched_quality_settings_request=data,
                 **kwargs,
@@ -1684,7 +1684,7 @@ class TestQualityReportContents(_PermissionTestBase):
             user=admin_user, task_id=self.demo_task_id_multiple_jobs
         )
         with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
         report_data = json.loads(response.data)
         task_confusion_matrix = report_data["comparison_summary"]["annotations"][
@@ -1738,7 +1738,7 @@ class TestQualityReportContents(_PermissionTestBase):
 
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
 
     def test_excluded_gt_job_frames_are_not_included_in_honeypot_task_quality_report(
@@ -1781,7 +1781,7 @@ class TestQualityReportContents(_PermissionTestBase):
             )
             report = self.create_quality_report(user=admin_user, task_id=task_id)
 
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
             assert honeypot_frames == json.loads(response.data)["comparison_summary"]["frames"]
 
@@ -1797,7 +1797,7 @@ class TestQualityReportContents(_PermissionTestBase):
 
             report = self.create_quality_report(user=admin_user, task_id=task_id)
 
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
             assert [
                 v for v in honeypot_frames if v not in excluded_gt_frame_honeypots
@@ -1824,7 +1824,7 @@ class TestQualityReportContents(_PermissionTestBase):
             )
             report = self.create_quality_report(user=admin_user, task_id=task_id)
 
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
             assert gt_frames == json.loads(response.data)["comparison_summary"]["frames"]
 
@@ -1838,7 +1838,7 @@ class TestQualityReportContents(_PermissionTestBase):
 
             report = self.create_quality_report(user=admin_user, task_id=task_id)
 
-            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
             assert [f for f in gt_frames if f != excluded_gt_frame] == json.loads(response.data)[
                 "comparison_summary"
@@ -2042,7 +2042,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
 
     def _test_create_report_403(self, user: str, project_id: int):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.create_report(
+            _, response = api_client.quality_api.create_report(
                 quality_report_create_request=models.QualityReportCreateRequest(
                     project_id=project_id
                 ),

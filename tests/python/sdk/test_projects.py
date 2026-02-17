@@ -304,7 +304,7 @@ class TestProjectUsecases(TestDatasetExport):
 
     def test_can_download_preview(self, fxt_project_with_shapes: Project):
         frame_encoded = fxt_project_with_shapes.get_preview()
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""

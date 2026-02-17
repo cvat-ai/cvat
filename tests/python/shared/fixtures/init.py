@@ -436,19 +436,15 @@ def session_start(
 
     if session.config.getoption("--collect-only"):
         if any((stop, start, rebuild, cleanup, dumpdb)):
-            raise Exception(
-                """--collect-only is not compatible with any of the other options:
-                --stop-services --start-services --rebuild --cleanup --dumpdb"""
-            )
+            raise Exception("""--collect-only is not compatible with any of the other options:
+                --stop-services --start-services --rebuild --cleanup --dumpdb""")
         return  # don't need to start the services to collect tests
 
     platform = session.config.getoption("--platform")
 
     if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb)):
-        raise Exception(
-            """--platform=kube is not compatible with any of the other options
-            --stop-services --start-services --rebuild --cleanup --dumpdb"""
-        )
+        raise Exception("""--platform=kube is not compatible with any of the other options
+            --stop-services --start-services --rebuild --cleanup --dumpdb""")
 
     if platform == "local":
         local_start(

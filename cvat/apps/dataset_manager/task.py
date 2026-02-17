@@ -639,6 +639,7 @@ class JobAnnotation:
                 "frame",
                 "group",
                 "source",
+                "score",
                 "occluded",
                 "outside",
                 "z_order",
