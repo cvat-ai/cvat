@@ -53,6 +53,20 @@ class Webhook(TimestampedModel):
     is_active = models.BooleanField(default=True)
     enable_ssl = models.BooleanField(default=True)
 
+    # Retry configuration
+    max_retries = models.PositiveIntegerField(
+        default=3,
+        help_text="Maximum number of retry attempts for failed deliveries (0 to disable retries)",
+    )
+    retry_delay = models.PositiveIntegerField(
+        default=60,
+        help_text="Initial delay in seconds before first retry attempt",
+    )
+    retry_backoff_factor = models.FloatField(
+        default=2.0,
+        help_text="Multiplier for exponential backoff (1.0 for fixed delay, 2.0 for exponential)",
+    )
+
     owner = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
@@ -90,6 +104,17 @@ class WebhookDelivery(TimestampedModel):
 
     status_code = models.PositiveIntegerField(null=True, default=None)
     redelivery = models.BooleanField(default=False)
+
+    # Retry tracking
+    attempt_number = models.PositiveIntegerField(
+        default=1,
+        help_text="Delivery attempt number (1 for initial attempt)",
+    )
+    next_retry_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Scheduled time for next retry attempt",
+    )
 
     changed_fields = models.CharField(max_length=4096, default="")
 
