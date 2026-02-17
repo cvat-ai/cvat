@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import jsonLogic from 'json-logic-js';
 import _ from 'lodash';
@@ -86,17 +86,21 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
         search: null,
         filter: '{"and":[{"!":{"var":"parent_job_id"}}]}',
     };
-    const updatedQuery = useResourceQuery<JobsQuery>(defaultQuery, defaultQuery);
+    const query = useResourceQuery<JobsQuery>(defaultQuery, defaultQuery);
 
-    const [query, setQuery] = useState<JobsQuery>(updatedQuery);
     const filteredJobs = filterJobs(jobs, query);
     const jobIds = filteredJobs.map((job) => job.id);
     const viewedJobs = setUpJobsList(filteredJobs, query.page, query.pageSize);
-    useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(query),
+
+    const setQuery = useCallback((nextQuery: JobsQuery) => {
+        const nextSearch = updateHistoryFromQuery(nextQuery);
+
+        if (nextSearch === (history.location.search || '')) return;
+
+        history.push({
+            ...history.location, search: nextSearch,
         });
-    }, [query]);
+    }, [history.location]);
 
     const onCreateJob = useCallback(() => {
         history.push(`/tasks/${taskId}/jobs/create`);

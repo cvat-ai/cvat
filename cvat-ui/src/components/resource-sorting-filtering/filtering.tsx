@@ -101,7 +101,7 @@ export default function ResourceFilterHOC(
         return filters[0];
     }
 
-    function splitFilterIntoPredefined(predefinedFilters: string[], filter: string) {
+    function splitFilterIntoPredefined(predefinedFilters: string[], filter: string): string[] | null {
         if (predefinedFilters.includes(filter)) {
             return [filter];
         }
@@ -160,6 +160,13 @@ export default function ResourceFilterHOC(
                         });
                         setState(tree);
                     }
+                } else {
+                    setState(defaultTree);
+                    setAppliedFilter({
+                        ...appliedFilter,
+                        predefined: null,
+                        built: null,
+                    });
                 }
             } catch (_: any) {
                 // nothing to do

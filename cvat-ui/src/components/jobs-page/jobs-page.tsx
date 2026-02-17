@@ -3,6 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
+
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
@@ -49,16 +51,6 @@ function JobsPageComponent(): JSX.Element {
         ));
     }, [currentJobs]);
 
-    const onApplyFilter = (filter: string | null) => {
-        dispatch(
-            getJobsAsync({
-                ...query,
-                filter,
-                page: 1,
-            }),
-        );
-    };
-
     const updatedQuery = useResourceQuery<JobsQuery>(query, { pageSize: 12 });
 
     useEffect(() => {
@@ -67,12 +59,30 @@ function JobsPageComponent(): JSX.Element {
     }, []);
 
     useEffect(() => {
+        if (isMounted && !_.isEqual(query, updatedQuery)) {
+            dispatch(getJobsAsync({ ...updatedQuery }));
+        }
+    }, [updatedQuery, query, isMounted]);
+
+    const setQuery = useCallback((nextQuery: JobsQuery) => {
         if (isMounted) {
-            history.replace({
-                search: updateHistoryFromQuery(query),
+            const nextSearch = updateHistoryFromQuery(nextQuery);
+
+            if (nextSearch === (history.location.search || '')) return;
+
+            history.push({
+                ...history.location, search: nextSearch,
             });
         }
-    }, [query]);
+    }, [history.location, isMounted]);
+
+    const onApplyFilter = (filter: string | null) => {
+        setQuery({
+            ...query,
+            filter,
+            page: 1,
+        });
+    };
 
     const isAnySearch = anySearch<JobsQuery>(query);
 
@@ -84,11 +94,11 @@ function JobsPageComponent(): JSX.Element {
                     <Pagination
                         className='cvat-jobs-page-pagination'
                         onChange={(page: number, pageSize: number) => {
-                            dispatch(getJobsAsync({
+                            setQuery({
                                 ...query,
                                 page,
                                 pageSize,
-                            }));
+                            });
                         }}
                         total={count}
                         pageSizeOptions={[12, 24, 48, 96]}
@@ -111,23 +121,19 @@ function JobsPageComponent(): JSX.Element {
                 selectedCount={selectedCount}
                 onSelectAll={onSelectAll}
                 onApplySearch={(search: string | null) => {
-                    dispatch(
-                        getJobsAsync({
-                            ...query,
-                            search,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...query,
+                        search,
+                        page: 1,
+                    });
                 }}
                 onApplyFilter={onApplyFilter}
                 onApplySorting={(sorting: string | null) => {
-                    dispatch(
-                        getJobsAsync({
-                            ...query,
-                            sort: sorting,
-                            page: 1,
-                        }),
-                    );
+                    setQuery({
+                        ...query,
+                        sort: sorting,
+                        page: 1,
+                    });
                 }}
             />
             {fetching && !bulkFetching ? <Spin size='large' className='cvat-spinner' /> : content}
