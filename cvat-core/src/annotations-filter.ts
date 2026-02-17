@@ -73,6 +73,7 @@ type ConvertedAttributes = Record<string, string | number | boolean>;
 interface ConvertedObjectData {
     width: number | null;
     height: number | null;
+    rotate: number | null;
     attr: Record<string, ConvertedAttributes>;
     label: string;
     serverID: number;
@@ -111,6 +112,7 @@ export default class AnnotationsFilter {
             return {
                 width,
                 height,
+                rotate: state.rotation ?? null,
                 attr: {
                     [adjustName(state.label.name)]: attributes,
                 },
@@ -161,6 +163,7 @@ export default class AnnotationsFilter {
                 return {
                     width,
                     height,
+                    rotate: shape.rotation ?? null,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(shape.attributes),
                     },
@@ -180,6 +183,7 @@ export default class AnnotationsFilter {
                 return {
                     width: null,
                     height: null,
+                    rotate: null,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(tag.attributes),
                     },
@@ -199,6 +203,7 @@ export default class AnnotationsFilter {
                 return {
                     width: null,
                     height: null,
+                    rotate: null,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(track.attributes),
                     },
