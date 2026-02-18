@@ -1771,6 +1771,24 @@ class TestPostTaskData:
                     == {}
                 )
 
+    def test_can_create_task_with_share_directory_and_file(self):
+        task_id, _ = create_task(
+            self._USERNAME,
+            {"name": "Task created from both a share directory and a file"},
+            {"server_files": ["images/exif_rotated/", "images/image_0.jpg"], "image_quality": 70},
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            frame_names = {frame.name for frame in data_meta.frames}
+
+            assert {
+                "images/exif_rotated/left.jpg",
+                "images/exif_rotated/right.jpg",
+                "images/image_0.jpg",
+            } <= frame_names
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_cvat_data_per_class")
