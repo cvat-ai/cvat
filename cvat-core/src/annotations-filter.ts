@@ -94,6 +94,7 @@ export default class AnnotationsFilter {
             }, {});
 
             let [width, height]: (number | null)[] = [null, null];
+            let rotate: number | null = null;
             if (state.objectType !== ObjectType.TAG) {
                 const points = state.shapeType === ShapeType.SKELETON ? state.elements.reduce((acc, val) => {
                     acc.push(val.points);
@@ -101,6 +102,10 @@ export default class AnnotationsFilter {
                 }, []).flat() : state.points;
 
                 ({ width, height } = getDimensions(points, state.shapeType as ShapeType));
+
+                if (state.shapeType === ShapeType.RECTANGLE || state.shapeType === ShapeType.ELLIPSE) {
+                    rotate = state.rotation ?? null;
+                }
             }
 
             const attributes = Object.keys(state.attributes).reduce((acc, key) => {
@@ -112,7 +117,7 @@ export default class AnnotationsFilter {
             return {
                 width,
                 height,
-                rotate: state.rotation ?? null,
+                rotate,
                 attr: {
                     [adjustName(state.label.name)]: attributes,
                 },
@@ -158,12 +163,17 @@ export default class AnnotationsFilter {
                 const points = shape.type === ShapeType.SKELETON ?
                     shape.elements.map((el) => el.points).flat() : shape.points;
                 let [width, height]: (number | null)[] = [null, null];
+                let rotate: number | null = null;
                 ({ width, height } = getDimensions(points, shape.type));
+
+                if (shape.type === ShapeType.RECTANGLE || shape.type === ShapeType.ELLIPSE) {
+                    rotate = shape.rotation ?? null;
+                }
 
                 return {
                     width,
                     height,
-                    rotate: shape.rotation ?? null,
+                    rotate,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(shape.attributes),
                     },
