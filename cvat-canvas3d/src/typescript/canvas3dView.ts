@@ -18,7 +18,7 @@ import {
     createCuboidEdges, removeCuboidEdges, CuboidModel, makeCornerPointsMatrix,
 } from './cuboid';
 import { ObjectState, ObjectType } from '.';
-import { disposeObject3D, disposeScene } from './utils';
+import { disposeScene } from './utils';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
@@ -128,9 +128,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
-    private pointClouds: {
-        [key in ViewType]?: THREE.Points;
-    };
 
     private action: {
         translation: any;
@@ -182,7 +179,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.activatedElementID = null;
         this.sideViewsZoomMemory = {};
         this.drawnObjects = {};
-        this.pointClouds = {};
         this.model = model;
         this.sceneBBox = new THREE.Box3();
         this.cameraSettings = {
@@ -1271,11 +1267,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private deleteObjects(clientIDs: number[]): void {
         clientIDs.forEach((clientID: number): void => {
             const { cuboid } = this.drawnObjects[clientID];
-            Object.keys(this.views).forEach((view: string): void => {
-                this.views[view as keyof Views].scene.children[0].remove(cuboid[view as keyof Views]);
-            });
-
-            delete this.drawnObjects[clientID];
+            this.removeSceneChildren(cuboid, clientID);
         });
     }
 
@@ -1301,6 +1293,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.views.top.scene.children[0].add(shapeObject.top);
         this.views.side.scene.children[0].add(shapeObject.side);
         this.views.front.scene.children[0].add(shapeObject.front);
+    }
+
+    private removeSceneChildren(shapeObject: CuboidModel, clientID: number): void {
+        this.views.perspective.scene.children[0].remove(shapeObject.perspective);
+        this.views.top.scene.children[0].remove(shapeObject.top);
+        this.views.side.scene.children[0].remove(shapeObject.side);
+        this.views.front.scene.children[0].remove(shapeObject.front);
+
+        shapeObject.dispose();
+        delete this.drawnObjects[clientID];
     }
 
     private dispatchEvent(event: CustomEvent): void {
@@ -1608,6 +1610,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private clearScene(): void {
+        Object.entries(this.drawnObjects).forEach(([clientID, { cuboid }]) => {
+            this.removeSceneChildren(cuboid, +clientID);
+        });
+
         this.drawnObjects = {};
         this.activatedElementID = null;
 
@@ -1615,8 +1621,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const viewData = this.views[view as keyof Views];
             disposeScene(viewData.scene);
         });
-
-        this.pointClouds = {};
     }
 
     private updateRotationHelperPos(): void {
@@ -1715,15 +1719,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private onSceneImageLoaded(points: any): void {
-        // Dispose old point clouds before creating new ones
-        Object.keys(this.pointClouds).forEach((view) => {
-            const cloud = this.pointClouds[view as ViewType];
-            if (cloud) {
-                disposeObject3D(cloud);
-            }
-        });
-        this.pointClouds = {};
-
         const getCameraSettingsToFitScene = (
             camera: THREE.PerspectiveCamera,
             boundingBox: THREE.Box3,
@@ -1782,7 +1777,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.sceneBBox = new THREE.Box3().setFromObject(points);
         const perspectiveCloud = points.clone();
         this.views.perspective.scene.add(perspectiveCloud);
-        this.pointClouds[ViewType.PERSPECTIVE] = perspectiveCloud;
 
         const origin = new THREE.Vector3(0, 0, 0);
         const isOriginInScene = this.sceneBBox.containsPoint(origin);
@@ -1819,7 +1813,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         material.size = 0.5;
         const topCloud = points.clone();
         this.views.top.scene.add(topCloud);
-        this.pointClouds[ViewType.TOP] = topCloud;
         this.views.top.scene.add(topScenePlane);
         // Setup Side View
         const canvasSideView = this.views.side.renderer.domElement;
@@ -1843,7 +1836,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         (sideScenePlane as any).verticesNeedUpdate = true;
         const sideCloud = points.clone();
         this.views.side.scene.add(sideCloud);
-        this.pointClouds[ViewType.SIDE] = sideCloud;
         this.views.side.scene.add(sideScenePlane);
         // Setup front View
         const canvasFrontView = this.views.front.renderer.domElement;
@@ -1866,7 +1858,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         (frontScenePlane as any).verticesNeedUpdate = true;
         const frontCloud = points.clone();
         this.views.front.scene.add(frontCloud);
-        this.pointClouds[ViewType.FRONT] = frontCloud;
         this.views.front.scene.add(frontScenePlane);
 
         if (this.mode === Mode.DRAW) {
