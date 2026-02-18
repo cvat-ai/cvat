@@ -2253,7 +2253,7 @@ paths:
           enum:
           - annotation
           - ground_truth
-          - consensus_replica
+          - replica
       tags:
       - jobs
       security:
@@ -8379,12 +8379,12 @@ components:
       enum:
       - annotation
       - ground_truth
-      - consensus_replica
+      - replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
-        * `consensus_replica` - CONSENSUS_REPLICA
+        * `replica` - REPLICA
     JobValidationLayoutRead:
       type: object
       properties:

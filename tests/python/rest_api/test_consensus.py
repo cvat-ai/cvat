@@ -92,7 +92,7 @@ class _PermissionTestBase:
                     == any(
                         j
                         for j in jobs
-                        if j["task_id"] == t["id"] and j["type"] == "consensus_replica"
+                        if j["task_id"] == t["id"] and j["type"] == "replica"
                     )
                 )
             )
@@ -134,7 +134,7 @@ class _PermissionTestBase:
                             == any(
                                 j
                                 for j in jobs
-                                if j["task_id"] == t["id"] and j["type"] == "consensus_replica"
+                                if j["task_id"] == t["id"] and j["type"] == "replica"
                             )
                         )
                     ),
@@ -220,7 +220,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
 
         for j in jobs:
             if (j["stage"] != "annotation" or j["state"] != "new") and (
-                j["task_id"] == task_id and j["type"] in ("annotation", "consensus_replica")
+                j["task_id"] == task_id and j["type"] in ("annotation", "replica")
             ):
                 with make_api_client(admin_user) as api_client:
                     api_client.jobs_api.partial_update(
@@ -239,7 +239,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
         job_id = next(
             j["id"]
             for j in jobs
-            if j["type"] == "consensus_replica"
+            if j["type"] == "replica"
             if tasks.map[j["task_id"]]["consensus_enabled"]
         )
 
@@ -660,7 +660,7 @@ class TestMerging(_PermissionTestBase):
         replicas = [
             j
             for j in task_jobs
-            if j["type"] == "consensus_replica"
+            if j["type"] == "replica"
             if j["parent_job_id"] == parent_job["id"]
         ]
 
