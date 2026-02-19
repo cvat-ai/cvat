@@ -1086,8 +1086,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     @staticmethod
     def _get_job_type(job: dict) -> models.JobType:
-        # The type field will be missing in backups created before the GT jobs were introduced
         try:
+            # The type field will be missing in backups created before the GT jobs were introduced
             raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
             job_type = models.JobType(raw_job_type)
         except ValueError:
