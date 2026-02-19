@@ -595,7 +595,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
     def _write_manifest(self, zip_object: ZipFile, target_dir: str) -> None:
         def serialize_task():
             task_serializer = TaskReadSerializer(self._db_task)
-            for field in ("url", "owner", "assignee", "consensus_enabled"):
+            for field in ("url", "owner", "assignee"):
                 task_serializer.fields.pop(field)
 
             task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
