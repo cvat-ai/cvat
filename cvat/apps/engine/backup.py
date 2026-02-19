@@ -26,6 +26,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
+from django.db.models import Min, Prefetch
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
@@ -346,11 +347,15 @@ class _TaskBackupBase(_BackupBase):
         if not self._db_task:
             return
 
-        db_segments = list(self._db_task.segment_set.all().prefetch_related("job_set"))
-        db_segments.sort(key=lambda i: i.job_set.first().id)
+        db_segments = (
+            self._db_task.segment_set
+            .annotate(min_job_id=Min("job__id"))
+            .order_by("min_job_id")
+            .prefetch_related(Prefetch("job_set", queryset=models.Job.objects.order_by("id")))
+        )
 
         for db_segment in db_segments:
-            yield from sorted(db_segment.job_set.all(), key=lambda db_job: db_job.id)
+            yield from db_segment.job_set.all()
 
 
 class _ExporterBase(metaclass=ABCMeta):
