@@ -144,8 +144,8 @@ function FiltersModalComponent(): JSX.Element {
                     type: 'number',
                     fieldSettings: { min: 0 },
                 },
-                rotate: {
-                    label: 'Rotate',
+                rotation: {
+                    label: 'Rotation',
                     type: 'number',
                     fieldSettings: { min: 0 },
                 },

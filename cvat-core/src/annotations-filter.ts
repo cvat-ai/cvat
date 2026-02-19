@@ -73,7 +73,7 @@ type ConvertedAttributes = Record<string, string | number | boolean>;
 interface ConvertedObjectData {
     width: number | null;
     height: number | null;
-    rotate: number | null;
+    rotation: number | null;
     attr: Record<string, ConvertedAttributes>;
     label: string;
     serverID: number;
@@ -94,7 +94,7 @@ export default class AnnotationsFilter {
             }, {});
 
             let [width, height]: (number | null)[] = [null, null];
-            let rotate: number | null = null;
+            let rotation: number | null = null;
             if (state.objectType !== ObjectType.TAG) {
                 const points = state.shapeType === ShapeType.SKELETON ? state.elements.reduce((acc, val) => {
                     acc.push(val.points);
@@ -104,7 +104,7 @@ export default class AnnotationsFilter {
                 ({ width, height } = getDimensions(points, state.shapeType as ShapeType));
 
                 if (state.shapeType === ShapeType.RECTANGLE || state.shapeType === ShapeType.ELLIPSE) {
-                    rotate = state.rotation ?? null;
+                    rotation = state.rotation ?? null;
                 }
             }
 
@@ -117,7 +117,7 @@ export default class AnnotationsFilter {
             return {
                 width,
                 height,
-                rotate,
+                rotation,
                 attr: {
                     [adjustName(state.label.name)]: attributes,
                 },
@@ -163,17 +163,17 @@ export default class AnnotationsFilter {
                 const points = shape.type === ShapeType.SKELETON ?
                     shape.elements.map((el) => el.points).flat() : shape.points;
                 let [width, height]: (number | null)[] = [null, null];
-                let rotate: number | null = null;
+                let rotation: number | null = null;
                 ({ width, height } = getDimensions(points, shape.type));
 
                 if (shape.type === ShapeType.RECTANGLE || shape.type === ShapeType.ELLIPSE) {
-                    rotate = shape.rotation ?? null;
+                    rotation = shape.rotation ?? null;
                 }
 
                 return {
                     width,
                     height,
-                    rotate,
+                    rotation,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(shape.attributes),
                     },
@@ -193,7 +193,7 @@ export default class AnnotationsFilter {
                 return {
                     width: null,
                     height: null,
-                    rotate: null,
+                    rotation: null,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(tag.attributes),
                     },
@@ -213,7 +213,7 @@ export default class AnnotationsFilter {
                 return {
                     width: null,
                     height: null,
-                    rotate: null,
+                    rotation: null,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(track.attributes),
                     },
