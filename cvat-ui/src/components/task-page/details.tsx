@@ -64,7 +64,7 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
-    consensusEnabled: boolean;
+    hasReplicas: boolean;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -76,7 +76,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
-            consensusEnabled: taskInstance.consensusEnabled,
+            hasReplicas: taskInstance.jobSummary.hasReplicas,
         };
     }
 
@@ -127,7 +127,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             cloudStorageInstance,
             onUpdateTaskMeta,
         } = this.props;
-        const { consensusEnabled } = this.state;
+        const { hasReplicas } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
@@ -153,7 +153,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 </Text>
                             </div>
                         )}
-                        {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
+                        {hasReplicas && <CVATTag type={TagType.CONSENSUS} />}
                     </Col>
                     <Col>
                         <Text type='secondary'>Assigned to</Text>

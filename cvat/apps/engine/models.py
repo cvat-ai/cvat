@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.postgres.aggregates import BoolOr
 from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
@@ -708,6 +709,7 @@ class TaskQuerySet(models.QuerySet):
         total_jobs_count = "total_jobs_count"
         completed_jobs_count = "completed_jobs_count"
         validation_jobs_count = "validation_jobs_count"
+        has_replicas = "has_replicas"
 
     def with_job_summary(self):
         Fields = self.JobSummaryFields
@@ -724,6 +726,10 @@ class TaskQuerySet(models.QuerySet):
                     'segment__job',
                     filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
                     distinct=True,
+                ),
+                Fields.has_replicas.value: BoolOr(
+                    models.Q(segment__job__type="replica"),
+                    default=False,
                 ),
             }
         )

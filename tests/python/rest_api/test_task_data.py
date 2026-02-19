@@ -2148,9 +2148,7 @@ class TestTaskData(TestTasksBase):
                     api_client.jobs_api.retrieve_data_meta(job.id)[1].data
                 )
 
-                replicas = [
-                    j for j in jobs if j.type == "replica" if j.parent_job_id == job.id
-                ]
+                replicas = [j for j in jobs if j.type == "replica" if j.parent_job_id == job.id]
                 assert len(replicas) == task_spec.initial_replicas
 
                 for replica_job in replicas:

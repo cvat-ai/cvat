@@ -285,7 +285,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                 const jobs = await serverProxy.jobs.get({ task_id: taskItem.id }, true);
                 return new Task({
                     ...omit(taskItem, ['jobs', 'labels']),
-                    progress: taskItem.jobs,
+                    jobSummary: taskItem.jobs,
                     jobs,
                     labels: labels.results,
                 });
@@ -293,7 +293,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
             return new Task({
                 ...omit(taskItem, ['jobs', 'labels']),
-                progress: taskItem.jobs,
+                jobSummary: taskItem.jobs,
             });
         }));
 

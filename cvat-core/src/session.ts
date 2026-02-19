@@ -796,14 +796,14 @@ export class Task extends Session {
     public readonly dataChunkSize: number;
     public readonly dataChunkType: ChunkType;
     public readonly dimension: DimensionType;
-    public readonly progress: {
+    public readonly jobSummary: {
         completedJobs: number,
         totalJobs: number,
         validationJobs: number,
         annotationJobs: number,
+        hasReplicas: boolean,
     };
     public readonly jobs: Job[];
-    public readonly consensusEnabled: boolean;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -826,7 +826,7 @@ export class Task extends Session {
 
     constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
         labels?: SerializedLabel[];
-        progress?: SerializedTask['jobs'];
+        jobSummary?: SerializedTask['jobs'];
         jobs?: SerializedJob[];
     }>) {
         super();
@@ -856,7 +856,7 @@ export class Task extends Session {
             dimension: undefined,
             source_storage: undefined,
             target_storage: undefined,
-            progress: undefined,
+            job_summary: undefined,
             labels: undefined,
             jobs: undefined,
 
@@ -868,7 +868,6 @@ export class Task extends Session {
             copy_data: undefined,
             sorting_method: undefined,
             files: undefined,
-            consensus_enabled: undefined,
 
             validation_mode: null,
         };
@@ -887,14 +886,15 @@ export class Task extends Session {
         data.labels = [];
         data.jobs = [];
 
-        data.progress = {
-            completedJobs: initialData.progress?.completed || 0,
-            totalJobs: initialData.progress?.count || 0,
-            validationJobs: initialData.progress?.validation || 0,
+        data.job_summary = {
+            completedJobs: initialData.jobSummary?.completed || 0,
+            totalJobs: initialData.jobSummary?.count || 0,
+            validationJobs: initialData.jobSummary?.validation || 0,
             annotationJobs:
-                (initialData.progress?.count || 0) -
-                (initialData.progress?.validation || 0) -
-                (initialData.progress?.completed || 0),
+                (initialData.jobSummary?.count || 0) -
+                (initialData.jobSummary?.validation || 0) -
+                (initialData.jobSummary?.completed || 0),
+            hasReplicas: initialData.jobSummary?.has_replicas || false,
         };
 
         data.files = Object.freeze({
@@ -1054,9 +1054,6 @@ export class Task extends Session {
                 },
                 copyData: {
                     get: () => data.copy_data,
-                },
-                consensusEnabled: {
-                    get: () => data.consensus_enabled,
                 },
                 labels: {
                     get: () => [...data.labels],
@@ -1222,8 +1219,8 @@ export class Task extends Session {
                         data.target_storage = storage;
                     },
                 },
-                progress: {
-                    get: () => data.progress,
+                jobSummary: {
+                    get: () => data.job_summary,
                 },
                 validationMode: {
                     get: () => data.validation_mode,

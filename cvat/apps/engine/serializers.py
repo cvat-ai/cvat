@@ -181,6 +181,7 @@ class JobsSummarySerializer(_CollectionSummarySerializer):
     count = serializers.IntegerField(source='total_jobs_count', default=0)
     completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
     validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
+    has_replicas = serializers.BooleanField(default=False, allow_null=False)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
@@ -2406,7 +2407,8 @@ class TaskReadListSerializer(serializers.ListSerializer):
 
         return super().to_representation(data)
 
-@extend_schema_serializer(deprecate_fields=["organization"])
+
+@extend_schema_serializer(deprecate_fields=["organization", "consensus_enabled"])
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -2429,9 +2431,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         source='data.validation_mode', required=False, allow_null=True,
         help_text="Describes how the task validation is performed. Configured at task creation"
     )
-    consensus_enabled = serializers.BooleanField(
-        source='get_consensus_enabled', required=False, read_only=True
-    )
+    consensus_enabled = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = models.Task
@@ -2451,12 +2451,10 @@ class TaskReadSerializer(serializers.ModelSerializer):
         }
         list_serializer_class = TaskReadListSerializer
 
-    def get_consensus_enabled(self, instance: models.Task) -> bool:
-        return instance.initial_replicas > 0
-
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['consensus_enabled'] = self.get_consensus_enabled(instance)
+        if 'jobs' in self.fields:
+            representation['consensus_enabled'] = representation["jobs"]["has_replicas"]
         return representation
 
 

@@ -78,7 +78,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [taskInstance.bugTracker]);
 
     const onMergeConsensusJobs = useCallback(() => {
-        if (taskInstance.consensusEnabled) {
+        if (taskInstance.jobSummary.hasReplicas) {
             Modal.confirm({
                 title: 'The consensus jobs will be merged',
                 content: 'Existing annotations in parent jobs will be updated. Continue?',
@@ -93,7 +93,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 okText: 'Merge',
             });
         }
-    }, [taskInstance.consensusEnabled, taskInstance]);
+    }, [taskInstance.jobSummary.hasReplicas, taskInstance]);
 
     const onExportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(taskInstance));
@@ -253,10 +253,10 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 activeInference &&
                 ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
             ),
-            isConsensusEnabled: taskInstance.consensusEnabled,
+            isConsensusEnabled: taskInstance.jobSummary.hasReplicas,
             isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
             pluginActions,
-            onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
+            onMergeConsensusJobs: taskInstance.jobSummary.hasReplicas ? onMergeConsensusJobs : null,
             onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
             onUploadAnnotations,
             onExportDataset,

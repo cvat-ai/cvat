@@ -8475,6 +8475,9 @@ components:
         validation:
           type: integer
           nullable: true
+        has_replicas:
+          type: boolean
+          default: false
         url:
           type: string
           format: uri
@@ -11249,6 +11252,7 @@ components:
         consensus_enabled:
           type: boolean
           readOnly: true
+          deprecated: true
       required:
       - jobs
       - labels

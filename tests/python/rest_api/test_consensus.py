@@ -89,11 +89,7 @@ class _PermissionTestBase:
                 and (
                     has_consensus_jobs is None
                     or has_consensus_jobs
-                    == any(
-                        j
-                        for j in jobs
-                        if j["task_id"] == t["id"] and j["type"] == "replica"
-                    )
+                    == any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "replica")
                 )
             )
 
@@ -148,7 +144,7 @@ class _PermissionTestBase:
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    if has_consensus_jobs is None or has_consensus_jobs == t["consensus_enabled"]
+                    if has_consensus_jobs is None or has_consensus_jobs == t["jobs"]["has_replicas"]
                 )
                 user = next(
                     u
@@ -196,7 +192,7 @@ class _PermissionTestBase:
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostConsensusMerge(_PermissionTestBase):
     def test_can_merge_task_with_consensus_jobs(self, admin_user, tasks):
-        task_id = next(t["id"] for t in tasks if t["consensus_enabled"])
+        task_id = next(t["id"] for t in tasks if t["jobs"]["has_replicas"])
 
         self.merge(user=admin_user, task_id=task_id)
 
@@ -208,7 +204,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
         self.merge(user=admin_user, job_id=job_id)
 
     def test_cannot_merge_task_without_consensus_jobs(self, admin_user, tasks):
-        task_id = next(t["id"] for t in tasks if not t["consensus_enabled"])
+        task_id = next(t["id"] for t in tasks if not t["jobs"]["has_replicas"])
 
         with pytest.raises(exceptions.ApiException) as capture:
             self.merge(user=admin_user, task_id=task_id)
@@ -216,7 +212,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
         assert "Consensus is not enabled in this task" in capture.value.body
 
     def test_cannot_merge_task_without_mergeable_parent_jobs(self, admin_user, tasks, jobs):
-        task_id = next(t["id"] for t in tasks if t["consensus_enabled"])
+        task_id = next(t["id"] for t in tasks if t["jobs"]["has_replicas"])
 
         for j in jobs:
             if (j["stage"] != "annotation" or j["state"] != "new") and (
@@ -240,7 +236,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
             j["id"]
             for j in jobs
             if j["type"] == "replica"
-            if tasks.map[j["task_id"]]["consensus_enabled"]
+            if tasks.map[j["task_id"]]["jobs"]["has_replicas"]
         )
 
         with pytest.raises(exceptions.ApiException) as capture:
@@ -658,10 +654,7 @@ class TestMerging(_PermissionTestBase):
             j for j in task_jobs if j["type"] == "annotation" if j["initial_replicas"] > 0
         )
         replicas = [
-            j
-            for j in task_jobs
-            if j["type"] == "replica"
-            if j["parent_job_id"] == parent_job["id"]
+            j for j in task_jobs if j["type"] == "replica" if j["parent_job_id"] == parent_job["id"]
         ]
 
         with make_api_client(admin_user) as api_client:

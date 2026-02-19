@@ -118,6 +118,7 @@ export interface SerializedTask {
         completed: number;
         url: string;
         validation: number;
+        has_replicas: boolean;
     };
     labels: { count: number; url: string; };
     mode: TaskMode | '';
@@ -135,7 +136,6 @@ export interface SerializedTask {
     subset: string;
     updated_date: string;
     url: string;
-    consensus_enabled: boolean;
 }
 
 export interface SerializedJob {

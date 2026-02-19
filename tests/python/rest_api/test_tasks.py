@@ -1317,8 +1317,8 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
         self._test_can_export_backup(task_id)
 
-    def test_can_export_backup_for_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+    def test_can_export_backup_for_task_with_replicas(self, tasks):
+        task_id = next(t for t in tasks if t["jobs"]["has_replicas"])["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_honeypot_task(self, tasks):
@@ -1422,8 +1422,8 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         self._test_can_restore_task_from_backup(task_id)
 
-    def test_can_import_backup_with_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+    def test_can_import_backup_with_task_with_replicas(self, tasks):
+        task_id = next(t for t in tasks if t["jobs"]["has_replicas"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
