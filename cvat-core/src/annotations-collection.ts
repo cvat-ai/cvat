@@ -1378,7 +1378,9 @@ export default class Collection {
         }
 
         const filtersStr = JSON.stringify(annotationsFilters);
-        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+        const linearSearch = filtersStr.match(/"var":"width"/) ||
+            filtersStr.match(/"var":"height"/) ||
+            filtersStr.match(/"var":"rotation"/);
 
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
             if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {
