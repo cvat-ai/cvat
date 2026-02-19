@@ -213,7 +213,7 @@ class TestTasksBase:
             for task_spec, task_id in task_gen:
                 # Get the actual frame order after the task is created
                 with make_api_client(self._USERNAME) as api_client:
-                    (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+                    task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
                     frame_map = [
                         next(i for i, f in enumerate(image_files) if f.name == frame_info.name)
                         for frame_info in task_meta.frames
@@ -417,12 +417,12 @@ class TestTasksBase:
 
         related_files = []
 
-        for image in image_files:
+        for i, image in enumerate(image_files):
             image.name = f"test/{image.name}"
             image.seek(0)
             _upload_file(image)
 
-            image_related_files = generate_image_files(3)
+            image_related_files = generate_image_files(i)
             related_files.append(image_related_files)
 
             for related_file in image_related_files:

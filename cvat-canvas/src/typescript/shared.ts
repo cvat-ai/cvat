@@ -343,10 +343,9 @@ export function getSkeletonEdgeCoordinates(edge: SVG.Line): {
     };
 }
 
-export function makeSVGFromTemplate(template: string): SVG.G {
+export function makeSVGFromTemplate(template: SVGSVGElement): SVG.G {
     const SVGElement = new SVG.G();
-    /* eslint-disable-next-line no-unsanitized/property */
-    SVGElement.node.innerHTML = template;
+    SVGElement.node.replaceChildren(...template.cloneNode(true).childNodes);
     return SVGElement;
 }
 

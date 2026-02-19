@@ -24,7 +24,7 @@ class TestTUSUpload:
     def fxt_task(self):
         """Fixture to create a task for TUS upload tests"""
         with make_api_client(self._USERNAME) as api_client:
-            (task, response) = api_client.tasks_api.create({"name": "test TUS upload"})
+            task, response = api_client.tasks_api.create({"name": "test TUS upload"})
             assert response.status == HTTPStatus.CREATED
             return task
 

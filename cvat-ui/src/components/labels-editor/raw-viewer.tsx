@@ -42,11 +42,11 @@ function transformSkeletonSVG(value: string): string {
         return value;
     }
 
-    const matches = data.matchAll(/data-label-id=&quot;([\d]+)&quot;/g);
+    const matches = data.matchAll(/data-label-id=\\"([\d]+)\\"/g);
     for (const match of matches) {
         if (idNameMapping[match[1]]) {
             data = data.replace(
-                match[0], `data-label-name=&quot;${idNameMapping[match[1]]}&quot;`,
+                match[0], `data-label-name=\\"${idNameMapping[match[1]]}\\"`,
             );
         }
     }
@@ -90,7 +90,6 @@ function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
         (label: LabelOptColor): LabelOptColor => ({
             ...label,
             id: (label.id as number) < 0 ? undefined : label.id,
-            svg: label.svg ? label.svg.replaceAll('"', '&quot;') : undefined,
             attributes: label.attributes.map(
                 (attribute: any): SerializedAttribute => ({
                     ...attribute,
@@ -127,9 +126,6 @@ export default class RawViewer extends React.PureComponent<Props> {
         const labelIds: number[] = [];
         const attrIds: number[] = [];
         for (const label of parsed) {
-            if (label.svg) {
-                label.svg = label.svg.replaceAll('&quot;', '"');
-            }
             label.id = label.id || idGenerator();
             if (label.id >= 0) {
                 labelIds.push(label.id);

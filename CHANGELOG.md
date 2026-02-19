@@ -16,6 +16,138 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.57.0'></a>
+## \[2.57.0\] - 2026-02-17
+
+### Added
+
+- Ability to change zOrder of an object one by one, using corresponding buttons in object menu or shortcuts
+  (<https://github.com/cvat-ai/cvat/pull/9063>)
+
+### Fixed
+
+- Creation of extra "create" and "update" events on children summary field
+  updates and inclusion of invalid data in the events for these fields
+  (<https://github.com/cvat-ai/cvat/pull/10257>)
+
+- Fixed a crash on fetching an empty related image chunk
+  of a task in cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10277>)
+
+- Fixed creating a task from an attached file share in the case where
+  at least one image and one directory are specified
+  (<https://github.com/cvat-ai/cvat/pull/10281>)
+
+<a id='changelog-2.56.1'></a>
+## \[2.56.1\] - 2026-02-03
+
+### Fixed
+
+- Consensus score calculation always returning 1.0 regardless of actual agreement
+  (<https://github.com/cvat-ai/cvat/pull/10247>)
+
+<a id='changelog-2.56.0'></a>
+## \[2.56.0\] - 2026-02-02
+
+### Added
+
+- Adds the option to sort annotations by label
+  (<https://github.com/cvat-ai/cvat/pull/9738>)
+
+- Score visualization in UI with a virtual "Votes" attribute calculated as `score × replica_jobs`
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+- A user now may navigate between different shapes with shortcuts (Tab/Shift+Tab by default) in Standard, Review modes
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+- Review mode now supports editing objects. Users can unlock and edit individual annotations as needed
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+- Double-clicking an object in the sidebar now centers it on the canvas and expands its details
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+- Added a keyboard shortcut to switch object appearance using the “Color by” setting on the annotation page
+  (<https://github.com/cvat-ai/cvat/pull/10175>)
+
+- Individual annotations for CVAT and analytics ingress in Helm chart
+  (<https://github.com/cvat-ai/cvat/pull/10231>)
+
+### Changed
+
+- Increased the maximum number of assets per guide from 30 to 150
+  (<https://github.com/cvat-ai/cvat/pull/10185>)
+
+- Consensus merge function now preserves all shapes with their scores, regardless of quorum threshold
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+### Removed
+
+- Consensus quorum setting has been removed. All merged annotations are now kept with their consensus scores,
+  allowing users to filter results based on score thresholds instead
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+### Fixed
+
+- Missing validation for the maximum number of annotation guide assets
+  (<https://github.com/cvat-ai/cvat/pull/10185>)
+
+- In the raw label editor, double quote characters inside SVG strings are no
+  longer displayed as "\&quot;"
+  (<https://github.com/cvat-ai/cvat/pull/10198>)
+
+- Annotation `source` was not updated on label change
+  (<https://github.com/cvat-ai/cvat/pull/9886>)
+
+- Incorrect camera position on 3d scene when position of point clouds
+  shifted from center of coordinates (<https://github.com/cvat-ai/cvat/pull/10221>)
+
+- Possible 500 error in TUS uploading via SDK/CLI in development or customized deployments
+  (<https://github.com/cvat-ai/cvat/pull/10227>)
+
+<a id='changelog-2.55.0'></a>
+## \[2.55.0\] - 2026-01-19
+
+### Added
+
+- An option to download quality report as a confusion matrix CSV file
+  (<https://github.com/cvat-ai/cvat/pull/10177>)
+
+### Fixed
+
+- Added reading HTTP request data in chunks instead of loading entire body into memory for TUS PATCH requests
+  (<https://github.com/cvat-ai/cvat/issues/5261>)
+
+- Return a 404 for HEAD requests after a file upload is completed via TUS, instead of a 500 Internal Server Error
+  (<https://github.com/cvat-ai/cvat/issues/5261>)
+
+- When creating a task, manifest files uploaded alongside videos are no longer ignored
+  (<https://github.com/cvat-ai/cvat/pull/10162>)
+
+- Improved annotation import performance for Ultralytics YOLO Classification
+  (<https://github.com/cvat-ai/cvat/pull/10163>)
+
+- Fixed a AssertionError that occurred during the download of 3D annotations.
+  (<https://github.com/cvat-ai/cvat/pull/10165>)
+
+- Removed redundant `PATCH: /api/jobs/<id>/meta` requests sent from annotation view
+  (<https://github.com/cvat-ai/cvat/pull/10184>)
+
+- \[CLI\] Fixed agents waiting for inappropriate amounts between retrying
+  failed AR acquire requests
+  (<https://github.com/cvat-ai/cvat/pull/10193>)
+
+- \[CLI\] Made agents handle failure of queue-related HTTP requests
+  in a more robust manner
+  (<https://github.com/cvat-ai/cvat/pull/10194>)
+
+### Security
+
+- Fixed XSS vulnerabilities related to skeleton SVG images
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-3m7p-wx65-c7mp>)
+
+- Upgrade OPA to new version (1.12.2)
+  (<https://github.com/cvat-ai/cvat/pull/10183>)
+
+- Users with staff status can no longer change their permissions
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-7pvv-w55f-qmw7>)
+
 <a id='changelog-2.54.0'></a>
 ## \[2.54.0\] - 2025-12-24
 

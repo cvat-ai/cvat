@@ -20,13 +20,11 @@ class AccessTokenAuthenticationScheme(TokenScheme):
 
     def get_security_definition(self, auto_schema):
         schema = super().get_security_definition(auto_schema)
-        schema["description"] = textwrap.dedent(
-            f"""\
+        schema["description"] = textwrap.dedent(f"""\
             To authenticate using an API Access token, you need to include
             the 'Authentication' header with the '{self.target.keyword} ' prefix
 
             An API Access token has to be issued in the user profile section of the UI or
             via the /auth/access_tokens API before this authentication method can be used.
-        """
-        )
+        """)
         return schema

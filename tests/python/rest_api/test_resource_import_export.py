@@ -162,7 +162,7 @@ class TestExportResourceToS3(_S3ResourceTest):
             "server_files": ["images/image_1.jpg"],
             "project_id": project_id,
         }
-        (task_id, _) = create_task(user, task_spec, data_spec)
+        task_id, _ = create_task(user, task_spec, data_spec)
 
         jobs = get_method(user, "jobs", task_id=task_id).json()["results"]
         job_id = jobs[0]["id"]
@@ -323,7 +323,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
             "server_files": ["images/image_1.jpg"],
             "project_id": project_id,
         }
-        (task_id, _) = create_task(user, task_spec, data_spec)
+        task_id, _ = create_task(user, task_spec, data_spec)
 
         jobs = get_method(user, "jobs", task_id=task_id).json()["results"]
         job_id = jobs[0]["id"]

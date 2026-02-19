@@ -6,7 +6,6 @@
 import itertools
 import os
 import os.path as osp
-import re
 import shutil
 import textwrap
 import traceback
@@ -2469,13 +2468,11 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         user = self.request.user
         is_self = int(self.kwargs.get("pk", 0)) == user.id or \
             self.action == "self"
-        if user.is_staff:
-            return UserSerializer if not is_self else UserSerializer
+
+        if is_self or user.is_superuser:
+            return UserSerializer
         else:
-            if is_self and self.request.method in SAFE_METHODS:
-                return UserSerializer
-            else:
-                return BasicUserSerializer
+            return BasicUserSerializer
 
     @extend_schema(summary='Get details of the current user',
         responses={
@@ -2624,7 +2621,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
                 full_manifest_path = db_storage.get_storage_dirname() / manifest_path
                 if not full_manifest_path.exists() or \
-                        datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
+                        datetime.fromtimestamp(full_manifest_path.stat().st_mtime, tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
                     storage.download_file(manifest_path, full_manifest_path)
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
                 # need to update index
@@ -2866,14 +2863,11 @@ class AnnotationGuidesViewSet(
     def _update_related_assets(self, request: ExtendedRequest, guide: AnnotationGuide):
         existing_assets = list(guide.assets.all())
         new_assets = []
-
-        pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-        results = set(re.findall(pattern, guide.markdown))
-
+        asset_ids = AnnotationGuide.get_asset_ids_from_markdown(guide.markdown)
         db_assets_to_copy = {}
 
         # first check if we need to copy some assets and if user has permissions to access them
-        for asset_id in results:
+        for asset_id in asset_ids:
             with suppress(models.Asset.DoesNotExist):
                 db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
                 if db_asset.guide.id != guide.id:
@@ -2893,7 +2887,7 @@ class AnnotationGuidesViewSet(
         # then copy those assets, where user has permissions
         assets_mapping = {}
         with transaction.atomic():
-            for asset_id in results:
+            for asset_id in asset_ids:
                 db_asset = db_assets_to_copy.get(asset_id)
                 if db_asset is not None:
                     copied_asset = Asset(
@@ -2906,7 +2900,7 @@ class AnnotationGuidesViewSet(
 
         # finally apply changes on filesystem out of transaction
         try:
-            for asset_id in results:
+            for asset_id in asset_ids:
                 copied_asset = assets_mapping.get(asset_id)
                 if copied_asset is not None:
                     db_asset = db_assets_to_copy.get(asset_id)

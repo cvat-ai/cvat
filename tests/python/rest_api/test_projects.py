@@ -57,13 +57,13 @@ class TestGetProjects:
 
     def _test_response_200(self, username, project_id):
         with make_api_client(username) as api_client:
-            (project, response) = api_client.projects_api.retrieve(project_id)
+            project, response = api_client.projects_api.retrieve(project_id)
             assert response.status == HTTPStatus.OK
             assert project_id == project.id
 
     def _test_response_403(self, username, project_id):
         with make_api_client(username) as api_client:
-            (_, response) = api_client.projects_api.retrieve(
+            _, response = api_client.projects_api.retrieve(
                 project_id, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -158,7 +158,7 @@ class TestGetProjects:
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_project["owner"]["id"])
 
-            (_, response) = api_client.projects_api.retrieve(source_project["id"])
+            _, response = api_client.projects_api.retrieve(source_project["id"])
             fetched_project = json.loads(response.data)
 
         source_project["owner"] = None
@@ -396,14 +396,14 @@ class TestGetPostProjectBackup:
 class TestPostProjects:
     def _test_create_project_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.projects_api.create(spec, **kwargs)
+            _, response = api_client.projects_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
         return response
 
     def _test_create_project_403(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.projects_api.create(
+            _, response = api_client.projects_api.create(
                 spec, **kwargs, _parse_response=False, _check_status=False
             )
         assert response.status == HTTPStatus.FORBIDDEN
@@ -458,7 +458,7 @@ class TestPostProjects:
     def _create_user(cls, api_client: ApiClient, email: str) -> str:
         username = email.split("@", maxsplit=1)[0]
         with api_client:
-            (_, response) = api_client.auth_api.create_register(
+            _, response = api_client.auth_api.create_register(
                 models.RegisterSerializerExRequest(
                     username=username, password1=USER_PASS, password2=USER_PASS, email=email
                 )
@@ -471,7 +471,7 @@ class TestPostProjects:
     @classmethod
     def _create_org(cls, api_client: ApiClient, members: dict[str, str] | None = None) -> str:
         with api_client:
-            (_, response) = api_client.organizations_api.create(
+            _, response = api_client.organizations_api.create(
                 models.OrganizationWriteRequest(slug="test_org_roles"), _parse_response=False
             )
             org = json.loads(response.data)["id"]
@@ -542,7 +542,7 @@ class TestPostProjects:
         project = json.loads(response.data)
 
         with make_api_client(username) as api_client:
-            (_, response) = api_client.projects_api.retrieve(project["id"])
+            _, response = api_client.projects_api.retrieve(project["id"])
             assert DeepDiff(project, json.loads(response.data), ignore_order=True) == {}
 
     @pytest.mark.parametrize("assignee", [None, "admin1"])
@@ -554,7 +554,7 @@ class TestPostProjects:
         }
 
         with make_api_client(admin_user) as api_client:
-            (project, _) = api_client.projects_api.create(project_write_request=spec)
+            project, _ = api_client.projects_api.create(project_write_request=spec)
 
             if assignee:
                 assert project.assignee.username == assignee
@@ -619,7 +619,7 @@ class TestImportExportDatasetProject:
 
     def _test_import_project(self, username, project_id, format_name, data):
         with make_api_client(username) as api_client:
-            (_, response) = api_client.projects_api.create_dataset(
+            _, response = api_client.projects_api.create_dataset(
                 id=project_id,
                 format=format_name,
                 dataset_file_request={"dataset_file": data},
@@ -630,7 +630,7 @@ class TestImportExportDatasetProject:
             assert rq_id, "The rq_id was not found in the response"
 
             for _ in range(50):
-                (background_request, response) = api_client.requests_api.retrieve(rq_id)
+                background_request, response = api_client.requests_api.retrieve(rq_id)
                 assert response.status == HTTPStatus.OK
                 if (
                     background_request.status.value
@@ -645,7 +645,7 @@ class TestImportExportDatasetProject:
 
     def _test_get_annotations_from_task(self, username, task_id):
         with make_api_client(username) as api_client:
-            (_, response) = api_client.tasks_api.retrieve_annotations(task_id)
+            _, response = api_client.tasks_api.retrieve_annotations(task_id)
             assert response.status == HTTPStatus.OK
 
             response_data = json.loads(response.data)
@@ -1085,7 +1085,7 @@ class TestImportExportDatasetProject:
         labels = filter_labels(project_id=project["id"])
         frame_to_delete = 1
         with make_api_client(admin_user) as api_client:
-            (_, update_job) = api_client.jobs_api.partial_update_annotations(
+            _, update_job = api_client.jobs_api.partial_update_annotations(
                 "update",
                 job["id"],
                 patched_labeled_data_request=dict(
@@ -1108,7 +1108,7 @@ class TestImportExportDatasetProject:
                     ],
                 ),
             )
-            (_, get_meta) = api_client.jobs_api.retrieve_data_meta(job["id"])
+            _, get_meta = api_client.jobs_api.retrieve_data_meta(job["id"])
             assert update_job.status == HTTPStatus.OK
             assert get_meta.status == HTTPStatus.OK
 
@@ -1118,7 +1118,7 @@ class TestImportExportDatasetProject:
 
         # delete frame
         with make_api_client(admin_user) as api_client:
-            (_, patchMeta) = api_client.jobs_api.partial_update_data_meta(
+            _, patchMeta = api_client.jobs_api.partial_update_data_meta(
                 job["id"],
                 patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
                     deleted_frames=[frame_to_delete]
@@ -1334,22 +1334,22 @@ class TestPatchProjectLabel:
 class TestGetProjectPreview:
     def _test_response_200(self, username, project_id, **kwargs):
         with make_api_client(username) as api_client:
-            (_, response) = api_client.projects_api.retrieve_preview(project_id, **kwargs)
+            _, response = api_client.projects_api.retrieve_preview(project_id, **kwargs)
 
             assert response.status == HTTPStatus.OK
-            (width, height) = Image.open(BytesIO(response.data)).size
+            width, height = Image.open(BytesIO(response.data)).size
             assert width > 0 and height > 0
 
     def _test_response_403(self, username, project_id):
         with make_api_client(username) as api_client:
-            (_, response) = api_client.projects_api.retrieve_preview(
+            _, response = api_client.projects_api.retrieve_preview(
                 project_id, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
 
     def _test_response_404(self, username, project_id):
         with make_api_client(username) as api_client:
-            (_, response) = api_client.projects_api.retrieve_preview(
+            _, response = api_client.projects_api.retrieve_preview(
                 project_id, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.NOT_FOUND
@@ -1494,7 +1494,7 @@ class TestPatchProject:
             new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
 
         with make_api_client(admin_user) as api_client:
-            (updated_project, _) = api_client.projects_api.partial_update(
+            updated_project, _ = api_client.projects_api.partial_update(
                 project["id"], patched_project_write_request={"assignee_id": new_assignee_id}
             )
 
@@ -1535,7 +1535,7 @@ class TestPatchProject:
                         "location": "local",
                     }
                 }
-                (_, response) = api_client.projects_api.partial_update(
+                _, response = api_client.projects_api.partial_update(
                     project_id,
                     patched_project_write_request=patch_data,
                     _check_status=False,
@@ -1684,7 +1684,7 @@ class TestPatchProject:
         dst_org_id = dst_org["id"] if dst_org else dst_org
 
         with make_api_client(user) as api_client:
-            (project, response) = api_client.projects_api.create(
+            project, response = api_client.projects_api.create(
                 {"name": "Project to be transferred to another workspace"},
                 **({"org_id": src_org_id} if src_org_id else {}),
             )
