@@ -92,7 +92,9 @@ interface ConvertedObjectData {
 
 export default class AnnotationsFilter {
     private _convertSerializedObjectStates(statesData: SerializedData[]): ConvertedObjectData[] {
-        const objects = statesData.map((state) => {
+        const objects: ConvertedObjectData[] = [];
+
+        statesData.forEach((state) => {
             const labelAttributes = state.label.attributes.reduce((acc, attr) => {
                 acc[attr.id] = attr;
                 return acc;
@@ -126,7 +128,21 @@ export default class AnnotationsFilter {
                 [adjustName(state.label.name)]: attributes,
             };
 
-            // For skeleton shapes, also include element (sublabel) attributes
+            objects.push({
+                width,
+                height,
+                attr: attrData,
+                label: state.label.name,
+                serverID: state.serverID,
+                objectID: state.clientID,
+                type: state.objectType,
+                shape: state.shapeType,
+                occluded: state.occluded,
+                score: state.score ?? null,
+                votes: state.votes ?? null,
+            });
+
+            // For skeleton shapes, create separate filterable entries for each element (sublabel)
             if (state.shapeType === ShapeType.SKELETON && state.elements) {
                 state.elements.forEach((element) => {
                     const elementLabelAttributes = element.label.attributes.reduce((acc, attr) => {
@@ -147,28 +163,34 @@ export default class AnnotationsFilter {
                         {} as Record<string, string | number | boolean>,
                     );
 
-                    // Add built-in properties for skeleton elements
-                    elementAttributes.occluded = element.occluded ?? false;
-                    elementAttributes.outside = element.outside ?? false;
+                    const sublabelName = `${state.label.name} / ${element.label.name}`;
+                    const elementAttrData: Record<string, ConvertedAttributes> = {
+                        [adjustName(sublabelName)]: elementAttributes,
+                    };
 
-                    const adjustedSublabelName = adjustName(element.label.name);
-                    attrData[adjustName(state.label.name)][adjustedSublabelName] = elementAttributes;
+                    let [elWidth, elHeight]: (number | null)[] = [null, null];
+                    if (element.points) {
+                        ({ width: elWidth, height: elHeight } = getDimensions(
+                            element.points,
+                            (element.shapeType ?? ShapeType.POINTS) as ShapeType,
+                        ));
+                    }
+
+                    objects.push({
+                        width: elWidth,
+                        height: elHeight,
+                        attr: elementAttrData,
+                        label: sublabelName,
+                        serverID: state.serverID,
+                        objectID: state.clientID, // parent's clientID so the skeleton is shown/hidden
+                        type: state.objectType,
+                        shape: (element.shapeType ?? ShapeType.POINTS) as ShapeType,
+                        occluded: element.occluded ?? false,
+                        score: null,
+                        votes: null,
+                    });
                 });
             }
-
-            return {
-                width,
-                height,
-                attr: attrData,
-                label: state.label.name,
-                serverID: state.serverID,
-                objectID: state.clientID,
-                type: state.objectType,
-                shape: state.shapeType,
-                occluded: state.occluded,
-                score: state.score ?? null,
-                votes: state.votes ?? null,
-            };
         });
 
         return objects;
@@ -187,8 +209,15 @@ export default class AnnotationsFilter {
         );
 
         const attributeById = labelsSpec
-            .map((label) => label.attributes)
-            .flat()
+            .flatMap((label) => {
+                const attrs = [...label.attributes];
+                if (label.structure?.sublabels) {
+                    label.structure.sublabels.forEach((sublabel) => {
+                        attrs.push(...sublabel.attributes);
+                    });
+                }
+                return attrs;
+            })
             .reduce(
                 (acc, attribute) => ({
                     ...acc,
@@ -208,7 +237,7 @@ export default class AnnotationsFilter {
             );
 
         return {
-            shapes: collection.shapes.map((shape) => {
+            shapes: collection.shapes.flatMap((shape) => {
                 const label = labelByID[shape.label_id];
                 const points =
                     shape.type === ShapeType.SKELETON ? shape.elements.map((el) => el.points).flat() : shape.points;
@@ -219,22 +248,7 @@ export default class AnnotationsFilter {
                     [adjustName(label.name)]: convertAttributes(shape.attributes),
                 };
 
-                // For skeleton shapes, also include element (sublabel) attributes
-                if (shape.type === ShapeType.SKELETON && shape.elements) {
-                    shape.elements.forEach((element) => {
-                        const elementLabel = labelByID[element.label_id];
-                        if (elementLabel) {
-                            const adjustedSublabelName = adjustName(elementLabel.name);
-                            const elementAttrs = convertAttributes(element.attributes);
-                            // Add built-in properties for skeleton elements
-                            elementAttrs.occluded = element.occluded ?? false;
-                            elementAttrs.outside = element.outside ?? false;
-                            attrData[adjustName(label.name)][adjustedSublabelName] = elementAttrs;
-                        }
-                    });
-                }
-
-                return {
+                const mainEntry: ConvertedObjectData = {
                     width,
                     height,
                     attr: attrData,
@@ -247,6 +261,44 @@ export default class AnnotationsFilter {
                     score: shape.score ?? null,
                     votes: null,
                 };
+
+                const entries: ConvertedObjectData[] = [mainEntry];
+
+                // For skeleton shapes, create separate entries for each element (sublabel)
+                if (shape.type === ShapeType.SKELETON && shape.elements) {
+                    shape.elements.forEach((element) => {
+                        const elementLabel = labelByID[element.label_id];
+                        if (elementLabel) {
+                            const sublabelName = `${label.name} / ${elementLabel.name}`;
+                            const elementAttrs = convertAttributes(element.attributes);
+                            const elementAttrData: Record<string, ConvertedAttributes> = {
+                                [adjustName(sublabelName)]: elementAttrs,
+                            };
+
+                            let [elWidth, elHeight]: (number | null)[] = [null, null];
+                            ({ width: elWidth, height: elHeight } = getDimensions(
+                                element.points,
+                                element.type ?? ShapeType.POINTS,
+                            ));
+
+                            entries.push({
+                                width: elWidth,
+                                height: elHeight,
+                                attr: elementAttrData,
+                                label: sublabelName,
+                                serverID: shape.id ?? null,
+                                type: ObjectType.SHAPE,
+                                shape: element.type ?? ShapeType.POINTS,
+                                occluded: element.occluded ?? false,
+                                objectID: shape.clientID ?? null,
+                                score: null,
+                                votes: null,
+                            });
+                        }
+                    });
+                }
+
+                return entries;
             }),
             tags: collection.tags.map((tag) => {
                 const label = labelByID[tag.label_id];
@@ -267,27 +319,14 @@ export default class AnnotationsFilter {
                     votes: null,
                 };
             }),
-            tracks: collection.tracks.map((track) => {
+            tracks: collection.tracks.flatMap((track) => {
                 const label = labelByID[track.label_id];
 
                 const attrData: Record<string, ConvertedAttributes> = {
                     [adjustName(label.name)]: convertAttributes(track.attributes),
                 };
 
-                // For skeleton tracks, also include element (sublabel) attributes
-                if (track.shapes[0]?.type === ShapeType.SKELETON && track.elements) {
-                    track.elements.forEach((element) => {
-                        const elementLabel = labelByID[element.label_id];
-                        if (elementLabel) {
-                            const adjustedSublabelName = adjustName(elementLabel.name);
-                            attrData[adjustName(label.name)][adjustedSublabelName] = convertAttributes(
-                                element.attributes || [],
-                            );
-                        }
-                    });
-                }
-
-                return {
+                const mainEntry: ConvertedObjectData = {
                     width: null,
                     height: null,
                     attr: attrData,
@@ -300,6 +339,37 @@ export default class AnnotationsFilter {
                     score: null,
                     votes: null,
                 };
+
+                const entries: ConvertedObjectData[] = [mainEntry];
+
+                // For skeleton tracks, create separate entries for each element (sublabel)
+                if (track.shapes[0]?.type === ShapeType.SKELETON && track.elements) {
+                    track.elements.forEach((element) => {
+                        const elementLabel = labelByID[element.label_id];
+                        if (elementLabel) {
+                            const sublabelName = `${label.name} / ${elementLabel.name}`;
+                            const elementAttrData: Record<string, ConvertedAttributes> = {
+                                [adjustName(sublabelName)]: convertAttributes(element.attributes || []),
+                            };
+
+                            entries.push({
+                                width: null,
+                                height: null,
+                                attr: elementAttrData,
+                                label: sublabelName,
+                                serverID: track.id,
+                                type: ObjectType.TRACK,
+                                shape: element.shapes?.[0]?.type ?? ShapeType.POINTS,
+                                occluded: null,
+                                objectID: track.clientID ?? null,
+                                score: null,
+                                votes: null,
+                            });
+                        }
+                    });
+                }
+
+                return entries;
             }),
         };
     }
@@ -310,9 +380,13 @@ export default class AnnotationsFilter {
         }
 
         const converted = this._convertSerializedObjectStates(statesData);
-        return converted
-            .map((state) => state.objectID)
-            .filter((_, index) => jsonLogic.apply(filters[0], converted[index]));
+        const matchingIDs = new Set<number>();
+        converted.forEach((entry) => {
+            if (jsonLogic.apply(filters[0], entry)) {
+                matchingIDs.add(entry.objectID);
+            }
+        });
+        return [...matchingIDs];
     }
 
     public filterSerializedCollection(
@@ -329,16 +403,21 @@ export default class AnnotationsFilter {
         }
 
         const converted = this._convertSerializedCollection(collection, labelsSpec);
+
+        const filterCategory = (entries: ConvertedObjectData[]): number[] => {
+            const matchingIDs = new Set<number>();
+            entries.forEach((entry) => {
+                if (jsonLogic.apply(filters[0], entry)) {
+                    matchingIDs.add(entry.objectID);
+                }
+            });
+            return [...matchingIDs];
+        };
+
         return {
-            shapes: converted.shapes
-                .map((shape) => shape.objectID)
-                .filter((_, index) => jsonLogic.apply(filters[0], converted.shapes[index])),
-            tags: converted.tags
-                .map((shape) => shape.objectID)
-                .filter((_, index) => jsonLogic.apply(filters[0], converted.tags[index])),
-            tracks: converted.tracks
-                .map((shape) => shape.objectID)
-                .filter((_, index) => jsonLogic.apply(filters[0], converted.tracks[index])),
+            shapes: filterCategory(converted.shapes),
+            tags: filterCategory(converted.tags),
+            tracks: filterCategory(converted.tracks),
         };
     }
 }

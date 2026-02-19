@@ -49,70 +49,47 @@ const getConvertedInputType = (inputType: string): string => {
 
 const adjustName = (name: string): string => name.replace(/\./g, '\u2219');
 
+const addAttributeSubfields = (
+    subfields: Record<string, any>,
+    key: string,
+    displayLabel: string,
+    attributes: any[],
+): void => {
+    subfields[key] = {
+        type: '!struct',
+        label: displayLabel,
+        subfields: {},
+    };
+
+    const attrSubfields = subfields[key].subfields;
+    attributes.forEach((attr: any): void => {
+        const adjustedAttrName = adjustName(attr.name);
+        attrSubfields[adjustedAttrName] = {
+            label: attr.name,
+            type: getConvertedInputType(attr.inputType),
+        };
+        if (attrSubfields[adjustedAttrName].type === 'select') {
+            attrSubfields[adjustedAttrName] = {
+                ...attrSubfields[adjustedAttrName],
+                fieldSettings: {
+                    listValues: attr.values,
+                },
+            };
+        }
+    });
+};
+
 const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
     const subfields: Record<string, any> = {};
     labels.forEach((label: any): void => {
-        const adjustedLabelName = adjustName(label.name);
-        subfields[adjustedLabelName] = {
-            type: '!struct', // nested complex field
-            label: label.name,
-            subfields: {},
-        };
+        addAttributeSubfields(subfields, adjustName(label.name), label.name, label.attributes);
 
-        const labelSubfields = subfields[adjustedLabelName].subfields;
-        label.attributes.forEach((attr: any): void => {
-            const adjustedAttrName = adjustName(attr.name);
-            labelSubfields[adjustedAttrName] = {
-                label: attr.name,
-                type: getConvertedInputType(attr.inputType),
-            };
-            if (labelSubfields[adjustedAttrName].type === 'select') {
-                labelSubfields[adjustedAttrName] = {
-                    ...labelSubfields[adjustedAttrName],
-                    fieldSettings: {
-                        listValues: attr.values,
-                    },
-                };
-            }
-        });
-
+        // For skeleton labels, add each sublabel as a separate top-level entry
         if (label.type === 'skeleton' && label.structure?.sublabels) {
             label.structure.sublabels.forEach((sublabel: any): void => {
-                const adjustedSublabelName = adjustName(sublabel.name);
-                labelSubfields[adjustedSublabelName] = {
-                    type: '!struct',
-                    label: sublabel.name,
-                    subfields: {},
-                };
-
-                const sublabelSubfields = labelSubfields[adjustedSublabelName].subfields;
-
-                // Add built-in properties for skeleton sublabels
-                sublabelSubfields.occluded = {
-                    label: 'Occluded',
-                    type: 'boolean',
-                };
-                sublabelSubfields.outside = {
-                    label: 'Outside',
-                    type: 'boolean',
-                };
-
-                // Add custom attributes for the sublabel
-                sublabel.attributes.forEach((attr: any): void => {
-                    const adjustedAttrName = adjustName(attr.name);
-                    sublabelSubfields[adjustedAttrName] = {
-                        label: attr.name,
-                        type: getConvertedInputType(attr.inputType),
-                    };
-                    if (sublabelSubfields[adjustedAttrName].type === 'select') {
-                        sublabelSubfields[adjustedAttrName] = {
-                            ...sublabelSubfields[adjustedAttrName],
-                            fieldSettings: {
-                                listValues: attr.values,
-                            },
-                        };
-                    }
-                });
+                const sublabelKey = adjustName(`${label.name} / ${sublabel.name}`);
+                const sublabelDisplayLabel = `${label.name} / ${sublabel.name}`;
+                addAttributeSubfields(subfields, sublabelKey, sublabelDisplayLabel, sublabel.attributes);
             });
         }
     });
@@ -144,10 +121,16 @@ function FiltersModalComponent(): JSX.Element {
                     type: 'select',
                     valueSources: ['value'] as 'value'[],
                     fieldSettings: {
-                        listValues: labels.map((label: any) => ({
-                            value: label.name,
-                            title: label.name,
-                        })),
+                        listValues: labels.reduce((acc: any[], label: any) => {
+                            acc.push({ value: label.name, title: label.name });
+                            if (label.type === 'skeleton' && label.structure?.sublabels) {
+                                label.structure.sublabels.forEach((sublabel: any) => {
+                                    const sublabelValue = `${label.name} / ${sublabel.name}`;
+                                    acc.push({ value: sublabelValue, title: sublabelValue });
+                                });
+                            }
+                            return acc;
+                        }, []),
                     },
                 },
                 type: {
