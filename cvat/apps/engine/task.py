@@ -1364,14 +1364,15 @@ def _create_image_dataset_descriptors(
 def _create_audio_dataset_descriptors(
     extractor: "AudioReader", *, db_data: models.Data, upload_dir: Path, audio_path: Path
 ) -> tuple[models.Audio, int]:
-    audio_duration_ms = int(round(extractor.duration, 3) * 1000)
+    size = extractor.length
 
     audio = models.Audio(
         data=db_data,
         path=audio_path.relative_to(upload_dir),
         sampling_rate=extractor.sampling_rate,
     )
-    return audio, audio_duration_ms
+
+    return audio, size
 
 
 @transaction.atomic
@@ -1772,7 +1773,7 @@ def create_thread(
                 w, h = img_properties["width"], img_properties["height"]
             area = h * w
             db_data.chunk_size = max(2, min(72, 36 * 1920 * 1080 // area))
-        else:
+        elif db_data.compressed_chunk_type != models.DataChoice.AUDIO_MP3:
             db_data.chunk_size = 36
 
     if db_task.media_type in [models.MediaType.IMAGE, models.MediaType.VIDEO] and not data.get(
@@ -1806,13 +1807,20 @@ def create_thread(
         )
         db_data.size = len(images)
     elif db_task.media_type == models.MediaType.AUDIO:
-        audio, audio_duration = _create_audio_dataset_descriptors(
+        audio, audio_length = _create_audio_dataset_descriptors(
             extractor=extractor,
             audio_path=upload_dir / media["audio"][0],
             upload_dir=upload_dir,
             db_data=db_data,
         )
-        db_data.size = audio_duration
+        db_data.size = audio_length
+
+        if db_data.chunk_size is None:
+            db_data.chunk_size = 30 * extractor.FRAME_RATE
+
+        # Creating huge chunks is not recommended for smooth playback
+        # Smaller chunks occupy ~5-15% more, but encoded faster
+        db_data.chunk_size = min(db_data.chunk_size, 2 * 60 * extractor.FRAME_RATE)
     else:
         assert False, f"Unexpected media type {db_task.media_type}"
 
