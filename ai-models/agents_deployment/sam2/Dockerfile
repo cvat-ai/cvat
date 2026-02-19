@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.14-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN groupadd --gid 1000 agent && \
     useradd --uid 1000 --gid 1000 --create-home agent
+
+RUN mkdir /shared && chown agent:agent /shared
 
 WORKDIR /app
 

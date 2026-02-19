@@ -12,14 +12,26 @@ if [ -z "$CVAT_BASE_URL" ]; then
     CVAT_BASE_URL="https://app.cvat.ai"
 fi
 
+if [ -z "$SERVER_PORT" ]; then
+    echo "Warning: SERVER_PORT environment variable is not found. Defaulting to 443 for https or 80 for http based on CVAT_BASE_URL schema."
+else
+    echo "SERVER_PORT environment variable found. Using SERVER_PORT: $SERVER_PORT"
+    SERVER_PORT_ARGS=(--server-port "$SERVER_PORT")
+fi
+
+if [ -z "$ORG_SLUG" ]; then
+    echo "Warning: ORG_SLUG environment variable not found. Function will be registered only for your user"
+    echo "ORG_SLUG must be the short name of the organization; it is the name displayed under your username when you switch to the organization in the CVAT UI."
+else
+    echo "ORG_SLUG environment variable found. Function will be registered for the organization with slug: $ORG_SLUG"
+    ORG_SLUG_ARGS=(--organization "$ORG_SLUG")
+fi
+
 if [ -z "$MODEL_ID" ]; then
     echo "Warning: MODEL_ID environment variable not found. Default is facebook/sam2.1-hiera-tiny"
     MODEL_ID="facebook/sam2.1-hiera-tiny"
-fi
-
-# We use it for compose but we have same image for Helm.
-if [ ! -d /shared ]; then
-    mkdir /shared
+else
+    echo "MODEL_ID environment variable found. Using MODEL_ID: $MODEL_ID"
 fi
 
 # Hardcoded for SAM2
@@ -29,8 +41,8 @@ FUNCTION_FILE_PATH="func.py"
 
 
 # Get the username associated with the access token
-USERNAME=$(curl "$CVAT_BASE_URL"/api/users/self -s -H "Authorization: Bearer $CVAT_ACCESS_TOKEN" | jq -r '.username')
-if [ -z "$USERNAME" ] || [ "$USERNAME" = "null" ]; then
+USERNAME=$(curl "$CVAT_BASE_URL"/api/users/self -s --oauth2-bearer "$CVAT_ACCESS_TOKEN" | jq -r '.username')
+if [ -z "$USERNAME" ]; then
     echo "Error: Unable to retrieve username from CVAT API. Check your access token."
     exit 1
 else
@@ -45,7 +57,7 @@ if request_function_id=$(curl --get --data-urlencode "filter={\"and\":[{\"==\":[
 else
     echo -e "Function with name $FUNCTION_NAME not found. Proceeding to create a new one.\nPlease have some patience, function creation might take some time..."
     # Register the SAM2 function in CVAT
-    if function_id="$(cvat-cli --server-host "$CVAT_BASE_URL" function create-native "$FUNCTION_NAME" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID")"; then
+    if function_id="$(cvat-cli --server-host "$CVAT_BASE_URL" "${SERVER_PORT_ARGS[@]}" "${ORG_SLUG_ARGS[@]}" function create-native "$FUNCTION_NAME" --function-file="$FUNCTION_FILE_PATH" -p model_id=str:"$MODEL_ID")"; then
       echo "Successfully created $FUNCTION_NAME function"
       FUNCTION_ID="$function_id"
       echo "$function_id" > /shared/FUNCTION_ID

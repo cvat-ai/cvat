@@ -12,6 +12,21 @@ if [ -z "$CVAT_BASE_URL" ]; then
     CVAT_BASE_URL="https://app.cvat.ai"
 fi
 
+if [ -z "$SERVER_PORT" ]; then
+    echo "Warning: SERVER_PORT environment variable is not found. Defaulting to 443 for https or 80 for http based on CVAT_BASE_URL schema."
+else
+    echo "SERVER_PORT environment variable found. Using SERVER_PORT: $SERVER_PORT"
+    SERVER_PORT_ARGS=(--server-port "$SERVER_PORT")
+fi
+
+if [ -z "$ORG_SLUG" ]; then
+    echo "Warning: ORG_SLUG environment variable not found. Agents will be running for function, registered only for your user"
+    echo "ORG_SLUG must be the short name of the organization; it is the name displayed under your username when you switch to the organization in the CVAT UI."
+else
+    echo "ORG_SLUG environment variable found. Function will be registered for the organization with slug: $ORG_SLUG"
+    ORG_SLUG_ARGS=(--organization "$ORG_SLUG")
+fi
+
 # Compose way to share FUNCTION_ID between containers
 if [ -f /shared/FUNCTION_ID ]; then
     FUNCTION_ID="$(cat /shared/FUNCTION_ID)"
@@ -25,10 +40,4 @@ if [ -z "$FUNCTION_ID" ]; then
     exit 1
 fi
 
-if result=$(cvat-cli --server-host "$CVAT_BASE_URL" function delete "$FUNCTION_ID"); then
-  echo "Function with ID: $FUNCTION_ID has been removed successfully."
-else
-  echo "cvat-cli function delete failed."
-  echo "$result"
-  exit 1
-fi
+exec cvat-cli --server-host "$CVAT_BASE_URL" "${SERVER_PORT_ARGS[@]}" "${ORG_SLUG_ARGS[@]}" function delete "$FUNCTION_ID"
