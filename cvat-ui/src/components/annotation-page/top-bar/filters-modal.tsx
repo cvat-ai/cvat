@@ -174,6 +174,11 @@ function FiltersModalComponent(): JSX.Element {
                     type: 'number',
                     fieldSettings: { min: 0 },
                 },
+                rotation: {
+                    label: 'Rotation',
+                    type: 'number',
+                    fieldSettings: { min: 0 },
+                },
                 objectID: {
                     label: 'ObjectID',
                     type: 'number',
