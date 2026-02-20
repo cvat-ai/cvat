@@ -8,8 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ARG TARGETARCH
-RUN curl -LO "https://dl.k8s.io/release/v1.34.0/bin/linux/${TARGETARCH}/kubectl" \
-    && chmod +x kubectl && mv kubectl /usr/local/bin/
+ADD --chmod=+x https://dl.k8s.io/release/v1.34.0/bin/linux/${TARGETARCH}/kubectl /usr/local/bin/
 
 RUN if [ "$TARGETARCH" = "amd64" ]; then \
         pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu; \
