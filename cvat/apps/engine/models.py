@@ -23,7 +23,7 @@ from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
 from django.db.models import Case, Max, Q, TextChoices, Value, When
 from django.db.models.base import ModelBase
-from django.db.models.fields import BooleanField, FloatField
+from django.db.models.fields import FloatField, IntegerField
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
@@ -728,9 +728,9 @@ class TaskQuerySet(models.QuerySet):
                 ),
                 Fields.has_replicas.value: Max(
                     Case(
-                        When(segment__job__type="replica", then=Value(True)),
-                        default=Value(False),
-                        output_field=BooleanField(),
+                        When(segment__job__type="replica", then=Value(1)),
+                        default=Value(0),
+                        output_field=IntegerField(),
                     )
                 ),
             }
