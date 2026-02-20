@@ -30,7 +30,6 @@ import {
     updateCanvasContextMenu,
     getDataFailed,
     canvasErrorOccurred,
-    collapseObjectItems,
 } from 'actions/annotation-actions';
 import {
     ActiveControl,
@@ -165,7 +164,6 @@ interface DispatchToProps {
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onGetDataFailed(error: Error): void;
     onCanvasErrorOccurred(error: Error): void;
-    onExpandObject(objectState: ObjectState): void;
 }
 
 const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -277,9 +275,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onCanvasErrorOccurred(error: Error): void {
             dispatch(canvasErrorOccurred(error));
-        },
-        onExpandObject(objectState: ObjectState): void {
-            dispatch(collapseObjectItems([objectState], false));
         },
     };
 }
@@ -621,7 +616,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         onCanvasErrorOccurred,
         onActivateObject,
         onUpdateContextMenu,
-        onExpandObject,
     } = props;
 
     const { canvasInstance } = props as { canvasInstance: Canvas3d };
@@ -722,8 +716,6 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         const objectState = annotations.find((state) => state.clientID === clientID);
 
         if (objectState) {
-            onExpandObject(objectState);
-
             const sidebarItem = window.document.getElementById(
                 `cvat-objects-sidebar-state-item-${clientID}`,
             );
