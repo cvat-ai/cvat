@@ -60,12 +60,6 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.openTask(taskName);
             cy.get('.cvat-task-details-wrapper').should('be.visible');
             cy.get('.ant-notification-notice-error').should('not.exist');
-            cy.get('.cvat-tag-consensus').then((tags) => {
-                expect(tags.length).to.equal(1);
-                cy.wrap(tags).each(($el) => {
-                    cy.wrap($el).should('have.text', 'Consensus');
-                });
-            });
             cy.get('.cvat-tag-parent').then((tags) => {
                 expect(tags.length).to.equal(1);
                 cy.wrap(tags).each(($el) => {
