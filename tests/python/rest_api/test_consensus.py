@@ -198,7 +198,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
 
     def test_can_merge_consensus_job(self, admin_user, jobs):
         job_id = next(
-            j["id"] for j in jobs if j["type"] == "annotation" and j["initial_replicas"] > 0
+            j["id"] for j in jobs if j["type"] == "annotation" and j["replicas_count"] > 0
         )
 
         self.merge(user=admin_user, job_id=job_id)
@@ -651,7 +651,7 @@ class TestMerging(_PermissionTestBase):
 
         task_jobs = [j for j in jobs if j["task_id"] == task_id]
         parent_job = next(
-            j for j in task_jobs if j["type"] == "annotation" if j["initial_replicas"] > 0
+            j for j in task_jobs if j["type"] == "annotation" if j["replicas_count"] > 0
         )
         replicas = [
             j for j in task_jobs if j["type"] == "replica" if j["parent_job_id"] == parent_job["id"]
