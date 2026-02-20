@@ -311,13 +311,14 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private focusAndExpand = (): void => {
         const {
-            objectState, canvasInstance, focusedObjectPadding, expandObject,
+            objectState, canvasInstance, focusedObjectPadding,
         } = this.props;
 
         if (canvasInstance instanceof Canvas && objectState.objectType !== ObjectType.TAG) {
             canvasInstance.focus(objectState.clientID as number, focusedObjectPadding);
+        } else if (canvasInstance instanceof Canvas3d && objectState.objectType !== ObjectType.TAG) {
+            canvasInstance.focusObject(objectState.clientID as number);
         }
-        expandObject(objectState);
     };
 
     private changeColor = (color: string): void => {

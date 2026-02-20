@@ -35,6 +35,7 @@ interface Canvas3d {
     configure(configuration: Configuration): void;
     fitCanvas(): void;
     fit(): void;
+    focusObject(clientID: number, animate?: boolean): void;
     group(groupData: GroupData): void;
     merge(mergeData: MergeData): void;
     split(splitData: SplitData): void;
@@ -106,6 +107,10 @@ class Canvas3dImpl implements Canvas3d {
 
     public activate(clientID: number | null, attributeID: number | null = null): void {
         this.model.activate(typeof clientID === 'number' ? String(clientID) : null, attributeID);
+    }
+
+    public focusObject(clientID: number, animate: boolean = true): void {
+        this.view.focusObjectByClientId(clientID, animate);
     }
 
     public fit(): void {

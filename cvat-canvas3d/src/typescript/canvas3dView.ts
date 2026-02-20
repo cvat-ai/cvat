@@ -24,6 +24,7 @@ export interface Canvas3dView {
     html(): ViewsDOM;
     render(): void;
     keyControls(keys: KeyboardEvent): void;
+    focusObjectByClientId(clientID: number, animate?: boolean): void;
 }
 
 export enum CameraAction {
@@ -128,6 +129,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
+
+    public focusObjectByClientId(clientID: number, animate: boolean = true): void {
+        const cuboidModel = this.drawnObjects[String(clientID)];
+        if (cuboidModel) {
+            this.fitObject(cuboidModel.cuboid, animate);
+        }
+    }
 
     private action: {
         translation: any;
@@ -466,6 +474,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 } else {
                     const clientID = intersects[0].object.name;
                     this.fitObject(this.drawnObjects[clientID].cuboid, true);
+
+                    this.dispatchEvent(
+                        new CustomEvent('canvas.doubleclicked', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                clientID: typeof clientID === 'string' ? +clientID : null,
+                            },
+                        }),
+                    );
                 }
                 return;
             }
@@ -1374,7 +1392,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             // in input data is incorrect
                             let cloud = null;
                             try {
-                                console.error = () => {};
+                                console.error = () => { };
                                 cloud = loader.parse(data) as THREE.Points;
                             } finally {
                                 console.error = defaultImpl;
@@ -2134,11 +2152,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // small check to avoid case when points change their relative orientation
         if (
             Math.sign(crosslyingPointInternalCoordinates.x - cuboidNodes[currentPointNumber][0]) !==
-                Math.sign(crosslyingPointInternalCoordinates.x - currentPointInternalCoordinates.x) ||
+            Math.sign(crosslyingPointInternalCoordinates.x - currentPointInternalCoordinates.x) ||
             Math.sign(crosslyingPointInternalCoordinates.y - cuboidNodes[currentPointNumber][1]) !==
-                Math.sign(crosslyingPointInternalCoordinates.y - currentPointInternalCoordinates.y) ||
+            Math.sign(crosslyingPointInternalCoordinates.y - currentPointInternalCoordinates.y) ||
             Math.sign(crosslyingPointInternalCoordinates.z - cuboidNodes[currentPointNumber][2]) !==
-                Math.sign(crosslyingPointInternalCoordinates.z - currentPointInternalCoordinates.z)
+            Math.sign(crosslyingPointInternalCoordinates.z - currentPointInternalCoordinates.z)
         ) {
             return;
         }
