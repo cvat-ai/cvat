@@ -34,6 +34,15 @@ resolve_model_id() {
     fi
 }
 
+resolve_cuda() {
+    if [ "$USE_CUDA" = "true" ]; then
+        echo "Using CUDA! Please ensure that you are using proper image with CUDA support"
+        USE_CUDA_ARGS=(-p device=str:cuda)
+    else
+        echo "Warning: USE_CUDA environment variable not found. Model will run on CPU."
+    fi
+}
+
 common_env() {
     validate_access_token
     resolve_base_url
