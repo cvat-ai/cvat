@@ -70,11 +70,17 @@ function JobsPageComponent(): JSX.Element {
 
             if (nextSearch === (history.location.search || '')) return;
 
-            history.push({
-                ...history.location, search: nextSearch,
-            });
+            if (
+                updatedQuery.filter === nextQuery.filter &&
+                updatedQuery.sort === nextQuery.sort &&
+                updatedQuery.search === nextQuery.search
+            ) {
+                history.replace({ search: nextSearch });
+            } else {
+                history.push({ ...history.location, search: nextSearch });
+            }
         }
-    }, [history.location, isMounted]);
+    }, [history.location, updatedQuery, isMounted]);
 
     const onApplyFilter = (filter: string | null) => {
         setQuery({

@@ -97,10 +97,12 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
 
         if (nextSearch === (history.location.search || '')) return;
 
-        history.push({
-            ...history.location, search: nextSearch,
-        });
-    }, [history.location]);
+        if (query.filter === nextQuery.filter && query.sort === nextQuery.sort) {
+            history.replace({ search: nextSearch });
+        } else {
+            history.push({ ...history.location, search: nextSearch });
+        }
+    }, [history.location, query]);
 
     const onCreateJob = useCallback(() => {
         history.push(`/tasks/${taskId}/jobs/create`);
