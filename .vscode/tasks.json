@@ -37,7 +37,7 @@
         {
             "label": "docker: up workers",
             "type": "shell",
-            "command": "./dev/debug.sh up-workers",
+            "command": "./dev/cvat-debug.sh up-workers",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -46,7 +46,7 @@
         {
             "label": "docker: restart server",
             "type": "shell",
-            "command": "./dev/debug.sh restart-server",
+            "command": "./dev/cvat-debug.sh restart-server",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
