@@ -45,8 +45,16 @@ if [ -z "$KUBERNETES_SERVICE_HOST" ]; then
     exit 0
 fi
 
-kubectl create configmap "$CONFIGMAP_NAME" \
+
+if kubectl -n "$NAMESPACE" get cm "$CONFIGMAP_NAME" > /dev/null 2>&1; then
+    echo "ConfigMap $CONFIGMAP_NAME already exists. Updating it with the new FUNCTION_ID."
+    kubectl -n "$NAMESPACE" patch configmap "$CONFIGMAP_NAME" \
+    -p "$(jq -n --arg func_id "$FUNCTION_ID" '{"data":{"FUNCTION_ID": $func_id}}')"
+    echo "Function registration complete!"
+    exit 0
+fi
+
+echo "Creating ConfigMap $CONFIGMAP_NAME with FUNCTION_ID."
+exec kubectl create configmap "$CONFIGMAP_NAME" \
   --namespace "$NAMESPACE" \
   --from-literal=FUNCTION_ID="$FUNCTION_ID"
-
-echo "Function registration complete!"
