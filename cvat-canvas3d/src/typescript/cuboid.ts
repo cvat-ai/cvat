@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { OrientationVisibility, ViewType } from './canvas3dModel';
 import constants from './consts';
 import controlPointTexture from './controlPointTexture';
-import { disposeObjectResources } from './utils';
+import { disposeObject3D, disposeObjectResources } from './utils';
 
 export interface Indexable {
     [key: string]: any;
@@ -245,22 +245,10 @@ export class CuboidModel {
     }
 
     public dispose(): void {
-        [ViewType.PERSPECTIVE, ViewType.TOP, ViewType.SIDE, ViewType.FRONT].forEach((view): void => {
-            const mesh = (this as Indexable)[view] as THREE.Mesh;
-            if (mesh) {
-                disposeObjectResources(mesh);
-
-                while (mesh.children.length > 0) {
-                    const child = mesh.children[0];
-                    disposeObjectResources(child);
-                    mesh.remove(child);
-                }
-            }
-        });
-
-        if (this.wireframe) {
-            disposeObjectResources(this.wireframe);
-        }
+        disposeObject3D(this.perspective);
+        disposeObject3D(this.top);
+        disposeObject3D(this.side);
+        disposeObject3D(this.front);
 
         this.perspective = null;
         this.top = null;
@@ -287,8 +275,8 @@ export function createCuboidEdges(instance: THREE.Mesh): THREE.LineSegments {
 export function removeCuboidEdges(instance: THREE.Mesh): void {
     const edges = instance.getObjectByName(constants.CUBOID_EDGE_NAME) as THREE.LineSegments;
     if (edges) {
-        disposeObjectResources(edges);
         instance.remove(edges);
+        disposeObjectResources(edges);
     }
 }
 
@@ -313,11 +301,11 @@ export function createResizeHelper(cuboid: CuboidModel, viewType: ViewType): voi
 export function removeResizeHelper(instance: THREE.Mesh): void {
     instance.parent.children.filter((child: THREE.Object3D) => child.name.startsWith(constants.RESIZE_HELPER_NAME))
         .forEach((helper) => {
+            instance.parent.remove(helper);
             if ((helper as THREE.Sprite).material) {
                 const material = (helper as THREE.Sprite).material as THREE.SpriteMaterial;
                 material.dispose();
             }
-            instance.parent.remove(helper);
         });
 }
 
@@ -339,10 +327,10 @@ export function createRotationHelper(cuboid: CuboidModel, viewType: ViewType): v
 export function removeRotationHelper(instance: THREE.Mesh): void {
     const helper = instance.parent.getObjectByName(constants.ROTATION_HELPER_NAME);
     if (helper) {
+        instance.parent.remove(helper);
         if ((helper as THREE.Sprite).material) {
             const material = (helper as THREE.Sprite).material as THREE.SpriteMaterial;
             material.dispose();
         }
-        instance.parent.remove(helper);
     }
 }
