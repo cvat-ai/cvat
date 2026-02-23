@@ -39,7 +39,7 @@ resolve_cuda() {
         echo "Using CUDA! Please ensure that you are using proper image with CUDA support"
         USE_CUDA_ARGS=(-p device=str:cuda)
     else
-        echo "Warning: USE_CUDA environment variable not found. Model will run on CPU."
+        echo "Info: USE_CUDA environment variable not found. Model will run on CPU."
     fi
 }
 
