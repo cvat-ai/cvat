@@ -13,31 +13,38 @@ This guide describes the Docker-first debugging workflow added in this repo:
 3. VS Code extensions:
    - Python (`ms-python.python`)
    - JavaScript Debugger (usually built-in)
-4. `code` CLI is optional (used by `./dev/debug.sh vscode`).
+4. `code` CLI is optional (used by `./dev/cvat-debug.sh vscode`).
 
 ## Files used by this workflow
 
 - `docker-compose.yml`
 - `docker-compose.dev.yml`
 - `dev/docker-compose.debug.yml`
+- `dev/Dockerfile.server.debug`
 - `.vscode/launch.json`
 - `.vscode/tasks.json`
-- `dev/debug.sh`
+- `dev/cvat-debug.sh`
+
+`dev/cvat-debug.sh` enables Compose Bake by default (`COMPOSE_BAKE=true`) to speed up builds when supported.
 
 ## 1. Build server image with debug tooling
 
 Run from repo root:
 
 ```bash
-./dev/debug.sh build-server
+./dev/cvat-debug.sh build-server
 ```
 
-`dev/docker-compose.debug.yml` sets `CVAT_DEBUG_ENABLED=yes` build args for `cvat_server`, so `debugpy` is installed during build.
+This builds `cvat/server:dev-debug` as a lightweight overlay image:
+- base: prebuilt `cvat/server:dev`
+- extra: `debugpy` only (via `dev/Dockerfile.server.debug`)
+
+This avoids rebuilding the full CVAT image locally.
 
 ## 2. Start CVAT and workers
 
 ```bash
-./dev/debug.sh up-workers
+./dev/cvat-debug.sh up-workers
 ```
 
 This starts the core stack and worker profile.  
@@ -50,7 +57,7 @@ http://localhost:8080
 ## 3. Create admin user (first run)
 
 ```bash
-./dev/debug.sh createsuperuser
+./dev/cvat-debug.sh createsuperuser
 ```
 
 ## 4. Start debugging from VS Code
@@ -74,13 +81,13 @@ This compound attaches to:
 2. Restart only what changed:
 
 ```bash
-./dev/debug.sh restart-server
+./dev/cvat-debug.sh restart-server
 ```
 
 or:
 
 ```bash
-./dev/debug.sh restart-worker cvat_worker_import
+./dev/cvat-debug.sh restart-worker cvat_worker_import
 ```
 
 3. Re-run the same VS Code attach config if needed.
@@ -88,11 +95,12 @@ or:
 ## Useful commands
 
 ```bash
-./dev/debug.sh logs
-./dev/debug.sh logs cvat_server
-./dev/debug.sh ps
-./dev/debug.sh down
-./dev/debug.sh down-v
+./dev/cvat-debug.sh logs
+./dev/cvat-debug.sh logs cvat_server
+./dev/cvat-debug.sh ps
+./dev/cvat-debug.sh clean
+./dev/cvat-debug.sh distclean
+./dev/cvat-debug.sh clobber
 ```
 
 ## Troubleshooting
@@ -106,8 +114,8 @@ If you get `Cannot connect to the Docker daemon ... docker.sock`, start Docker D
 Rebuild the server image and recreate container:
 
 ```bash
-./dev/debug.sh build-server
-./dev/debug.sh up-workers
+./dev/cvat-debug.sh build-server
+./dev/cvat-debug.sh up-workers
 ```
 
 ### Breakpoints not hit
@@ -115,8 +123,16 @@ Rebuild the server image and recreate container:
 1. Confirm container is running:
 
 ```bash
-./dev/debug.sh ps
+./dev/cvat-debug.sh ps
 ```
 
 2. Confirm debug port is reachable (example: server 9090).
 3. Restart the relevant service and re-attach.
+
+### `distclean` reports "Resource is still in use"
+
+Use aggressive cleanup:
+
+```bash
+./dev/cvat-debug.sh clobber
+```
