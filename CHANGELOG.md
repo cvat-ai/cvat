@@ -16,6 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.58.0'></a>
+## \[2.58.0\] - 2026-02-23
+
+### Added
+
+- Added a new annotation filter to find rotated bounding boxes and ellipses.
+  (<https://github.com/cvat-ai/cvat/pull/10291>)
+
+### Fixed
+
+- Memory leaks on 3D canvas because of unreleased GL resources
+  (<https://github.com/cvat-ai/cvat/pull/10268>)
+
 <a id='changelog-2.57.0'></a>
 ## \[2.57.0\] - 2026-02-17
 
