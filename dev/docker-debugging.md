@@ -14,6 +14,11 @@ This guide describes the Docker-first debugging workflow added in this repo:
    - Python (`ms-python.python`)
    - JavaScript Debugger (usually built-in)
 4. `code` CLI is optional (used by `./dev/cvat-debug.sh vscode`).
+5. Run preflight once:
+
+```bash
+./dev/cvat-debug.sh doctor
+```
 
 ## Files used by this workflow
 
