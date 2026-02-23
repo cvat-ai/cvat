@@ -37,7 +37,7 @@ This guide describes the Docker-first debugging workflow added in this repo:
 Run from repo root:
 
 ```bash
-./dev/cvat-debug.sh build-server
+./dev/cvat-debug.sh build-debug
 ```
 
 This builds `cvat/server:dev-debug` as a lightweight overlay image:
@@ -89,6 +89,13 @@ This compound attaches to:
 ./dev/cvat-debug.sh restart-server
 ```
 
+This is a fast in-container restart of `uvicorn`.
+Use full container restart when env/supervisord/nginx/image-level changes require full re-init:
+
+```bash
+./dev/cvat-debug.sh restart-server-full
+```
+
 or:
 
 ```bash
@@ -119,7 +126,7 @@ If you get `Cannot connect to the Docker daemon ... docker.sock`, start Docker D
 Rebuild the server image and recreate container:
 
 ```bash
-./dev/cvat-debug.sh build-server
+./dev/cvat-debug.sh build-debug
 ./dev/cvat-debug.sh up-workers
 ```
 

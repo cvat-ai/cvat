@@ -5,14 +5,13 @@ set -euo pipefail
 # Prefer Buildx Bake when available for faster Compose builds.
 export COMPOSE_BAKE="${COMPOSE_BAKE:-true}"
 
-COMPOSE_FILES=(
-  -f docker-compose.yml
-  -f docker-compose.dev.yml
-  -f dev/docker-compose.debug.yml
-)
-
 compose() {
-  docker compose "${COMPOSE_FILES[@]}" "$@"
+  if [[ "${1:-}" == "--base" ]]; then
+    shift
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml "$@"
+  else
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml -f dev/docker-compose.debug.yml "$@"
+  fi
 }
 
 usage() {
@@ -20,14 +19,16 @@ usage() {
 Usage: ./dev/cvat-debug.sh <command> [args]
 
 Commands:
-  build-server                    Build debug image (FROM prebuilt cvat/server:dev + debugpy)
+  build-debug                     Build debug image (FROM prebuilt cvat/server:dev + debugpy)
+  build-all                       Rebuild local cvat/server:dev and refresh debug image
   doctor                          Check required/optional local tooling
   up                              Start core stack
   up-workers                      Start worker profile services
   up-analytics                    Start analytics profile services
   createsuperuser                 Run Django createsuperuser in cvat_server
   vscode                          Start server+workers and open VS Code
-  restart-server                  Restart cvat_server
+  restart-server                  Fast restart of API process (uvicorn) inside cvat_server
+  restart-server-full             Full container restart of cvat_server
   restart-worker <service>        Restart one worker service (e.g. cvat_worker_import)
   logs [service]                  Follow logs (default: cvat_server)
   ps                              Show compose services status
@@ -38,7 +39,7 @@ Commands:
 
 Most common workflow:
   1) First time setup:
-       ./dev/cvat-debug.sh build-server
+       ./dev/cvat-debug.sh build-debug
        ./dev/cvat-debug.sh up-workers
        ./dev/cvat-debug.sh createsuperuser
   2) Daily start:
@@ -48,6 +49,7 @@ Most common workflow:
        # then run "docker: attach backend debug" launch config
   4) After backend code changes:
        ./dev/cvat-debug.sh restart-server
+       # use restart-server-full when env/supervisord/nginx/image-level changes require full re-init
   5) Cleanup:
        ./dev/cvat-debug.sh clean
        ./dev/cvat-debug.sh distclean
@@ -137,7 +139,11 @@ case "$cmd" in
       exit 1
     fi
     ;;
-  build-server)
+  build-debug|build-server)
+    compose build cvat_server
+    ;;
+  build-all|rebuild-server-local)
+    compose --base build cvat_server
     compose build cvat_server
     ;;
   up)
@@ -162,6 +168,13 @@ case "$cmd" in
     fi
     ;;
   restart-server)
+    # Fast path: restart only ASGI process under supervisord, avoid full container init path.
+    if ! compose exec cvat_server supervisorctl -s unix:///tmp/supervisord/supervisor.sock restart "uvicorn:*" >/dev/null 2>&1; then
+      echo "Fast restart failed; falling back to full container restart..." >&2
+      compose restart cvat_server
+    fi
+    ;;
+  restart-server-full)
     compose restart cvat_server
     ;;
   restart-worker)
