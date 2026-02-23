@@ -21,6 +21,7 @@ Usage: ./dev/cvat-debug.sh <command> [args]
 
 Commands:
   build-server                    Build debug image (FROM prebuilt cvat/server:dev + debugpy)
+  doctor                          Check required/optional local tooling
   up                              Start core stack
   up-workers                      Start worker profile services
   up-analytics                    Start analytics profile services
@@ -57,7 +58,85 @@ EOF
 cmd="${1:-help}"
 shift || true
 
+timer_source="seconds"
+timer_start="0"
+
+if [[ -n "${EPOCHREALTIME:-}" ]]; then
+  timer_source="epochrealtime"
+  timer_start="$EPOCHREALTIME"
+elif command -v python3 >/dev/null 2>&1; then
+  timer_source="python3"
+  timer_start="$(python3 -c 'import time; print(f"{time.time():.6f}")')"
+else
+  SECONDS=0
+fi
+
+report_timing() {
+  case "$timer_source" in
+    epochrealtime)
+      # Pure bash math for portability: avoid requiring awk/python/perl.
+      local end start_s start_us end_s end_us start_ms end_ms elapsed_ms
+      end="${EPOCHREALTIME:-$timer_start}"
+      start_s="${timer_start%.*}"
+      start_us="${timer_start#*.}"
+      end_s="${end%.*}"
+      end_us="${end#*.}"
+      start_ms=$((10#$start_s * 1000 + 10#${start_us:0:3}))
+      end_ms=$((10#$end_s * 1000 + 10#${end_us:0:3}))
+      elapsed_ms=$((end_ms - start_ms))
+      if (( elapsed_ms < 0 )); then
+        elapsed_ms=0
+      fi
+      printf '[cvat-debug][%s] elapsed real time: %d.%03ds\n' "$cmd" $((elapsed_ms / 1000)) $((elapsed_ms % 1000)) >&2
+      ;;
+    python3)
+      python3 - "$timer_start" "$cmd" <<'PY'
+import sys
+import time
+
+start = float(sys.argv[1])
+cmd = sys.argv[2]
+print(f"[cvat-debug][{cmd}] elapsed real time: {time.time() - start:.3f}s", file=sys.stderr)
+PY
+      ;;
+    *)
+      printf '[cvat-debug][%s] elapsed real time: %ss\n' "$cmd" "$SECONDS" >&2
+      ;;
+  esac
+}
+trap report_timing EXIT
+
 case "$cmd" in
+  doctor)
+    missing=0
+    for tool in docker; do
+      if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "missing required tool: $tool" >&2
+        missing=1
+      fi
+    done
+
+    if ! docker compose version >/dev/null 2>&1; then
+      echo "missing required feature: docker compose plugin" >&2
+      missing=1
+    fi
+
+    if command -v code >/dev/null 2>&1; then
+      echo "optional tool detected: code (VS Code CLI)"
+    else
+      echo "optional tool missing: code (needed only for 'vscode' command)"
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+      echo "optional tool detected: python3 (used for timer fallback)"
+    else
+      echo "optional tool missing: python3 (timer falls back to 1s granularity)"
+    fi
+
+    if (( missing != 0 )); then
+      exit 1
+    fi
+    ;;
   build-server)
     compose build cvat_server
     ;;
@@ -101,7 +180,9 @@ case "$cmd" in
     compose ps
     ;;
   clean|down)
-    compose down
+    # Workers are started via optional profiles. Without --remove-orphans,
+    # profile-created containers can stay running and keep project resources in use.
+    compose down --remove-orphans
     ;;
   distclean|down-v)
     compose down -v --remove-orphans
