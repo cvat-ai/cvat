@@ -139,10 +139,10 @@ case "$cmd" in
       exit 1
     fi
     ;;
-  build-debug|build-server)
+  build-debug)
     compose build cvat_server
     ;;
-  build-all|rebuild-server-local)
+  build-all)
     compose --base build cvat_server
     compose build cvat_server
     ;;
@@ -192,15 +192,15 @@ case "$cmd" in
   ps)
     compose ps
     ;;
-  clean|down)
+  clean)
     # Workers are started via optional profiles. Without --remove-orphans,
     # profile-created containers can stay running and keep project resources in use.
     compose down --remove-orphans
     ;;
-  distclean|down-v)
+  distclean)
     compose down -v --remove-orphans
     ;;
-  clobber|hard-clean)
+  clobber)
     compose down -v --remove-orphans || true
 
     # Remove any leftovers still attached to the project network.
