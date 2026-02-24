@@ -1693,7 +1693,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 "segment__task__source_storage", "segment__task__target_storage"
             )
         else:
-            queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
+            # optimized in JobReadSerializer
+            queryset = queryset.with_issue_counts().with_child_jobs_counts()
 
         return queryset
 

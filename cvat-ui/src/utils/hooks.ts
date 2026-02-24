@@ -260,10 +260,12 @@ interface ResourceQueryDefaultParams {
 export function useResourceQuery<QueryType extends {
     page: number;
     pageSize: number;
+    filter?: string;
 }>(query: QueryType, defaultParams: ResourceQueryDefaultParams = {}): QueryType {
     const {
         page = 1,
         pageSize = 10,
+        filter = null,
     } = defaultParams;
 
     const history = useHistory();
@@ -277,6 +279,9 @@ export function useResourceQuery<QueryType extends {
         }
         if (key === 'pageSize') {
             updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : pageSize;
+        }
+        if (key === 'filter') {
+            updatedQuery.filter = updatedQuery.filter ? updatedQuery.filter : filter;
         }
     }
     return updatedQuery;
