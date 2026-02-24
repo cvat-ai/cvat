@@ -90,6 +90,12 @@ class UploadMixin:
         return response
 
     def upload_data(self, request: ExtendedRequest, *, append_url_name: str) -> Response:
+        """
+        Implements the "creation" TUS endpoint.
+        append_url_name must be the URL name of an action in the same viewset that implements
+        the "append chunk" endpoint. This action must accept the same path parameters (if any)
+        as the creation action, plus a "file_id" parameter.
+        """
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
         bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
         start_upload = request.headers.get('Upload-Start', None) is not None
