@@ -181,6 +181,7 @@ class JobsSummarySerializer(_CollectionSummarySerializer):
     count = serializers.IntegerField(source='total_jobs_count', default=0)
     completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
     validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
+    has_replicas = serializers.BooleanField(default=False, allow_null=False)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
@@ -2406,7 +2407,8 @@ class TaskReadListSerializer(serializers.ListSerializer):
 
         return super().to_representation(data)
 
-@extend_schema_serializer(deprecate_fields=["organization"])
+
+@extend_schema_serializer(deprecate_fields=["organization", "consensus_enabled"])
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
@@ -2429,9 +2431,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         source='data.validation_mode', required=False, allow_null=True,
         help_text="Describes how the task validation is performed. Configured at task creation"
     )
-    consensus_enabled = serializers.BooleanField(
-        source='get_consensus_enabled', required=False, read_only=True
-    )
+    consensus_enabled = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = models.Task
@@ -2451,13 +2451,12 @@ class TaskReadSerializer(serializers.ModelSerializer):
         }
         list_serializer_class = TaskReadListSerializer
 
-    def get_consensus_enabled(self, instance: models.Task) -> bool:
-        return instance.consensus_replicas > 0
-
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['consensus_enabled'] = self.get_consensus_enabled(instance)
+        if 'jobs' in self.fields:
+            representation['consensus_enabled'] = representation["jobs"]["has_replicas"]
         return representation
+
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransferableMixin):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
@@ -2467,11 +2466,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
     organization_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=False)
     source_storage = StorageSerializer(required=False, allow_null=False)
-    consensus_replicas = serializers.IntegerField(
+    initial_replicas = serializers.IntegerField(
         required=False, default=0, min_value=0,
         help_text=textwrap.dedent("""\
-            The number of consensus replica jobs for each annotation job.
-            Configured at task creation
+            The number of replica jobs for each annotation job created on task creation.
         """)
     )
 
@@ -2480,10 +2478,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
         fields = (
             'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage', 'consensus_replicas',
+            'target_storage', 'source_storage', 'initial_replicas',
             'organization_id',
         )
-        write_once_fields = ('overlap', 'segment_size', 'consensus_replicas')
+        write_once_fields = ('overlap', 'segment_size', 'initial_replicas')
         update_only_fields = ('organization_id',)
 
     def __init__(self, *args, **kwargs):
@@ -2497,7 +2495,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
         serializer = TaskReadSerializer(instance, context=self.context)
         return serializer.data
 
-    def validate_consensus_replicas(self, value):
+    def validate_initial_replicas(self, value):
         max_replicas = settings.MAX_CONSENSUS_REPLICAS
         if value and (value == 1 or value < 0 or value > max_replicas):
             raise serializers.ValidationError(

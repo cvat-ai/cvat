@@ -1723,7 +1723,7 @@ class TestPostTaskData:
             "name": request.node.name,
             "labels": [{"name": "a"}],
             "segment_size": segment_size,
-            "consensus_replicas": replication,
+            "initial_replicas": replication,
         }
 
         data_params = {
@@ -1746,7 +1746,7 @@ class TestPostTaskData:
             consensus_job_metas = {
                 job.id: json.loads(api_client.jobs_api.retrieve_data_meta(job.id)[1].data)
                 for job in jobs
-                if job.type == "consensus_replica"
+                if job.type == "replica"
             }
 
         assert task.segment_size == segment_size
@@ -2129,7 +2129,7 @@ class TestTaskData(TestTasksBase):
         timeout=300
     )
     @parametrize("task_spec, task_id", TestTasksBase._tasks_with_consensus_cases)
-    def test_can_get_consensus_replica_job_meta(self, task_spec: ITaskSpec, task_id: int):
+    def test_can_get_replica_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
                 get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
@@ -2139,8 +2139,8 @@ class TestTaskData(TestTasksBase):
             # Only annotation jobs can have replicas
             annotation_jobs = [j for j in jobs if j.type == "annotation"]
             assert (
-                len([j for j in jobs if j.type == "consensus_replica"])
-                == len(annotation_jobs) * task_spec.consensus_replicas
+                len([j for j in jobs if j.type == "replica"])
+                == len(annotation_jobs) * task_spec.initial_replicas
             )
 
             for job in annotation_jobs:
@@ -2148,10 +2148,8 @@ class TestTaskData(TestTasksBase):
                     api_client.jobs_api.retrieve_data_meta(job.id)[1].data
                 )
 
-                replicas = [
-                    j for j in jobs if j.type == "consensus_replica" if j.parent_job_id == job.id
-                ]
-                assert len(replicas) == task_spec.consensus_replicas
+                replicas = [j for j in jobs if j.type == "replica" if j.parent_job_id == job.id]
+                assert len(replicas) == task_spec.initial_replicas
 
                 for replica_job in replicas:
                     replica_job_meta = json.loads(

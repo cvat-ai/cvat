@@ -1014,7 +1014,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             data["job_file_mapping"] = job_file_mapping
 
         replica_counts = self._collect_replica_counts(jobs)
-        self._manifest["consensus_replicas"] = min(replica_counts[models.JobType.ANNOTATION])
+        self._manifest["initial_replicas"] = min(replica_counts[models.JobType.ANNOTATION])
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
@@ -1089,6 +1089,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         try:
             # The type field will be missing in backups created before the GT jobs were introduced
             raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
+            # consensus_replica type was removed in favor of replica
+            if raw_job_type == "consensus_replica":
+                raw_job_type = models.JobType.REPLICA.value
             job_type = models.JobType(raw_job_type)
         except ValueError:
             raise ValidationError(f"Unexpected job type {raw_job_type}")
@@ -1099,7 +1102,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         for job in jobs:
             job_type = self._get_job_type(job)
 
-            if job_type != models.JobType.CONSENSUS_REPLICA:
+            if job_type != models.JobType.REPLICA:
                 replica_counts.append([job_type, 0])
             else:
                 replica_counts[-1][1] += 1
@@ -1125,7 +1128,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type in [models.JobType.ANNOTATION, models.JobType.CONSENSUS_REPLICA]:
+            elif job_type in [models.JobType.ANNOTATION, models.JobType.REPLICA]:
                 continue
             else:
                 assert False

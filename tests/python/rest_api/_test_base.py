@@ -54,7 +54,7 @@ class TestTasksBase:
             "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
             **({"segment_size": segment_size} if segment_size else {}),
-            **({"consensus_replicas": job_replication} if job_replication else {}),
+            **({"initial_replicas": job_replication} if job_replication else {}),
         }
 
         if server_files is not None:

@@ -19,7 +19,7 @@ export const config: Partial<Config> = {
             fieldSettings: {
                 listValues: [
                     { value: 'annotation', title: 'Annotation' },
-                    { value: 'consensus_replica', title: 'Consensus replica' },
+                    { value: 'replica', title: 'Replica' },
                 ],
             },
         },

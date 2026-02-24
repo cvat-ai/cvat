@@ -728,7 +728,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
                 return new Task({
                     ...omit(serializedTask, ['jobs', 'labels']),
-                    progress: serializedTask.jobs,
+                    jobSummary: serializedTask.jobs,
                     jobs,
                     labels: labels.results,
                 });
@@ -766,8 +766,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
-            if (fields.consensus_replicas) {
-                taskSpec.consensus_replicas = fields.consensus_replicas;
+            if (fields.initial_replicas) {
+                taskSpec.initial_replicas = fields.initial_replicas;
             }
 
             const taskDataSpec = {
@@ -811,7 +811,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             return new Task({
                 ...omit(task, ['jobs', 'labels']),
                 jobs,
-                progress: task.jobs,
+                jobSummary: task.jobs,
                 labels: labels.results,
             });
         },

@@ -2253,7 +2253,7 @@ paths:
           enum:
           - annotation
           - ground_truth
-          - consensus_replica
+          - replica
       tags:
       - jobs
       security:
@@ -8379,12 +8379,12 @@ components:
       enum:
       - annotation
       - ground_truth
-      - consensus_replica
+      - replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
-        * `consensus_replica` - CONSENSUS_REPLICA
+        * `replica` - REPLICA
     JobValidationLayoutRead:
       type: object
       properties:
@@ -8475,6 +8475,9 @@ components:
         validation:
           type: integer
           nullable: true
+        has_replicas:
+          type: boolean
+          default: false
         url:
           type: string
           format: uri
@@ -11249,6 +11252,7 @@ components:
         consensus_enabled:
           type: boolean
           readOnly: true
+          deprecated: true
       required:
       - jobs
       - labels
@@ -11337,13 +11341,12 @@ components:
           $ref: '#/components/schemas/StorageRequest'
         source_storage:
           $ref: '#/components/schemas/StorageRequest'
-        consensus_replicas:
+        initial_replicas:
           type: integer
           minimum: 0
           default: 0
           description: |
-            The number of consensus replica jobs for each annotation job.
-            Configured at task creation
+            The number of replica jobs for each annotation job created on task creation.
       required:
       - name
     TasksSummary:

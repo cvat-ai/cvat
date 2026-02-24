@@ -19,7 +19,6 @@ import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference, CloudStorage } from 'reducers';
-import CVATTag, { TagType } from 'components/common/cvat-tag';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import CloudStorageEditor from './cloud-storage-editor';
@@ -64,7 +63,6 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
-    consensusEnabled: boolean;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -76,7 +74,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
-            consensusEnabled: taskInstance.consensusEnabled,
         };
     }
 
@@ -127,7 +124,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             cloudStorageInstance,
             onUpdateTaskMeta,
         } = this.props;
-        const { consensusEnabled } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
@@ -153,7 +149,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 </Text>
                             </div>
                         )}
-                        {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
                     </Col>
                     <Col>
                         <Text type='secondary'>Assigned to</Text>

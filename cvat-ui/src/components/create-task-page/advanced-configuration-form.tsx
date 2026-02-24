@@ -49,7 +49,7 @@ export interface AdvancedConfiguration {
     sortingMethod: SortingMethod;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
-    consensusReplicas: number;
+    initialReplicas: number;
     sourceStorage: StorageData;
     targetStorage: StorageData;
 }
@@ -62,7 +62,7 @@ const initialValues: AdvancedConfiguration = {
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     useProjectSourceStorage: true,
     useProjectTargetStorage: true,
-    consensusReplicas: 0,
+    initialReplicas: 0,
 
     sourceStorage: {
         location: StorageLocation.LOCAL,
@@ -385,11 +385,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
-    private renderConsensusReplicas(): JSX.Element {
+    private renderInitialReplicas(): JSX.Element {
         return (
             <Form.Item
                 label='Consensus Replicas'
-                name='consensusReplicas'
+                name='initialReplicas'
                 rules={[
                     {
                         validator: isInteger({
@@ -494,7 +494,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Row>
                 <Row justify='start'>
                     <Col span={7}>
-                        {this.renderConsensusReplicas()}
+                        {this.renderInitialReplicas()}
                     </Col>
                 </Row>
 

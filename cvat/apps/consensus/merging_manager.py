@@ -35,7 +35,7 @@ class _TaskMerger:
     _settings: ConsensusSettings
 
     def check_merging_available(self, *, parent_job_id: int | None = None):
-        if not self._task.consensus_replicas:
+        if not self._task.initial_replicas:
             raise MergingNotAvailable("Consensus is not enabled in this task")
 
         if self._task.dimension != DimensionType.DIM_2D:
@@ -47,7 +47,7 @@ class _TaskMerger:
         if not self._jobs:
             raise MergingNotAvailable(
                 f"No {JobType.ANNOTATION} jobs in the {StageChoice.ANNOTATION} stage or "
-                f"no {JobType.CONSENSUS_REPLICA} jobs "
+                f"no {JobType.REPLICA} jobs "
                 f"not in the {StageChoice.ANNOTATION} - {StateChoice.NEW} state found"
             )
 
@@ -76,7 +76,7 @@ class _TaskMerger:
             Job.objects.prefetch_related("segment", "parent_job", "assignee")
             .filter(
                 segment__task=self._task,
-                type=JobType.CONSENSUS_REPLICA,
+                type=JobType.REPLICA,
                 parent_job__stage=StageChoice.ANNOTATION,
                 parent_job__isnull=False,
             )

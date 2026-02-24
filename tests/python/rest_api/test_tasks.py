@@ -1317,8 +1317,8 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
         self._test_can_export_backup(task_id)
 
-    def test_can_export_backup_for_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+    def test_can_export_backup_for_task_with_replicas(self, tasks):
+        task_id = next(t for t in tasks if t["jobs"]["has_replicas"])["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_honeypot_task(self, tasks):
@@ -1422,8 +1422,8 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         self._test_can_restore_task_from_backup(task_id)
 
-    def test_can_import_backup_with_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+    def test_can_import_backup_with_task_with_replicas(self, tasks):
+        task_id = next(t for t in tasks if t["jobs"]["has_replicas"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
@@ -2423,7 +2423,7 @@ class TestWorkWithConsensusTasks:
         self, admin_user, jobs, annotations, task_id: int
     ):
         task_jobs = [j for j in jobs if j["task_id"] == task_id]
-        consensus_jobs = [j for j in task_jobs if j["type"] == "consensus_replica"]
+        consensus_jobs = [j for j in task_jobs if j["type"] == "replica"]
 
         # Ensure there are annotations in replicas
         assert any(
@@ -2435,7 +2435,7 @@ class TestWorkWithConsensusTasks:
 
         with make_api_client(admin_user) as api_client:
             for annotation_job in task_jobs:
-                if annotation_job["type"] != "consensus_replica":
+                if annotation_job["type"] != "replica":
                     api_client.jobs_api.destroy_annotations(annotation_job["id"])
 
             updated_task_annotations, _ = api_client.tasks_api.retrieve_annotations(task_id)

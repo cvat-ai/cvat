@@ -89,11 +89,7 @@ class _PermissionTestBase:
                 and (
                     has_consensus_jobs is None
                     or has_consensus_jobs
-                    == any(
-                        j
-                        for j in jobs
-                        if j["task_id"] == t["id"] and j["type"] == "consensus_replica"
-                    )
+                    == any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "replica")
                 )
             )
 
@@ -134,7 +130,7 @@ class _PermissionTestBase:
                             == any(
                                 j
                                 for j in jobs
-                                if j["task_id"] == t["id"] and j["type"] == "consensus_replica"
+                                if j["task_id"] == t["id"] and j["type"] == "replica"
                             )
                         )
                     ),
@@ -148,7 +144,7 @@ class _PermissionTestBase:
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    if has_consensus_jobs is None or has_consensus_jobs == t["consensus_enabled"]
+                    if has_consensus_jobs is None or has_consensus_jobs == t["jobs"]["has_replicas"]
                 )
                 user = next(
                     u
@@ -196,19 +192,19 @@ class _PermissionTestBase:
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostConsensusMerge(_PermissionTestBase):
     def test_can_merge_task_with_consensus_jobs(self, admin_user, tasks):
-        task_id = next(t["id"] for t in tasks if t["consensus_enabled"])
+        task_id = next(t["id"] for t in tasks if t["jobs"]["has_replicas"])
 
         self.merge(user=admin_user, task_id=task_id)
 
     def test_can_merge_consensus_job(self, admin_user, jobs):
         job_id = next(
-            j["id"] for j in jobs if j["type"] == "annotation" and j["consensus_replicas"] > 0
+            j["id"] for j in jobs if j["type"] == "annotation" and j["replicas_count"] > 0
         )
 
         self.merge(user=admin_user, job_id=job_id)
 
     def test_cannot_merge_task_without_consensus_jobs(self, admin_user, tasks):
-        task_id = next(t["id"] for t in tasks if not t["consensus_enabled"])
+        task_id = next(t["id"] for t in tasks if not t["jobs"]["has_replicas"])
 
         with pytest.raises(exceptions.ApiException) as capture:
             self.merge(user=admin_user, task_id=task_id)
@@ -216,11 +212,11 @@ class TestPostConsensusMerge(_PermissionTestBase):
         assert "Consensus is not enabled in this task" in capture.value.body
 
     def test_cannot_merge_task_without_mergeable_parent_jobs(self, admin_user, tasks, jobs):
-        task_id = next(t["id"] for t in tasks if t["consensus_enabled"])
+        task_id = next(t["id"] for t in tasks if t["jobs"]["has_replicas"])
 
         for j in jobs:
             if (j["stage"] != "annotation" or j["state"] != "new") and (
-                j["task_id"] == task_id and j["type"] in ("annotation", "consensus_replica")
+                j["task_id"] == task_id and j["type"] in ("annotation", "replica")
             ):
                 with make_api_client(admin_user) as api_client:
                     api_client.jobs_api.partial_update(
@@ -239,8 +235,8 @@ class TestPostConsensusMerge(_PermissionTestBase):
         job_id = next(
             j["id"]
             for j in jobs
-            if j["type"] == "consensus_replica"
-            if tasks.map[j["task_id"]]["consensus_enabled"]
+            if j["type"] == "replica"
+            if tasks.map[j["task_id"]]["jobs"]["has_replicas"]
         )
 
         with pytest.raises(exceptions.ApiException) as capture:
@@ -655,13 +651,10 @@ class TestMerging(_PermissionTestBase):
 
         task_jobs = [j for j in jobs if j["task_id"] == task_id]
         parent_job = next(
-            j for j in task_jobs if j["type"] == "annotation" if j["consensus_replicas"] > 0
+            j for j in task_jobs if j["type"] == "annotation" if j["replicas_count"] > 0
         )
         replicas = [
-            j
-            for j in task_jobs
-            if j["type"] == "consensus_replica"
-            if j["parent_job_id"] == parent_job["id"]
+            j for j in task_jobs if j["type"] == "replica" if j["parent_job_id"] == parent_job["id"]
         ]
 
         with make_api_client(admin_user) as api_client:

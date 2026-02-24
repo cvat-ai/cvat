@@ -134,10 +134,10 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
             );
         }
 
-        const numOfJobs = taskInstance.progress.totalJobs;
-        const numOfCompleted = taskInstance.progress.completedJobs;
-        const numOfValidation = taskInstance.progress.validationJobs;
-        const numOfAnnotation = taskInstance.progress.annotationJobs;
+        const numOfJobs = taskInstance.jobSummary.totalJobs;
+        const numOfCompleted = taskInstance.jobSummary.completedJobs;
+        const numOfValidation = taskInstance.jobSummary.validationJobs;
+        const numOfAnnotation = taskInstance.jobSummary.annotationJobs;
         const jobsProgress = ((numOfCompleted + numOfValidation) * 100) / numOfJobs;
 
         return (

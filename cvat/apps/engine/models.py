@@ -21,9 +21,9 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
-from django.db.models import Q, TextChoices
+from django.db.models import Case, Max, Q, TextChoices, Value, When
 from django.db.models.base import ModelBase
-from django.db.models.fields import FloatField
+from django.db.models.fields import FloatField, IntegerField
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
@@ -174,7 +174,7 @@ class SortingMethod(str, Enum):
 class JobType(str, Enum):
     ANNOTATION = 'annotation'
     GROUND_TRUTH = 'ground_truth'
-    CONSENSUS_REPLICA = 'consensus_replica'
+    REPLICA = 'replica'
 
     @classmethod
     def choices(cls):
@@ -708,6 +708,7 @@ class TaskQuerySet(models.QuerySet):
         total_jobs_count = "total_jobs_count"
         completed_jobs_count = "completed_jobs_count"
         validation_jobs_count = "validation_jobs_count"
+        has_replicas = "has_replicas"
 
     def with_job_summary(self):
         Fields = self.JobSummaryFields
@@ -724,6 +725,13 @@ class TaskQuerySet(models.QuerySet):
                     'segment__job',
                     filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
                     distinct=True,
+                ),
+                Fields.has_replicas.value: Max(
+                    Case(
+                        When(segment__job__type="replica", then=Value(1)),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )
                 ),
             }
         )
@@ -757,8 +765,8 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-    consensus_replicas = models.IntegerField(default=0)
-    "Per job consensus replica count"
+    initial_replicas = models.IntegerField(default=0)
+    "Per job replica count on task creation"
 
     segment_set: models.manager.RelatedManager[Segment]
 

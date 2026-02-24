@@ -454,7 +454,7 @@
         "location": "local"
       },
       "task_id": 31,
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-27T16:43:47.462000Z",
       "url": "http://localhost:8080/api/jobs/53"
     },
@@ -499,7 +499,7 @@
         "location": "local"
       },
       "task_id": 31,
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-27T16:43:07.696000Z",
       "url": "http://localhost:8080/api/jobs/52"
     },
@@ -634,7 +634,7 @@
         "location": "local"
       },
       "task_id": 30,
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:24:51.333000Z",
       "url": "http://localhost:8080/api/jobs/49"
     },
@@ -679,7 +679,7 @@
         "location": "local"
       },
       "task_id": 30,
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:19:51.388000Z",
       "url": "http://localhost:8080/api/jobs/48"
     },
@@ -724,7 +724,7 @@
         "location": "local"
       },
       "task_id": 30,
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:23:55.551000Z",
       "url": "http://localhost:8080/api/jobs/47"
     },
@@ -814,7 +814,7 @@
         "location": "local"
       },
       "task_id": 30,
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-02-03T15:22:52.241000Z",
       "url": "http://localhost:8080/api/jobs/45"
     },
@@ -859,7 +859,7 @@
         "location": "local"
       },
       "task_id": 30,
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:19:51.388000Z",
       "url": "http://localhost:8080/api/jobs/44"
     },
@@ -904,7 +904,7 @@
         "location": "local"
       },
       "task_id": 30,
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-02-03T15:25:32.413000Z",
       "url": "http://localhost:8080/api/jobs/43"
     },
