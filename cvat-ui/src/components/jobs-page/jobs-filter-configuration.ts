@@ -109,6 +109,13 @@ export const config: Partial<Config> = {
                 ],
             },
         },
+        parent_job_id: {
+            label: 'Parent ID',
+            type: 'number',
+            operators: ['is_empty', 'is_not_empty', 'equal', 'between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
+            fieldSettings: { min: 0 },
+            valueSources: ['value'],
+        },
     },
 };
 

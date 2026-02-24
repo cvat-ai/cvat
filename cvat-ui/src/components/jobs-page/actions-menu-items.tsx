@@ -8,6 +8,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { usePlugins } from 'utils/hooks';
 import { CVATMenuEditLabel } from 'components/common/cvat-menu-edit-label';
 import { LabelWithCountHOF } from 'components/common/label-with-count';
+import { Job, JobType } from 'cvat-core-wrapper';
 
 interface MenuItemsData {
     jobId: number;
@@ -20,8 +21,26 @@ interface MenuItemsData {
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
+    onGoToParent: (() => void) | null;
+    onGoToReplicas: (() => void) | null;
     startEditField: (key: string) => void;
-    selectedIds: number[];
+    jobsToAct: Job[];
+}
+
+enum MenuKeys {
+    EDIT_ASSIGNEE = 'edit_assignee',
+    EDIT_STATE = 'edit_state',
+    EDIT_STAGE = 'edit_stage',
+    EXPORT_JOB = 'export_job',
+    DELETE = 'delete',
+    GO_TO_PARENT = 'go_to_parent',
+    GO_TO_REPLICAS = 'go_to_replicas',
+    VIEW_ANALYTICS = 'view-analytics',
+    MERGE_SPECIFIC_CONSENSUS_JOBS = 'merge_specific_consensus_jobs',
+    IMPORT_JOB = 'import_job',
+    BUG_TRACKER = 'bug_tracker',
+    PROJECT = 'project',
+    TASK = 'task',
 }
 
 export default function JobActionsItems(
@@ -40,98 +59,135 @@ export default function JobActionsItems(
         onExportAnnotations,
         onMergeConsensusJob,
         onDeleteJob,
-        selectedIds = [],
+        jobsToAct,
+        onGoToParent,
+        onGoToReplicas,
     } = menuItemsData;
 
-    const isBulkMode = selectedIds.length > 1;
-    const bulkAllowedKeys = ['edit_assignee', 'edit_state', 'edit_stage', 'export_job', 'delete'];
+    const isBulkMode = jobsToAct.length > 1;
+    const bulkAllowedKeys = [
+        MenuKeys.EDIT_ASSIGNEE, MenuKeys.EDIT_STATE, MenuKeys.EDIT_STAGE, MenuKeys.EXPORT_JOB,
+        MenuKeys.DELETE, MenuKeys.GO_TO_PARENT, MenuKeys.GO_TO_REPLICAS,
+    ];
     const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
-    const withCount = LabelWithCountHOF(selectedIds, bulkAllowedKeys);
+
+    const jobsToActWithParents = jobsToAct.filter((j) => j.parentJobId != null);
+    const jobsToActWithReplicas = jobsToAct.filter((j) => j.replicasCount > 0);
+
+    const actionsApplicable = {
+        [MenuKeys.EDIT_ASSIGNEE]: jobsToAct,
+        [MenuKeys.EDIT_STATE]: jobsToAct,
+        [MenuKeys.EDIT_STAGE]: jobsToAct,
+        [MenuKeys.EXPORT_JOB]: jobsToAct,
+        [MenuKeys.DELETE]: jobsToAct.filter((j) => j.type === JobType.GROUND_TRUTH),
+        [MenuKeys.GO_TO_PARENT]: jobsToActWithParents,
+        [MenuKeys.GO_TO_REPLICAS]: jobsToActWithReplicas,
+    };
+
+    const idsToAct = jobsToAct.map((j) => j.id);
+    const withCount = LabelWithCountHOF(idsToAct, bulkAllowedKeys, actionsApplicable);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
     menuItems.push([{
-        key: 'task',
-        label: withCount('Go to the task', 'task', `/tasks/${taskId}`),
-        disabled: isDisabled('task'),
+        key: MenuKeys.TASK,
+        label: withCount('Go to the task', MenuKeys.TASK, `/tasks/${taskId}`),
+        disabled: isDisabled(MenuKeys.TASK),
     }, 0]);
+
+    if (jobsToActWithParents.length && onGoToParent) {
+        menuItems.push([{
+            key: MenuKeys.GO_TO_PARENT,
+            onClick: onGoToParent,
+            label: withCount('Go to parent', MenuKeys.GO_TO_PARENT),
+            disabled: isDisabled(MenuKeys.GO_TO_PARENT),
+        }, 10]);
+    }
+    if (jobsToActWithReplicas.length && onGoToReplicas) {
+        menuItems.push([{
+            key: MenuKeys.GO_TO_REPLICAS,
+            onClick: onGoToReplicas,
+            label: withCount('Go to replicas', MenuKeys.GO_TO_REPLICAS),
+            disabled: isDisabled(MenuKeys.GO_TO_REPLICAS),
+        }, 20]);
+    }
 
     if (projectId) {
         menuItems.push([{
-            key: 'project',
-            label: withCount('Go to the project', 'project', `/projects/${projectId}`),
-            disabled: isDisabled('project'),
-        }, 10]);
+            key: MenuKeys.PROJECT,
+            label: withCount('Go to the project', MenuKeys.PROJECT, `/projects/${projectId}`),
+            disabled: isDisabled(MenuKeys.PROJECT),
+        }, 30]);
     }
 
     if (onOpenBugTracker) {
         menuItems.push([{
-            key: 'bug_tracker',
+            key: MenuKeys.BUG_TRACKER,
             onClick: onOpenBugTracker,
-            label: withCount('Go to the bug tracker', 'bug_tracker'),
-            disabled: isDisabled('bug_tracker'),
-        }, 20]);
+            label: withCount('Go to the bug tracker', MenuKeys.BUG_TRACKER),
+            disabled: isDisabled(MenuKeys.BUG_TRACKER),
+        }, 40]);
     }
 
     menuItems.push([{
-        key: 'import_job',
+        key: MenuKeys.IMPORT_JOB,
         onClick: onImportAnnotations,
-        label: withCount('Import annotations', 'import_job'),
-        disabled: isDisabled('import_job'),
-    }, 30]);
+        label: withCount('Import annotations', MenuKeys.IMPORT_JOB),
+        disabled: isDisabled(MenuKeys.IMPORT_JOB),
+    }, 50]);
 
     menuItems.push([{
-        key: 'export_job',
+        key: MenuKeys.EXPORT_JOB,
         onClick: onExportAnnotations,
-        label: withCount('Export annotations', 'export_job'),
-        disabled: isDisabled('export_job'),
-    }, 40]);
+        label: withCount('Export annotations', MenuKeys.EXPORT_JOB),
+        disabled: isDisabled(MenuKeys.EXPORT_JOB),
+    }, 60]);
 
     if (onMergeConsensusJob) {
         menuItems.push([{
-            key: 'merge_specific_consensus_jobs',
+            key: MenuKeys.MERGE_SPECIFIC_CONSENSUS_JOBS,
             onClick: onMergeConsensusJob,
-            label: withCount('Merge consensus job', 'merge_specific_consensus_jobs'),
-            disabled: isMergingConsensusEnabled || isDisabled('merge_specific_consensus_jobs'),
+            label: withCount('Merge consensus job', MenuKeys.MERGE_SPECIFIC_CONSENSUS_JOBS),
+            disabled: isMergingConsensusEnabled || isDisabled(MenuKeys.MERGE_SPECIFIC_CONSENSUS_JOBS),
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
-        }, 50]);
+        }, 70]);
     }
 
     menuItems.push([{
-        key: 'edit_assignee',
+        key: MenuKeys.EDIT_ASSIGNEE,
         onClick: () => startEditField('assignee'),
-        label: <CVATMenuEditLabel>{withCount('Assignee', 'edit_assignee')}</CVATMenuEditLabel>,
-        disabled: isDisabled('edit_assignee'),
-    }, 60]);
-
-    menuItems.push([{
-        key: 'edit_state',
-        onClick: () => startEditField('state'),
-        label: <CVATMenuEditLabel>{withCount('State', 'edit_state')}</CVATMenuEditLabel>,
-        disabled: isDisabled('edit_state'),
-    }, 70]);
-
-    menuItems.push([{
-        key: 'edit_stage',
-        onClick: () => startEditField('stage'),
-        label: <CVATMenuEditLabel>{withCount('Stage', 'edit_stage')}</CVATMenuEditLabel>,
-        disabled: isDisabled('edit_stage'),
+        label: <CVATMenuEditLabel>{withCount('Assignee', MenuKeys.EDIT_ASSIGNEE)}</CVATMenuEditLabel>,
+        disabled: isDisabled(MenuKeys.EDIT_ASSIGNEE),
     }, 80]);
 
     menuItems.push([{
-        key: 'view-analytics',
-        label: withCount('View analytics', 'view-analytics', `/tasks/${taskId}/jobs/${jobId}/analytics`),
-        disabled: isDisabled('view-analytics'),
+        key: MenuKeys.EDIT_STATE,
+        onClick: () => startEditField('state'),
+        label: <CVATMenuEditLabel>{withCount('State', MenuKeys.EDIT_STATE)}</CVATMenuEditLabel>,
+        disabled: isDisabled(MenuKeys.EDIT_STATE),
     }, 90]);
 
+    menuItems.push([{
+        key: MenuKeys.EDIT_STAGE,
+        onClick: () => startEditField('stage'),
+        label: <CVATMenuEditLabel>{withCount('Stage', MenuKeys.EDIT_STAGE)}</CVATMenuEditLabel>,
+        disabled: isDisabled(MenuKeys.EDIT_STAGE),
+    }, 100]);
+
+    menuItems.push([{
+        key: MenuKeys.VIEW_ANALYTICS,
+        label: withCount('View analytics', MenuKeys.VIEW_ANALYTICS, `/tasks/${taskId}/jobs/${jobId}/analytics`),
+        disabled: isDisabled(MenuKeys.VIEW_ANALYTICS),
+    }, 110]);
+
     if (onDeleteJob) {
-        menuItems.push([{ type: 'divider' }, 99]);
+        menuItems.push([{ type: 'divider' }, 119]);
         menuItems.push([{
-            key: 'delete',
+            key: MenuKeys.DELETE,
             onClick: onDeleteJob,
-            label: withCount('Delete', 'delete'),
-            disabled: isDisabled('delete'),
-        }, 100]);
+            label: withCount('Delete', MenuKeys.DELETE),
+            disabled: isDisabled(MenuKeys.DELETE),
+        }, 120]);
     }
 
     menuItems.push(

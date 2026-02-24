@@ -8348,6 +8348,10 @@ components:
         consensus_replicas:
           type: integer
           readOnly: true
+          deprecated: true
+        replicas_count:
+          type: integer
+          readOnly: true
       required:
       - issues
       - labels
