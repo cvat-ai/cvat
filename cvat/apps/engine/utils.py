@@ -222,10 +222,6 @@ def reverse(
     return url
 
 
-def get_server_url(request: ExtendedRequest) -> str:
-    return request.build_absolute_uri("/")
-
-
 def build_field_filter_params(field: str, value: Any) -> dict[str, str]:
     """
     Builds a collection filter query params for a single field and value.

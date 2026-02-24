@@ -68,6 +68,7 @@ export default class Collection {
         dimension: DimensionType;
         framesInfo: BasicInjection['framesInfo'];
         jobType: JobType;
+        consensusReplicas?: number;
     }) {
         this.stopFrame = data.stopFrame;
 
@@ -102,6 +103,7 @@ export default class Collection {
             nextClientID: () => ++config.globalObjectsCounter,
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
+            consensusReplicas: data.consensusReplicas,
         };
     }
 
@@ -1376,7 +1378,9 @@ export default class Collection {
         }
 
         const filtersStr = JSON.stringify(annotationsFilters);
-        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+        const linearSearch = filtersStr.match(/"var":"width"/) ||
+            filtersStr.match(/"var":"height"/) ||
+            filtersStr.match(/"var":"rotation"/);
 
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
             if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {

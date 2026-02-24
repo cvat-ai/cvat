@@ -1,5 +1,6 @@
 {{- if and .Values.ingress.enabled .Values.analytics.enabled -}}
 {{- $fullName := include "cvat.fullname" . -}}
+{{- $localValues := .Values.analytics.ingress -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -12,7 +13,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-stripprefix@kubernetescrd,
       {{ $.Release.Namespace }}-forwardauth@kubernetescrd
     {{- end }}
-    {{- with .Values.ingress.annotations }}
+    {{- with merge $localValues.annotations .Values.ingress.annotations }}
       {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
