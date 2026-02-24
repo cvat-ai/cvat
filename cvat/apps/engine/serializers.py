@@ -46,7 +46,7 @@ from cvat.apps.engine.cloud_provider import (
 from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
-from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.permissions import TaskPermission, ProjectPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
@@ -743,6 +743,13 @@ class JobReadListSerializer(serializers.ListSerializer):
                 visible_tasks_perm.filter(visible_tasks_queryset).values_list("id", flat=True)
             )
 
+            # Prefetch task and project objects for task_name and project_name fields
+            # This avoids N+1 queries when serializing
+            tasks_with_projects = models.Task.objects.filter(
+                id__in=page_task_ids
+            ).select_related('project')
+            tasks_map = {task.id: task for task in tasks_with_projects}
+
             # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
             # limiting in only for the page
             issue_counts = dict(
@@ -754,12 +761,17 @@ class JobReadListSerializer(serializers.ListSerializer):
             for job in page:
                 job.user_can_view_task = job.get_task_id() in visible_tasks
                 job.issue__count = issue_counts.get(job.id, 0)
+                # Attach prefetched task to avoid additional queries
+                if task := tasks_map.get(job.get_task_id()):
+                    job.segment.task = task
 
         return super().to_representation(data)
 
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="get_task_id")
+    task_name = serializers.SerializerMethodField()
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
+    project_name = serializers.SerializerMethodField()
     guide_id = serializers.ReadOnlyField(source="get_guide_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
@@ -782,7 +794,7 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
+        fields = ('url', 'id', 'task_id', 'task_name', 'project_id', 'project_name', 'assignee', 'guide_id',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
@@ -792,6 +804,36 @@ class JobReadSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
         list_serializer_class = JobReadListSerializer
+
+    def get_task_name(self, instance):
+        """Returns task name if user has access, 'Unknown' otherwise"""
+        request = self.context.get('request')
+        if not request:
+            return None
+
+        can_view_task = getattr(instance, "user_can_view_task", None)
+        if can_view_task is None:
+            perm = TaskPermission.create_scope_view(request, instance.segment.task)
+            can_view_task = perm.check_access().allow
+
+        return instance.segment.task.name if can_view_task else None
+
+    def get_project_name(self, instance):
+        """Returns project name if user has access, 'Unknown' otherwise, None if no project"""
+        project = instance.segment.task.project
+        if not project:
+            return None
+
+        request = self.context.get('request')
+        if not request:
+            return None
+
+        can_view_project = getattr(instance.segment.task, "user_can_view_project", None)
+        if can_view_project is None:
+            perm = ProjectPermission.create_scope_view(request, project)
+            can_view_project = perm.check_access().allow
+
+        return project.name if can_view_project else None
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -2387,6 +2429,23 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 .values("id", *job_summary_fields)
             }
 
+            # Prefetch projects for tasks that have project_id
+            page_project_ids = set(t.project_id for t in page if t.project_id is not None)
+            if page_project_ids:
+                projects_with_details = models.Project.objects.filter(id__in=page_project_ids)
+                projects_map = {p.id: p for p in projects_with_details}
+
+                # Check project permissions for the current user
+                request = self.context.get('request')
+                if request and hasattr(request, 'user'):
+                    for task in page:
+                        if task.project_id:
+                            # Attach prefetched project
+                            task.project = projects_map.get(task.project_id)
+                            # Check if user can view the project
+                            perm = ProjectPermission.create_scope_view(request, task.project_id)
+                            task.user_can_view_project = request.user.has_perm(perm)
+
             for task in page:
                 task_job_summary = job_counts.get(task.id)
                 for k in job_summary_fields:
@@ -2406,6 +2465,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False, allow_null=True)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
+    project_name = serializers.SerializerMethodField()
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
@@ -2423,7 +2483,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'project_id', 'project_name', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_original_chunk_type', 'data_compressed_chunk_type',
             'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data', 'dimension',
@@ -2441,6 +2501,24 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     def get_consensus_enabled(self, instance: models.Task) -> bool:
         return instance.consensus_replicas > 0
+
+    def get_project_name(self, instance: models.Task) -> str | None:
+        # If task has no project, return None
+        if not instance.project_id:
+            return None
+
+        # Check if we have a prefetched project attribute set by TaskReadListSerializer
+        if hasattr(instance, 'user_can_view_project'):
+            return instance.project.name if instance.user_can_view_project else None
+
+        # Fallback: Check permission directly
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            perm = ProjectPermission.create_scope_view(request, instance.project_id)
+            if request.user.has_perm(perm):
+                return instance.project.name
+
+        return None
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
