@@ -499,7 +499,9 @@ def local_start(
 
     wait_for_services(waiting_time)
 
-    docker_exec_cvat("python manage.py loaddata /tmp/data.json")
+    docker_exec_cvat(
+        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+    )
     docker_exec(
         Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
     )
@@ -517,7 +519,9 @@ def kube_start(cvat_db_dir):
 
     wait_for_services()
 
-    kube_exec_cvat("python manage.py loaddata /tmp/data.json")
+    kube_exec_cvat(
+        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+    )
 
     kube_exec_cvat_db(
         [
@@ -545,13 +549,6 @@ def session_finish(session):
     if platform == "local":
         if os.environ.get("COVERAGE_PROCESS_START"):
             collect_code_coverage_from_containers()
-
-        docker_restore_db()
-        docker_exec(Container.DB, "dropdb test_db")
-
-        docker_exec(Container.DB, "dropdb --if-exists cvat")
-        docker_exec(Container.DB, "createdb cvat")
-        docker_exec_cvat("python manage.py migrate")
 
 
 def collect_code_coverage_from_containers():
