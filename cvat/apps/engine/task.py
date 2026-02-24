@@ -992,6 +992,143 @@ def _create_validation_jobs(
         db_gt_job.make_dirs()
 
 
+def _filter_cloud_storage_files(
+    cloud_storage: models.CloudStorage,
+    data: dict[str, Any],
+    *,
+    job_file_mapping: JobFileMapping | None,
+    manifest_file: str | None,
+) -> tuple[ImageManifestManager | None, str | None]:
+    cloud_storage_instance = db_storage_to_storage_instance(cloud_storage)
+
+    cloud_storage_manifest = None
+    cloud_storage_manifest_prefix = None
+    if manifest_file:
+        cloud_storage_manifest = ImageManifestManager(
+            cloud_storage.get_storage_dirname() / manifest_file,
+            cloud_storage.get_storage_dirname(),
+        )
+        cloud_storage_manifest.set_index()
+        cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
+
+    if manifest_file and not data["server_files"] and not data["filename_pattern"]:
+        # only manifest file was specified in server files by the user
+        data["filename_pattern"] = "*"
+
+    # update the server_files list with files from the specified directories
+    if dirs := list(filter(lambda x: x.endswith("/"), data["server_files"])):
+        copy_of_server_files = data["server_files"].copy()
+        copy_of_dirs = dirs.copy()
+        additional_files = []
+        if manifest_file:
+            for directory in dirs:
+                if cloud_storage_manifest_prefix:
+                    # cloud_storage_manifest_prefix is a dirname of manifest,
+                    # it doesn't end with a slash
+                    directory = directory[len(cloud_storage_manifest_prefix) + 1 :]
+
+                additional_files.extend(
+                    [
+                        x[1].full_name
+                        for x in filter(
+                            lambda x: x[1].full_name.startswith(directory),
+                            cloud_storage_manifest,
+                        )
+                    ]
+                    if directory
+                    else [x[1].full_name for x in cloud_storage_manifest]
+                )
+
+            if cloud_storage_manifest_prefix:
+                additional_files = [
+                    os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files
+                ]
+        else:
+            while len(dirs):
+                directory = dirs.pop()
+                for f in cloud_storage_instance.list_files(
+                    prefix=directory, _use_flat_listing=True
+                ):
+                    if f["type"] == "REG":
+                        additional_files.append(f["name"])
+                    else:
+                        dirs.append(f["name"])
+
+        data["server_files"] = []
+        for f in copy_of_server_files:
+            if f not in copy_of_dirs:
+                data["server_files"].append(f)
+            else:
+                data["server_files"].extend(
+                    list(filter(lambda x: x.startswith(f), additional_files))
+                )
+
+        del additional_files
+
+    if server_files_exclude := data.get("server_files_exclude"):
+        data["server_files"] = list(
+            filter(
+                lambda x: x not in server_files_exclude
+                and all([f"{i}/" not in server_files_exclude for i in Path(x).parents]),
+                data["server_files"],
+            )
+        )
+
+    # update list with server files if task creation approach with pattern and manifest file is used
+    if data["filename_pattern"]:
+        additional_files = []
+
+        if not manifest_file:
+            # NOTE: we cannot list files with specified pattern on the providers page,
+            # because they don't provide such function
+            dirs = []
+            prefix = ""
+
+            while True:
+                for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
+                    if f["type"] == "REG":
+                        additional_files.append(f["name"])
+                    else:
+                        dirs.append(f["name"])
+                if not dirs:
+                    break
+                prefix = dirs.pop()
+
+            if not data["filename_pattern"] == "*":
+                additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
+        else:
+            additional_files = (
+                list(cloud_storage_manifest.data)
+                if not cloud_storage_manifest_prefix
+                else [
+                    os.path.join(cloud_storage_manifest_prefix, f)
+                    for f in cloud_storage_manifest.data
+                ]
+            )
+            if not data["filename_pattern"] == "*":
+                additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
+
+        data["server_files"].extend(additional_files)
+
+    if cloud_storage_instance.prefix:
+        # filter server_files based on default prefix
+        data["server_files"] = list(
+            filter(lambda x: x.startswith(cloud_storage_instance.prefix), data["server_files"])
+        )
+
+    if job_file_mapping is not None:
+        # We only need to process the files specified in job_file_mapping
+        filtered_files = []
+        for f in itertools.chain.from_iterable(job_file_mapping):
+            if f not in data["server_files"]:
+                raise ValidationError(f"Job mapping file {f} is not specified in input files")
+            filtered_files.append(f)
+
+        data["server_files"] = filtered_files
+
+    return cloud_storage_manifest, cloud_storage_manifest_prefix
+
+
 @transaction.atomic
 def create_thread(
     db_task: int | models.Task,
@@ -1065,135 +1202,20 @@ def create_thread(
         is_backup_restore=is_backup_restore,
     )
 
-    manifest = None
     if is_data_in_cloud and not is_backup_restore:
-        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
-
-        if manifest_file:
-            cloud_storage_manifest = ImageManifestManager(
-                db_data.cloud_storage.get_storage_dirname() / manifest_file,
-                db_data.cloud_storage.get_storage_dirname(),
-            )
-            cloud_storage_manifest.set_index()
-            cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
-
-        if manifest_file and not data["server_files"] and not data["filename_pattern"]:
-            # only manifest file was specified in server files by the user
-            data["filename_pattern"] = "*"
-
-        # update the server_files list with files from the specified directories
-        if dirs := list(filter(lambda x: x.endswith("/"), data["server_files"])):
-            copy_of_server_files = data["server_files"].copy()
-            copy_of_dirs = dirs.copy()
-            additional_files = []
-            if manifest_file:
-                for directory in dirs:
-                    if cloud_storage_manifest_prefix:
-                        # cloud_storage_manifest_prefix is a dirname of manifest, it doesn't end with a slash
-                        directory = directory[len(cloud_storage_manifest_prefix) + 1 :]
-                    additional_files.extend(
-                        [
-                            x[1].full_name
-                            for x in filter(
-                                lambda x: x[1].full_name.startswith(directory),
-                                cloud_storage_manifest,
-                            )
-                        ]
-                        if directory
-                        else [x[1].full_name for x in cloud_storage_manifest]
-                    )
-                if cloud_storage_manifest_prefix:
-                    additional_files = [
-                        os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files
-                    ]
-            else:
-                while len(dirs):
-                    directory = dirs.pop()
-                    for f in cloud_storage_instance.list_files(
-                        prefix=directory, _use_flat_listing=True
-                    ):
-                        if f["type"] == "REG":
-                            additional_files.append(f["name"])
-                        else:
-                            dirs.append(f["name"])
-
-            data["server_files"] = []
-            for f in copy_of_server_files:
-                if f not in copy_of_dirs:
-                    data["server_files"].append(f)
-                else:
-                    data["server_files"].extend(
-                        list(filter(lambda x: x.startswith(f), additional_files))
-                    )
-
-            del additional_files
-
-        if server_files_exclude := data.get("server_files_exclude"):
-            data["server_files"] = list(
-                filter(
-                    lambda x: x not in server_files_exclude
-                    and all([f"{i}/" not in server_files_exclude for i in Path(x).parents]),
-                    data["server_files"],
-                )
-            )
-
-        # update list with server files if task creation approach with pattern and manifest file is used
-        if data["filename_pattern"]:
-            additional_files = []
-
-            if not manifest_file:
-                # NOTE: we cannot list files with specified pattern on the providers page because they don't provide such function
-                dirs = []
-                prefix = ""
-
-                while True:
-                    for f in cloud_storage_instance.list_files(
-                        prefix=prefix, _use_flat_listing=True
-                    ):
-                        if f["type"] == "REG":
-                            additional_files.append(f["name"])
-                        else:
-                            dirs.append(f["name"])
-                    if not dirs:
-                        break
-                    prefix = dirs.pop()
-
-                if not data["filename_pattern"] == "*":
-                    additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
-            else:
-                additional_files = (
-                    list(cloud_storage_manifest.data)
-                    if not cloud_storage_manifest_prefix
-                    else [
-                        os.path.join(cloud_storage_manifest_prefix, f)
-                        for f in cloud_storage_manifest.data
-                    ]
-                )
-                if not data["filename_pattern"] == "*":
-                    additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
-
-            data["server_files"].extend(additional_files)
-
-        if cloud_storage_instance.prefix:
-            # filter server_files based on default prefix
-            data["server_files"] = list(
-                filter(lambda x: x.startswith(cloud_storage_instance.prefix), data["server_files"])
-            )
-
-        # We only need to process the files specified in job_file_mapping
-        if job_file_mapping is not None:
-            filtered_files = []
-            for f in itertools.chain.from_iterable(job_file_mapping):
-                if f not in data["server_files"]:
-                    raise ValidationError(f"Job mapping file {f} is not specified in input files")
-                filtered_files.append(f)
-            data["server_files"] = filtered_files
+        cloud_storage_manifest, cloud_storage_manifest_prefix = _filter_cloud_storage_files(
+            db_data.cloud_storage,
+            data,
+            job_file_mapping=job_file_mapping,
+            manifest_file=manifest_file,
+        )
 
     # count and validate uploaded files
     media = _count_files(data)
     media, task_mode = _validate_data(media, manifest_files)
     is_media_sorted = False
 
+    manifest = None
     if is_data_in_cloud:
         is_packed_media = any(v for k, v in media.items() if k != "image")
         if (
@@ -1278,7 +1300,7 @@ def create_thread(
             [
                 os.path.relpath(image, upload_dir)
                 for image in MEDIA_TYPES["directory"]["extractor"](
-                    source_paths=[os.path.join(upload_dir, f) for f in media["directory"]],
+                    source_paths=[upload_dir / f for f in media["directory"]],
                 ).absolute_source_paths
             ]
         )
