@@ -89,7 +89,7 @@ class UploadMixin:
                 response.__setitem__(key, value)
         return response
 
-    def upload_data(self, request: ExtendedRequest, append_url_name: str) -> Response:
+    def upload_data(self, request: ExtendedRequest, *, append_url_name: str) -> Response:
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
         bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
         start_upload = request.headers.get('Upload-Start', None) is not None
@@ -100,7 +100,7 @@ class UploadMixin:
         elif start_upload:
             return self.upload_started(request)
         elif tus_request:
-            return self.init_tus_upload(request, append_url_name)
+            return self.init_tus_upload(request, append_url_name=append_url_name)
         elif bulk_file_upload:
             return self.append_files(request)
         else: # backward compatibility case - no upload headers were found
@@ -109,7 +109,7 @@ class UploadMixin:
     def should_result_file_be_replaced(self) -> bool:
         return self.action in ("data", "append_data_chunk")
 
-    def init_tus_upload(self, request: ExtendedRequest, append_url_name: str) -> Response:
+    def init_tus_upload(self, request: ExtendedRequest, *, append_url_name: str) -> Response:
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204_NO_CONTENT)
 

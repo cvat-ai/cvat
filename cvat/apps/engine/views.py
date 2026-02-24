@@ -407,7 +407,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # of exporting process|download a result file, but also to initiate export process
             return get_410_response_for_export_api("/api/projects/id/dataset/export?save_images=True")
 
-        return self.upload_data(request, "append-dataset-chunk")
+        return self.upload_data(request, append_url_name="append-dataset-chunk")
 
 
     @tus_chunk_action(detail=True, suffix_base="dataset")
@@ -478,7 +478,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if "rq_id" in request.query_params:
             return get_410_response_when_checking_process_status("import")
 
-        return self.upload_data(request, "append-backup-chunk")
+        return self.upload_data(request, append_url_name="append-backup-chunk")
 
     @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
@@ -933,7 +933,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if "rq_id" in request.query_params:
             return get_410_response_when_checking_process_status("import")
 
-        return self.upload_data(request, "append-backup-chunk")
+        return self.upload_data(request, append_url_name="append-backup-chunk")
 
     @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
@@ -1039,8 +1039,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return list(expected_files)
 
     # UploadMixin method
-    def init_tus_upload(self, request: ExtendedRequest, append_url_name: str) -> Response:
-        response = super().init_tus_upload(request, append_url_name)
+    def init_tus_upload(self, request: ExtendedRequest, *, append_url_name: str) -> Response:
+        response = super().init_tus_upload(request, append_url_name=append_url_name)
 
         if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
             self._maybe_append_upload_info_entry(TusFile.TusMeta.from_request(request).filename)
@@ -1276,7 +1276,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 elif task_data.size != 0:
                     return Response(data='Adding more data is not supported',
                         status=status.HTTP_400_BAD_REQUEST)
-                return self.upload_data(request, "append-data-chunk")
+                return self.upload_data(request, append_url_name="append-data-chunk")
         else:
             data_type = request.query_params.get('type', None)
             data_num = request.query_params.get('number', None)
@@ -1362,7 +1362,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(data)
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
-            return self.upload_data(request, "append-annotations-chunk")
+            return self.upload_data(request, append_url_name="append-annotations-chunk")
 
         elif request.method == 'PUT':
             if {"format", "rq_id"} & set(request.query_params.keys()):
@@ -1851,7 +1851,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             return Response(annotations)
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
-            return self.upload_data(request, "append-annotations-chunk")
+            return self.upload_data(request, append_url_name="append-annotations-chunk")
 
         elif request.method == 'PUT':
             if {"format", "rq_id"} & set(request.query_params.keys()):
