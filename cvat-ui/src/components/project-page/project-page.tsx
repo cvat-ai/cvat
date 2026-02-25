@@ -38,6 +38,7 @@ import BulkWrapper, { BulkSelectProps } from 'components/bulk-wrapper';
 
 import { useResourceQuery } from 'utils/hooks';
 import { selectionActions } from 'actions/selection-actions';
+import TasksCSVExportButton from 'components/tasks-page/tasks-csv-export-button';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -325,6 +326,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         }));
                                     }}
                                 />
+                                <TasksCSVExportButton tasks={tasks} />
                             </div>
                         </div>
                         <Popover

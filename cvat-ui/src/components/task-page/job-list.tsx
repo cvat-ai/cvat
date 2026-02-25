@@ -23,6 +23,7 @@ import {
 import { useResourceQuery } from 'utils/hooks';
 import BulkWrapper from 'components/bulk-wrapper';
 import { selectionActions } from 'actions/selection-actions';
+import JobsCSVExportButton from 'components/jobs-page/jobs-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -200,6 +201,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                             });
                         }}
                     />
+                    <JobsCSVExportButton jobs={filteredJobs} />
                     <div className='cvat-job-add-wrapper'>
                         <Button onClick={onCreateJob} type='primary' className='cvat-create-job' icon={<PlusOutlined />} />
                     </div>

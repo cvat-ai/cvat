@@ -1,0 +1,109 @@
+// Copyright (C) 2026 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import notification from 'antd/lib/notification';
+
+import { CombinedState } from 'reducers';
+import { ThunkDispatch } from 'utils/redux';
+import IncrementalCSVWriter, { CSVColumn, downloadCSV } from 'utils/csv-writer';
+import { bulkActions } from './bulk-actions';
+
+export interface CSVExportOptions<T> {
+    columns: CSVColumn<T>[];
+    fetchPage: (page: number, pageSize: number) => Promise<{ results: T[]; count: number }>;
+    filename: string;
+    pageSize?: number;
+    resourceName?: string; // e.g., "jobs", "tasks", "projects"
+}
+
+export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState) => {
+        const {
+            columns,
+            fetchPage,
+            filename,
+            pageSize = 500,
+            resourceName = 'items',
+        } = options;
+
+        try {
+            dispatch(bulkActions.startBulkAction());
+
+            // Initialize CSV writer
+            const csvWriter = new IncrementalCSVWriter<T>(columns);
+
+            // Fetch first page to get total count
+            const firstPage = await fetchPage(1, pageSize);
+            const totalCount = firstPage.count;
+            const totalPages = Math.ceil(totalCount / pageSize);
+
+            // Check if cancelled
+            if (getState().bulkActions.cancelled) {
+                return;
+            }
+
+            // Handle empty results
+            if (totalCount === 0) {
+                notification.info({
+                    message: 'No data to export',
+                    description: 'No items match the current filters.',
+                });
+                return;
+            }
+
+            // Add first page to CSV
+            csvWriter.addBatch(firstPage.results);
+
+            // Update progress for first page
+            dispatch(bulkActions.updateBulkActionStatus({
+                message: `Exporting ${resourceName}: ${firstPage.results.length} of ${totalCount}`,
+                percent: Math.round((1 / totalPages) * 100),
+            }));
+
+            // Fetch remaining pages
+            for (let page = 2; page <= totalPages; page++) {
+                // Check if cancelled
+                if (getState().bulkActions.cancelled) {
+                    return;
+                }
+
+                const response = await fetchPage(page, pageSize);
+                csvWriter.addBatch(response.results);
+
+                const loadedCount = (page - 1) * pageSize + response.results.length;
+                dispatch(bulkActions.updateBulkActionStatus({
+                    message: `Exporting ${resourceName}: ${loadedCount} of ${totalCount}`,
+                    percent: Math.round((page / totalPages) * 100),
+                }));
+            }
+
+            // Generate and download CSV
+            const csvContent = csvWriter.getContent();
+            downloadCSV(csvContent, filename);
+
+            // Show success notification
+            notification.success({
+                message: 'Export completed',
+                description: `Successfully exported ${totalCount} ${resourceName} to ${filename}`,
+            });
+        } catch (error) {
+            dispatch(bulkActions.bulkOperationFailed({
+                error,
+                remainingItemsCount: 0,
+                retryPayload: {
+                    items: [],
+                    operation: async () => {},
+                    statusMessage: () => '',
+                },
+            }));
+
+            notification.error({
+                message: 'Export failed',
+                description: error instanceof Error ? error.message : 'An error occurred during export',
+            });
+        } finally {
+            dispatch(bulkActions.finishBulkAction());
+        }
+    };
+}

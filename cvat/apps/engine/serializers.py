@@ -806,7 +806,6 @@ class JobReadSerializer(serializers.ModelSerializer):
         list_serializer_class = JobReadListSerializer
 
     def get_task_name(self, instance):
-        """Returns task name if user has access, 'Unknown' otherwise"""
         request = self.context.get('request')
         if not request:
             return None
@@ -819,7 +818,6 @@ class JobReadSerializer(serializers.ModelSerializer):
         return instance.segment.task.name if can_view_task else None
 
     def get_project_name(self, instance):
-        """Returns project name if user has access, 'Unknown' otherwise, None if no project"""
         project = instance.segment.task.project
         if not project:
             return None

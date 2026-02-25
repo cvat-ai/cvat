@@ -521,8 +521,10 @@ export class Job extends Session {
         stop_frame?: number;
         frame_count?: number;
         project_id: number | null;
+        project_name: string | null;
         guide_id: number | null;
         task_id: number;
+        task_name: string;
         labels: Label[];
         dimension?: DimensionType;
         data_compressed_chunk_type?: ChunkType;
@@ -550,8 +552,10 @@ export class Job extends Session {
             stop_frame: undefined,
             frame_count: undefined,
             project_id: null,
+            project_name: null,
             guide_id: null,
             task_id: null,
+            task_name: undefined,
             labels: [],
             dimension: undefined,
             data_compressed_chunk_type: undefined,
@@ -572,6 +576,8 @@ export class Job extends Session {
         this.#data.stop_frame = initialData.stop_frame ?? this.#data.stop_frame;
         this.#data.frame_count = initialData.frame_count ?? this.#data.frame_count;
         this.#data.task_id = initialData.task_id ?? this.#data.task_id;
+        this.#data.task_name = initialData.task_name ?? this.#data.task_name;
+        this.#data.project_name = initialData.project_name ?? this.#data.project_name;
         this.#data.dimension = initialData.dimension ?? this.#data.dimension;
         this.#data.data_compressed_chunk_type =
             initialData.data_compressed_chunk_type ?? this.#data.data_compressed_chunk_type;
@@ -679,6 +685,14 @@ export class Job extends Session {
         return this.#data.task_id;
     }
 
+    public get taskName(): string {
+        return this.#data.task_name;
+    }
+
+    public get projectName(): string | null {
+        return this.#data.project_name;
+    }
+
     public get dimension(): DimensionType {
         return this.#data.dimension;
     }
@@ -775,6 +789,7 @@ export class Job extends Session {
 export class Task extends Session {
     public name: string;
     public projectId: number | null;
+    public projectName: string | null;
     public organizationId: number | null;
     public assignee: User | null;
     public bugTracker: string;
@@ -835,6 +850,7 @@ export class Task extends Session {
             id: undefined,
             name: undefined,
             project_id: null,
+            project_name: null,
             guide_id: undefined,
             organization_id: undefined,
             status: undefined,
@@ -979,6 +995,9 @@ export class Task extends Session {
                         updateTrigger.update('projectId');
                         data.project_id = projectId;
                     },
+                },
+                projectName: {
+                    get: () => data.project_name,
                 },
                 guideId: {
                     get: () => data.guide_id,
