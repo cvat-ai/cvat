@@ -22,9 +22,9 @@ function updateHistoryFromQuery(query: Indexable): string {
         ...(query.sort ? { sort: query.sort } : {}),
         ...(query.page ? { page: `${query.page}` } : {}),
         ...(query.pageSize ? { pageSize: `${query.pageSize}` } : {}),
-    });
+    }).toString();
 
-    return search.toString();
+    return search ? `?${search}` : '';
 }
 
 export {
