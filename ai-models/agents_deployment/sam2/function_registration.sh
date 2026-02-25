@@ -23,7 +23,10 @@ else
 fi
 
 # Try to find existing function with the same name and owner
-if FUNCTION_ID=$(curl --get --fail --data-urlencode "filter={\"and\":[{\"==\":[{\"var\":\"name\"},\"${FUNCTION_NAME}\"]},{\"==\":[{\"var\":\"owner\"},\"$USERNAME\"]}]}" "$CVAT_BASE_URL"/api/functions -s --oauth2-bearer "$CVAT_ACCESS_TOKEN" | jq -r '.results[0].id') && [ "$FUNCTION_ID" != "null" ]; then
+FILTER=$(jq -nc --arg name "${FUNCTION_NAME}" --arg owner "$USERNAME" \
+  '{"and":[{"==":[{"var":"name"},$name]},{"==":[{"var":"owner"},$owner]}]}')
+
+if FUNCTION_ID=$(curl --get --fail --data-urlencode "filter=$FILTER" "${ORG_CURL_ARGS[@]}" "$CVAT_BASE_URL"/api/functions -s --oauth2-bearer "$CVAT_ACCESS_TOKEN" | jq -r '.results[0].id') && [ "$FUNCTION_ID" != "null" ]; then
     echo "Found existing function with ID: $FUNCTION_ID, new function won't be created."
     echo "$FUNCTION_ID" > /shared/FUNCTION_ID
 else
