@@ -166,15 +166,6 @@ Assets directory has two parts:
 
 ## Troubleshooting
 
-1. If your test session was exit with message:
-   ```
-   _pytest.outcomes.Exit: Command failed: ... Add `-s` option to see more details.
-   ```
-   Rerun tests to see error messages:
-   ```
-   pytest ./tests/python/rest_api -s
-   ```
-
 1. If your tests was failed due to date field incompatibility and you have
    error message like this:
    ```
