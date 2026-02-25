@@ -6,7 +6,6 @@ source "$(dirname "$0")/check_env.sh"
 
 common_env
 resolve_model_id
-resolve_org_slug_curl
 
 # Hardcoded for SAM2
 
