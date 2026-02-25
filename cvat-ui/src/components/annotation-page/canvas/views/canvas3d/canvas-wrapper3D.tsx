@@ -30,6 +30,7 @@ import {
     updateCanvasContextMenu,
     getDataFailed,
     canvasErrorOccurred,
+    collapseObjectItems,
 } from 'actions/annotation-actions';
 import {
     ActiveControl,
@@ -48,6 +49,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { scrollAndExpandByClientID, scrollAndExpandState } from 'utils/objects-sidebar';
 
 const cvat = getCore();
 
@@ -116,13 +118,13 @@ const componentShortcuts = {
         name: 'Next object',
         description: 'Go to the next object and center it on the canvas',
         sequences: ['tab'],
-        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
     PREVIOUS_OBJECT: {
         name: 'Previous object',
         description: 'Go to the previous object and center it on the canvas',
         sequences: ['shift+tab'],
-        scope: ShortcutScope['3D_ANNOTATION_WORKSPACE'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
 
@@ -160,17 +162,12 @@ interface DispatchToProps {
     onSplitAnnotations(state: ObjectState): void;
     onUpdateAnnotations(states: ObjectState[]): void;
     onActivateObject: (activatedStateID: number | null) => void;
+    onExpandObject(objectState: ObjectState): void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onGetDataFailed(error: Error): void;
     onCanvasErrorOccurred(error: Error): void;
 }
-
-const preventDefault = (event: KeyboardEvent | undefined): void => {
-    if (event) {
-        event.preventDefault();
-    }
-};
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -209,7 +206,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance: jobInstance as Job,
         frameData,
         contextMenuVisibility,
-        annotations: annotations as ObjectState[],
+        annotations,
         frameFetching,
         frame,
         opacity,
@@ -254,6 +251,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             }
 
             dispatch(activateObject(activatedStateID, null, null));
+        },
+        onExpandObject(objectState: ObjectState): void {
+            dispatch(collapseObjectItems([objectState], false));
         },
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
@@ -305,8 +305,8 @@ export const PerspectiveViewComponent = React.memo(
             keyMap: state.shortcuts.keyMap,
             normalizedKeyMap: state.shortcuts.normalizedKeyMap,
             annotations: state.annotation.annotations.states as ObjectState[],
-            activatedStateID: state.annotation.annotations.activatedStateID as number | null,
-            curZLayer: state.annotation.annotations.zLayer.cur as number,
+            activatedStateID: state.annotation.annotations.activatedStateID,
+            curZLayer: state.annotation.annotations.zLayer.cur,
         }), shallowEqual);
 
         const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
@@ -341,15 +341,11 @@ export const PerspectiveViewComponent = React.memo(
             canvas.activate(nextState.clientID);
 
             // Center camera on the selected object in 3D workspace
-            canvas.focusObject(nextState.clientID);
+            canvas.focus(nextState.clientID);
 
-            const sidebarItem = window.document.getElementById(
-                `cvat-objects-sidebar-state-item-${nextState.clientID}`,
-            );
-
-            if (sidebarItem) {
-                sidebarItem.scrollIntoView();
-            }
+            scrollAndExpandState(nextState, (state) => {
+                dispatch(collapseObjectItems([state], false));
+            });
         };
 
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
@@ -363,12 +359,16 @@ export const PerspectiveViewComponent = React.memo(
             MOVE_RIGHT: () => { },
             ZOOM_IN: () => { },
             ZOOM_OUT: () => { },
-            NEXT_OBJECT: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
+            NEXT_OBJECT: (event?: KeyboardEvent) => {
+                if (event) {
+                    event.preventDefault();
+                }
                 navigateObject(1);
             },
-            PREVIOUS_OBJECT: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
+            PREVIOUS_OBJECT: (event?: KeyboardEvent) => {
+                if (event) {
+                    event.preventDefault();
+                }
                 navigateObject(-1);
             },
         };
@@ -712,18 +712,17 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         const { clientID } = event.detail;
         onActivateObject(clientID);
         canvasInstance.activate(clientID);
+    };
 
-        const objectState = annotations.find((state) => state.clientID === clientID);
+    const onCanvasShapeClicked = (event: CustomEvent<{ clientID: number | null }>): void => {
+        const { onExpandObject } = props;
+        const { clientID } = event.detail;
 
-        if (objectState) {
-            const sidebarItem = window.document.getElementById(
-                `cvat-objects-sidebar-state-item-${clientID}`,
-            );
-
-            if (sidebarItem) {
-                sidebarItem.scrollIntoView();
-            }
+        if (clientID === null) {
+            return;
         }
+
+        scrollAndExpandByClientID(clientID, annotations, onExpandObject);
     };
 
     const onCanvasEditDone = (event: any): void => {
@@ -844,6 +843,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         updateCanvas();
         canvasInstanceDOM.perspective.addEventListener('canvas.drawn', onCanvasShapeDrawn);
         canvasInstanceDOM.perspective.addEventListener('canvas.selected', onCanvasShapeSelected);
+        canvasInstanceDOM.perspective.addEventListener('canvas.clicked', onCanvasShapeClicked as EventListener);
         canvasInstanceDOM.perspective.addEventListener('canvas.edited', onCanvasEditDone);
         canvasInstanceDOM.perspective.addEventListener('canvas.contextmenu', onContextMenu);
         canvasInstanceDOM.perspective.addEventListener('click', onCanvasClick);
@@ -855,6 +855,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         return () => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.drawn', onCanvasShapeDrawn);
             canvasInstanceDOM.perspective.removeEventListener('canvas.selected', onCanvasShapeSelected);
+            canvasInstanceDOM.perspective.removeEventListener('canvas.clicked', onCanvasShapeClicked as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.edited', onCanvasEditDone);
             canvasInstanceDOM.perspective.removeEventListener('canvas.contextmenu', onContextMenu);
             canvasInstanceDOM.perspective.removeEventListener('click', onCanvasClick);

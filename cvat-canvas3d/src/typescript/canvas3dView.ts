@@ -131,7 +131,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }>;
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {
-        const cuboidModel = this.drawnObjects[String(clientID)];
+        const cuboidModel = this.drawnObjects[clientID];
         if (cuboidModel) {
             this.fitObject(cuboidModel.cuboid, animate);
         }
@@ -420,6 +420,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const objectState = Number.isInteger(intersectionClientID) ? this.model.objects
                 .find((state: ObjectState) => state.clientID === intersectionClientID) : null;
 
+            if (objectState) {
+                this.dispatchEvent(
+                    new CustomEvent('canvas.clicked', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            clientID: intersectionClientID,
+                        },
+                    }),
+                );
+            }
+
             const handleClick = (targetList: ObjectState[]): void => {
                 const objectStateIdx = targetList
                     .findIndex((state: ObjectState) => state.clientID === intersectionClientID);
@@ -480,7 +492,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             bubbles: false,
                             cancelable: true,
                             detail: {
-                                clientID: typeof clientID === 'string' ? +clientID : null,
+                                clientID: Number(clientID),
                             },
                         }),
                     );
@@ -1963,15 +1975,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     if (this.model.data.activeElement.clientID !== clientID) {
                         const object = this.views.perspective.scene.getObjectByName(clientID);
                         if (object === undefined) return;
-                        this.dispatchEvent(
-                            new CustomEvent('canvas.selected', {
-                                bubbles: false,
-                                cancelable: true,
-                                detail: {
-                                    clientID: castedClientID,
-                                },
-                            }),
-                        );
+                        this.model.data.activeElement.clientID = clientID;
                     }
                 }
             } else if (this.mode === Mode.SPLIT && this.stateToBeSplitted) {
