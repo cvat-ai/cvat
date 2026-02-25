@@ -25,6 +25,16 @@ resolve_org_slug() {
     fi
 }
 
+resolve_org_slug_curl() {
+    ORG_CURL_ARGS=()
+    if [ -n "$ORG_SLUG" ]; then
+        ORG_CURL_ARGS=(--data-urlencode "org=$ORG_SLUG")
+    else
+        # That means "search ONLY outside of organizations, i.e. for the user"
+        ORG_CURL_ARGS=(--data-urlencode "org=")
+    fi
+}
+
 resolve_model_id() {
     if [ -z "$MODEL_ID" ]; then
         echo "Warning: MODEL_ID environment variable not found. Default is facebook/sam2.1-hiera-tiny"
