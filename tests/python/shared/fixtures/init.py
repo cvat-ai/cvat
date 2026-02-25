@@ -4,7 +4,6 @@
 
 import logging
 import os
-import shlex
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -96,35 +95,23 @@ def pytest_addoption(parser):
 
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
-    try:
-        logger.debug(f"Executing a command: {_command}")
+    logger.debug(f"Executing a command: {_command}")
 
-        stdout, stderr = "", ""
-        if capture_output:
-            proc = run(_command, check=True, stdout=PIPE, stderr=PIPE)  # nosec
-            stdout, stderr = proc.stdout.decode(), proc.stderr.decode()
-        else:
-            proc = run(_command)  # nosec
+    if capture_output:
+        proc = run(_command, check=True, stdout=PIPE)  # nosec
+        stdout = proc.stdout.decode()
+    else:
+        proc = run(_command, check=True)  # nosec
+        stdout = ""
 
-        if stdout:
-            logger.debug(f"Output (stdout): {stdout}")
-        if stderr:
-            logger.debug(f"Output (stderr): {stderr}")
+    if stdout:
+        logger.debug(f"Output (stdout): {stdout}")
 
-        return stdout, stderr
-    except CalledProcessError as exc:
-        message = f"Command failed: {' '.join(map(shlex.quote, _command))}."
-        message += f"\nExit code: {exc.returncode}"
-        if capture_output:
-            message += f"\nStandard output:\n{exc.stdout.decode()}"
-            message += f"\nStandard error:\n{exc.stderr.decode()}"
-
-        pytest.exit(message)
+    return stdout
 
 
 def _kube_get_pod_name(label_filter):
-    output, _ = _run(f"kubectl get pods -l {label_filter} -o jsonpath={{.items[0].metadata.name}}")
-    return output
+    return _run(f"kubectl get pods -l {label_filter} -o jsonpath={{.items[0].metadata.name}}")
 
 
 def _kube_get_server_pod_name():
@@ -297,7 +284,7 @@ def kube_restore_redis_ondisk():
 
 
 def running_containers():
-    return [cn for cn in _run("docker ps --format {{.Names}}")[0].split("\n") if cn]
+    return [cn for cn in _run("docker ps --format {{.Names}}").split("\n") if cn]
 
 
 def dump_db():
@@ -556,7 +543,7 @@ def collect_code_coverage_from_containers():
         process_command = "python3"
 
         # find process with code coverage
-        pid, _ = docker_exec(container, f"pidof {process_command} -o 1")
+        pid = docker_exec(container, f"pidof {process_command} -o 1")
 
         # stop process with code coverage
         docker_exec(container, f"kill -15 {pid}")
