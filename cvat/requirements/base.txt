@@ -65,7 +65,7 @@ dj-pagination==2.5.0
     # via -r cvat/requirements/base.in
 dj-rest-auth[with-social]==5.0.2
     # via -r cvat/requirements/base.in
-django==4.2.26
+django==4.2.28
     # via
     #   -r cvat/requirements/base.in
     #   dj-rest-auth
@@ -189,7 +189,7 @@ networkx==3.4.2
     # via datumaro
 nibabel==5.3.2
     # via datumaro
-nltk==3.9.1
+nltk==3.9.3
     # via datumaro
 oauthlib==3.3.1
     # via requests-oauthlib
@@ -214,7 +214,7 @@ pottery==3.0.1
     # via -r cvat/requirements/base.in
 proto-plus==1.26.1
     # via google-api-core
-protobuf==6.31.1
+protobuf==6.33.5
     # via
     #   datumaro
     #   google-api-core
@@ -330,9 +330,7 @@ shapely==1.7.1
     #   -r cvat/requirements/base.in
     #   datumaro
 six==1.17.0
-    # via
-    #   azure-core
-    #   python-dateutil
+    # via python-dateutil
 sqlparse==0.5.3
     # via django
 tabulate==0.9.0
