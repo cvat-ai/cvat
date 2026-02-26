@@ -534,7 +534,7 @@ export class Job extends Session {
         source_storage: Storage,
         target_storage: Storage,
         parent_job_id: number | null;
-        consensus_replicas: number;
+        replicas_count: number;
     };
 
     constructor(initialData: InitializerType) {
@@ -563,7 +563,7 @@ export class Job extends Session {
             source_storage: undefined,
             target_storage: undefined,
             parent_job_id: null,
-            consensus_replicas: undefined,
+            replicas_count: undefined,
         };
 
         this.#data.id = initialData.id ?? this.#data.id;
@@ -579,7 +579,7 @@ export class Job extends Session {
         this.#data.mode = initialData.mode ?? this.#data.mode;
         this.#data.created_date = initialData.created_date ?? this.#data.created_date;
         this.#data.parent_job_id = initialData.parent_job_id ?? this.#data.parent_job_id;
-        this.#data.consensus_replicas = initialData.consensus_replicas ?? this.#data.consensus_replicas;
+        this.#data.replicas_count = initialData.replicas_count ?? this.#data.replicas_count;
 
         if (Array.isArray(initialData.labels)) {
             this.#data.labels = initialData.labels.map((labelData) => {
@@ -687,8 +687,8 @@ export class Job extends Session {
         return this.#data.parent_job_id;
     }
 
-    public get consensusReplicas(): number {
-        return this.#data.consensus_replicas;
+    public get replicasCount(): number {
+        return this.#data.replicas_count;
     }
 
     public get dataChunkType(): ChunkType {
@@ -947,7 +947,7 @@ export class Task extends Session {
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
                     parent_job_id: job.parent_job_id,
-                    consensus_replicas: job.consensus_replicas,
+                    replicas_count: job.replicas_count,
                 });
                 data.jobs.push(jobInstance);
             }
