@@ -818,6 +818,7 @@ class JobReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
         list_serializer_class = JobReadListSerializer
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_task_name(self, instance):
         request = self.context.get('request')
         if not request:
@@ -830,6 +831,7 @@ class JobReadSerializer(serializers.ModelSerializer):
 
         return instance.segment.task.name if can_view_task else None
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_project_name(self, instance):
         project = instance.segment.task.project
         if not project:
@@ -2512,6 +2514,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     def get_consensus_enabled(self, instance: models.Task) -> bool:
         return instance.consensus_replicas > 0
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
     def get_project_name(self, instance: models.Task) -> str | None:
         # If task has no project, return None
         if not instance.project_id:

@@ -8246,6 +8246,7 @@ components:
           readOnly: true
         task_name:
           type: string
+          nullable: true
           readOnly: true
         project_id:
           type: integer
@@ -8253,6 +8254,7 @@ components:
           nullable: true
         project_name:
           type: string
+          nullable: true
           readOnly: true
         assignee:
           allOf:
