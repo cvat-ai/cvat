@@ -8244,10 +8244,16 @@ components:
         task_id:
           type: integer
           readOnly: true
+        task_name:
+          type: string
+          readOnly: true
         project_id:
           type: integer
           readOnly: true
           nullable: true
+        project_name:
+          type: string
+          readOnly: true
         assignee:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -11143,6 +11149,10 @@ components:
         project_id:
           type: integer
           nullable: true
+        project_name:
+          type: string
+          nullable: true
+          readOnly: true
         mode:
           type: string
           readOnly: true
