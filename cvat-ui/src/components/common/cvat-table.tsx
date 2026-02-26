@@ -92,10 +92,8 @@ function CVATTable(props: Props): JSX.Element {
                     accessor: (dataItem: any) => getValueFromDataItem<string>(dataItem, column.dataIndex),
                 }));
 
-            // Generate CSV content using unified utility
             const csvContent = generateCSV([...filteredDataSource], csvColumns);
 
-            // Download CSV file
             triggerCSVDownload(csvContent, csvExport.filename);
         }
     }, [csvExport, filteredDataSource, columns]);

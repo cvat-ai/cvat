@@ -10,6 +10,7 @@ import { DownloadOutlined } from '@ant-design/icons';
 import { CombinedState, ProjectsQuery } from 'reducers';
 import { CSVColumn } from 'utils/csv-writer';
 import { exportToCSVAsync } from 'actions/csv-export-actions';
+import { filterNull } from 'utils/filter-null';
 import { getCore } from 'cvat-core-wrapper';
 
 const cvat = getCore();
@@ -23,10 +24,10 @@ function ProjectsCSVExportButton(props: ProjectsCSVExportButtonProps): JSX.Eleme
     const dispatch = useDispatch();
     const isExporting = useSelector((state: CombinedState) => state.bulkActions.fetching);
 
-    // Define CSV columns for projects
     const columns = useMemo<CSVColumn<any>[]>(() => [
         { header: 'ID', accessor: (project) => project.id },
         { header: 'Name', accessor: (project) => project.name },
+        { header: 'Project URL', accessor: (project) => `${window.location.origin}/projects/${project.id}` },
         { header: 'Owner', accessor: (project) => project.owner?.username || 'Unknown' },
         { header: 'Assignee', accessor: (project) => project.assignee?.username || 'Unassigned' },
         { header: 'Status', accessor: (project) => project.status },
@@ -59,18 +60,19 @@ function ProjectsCSVExportButton(props: ProjectsCSVExportButtonProps): JSX.Eleme
         dispatch(exportToCSVAsync({
             columns,
             fetchPage: async (page: number, pageSize: number) => {
-                const projects = await cvat.projects.get({
+                const filteredQuery = filterNull({
                     ...query,
                     page,
                     pageSize,
-                } as any); // cvat.projects.get converts pageSize to page_size internally
+                });
+                const projects = await cvat.projects.get(filteredQuery);
                 return {
                     results: projects,
                     count: projects.count,
                 };
             },
             filename,
-            pageSize: 500,
+            pageSize: 100,
             resourceName: 'projects',
         }));
     }, [dispatch, columns, query]);

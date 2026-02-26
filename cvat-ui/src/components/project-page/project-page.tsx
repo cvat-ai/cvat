@@ -326,7 +326,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         }));
                                     }}
                                 />
-                                <TasksCSVExportButton tasks={tasks} />
+                                <TasksCSVExportButton query={{ ...tasksQuery, projectId: id }} />
                             </div>
                         </div>
                         <Popover

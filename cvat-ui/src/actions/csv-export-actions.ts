@@ -14,7 +14,7 @@ export interface CSVExportOptions<T> {
     fetchPage: (page: number, pageSize: number) => Promise<{ results: T[]; count: number }>;
     filename: string;
     pageSize?: number;
-    resourceName?: string; // e.g., "jobs", "tasks", "projects"
+    resourceName?: string;
 }
 
 export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
@@ -23,14 +23,13 @@ export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
             columns,
             fetchPage,
             filename,
-            pageSize = 500,
+            pageSize = 100,
             resourceName = 'items',
         } = options;
 
         try {
             dispatch(bulkActions.startBulkAction());
 
-            // Initialize CSV writer
             const csvWriter = new IncrementalCSVWriter<T>(columns);
 
             // Fetch first page to get total count
@@ -38,12 +37,10 @@ export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
             const totalCount = firstPage.count;
             const totalPages = Math.ceil(totalCount / pageSize);
 
-            // Check if cancelled
             if (getState().bulkActions.cancelled) {
                 return;
             }
 
-            // Handle empty results
             if (totalCount === 0) {
                 notification.info({
                     message: 'No data to export',
@@ -52,18 +49,14 @@ export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
                 return;
             }
 
-            // Add first page to CSV
             csvWriter.addBatch(firstPage.results);
 
-            // Update progress for first page
             dispatch(bulkActions.updateBulkActionStatus({
                 message: `Exporting ${resourceName}: ${firstPage.results.length} of ${totalCount}`,
                 percent: Math.round((1 / totalPages) * 100),
             }));
 
-            // Fetch remaining pages
             for (let page = 2; page <= totalPages; page++) {
-                // Check if cancelled
                 if (getState().bulkActions.cancelled) {
                     return;
                 }
@@ -78,11 +71,9 @@ export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
                 }));
             }
 
-            // Generate and download CSV
             const csvContent = csvWriter.getContent();
             downloadCSV(csvContent, filename);
 
-            // Show success notification
             notification.success({
                 message: 'Export completed',
                 description: `Successfully exported ${totalCount} ${resourceName} to ${filename}`,

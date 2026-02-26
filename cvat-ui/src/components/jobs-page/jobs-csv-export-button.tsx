@@ -10,13 +10,14 @@ import { DownloadOutlined } from '@ant-design/icons';
 import { CombinedState, JobsQuery } from 'reducers';
 import IncrementalCSVWriter, { CSVColumn, downloadCSV } from 'utils/csv-writer';
 import { exportToCSVAsync } from 'actions/csv-export-actions';
+import { filterNull } from 'utils/filter-null';
 import { getCore, Job } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
 interface JobsCSVExportButtonProps {
     query?: JobsQuery;
-    jobs?: Job[]; // Optional: pre-loaded jobs to export directly
+    jobs?: Job[];
 }
 
 function JobsCSVExportButton(props: JobsCSVExportButtonProps): JSX.Element {
@@ -24,13 +25,15 @@ function JobsCSVExportButton(props: JobsCSVExportButtonProps): JSX.Element {
     const dispatch = useDispatch();
     const isExporting = useSelector((state: CombinedState) => state.bulkActions.fetching);
 
-    // Define CSV columns for jobs
     const columns: CSVColumn<any>[] = useMemo(() => [
         { header: 'ID', accessor: (job) => job.id },
+        { header: 'Job URL', accessor: (job) => `${window.location.origin}/tasks/${job.taskId}/jobs/${job.id}` },
         { header: 'Task ID', accessor: (job) => job.taskId },
         { header: 'Task Name', accessor: (job) => job.taskName || 'Unknown' },
+        { header: 'Task URL', accessor: (job) => `${window.location.origin}/tasks/${job.taskId}` },
         { header: 'Project ID', accessor: (job) => job.projectId },
         { header: 'Project Name', accessor: (job) => job.projectName || 'N/A' },
+        { header: 'Project URL', accessor: (job) => (job.projectId ? `${window.location.origin}/projects/${job.projectId}` : 'N/A') },
         { header: 'Assignee', accessor: (job) => job.assignee?.username || 'Unassigned' },
         { header: 'Stage', accessor: (job) => job.stage },
         { header: 'State', accessor: (job) => job.state },
@@ -54,7 +57,6 @@ function JobsCSVExportButton(props: JobsCSVExportButtonProps): JSX.Element {
         const timestamp = new Date().toISOString().split('T')[0];
         const filename = `cvat-jobs-${timestamp}.csv`;
 
-        // If jobs are pre-loaded, export them directly without API calls
         if (predefinedJobs) {
             const csvWriter = new IncrementalCSVWriter(columns);
             csvWriter.addBatch(predefinedJobs);
@@ -63,22 +65,22 @@ function JobsCSVExportButton(props: JobsCSVExportButtonProps): JSX.Element {
             return;
         }
 
-        // Otherwise, use the async export action to fetch from API
         dispatch(exportToCSVAsync({
             columns,
             fetchPage: async (page: number, pageSize: number) => {
-                const jobs = await cvat.jobs.get({
+                const filteredQuery = filterNull({
                     ...query,
                     page,
                     pageSize,
-                } as any); // cvat.jobs.get converts pageSize to page_size internally
+                });
+                const jobs = await cvat.jobs.get(filteredQuery);
                 return {
                     results: jobs,
                     count: jobs.count,
                 };
             },
             filename,
-            pageSize: 500,
+            pageSize: 100,
             resourceName: 'jobs',
         }));
     }, [dispatch, columns, query, predefinedJobs]);
