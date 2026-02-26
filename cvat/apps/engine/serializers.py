@@ -750,12 +750,21 @@ class JobReadListSerializer(serializers.ListSerializer):
             ).select_related('project')
             tasks_map = {task.id: task for task in tasks_with_projects}
 
+            job_ids = set(j.id for j in page)
             # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
-            # limiting in only for the page
+            # limiting it only for the page
             issue_counts = dict(
                 models.Job.objects.with_issue_counts().filter(
-                    id__in=set(j.id for j in page)
+                    id__in=job_ids
                 ).values_list("id", "issue__count")
+            )
+
+            # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
+            # limiting it only for the page
+            children_counts = dict(
+                models.Job.objects.with_child_jobs_counts().filter(
+                    id__in=job_ids
+                ).values_list("id", "child_jobs__count")
             )
 
             for job in page:
@@ -764,9 +773,12 @@ class JobReadListSerializer(serializers.ListSerializer):
                 # Attach prefetched task to avoid additional queries
                 if task := tasks_map.get(job.get_task_id()):
                     job.segment.task = task
+                job.child_jobs__count = children_counts.get(job.id, 0)
 
         return super().to_representation(data)
 
+
+@extend_schema_serializer(deprecate_fields=["consensus_replicas"])
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="get_task_id")
     task_name = serializers.SerializerMethodField()
@@ -791,6 +803,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     source_storage = StorageSerializer(required=False, allow_null=True)
     parent_job_id = serializers.ReadOnlyField(allow_null=True)
     consensus_replicas = serializers.IntegerField(read_only=True)
+    replicas_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = models.Job
@@ -800,7 +813,7 @@ class JobReadSerializer(serializers.ModelSerializer):
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
             'target_storage', 'source_storage', 'assignee_updated_date', 'parent_job_id',
-            'consensus_replicas'
+            'consensus_replicas', 'replicas_count',
         )
         read_only_fields = fields
         list_serializer_class = JobReadListSerializer
@@ -833,16 +846,15 @@ class JobReadSerializer(serializers.ModelSerializer):
 
         return project.name if can_view_project else None
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: models.Job):
         data = super().to_representation(instance)
 
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
 
-        if instance.type == models.JobType.ANNOTATION:
-            data['consensus_replicas'] = instance.segment.task.consensus_replicas
-        else:
-            data['consensus_replicas'] = 0
+        if 'replicas_count' in self.fields:
+            data['replicas_count'] = getattr(instance, "child_jobs__count", 0)
+            data['consensus_replicas'] = data['replicas_count']
 
         if request := self.context.get('request'):
             can_view_task = getattr(instance, "user_can_view_task", None)
