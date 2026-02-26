@@ -19,9 +19,11 @@ resolve_org_slug() {
     if [ -z "$ORG_SLUG" ]; then
         echo "Warning: ORG_SLUG environment variable not found. Function will be registered only for your user."
         echo "ORG_SLUG must be the short name of the organization; it is the name displayed under your username when you switch to the organization in the CVAT UI."
+        ORG_CURL_ARGS=(--data-urlencode "org=")
     else
         echo "Using organization: $ORG_SLUG"
         ORG_SLUG_ARGS=(--organization "$ORG_SLUG")
+        ORG_CURL_ARGS=(--data-urlencode "org=$ORG_SLUG")
     fi
 }
 
