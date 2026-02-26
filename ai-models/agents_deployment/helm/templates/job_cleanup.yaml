@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "agent.fullname" . }}-function-deregistration
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook-weight": "0"
+spec:
+  backoffLimit: {{ .Values.job.backoffLimit | default 3 }}
+  ttlSecondsAfterFinished: {{ .Values.job.ttlSecondsAfterFinished | default 300 }}
+  template:
+    metadata:
+      labels:
+        {{- include "agent.jobSelectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+      {{- include "agent.podSecurityContext" . | nindent 8 }}
+      serviceAccountName: {{ include "agent.fullname" . }}-job-sa
+      restartPolicy: Never
+      containers:
+        - name: function-deregistration
+          securityContext:
+            allowPrivilegeEscalation: false
+          {{- include "agent.image" . | nindent 10 }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              ./function_deregistration.sh
+          envFrom:
+            - configMapRef:
+                optional: true
+                name: {{ include "agent.fullname" . }}-config
+          env:
+            {{- include "agent.commonEnv" . | nindent 12 }}
+            {{- range .Values.job.envVars }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.job.resources | nindent 12 }}
