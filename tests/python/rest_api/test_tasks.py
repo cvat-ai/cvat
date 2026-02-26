@@ -90,7 +90,9 @@ class TestGetTasks:
                     exclude_regex.append(exclude_paths)
                 else:
                     exclude_regex.extend(exclude_paths)
-            assert DeepDiff(data, results, ignore_order=True, exclude_regex_paths=exclude_regex) == {}
+            assert (
+                DeepDiff(data, results, ignore_order=True, exclude_regex_paths=exclude_regex) == {}
+            )
 
     def _test_users_to_see_task_list(
         self, project_id, tasks, users, is_staff, is_allow, is_project_staff, **kwargs
