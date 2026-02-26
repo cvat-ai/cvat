@@ -551,7 +551,12 @@ class TestGetJobs:
             assert response.status == HTTPStatus.OK
 
             if expected_data is not None:
-                assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+                assert DeepDiff(
+                    expected_data, 
+                    json.loads(response.data), 
+                    ignore_order=True,
+                    exclude_paths=["root['task_name']", "root['project_name']"]
+                ) == {}
 
     def _test_get_job_403(self, user, jid, **kwargs):
         with make_api_client(user) as client:
@@ -941,7 +946,12 @@ class TestListJobs:
             results = get_paginated_collection(
                 client.jobs_api.list_endpoint, return_json=True, **kwargs
             )
-            assert DeepDiff(data, results, ignore_order=True) == {}
+            assert DeepDiff(
+                data, 
+                results, 
+                ignore_order=True,
+                exclude_regex_paths=[r"root\[\d+\]\['task_name'\]", r"root\[\d+\]\['project_name'\]"]
+            ) == {}
 
     def _test_list_jobs_403(self, user, **kwargs):
         with make_api_client(user) as client:

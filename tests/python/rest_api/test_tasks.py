@@ -84,7 +84,13 @@ class TestGetTasks:
                 project_id=project_id,
                 **kwargs,
             )
-            assert DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths) == {}
+            exclude_regex = [r"root\[\d+\]\['project_name'\]"]
+            if exclude_paths:
+                if isinstance(exclude_paths, str):
+                    exclude_regex.append(exclude_paths)
+                else:
+                    exclude_regex.extend(exclude_paths)
+            assert DeepDiff(data, results, ignore_order=True, exclude_regex_paths=exclude_regex) == {}
 
     def _test_users_to_see_task_list(
         self, project_id, tasks, users, is_staff, is_allow, is_project_staff, **kwargs
@@ -1561,6 +1567,7 @@ class TestTaskBackups:
                     r"root\['organization'\]",  # depends on the task setup, deprecated field
                     r"root\['organization_id'\]",  # depends on the task setup
                     r"root\['project_id'\]",  # should be dropped
+                    r"root\['project_name'\]",  # permission-dependent field
                     r"root\['data_cloud_storage_id'\]",  # should be dropped
                     r"root(\['.*'\])*\['url'\]",  # depends on the task id
                     r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
