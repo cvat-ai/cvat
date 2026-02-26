@@ -27,7 +27,7 @@ Since we know DL models can help us to annotate faster, how then do we use them?
 In CVAT all such DL models are implemented as serverless functions using the [Nuclio][nuclio-homepage]
 serverless platform. There are multiple implemented functions that can be
 found in the [serverless][cvat-builtin-serverless] directory such as
-_Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
+_Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Segment Anything, etc.
 Follow {{< ilink
  "/docs/administration/community/advanced/installation_automatic_annotation" "the installation guide" >}}
 to build and deploy
@@ -892,16 +892,15 @@ Failed to run a Docker container
 Failed to deploy function
     ...//nuclio/pkg/platform/abstract/platform.go:182
   NAMESPACE |                      NAME                      | PROJECT | STATE | NODE PORT | REPLICAS
-  nuclio    | openvino-dextr                                 | cvat    | ready |     49154 | 1/1
+  nuclio    | pth-facebookresearch-sam-vit-h                 | cvat    | ready |     49154 | 1/1
   nuclio    | pth-foolwood-siammask                          | cvat    | ready |     49155 | 1/1
   nuclio    | pth-facebookresearch-detectron2-retinanet-r101 | cvat    | ready |     49155 | 1/1
   nuclio    | pth-shiyinzhang-iog                            | cvat    | error |         0 | 1/1
 ```
-
 </details>
 
 In this case the container was built some time ago and the port 49154 was
-assigned by Nuclio. Now the port is used by `openvino-dextr` as we can
+assigned by Nuclio. Now the port is used by `pth-facebookresearch-sam-vit-h` as we can
 see in logs. To prove our hypothesis just need to run a couple of docker
 commands:
 
@@ -951,7 +950,7 @@ Deploying serverless/pytorch/shiyinzhang/iog function...
 21.07.06 13:10:01.604            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
 21.07.06 13:10:02.976                     nuctl (I) Function deploy complete {"functionName": "pth-shiyinzhang-iog", "httpPort": 49159}
   NAMESPACE |                      NAME                      | PROJECT | STATE | NODE PORT | REPLICAS
-  nuclio    | openvino-dextr                                 | cvat    | ready |     49154 | 1/1
+  nuclio    | pth-facebookresearch-sam-vit-h                 | cvat    | ready |     49154 | 1/1
   nuclio    | pth-foolwood-siammask                          | cvat    | ready |     49155 | 1/1
   nuclio    | pth-facebookresearch-detectron2-retinanet-r101 | cvat    | ready |     49155 | 1/1
   nuclio    | pth-shiyinzhang-iog                            | cvat    | ready |     49159 | 1/1
