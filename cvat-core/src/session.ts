@@ -953,7 +953,9 @@ export class Task extends Session {
                     // following fields also returned when doing API request /jobs/<id>
                     // here we know them from task and append to constructor
                     task_id: data.id,
+                    task_name: data.name,
                     project_id: data.project_id,
+                    project_name: data.project_name,
                     labels: data.labels,
                     bug_tracker: data.bug_tracker,
                     mode: data.mode,
