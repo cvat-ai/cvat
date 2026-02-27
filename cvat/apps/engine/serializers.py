@@ -2486,7 +2486,8 @@ class TaskReadListSerializer(serializers.ListSerializer):
             for task in page:
                 if task.project_id:
                     task.user_can_view_project = task.project_id in visible_projects
-                    task.project = visible_projects[task.project_id]
+                    if task.user_can_view_project:
+                        task.project = visible_projects[task.project_id]
 
                 task_job_summary = job_counts.get(task.id)
                 for k in job_summary_fields:

@@ -550,14 +550,9 @@ class TestGetJobs:
         task_org = task.get("organization")
         task_org_staff = org_staff(task_org) if task_org else set()
 
-        can_view_task = (
-            user_id in task_org_staff or
-            is_task_staff(user_id, task["id"])
-        )
+        can_view_task = user_id in task_org_staff or is_task_staff(user_id, task["id"])
 
-        result = {
-            "task_name": task["name"] if can_view_task else None
-        }
+        result = {"task_name": task["name"] if can_view_task else None}
 
         project_id = job.get("project_id")
         if project_id:
@@ -565,10 +560,7 @@ class TestGetJobs:
             project_org = project.get("organization")
             project_org_staff = org_staff(project_org) if project_org else set()
 
-            can_view_project = (
-                user_id in project_org_staff or
-                is_project_staff(user_id, project_id)
-            )
+            can_view_project = user_id in project_org_staff or is_project_staff(user_id, project_id)
             result["project_name"] = project["name"] if can_view_project else None
         else:
             result["project_name"] = None
@@ -612,7 +604,16 @@ class TestGetJobs:
 
     @pytest.mark.parametrize("groups", [["user"]])
     def test_non_admin_org_staff_can_get_job(
-        self, groups, users, organizations, org_staff, jobs_by_org, tasks, projects, is_task_staff, is_project_staff
+        self,
+        groups,
+        users,
+        organizations,
+        org_staff,
+        jobs_by_org,
+        tasks,
+        projects,
+        is_task_staff,
+        is_project_staff,
     ):
         user, org_id = next(
             (user, org["id"])
@@ -630,7 +631,16 @@ class TestGetJobs:
 
     @pytest.mark.parametrize("groups", [["user"], ["worker"]])
     def test_non_admin_job_staff_can_get_job(
-        self, groups, users, jobs, tasks, projects, is_job_staff, is_task_staff, is_project_staff, org_staff
+        self,
+        groups,
+        users,
+        jobs,
+        tasks,
+        projects,
+        is_job_staff,
+        is_task_staff,
+        is_project_staff,
+        org_staff,
     ):
         user, job = next(
             (user, job)
