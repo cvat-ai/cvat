@@ -1013,8 +1013,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data["job_file_mapping"] = job_file_mapping
 
-        replica_counts = self._collect_replica_counts(jobs)
-        self._manifest["consensus_replicas"] = min(replica_counts[models.JobType.ANNOTATION])
+        self._manifest["consensus_replicas"] = self._parse_replica_counts(jobs)
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
@@ -1102,6 +1101,12 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             if job_type != models.JobType.CONSENSUS_REPLICA:
                 replica_counts.append([job_type, 0])
             else:
+                if not replica_counts:
+                    raise ValidationError(
+                        f"Invalid job order, jobs of type '{job_type}' "
+                        "must follow their parent jobs."
+                    )
+
                 replica_counts[-1][1] += 1
 
         replica_counts_map = defaultdict(list)
@@ -1109,6 +1114,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             replica_counts_map[primary_type].append(count)
 
         return replica_counts_map
+
+    def _parse_replica_counts(self, jobs: dict) -> int:
+        replica_counts = self._collect_replica_counts(jobs)
+        return min(replica_counts.get(models.JobType.ANNOTATION, [0]))
 
     def _import_gt_jobs(self, jobs):
         for job in jobs:
