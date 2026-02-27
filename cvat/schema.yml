@@ -11221,6 +11221,7 @@ components:
           readOnly: true
         data:
           type: integer
+          nullable: true
           readOnly: true
         dimension:
           type: string
