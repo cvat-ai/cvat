@@ -543,6 +543,48 @@ class TestDeleteJobs:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
+    def _compute_expected_task_project_names(
+        self, user_id, job, tasks, projects, is_task_staff, is_project_staff, org_staff
+    ):
+        task = tasks[job["task_id"]]
+        task_org = task.get("organization")
+        task_org_staff = org_staff(task_org) if task_org else set()
+
+        can_view_task = (
+            user_id in task_org_staff or
+            is_task_staff(user_id, task["id"])
+        )
+
+        result = {
+            "task_name": task["name"] if can_view_task else None
+        }
+
+        project_id = job.get("project_id")
+        if project_id:
+            project = projects[project_id]
+            project_org = project.get("organization")
+            project_org_staff = org_staff(project_org) if project_org else set()
+
+            can_view_project = (
+                user_id in project_org_staff or
+                is_project_staff(user_id, project_id)
+            )
+            result["project_name"] = project["name"] if can_view_project else None
+        else:
+            result["project_name"] = None
+
+        return result
+
+    def _get_expected_job_data(
+        self, user_id, job, tasks, projects, is_task_staff, is_project_staff, org_staff
+    ):
+        expected_job = deepcopy(job)
+        names = self._compute_expected_task_project_names(
+            user_id, job, tasks, projects, is_task_staff, is_project_staff, org_staff
+        )
+        expected_job.update(names)
+        return expected_job
+
     def _test_get_job_200(
         self, user, jid, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
@@ -551,15 +593,7 @@ class TestGetJobs:
             assert response.status == HTTPStatus.OK
 
             if expected_data is not None:
-                assert (
-                    DeepDiff(
-                        expected_data,
-                        json.loads(response.data),
-                        ignore_order=True,
-                        exclude_paths=["root['task_name']", "root['project_name']"],
-                    )
-                    == {}
-                )
+                assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
 
     def _test_get_job_403(self, user, jid, **kwargs):
         with make_api_client(user) as client:
@@ -578,7 +612,7 @@ class TestGetJobs:
 
     @pytest.mark.parametrize("groups", [["user"]])
     def test_non_admin_org_staff_can_get_job(
-        self, groups, users, organizations, org_staff, jobs_by_org
+        self, groups, users, organizations, org_staff, jobs_by_org, tasks, projects, is_task_staff, is_project_staff
     ):
         user, org_id = next(
             (user, org["id"])
@@ -587,17 +621,29 @@ class TestGetJobs:
             if user["groups"] == groups and user["id"] in org_staff(org["id"])
         )
         job = jobs_by_org[org_id][0]
-        self._test_get_job_200(user["username"], job["id"], expected_data=job)
+
+        expected_job = self._get_expected_job_data(
+            user["id"], job, tasks, projects, is_task_staff, is_project_staff, org_staff
+        )
+
+        self._test_get_job_200(user["username"], job["id"], expected_data=expected_job)
 
     @pytest.mark.parametrize("groups", [["user"], ["worker"]])
-    def test_non_admin_job_staff_can_get_job(self, groups, users, jobs, is_job_staff):
+    def test_non_admin_job_staff_can_get_job(
+        self, groups, users, jobs, tasks, projects, is_job_staff, is_task_staff, is_project_staff, org_staff
+    ):
         user, job = next(
             (user, job)
             for user in users
             for job in jobs
             if user["groups"] == groups and is_job_staff(user["id"], job["id"])
         )
-        self._test_get_job_200(user["username"], job["id"], expected_data=job)
+
+        expected_job = self._get_expected_job_data(
+            user["id"], job, tasks, projects, is_task_staff, is_project_staff, org_staff
+        )
+
+        self._test_get_job_200(user["username"], job["id"], expected_data=expected_job)
 
     @pytest.mark.parametrize("groups", [["user"], ["worker"]])
     def test_non_admin_non_job_staff_non_org_staff_cannot_get_job(
@@ -615,7 +661,9 @@ class TestGetJobs:
         self._test_get_job_403(user["username"], job_id)
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_get_gt_job_in_sandbox_task(self, tasks, jobs, users, admin_user):
+    def test_can_get_gt_job_in_sandbox_task(
+        self, tasks, jobs, users, projects, admin_user, is_task_staff, is_project_staff, org_staff
+    ):
         task = next(
             t
             for t in tasks
@@ -624,6 +672,7 @@ class TestGetJobs:
             and not users[t["owner"]["id"]]["is_superuser"]
         )
         user = task["owner"]["username"]
+        user_id = task["owner"]["id"]
 
         job_spec = {
             "task_id": task["id"],
@@ -633,9 +682,14 @@ class TestGetJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            job, _ = api_client.jobs_api.create(job_spec)
+            _, response = api_client.jobs_api.create(job_spec)
+            job = json.loads(response.data)
 
-        self._test_get_job_200(user, job.id)
+        expected_job = self._get_expected_job_data(
+            user_id, job, tasks, projects, is_task_staff, is_project_staff, org_staff
+        )
+
+        self._test_get_job_200(user, job["id"], expected_data=expected_job)
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
@@ -656,8 +710,11 @@ class TestGetJobs:
         tasks,
         jobs,
         users,
+        projects,
         is_org_member,
         is_task_staff,
+        is_project_staff,
+        org_staff,
         org_role,
         is_staff,
         allow,
@@ -692,7 +749,11 @@ class TestGetJobs:
             job = json.loads(response.data)
 
         if allow:
-            self._test_get_job_200(user["username"], job["id"], expected_data=job)
+            expected_job = self._get_expected_job_data(
+                user["id"], job, tasks, projects, is_task_staff, is_project_staff, org_staff
+            )
+
+            self._test_get_job_200(user["username"], job["id"], expected_data=expected_job)
         else:
             self._test_get_job_403(user["username"], job["id"])
 
