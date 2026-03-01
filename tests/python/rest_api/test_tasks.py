@@ -3096,7 +3096,7 @@ class TestImportTaskAnnotations:
         command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
         for _ in range(12):
             sleep(2)
-            result, _ = container_exec_cvat(request, command)
+            result = container_exec_cvat(request, command)
             number_of_files = int(result)
             if not number_of_files:
                 break

@@ -101,6 +101,23 @@ export default function ResourceFilterHOC(
         return filters[0];
     }
 
+    function splitFilterIntoPredefined(predefinedFilters: string[], filter: string): string[] | null {
+        if (predefinedFilters.includes(filter)) {
+            return [filter];
+        }
+
+        const parsedFilter = JSON.parse(filter);
+        const filterKeys = Object.keys(parsedFilter);
+        if (filterKeys.length === 1 && filterKeys[0] === 'and') {
+            const subFilters = parsedFilter.and.map((v) => JSON.stringify(v));
+            if (subFilters.every((s) => predefinedFilters.includes(s))) {
+                return subFilters;
+            }
+        }
+
+        return null;
+    }
+
     function getPredefinedFilters(user: User): Record<string, string> | null {
         let result: Record <string, string> | null = null;
         if (user && predefinedFilterValues) {
@@ -126,25 +143,35 @@ export default function ResourceFilterHOC(
         const [appliedFilter, setAppliedFilter] = useState(defaultAppliedFilter);
         const [state, setState] = useState<ImmutableTree>(defaultTree);
 
+        const predefinedFilters = getPredefinedFilters(user);
+
         useEffect(() => {
             setRecentFilters(receiveRecentFilters());
             setIsMounted(true);
 
             try {
-                if (value) {
+                if (value && value !== '{}') {
                     const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
                     if (tree && isValidTree(tree)) {
                         setAppliedFilter({
                             ...appliedFilter,
+                            predefined: splitFilterIntoPredefined(Object.values(predefinedFilters), value),
                             built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
                         });
                         setState(tree);
                     }
+                } else {
+                    setState(defaultTree);
+                    setAppliedFilter({
+                        ...appliedFilter,
+                        predefined: null,
+                        built: null,
+                    });
                 }
             } catch (_: any) {
                 // nothing to do
             }
-        }, []);
+        }, [value]);
 
         useEffect(() => {
             const listener = (event: MouseEvent): void => {
@@ -197,7 +224,6 @@ export default function ResourceFilterHOC(
             </div>
         );
 
-        const predefinedFilters = getPredefinedFilters(user);
         return (
             <div className='cvat-resource-page-filters'>
                 {
