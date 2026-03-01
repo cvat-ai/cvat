@@ -45,6 +45,7 @@ interface AnnotationsParameters {
     groundTruthInstance: Job | null;
     validationLayout: JobValidationLayout | null;
     navigationType: NavigationType;
+    workspace: Workspace;
 }
 
 const cvat = getCore();
@@ -70,6 +71,8 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
                 instance: jobInstance,
                 groundTruthInfo: { groundTruthInstance, validationLayout },
             },
+            job: { instance: jobInstance, groundTruthInfo: { groundTruthInstance, validationLayout } },
+            workspace,
         },
         settings: {
             workspace: { showAllInterpolationTracks },
@@ -86,6 +89,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
         showAllInterpolationTracks,
         showGroundTruth,
         navigationType,
+        workspace,
     };
 }
 
@@ -285,6 +289,41 @@ function wrapAnnotationsInGTJob(states: ObjectState[]): ObjectState[] {
     );
 }
 
+const userUnlockedInReviewMode = new Set<number>();
+
+function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
+    return states.map((state: ObjectState) => new Proxy(state, {
+        get(target, prop) {
+            if (prop === 'lock') {
+                if (target.isGroundTruth) {
+                    return true;
+                }
+
+                // If user explicitly unlocked this object, return actual lock state
+                if (userUnlockedInReviewMode.has(target.clientID as number)) {
+                    return Reflect.get(target, prop);
+                }
+                return true;
+            }
+            return Reflect.get(target, prop);
+        },
+        set(target, prop, value) {
+            if (prop === 'lock') {
+                if (target.isGroundTruth) {
+                    return Reflect.set(target, prop, true);
+                }
+
+                if (!value) {
+                    userUnlockedInReviewMode.add(target.clientID as number);
+                } else {
+                    userUnlockedInReviewMode.delete(target.clientID as number);
+                }
+            }
+            return Reflect.set(target, prop, value);
+        },
+    }));
+}
+
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
     history: CombinedState['annotation']['annotations']['history'];
@@ -300,6 +339,9 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
         groundTruthInstance,
         validationLayout,
         navigationType,
+        filters, frame, showAllInterpolationTracks, jobInstance,
+        showGroundTruth, groundTruthInstance, validationLayout,
+        workspace,
     } = receiveAnnotationsParameters();
 
     // When "Filter frames only" is active (FILTERED navigation), show all annotations
@@ -327,6 +369,10 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
             );
             states.push(...gtStates);
         }
+    }
+
+    if (workspace === Workspace.REVIEW) {
+        states = wrapStatesForReviewMode(states);
     }
 
     const history = await jobInstance.actions.get();
@@ -796,12 +842,8 @@ export function changeFrameAsync(
 
             const { states, maxZ, minZ, history } = await fetchAnnotations(toFrame);
 
-            // Wrap states with Proxy in review mode
-            let finalStates = states;
             if (state.annotation.workspace === Workspace.REVIEW) {
-                // Clear user unlocks when changing frame since we're showing different objects
                 userUnlockedInReviewMode.clear();
-                finalStates = wrapStatesForReviewMode(states);
             }
 
             dispatch({
@@ -811,7 +853,7 @@ export function changeFrameAsync(
                     data,
                     filename: data.filename,
                     relatedFiles: data.relatedFiles,
-                    states: finalStates,
+                    states,
                     history,
                     minZ,
                     maxZ,
@@ -1199,8 +1241,7 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
 
 export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
-        const { jobInstance } = receiveAnnotationsParameters();
-
+        const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
@@ -1217,6 +1258,12 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             const needToUpdateAll = states.some(
                 (state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null,
             );
+            if (workspace === Workspace.REVIEW) {
+                states = wrapStatesForReviewMode(states);
+            }
+
+            const needToUpdateAll = states
+                .some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null);
             if (needToUpdateAll) {
                 dispatch(fetchAnnotationsAsync());
                 return;
