@@ -298,7 +298,7 @@ def get_serializer(instance):
 SERIALIZER_CLEAN_UP_FIELDS = [
     (ProjectReadSerializer, ["tasks", "labels"]),
     (TaskReadSerializer, ["jobs", "labels"]),
-    (JobReadSerializer, ["labels", "issues"]),
+    (JobReadSerializer, ["labels", "issues", "replicas_count", "consensus_replicas"]),
     (IssueReadSerializer, ["comments"]),
 ]
 
