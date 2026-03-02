@@ -32,7 +32,7 @@ certifi==2025.6.15
     #   clickhouse-connect
     #   msrest
     #   requests
-cffi==1.17.1
+cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.2
     # via requests
@@ -46,7 +46,7 @@ contourpy==1.2.1
     # via matplotlib
 crontab==1.0.4
     # via rq-scheduler
-cryptography==45.0.4
+cryptography==46.0.5
     # via
     #   azure-storage-blob
     #   datumaro
@@ -189,7 +189,7 @@ networkx==3.4.2
     # via datumaro
 nibabel==5.3.2
     # via datumaro
-nltk==3.9.1
+nltk==3.9.3
     # via datumaro
 oauthlib==3.3.1
     # via requests-oauthlib
@@ -330,9 +330,7 @@ shapely==1.7.1
     #   -r cvat/requirements/base.in
     #   datumaro
 six==1.17.0
-    # via
-    #   azure-core
-    #   python-dateutil
+    # via python-dateutil
 sqlparse==0.5.3
     # via django
 tabulate==0.9.0
