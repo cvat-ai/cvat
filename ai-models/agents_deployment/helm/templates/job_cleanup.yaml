@@ -25,10 +25,7 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
           {{- include "agent.image" . | nindent 10 }}
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              ./function_deregistration.sh
+          command: ["./function_deregistration.sh"]
           envFrom:
             - configMapRef:
                 optional: true
