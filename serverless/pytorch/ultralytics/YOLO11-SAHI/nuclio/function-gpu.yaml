@@ -1,0 +1,142 @@
+metadata:
+  name: gpu-yolov11-sahi
+  namespace: cvat
+  annotations:
+    name: GPU YOLOv11 with SAHI
+    type: detector
+    framework: pytorch
+    spec: |
+      [
+        { "id": 0, "name": "person", "type": "rectangle" },
+        { "id": 1, "name": "bicycle", "type": "rectangle" },
+        { "id": 2, "name": "car", "type": "rectangle" },
+        { "id": 3, "name": "motorcycle", "type": "rectangle" },
+        { "id": 4, "name": "airplane", "type": "rectangle" },
+        { "id": 5, "name": "bus", "type": "rectangle" },
+        { "id": 6, "name": "train", "type": "rectangle" },
+        { "id": 7, "name": "truck", "type": "rectangle" },
+        { "id": 8, "name": "boat", "type": "rectangle" },
+        { "id": 9, "name": "traffic light", "type": "rectangle" },
+        { "id": 10, "name": "fire hydrant", "type": "rectangle" },
+        { "id": 11, "name": "stop sign", "type": "rectangle" },
+        { "id": 12, "name": "parking meter", "type": "rectangle" },
+        { "id": 13, "name": "bench", "type": "rectangle" },
+        { "id": 14, "name": "bird", "type": "rectangle" },
+        { "id": 15, "name": "cat", "type": "rectangle" },
+        { "id": 16, "name": "dog", "type": "rectangle" },
+        { "id": 17, "name": "horse", "type": "rectangle" },
+        { "id": 18, "name": "sheep", "type": "rectangle" },
+        { "id": 19, "name": "cow", "type": "rectangle" },
+        { "id": 20, "name": "elephant", "type": "rectangle" },
+        { "id": 21, "name": "bear", "type": "rectangle" },
+        { "id": 22, "name": "zebra", "type": "rectangle" },
+        { "id": 23, "name": "giraffe", "type": "rectangle" },
+        { "id": 24, "name": "backpack", "type": "rectangle" },
+        { "id": 25, "name": "umbrella", "type": "rectangle" },
+        { "id": 26, "name": "handbag", "type": "rectangle" },
+        { "id": 27, "name": "tie", "type": "rectangle" },
+        { "id": 28, "name": "suitcase", "type": "rectangle" },
+        { "id": 29, "name": "frisbee", "type": "rectangle" },
+        { "id": 30, "name": "skis", "type": "rectangle" },
+        { "id": 31, "name": "snowboard", "type": "rectangle" },
+        { "id": 32, "name": "sports ball", "type": "rectangle" },
+        { "id": 33, "name": "kite", "type": "rectangle" },
+        { "id": 34, "name": "baseball bat", "type": "rectangle" },
+        { "id": 35, "name": "baseball glove", "type": "rectangle" },
+        { "id": 36, "name": "skateboard", "type": "rectangle" },
+        { "id": 37, "name": "surfboard", "type": "rectangle" },
+        { "id": 38, "name": "tennis racket", "type": "rectangle" },
+        { "id": 39, "name": "bottle", "type": "rectangle" },
+        { "id": 40, "name": "wine glass", "type": "rectangle" },
+        { "id": 41, "name": "cup", "type": "rectangle" },
+        { "id": 42, "name": "fork", "type": "rectangle" },
+        { "id": 43, "name": "knife", "type": "rectangle" },
+        { "id": 44, "name": "spoon", "type": "rectangle" },
+        { "id": 45, "name": "bowl", "type": "rectangle" },
+        { "id": 46, "name": "banana", "type": "rectangle" },
+        { "id": 47, "name": "apple", "type": "rectangle" },
+        { "id": 48, "name": "sandwich", "type": "rectangle" },
+        { "id": 49, "name": "orange", "type": "rectangle" },
+        { "id": 50, "name": "broccoli", "type": "rectangle" },
+        { "id": 51, "name": "carrot", "type": "rectangle" },
+        { "id": 52, "name": "hot dog", "type": "rectangle" },
+        { "id": 53, "name": "pizza", "type": "rectangle" },
+        { "id": 54, "name": "donut", "type": "rectangle" },
+        { "id": 55, "name": "cake", "type": "rectangle" },
+        { "id": 56, "name": "chair", "type": "rectangle" },
+        { "id": 57, "name": "couch", "type": "rectangle" },
+        { "id": 58, "name": "potted plant", "type": "rectangle" },
+        { "id": 59, "name": "bed", "type": "rectangle" },
+        { "id": 60, "name": "dining table", "type": "rectangle" },
+        { "id": 61, "name": "toilet", "type": "rectangle" },
+        { "id": 62, "name": "tv", "type": "rectangle" },
+        { "id": 63, "name": "laptop", "type": "rectangle" },
+        { "id": 64, "name": "mouse", "type": "rectangle" },
+        { "id": 65, "name": "remote", "type": "rectangle" },
+        { "id": 66, "name": "keyboard", "type": "rectangle" },
+        { "id": 67, "name": "cell phone", "type": "rectangle" },
+        { "id": 68, "name": "microwave", "type": "rectangle" },
+        { "id": 69, "name": "oven", "type": "rectangle" },
+        { "id": 70, "name": "toaster", "type": "rectangle" },
+        { "id": 71, "name": "sink", "type": "rectangle" },
+        { "id": 72, "name": "refrigerator", "type": "rectangle" },
+        { "id": 73, "name": "book", "type": "rectangle" },
+        { "id": 74, "name": "clock", "type": "rectangle" },
+        { "id": 75, "name": "vase", "type": "rectangle" },
+        { "id": 76, "name": "scissors", "type": "rectangle" },
+        { "id": 77, "name": "teddy bear", "type": "rectangle" },
+        { "id": 78, "name": "hair drier", "type": "rectangle" },
+        { "id": 79, "name": "toothbrush", "type": "rectangle" }
+      ]
+
+spec:
+  description: GPU YOLOv11 with SAHI for ants
+  runtime: 'python:3.9'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.pth.fraunhofer.uam_upernet.gpu
+    baseImage: ultralytics/ultralytics
+
+    directives:
+      preCopy:
+        - kind: USER
+          value: root
+        - kind: ENV
+          value: NVIDIA_VISIBLE_DEVICES=all
+        - kind: ENV
+          value: NVIDIA_DRIVER_CAPABILITIES=compute,utility
+        - kind: ENV
+          value: RUN_ON_GPU="true"
+        - kind: RUN
+          value: export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y python-is-python3
+        - kind: RUN
+          value: pip install --no-cache-dir opencv-python-headless pillow pyyaml
+        - kind: RUN
+          value: pip uninstall -y torch torchvision torchaudio
+        - kind: RUN
+          value: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+        - kind: RUN
+          value: pip install sahi
+        - kind: WORKDIR
+          value: /opt/nuclio
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 524288000 # 500MB
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
