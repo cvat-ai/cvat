@@ -473,6 +473,7 @@ class LambdaFunction:
                     "image": self._get_image(db_task, mandatory_arg("frame")),
                     "pos_points": mandatory_arg("pos_points"),
                     "neg_points": mandatory_arg("neg_points"),
+                    "text_prompts": data.get("text_prompts", None),
                     "obj_bbox": data.get("obj_bbox", None),
                 }
             )

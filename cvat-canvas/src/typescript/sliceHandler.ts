@@ -510,30 +510,41 @@ export class SliceHandlerImpl implements SliceHandler {
 
     public slice(sliceData: SliceData): void {
         const initializeWithContour = (state: any): void => {
-            this.startTimestamp = Date.now();
-            const { startTimestamp } = this;
+            const { shapeType, points } = state;
 
-            this.onMessage([{
-                type: 'text',
-                content: 'Getting shape contour',
-                icon: 'loading',
-            }], 'force');
+            if (state.shapeType === 'polygon') {
+                this.initialize({
+                    enabled: true,
+                    contour: points,
+                    state,
+                    shapeType,
+                });
+            } else {
+                this.startTimestamp = Date.now();
+                const { startTimestamp } = this;
 
-            sliceData.getContour(state).then((contour) => {
-                const { shapeType } = state;
-                if (this.startTimestamp === startTimestamp && this.enabled) {
-                    // checking if a user does not left mode / reinit it
-                    this.initialize({
-                        enabled: true,
-                        contour,
-                        state,
-                        shapeType,
-                    });
-                }
-            }).catch((error: unknown) => {
-                this.release();
-                this.onError(error);
-            });
+                this.onMessage([{
+                    type: 'text',
+                    content: 'Getting shape contour',
+                    icon: 'loading',
+                }], 'force');
+
+                sliceData.getContour(state).then((contour) => {
+                    const { shapeType } = state;
+                    if (this.startTimestamp === startTimestamp && this.enabled) {
+                        // checking if a user does not left mode / reinit it
+                        this.initialize({
+                            enabled: true,
+                            contour: contour.flat(),
+                            state,
+                            shapeType,
+                        });
+                    }
+                }).catch((error: unknown) => {
+                    this.release();
+                    this.onError(error);
+                });
+            }
         };
 
         if (sliceData.enabled && !this.enabled && sliceData.getContour) {

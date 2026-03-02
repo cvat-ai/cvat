@@ -443,7 +443,7 @@
     width: $grid-unit-size * 32;
     position: absolute;
     background: $background-color-2;
-    top: 8px;
+    top: $grid-unit-size;
     left: 50%;
     border-radius: $border-radius-base;
     border: 1px solid $border-color-1;
@@ -455,6 +455,12 @@
         margin-top: 4px;
         pointer-events: none;
     }
+}
+
+.cvat-interactor-threshold-wrapper {
+    @extend .cvat-approx-poly-threshold-wrapper;
+
+    top: $grid-unit-size * 6
 }
 
 .cvat-objects-sidebar-state-item-elements {

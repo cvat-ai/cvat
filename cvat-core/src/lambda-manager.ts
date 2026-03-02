@@ -6,14 +6,16 @@
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { RQStatus, ShapeType } from './enums';
+import { ModelKind, RQStatus, ShapeType } from './enums';
 import { SerializedCollection } from './server-response-types';
 
-export interface InteractorResults {
+export type InteractorResultsPrev = {
     mask: number[][];
     points?: [number, number][];
-    bounds?: [number, number, number, number]
+    bounds?: [number, number, number, number];
 }
+
+export type InteractorResults = (InteractorResultsPrev & { confidence: number })[];
 
 export interface MinimalShape {
     type: ShapeType;
@@ -84,11 +86,20 @@ class LambdaManager {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
 
-        const body = {
-            ...args,
-            task: taskID,
-        };
+        const body = { ...args, task: taskID };
         const result = await serverProxy.lambda.call(model.id, body);
+
+        if (model.kind === ModelKind.INTERACTOR && !Array.isArray(result) && 'mask' in result) {
+            // wrap old interfaces for backward compatibility
+            // it was: -> { mask: [], points: [], bounds: [] }
+            // will be: -> [{ mask: [], points: [], bounds: [] }]
+            // not ideally from design perspective, but quick and good enough client-only solution
+            return [{
+                ...result,
+                confidence: 1,
+            }] as InteractorResults;
+        }
+
         return result;
     }
 

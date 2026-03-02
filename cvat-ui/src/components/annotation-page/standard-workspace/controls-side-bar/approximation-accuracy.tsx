@@ -53,10 +53,10 @@ function ApproximationAccuracy(props: Props): React.ReactPortal | null {
     return target ?
         ReactDOM.createPortal(
             <Row align='middle' className='cvat-approx-poly-threshold-wrapper'>
-                <Col span={5}>
+                <Col span={8}>
                     <Text>Points: </Text>
                 </Col>
-                <Col offset={1} span={18}>
+                <Col offset={1} span={15}>
                     <Slider
                         value={approxPolyAccuracy}
                         min={0}

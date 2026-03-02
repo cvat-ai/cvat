@@ -126,23 +126,26 @@ export interface DrawData {
 
 export interface InteractionData {
     enabled: boolean;
-    shapeType?: string;
-    crosshair?: boolean;
-    minPosVertices?: number;
-    minNegVertices?: number;
-    startWithBox?: boolean;
-    enableSliding?: boolean;
-    allowRemoveOnlyLast?: boolean;
-    intermediateShape?: {
-        shapeType: string;
-        points: number[];
+    command?: 'draw_points' | 'draw_box' | 'put_shapes' | 'refine';
+    payload?: {
+        shapes: {
+            id: unknown;
+            shapeType: string;
+            points: number[];
+        }[];
+    };
+    settings?: {
+        crosshair?: boolean; // default is false
+        points_type?: 'any' | 'positive' | 'negative'; // default is any
+        removalStrategy?: 'any' | 'last'; // default is any
+        allowPointsSliding?: boolean; // default is false
     };
 }
 
 export interface InteractionResult {
     points: number[];
     shapeType: string;
-    button: number;
+    type: 'positive' | 'negative';
 }
 
 export interface PolyEditData {
@@ -177,7 +180,7 @@ export interface JoinData {
 export interface SliceData {
     enabled: boolean;
     clientID?: number;
-    getContour?: (state: any) => Promise<number[]>;
+    getContour?: (state: any) => Promise<[number, number][]>;
 }
 
 export enum FrameZoom {
@@ -838,16 +841,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
-        if (interactionData.enabled) {
-            if (!this.data.interactionData.enabled && !interactionData.shapeType) {
-                throw new Error('A shape type was not specified');
-            }
-        }
-        this.data.interactionData = interactionData;
-        if (typeof this.data.interactionData.crosshair !== 'boolean') {
-            this.data.interactionData.crosshair = true;
-        }
 
+        this.data.interactionData = interactionData;
         this.notify(UpdateReasons.INTERACT);
     }
 

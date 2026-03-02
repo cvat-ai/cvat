@@ -25,7 +25,7 @@ import Switch from 'antd/lib/switch';
 import lodash, { omit } from 'lodash';
 
 import { AIToolsIcon } from 'icons';
-import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
+import { Canvas, convertShapesForInteractor, InteractionResult } from 'cvat-canvas-wrapper';
 import {
     getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
     MinimalShape, InteractorResults, TrackerResults,
@@ -49,6 +49,7 @@ import CVATMarkdown from 'components/common/cvat-markdown';
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
+import InteractorThreshold from 'components/annotation-page/standard-workspace/controls-side-bar/interaction-threshold';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
@@ -159,8 +160,9 @@ interface State {
     convertMasksToPolygons: boolean;
     trackedShapes: TrackedShape[];
     fetching: boolean;
-    pointsReceived: boolean;
+    interactorResponseReceived: boolean;
     approxPolyAccuracy: number;
+    thresholdValue: number;
     mode: 'detection' | 'interaction' | 'tracking';
     portals: React.ReactPortal[];
 }
@@ -226,13 +228,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interaction: {
         id: string | null;
         isAborted: boolean;
+        latestPostponedEvent: Event | null;
         latestResponse: {
             rle: number[];
             points: [number, number][];
-            bounds?: [number, number, number, number];
-        };
-        latestPostponedEvent: Event | null;
-        latestApproximatedPoints: number[][];
+            approximatedPoints: [number, number][];
+            confidence: number;
+        }[];
         latestRequest: null | {
             interactor: MLModel;
             data: {
@@ -257,9 +259,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeTracker: supportedTrackers.length ? supportedTrackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id as number : null,
             approxPolyAccuracy: props.defaultApproxPolyAccuracy,
+            thresholdValue: 0.5,
             trackedShapes: [],
             fetching: false,
-            pointsReceived: false,
+            interactorResponseReceived: false,
             mode: 'interaction',
             portals: [],
         };
@@ -268,11 +271,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             id: null,
             isAborted: false,
             latestPostponedEvent: null,
-            latestResponse: {
-                rle: [],
-                points: [],
-            },
-            latestApproximatedPoints: [],
+            latestResponse: [],
             latestRequest: null,
             hideMessage: null,
         };
@@ -294,7 +293,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, states, toolsBlockerState,
+            isActivated, defaultApproxPolyAccuracy, states, toolsBlockerState,
         } = this.props;
         const { approxPolyAccuracy, mode, activeTracker } = this.state;
 
@@ -317,15 +316,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 id: null,
                 isAborted: false,
                 latestPostponedEvent: null,
-                latestResponse: { rle: [], points: [] },
-                latestApproximatedPoints: [],
+                latestResponse: [],
                 latestRequest: null,
                 hideMessage: null,
             };
 
             this.setState({
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
-                pointsReceived: false,
+                interactorResponseReceived: false,
             });
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
@@ -338,19 +336,20 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.onInteraction(this.interaction.latestPostponedEvent);
         }
 
+        if (prevState.thresholdValue !== this.state.thresholdValue) {
+            if (isActivated && mode === 'interaction') {
+                this.drawIntermediateShapesOnCanvas();
+            }
+        }
+
         if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
-            if (isActivated && mode === 'interaction' && this.interaction.latestResponse.points.length) {
-                this.approximateResponsePoints(this.interaction.latestResponse.points)
-                    .then((points: number[][]) => {
-                        this.interaction.latestApproximatedPoints = points;
-                        canvasInstance.interact({
-                            enabled: true,
-                            intermediateShape: {
-                                shapeType: ShapeType.POLYGON,
-                                points: this.interaction.latestApproximatedPoints.flat(),
-                            },
-                        });
-                    });
+            if (isActivated && mode === 'interaction') {
+                this.interaction.latestResponse.map(({ points }, idx) => {
+                    const approximated = this.approximateResponsePoints(points);
+                    this.interaction.latestResponse[idx].approximatedPoints = approximated;
+                });
+
+                this.drawIntermediateShapesOnCanvas();
             }
         }
 
@@ -388,15 +387,35 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     };
 
+    private drawIntermediateShapesOnCanvas(): void {
+        const { canvasInstance } = this.props;
+        const { convertMasksToPolygons, thresholdValue } = this.state;
+        if (this.interaction.latestResponse.length) {
+            canvasInstance.interact({
+                enabled: true,
+                command: 'put_shapes',
+                payload: {
+                    shapes: this.interaction.latestResponse
+                        .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
+                        .map(({ rle, approximatedPoints }) => ({
+                            id: 'dummy',
+                            shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
+                            points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
+                        })),
+                },
+            });
+        }
+    }
+
     private runInteractionRequest = async (interactionId: string): Promise<void> => {
-        const { jobInstance, canvasInstance } = this.props;
-        const { activeInteractor, fetching, convertMasksToPolygons } = this.state;
+        const { jobInstance } = this.props;
+        const { activeInteractor, fetching } = this.state;
 
         const { id, latestRequest } = this.interaction;
         if (id !== interactionId || !latestRequest || fetching) {
-            // current interaction request is not relevant (new interaction session has started)
-            // or a user didn't add more points
-            // or one server request is on processing
+            // id !== interactionId: request not relevant anymore (new session has started)
+            // !latestRequest: nothing to process
+            // fetching: another request is already running
             return;
         }
 
@@ -409,47 +428,52 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 duration: 0,
                 className: 'cvat-tracking-notice',
             });
+
             try {
                 // run server request
                 this.setState({ fetching: true });
 
+                await this.initializeOpenCV();
                 const response = await core.lambda.call(
                     jobInstance.taskId,
                     interactor,
-                    { ...data, job: jobInstance.id },
+                    { ...data, job: jobInstance.id, text_prompts: [jobInstance.labels[0].name] },
                 ) as InteractorResults;
-
-                // if only mask presented, let's receive points
-                if (response.mask && !response.points) {
-                    const left = response.bounds ? response.bounds[0] : 0;
-                    const top = response.bounds ? response.bounds[1] : 0;
-                    response.points = await this.receivePointsFromMask(response.mask, left, top);
-                }
-
-                // approximation with cv.approxPolyDP
-                const approximated = await this.approximateResponsePoints(response.points as [number, number][]);
-                const rle = core.utils.mask2Rle(response.mask.flat());
-                if (response.bounds) {
-                    rle.push(...response.bounds);
-                } else {
-                    const height = response.mask.length;
-                    const width = response.mask[0].length;
-                    rle.push(0, 0, width - 1, height - 1);
-                }
 
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {
                     // new interaction session or the session is aborted
                     return;
                 }
 
-                this.interaction.latestResponse = {
-                    bounds: response.bounds,
-                    points: response.points as [number, number][],
-                    rle,
-                };
-                this.interaction.latestApproximatedPoints = approximated;
+                const latestResponse: ToolsControlComponent['interaction']['latestResponse'] = [];
+                for (const item of response) {
+                    let { mask, points, bounds, confidence } = item;
+                    const maskHeight = mask.length;
+                    const maskWidth = mask[0].length;
 
-                this.setState({ pointsReceived: !!response.points?.length });
+                    bounds = bounds ?? [0, 0, maskWidth - 1, maskHeight - 1];
+                    points = points ?? this.receivePointsFromMask(mask, bounds[0], bounds[1]);
+
+                    if (points.length < 3) {
+                        item.mask = []; // free memory
+                        continue;
+                    }
+
+                    const approximated = this.approximateResponsePoints(points!);
+                    const rle = core.utils.mask2Rle(mask.flat());
+                    rle.push(...bounds);
+
+                    item.mask = []; // free memory
+                    latestResponse.push({
+                        rle,
+                        points,
+                        approximatedPoints: approximated,
+                        confidence: confidence ?? 1,
+                    });
+                }
+
+                this.interaction.latestResponse = latestResponse;
+                this.setState({ interactorResponseReceived: !!response.length });
             } finally {
                 if (this.interaction.id === interactionId && this.interaction.hideMessage) {
                     this.interaction.hideMessage();
@@ -459,17 +483,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 this.setState({ fetching: false });
             }
 
-            if (this.interaction.latestApproximatedPoints.length) {
-                canvasInstance.interact({
-                    enabled: true,
-                    intermediateShape: {
-                        shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
-                        points: convertMasksToPolygons ? this.interaction.latestApproximatedPoints.flat() :
-                            this.interaction.latestResponse.rle,
-                    },
-                });
-            }
-
+            this.drawIntermediateShapesOnCanvas();
             setTimeout(() => this.runInteractionRequest(interactionId));
         } catch (error: any) {
             notification.error({
@@ -492,30 +506,22 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction.id = lodash.uniqueId('interaction_');
         }
 
-        const { shapesUpdated, isDone, shapes } = (e as CustomEvent).detail;
-        if (isDone) {
-            // make an object from current result
-            // do not make one more request
-            // prevent future requests if possible
-            this.interaction.isAborted = true;
-            this.interaction.latestRequest = null;
-            if (this.interaction.latestApproximatedPoints.length) {
-                this.constructFromPoints();
-            }
-        } else if (shapesUpdated) {
-            const interactor = activeInteractor as MLModel;
-            this.interaction.latestRequest = {
-                interactor,
-                data: {
-                    frame,
-                    obj_bbox: convertShapesForInteractor(shapes, 'rectangle', 0),
-                    pos_points: convertShapesForInteractor(shapes, 'points', 0),
-                    neg_points: convertShapesForInteractor(shapes, 'points', 2),
-                },
-            };
+        const { shapes } = (e as CustomEvent).detail;
+        const interactor = activeInteractor as MLModel;
+        const boxes = convertShapesForInteractor(shapes, 'rectangle', 'positive');
+        const posPoints = convertShapesForInteractor(shapes, 'points', 'positive');
+        const negPoints = convertShapesForInteractor(shapes, 'points', 'negative');
+        this.interaction.latestRequest = {
+            interactor,
+            data: {
+                frame,
+                obj_bbox: boxes,
+                pos_points: posPoints,
+                neg_points: negPoints,
+            },
+        };
 
-            this.runInteractionRequest(this.interaction.id);
-        }
+        this.runInteractionRequest(this.interaction.id);
     };
 
     private onTracking = async (e: Event): Promise<void> => {
@@ -530,10 +536,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const [label] = jobInstance.labels.filter((_label: any): boolean => _label.id === activeLabelID);
 
-        const { isDone, shapesUpdated } = (e as CustomEvent).detail;
-        if (!isDone || !shapesUpdated) {
+        const { finished } = (e as CustomEvent).detail;
+        if (!finished) {
             return;
         }
+
+        // TODO: support more rectangles at the same time
+        // OR: drop this tracking method
 
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
@@ -579,16 +588,52 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { mode } = this.state;
 
         if (mode === 'interaction') {
-            if (toolsBlockerState.algorithmsLocked) {
-                this.interaction.latestPostponedEvent = e;
-                return;
-            }
+            const { canvasInstance } = this.props;
+            const { activeInteractor } = this.state;
+            const { shapes, finished } = (e as CustomEvent<{ shapes: InteractionResult[], finished: boolean }>).detail;
 
-            await this.onInteraction(e);
+            if (finished) {
+                // make an object from current result
+                // do not make one more request
+                // prevent future requests if possible
+                this.interaction.isAborted = true;
+                this.interaction.latestRequest = null;
+                this.constructFromLatestResponse();
+            } else {
+                const isRectangleRequired = activeInteractor!.params.canvas.startWithBox === true;
+                const minPosPoints = activeInteractor!.params.canvas.minPosVertices ?? 0;
+                const minNegPoints = activeInteractor!.params.canvas.minNegVertices ?? 0;
+
+                const boxes = convertShapesForInteractor(shapes, 'rectangle', 'positive');
+                const posPoints = convertShapesForInteractor(shapes, 'points', 'positive');
+                const negPoints = convertShapesForInteractor(shapes, 'points', 'negative');
+
+                if (isRectangleRequired && !boxes.length) {
+                    // there should be at least one box to proceed
+                    canvasInstance.interact({ enabled: true, command: 'draw_box' });
+                    return;
+                }
+
+                // auto-switch to points when something is already drawn
+                canvasInstance.interact({ enabled: true, command: 'draw_points', settings: { points_type: 'any' } });
+
+                if (posPoints.length < minPosPoints || negPoints.length < minNegPoints) {
+                    // there should be enough points to proceed
+                    return;
+                }
+
+                // request data is enough, but it is postponed
+                if (toolsBlockerState.algorithmsLocked) {
+                    this.interaction.latestPostponedEvent = e;
+                    return;
+                }
+
+                this.onInteraction(e);
+            }
         }
 
         if (mode === 'tracking') {
-            await this.onTracking(e);
+            this.onTracking(e);
         }
     };
 
@@ -883,39 +928,50 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
-    private async constructFromPoints(): Promise<void> {
-        const { convertMasksToPolygons } = this.state;
+    private async constructFromLatestResponse(): Promise<void> {
+        const { convertMasksToPolygons, thresholdValue } = this.state;
         const {
             frame, labels, curZOrder, activeLabelID, createAnnotations,
         } = this.props;
 
-        if (convertMasksToPolygons) {
-            const object = new core.classes.ObjectState({
-                frame,
-                objectType: ObjectType.SHAPE,
-                source: core.enums.Source.SEMI_AUTO,
-                label: labels.find((label) => label.id === activeLabelID as number) as Label,
-                shapeType: ShapeType.POLYGON,
-                points: this.interaction.latestApproximatedPoints.flat(),
-                occluded: false,
-                zOrder: curZOrder,
-            });
-
-            createAnnotations([object]);
-        } else {
-            const object = new core.classes.ObjectState({
-                frame,
-                objectType: ObjectType.SHAPE,
-                source: core.enums.Source.SEMI_AUTO,
-                label: labels.find((label) => label.id === activeLabelID as number) as Label,
-                shapeType: ShapeType.MASK,
-                points: this.interaction.latestResponse.rle,
-                occluded: false,
-                zOrder: curZOrder,
-            });
-
-            createAnnotations([object]);
+        if (!this.interaction.latestResponse.length) {
+            return;
         }
+
+        const common = {
+            frame,
+            objectType: ObjectType.SHAPE,
+            source: core.enums.Source.SEMI_AUTO,
+            label: labels.find((label) => label.id === activeLabelID as number) as Label,
+            occluded: false,
+            zOrder: curZOrder,
+        };
+
+        const objectsToConstruct = this.interaction.latestResponse.filter(
+            ({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue,
+        );
+
+        let objects: ObjectState[] = [];
+        if (convertMasksToPolygons) {
+            objects = objectsToConstruct
+                .map(({ approximatedPoints }) => {
+                    return new core.classes.ObjectState({
+                        shapeType: ShapeType.POLYGON,
+                        points: approximatedPoints.flat(),
+                        ...common,
+                    });
+                });
+        } else {
+            objects = objectsToConstruct
+                .map(({ rle }) => {
+                    return new core.classes.ObjectState({
+                        shapeType: ShapeType.MASK,
+                        points: rle,
+                        ...common,
+                    });
+                });
+        }
+        createAnnotations(objects);
     }
 
     private async initializeOpenCV(): Promise<void> {
@@ -935,32 +991,54 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
-    private async receivePointsFromMask(
-        mask: number[][],
+    private receivePointsFromMask(
+        mask: number[][] | ArrayBuffer,
         left: number,
         top: number,
-    ): Promise<[number, number][]> {
-        await this.initializeOpenCV();
+        width?: number,
+        height?: number,
+    ): [number, number][] {
+        if (!openCVWrapper.isInitialized) {
+            throw new Error('OpenCV was not initialized');
+        }
 
-        const src = openCVWrapper.mat.fromData(mask[0].length, mask.length, MatType.CV_8UC1, mask.flat());
+        let maskWidth: number;
+        let maskHeight: number;
+        let maskData: Uint8Array;
+
+        if (mask instanceof ArrayBuffer) {
+            if (width === undefined || height === undefined) {
+                throw new Error('Width and height are required when passing ArrayBuffer');
+            }
+            maskWidth = width;
+            maskHeight = height;
+            maskData = new Uint8Array(mask);
+        } else {
+            // Handle legacy 2D array format
+            maskWidth = mask[0].length;
+            maskHeight = mask.length;
+            maskData = new Uint8Array(mask.flat());
+        }
+
+        const src = openCVWrapper.mat.fromData(maskWidth, maskHeight, MatType.CV_8UC1, maskData);
         try {
-            const polygons = openCVWrapper.contours.findContours(src, true);
-            return polygons[0].reduce<[number, number][]>((acc, _, idx, array) => {
-                if (idx % 2) {
-                    acc.push([array[idx - 1] + left, array[idx] + top]);
-                }
-
-                return acc;
-            }, []);
+            const polygons = openCVWrapper.contours.findContours(src);
+            if (polygons.length) {
+                return polygons[0].map<[number, number]>((val) => [val[0] + left, val[1] + top]);
+            }
+            return [];
         } finally {
             src.delete();
         }
     }
 
-    private async approximateResponsePoints(points: number[][]): Promise<number[][]> {
+    private approximateResponsePoints(points: [number, number][]): [number, number][] {
+        if (!openCVWrapper.isInitialized) {
+            throw new Error('OpenCV was not initialized');
+        }
+
         const { approxPolyAccuracy } = this.state;
         if (points.length > 3) {
-            await this.initializeOpenCV();
             const threshold = thresholdFromAccuracy(approxPolyAccuracy);
             return openCVWrapper.contours.approxPoly(points, threshold);
         }
@@ -1048,10 +1126,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     this.setState({ mode: 'tracking' });
 
                                     canvasInstance.cancel();
-                                    canvasInstance.interact({
-                                        shapeType: 'rectangle',
-                                        enabled: true,
-                                    });
+                                    canvasInstance.interact({ enabled: true, command: 'draw_box' });
 
                                     const { onSwitchToolsBlockerState } = this.props;
                                     onInteractionStart(activeTracker, activeLabelID, {});
@@ -1186,7 +1261,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         }),
                                     };
 
-                                    canvasInstance.interact({ shapeType: 'points', enabled: true, ...interactorParameters });
+                                    const command = interactorParameters.startWithBox ? 'draw_box' : 'draw_points';
+                                    canvasInstance.interact({ enabled: true, command });
                                     onInteractionStart(activeInteractor, activeLabelID, interactorParameters);
                                 }
                             }}
@@ -1347,7 +1423,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, detectors, trackers, isActivated, canvasInstance, labels, frameIsDeleted,
         } = this.props;
         const {
-            fetching, approxPolyAccuracy, pointsReceived, mode, portals, convertMasksToPolygons,
+            fetching, approxPolyAccuracy, interactorResponseReceived, mode, portals, convertMasksToPolygons,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -1372,16 +1448,26 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             };
 
         const showAnyContent = labels.length && !frameIsDeleted;
-        const showInteractionContent = isActivated && mode === 'interaction' && pointsReceived && convertMasksToPolygons;
+        const showInteractionContent = isActivated && mode === 'interaction' && interactorResponseReceived;
         const showDetectionContent = fetching && mode === 'detection';
 
         const interactionContent: JSX.Element | null = showInteractionContent ? (
-            <ApproximationAccuracy
-                approxPolyAccuracy={approxPolyAccuracy}
-                onChange={(value: number) => {
-                    this.setState({ approxPolyAccuracy: value });
-                }}
-            />
+            <>
+                <InteractorThreshold
+                    thresholdValue={this.state.thresholdValue}
+                    onChange={(value: number) => {
+                        this.setState({ thresholdValue: value });
+                    }}
+                />
+                { convertMasksToPolygons && (
+                    <ApproximationAccuracy
+                        approxPolyAccuracy={approxPolyAccuracy}
+                        onChange={(value: number) => {
+                            this.setState({ approxPolyAccuracy: value });
+                        }}
+                    />
+                )}
+            </>
         ) : null;
 
         const detectionContent: JSX.Element | null = showDetectionContent ? (

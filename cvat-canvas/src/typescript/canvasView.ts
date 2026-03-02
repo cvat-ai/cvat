@@ -298,26 +298,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onInteraction = (
         shapes: InteractionResult[] | null,
-        shapesUpdated = true,
-        isDone = false,
+        finished = false,
     ): void => {
-        const { zLayer } = this.controller;
-        if (Array.isArray(shapes)) {
+        if (Array.isArray(shapes) || finished) {
             const event: CustomEvent = new CustomEvent('canvas.interacted', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    shapesUpdated,
-                    isDone,
+                    finished,
                     shapes,
-                    zOrder: zLayer || 0,
                 },
             });
 
             this.canvas.dispatchEvent(event);
         }
 
-        if (shapes === null || isDone) {
+        if (shapes === null) {
             this.dispatchCanceledEvent();
         }
     };
@@ -1693,6 +1689,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.zoomHandler = new ZoomHandlerImpl(this.onFocusRegion, this.adoptedContent, this.geometry);
         this.interactionHandler = new InteractionHandlerImpl(
             this.onInteraction,
+            this.onMessage,
             this.adoptedContent,
             this.geometry,
             this.configuration,
@@ -2107,20 +2104,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.INTERACT) {
             const data: InteractionData = this.controller.interactionData;
-            if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape)) {
-                if (!data.intermediateShape) {
-                    this.canvas.style.cursor = 'crosshair';
-                    this.mode = Mode.INTERACT;
-                }
-                this.interactionHandler.interact(data);
-            } else {
-                if (!data.enabled) {
-                    this.canvas.style.cursor = '';
-                }
-                if (this.mode !== Mode.IDLE) {
-                    this.interactionHandler.interact(data);
-                }
+            if (data.enabled && this.mode === Mode.IDLE) {
+                this.canvas.style.cursor = 'crosshair';
+                this.mode = Mode.INTERACT;
             }
+
+            if (!data.enabled && this.mode === Mode.INTERACT) {
+                this.canvas.style.cursor = '';
+                this.mode = Mode.IDLE;
+            }
+            this.interactionHandler.interact(data);
+            // if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape)) {
+            //     if (!data.intermediateShape) {
+            //         this.canvas.style.cursor = 'crosshair';
+            //         this.mode = Mode.INTERACT;
+            //     }
+            //     this.interactionHandler.interact(data);
+            // } else {
+            //     if (!data.enabled) {
+            //         this.canvas.style.cursor = '';
+            //     }
+            //     if (this.mode !== Mode.IDLE) {
+            //         this.interactionHandler.interact(data);
+            //     }
+            // }
         } else if (reason === UpdateReasons.MERGE) {
             const data: MergeData = this.controller.mergeData;
             if (data.enabled) {

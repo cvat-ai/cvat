@@ -224,7 +224,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
 
         const { shapesUpdated, isDone, shapes } = (e as CustomEvent).detail;
-        const pressedPoints = convertShapesForInteractor(shapes, 'points', 0).flat();
+        const pressedPoints = convertShapesForInteractor(shapes, 'points', 'positive').flat();
         try {
             if (shapesUpdated) {
                 this.latestPoints = await this.runCVAlgorithm(pressedPoints);
