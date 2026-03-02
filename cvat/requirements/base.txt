@@ -32,7 +32,7 @@ certifi==2025.6.15
     #   clickhouse-connect
     #   msrest
     #   requests
-cffi==1.17.1
+cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.2
     # via requests
@@ -46,7 +46,7 @@ contourpy==1.2.1
     # via matplotlib
 crontab==1.0.4
     # via rq-scheduler
-cryptography==45.0.4
+cryptography==46.0.5
     # via
     #   azure-storage-blob
     #   datumaro
