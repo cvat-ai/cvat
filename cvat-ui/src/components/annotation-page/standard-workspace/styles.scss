@@ -211,9 +211,23 @@
 .cvat-tools-control-popover-content,
 .cvat-opencv-control-popover-content {
     width: fit-content;
+    max-height: 80vh;
     padding: $grid-unit-size;
     border-radius: $grid-unit-size;
     background: $background-color-2;
+    display: flex;
+    flex-direction: column;
+
+    .ant-tabs {
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+
+        .ant-tabs-content-holder {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+    }
 
     .ant-tabs-tab {
         width: $grid-unit-size * 14;
