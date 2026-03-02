@@ -7,7 +7,7 @@ av==16.0.1
     # via -r utils/dataset_manifest/requirements.in
 natsort==8.0.0
     # via -r utils/dataset_manifest/requirements.in
-numpy==1.22.4
+numpy==2.2.6
     # via opencv-python-headless
 opencv-python-headless==4.11.0.86
     # via -r utils/dataset_manifest/requirements.in
