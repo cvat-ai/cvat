@@ -129,6 +129,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
+    private hoverNeedsUpdate: boolean;
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {
         const cuboidModel = this.drawnObjects[clientID];
@@ -213,6 +214,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
 
         this.isCtrlDown = false;
+        this.hoverNeedsUpdate = false;
         this.action = {
             scan: null,
             detected: false,
@@ -405,6 +407,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const { mouseVector } = this.views.perspective.rayCaster as { mouseVector: THREE.Vector2 };
             mouseVector.x = ((event.clientX - (canvas.offsetLeft + rect.left)) / canvas.clientWidth) * 2 - 1;
             mouseVector.y = -((event.clientY - (canvas.offsetTop + rect.top)) / canvas.clientHeight) * 2 + 1;
+            this.hoverNeedsUpdate = true;
         });
 
         canvasPerspectiveView.addEventListener('click', (e: MouseEvent): void => {
@@ -1972,10 +1975,30 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     this.stateToBeSplitted = objectState;
                     this.drawnObjects[castedClientID].cuboid.setColor(this.receiveShapeColor(objectState));
                 } else if (this.mode === Mode.IDLE && !this.isCtrlDown) {
-                    if (this.model.data.activeElement.clientID !== clientID) {
-                        const object = this.views.perspective.scene.getObjectByName(clientID);
-                        if (object === undefined) return;
-                        this.model.data.activeElement.clientID = clientID;
+                    if (!this.hoverNeedsUpdate) {
+                        return;
+                    }
+                    this.hoverNeedsUpdate = false;
+
+                    const intersectedClientID = intersects[0]?.object?.name || null;
+                    if (this.model.data.activeElement.clientID !== intersectedClientID) {
+                        const object = intersectedClientID ?
+                            this.views.perspective.scene.getObjectByName(intersectedClientID) :
+                            null;
+                        if (intersectedClientID && object === undefined) return;
+
+                        const numericClientID =
+                            typeof intersectedClientID === 'string' ? +intersectedClientID : null;
+
+                        this.dispatchEvent(
+                            new CustomEvent('canvas.selected', {
+                                bubbles: false,
+                                cancelable: true,
+                                detail: {
+                                    clientID: numericClientID,
+                                },
+                            }),
+                        );
                     }
                 }
             } else if (this.mode === Mode.SPLIT && this.stateToBeSplitted) {

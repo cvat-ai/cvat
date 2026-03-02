@@ -4,7 +4,11 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useRef,
+} from 'react';
 import {
     connect,
     shallowEqual,
@@ -49,7 +53,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
-import { scrollAndExpandByClientID, scrollAndExpandState } from 'utils/objects-sidebar';
+import { scrollAndExpandState } from 'utils/objects-sidebar';
 
 const cvat = getCore();
 
@@ -722,7 +726,13 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             return;
         }
 
-        scrollAndExpandByClientID(clientID, annotations, onExpandObject);
+        const objectState = annotations.find((state) => state.clientID === clientID);
+
+        if (!objectState) {
+            return;
+        }
+
+        scrollAndExpandState(objectState, onExpandObject);
     };
 
     const onCanvasEditDone = (event: any): void => {
