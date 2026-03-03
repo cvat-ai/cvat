@@ -33,11 +33,14 @@ if FUNCTION_ID=$(curl --get --fail --data-urlencode "filter=$FILTER" "${ORG_CURL
 else
     echo -e "Function with name $FUNCTION_NAME not found. Proceeding to create a new one.\nPlease have some patience, function creation might take some time..."
     # Register the YOLO function in CVAT
-    if FUNCTION_ID="$(cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function create-native "$FUNCTION_NAME" --function-file="$FUNCTION_FILE_PATH" -p model=str:"$MODEL" "${KEYPOINTS_FILE_ARGS[@]}")"; then
+    RAW_OUTPUT="$(cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function create-native "$FUNCTION_NAME" --function-file="$FUNCTION_FILE_PATH" -p model=str:"$MODEL" "${KEYPOINTS_FILE_ARGS[@]}")"
+    FUNCTION_ID=$(echo "$RAW_OUTPUT" | tail -1 | tr -d '[:space:]')
+    if [[ $FUNCTION_ID =~ ^[0-9]+$ ]]; then
       echo "Successfully created $FUNCTION_NAME function"
       echo "$FUNCTION_ID" > /shared/FUNCTION_ID
     else
-      echo "cvat-cli function create-native failed."
+      echo "cvat-cli function create-native failed. Output:"
+      echo "$RAW_OUTPUT"
       exit 1
     fi
 fi

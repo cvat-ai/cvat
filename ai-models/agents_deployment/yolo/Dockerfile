@@ -16,9 +16,9 @@ ADD --chmod=+x https://dl.k8s.io/release/v1.34.0/bin/linux/${TARGETARCH}/kubectl
 RUN groupadd --gid 1000 agent && \
     useradd --uid 1000 --gid 1000 --create-home agent
 
-RUN mkdir /shared && chown agent:agent /shared
-
 WORKDIR /app
+
+RUN mkdir /shared && chown agent:agent /shared && chown agent:agent /app
 
 COPY ai-models/detector/yolo/requirements.txt .
 
