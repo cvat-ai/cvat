@@ -26,6 +26,8 @@ from .utils import (
     wait_background_request,
 )
 
+pytestmark = [pytest.mark.infra_profile("extended")]
+
 
 class _PermissionTestBase:
     def merge(

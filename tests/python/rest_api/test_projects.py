@@ -27,8 +27,8 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
 
+from shared.utils import config as shared_config
 from shared.utils.config import (
-    BASE_URL,
     USER_PASS,
     get_method,
     make_api_client,
@@ -192,7 +192,7 @@ class TestProjectsListFilters(CollectionSimpleFilterTestBase):
         return super()._test_can_use_simple_filter_for_object_list(field)
 
 
-class TestGetPostProjectBackup:
+class _ProjectBackupBase:
 
     @pytest.fixture(autouse=True)
     def setup(self, projects):
@@ -222,6 +222,9 @@ class TestGetPostProjectBackup:
         with pytest.raises(ForbiddenException):
             export_project_backup(username, id=pid, expect_forbidden=True, **kwargs)
 
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetProjectBackupReadOnly(_ProjectBackupBase):
     def test_admin_can_get_project_backup(self):
         project = list(self.projects)[0]
         self._test_can_get_project_backup("admin1", project["id"])
@@ -341,6 +344,14 @@ class TestGetPostProjectBackup:
 
         self._test_can_get_project_backup(user["username"], project["id"])
 
+    def test_can_get_backup_for_empty_project(self):
+        empty_project = next(p for p in self.projects if 0 == p["tasks"]["count"])
+        self._test_can_get_project_backup("admin1", empty_project["id"])
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestGetProjectBackupMutable(_ProjectBackupBase):
+
     def test_can_get_backup_project_when_some_tasks_have_no_data(self):
         project = next(p for p in self.projects if 0 < p["tasks"]["count"])
 
@@ -377,10 +388,6 @@ class TestGetPostProjectBackup:
         assert response.status_code == HTTPStatus.CREATED, response.text
 
         self._test_can_get_project_backup("admin1", project["id"])
-
-    def test_can_get_backup_for_empty_project(self):
-        empty_project = next(p for p in self.projects if 0 == p["tasks"]["count"])
-        self._test_can_get_project_backup("admin1", empty_project["id"])
 
     def test_admin_can_get_project_backup_and_create_project_by_backup(self, admin_user: str):
         project_id = 5
@@ -441,7 +448,8 @@ class TestPostProjects:
     def test_if_org_role_can_create_project(self, role, admin_user):
         # We can hit org or user limits here, so we create a new org and users
         user = self._create_user(
-            ApiClient(configuration=Configuration(BASE_URL)), email="test_org_roles@localhost"
+            ApiClient(configuration=Configuration(shared_config.BASE_URL)),
+            email="test_org_roles@localhost",
         )
 
         if role != "owner":

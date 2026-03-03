@@ -7,7 +7,8 @@ from http import HTTPStatus
 
 import pytest
 
-from shared.utils.config import BASE_URL, make_api_client
+from shared.utils import config as shared_config
+from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_file
 
 
@@ -51,7 +52,7 @@ class TestTUSUpload:
 
         response = self._call_tus_endpoint(
             "POST",
-            BASE_URL + f"/api/tasks/{task_id}/data/",
+            shared_config.BASE_URL + f"/api/tasks/{task_id}/data/",
             headers={
                 "Upload-Length": str(file_size),
                 "Upload-Metadata": metadata,
@@ -221,9 +222,10 @@ class TestTUSUpload:
         """Test uploading without the trailing slash in the initial URL."""
         task = fxt_task
 
+        data_endpoint = shared_config.BASE_URL + f"/api/tasks/{task.id}/data"
         response = self._call_tus_endpoint(
             "POST",
-            BASE_URL + f"/api/tasks/{task.id}/data",
+            data_endpoint,
             headers={
                 "Upload-Length": "1000",
                 "Upload-Metadata": f"filename {base64.b64encode('test_image.jpg'.encode()).decode()}",

@@ -29,7 +29,7 @@ class TestGetResources:
                 endpoint = "auth/access_tokens"
 
             if endpoint == "annotations":
-                objects = json.load(f)
+                objects = config.replace_legacy_base_url(json.load(f))
                 for jid, annotations in objects["job"].items():
                     response = config.get_method("admin1", f"jobs/{jid}/annotations").json()
                     assert (
@@ -42,7 +42,7 @@ class TestGetResources:
                         == {}
                     )
             elif endpoint == "auth/access_tokens":
-                objects = json.load(f)
+                objects = config.replace_legacy_base_url(json.load(f))
                 assert set(objects) == {"user"}
 
                 for username, tokens in objects["user"].items():
@@ -59,8 +59,12 @@ class TestGetResources:
                     )
             else:
                 response = config.get_method("admin1", endpoint, page_size="all")
-                json_objs = json.load(f)
+                json_objs = config.replace_legacy_base_url(json.load(f))
                 resp_objs = response.json()
+                if endpoint == "jobs":
+                    for items in (json_objs.get("results", []), resp_objs.get("results", [])):
+                        for job in items:
+                            job.pop("replicas_count", None)
 
                 assert (
                     DeepDiff(

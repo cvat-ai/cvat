@@ -49,6 +49,7 @@ from shared.utils.helpers import (
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.parallel_group("case")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -180,6 +181,8 @@ class TestPostTaskData:
                             assert im.getexif().get(274, 1) == 1
 
     def test_can_create_task_with_big_images(self):
+        # This path uploads a >10MB image and then verifies chunk/raw integrity.
+        # Under parallel lanes, background load can exceed the default per-test timeout.
         # Checks for regressions about the issue
         # https://github.com/cvat-ai/cvat/issues/6878
         # In the case of big files (>2.5 MB by default),
@@ -483,7 +486,7 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, f"jobs/{job_id}/annotations")
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize(
         "use_cache, cloud_storage_id, manifest, use_bucket_content",
         [
@@ -643,7 +646,7 @@ class TestPostTaskData:
 
         return create_task(self._USERNAME, task_spec, data_spec, org=org)
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
         "use_cache, use_manifest, server_files, server_files_exclude, task_size",
@@ -688,7 +691,7 @@ class TestPostTaskData:
             assert response.status == HTTPStatus.OK
             assert task.size == task_size
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize(
@@ -731,7 +734,7 @@ class TestPostTaskData:
             data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             assert expected_result == [x.name for x in data_meta.frames]
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize(
         "storage_id, manifest",
         [
@@ -788,7 +791,7 @@ class TestPostTaskData:
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("cloud_storage_id", [1])
     @pytest.mark.parametrize(
         "manifest, filename_pattern, sub_dir, task_size, expected_error",
@@ -889,7 +892,7 @@ class TestPostTaskData:
             rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert expected_error and expected_error in rq_job_details.message
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize("use_cache", [True, False])
     @pytest.mark.parametrize(
@@ -929,7 +932,7 @@ class TestPostTaskData:
             )
             assert response.status == HTTPStatus.OK
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize(
         "filenames, sorting_method",
         [
@@ -972,7 +975,7 @@ class TestPostTaskData:
             for image_name, frame in zip(filenames, data_meta.frames):
                 assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize(
         "cloud_storage_id, org",
         [
@@ -1078,7 +1081,7 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize("server_files", [["test/"]])
@@ -1571,7 +1574,7 @@ class TestPostTaskData:
         else:
             assert len(validation_frames) == validation_frames_count
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
         "validation_mode",
@@ -1732,7 +1735,9 @@ class TestPostTaskData:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.parallel_group("function")
 class TestTaskData(TestTasksBase):
+    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
 
@@ -1772,6 +1777,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the task frames availability, it can make many requests
         timeout=300
     )
+    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -1803,19 +1809,21 @@ class TestTaskData(TestTasksBase):
                 frame = Image.open(io.BytesIO(response.data))
                 assert frame_size == frame.size
 
+                must_be_identical = (
+                    task_spec.source_data_type == SourceDataType.images and quality == "original"
+                )
                 self._compare_images(
                     task_spec.read_frame(abs_frame_id),
                     frame,
-                    must_be_identical=(
-                        task_spec.source_data_type == SourceDataType.images
-                        and quality == "original"
-                    ),
+                    must_be_identical=must_be_identical,
+                    source_data_type=task_spec.source_data_type,
                 )
 
     @pytest.mark.timeout(
         # This test has to check all the task chunks availability, it can make many requests
         timeout=300
     )
+    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_chunks(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -1871,13 +1879,15 @@ class TestTaskData(TestTasksBase):
                 assert sorted(chunk_images.keys()) == list(range(len(expected_chunk_frame_ids)))
 
                 for chunk_frame, abs_frame_id in zip(chunk_images, expected_chunk_frame_ids):
+                    must_be_identical = (
+                        task_spec.source_data_type == SourceDataType.images
+                        and quality == "original"
+                    )
                     self._compare_images(
                         task_spec.read_frame(abs_frame_id),
                         chunk_images[chunk_frame],
-                        must_be_identical=(
-                            task_spec.source_data_type == SourceDataType.images
-                            and quality == "original"
-                        ),
+                        must_be_identical=must_be_identical,
+                        source_data_type=task_spec.source_data_type,
                     )
 
     @pytest.mark.timeout(
@@ -1932,6 +1942,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the task meta availability, it can make many requests
         timeout=300
     )
+    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_annotation_job_meta(self, task_spec: ITaskSpec, task_id: int):
         segment_params = self._compute_annotation_segment_params(task_spec)
@@ -1972,6 +1983,7 @@ class TestTaskData(TestTasksBase):
                 else:
                     assert len(job_meta.frames) == job_meta.size
 
+    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._tasks_with_simple_gt_job_cases)
     def test_can_get_simple_gt_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -2028,6 +2040,7 @@ class TestTaskData(TestTasksBase):
                 # there are placeholders on the non-included places
                 assert len(job_meta.frames) == task_spec.size
 
+    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._tasks_with_honeypots_cases)
     def test_can_get_honeypot_gt_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -2100,6 +2113,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job frames availability, it can make many requests
         timeout=300
     )
+    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_job_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -2137,19 +2151,22 @@ class TestTaskData(TestTasksBase):
                     frame = Image.open(io.BytesIO(response.data))
                     assert frame_size == frame.size
 
+                    must_be_identical = (
+                        task_spec.source_data_type == SourceDataType.images
+                        and quality == "original"
+                    )
                     self._compare_images(
                         task_spec.read_frame(abs_frame_id),
                         frame,
-                        must_be_identical=(
-                            task_spec.source_data_type == SourceDataType.images
-                            and quality == "original"
-                        ),
+                        must_be_identical=must_be_identical,
+                        source_data_type=task_spec.source_data_type,
                     )
 
     @pytest.mark.timeout(
         # This test has to check all the job chunks availability, it can make many requests
         timeout=300
     )
+    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: ITaskSpec, task_id: int, indexing: str):
@@ -2268,11 +2285,13 @@ class TestTaskData(TestTasksBase):
                         else:
                             expected_image = task_spec.read_frame(abs_frame_id)
 
+                        must_be_identical = (
+                            task_spec.source_data_type == SourceDataType.images
+                            and quality == "original"
+                        )
                         self._compare_images(
                             expected_image,
                             chunk_images[chunk_frame],
-                            must_be_identical=(
-                                task_spec.source_data_type == SourceDataType.images
-                                and quality == "original"
-                            ),
+                            must_be_identical=must_be_identical,
+                            source_data_type=task_spec.source_data_type,
                         )

@@ -1322,7 +1322,7 @@ class TestPatchTaskLabel:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
@@ -1421,7 +1421,7 @@ class TestTaskBackups:
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     def test_can_export_and_import_backup_task_with_mounted_share(self):
         task_spec = {
             "name": "Task with files from mounted share",
@@ -1450,7 +1450,7 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
         task_spec = {
@@ -2799,7 +2799,7 @@ class TestPatchTask:
         assert response.status_code == HTTPStatus.OK
         assert compare_annotations(annotations, response.json(), ignore_spec_ids=True) == {}
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize(
         "storage_id",
         [
@@ -3134,7 +3134,7 @@ def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user
         task, _ = api_client.tasks_api.retrieve(task["id"])
         assert task.jobs.completed == 1
 
-
+@pytest.mark.infra_profile("full")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestImportTaskAnnotations:
     @pytest.fixture(autouse=True)

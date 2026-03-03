@@ -14,6 +14,8 @@ from shared.utils.config import delete_method, get_method, patch_method, post_me
 
 from .utils import CollectionSimpleFilterTestBase
 
+pytestmark = [pytest.mark.infra_profile("full")]
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostWebhooks:

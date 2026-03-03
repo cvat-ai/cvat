@@ -65,13 +65,70 @@ pytest ./tests/python
 
 This command will automatically start all necessary docker containers.
 
-If you want to start/stop these containers without running tests
-use special options for it:
+If you want explicit infrastructure lifecycle control, use project-scoped runs:
 
 ```bash
-pytest ./tests/python --start-services
-pytest ./tests/python --stop-services
+# Start infra for a dedicated compose project and exit
+pytest ./tests/python --run-prefix p1 --infra up
+
+# Run tests against the same running stack
+pytest ./tests/python --run-prefix p1
+
+# Stop and remove that stack
+pytest ./tests/python --run-prefix p1 --infra down
 ```
+
+You can also use shorthand aliases:
+
+```bash
+pytest ./tests/python --run-prefix p1 up
+pytest ./tests/python --run-prefix p1 down
+```
+
+To run against an externally managed CVAT instance:
+
+```bash
+pytest ./tests/python --infra external --base-url http://localhost:8080
+```
+
+Profile-based runs:
+
+```bash
+# core: base services + key workers (annotation, chunks, import, export)
+pytest ./tests/python --run-prefix p1 --infra-profile core --infra up
+
+# extended: core + worker services
+pytest ./tests/python --run-prefix p2 --infra-profile extended --infra up
+```
+
+Parallel lanes:
+
+```bash
+pytest ./tests/python --parallel core,extended,full
+pytest ./tests/python --parallel core*4
+pytest ./tests/python --parallel core*3,full
+```
+
+For shells that expand `*` (e.g. `zsh`), quote the argument:
+```bash
+pytest ./tests/python --parallel 'core*4'
+```
+
+Profile mismatch handling for `up`:
+```bash
+# default: fail fast if a lane profile differs from saved state
+pytest ./tests/python --run-prefix p1 --parallel core,core,full,core up
+
+# recreate only mismatched lanes
+pytest ./tests/python --run-prefix p1 --parallel core,core,full,core up \
+  --parallel-profile-mismatch=replace
+```
+
+Profile routing is automatic:
+- `infra_profile("full")` tests run in `full`
+- worker-dependent modules (task data/import/export/upload paths) run in `extended`
+- the rest run in `core`
+- you can override with `@pytest.mark.infra_profile("core|extended|full")`
 
 If you need to rebuild your CVAT images add `--rebuild` option:
 ```bash
@@ -89,50 +146,205 @@ COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --rebuild --cov --cov-r
 ```
 
 **Debugging**
+Docker-compose based debugging flow:
 
-Currently, this is only supported in deployments based on Docker Compose,
-which should be enough to fix errors arising in REST API tests.
+1. Start infrastructure for a dedicated run:
+   ```bash
+   pytest tests/python --run-prefix dbg up
+   ```
+1. Reproduce only the failing test(s) by node id or `-k`:
+   ```bash
+   pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+     --run-prefix dbg -vv -s
+   pytest tests/python/rest_api/test_tasks.py -k "<failing_test_name>" --run-prefix dbg -vv -s
+   ```
+1. Stop on first failure and open an interactive debugger with local variables:
+   ```bash
+   pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+     --run-prefix dbg -x --maxfail=1 --pdb -vv -s
+   ```
+1. Set breakpoints before a failure:
+   ```python
+   breakpoint()
+   ```
+   Then run the same command as above (no extra flags are required for `breakpoint()`).
+1. Enter debugger at test start (before test body executes):
+   ```bash
+   pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+     --run-prefix dbg --trace -vv -s
+   ```
+1. Inspect server/worker logs:
+   ```bash
+   docker logs dbg_cvat_server_1 --tail=200
+   docker logs dbg_cvat_worker_annotation_1 --tail=200
+   docker logs dbg_cvat_worker_chunks_1 --tail=200
+   ```
+1. Open a shell in the container if needed:
+   ```bash
+   docker exec -it dbg_cvat_server_1 /bin/bash
+   ```
+1. Debug recommendation for parallel runs:
+   Run the failing test without `--parallel` when using `--pdb`/`--trace`. Interactive debugging is most reliable in a single pytest process.
+1. Stop and cleanup:
+   ```bash
+   pytest tests/python --run-prefix dbg down
+   ```
 
-To debug a server deployed with Docker, you need to do the following:
+Debugging by use case:
 
-- Adjust env variables in the `docker-compose.dev.yml` file for your test case
+### Debug a failed test
 
-- Rebuild the images and start the test containers:
+1. Start dedicated infra:
+   ```bash
+   pytest tests/python --run-prefix dbg up
+   ```
+1. Reproduce the exact failing test:
+   ```bash
+   pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+     --run-prefix dbg -vv -s
+   ```
+1. Rerun with automatic debugger on failure:
+   ```bash
+   pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+     --run-prefix dbg -x --maxfail=1 --pdb -vv -s
+   ```
+1. In `pdb`, inspect and navigate:
+   ```text
+   p var_name
+   pp object_name
+   where
+   up
+   down
+   n
+   s
+   c
+   ```
+1. Cleanup:
+   ```bash
+   pytest tests/python --run-prefix dbg down
+   ```
 
-```bash
-CVAT_DEBUG_ENABLED=yes pytest --rebuild --start-services tests/python
-```
+### Debug a non-failed test
 
-Now, you can use VS Code tasks to attach to the running server containers.
-To attach to a container, run one of the following tasks:
-- `REST API tests: Attach to server` for the server container
-- `REST API tests: Attach to RQ low` for the low priority queue worker
-- `REST API tests: Attach to RQ default` for the default priority queue worker
+1. Start dedicated infra:
+   ```bash
+   pytest tests/python --run-prefix dbg up
+   ```
+1. Option A: enter debugger at test start:
+   ```bash
+   pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+     --run-prefix dbg --trace -vv -s
+   ```
+1. Option C: VS Code attach flow for pytest process (wait before test execution):
+   ```bash
+   pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+     --run-prefix dbg --vscode -vv -s
+   ```
+   Requirement: `debugpy` must be installed in the active Python environment.
+   ```bash
+   pip install debugpy
+   ```
+   This opens VS Code (if `code` is in `PATH`) and waits for debugger attach.
+   In VS Code select launch target `local: attach pytest (waiting)` and start debugging.
+   `--vscode` is intended for single-process runs (without `--parallel`).
+1. Option D: VS Code attach flow for CVAT server/worker code in containers:
+   ```bash
+   pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+     --run-prefix dbg --container-debug server,worker_annotation --container-debug-wait --vscode -vv -s
+   ```
+   Pytest generates `.vscode/tests-debug.code-workspace` with the exact attach targets/ports
+   and opens it via `code -r ...`.
+   In VS Code use:
+   - `local: attach pytest (waiting)` (always first)
+   - `tests: attach all enabled containers` (or individual generated container targets)
+1. Option B: stop at a specific line:
+   - add `breakpoint()` in test code or application code;
+   - run the same test normally:
+   ```bash
+   pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+     --run-prefix dbg -vv -s
+   ```
+1. Cleanup:
+   ```bash
+   pytest tests/python --run-prefix dbg down
+   ```
 
-If you have a custom development environment setup, you need to adjust
-host-remote path mappings in the `.vscode/launch.json`:
+### VS Code debug profiles
+
+The repository includes base launch profiles in `.vscode/launch.json`:
+- `server: REST API tests`
+- `sdk: tests`
+- `cli: tests`
+- `local: attach pytest (waiting)` (for `pytest --vscode`)
+
+For container debugging with dynamic ports/services, use generated
+`.vscode/tests-debug.code-workspace` (created by `--vscode`).
+
+How to use them for Python tests:
+
+1. Open **Run and Debug** in VS Code.
+1. Select one of the profiles above.
+1. For infra-isolated debugging, edit that profile `args` and add:
+   ```json
+   "--run-prefix", "dbg"
+   ```
+1. If needed, force profile explicitly:
+   ```json
+   "--infra-profile", "core"
+   ```
+   or
+   ```json
+   "--infra-profile", "extended"
+   ```
+   or
+   ```json
+   "--infra-profile", "full"
+   ```
+1. For debugger on failure, add:
+   ```json
+   "-x", "--maxfail=1", "--pdb", "-s", "-vv"
+   ```
+1. To debug one test, replace directory argument with a node id:
+   ```json
+   "tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup"
+   ```
+
+Example `args` for `server: REST API tests`:
 ```json
-...
-"pathMappings": [
-   {
-      "localRoot": "${workspaceFolder}/my_venv",
-      "remoteRoot": "/opt/venv",
-   },
-   {
-      "localRoot": "/some/other/path",
-      "remoteRoot": "/some/container/path",
-   }
+[
+  "--verbose",
+  "--no-cov",
+  "-x",
+  "--maxfail=1",
+  "--pdb",
+  "-s",
+  "--run-prefix",
+  "dbg",
+  "tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup"
 ]
 ```
 
-Extra options:
-- If you want the server to wait for a debugger on startup,
-  use the `CVAT_DEBUG_WAIT_CLIENT` environment variable:
+If you need a different attach port:
+- run pytest with `--vscode-port <port>`
+- duplicate `local: attach pytest (waiting)` and update its `connect.port` to the same value.
+- for container-side attach, use `--container-debug-port-base <port>`.
+
+If attach fails with `ECONNREFUSED` or the port is busy:
+- check whether something else already uses the port:
   ```bash
-  CVAT_DEBUG_WAIT_CLIENT=yes pytest ...
+  lsof -i :5678
   ```
-- If you want to change the default debugging ports, check the `*_DEBUG_PORT`
-  variables in the `docker-compose.dev.yml`
+- choose another port and use it in both places:
+  ```bash
+  pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+    --run-prefix dbg --vscode --vscode-port 5680 -vv -s
+  ```
+  and in VS Code set `connect.port` to `5680`.
+- for container-side debugging:
+  ```bash
+  pytest tests/python/rest_api/test_tasks.py::TestTaskBackups::test_can_export_backup \
+    --run-prefix dbg --container-debug server --container-debug-wait --container-debug-port-base 39190 --vscode -vv -s
+  ```
 
 
 # Server unit tests

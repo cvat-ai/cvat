@@ -7,6 +7,7 @@ from time import sleep
 from typing import Any, TypeVar
 
 import pytest
+import requests
 
 T = TypeVar("T")
 
@@ -63,7 +64,12 @@ def _wait_request(
 ):
     for _ in range(number_of_checks):
         sleep(sleep_interval)
-        response = get_method(user, f"requests/{request_id}")
+        try:
+            # During startup/load, polling the async request endpoint can briefly fail
+            # with transport errors; treat them as transient and keep polling.
+            response = get_method(user, f"requests/{request_id}", timeout=5)
+        except (requests.Timeout, requests.ConnectionError):
+            continue
         assert response.status_code == HTTPStatus.OK
 
         request_details = json.loads(response.content)

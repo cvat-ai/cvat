@@ -21,6 +21,8 @@ from shared.utils.helpers import generate_image_files
 
 from .utils import create_task, export_events
 
+pytestmark = [pytest.mark.infra_profile("full")]
+
 
 class TestGetAnalytics:
     endpoint = "analytics"
@@ -295,7 +297,7 @@ class TestGetAuditEvents:
         assert event_count["delete:task"] == 2
         assert event_count["delete:job"] == 4
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("api_version, allowed", [(1, False), (2, True)])
     @pytest.mark.parametrize("cloud_storage_id", [3])  # import/export bucket
     def test_export_to_cloud(

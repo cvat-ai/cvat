@@ -11,21 +11,29 @@ from unittest import mock
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
 
-from shared.utils.config import BASE_URL, USER_PASS, make_api_client
+from shared.utils import config as shared_config
+from shared.utils.config import USER_PASS, make_api_client
+
+pytestmark = [pytest.mark.infra_profile("full")]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestBasicAuth:
     def test_can_use_basic_auth(self, admin_user: str):
         username = admin_user
-        config = Configuration(host=BASE_URL, username=username, password=USER_PASS)
+        config = Configuration(host=shared_config.BASE_URL, username=username, password=USER_PASS)
         with ApiClient(config) as client:
             user, response = client.users_api.retrieve_self()
             assert response.status == HTTPStatus.OK
             assert user.username == username
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures(
+    # Auth tests can hit Django throttle/cache state in Redis in-memory DB 1.
+    # Keep this per-function reset to avoid order-dependent 429 responses.
+    "restore_db_per_function",
+    "restore_redis_inmem_per_function",
+)
 class TestTokenAuth:
     @staticmethod
     def login(api_client: ApiClient, username: str) -> models.Token:
@@ -45,7 +53,7 @@ class TestTokenAuth:
     @classmethod
     @contextmanager
     def make_client(cls, username: str | None = None) -> Generator[ApiClient, None, None]:
-        with ApiClient(Configuration(host=BASE_URL)) as api_client:
+        with ApiClient(Configuration(host=shared_config.BASE_URL)) as api_client:
             if username:
                 cls.login(api_client, username)
 
@@ -87,7 +95,7 @@ class TestTokenAuth:
             auth = self.login(api_client, username=username)
 
             config = Configuration(
-                host=BASE_URL,
+                host=shared_config.BASE_URL,
                 api_key={
                     "tokenAuth": auth.key,
                 },
@@ -107,7 +115,11 @@ class TestTokenAuth:
             assert response.status == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures(
+    # Session auth also touches login/throttle state in Redis in-memory DB 1.
+    "restore_db_per_function",
+    "restore_redis_inmem_per_function",
+)
 class TestSessionAuth:
     @staticmethod
     def login(api_client: ApiClient, username: str) -> models.Token:
@@ -124,7 +136,7 @@ class TestSessionAuth:
     @classmethod
     @contextmanager
     def make_client(cls, username: str | None = None) -> Generator[ApiClient, None, None]:
-        with ApiClient(Configuration(host=BASE_URL)) as api_client:
+        with ApiClient(Configuration(host=shared_config.BASE_URL)) as api_client:
             if username:
                 cls.login(api_client, username)
 
@@ -168,7 +180,7 @@ class TestSessionAuth:
         username = admin_user
         with self.make_client(username) as api_client:
             config = Configuration(
-                host=BASE_URL,
+                host=shared_config.BASE_URL,
                 api_key={
                     "sessionAuth": api_client.cookies["sessionid"].value,
                     "csrfAuth": api_client.cookies["csrftoken"].value,
@@ -189,12 +201,16 @@ class TestSessionAuth:
             assert response.status == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures(
+    # Access-token auth can still be affected by stale auth throttle/cache keys.
+    "restore_db_per_function",
+    "restore_redis_inmem_per_function",
+)
 class TestAccessTokenAuth:
     @classmethod
     @contextmanager
     def make_client(cls, *, token: str | None = None) -> Generator[ApiClient, None, None]:
-        with ApiClient(Configuration(host=BASE_URL)) as api_client:
+        with ApiClient(Configuration(host=shared_config.BASE_URL)) as api_client:
             if token:
                 api_client.configuration.access_token = token
 
@@ -229,7 +245,7 @@ class TestAccessTokenAuth:
 
     def test_logout_is_not_an_error(self, admin_user: str, access_tokens_by_username):
         token = access_tokens_by_username[admin_user][0]["private_key"]
-        with ApiClient(Configuration(host=BASE_URL)) as session_api_client:
+        with ApiClient(Configuration(host=shared_config.BASE_URL)) as session_api_client:
             session_api_client.auth_api.create_login(
                 login_serializer_ex_request=models.LoginSerializerExRequest(
                     username=admin_user, password=USER_PASS
@@ -255,12 +271,16 @@ class TestAccessTokenAuth:
             session_api_client.users_api.retrieve_self()
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures(
+    # Registration/password change endpoints may hit auth throttling/cache too.
+    "restore_db_per_function",
+    "restore_redis_inmem_per_function",
+)
 class TestCredentialsManagement:
     def test_can_register(self):
         username = "newuser"
         email = "123@456.com"
-        with ApiClient(Configuration(host=BASE_URL)) as api_client:
+        with ApiClient(Configuration(host=shared_config.BASE_URL)) as api_client:
             user, response = api_client.auth_api.create_register(
                 models.RegisterSerializerExRequest(
                     username=username, password1=USER_PASS, password2=USER_PASS, email=email

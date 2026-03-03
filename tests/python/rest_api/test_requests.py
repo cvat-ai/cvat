@@ -38,6 +38,7 @@ from .utils import (
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.timeout(30)
+@pytest.mark.parallel_group("case")
 class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
     field_lookups = {
@@ -568,6 +569,7 @@ class TestGetRequests:
             legacy_request_id, admin_user, action="create", target_type="task"
         )
 
+    @pytest.mark.infra_profile("full")
     def test_can_retrieve_quality_calculation_requests_using_legacy_ids(self, jobs, tasks):
         gt_job = next(
             j

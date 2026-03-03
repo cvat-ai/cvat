@@ -126,6 +126,16 @@
             "justMyCode": false,
         },
         {
+            "name": "local: attach pytest (waiting)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 5678
+            },
+            "justMyCode": false,
+        },
+        {
             "type": "pwa-chrome",
             "request": "launch",
             "preLaunchTask": "npm: start - cvat-ui",

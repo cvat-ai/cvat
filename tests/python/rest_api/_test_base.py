@@ -293,18 +293,22 @@ class TestTasksBase:
     @fixture(scope="class")
     @parametrize(
         "cloud_storage_id",
-        [pytest.param(2, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+        [pytest.param(2, marks=[pytest.mark.infra_profile("full"), pytest.mark.timeout(60)])],
     )
     def fxt_cloud_images_task_with_honeypots_and_changed_real_frames(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
     ) -> tuple[ITaskSpec, int]:
         cloud_storage = cloud_storages[cloud_storage_id]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
+        # Use a dedicated prefix to avoid key collisions with other cloud fixtures
+        # that also upload/remove files under "test/" (for example, related-images
+        # fixtures using test/0.jpeg..test/4.jpeg).
+        cloud_prefix = "test/honeypots_changed_real_frames"
 
         image_files = generate_image_files(47)
 
         for image in image_files:
-            image.name = f"test/{image.name}"
+            image.name = f"{cloud_prefix}/{image.name}"
             image.seek(0)
 
             s3_client.create_file(data=image, filename=image.name)
@@ -397,13 +401,15 @@ class TestTasksBase:
     @fixture(scope="class")
     @parametrize(
         "cloud_storage_id",
-        [pytest.param(2, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+        [pytest.param(2, marks=[pytest.mark.infra_profile("full"), pytest.mark.timeout(60)])],
     )
     def fxt_cloud_images_task_with_related_images(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
     ) -> tuple[ITaskSpec, int]:
         cloud_storage = cloud_storages[cloud_storage_id]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
+        # Dedicated prefix to prevent cross-fixture key collisions in the same bucket.
+        cloud_prefix = "test/related_images_fixture"
 
         image_files = generate_image_files(5)
 
@@ -414,7 +420,7 @@ class TestTasksBase:
         related_files = []
 
         for i, image in enumerate(image_files):
-            image.name = f"test/{image.name}"
+            image.name = f"{cloud_prefix}/{image.name}"
             image.seek(0)
             _upload_file(image)
 
@@ -449,7 +455,7 @@ class TestTasksBase:
     @fixture(scope="class")
     @parametrize(
         "cloud_storage_id",
-        [pytest.param(1, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+        [pytest.param(1, marks=[pytest.mark.infra_profile("full"), pytest.mark.timeout(60)])],
     )
     def fxt_cloud_pcd_task_with_related_images(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
@@ -773,8 +779,24 @@ class TestTasksBase:
 
     @staticmethod
     def _compare_images(
-        expected: Image.Image, actual: Image.Image, *, must_be_identical: bool = True
+        expected: Image.Image,
+        actual: Image.Image,
+        *,
+        must_be_identical: bool = True,
+        source_data_type: SourceDataType | None = None,
+        atol: int | None = None,
     ):
+        """
+        Compare two decoded frames.
+
+        `must_be_identical=True` is intended for lossless paths and requires byte-exact equality.
+
+        For lossy paths (`must_be_identical=False`) callers can:
+        - pass `source_data_type` and rely on defaults:
+          - video: `atol=8` (codec-dependent decode variance),
+          - non-video: `atol=2`;
+        - pass explicit `atol` to override the default tolerance when needed.
+        """
         expected_pixels = np.array(expected)
         chunk_frame_pixels = np.array(actual)
         assert expected_pixels.shape == chunk_frame_pixels.shape
@@ -782,7 +804,9 @@ class TestTasksBase:
         if not must_be_identical:
             # video chunks can have slightly changed colors, due to codec specifics
             # compressed images can also be distorted
-            assert np.allclose(chunk_frame_pixels, expected_pixels, atol=2)
+            if atol is None:
+                atol = 8 if source_data_type == SourceDataType.video else 2
+            assert np.allclose(chunk_frame_pixels, expected_pixels, atol=atol)
         else:
             assert np.array_equal(chunk_frame_pixels, expected_pixels)
 

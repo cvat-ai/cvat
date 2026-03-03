@@ -45,6 +45,86 @@ which are used by containers for the testing system.
   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
   to get more information about tests running.
 
+- Infrastructure lifecycle can be controlled explicitly:
+
+  ```shell
+  # Start infra for a dedicated compose project and exit
+  pytest ./tests/python --run-prefix p1 up
+
+  # Run tests against this running instance (state is reused automatically)
+  pytest ./tests/python --run-prefix p1
+
+  # Stop and remove the project infrastructure
+  pytest ./tests/python --run-prefix p1 down
+  ```
+
+- For lighter local runs, use profile-based infrastructure:
+
+  ```shell
+  # core: base services + key workers (annotation, chunks, import, export)
+  pytest ./tests/python --run-prefix p1 --infra-profile core --infra up
+
+  # extended: core + worker services
+  pytest ./tests/python --run-prefix p2 --infra-profile extended --infra up
+
+  # Run a server-focused subset against core profile
+  pytest ./tests/python/rest_api/test_server.py --run-prefix p1 --infra-profile core
+  ```
+
+- Parallel lanes can be started with explicit profile list:
+
+  ```shell
+  pytest ./tests/python --parallel core,extended,full
+  pytest ./tests/python --parallel core*4
+  pytest ./tests/python --parallel core*3,full
+  ```
+
+  Note for `zsh`: quote values with `*` (`--parallel 'core*4'`).
+
+- macOS benchmark runs:
+
+  For stable and repeatable benchmark numbers on laptops, prevent sleep during the run:
+
+  ```shell
+  caffeinate -d -i -m -s ./run_benchmark.sh
+  ```
+
+  This affects only the wrapped command runtime and does not require changing system power settings.
+
+- Reusing running lanes with different profiles:
+
+  ```shell
+  # Fail fast on mismatch (default)
+  pytest ./tests/python --run-prefix p1 --parallel core,core,full,core up
+
+  # Recreate only mismatched lanes
+  pytest ./tests/python --run-prefix p1 --parallel core,core,full,core up \
+      --parallel-profile-mismatch=replace
+  ```
+
+- Profile routing is automatic:
+  - `infra_profile("full")` tests run in `full`
+  - worker-dependent modules (task data/import/export/upload paths) run in `extended`
+  - the rest run in `core`
+  - override any test/module explicitly with `@pytest.mark.infra_profile("core|extended|full")`
+
+- Short aliases are supported for convenience:
+
+  ```shell
+  pytest ./tests/python --run-prefix p1 up
+  pytest ./tests/python --run-prefix p1 down
+  ```
+
+- You can run tests against an externally managed CVAT instance:
+
+  ```shell
+  pytest ./tests/python --infra external --base-url http://localhost:8080
+  ```
+
+- Defaults:
+  - `pytest ./tests/python` uses `--run-prefix test` and `--infra-profile full`.
+  - `--parallel core` behaves as one isolated lane (child process orchestration).
+
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already
@@ -53,7 +133,7 @@ procedure to add them:
 
 1. Run a clean CVAT instance and restore DB and data volume
    ```console
-   pytest tests/python/ --start-services
+   pytest tests/python/ up
    ```
 1. Add new objects (e.g. issues, comments, tasks, projects)
 1. Backup DB and data volume using commands below
@@ -100,7 +180,7 @@ files as well, run the appropriate script:
 
 ```
 cd tests/python
-pytest ./ --start-services
+pytest ./ up
 python shared/utils/dump_objects.py
 ```
 

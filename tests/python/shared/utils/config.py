@@ -4,6 +4,7 @@
 
 from collections.abc import Generator
 from contextlib import contextmanager
+import os
 from pathlib import Path
 
 import requests
@@ -14,14 +15,30 @@ ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "uti
 ASSETS_DIR = (ROOT_DIR / "assets").resolve()
 # Suppress the warning from Bandit about hardcoded passwords
 USER_PASS = "!Q@W#E$R"  # nosec
-BASE_URL = "http://localhost:8080"
+BASE_URL = os.environ.get("CVAT_BASE_URL", "http://localhost:8080")
 API_URL = BASE_URL + "/api/"
+LEGACY_BASE_URL = "http://localhost:8080"
 
 # MiniIO settings
 MINIO_KEY = "minio_access_key"
 MINIO_SECRET_KEY = "minio_secret_key"  # nosec
-MINIO_ENDPOINT_URL = "http://localhost:9000"
+MINIO_ENDPOINT_URL = os.environ.get("CVAT_MINIO_ENDPOINT_URL", "http://localhost:9000")
 IMPORT_EXPORT_BUCKET_ID = 3
+
+
+def replace_legacy_base_url(value, *, base_url: str | None = None):
+    base_url = base_url or os.environ.get("CVAT_BASE_URL", LEGACY_BASE_URL)
+
+    if isinstance(value, str):
+        return value.replace(LEGACY_BASE_URL, base_url)
+
+    if isinstance(value, list):
+        return [replace_legacy_base_url(v, base_url=base_url) for v in value]
+
+    if isinstance(value, dict):
+        return {k: replace_legacy_base_url(v, base_url=base_url) for k, v in value.items()}
+
+    return value
 
 
 def _to_query_params(**kwargs):
@@ -36,8 +53,8 @@ def get_api_url(endpoint, **kwargs):
     return API_URL + endpoint + "?" + _to_query_params(**kwargs)
 
 
-def get_method(username, endpoint, **kwargs):
-    return requests.get(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
+def get_method(username, endpoint, *, timeout=None, **kwargs):
+    return requests.get(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=timeout)
 
 
 def options_method(username, endpoint, **kwargs):

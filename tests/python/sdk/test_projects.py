@@ -262,14 +262,14 @@ class TestProjectUsecases(TestDatasetExport):
                 pytest.param(
                     fixture_ref("fxt_new_project"),
                     Location.CLOUD_STORAGE,
-                    marks=pytest.mark.with_external_services,
+                    marks=pytest.mark.infra_profile("full"),
                 )
             ),
             (
                 pytest.param(
                     fixture_ref("fxt_new_project_with_target_storage"),
                     None,
-                    marks=pytest.mark.with_external_services,
+                    marks=pytest.mark.infra_profile("full"),
                 )
             ),
             (fixture_ref("fxt_new_project_with_target_storage"), Location.LOCAL),
@@ -277,7 +277,7 @@ class TestProjectUsecases(TestDatasetExport):
                 pytest.param(
                     fixture_ref("fxt_new_project_with_target_storage"),
                     Location.CLOUD_STORAGE,
-                    marks=pytest.mark.with_external_services,
+                    marks=pytest.mark.infra_profile("full"),
                 )
             ),
         ],
