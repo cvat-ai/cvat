@@ -523,8 +523,8 @@ export class Job extends Session {
         project_id: number | null;
         project_name: string | null;
         guide_id: number | null;
-        task_id: number;
-        task_name: string;
+        task_id: number | null;
+        task_name: string | null;
         labels: Label[];
         dimension?: DimensionType;
         data_compressed_chunk_type?: ChunkType;
@@ -555,7 +555,7 @@ export class Job extends Session {
             project_name: null,
             guide_id: null,
             task_id: null,
-            task_name: undefined,
+            task_name: null,
             labels: [],
             dimension: undefined,
             data_compressed_chunk_type: undefined,
@@ -681,11 +681,11 @@ export class Job extends Session {
         return this.#data.guide_id;
     }
 
-    public get taskId(): number {
+    public get taskId(): number | null {
         return this.#data.task_id;
     }
 
-    public get taskName(): string {
+    public get taskName(): string | null {
         return this.#data.task_name;
     }
 
