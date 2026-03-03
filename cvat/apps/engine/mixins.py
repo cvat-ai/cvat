@@ -38,8 +38,10 @@ from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 slogger = ServerLogManager(__name__)
 
+
 class UploadedFileError(ValueError):
     pass
+
 
 class UploadMixin:
     """
@@ -65,19 +67,19 @@ class UploadMixin:
     - Upload-Multiple - POST, has a 'Upload-Multiple' header
     """
 
-    _tus_api_version = '1.0.0'
-    _tus_api_version_supported = ['1.0.0']
+    _tus_api_version = "1.0.0"
+    _tus_api_version_supported = ["1.0.0"]
     _tus_api_extensions = []
     _base_tus_headers = {
-        'Tus-Resumable': _tus_api_version,
-        'Tus-Version': ",".join(_tus_api_version_supported),
-        'Tus-Extension': ",".join(_tus_api_extensions),
-        'Tus-Max-Size': str(TusFile.TusMeta.MAX_FILE_SIZE),
-        'Access-Control-Allow-Origin': "*",
-        'Access-Control-Allow-Methods': "PATCH,HEAD,GET,POST,OPTIONS",
-        'Access-Control-Expose-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset",
-        'Access-Control-Allow-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset,content-type",
-        'Cache-Control': 'no-store'
+        "Tus-Resumable": _tus_api_version,
+        "Tus-Version": ",".join(_tus_api_version_supported),
+        "Tus-Extension": ",".join(_tus_api_extensions),
+        "Tus-Max-Size": str(TusFile.TusMeta.MAX_FILE_SIZE),
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "PATCH,HEAD,GET,POST,OPTIONS",
+        "Access-Control-Expose-Headers": "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset",
+        "Access-Control-Allow-Headers": "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset,content-type",
+        "Cache-Control": "no-store",
     }
 
     def _tus_response(self, status, data=None, extra_headers=None):
@@ -96,10 +98,12 @@ class UploadMixin:
         the "append chunk" endpoint. This action must accept the same path parameters (if any)
         as the creation action, plus a "file_id" parameter.
         """
-        tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
-        bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
-        start_upload = request.headers.get('Upload-Start', None) is not None
-        finish_upload = request.headers.get('Upload-Finish', None) is not None
+        tus_request = (
+            request.headers.get("Upload-Length", None) is not None or request.method == "OPTIONS"
+        )
+        bulk_file_upload = request.headers.get("Upload-Multiple", None) is not None
+        start_upload = request.headers.get("Upload-Start", None) is not None
+        finish_upload = request.headers.get("Upload-Finish", None) is not None
         one_request_upload = start_upload and finish_upload
         if one_request_upload or finish_upload:
             return self.upload_finished(request)
@@ -109,14 +113,14 @@ class UploadMixin:
             return self.init_tus_upload(request, append_url_name=append_url_name)
         elif bulk_file_upload:
             return self.append_files(request)
-        else: # backward compatibility case - no upload headers were found
+        else:  # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
     def should_result_file_be_replaced(self) -> bool:
         return self.action in ("data", "append_data_chunk")
 
     def init_tus_upload(self, request: ExtendedRequest, *, append_url_name: str) -> Response:
-        if request.method == 'OPTIONS':
+        if request.method == "OPTIONS":
             return self._tus_response(status=status.HTTP_204_NO_CONTENT)
 
         upload_dir = self.get_upload_dir()
@@ -126,7 +130,7 @@ class UploadMixin:
         except TusTooLargeFileError:
             return self._tus_response(
                 status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                data=f"File size exceeds max limit of {TusFile.TusMeta.MAX_FILE_SIZE} bytes"
+                data=f"File size exceeds max limit of {TusFile.TusMeta.MAX_FILE_SIZE} bytes",
             )
 
         replaceable_result_file = self.should_result_file_be_replaced()
@@ -135,7 +139,7 @@ class UploadMixin:
             if not metadata.filename:
                 return self._tus_response(
                     status=status.HTTP_400_BAD_REQUEST,
-                    data="Metadata is expected to contain 'filename' key"
+                    data="Metadata is expected to contain 'filename' key",
                 )
 
             try:
@@ -144,13 +148,12 @@ class UploadMixin:
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST,
                     data=f"File name {metadata.filename} is not allowed",
-                    content_type="text/plain"
+                    content_type="text/plain",
                 )
 
             if (upload_dir / metadata.filename).exists():
                 return self._tus_response(
-                    status=status.HTTP_409_CONFLICT,
-                    data="File with same name already exists"
+                    status=status.HTTP_409_CONFLICT, data="File with same name already exists"
                 )
 
         tus_file = TusFile.create_file(
@@ -164,15 +167,16 @@ class UploadMixin:
             file_path = upload_dir / (
                 tus_file.filename if replaceable_result_file else tus_file.file_id.as_str
             )
-            cleaning_job = scheduler.enqueue_in(time_delta=settings.IMPORT_CACHE_CLEAN_DELAY,
+            cleaning_job = scheduler.enqueue_in(
+                time_delta=settings.IMPORT_CACHE_CLEAN_DELAY,
                 func=clear_import_cache,
                 path=file_path,
-                creation_time=file_path.stat().st_ctime
+                creation_time=file_path.stat().st_ctime,
             )
             slogger.glob.info(
-                f'The cleaning job {cleaning_job.id} is queued.'
-                f'The check that the file {file_path} is deleted will be carried out after '
-                f'{settings.IMPORT_CACHE_CLEAN_DELAY}.'
+                f"The cleaning job {cleaning_job.id} is queued."
+                f"The check that the file {file_path} is deleted will be carried out after "
+                f"{settings.IMPORT_CACHE_CLEAN_DELAY}."
             )
 
         return self._tus_response(
@@ -181,8 +185,12 @@ class UploadMixin:
                 "Location": self.reverse_action(
                     append_url_name, kwargs={**self.kwargs, "file_id": tus_file.file_id.as_str}
                 ),
-                'Upload-Filename': tus_file.meta_file.meta.filename if replaceable_result_file else tus_file.file_id.as_str
-            }
+                "Upload-Filename": (
+                    tus_file.meta_file.meta.filename
+                    if replaceable_result_file
+                    else tus_file.file_id.as_str
+                ),
+            },
         )
 
     def append_tus_chunk(self, request: ExtendedRequest, file_id: str):
@@ -198,12 +206,12 @@ class UploadMixin:
 
         tus_file.meta_file.init_from_file()
 
-        if request.method == 'HEAD':
+        if request.method == "HEAD":
             return self._tus_response(
                 status=status.HTTP_200_OK,
                 extra_headers={
-                    'Upload-Offset': tus_file.offset,
-                    'Upload-Length': tus_file.file_size
+                    "Upload-Offset": tus_file.offset,
+                    "Upload-Length": tus_file.file_size,
                 },
             )
 
@@ -225,8 +233,8 @@ class UploadMixin:
         return self._tus_response(
             status=status.HTTP_204_NO_CONTENT,
             extra_headers={
-                'Upload-Offset': tus_file.offset,
-            }
+                "Upload-Offset": tus_file.offset,
+            },
         )
 
     def validate_uploaded_file_name(self, *, filename: str, upload_dir: Path) -> None:
@@ -242,7 +250,7 @@ class UploadMixin:
     def _get_request_client_files(self, request: ExtendedRequest):
         serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
-        return serializer.validated_data.get('client_files')
+        return serializer.validated_data.get("client_files")
 
     def append_files(self, request: ExtendedRequest):
         """
@@ -254,18 +262,18 @@ class UploadMixin:
         if client_files:
             upload_dir = self.get_upload_dir()
             for client_file in client_files:
-                filename = client_file['file'].name
+                filename = client_file["file"].name
                 try:
                     self.validate_uploaded_file_name(filename=filename, upload_dir=upload_dir)
                 except UploadedFileError:
                     return Response(
                         status=status.HTTP_400_BAD_REQUEST,
                         data=f"File name {filename} is not allowed",
-                        content_type="text/plain"
+                        content_type="text/plain",
                     )
 
-                with open(os.path.join(upload_dir, filename), 'ab+') as destination:
-                    shutil.copyfileobj(client_file['file'], destination)
+                with open(os.path.join(upload_dir, filename), "ab+") as destination:
+                    shutil.copyfileobj(client_file["file"], destination)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -280,7 +288,8 @@ class UploadMixin:
         Allows to process uploaded files.
         """
 
-        raise NotImplementedError('Must be implemented in the derived class')
+        raise NotImplementedError("Must be implemented in the derived class")
+
 
 class PartialUpdateModelMixin:
     """
@@ -297,56 +306,90 @@ class PartialUpdateModelMixin:
         mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
 
     def partial_update(self, request: ExtendedRequest, *args, **kwargs):
-        with mock.patch.object(self, 'update', new=self._update, create=True):
+        with mock.patch.object(self, "update", new=self._update, create=True):
             return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
+
 
 class DatasetMixin:
     @extend_schema(
-        summary='Initialize process to export resource as a dataset in a specific format',
+        summary="Initialize process to export resource as a dataset in a specific format",
         description=dedent("""\
              The request `POST /api/<projects|tasks|jobs>/id/dataset/export` will initialize
              a background process to export a dataset. To check status of the process
              please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
          """),
         parameters=[
-            OpenApiParameter('format', location=OpenApiParameter.QUERY,
-                description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
-                type=OpenApiTypes.STR, required=True),
-            OpenApiParameter('filename', description='Desired output file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('location', description='Where need to save downloaded dataset',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('save_images', description='Include images or not',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=False),
+            OpenApiParameter(
+                "format",
+                location=OpenApiParameter.QUERY,
+                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
+                type=OpenApiTypes.STR,
+                required=True,
+            ),
+            OpenApiParameter(
+                "filename",
+                description="Desired output file name",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR,
+                required=False,
+            ),
+            OpenApiParameter(
+                "location",
+                description="Where need to save downloaded dataset",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR,
+                required=False,
+                enum=Location.list(),
+            ),
+            OpenApiParameter(
+                "cloud_storage_id",
+                description="Storage id",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.INT,
+                required=False,
+            ),
+            OpenApiParameter(
+                "save_images",
+                description="Include images or not",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.BOOL,
+                required=False,
+                default=False,
+            ),
         ],
         request=OpenApiTypes.NONE,
         responses={
-            '202': OpenApiResponse(response=RqIdSerializer, description='Exporting has been started'),
-            '405': OpenApiResponse(description='Format is not available'),
-            '409': OpenApiResponse(RqIdSerializer, description='Exporting is already in progress'),
+            "202": OpenApiResponse(
+                response=RqIdSerializer, description="Exporting has been started"
+            ),
+            "405": OpenApiResponse(description="Format is not available"),
+            "409": OpenApiResponse(RqIdSerializer, description="Exporting is already in progress"),
         },
     )
-    @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
+    @action(detail=True, methods=["POST"], serializer_class=None, url_path="dataset/export")
     def initiate_dataset_export(self, request: ExtendedRequest, pk: int):
-        self._object = self.get_object() # force call of check_object_permissions()
+        self._object = self.get_object()  # force call of check_object_permissions()
 
         export_manager = DatasetExporter(request=request, db_instance=self._object)
         return export_manager.enqueue_job()
 
-    @extend_schema(summary='Download a prepared dataset file',
+    @extend_schema(
+        summary="Download a prepared dataset file",
         parameters=[
-            OpenApiParameter('rq_id', description='Request ID',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+            OpenApiParameter(
+                "rq_id",
+                description="Request ID",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR,
+                required=True,
+            ),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            "200": OpenApiResponse(description="Download of file started"),
         },
-        exclude=True, # private API endpoint that should be used only as result_url
+        exclude=True,  # private API endpoint that should be used only as result_url
     )
-    @action(methods=['GET'], detail=True, url_path='dataset/download')
+    @action(methods=["GET"], detail=True, url_path="dataset/download")
     def download_dataset(self, request: ExtendedRequest, pk: int):
         obj = self.get_object()  # force to call check_object_permissions
 
@@ -356,49 +399,80 @@ class DatasetMixin:
 
 class BackupMixin:
 
-    @extend_schema(summary='Initiate process to backup resource',
+    @extend_schema(
+        summary="Initiate process to backup resource",
         description=dedent("""\
              The request `POST /api/<projects|tasks>/id/backup/export` will initialize
              a background process to backup a resource. To check status of the process
              please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
          """),
         parameters=[
-            OpenApiParameter('filename', description='Backup file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-            OpenApiParameter('location', description='Where need to save downloaded backup',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
-            OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('lightweight',
-                description='Makes a lightweight backup (without media files) for tasks whose media is located in cloud storage',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=True),
+            OpenApiParameter(
+                "filename",
+                description="Backup file name",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR,
+                required=False,
+            ),
+            OpenApiParameter(
+                "location",
+                description="Where need to save downloaded backup",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR,
+                required=False,
+                enum=Location.list(),
+            ),
+            OpenApiParameter(
+                "cloud_storage_id",
+                description="Storage id",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.INT,
+                required=False,
+            ),
+            OpenApiParameter(
+                "lightweight",
+                description="Makes a lightweight backup (without media files) for tasks whose media is located in cloud storage",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.BOOL,
+                required=False,
+                default=True,
+            ),
         ],
         request=OpenApiTypes.NONE,
         responses={
-            '202': OpenApiResponse(response=RqIdSerializer, description='Creating a backup file has been started'),
-            '400': OpenApiResponse(description='Wrong query parameters were passed'),
-            '409': OpenApiResponse(RqIdSerializer, description='The backup process has already been initiated and is not yet finished'),
+            "202": OpenApiResponse(
+                response=RqIdSerializer, description="Creating a backup file has been started"
+            ),
+            "400": OpenApiResponse(description="Wrong query parameters were passed"),
+            "409": OpenApiResponse(
+                RqIdSerializer,
+                description="The backup process has already been initiated and is not yet finished",
+            ),
         },
     )
-    @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
+    @action(detail=True, methods=["POST"], serializer_class=None, url_path="backup/export")
     def initiate_backup_export(self, request: ExtendedRequest, pk: int):
-        db_object = self.get_object() # force to call check_object_permissions
+        db_object = self.get_object()  # force to call check_object_permissions
         export_manager = BackupExporter(request=request, db_instance=db_object)
         return export_manager.enqueue_job()
 
-
-    @extend_schema(summary='Download a prepared backup file',
+    @extend_schema(
+        summary="Download a prepared backup file",
         parameters=[
-            OpenApiParameter('rq_id', description='Request ID',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+            OpenApiParameter(
+                "rq_id",
+                description="Request ID",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.STR,
+                required=True,
+            ),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
+            "200": OpenApiResponse(description="Download of file started"),
         },
-        exclude=True, # private API endpoint that should be used only as result_url
+        exclude=True,  # private API endpoint that should be used only as result_url
     )
-    @action(methods=['GET'], detail=True, url_path='backup/download')
+    @action(methods=["GET"], detail=True, url_path="backup/download")
     def download_backup(self, request: ExtendedRequest, pk: int):
         obj = self.get_object()  # force to call check_object_permissions
 
