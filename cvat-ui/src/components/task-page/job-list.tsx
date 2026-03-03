@@ -165,7 +165,7 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
                         )}
                         onApplyFilter={onApplyFilter}
                     />
-                    <JobsCSVExportButton jobs={filteredJobs} />
+                    <JobsCSVExportButton predefinedData={filteredJobs} />
                     <div className='cvat-job-add-wrapper'>
                         <Button onClick={onCreateJob} type='primary' className='cvat-create-job' icon={<PlusOutlined />} />
                     </div>
