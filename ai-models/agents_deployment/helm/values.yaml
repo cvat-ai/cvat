@@ -1,0 +1,49 @@
+fullnameOverride: "sam2-agent"
+
+# Please replace with your Docker image URL that contains the SAM2 agent implementation.
+# TODO replace with our actual public image URL once it's available.
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+agent:
+  # Please replace with your actual CVAT instance URL.
+  cvat_base_url: "https://app.cvat.ai"
+  # You can provide the CVAT access token directly here, but it's recommended to use Kubernetes Secrets for better security.
+  # If you choose to use a secret, make sure to create it in your cluster and reference it in the `secret_env` section below.
+  # Token takes precedence over the secret, so if both are provided, the value here will be used.
+  cvat_access_token: ""
+  # Please specify the model ID you want to use. You can find available models on Hugging Face, ex: https://huggingface.co/models?search=facebook%2Fsam2.
+  model_id: "facebook/sam2-hiera-tiny"
+  # Please specify the number of agent replicas you want to deploy.
+  replicaCount: 1
+  org_slug: ""
+  use_cuda: false
+  # TODO need to find out optimal recommended resources.
+  resources:
+    limits:
+      cpu: 1
+#      memory: 1.5Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  envVars: []
+#    - name: EXAMPLE_ENV_VAR
+#      value: true
+  secret_env:
+    - name: CVAT_ACCESS_TOKEN
+      secretName: cvat-agent
+      secretKey: token
+
+job:
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 400m
+      memory: 256Mi
+  envVars: []
+#   - name: EXAMPLE_ENV_VAR
+#     value: true

@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "agent.fullname" . }}-job-role
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade, pre-delete
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "helm.sh/hook-weight": "-5"
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "get", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["{{ include "agent.fullname" . }}-config"]
+    verbs: ["delete"]
+
+# You cannot restrict [...] or top-level create requests by resource name.
+# For create, this limitation is because the name of the new object may not be known at authorization time.
+# https://kubernetes.io/docs/reference/access-authn-authz/rbac/

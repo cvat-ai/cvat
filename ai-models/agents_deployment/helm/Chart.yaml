@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cvat-sam2-agent
+description: A chart to deploy CVAT SAM2 Agent.
+type: application
+version: 0.1.0
+appVersion: "1.0.4"

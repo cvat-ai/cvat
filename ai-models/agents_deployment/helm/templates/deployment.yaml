@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agent.fullname" . }}
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.agent.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "agent.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "agent.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+      {{- include "agent.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            allowPrivilegeEscalation: false
+          {{- include "agent.image" . | nindent 10 }}
+          #NB! configMap is created by job.yaml
+          envFrom:
+            - configMapRef:
+                optional: true
+                name: {{ include "agent.fullname" . }}-config
+          env:
+            {{- include "agent.commonEnv" . | nindent 12 }}
+            - name: USE_CUDA
+              value: {{ .Values.agent.use_cuda | default "false" | quote }}
+            {{- range .Values.agent.envVars }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.agent.resources | nindent 12 }}
