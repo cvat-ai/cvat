@@ -1013,7 +1013,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data["job_file_mapping"] = job_file_mapping
 
-        self._manifest["consensus_replicas"] = self._parse_replica_counts(jobs)
+        self._manifest["consensus_replicas"] = self._determine_replica_counts(jobs)
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
@@ -1115,7 +1115,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         return replica_counts_map
 
-    def _parse_replica_counts(self, jobs: dict) -> int:
+    def _determine_replica_counts(self, jobs: dict) -> int:
         replica_counts = self._collect_replica_counts(jobs)
         return min(replica_counts.get(models.JobType.ANNOTATION, [0]))
 
