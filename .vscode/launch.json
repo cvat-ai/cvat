@@ -204,6 +204,7 @@
             "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
+                "--worker-class=cvat.rqworker.SimpleWorker",
                 // high priority
                 "chunks",
                 // normal priority
@@ -215,8 +216,6 @@
                 "webhooks",
                 // low priority
                 "cleaning",
-                "--worker-class",
-                "cvat.rqworker.SimpleWorker"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
