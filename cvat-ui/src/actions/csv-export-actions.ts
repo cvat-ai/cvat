@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import notification from 'antd/lib/notification';
-
 import { CombinedState } from 'reducers';
 import { ThunkDispatch } from 'utils/redux';
 import IncrementalCSVWriter, { CSVColumn, downloadCSV } from 'utils/csv-writer';
@@ -15,6 +13,8 @@ export interface CSVExportOptions<T> {
     filename: string;
     pageSize?: number;
     resourceName?: string;
+    onSuccess?: (totalCount: number, filename: string) => void;
+    onError?: (error: Error) => void;
 }
 
 export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
@@ -25,6 +25,8 @@ export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
             filename,
             pageSize = 100,
             resourceName = 'items',
+            onSuccess,
+            onError,
         } = options;
 
         try {
@@ -32,55 +34,46 @@ export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
 
             const csvWriter = new IncrementalCSVWriter<T>(columns);
 
-            // Fetch first page to get total count
-            const firstPage = await fetchPage(1, pageSize);
-            const totalCount = firstPage.count;
-            const totalPages = Math.ceil(totalCount / pageSize);
+            let totalCount = 0;
+            let totalPages: number | null = null;
 
-            if (getState().bulkActions.cancelled) {
-                return;
-            }
-
-            if (totalCount === 0) {
-                const csvContent = csvWriter.getContent();
-                downloadCSV(csvContent, filename);
-
-                notification.info({
-                    message: 'Export completed',
-                    description: `Exported ${filename} with no data (headers only).`,
-                });
-                return;
-            }
-
-            csvWriter.addBatch(firstPage.results);
-
-            dispatch(bulkActions.updateBulkActionStatus({
-                message: `Exporting ${resourceName}: ${firstPage.results.length} of ${totalCount}`,
-                percent: Math.round((1 / totalPages) * 100),
-            }));
-
-            for (let page = 2; page <= totalPages; page++) {
+            for (let page = 1; page <= (totalPages ?? 1); page++) {
                 if (getState().bulkActions.cancelled) {
                     return;
                 }
 
                 const response = await fetchPage(page, pageSize);
+
+                if (page === 1) {
+                    totalCount = response.count;
+                    totalPages = Math.ceil(totalCount / pageSize);
+
+                    if (totalCount === 0) {
+                        const csvContent = csvWriter.getContent();
+                        downloadCSV(csvContent, filename);
+
+                        if (onSuccess) {
+                            onSuccess(totalCount, filename);
+                        }
+                        return;
+                    }
+                }
+
                 csvWriter.addBatch(response.results);
 
                 const loadedCount = (page - 1) * pageSize + response.results.length;
                 dispatch(bulkActions.updateBulkActionStatus({
                     message: `Exporting ${resourceName}: ${loadedCount} of ${totalCount}`,
-                    percent: Math.round((page / totalPages) * 100),
+                    percent: Math.round((page / (totalPages ?? 1)) * 100),
                 }));
             }
 
             const csvContent = csvWriter.getContent();
             downloadCSV(csvContent, filename);
 
-            notification.success({
-                message: 'Export completed',
-                description: `Successfully exported ${totalCount} ${resourceName} to ${filename}`,
-            });
+            if (onSuccess) {
+                onSuccess(totalCount, filename);
+            }
         } catch (error) {
             dispatch(bulkActions.bulkOperationFailed({
                 error,
@@ -92,10 +85,9 @@ export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
                 },
             }));
 
-            notification.error({
-                message: 'Export failed',
-                description: error instanceof Error ? error.message : 'An error occurred during export',
-            });
+            if (onError && error instanceof Error) {
+                onError(error);
+            }
         } finally {
             dispatch(bulkActions.finishBulkAction());
         }

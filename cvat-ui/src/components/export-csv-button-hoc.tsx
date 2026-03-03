@@ -6,6 +6,7 @@ import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
 import { DownloadOutlined } from '@ant-design/icons';
+import notification from 'antd/lib/notification';
 
 import { CombinedState } from 'reducers';
 import IncrementalCSVWriter, { CSVColumn, downloadCSV } from 'utils/csv-writer';
@@ -63,6 +64,20 @@ function createCSVExportButton<T, Q>(
                 filename,
                 pageSize: 100,
                 resourceName: config.resourceName,
+                onSuccess: (totalCount: number, exportedFilename: string) => {
+                    notification.success({
+                        message: 'Export completed',
+                        description: (
+                            `Successfully exported ${totalCount} ${config.resourceName} to ${exportedFilename}`
+                        ),
+                    });
+                },
+                onError: (error: Error) => {
+                    notification.error({
+                        message: 'CSV export failed',
+                        description: error.message || 'An unknown error occurred during export',
+                    });
+                },
             }));
         }, [dispatch, columns, query, predefinedData]);
 
