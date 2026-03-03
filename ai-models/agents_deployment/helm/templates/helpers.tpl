@@ -45,8 +45,7 @@ Common environment variables
 {{- if .Values.agent.cvat_access_token }}
 - name: CVAT_ACCESS_TOKEN
   value: {{ .Values.agent.cvat_access_token | quote }}
-{{- end }}
-{{- if not .Values.agent.cvat_access_token }}
+{{- else }}
 {{- range .Values.agent.secret_env }}
 - name: {{ .name }}
   valueFrom:
