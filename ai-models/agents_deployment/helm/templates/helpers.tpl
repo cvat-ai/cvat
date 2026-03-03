@@ -54,8 +54,18 @@ Common environment variables
       key: {{ .secretKey }}
 {{- end }}
 {{- end }}
+{{- if .Values.agent.model_id }}
 - name: MODEL_ID
   value: {{ .Values.agent.model_id | quote }}
+{{- end }}
+{{- if .Values.agent.model }}
+- name: MODEL
+  value: {{ .Values.agent.model | quote }}
+{{- end }}
+{{- if .Values.agent.keypoints_file_path }}
+- name: KEYPOINTS_FILE_PATH
+  value: {{ .Values.agent.keypoints_file_path | quote }}
+{{- end }}
 - name: NAMESPACE
   value: {{ .Release.Namespace }}
 - name: CONFIGMAP_NAME

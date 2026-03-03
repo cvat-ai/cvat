@@ -1,7 +1,6 @@
-fullnameOverride: "sam2-agent"
+fullnameOverride: "cvat-agent"
 
-# Please replace with your Docker image URL that contains the SAM2 agent implementation.
-# TODO replace with our actual public image URL once it's available.
+# Please replace with your Docker image URL that contains the desired agent implementation.
 image:
   repository: ""
   tag: ""
@@ -14,13 +13,23 @@ agent:
   # If you choose to use a secret, make sure to create it in your cluster and reference it in the `secret_env` section below.
   # Token takes precedence over the secret, so if both are provided, the value here will be used.
   cvat_access_token: ""
-  # Please specify the model ID you want to use. You can find available models on Hugging Face, ex: https://huggingface.co/models?search=facebook%2Fsam2.
-  model_id: "facebook/sam2-hiera-tiny"
+
+  ### SAM2 configuration
+  # Please specify the model ID for SAM you want to use. You can find available models on Hugging Face, ex: https://huggingface.co/models?search=facebook%2Fsam2.
+  #  model_id: "facebook/sam2-hiera-tiny"
+
+  ###YOLO configuration
+  # Please specify the model to use for YOLO agent https://docs.ultralytics.com/models/yolo26/#supported-tasks-and-modes
+  model: "yolo26s.pt"
+  # Please specify the path to the keypoints file if you are using a YOLO model that requires it, such as a pose estimation model.
+  # By default, the 17 keypoint names from the COCO dataset (`nose`, `left_eye`, `right_eye`, etc.) will be used
+  keypoints_file_path: ""
+
+  ### Common configuration
   # Please specify the number of agent replicas you want to deploy.
   replicaCount: 1
   org_slug: ""
   use_cuda: false
-  # TODO need to find out optimal recommended resources.
   resources:
     limits:
       cpu: 1

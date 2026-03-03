@@ -1,8 +1,17 @@
-=== CVAT SAM2 Agent ===
+=== CVAT Agent ===
 
 Agent deployed with {{ .Values.agent.replicaCount }} replica(s).
 CVAT URL: {{ .Values.agent.cvat_base_url }}
+{{- if .Values.agent.model_id }}
 Model:    {{ .Values.agent.model_id }}
+{{- end }}
+{{- if .Values.agent.model }}
+Model:    {{ .Values.agent.model }}
+{{- end }}
+
+{{- if and .Values.agent.model_id .Values.agent.model }}
+Warning: Both model_id and model are set. You are not supposed to use both values. model_id is for SAM2 and model is for YOLO :)
+{{- end }}
 
 The function registration job runs as a pre-install/pre-upgrade hook.
 Check its status:
