@@ -62,7 +62,6 @@ function createCSVExportButton<T, Q>(
                     return config.fetchPage(filteredQuery, page, pageSize);
                 },
                 filename,
-                pageSize: 100,
                 resourceName: config.resourceName,
                 onSuccess: (totalCount: number, exportedFilename: string) => {
                     notification.success({

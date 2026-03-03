@@ -14,25 +14,23 @@ const columns: CSVColumn<Task>[] = [
     { header: 'Name', accessor: (task) => task.name },
     { header: 'Task URL', accessor: (task) => `${window.location.origin}/tasks/${task.id}` },
     { header: 'Project ID', accessor: (task) => task.projectId },
-    { header: 'Project Name', accessor: (task) => task.projectName || 'N/A' },
-    { header: 'Project URL', accessor: (task) => (task.projectId ? `${window.location.origin}/projects/${task.projectId}` : 'N/A') },
-    { header: 'Owner', accessor: (task) => task.owner?.username || 'Unknown' },
-    { header: 'Assignee', accessor: (task) => task.assignee?.username || 'Unassigned' },
+    { header: 'Project Name', accessor: (task) => task.projectName ?? '' },
+    { header: 'Project URL', accessor: (task) => (task.projectId ? `${window.location.origin}/projects/${task.projectId}` : '') },
+    { header: 'Owner', accessor: (task) => task.owner?.username ?? '' },
+    { header: 'Assignee', accessor: (task) => task.assignee?.username ?? '' },
     { header: 'Status', accessor: (task) => task.status },
     { header: 'Mode', accessor: (task) => task.mode },
     { header: 'Size', accessor: (task) => task.size },
-    { header: 'Subset', accessor: (task) => task.subset || 'N/A' },
+    { header: 'Subset', accessor: (task) => task.subset ?? '' },
     {
         header: 'Created Date',
         accessor: (task) => task.createdDate,
-        transform: (date) => new Date(date).toLocaleString(),
     },
     {
         header: 'Updated Date',
         accessor: (task) => task.updatedDate,
-        transform: (date) => new Date(date).toLocaleString(),
     },
-    { header: 'Bug Tracker', accessor: (task) => task.bugTracker || 'N/A' },
+    { header: 'Bug Tracker', accessor: (task) => task.bugTracker ?? '' },
 ];
 
 const TasksCSVExportButton = createCSVExportButton<Task, TasksQuery>({

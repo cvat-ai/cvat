@@ -13,12 +13,12 @@ const columns: CSVColumn<Job>[] = [
     { header: 'ID', accessor: (job) => job.id },
     { header: 'Job URL', accessor: (job) => `${window.location.origin}/tasks/${job.taskId}/jobs/${job.id}` },
     { header: 'Task ID', accessor: (job) => job.taskId },
-    { header: 'Task Name', accessor: (job) => job.taskName || 'Unknown' },
+    { header: 'Task Name', accessor: (job) => job.taskName ?? '' },
     { header: 'Task URL', accessor: (job) => `${window.location.origin}/tasks/${job.taskId}` },
     { header: 'Project ID', accessor: (job) => job.projectId },
-    { header: 'Project Name', accessor: (job) => job.projectName || 'N/A' },
-    { header: 'Project URL', accessor: (job) => (job.projectId ? `${window.location.origin}/projects/${job.projectId}` : 'N/A') },
-    { header: 'Assignee', accessor: (job) => job.assignee?.username || 'Unassigned' },
+    { header: 'Project Name', accessor: (job) => job.projectName ?? '' },
+    { header: 'Project URL', accessor: (job) => (job.projectId ? `${window.location.origin}/projects/${job.projectId}` : '') },
+    { header: 'Assignee', accessor: (job) => job.assignee?.username ?? '' },
     { header: 'Stage', accessor: (job) => job.stage },
     { header: 'State', accessor: (job) => job.state },
     { header: 'Type', accessor: (job) => job.type },
@@ -28,12 +28,10 @@ const columns: CSVColumn<Job>[] = [
     {
         header: 'Created Date',
         accessor: (job) => job.createdDate,
-        transform: (date) => new Date(date).toLocaleString(),
     },
     {
         header: 'Updated Date',
         accessor: (job) => job.updatedDate,
-        transform: (date) => new Date(date).toLocaleString(),
     },
 ];
 

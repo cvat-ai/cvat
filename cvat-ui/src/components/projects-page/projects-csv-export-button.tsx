@@ -13,8 +13,8 @@ const columns: CSVColumn<Project>[] = [
     { header: 'ID', accessor: (project) => project.id },
     { header: 'Name', accessor: (project) => project.name },
     { header: 'Project URL', accessor: (project) => `${window.location.origin}/projects/${project.id}` },
-    { header: 'Owner', accessor: (project) => project.owner?.username || 'Unknown' },
-    { header: 'Assignee', accessor: (project) => project.assignee?.username || 'Unassigned' },
+    { header: 'Owner', accessor: (project) => project.owner?.username ?? '' },
+    { header: 'Assignee', accessor: (project) => project.assignee?.username ?? '' },
     { header: 'Status', accessor: (project) => project.status },
     { header: 'Dimension', accessor: (project) => project.dimension },
     {
@@ -22,20 +22,18 @@ const columns: CSVColumn<Project>[] = [
         accessor: (project) => (
             project.subsets && project.subsets.length > 0 ?
                 project.subsets.join(', ') :
-                'N/A'
+                ''
         ),
     },
     {
         header: 'Created Date',
         accessor: (project) => project.createdDate,
-        transform: (date) => new Date(date).toLocaleString(),
     },
     {
         header: 'Updated Date',
         accessor: (project) => project.updatedDate,
-        transform: (date) => new Date(date).toLocaleString(),
     },
-    { header: 'Bug Tracker', accessor: (project) => project.bugTracker || 'N/A' },
+    { header: 'Bug Tracker', accessor: (project) => project.bugTracker ?? '' },
 ];
 
 const ProjectsCSVExportButton = createCSVExportButton<Project, ProjectsQuery>({
