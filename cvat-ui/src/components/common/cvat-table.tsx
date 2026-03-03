@@ -83,7 +83,7 @@ function CVATTable(props: Props): JSX.Element {
     const [modifiedColumns, setModifiedColumns] = useState<NonNullable<typeof columns>>([]);
 
     const handleDownloadCSV = useCallback(() => {
-        if (csvExport && columns && filteredDataSource) {
+        if (csvExport && columns) {
             // Extract columns with dataIndex for CSV export
             const csvColumns = columns
                 .filter((column: any) => !!column.dataIndex)
@@ -92,7 +92,7 @@ function CVATTable(props: Props): JSX.Element {
                     accessor: (dataItem: any) => getValueFromDataItem<string>(dataItem, column.dataIndex),
                 }));
 
-            const csvContent = generateCSV([...filteredDataSource], csvColumns);
+            const csvContent = generateCSV([...(filteredDataSource || [])], csvColumns);
 
             triggerCSVDownload(csvContent, csvExport.filename);
         }
