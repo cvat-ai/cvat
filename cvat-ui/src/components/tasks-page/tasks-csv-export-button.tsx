@@ -36,6 +36,7 @@ const columns: CSVColumn<Task>[] = [
 const TasksCSVExportButton = createCSVExportButton<Task, TasksQuery>({
     resourceName: 'tasks',
     className: 'cvat-tasks-export-csv-button',
+    tooltipTitle: 'Export tasks to CSV',
     columns,
     fetchPage: async (query) => {
         const tasks = await cvat.tasks.get(query);
