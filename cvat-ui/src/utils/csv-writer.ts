@@ -2,11 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-/**
- * Escape CSV value according to RFC 4180
- * - Wrap in quotes if contains comma, quote, or newline
- * - Escape quotes by doubling them
- */
 export function escapeCSVValue(value: any): string {
     if (value === null || value === undefined) return '';
 
@@ -18,9 +13,6 @@ export function escapeCSVValue(value: any): string {
     return str;
 }
 
-/**
- * Trigger browser download of CSV content
- */
 export function downloadCSV(content: string, filename: string): void {
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -32,24 +24,19 @@ export function downloadCSV(content: string, filename: string): void {
 
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
 
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, 0);
 }
 
-/**
- * Column definition for CSV export
- */
 export interface CSVColumn<T> {
     header: string;
     accessor: (item: T) => string | number | null | undefined;
     transform?: (value: any) => string;
 }
 
-/**
- * Incremental CSV writer for large datasets
- * Builds CSV content in chunks to avoid memory issues
- */
 class IncrementalCSVWriter<T> {
     private columns: CSVColumn<T>[];
     private rows: string[] = [];
@@ -59,18 +46,12 @@ class IncrementalCSVWriter<T> {
         this.rows.push(this.generateHeader());
     }
 
-    /**
-     * Add a batch of items to the CSV
-     */
     addBatch(items: T[]): void {
         items.forEach((item) => {
             this.rows.push(this.generateRow(item));
         });
     }
 
-    /**
-     * Get the complete CSV content
-     */
     getContent(): string {
         return this.rows.join('\n');
     }
@@ -92,10 +73,6 @@ class IncrementalCSVWriter<T> {
     }
 }
 
-/**
- * Simple CSV generator for small datasets (used by cvat-table)
- * Generates complete CSV in one go
- */
 export function generateCSV<T>(
     data: T[],
     columns: Array<{ title: string; accessor: (item: T) => any }>,
