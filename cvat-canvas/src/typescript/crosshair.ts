@@ -24,6 +24,11 @@ export default class Crosshair {
             this.y = null;
         }
 
+        if (this.x && this.y) {
+            this.move(x, y);
+            return;
+        }
+
         this.canvas = canvas;
         this.x = this.canvas
             .line(0, y, this.canvas.node.clientWidth, y)
@@ -72,5 +77,9 @@ export default class Crosshair {
         if (this.y) {
             this.y.attr('stroke-width', consts.BASE_STROKE_WIDTH / (2 * scale));
         }
+    }
+
+    public visible(): boolean {
+        return !!this.x && !!this.y;
     }
 }

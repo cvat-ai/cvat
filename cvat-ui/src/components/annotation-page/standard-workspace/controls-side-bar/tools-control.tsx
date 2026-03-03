@@ -437,7 +437,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 const response = await core.lambda.call(
                     jobInstance.taskId,
                     interactor,
-                    { ...data, job: jobInstance.id, text_prompts: [jobInstance.labels[0].name] },
+                    { ...data, job: jobInstance.id },
                 ) as InteractorResults;
 
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {

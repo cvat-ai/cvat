@@ -7,10 +7,9 @@ import * as SVG from 'svg.js';
 import consts from './consts';
 import Crosshair from './crosshair';
 import {
-    translateToSVG, PropType, stringifyPoints, translateToCanvas, expandChannels, imageDataToDataURL,
-    translateFromCanvas,
+    translateToSVG, stringifyPoints, translateToCanvas,
+    expandChannels, imageDataToDataURL, translateFromCanvas,
 } from './shared';
-
 import {
     InteractionData, InteractionResult, Geometry, Configuration, CanvasHint,
 } from './canvasModel';
@@ -24,26 +23,46 @@ export interface InteractionHandler {
 }
 
 type InteractorSettings = Required<InteractionData['settings']>;
+type SupportedShapes = SVG.Rect | SVG.Circle;
+
+const DELETE_BUTTON_OFFSET = 10;
+
+function getTopRightPosition(shape: SVG.Rect | SVG.Circle): { x: number; y: number } {
+    if (shape instanceof SVG.Rect) {
+        return {
+            x: shape.x() + shape.width(),
+            y: shape.y(),
+        };
+    } else if (shape instanceof SVG.Circle) {
+        return {
+            x: shape.cx() + shape.attr('r'),
+            y: shape.cy() - shape.attr('r'),
+        }
+    } else {
+        throw new Error('Unsupported shape type');
+    }
+}
 
 export class InteractionHandlerImpl implements InteractionHandler {
     private settings: InteractorSettings;
     private enabled: boolean;
     private command: 'draw_box' | 'draw_points' | 'put_shapes' | 'refine' | 'idle';
     private currentRectangle: SVG.Rect | null;
-    private currentRectangles: SVG.Rect[];
-    private currentPoints: SVG.Circle[];
-    private allShapes: SVG.Element[];
+    private rectanglePrompts: SVG.Rect[];
+    private pointPrompts: SVG.Circle[];
+    private allPrompts: SupportedShapes[];
+    private deletionButtons: Map<SupportedShapes, SVG.G>;
     private intermediateShapes: (SVG.Image | SVG.Polygon)[];
-    private shapeDeletionMap: Map<SVG.Element, SVG.Element>;
     private onInteraction: (interactionResult: InteractionResult[], finished?: boolean) => void;
     private onMessage: (messages: CanvasHint[] | null, topic: string) => void;
-
     private geometry: Geometry;
     private container: SVG.Container;
     private configuration: Configuration;
     private effectiveStrokeWidth: number;
     private effectivePointSize: number;
     private effectiveShapeOpacity: number;
+    private lastMousePosition: { x: number; y: number };
+    private crosshair: Crosshair;
 
     public constructor(
         onInteraction: InteractionHandlerImpl['onInteraction'],
@@ -52,7 +71,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
         geometry: Geometry,
         configuration: Configuration,
     ) {
+        this.onInteraction = onInteraction;
+        this.onMessage = onMessage;
         this.enabled = false;
+        this.command = 'idle';
+        this.crosshair = new Crosshair();
         this.settings = {
             crosshair: false,
             points_type: 'any',
@@ -63,88 +86,54 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.geometry = geometry;
         this.configuration = configuration;
         this.currentRectangle = null;
-        this.currentRectangles = [];
-        this.currentPoints = [];
-        this.allShapes = [];
+        this.rectanglePrompts = [];
+        this.pointPrompts = [];
+        this.allPrompts = [];
         this.intermediateShapes = [];
-        this.shapeDeletionMap = new Map();
-        this.onInteraction = onInteraction;
-        this.onMessage = onMessage;
+        this.deletionButtons = new Map();
         this.effectiveStrokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
         this.effectivePointSize = (configuration.controlPointsSize ?? consts.BASE_POINT_SIZE) / this.geometry.scale;
         this.effectiveShapeOpacity = configuration.selectedShapeOpacity ?? 0.5;
+        this.lastMousePosition = { x: 0, y: 0 };
         this.container.on('mousedown', this.onMouseDown);
-        this.container.on('mouseup', this.onMouseUp);
+        this.container.on('mousemove', this.onMouseMove);
     }
-
 
     public transform(geometry: Geometry): void {
         this.geometry = geometry;
         this.effectiveStrokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
         this.effectivePointSize = (this.configuration.controlPointsSize ?? consts.BASE_POINT_SIZE) / this.geometry.scale;
 
-        // Update current rectangle if it exists
         if (this.currentRectangle) {
             this.currentRectangle.stroke({ width: this.effectiveStrokeWidth });
             this.currentRectangle.opacity(this.effectiveShapeOpacity);
         }
 
-        // Update all current points
-        this.currentPoints.forEach((point) => {
-            point.attr('r', this.effectivePointSize);
-        });
-
-        // Update all shapes in allShapes array
-        this.allShapes.forEach((shape) => {
+        this.allPrompts.forEach((shape) => {
+            shape.stroke({ width: this.effectiveStrokeWidth });
             if (shape instanceof SVG.Rect) {
-                shape.stroke({ width: this.effectiveStrokeWidth });
                 shape.opacity(this.effectiveShapeOpacity);
             } else if (shape instanceof SVG.Circle) {
                 shape.attr('r', this.effectivePointSize);
             }
         });
 
-        // Update delete buttons
-        this.shapeDeletionMap.forEach((deleteButtonGroup, shape) => {
-            const group = deleteButtonGroup as SVG.G;
+        this.deletionButtons.forEach((deleteButtonGroup, shape) => {
+            const { scale } = this.geometry;
+            const group = deleteButtonGroup;
 
-            // Recalculate button position based on new effective size
-            // Make offsets dynamic based on scale to maintain visual distance
-            const offsetX = 8 / this.geometry.scale;
-            const offsetY = -8 / this.geometry.scale;
-            let x = 0;
-            let y = 0;
-
-            if (shape instanceof SVG.Rect) {
-                x = shape.x() + shape.width();
-                y = shape.y();
-            } else if (shape instanceof SVG.Circle) {
-                x = shape.cx() + this.effectivePointSize * 2;
-                y = shape.cy() - this.effectivePointSize;
-            }
-
-            // Update group position
-            group.move(x + offsetX, y + offsetY);
-
-            const children = group.children();
-            children.forEach((child) => {
+            const { x, y } = getTopRightPosition(shape);
+            group.children().forEach((child) => {
                 if (child instanceof SVG.Circle) {
-                    // Update circle: radius should be scaled down with geometry scale
-                    // Base size is 10, so radius is 5. Scale it down by dividing by geometry.scale
-                    const scaledRadius = 5 / this.geometry.scale;
-                    child.attr('r', scaledRadius);
+                    child.attr('r', this.effectivePointSize);
                     child.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth });
                 } else if (child instanceof SVG.Path) {
-                    // Update path: recalculate coordinates based on the scaled circle size
-                    // Original path is for 10x10 circle, coordinates go from 3 to 7
-                    // Scale factor: scaledRadius / 5 (original radius)
-                    const scaledRadius = 5 / this.geometry.scale;
-                    const scaleFactor = scaledRadius / 5;
-                    const coords = [3, 7].map(c => (c * scaleFactor).toFixed(2));
+                    const coords = [3, 7].map((val) => (val / 10) * this.effectivePointSize * 2);
                     const pathData = `M ${coords[0]} ${coords[0]} L ${coords[1]} ${coords[1]} M ${coords[1]} ${coords[0]} L ${coords[0]} ${coords[1]}`;
-                    child.attr('d', pathData);
+                    (child as SVG.Path).plot(pathData);
                     child.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth, linecap: 'round', linejoin: 'round' });
                 }
+                child.center(x + DELETE_BUTTON_OFFSET / scale, y - DELETE_BUTTON_OFFSET / scale);
             });
         });
     }
@@ -159,24 +148,42 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
         if (interactData.enabled) {
             this.enabled = true;
-            this.command = interactData.command ?? 'idle';
         } else if (this.enabled) {
             this.onInteraction(null, true);
             this.release();
         }
 
         if (this.enabled) {
-            if (interactData.hasOwnProperty('command')) {
-                const { command } = interactData;
+            if (this.settings.crosshair) {
+                this.crosshair.show(this.container, this.lastMousePosition.x, this.lastMousePosition.y, this.geometry.scale);
+            } else {
+                this.crosshair.hide();
+            }
+
+            if (this.settings.removalStrategy === 'last') {
+                this.deletionButtons.values().forEach((deleteBtn) => deleteBtn.hide());
+                const lastShape = this.allPrompts?.[this.allPrompts.length - 1];
+                if (lastShape) {
+                    this.deletionButtons.get(lastShape)?.show();
+                }
+            } else {
+                this.deletionButtons.forEach((deleteBtn) => deleteBtn.show());
+            }
+
+            const { command } = interactData;
+            if (['draw_box', 'draw_points'].includes(command)) {
                 if (command === 'draw_box') {
                     this.drawBox();
-                } else if (command === 'draw_points') {
+                } else {
                     this.drawPoints();
-                } else if (command === 'put_shapes') {
-                    this.putShapes(interactData.payload.shapes);
-                } else if (command === 'refine') {
-                    this.refine();
+                    this.currentRectangle?.off('drawstop');
+                    this.currentRectangle?.remove();
+                    this.currentRectangle = null;
                 }
+            } else if (command === 'put_shapes') {
+                this.putShapes(interactData.payload.shapes);
+            } else if (command === 'refine') {
+                this.refine();
             }
         }
     }
@@ -189,7 +196,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     public destroy(): void {
         this.container.off('mousedown', this.onMouseDown);
-        this.container.off('mouseup', this.onMouseUp);
+        this.container.off('mousemove', this.onMouseMove);
         this.release();
     }
 
@@ -202,33 +209,47 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.enabled = false;
         this.command = 'idle';
         this.onMessage(null, 'interaction');
+
         if (this.currentRectangle) {
             this.currentRectangle.off('drawstop');
-            this.currentRectangles.push(this.currentRectangle);
             this.currentRectangle.remove();
             this.currentRectangle = null;
         }
 
-        if (this.currentRectangles.length > 0) {
-            this.currentRectangles.forEach((rect) => rect.remove());
-            this.currentRectangles = [];
-        }
+        this.rectanglePrompts.forEach((rect) => {
+            rect.remove();
+        });
 
-        if (this.currentPoints.length > 0) {
-            this.currentPoints.forEach((point) => point.remove());
-            this.currentPoints = [];
-        }
+        this.pointPrompts.forEach((point) => {
+            point.off('mouseenter');
+            point.off('mouseleave');
+            point.off('mousedown');
+            point.remove();
+        });
 
-        this.allShapes = [];
-
-        this.intermediateShapes.forEach((shape) => shape.remove());
-        this.intermediateShapes = [];
-
-        // Clean up delete buttons
-        this.shapeDeletionMap.forEach((deleteBtn) => {
+        this.deletionButtons.forEach((deleteBtn) => {
+            deleteBtn.off('mouseover');
+            deleteBtn.off('mouseout');
+            deleteBtn.off('mousedown');
             deleteBtn.remove();
         });
-        this.shapeDeletionMap.clear();
+
+        this.intermediateShapes.forEach((shape) => {
+            shape.remove();
+        });
+
+        this.rectanglePrompts = [];
+        this.pointPrompts = [];
+        this.allPrompts = [];
+        this.intermediateShapes = [];
+        this.deletionButtons.clear();
+        this.crosshair.hide();
+    }
+
+    private onMouseMove = (e: MouseEvent) => {
+        const [x, y] = translateToSVG((this.container.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
+        this.lastMousePosition = { x, y };
+        this.crosshair.move(x, y);
     }
 
     private onMouseDown = (e: MouseEvent) => {
@@ -239,6 +260,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
         if (this.command === 'draw_box') {
             (this.currentRectangle as any).draw(e);
         } else if (this.command === 'draw_points') {
+            if (e.button !== 0 && e.button !== 2) {
+                return;
+            }
+
             let color = 'green';
             if (this.settings.points_type === 'any') {
                 color = e.button === 0 ? 'green' : 'red';
@@ -248,47 +273,89 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 color = 'red';
             }
 
-            const point = this.container.circle(this.effectivePointSize * 2).fill(color).center(e.offsetX, e.offsetY);
-            this.currentPoints.push(point);
-            this.allShapes.push(point);
+            const point = this.container.circle(this.effectivePointSize * 2)
+                .fill('white')
+                .stroke(color)
+                .addClass('cvat_interaction_point')
+                .center(e.offsetX, e.offsetY);
+
+            const pointCanBeRemoved = () => {
+                return this.settings.removalStrategy === 'any' || (
+                    this.settings.removalStrategy === 'last' &&
+                    this.allPrompts.indexOf(point) === this.allPrompts.length - 1
+                );
+            };
+
+            point.on('mouseenter', (e: MouseEvent) => {
+                if (pointCanBeRemoved()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    point.addClass('cvat_canvas_removable_interaction_point');
+                    point.attr({ 'stroke-width': this.effectiveStrokeWidth * 1.5, r: this.effectivePointSize * 1.1 });
+                }
+            });
+
+            point.on('mouseleave', (): void => {
+                point.removeClass('cvat_canvas_removable_interaction_point');
+                point.attr({ 'stroke-width': this.effectiveStrokeWidth, r: this.effectivePointSize });
+            });
+
+            point.on('mousedown', (e: MouseEvent): void => {
+                if (pointCanBeRemoved()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.deleteShape(point);
+                }
+            });
+
+            this.pointPrompts.push(point);
+            this.allPrompts.push(point);
             this.drawDeleteButton(point);
             this.notify();
         }
     };
 
-    private onMouseUp = () => {
-
-    };
-
-    // Рисование bbox
     private drawBox(): void {
-        this.currentRectangle = this.container.rect()
-            .fill('rgba(0, 0, 0, 0)')
-            .stroke({ color: '#000000', width: this.effectiveStrokeWidth })
-            .opacity(this.effectiveShapeOpacity);
+        if (this.command === 'draw_box') {
+            return;
+        }
+
+        this.command = 'draw_box';
+        const initNewDrawingBox = () => {
+            this.currentRectangle = this.container.rect()
+                .fill('rgba(0, 0, 0, 0)')
+                .stroke({ color: '#000000', width: this.effectiveStrokeWidth })
+                .opacity(this.effectiveShapeOpacity)
+                .addClass('cvat_canvas_shape_drawing');
+        };
+
         this.onMessage([{
             type: 'text',
             content: 'Draw a prompt rectangle using top-left and bottom-right points.',
             icon: 'info',
         }], 'interaction');
 
+        initNewDrawingBox();
         this.currentRectangle.on('drawstop', (e) => {
             this.currentRectangle.off('drawstop');
-            this.currentRectangles.push(this.currentRectangle as SVG.Rect);
-            this.allShapes.push(this.currentRectangle);
+            this.rectanglePrompts.push(this.currentRectangle as SVG.Rect);
+            this.allPrompts.push(this.currentRectangle);
             this.drawDeleteButton(this.currentRectangle);
             this.currentRectangle = null;
+            initNewDrawingBox();
             this.notify();
         });
     }
 
     private drawPoints(): void {
         const { points_type } = this.settings;
-        let text = 'Add prompt points. Use left/right mouse button for positive/negative prompts.';
+
+        this.command = 'draw_points';
+        let text = 'Draw prompt points. Use left/right mouse button for positive/negative prompts.';
         if (points_type === 'positive') {
-            text = 'Add positive prompt points by clicking the canvas.';
+            text = 'Draw positive prompt points by clicking the canvas.';
         } else if (points_type === 'negative') {
-            text = 'Add negative prompt points by clicking the canvas.';
+            text = 'Draw negative prompt points by clicking the canvas.';
         }
 
         this.onMessage([{
@@ -298,107 +365,67 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }], 'interaction');
     }
 
-    private drawDeleteButton(shape: SVG.Element): void {
-        // Get shape bounds - position at top-right with offset
-        let x = 0;
-        let y = 0;
-        // Make offsets dynamic based on scale to maintain visual distance
-        const offsetX = 8 / this.geometry.scale; // pixels to the right, scaled
-        const offsetY = -8 / this.geometry.scale; // pixels upward, scaled
+    private drawDeleteButton(shape: SVG.Rect | SVG.Circle): void {
+        const { scale } = this.geometry;
+        let { x, y } = getTopRightPosition(shape);
 
-        if (shape instanceof SVG.Rect) {
-            x = shape.x() + shape.width();
-            y = shape.y();
-        } else if (shape instanceof SVG.Circle) {
-            x = shape.cx() + this.effectivePointSize * 2;
-            y = shape.cy() - this.effectivePointSize;
-        }
-
-        // Create a group for the delete button (single parent element)
-        const deleteButtonGroup = this.container.group() as SVG.G;
-
-        // Add red background circle with base color
-        const circleBg = deleteButtonGroup.circle(10)
+        const deleteButtonGroup = this.container.group().addClass('cvat_interaction_delete_button') as SVG.G;
+        const circleBg = deleteButtonGroup.circle(this.effectivePointSize * 2)
             .fill('#ff3333')
-            .stroke({ color: '#ffffff', width: this.effectiveStrokeWidth });
+            .stroke({ color: '#ffffff', width: this.effectiveStrokeWidth })
+            .center(x + DELETE_BUTTON_OFFSET / scale, y - DELETE_BUTTON_OFFSET / scale);
 
-        // Add X symbol using path (more professional than text)
-        // This creates an X by drawing two diagonal lines
-        const xPath = deleteButtonGroup.path('M 3 3 L 7 7 M 7 3 L 3 7')
+        const p = [3, 7].map((val) => (val / 10) * this.effectivePointSize * 2);
+        deleteButtonGroup.path(`M ${p[0]} ${p[0]} L ${p[1]} ${p[1]} M ${p[1]} ${p[0]} L ${p[0]} ${p[1]}`)
             .stroke({ color: '#ffffff', width: this.effectiveStrokeWidth, linecap: 'round', linejoin: 'round' })
+            .center(x + DELETE_BUTTON_OFFSET / scale, y - DELETE_BUTTON_OFFSET / scale)
             .fill('none');
 
-        // Position the group
-        deleteButtonGroup.move(x + offsetX, y + offsetY);
-
-        // Make button interactive with smooth transitions via CSS
-        const groupNode = deleteButtonGroup.node as any;
-        groupNode.style.cursor = 'pointer';
-        groupNode.style.transition = 'all 0.2s ease-out';
-        groupNode.style.filter = 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3))';
-
-        // Hover effects
         deleteButtonGroup.on('mouseover', () => {
-            // Increase brightness on hover
-            circleBg.fill('#ff5555');
-
-            // Enhance stroke
-            circleBg.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth * 2.4 });
+            circleBg.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth * 1.5 });
         });
 
         deleteButtonGroup.on('mouseout', () => {
-            // Return to original color
-            circleBg.fill('#ff3333');
-
-            // Restore stroke
             circleBg.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth });
         });
 
-        // Add mousedown handler to delete the shape
         deleteButtonGroup.on('mousedown', (e: any) => {
             e.stopPropagation();
             this.deleteShape(shape);
         });
 
-        // Store the delete button in map (only the group, which contains everything)
-        this.shapeDeletionMap.set(shape, deleteButtonGroup);
+        this.deletionButtons.set(shape, deleteButtonGroup);
     }
 
-    private deleteShape(shape: SVG.Element): void {
-        // Remove from allShapes
-        const shapeIndex = this.allShapes.indexOf(shape);
+    private deleteShape(shape: SupportedShapes): void {
+        const shapeIndex = this.allPrompts.indexOf(shape);
         if (shapeIndex > -1) {
-            this.allShapes.splice(shapeIndex, 1);
+            this.allPrompts.splice(shapeIndex, 1);
         }
 
-        // Remove from specific arrays (points or rectangles)
         if (shape instanceof SVG.Circle) {
-            const pointIndex = this.currentPoints.findIndex((p) => p === shape);
-            if (pointIndex > -1) {
-                this.currentPoints.splice(pointIndex, 1);
+            const pointIndex = this.pointPrompts.findIndex((p) => p === shape);
+            if (pointIndex !== -1) {
+                this.pointPrompts.splice(pointIndex, 1);
             }
         } else if (shape instanceof SVG.Rect) {
-            const rectIndex = this.currentRectangles.findIndex((r) => r === shape);
-            if (rectIndex > -1) {
-                this.currentRectangles.splice(rectIndex, 1);
+            const rectIndex = this.rectanglePrompts.findIndex((r) => r === shape);
+            if (rectIndex !== -1) {
+                this.rectanglePrompts.splice(rectIndex, 1);
             }
         }
 
         // Remove delete button from map and canvas
-        const deleteBtn = this.shapeDeletionMap.get(shape);
+        const deleteBtn = this.deletionButtons.get(shape);
         if (deleteBtn) {
             deleteBtn.remove();
-            this.shapeDeletionMap.delete(shape);
+            this.deletionButtons.delete(shape);
         }
 
-        // Remove shape from canvas
         shape.remove();
-
-        // Notify about the change
         this.notify();
     }
 
-    // Отображение фигур (ма ски, полигоны, боксы)
     private putShapes(shapes: InteractionData['payload']['shapes']): void {
         // TODO: add ID and incremental update
         this.intermediateShapes.forEach((shape) => shape.remove());
@@ -437,28 +464,22 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     imageBitmap,
                     right - left + 1,
                     bottom - top + 1,
-                    (dataURL: string) => new Promise((resolve, reject) => {
-                        image.loaded(() => {
-                            resolve();
-                        });
-                        image.error(() => {
-                            reject();
-                        });
+                    (dataURL: string) => new Promise<void>((resolve, reject) => {
+                        image.loaded(() => resolve());
+                        image.error(() => reject());
                         image.load(dataURL);
-                    }),
+                    })
                 );
             }
         }
     }
 
-    // Выбор отображенных фигур (refine)
     private refine(): void {
-        // TODO: реализовать выбор/уточнение фигур
-        // Пример: выделить фигуру, изменить стиль, добавить обработчики событий
+        // TODO: implement
     }
 
     private notify(): void {
-        const transformed = this.allShapes.map((shape) => {
+        const transformed = this.allPrompts.map((shape) => {
             if (shape instanceof SVG.Rect) {
                 const [x, y] = [shape.x(), shape.y()];
                 const [width, height] = [shape.width(), shape.height()];
@@ -473,15 +494,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 return {
                     points: translateFromCanvas(this.geometry.offset, [shape.cx(), shape.cy()]),
                     shapeType: 'points',
-                    type: shape.attr('fill') === 'green' ? 'positive' as const : 'negative' as const,
+                    type: shape.attr('stroke') === 'green' ? 'positive' as const : 'negative' as const,
                  };
             }
 
             throw new Error('Unknown shape type');
         });
 
-        if (transformed.length) {
-            this.onInteraction(transformed);
-        }
+        this.onInteraction(transformed);
     }
 }
