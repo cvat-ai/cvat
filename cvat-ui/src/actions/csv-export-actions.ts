@@ -42,9 +42,12 @@ export function exportToCSVAsync<T>(options: CSVExportOptions<T>) {
             }
 
             if (totalCount === 0) {
+                const csvContent = csvWriter.getContent();
+                downloadCSV(csvContent, filename);
+
                 notification.info({
-                    message: 'No data to export',
-                    description: 'No items match the current filters.',
+                    message: 'Export completed',
+                    description: `Exported ${filename} with no data (headers only).`,
                 });
                 return;
             }
