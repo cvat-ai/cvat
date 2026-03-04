@@ -216,3 +216,26 @@ class TestTUSUpload:
         assert head_response.status == HTTPStatus.NOT_FOUND
         # We verify that tus_file.meta_file.init_from_file() runs correctly after data validation.
         # was 500 (Internal Server Error) because tus_file.meta_file.init_from_file() was called before data validation.
+
+    def test_upload_without_trailing_slash(self, fxt_task):
+        """Test uploading without the trailing slash in the initial URL."""
+        task = fxt_task
+
+        response = self._call_tus_endpoint(
+            "POST",
+            BASE_URL + f"/api/tasks/{task.id}/data",
+            headers={
+                "Upload-Length": "1000",
+                "Upload-Metadata": f"filename {base64.b64encode('test_image.jpg'.encode()).decode()}",
+                "Tus-Resumable": "1.0.0",
+            },
+        )
+
+        assert response.status == HTTPStatus.CREATED
+        location = response.headers.get("Location")
+        assert location is not None
+
+        response = self._upload_chunk(location, 0, b"xxxxx")
+
+        assert response.status == HTTPStatus.NO_CONTENT
+        assert int(response.headers.get("Upload-Offset")) == 5

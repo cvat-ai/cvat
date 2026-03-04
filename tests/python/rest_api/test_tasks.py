@@ -55,6 +55,7 @@ from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
 from shared.utils.config import (
+    ASSETS_DIR,
     delete_method,
     get_method,
     make_api_client,
@@ -1426,6 +1427,11 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
+    def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
+        original_task_id = 30
+        backup_file = ASSETS_DIR / "backups" / "task_30_backup_pre_consensus_replica_removal.zip"
+        self._test_can_restore_task_from_backup(original_task_id, backup_file=backup_file)
+
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
         # Reproduces the problem with empty 'mode' in a restored task,
@@ -1453,15 +1459,22 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
-    def _test_can_restore_task_from_backup(self, task_id: int, lightweight_backup: bool = False):
+    def _test_can_restore_task_from_backup(
+        self,
+        task_id: int,
+        *,
+        lightweight_backup: bool = False,
+        backup_file: Path | None = None,
+    ):
         old_task = self.client.tasks.retrieve(task_id)
         _, response = self.client.api_client.tasks_api.retrieve(task_id)
         task_json = json.loads(response.data)
 
-        filename = self.tmp_dir / f"task_{old_task.id}_backup.zip"
-        old_task.download_backup(filename, lightweight=lightweight_backup)
+        if not backup_file:
+            backup_file = self.tmp_dir / f"task_{old_task.id}_backup.zip"
+            old_task.download_backup(backup_file, lightweight=lightweight_backup)
 
-        new_task = self.client.tasks.create_from_backup(filename)
+        new_task = self.client.tasks.create_from_backup(backup_file)
 
         old_meta = json.loads(old_task.api.retrieve_data_meta(old_task.id)[1].data)
         new_meta = json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data)
@@ -3096,7 +3109,7 @@ class TestImportTaskAnnotations:
         command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
         for _ in range(12):
             sleep(2)
-            result, _ = container_exec_cvat(request, command)
+            result = container_exec_cvat(request, command)
             number_of_files = int(result)
             if not number_of_files:
                 break

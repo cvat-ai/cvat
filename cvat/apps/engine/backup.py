@@ -10,7 +10,7 @@ import re
 import shutil
 import tempfile
 from abc import ABCMeta, abstractmethod
-from collections import deque
+from collections import defaultdict, deque
 from collections.abc import Collection, Iterable
 from contextlib import closing
 from copy import deepcopy
@@ -26,6 +26,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
+from django.db.models import Min, Prefetch
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
@@ -229,7 +230,6 @@ class _TaskBackupBase(_BackupBase):
             "status",
             "subset",
             "labels",
-            "consensus_replicas",
         }
 
         return self._prepare_meta(allowed_fields, task)
@@ -346,11 +346,14 @@ class _TaskBackupBase(_BackupBase):
         if not self._db_task:
             return
 
-        db_segments = list(self._db_task.segment_set.all().prefetch_related("job_set"))
-        db_segments.sort(key=lambda i: i.job_set.first().id)
+        db_segments = (
+            self._db_task.segment_set.annotate(min_job_id=Min("job__id"))
+            .order_by("min_job_id")
+            .prefetch_related(Prefetch("job_set", queryset=models.Job.objects.order_by("id")))
+        )
 
         for db_segment in db_segments:
-            yield from sorted(db_segment.job_set.all(), key=lambda db_job: db_job.id)
+            yield from db_segment.job_set.all()
 
 
 class _ExporterBase(metaclass=ABCMeta):
@@ -598,8 +601,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
 
             serialized_task = task_serializer.data
-            if serialized_task.pop("consensus_enabled", False):
-                serialized_task["consensus_replicas"] = self._db_task.consensus_replicas
 
             task = self._prepare_task_meta(serialized_task)
             task["labels"] = [
@@ -1012,6 +1013,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data["job_file_mapping"] = job_file_mapping
 
+        self._manifest["consensus_replicas"] = self._determine_replica_counts(jobs)
+
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
         task_data_path = self._db_task.get_dirname()
@@ -1080,14 +1083,45 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             db_job.status = job["status"]
             db_job.save()
 
+    @staticmethod
+    def _get_job_type(job: dict) -> models.JobType:
+        try:
+            # The type field will be missing in backups created before the GT jobs were introduced
+            raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
+            job_type = models.JobType(raw_job_type)
+        except ValueError:
+            raise ValidationError(f"Unexpected job type {raw_job_type}")
+        return job_type
+
+    def _collect_replica_counts(self, jobs: dict) -> dict[models.JobType, list[int]]:
+        replica_counts = []
+        for job in jobs:
+            job_type = self._get_job_type(job)
+
+            if job_type != models.JobType.CONSENSUS_REPLICA:
+                replica_counts.append([job_type, 0])
+            else:
+                if not replica_counts:
+                    raise ValidationError(
+                        f"Invalid job order, jobs of type '{job_type}' "
+                        "must follow their parent jobs."
+                    )
+
+                replica_counts[-1][1] += 1
+
+        replica_counts_map = defaultdict(list)
+        for primary_type, count in replica_counts:
+            replica_counts_map[primary_type].append(count)
+
+        return replica_counts_map
+
+    def _determine_replica_counts(self, jobs: dict) -> int:
+        replica_counts = self._collect_replica_counts(jobs)
+        return min(replica_counts.get(models.JobType.ANNOTATION, [0]))
+
     def _import_gt_jobs(self, jobs):
         for job in jobs:
-            # The type field will be missing in backups created before the GT jobs were introduced
-            try:
-                raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
-                job_type = models.JobType(raw_job_type)
-            except ValueError:
-                raise ValidationError(f"Unexpected job type {raw_job_type}")
+            job_type = self._get_job_type(job)
 
             if job_type == models.JobType.GROUND_TRUTH:
                 job_serializer = JobWriteSerializer(

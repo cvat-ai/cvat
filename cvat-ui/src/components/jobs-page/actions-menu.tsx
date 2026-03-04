@@ -17,6 +17,7 @@ import { importActions } from 'actions/import-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
+import { selectionActions } from 'actions/selection-actions';
 
 import UserSelector from 'components/task-page/user-selector';
 import { JobStageSelector, JobStateSelector } from 'components/job-item/job-selectors';
@@ -25,9 +26,9 @@ import JobActionsItems from './actions-menu-items';
 
 interface Props {
     jobInstance: Job;
-    consensusJobsPresent: boolean;
     triggerElement: JSX.Element;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
+    onApplyFilter?: (filter: string | null) => void;
 }
 
 function JobActionsComponent(
@@ -36,8 +37,8 @@ function JobActionsComponent(
     const {
         jobInstance,
         triggerElement,
-        consensusJobsPresent,
         dropdownTrigger,
+        onApplyFilter,
     } = props;
     const dispatch = useDispatch();
 
@@ -52,6 +53,11 @@ function JobActionsComponent(
         allJobs: state.jobs.current,
     }), shallowEqual);
     const isBulkMode = selectedIds.length > 1;
+
+    let jobsToAct: Job[] = [jobInstance];
+    if (selectedIds.includes(jobInstance.id)) {
+        jobsToAct = allJobs.filter((m) => selectedIds.includes(m.id));
+    }
 
     const {
         dropdownOpen,
@@ -77,7 +83,7 @@ function JobActionsComponent(
     }, [jobInstance]);
 
     const onMergeConsensusJob = useCallback(() => {
-        if (consensusJobsPresent && jobInstance.parentJobId === null) {
+        if (jobInstance.replicasCount > 0) {
             Modal.confirm({
                 title: 'The consensus job will be merged',
                 content: 'Existing annotations in the parent job will be updated. Continue?',
@@ -92,23 +98,21 @@ function JobActionsComponent(
                 okText: 'Merge',
             });
         }
-    }, [consensusJobsPresent, jobInstance]);
+    }, [jobInstance]);
 
     const onDeleteJob = useCallback(() => {
-        const jobsToDelete = allJobs.filter((job) => selectedIds.includes(job.id));
-        const isBulk = jobsToDelete.length > 1;
         Modal.confirm({
-            title: isBulk ?
-                `Delete ${jobsToDelete.length} selected jobs` :
+            title: isBulkMode ?
+                `Delete ${jobsToAct.length} selected jobs` :
                 `The job ${jobInstance.id} will be deleted`,
-            content: isBulk ?
+            content: isBulkMode ?
                 'All related data (annotations) for all selected jobs will be lost. Continue?' :
                 'All related data (annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-delete-job',
             onOk: () => {
                 setTimeout(() => {
                     dispatch(makeBulkOperationAsync(
-                        jobsToDelete.length ? jobsToDelete : [jobInstance],
+                        jobsToAct,
                         async (job) => {
                             if (job.type === JobType.GROUND_TRUTH) {
                                 await dispatch(deleteJobAsync(job));
@@ -122,17 +126,38 @@ function JobActionsComponent(
                 type: 'primary',
                 danger: true,
             },
-            okText: isBulk ? 'Delete selected' : 'Delete',
+            okText: isBulkMode ? 'Delete selected' : 'Delete',
         });
-    }, [jobInstance, allJobs, selectedIds, dispatch]);
+    }, [jobInstance, isBulkMode, jobsToAct, dispatch]);
+
+    const onGoToParent = useCallback(() => {
+        if (onApplyFilter) {
+            const parentIds = [...new Set(
+                jobsToAct.map((j) => j?.parentJobId).filter((id) => id != null),
+            )];
+            const logic = JSON.stringify({
+                or: parentIds.map((id) => ({ '==': [{ var: 'id' }, id] })),
+            });
+            onApplyFilter(logic);
+            dispatch(selectionActions.clearSelectedResources());
+        }
+    }, [jobsToAct, onApplyFilter, dispatch]);
+
+    const onGoToReplicas = useCallback(() => {
+        if (onApplyFilter) {
+            const jobIds = selectedIds.length ? selectedIds : [jobInstance.id];
+            const logic = JSON.stringify({
+                or: jobIds.map((id) => ({ '==': [{ var: 'parent_job_id' }, id] })),
+            });
+            onApplyFilter(logic);
+            dispatch(selectionActions.clearSelectedResources());
+        }
+    }, [jobInstance.id, onApplyFilter, selectedIds, dispatch]);
 
     const onUpdateJobField = useCallback((
         fields: Partial<{ assignee: User | null; state: JobState; stage: JobStage; }>,
     ) => {
-        const jobsToUpdate = allJobs.filter((job) => selectedIds.includes(job.id));
-        const jobs = jobsToUpdate.length ? jobsToUpdate : [jobInstance];
-
-        const jobsNeedingUpdate = jobs.filter((job) => {
+        const jobsNeedingUpdate = jobsToAct.filter((job) => {
             if (fields.assignee !== undefined) {
                 return job.assignee?.id !== fields.assignee?.id;
             }
@@ -157,7 +182,7 @@ function JobActionsComponent(
             },
             (job, idx, total) => `Updating job #${job.id} (${idx + 1}/${total})`,
         ));
-    }, [jobInstance, allJobs, selectedIds, dispatch, stopEditField]);
+    }, [jobsToAct, dispatch, stopEditField]);
 
     let menuItems;
     if (editField) {
@@ -198,9 +223,11 @@ function JobActionsComponent(
             onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
             onImportAnnotations,
             onExportAnnotations,
-            onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ? onMergeConsensusJob : null,
+            onMergeConsensusJob: jobInstance.replicasCount > 0 ? onMergeConsensusJob : null,
             onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
-            selectedIds,
+            onGoToParent: jobInstance.parentJobId ? onGoToParent : null,
+            onGoToReplicas: jobInstance.replicasCount > 0 ? onGoToReplicas : null,
+            jobsToAct,
         }, props);
     }
 
