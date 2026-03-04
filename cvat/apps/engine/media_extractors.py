@@ -480,6 +480,74 @@ class PdfReader(ImageListReader):
         )
 
 
+class DicomReader(ImageListReader):
+    def __init__(
+        self,
+        source_paths: list[Path],
+        step=1,
+        start=0,
+        stop=None,
+        dimension=DimensionType.DIM_2D,
+        sorting_method=SortingMethod.LEXICOGRAPHICAL,
+        extract_dir=None,
+    ):
+        (self._dicom_source,) = source_paths
+
+        import pydicom
+
+        _basename = os.path.splitext(os.path.basename(self._dicom_source))[0]
+        self._tmp_dir = extract_dir if extract_dir else os.path.dirname(self._dicom_source)
+        os.makedirs(self._tmp_dir, exist_ok=True)
+
+        ds = pydicom.dcmread(self._dicom_source)
+        pixel_array = ds.pixel_array.astype(np.float64)
+
+        # Apply rescale slope/intercept
+        slope = float(getattr(ds, "RescaleSlope", 1))
+        intercept = float(getattr(ds, "RescaleIntercept", 0))
+        pixel_array = pixel_array * slope + intercept
+
+        # If 3D volume, take the middle slice
+        if pixel_array.ndim == 3 and not self._is_color(ds, pixel_array):
+            mid = pixel_array.shape[0] // 2
+            pixel_array = pixel_array[mid]
+
+        # Normalize to 0-255
+        vmin, vmax = pixel_array.min(), pixel_array.max()
+        if vmax > vmin:
+            pixel_array = (pixel_array - vmin) / (vmax - vmin) * 255
+        pixel_array = pixel_array.astype(np.uint8)
+
+        # Handle YBR color space
+        photometric = getattr(ds, "PhotometricInterpretation", "")
+        if "YBR" in photometric:
+            from pydicom.pixel_data_handlers.util import convert_color_space
+
+            pixel_array = convert_color_space(pixel_array, photometric, "RGB")
+
+        image = Image.fromarray(pixel_array)
+        output_path = os.path.join(self._tmp_dir, f"{_basename}.png")
+        image.save(output_path)
+
+        if not extract_dir:
+            os.remove(self._dicom_source)
+
+        super().__init__(
+            source_paths=[Path(output_path)],
+            step=step,
+            start=start,
+            stop=stop,
+            dimension=dimension,
+            sorting_method=sorting_method,
+        )
+
+    @staticmethod
+    def _is_color(ds, pixel_array):
+        """Check if the 3rd dimension is color channels, not slices."""
+        samples = getattr(ds, "SamplesPerPixel", 1)
+        return pixel_array.ndim == 3 and samples > 1
+
+
 class ZipReader(ImageListReader):
     def __init__(
         self,
@@ -1161,6 +1229,11 @@ def _is_zip(path):
     return mime_type in supportedArchives or encoding in supportedArchives
 
 
+def _is_dicom(path):
+    mime = mimetypes.guess_type(path)
+    return mime[0] == "application/dicom"
+
+
 # 'has_mime_type': function receives 1 argument - path to file.
 #                  Should return True if file has specified media type.
 # 'extractor': class that extracts images from specified media.
@@ -1203,6 +1276,12 @@ MEDIA_TYPES = {
     "zip": {
         "has_mime_type": _is_zip,
         "extractor": ZipReader,
+        "mode": "annotation",
+        "unique": True,
+    },
+    "dicom": {
+        "has_mime_type": _is_dicom,
+        "extractor": DicomReader,
         "mode": "annotation",
         "unique": True,
     },
