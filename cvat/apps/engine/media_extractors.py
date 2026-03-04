@@ -507,46 +507,49 @@ class DicomReader(ImageListReader):
         intercept = float(getattr(ds, "RescaleIntercept", 0))
         pixel_array = pixel_array * slope + intercept
 
-        # If 3D volume, take the middle slice
-        if pixel_array.ndim == 3 and not self._is_color(ds, pixel_array):
-            mid = pixel_array.shape[0] // 2
-            pixel_array = pixel_array[mid]
+        # Extract all slices/frames
+        samples = getattr(ds, "SamplesPerPixel", 1)
+        expected_ndim = 2 if samples == 1 else 3
 
-        # Normalize to 0-255
-        vmin, vmax = pixel_array.min(), pixel_array.max()
-        if vmax > vmin:
-            pixel_array = (pixel_array - vmin) / (vmax - vmin) * 255
-        pixel_array = pixel_array.astype(np.uint8)
+        if pixel_array.ndim == expected_ndim:
+            slices = [pixel_array]
+        elif pixel_array.ndim > expected_ndim:
+            flat = pixel_array.reshape(-1, *pixel_array.shape[-(expected_ndim):])
+            slices = [flat[i] for i in range(flat.shape[0])]
+        else:
+            slices = [pixel_array]
 
-        # Handle YBR color space
         photometric = getattr(ds, "PhotometricInterpretation", "")
-        if "YBR" in photometric:
-            from pydicom.pixel_data_handlers.util import convert_color_space
+        num_digits = len(str(len(slices)))
+        output_paths = []
 
-            pixel_array = convert_color_space(pixel_array, photometric, "RGB")
+        for idx, sl in enumerate(slices):
+            vmin, vmax = sl.min(), sl.max()
+            if vmax > vmin:
+                sl = (sl - vmin) / (vmax - vmin) * 255
+            sl = sl.astype(np.uint8)
 
-        image = Image.fromarray(pixel_array)
-        output_path = os.path.join(self._tmp_dir, f"{_basename}.png")
-        image.save(output_path)
+            if "YBR" in photometric:
+                from pydicom.pixel_data_handlers.util import convert_color_space
+
+                sl = convert_color_space(sl, photometric, "RGB")
+
+            suffix = f"_{str(idx).zfill(num_digits)}" if len(slices) > 1 else ""
+            output_path = os.path.join(self._tmp_dir, f"{_basename}{suffix}.png")
+            Image.fromarray(sl).save(output_path)
+            output_paths.append(Path(output_path))
 
         if not extract_dir:
             os.remove(self._dicom_source)
 
         super().__init__(
-            source_paths=[Path(output_path)],
+            source_paths=output_paths,
             step=step,
             start=start,
             stop=stop,
             dimension=dimension,
             sorting_method=sorting_method,
         )
-
-    @staticmethod
-    def _is_color(ds, pixel_array):
-        """Check if the 3rd dimension is color channels, not slices."""
-        samples = getattr(ds, "SamplesPerPixel", 1)
-        return pixel_array.ndim == 3 and samples > 1
-
 
 class ZipReader(ImageListReader):
     def __init__(
