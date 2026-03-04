@@ -549,7 +549,7 @@ class Data(models.Model):
             return [PurePath(video.path)]
         else:
             return (
-                [PurePath(image.path) for image in self.images.all()]
+                [PurePath(image.path) for image in self.images.filter(is_placeholder=False)]
                 + [PurePath(f.path) for f in self.related_files.all()]
             )
 
