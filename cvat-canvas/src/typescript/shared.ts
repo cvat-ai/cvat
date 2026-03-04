@@ -385,22 +385,16 @@ export function imageDataToDataURL(
     imageBitmap: Uint8ClampedArray,
     width: number,
     height: number,
-    handleResult: (dataURL: string) => Promise<void>,
+    handleResult: (dataURL: string) => void,
 ): void {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-
+    const canvas = new OffscreenCanvas(width, height);
     canvas.getContext('2d').putImageData(
         new ImageData(imageBitmap, width, height), 0, 0,
     );
-
-    canvas.toBlob((blob) => {
+    canvas.convertToBlob({ type: 'image/png' }).then((blob) => {
         const dataURL = URL.createObjectURL(blob);
-        handleResult(dataURL).finally(() => {
-            URL.revokeObjectURL(dataURL);
-        });
-    }, 'image/png');
+        handleResult(dataURL);
+    });
 }
 
 export function zipChannels(imageData: Uint8ClampedArray): number[] {

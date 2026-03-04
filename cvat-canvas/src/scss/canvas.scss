@@ -251,9 +251,16 @@ g.cvat_canvas_shape_occluded {
     @extend .cvat_canvas_shape;
 }
 
+.cvat_interaction_delete_button {
+    opacity: 0.25;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
 .cvat_interaction_delete_button, .cvat_interaction_point {
-    cursor: 'pointer';
-    transition: stroke-width 0.2s ease-in-out;
+    transition: stroke-width 0.2s ease-in-out, opacity 0.2s ease-in-out;
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }
 

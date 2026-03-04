@@ -594,28 +594,26 @@ export class MasksHandlerImpl implements MasksHandler {
                     imageBitmap,
                     right - left + 1,
                     bottom - top + 1,
-                    (dataURL: string) => new Promise((resolve) => {
+                    (dataURL: string) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
-                            try {
-                                image.selectable = false;
-                                image.evented = false;
-                                image.globalCompositeOperation = 'xor';
-                                image.opacity = 0.5;
-                                this.canvas.add(image);
-                                /*
-                                    when we paste a mask, we do not need additional logic implemented
-                                    in MasksHandlerImpl::createDrawnObjectsArray.push using JS Proxy
-                                    because we will not work with any drawing tools here, and it will cause the issue
-                                    because this.tools may be undefined here
-                                    when it is used inside the push custom implementation
-                                */
-                                this.drawnObjects = [image];
-                                this.canvas.renderAll();
-                            } finally {
-                                resolve();
-                            }
+                            URL.revokeObjectURL(dataURL);
+                            image.selectable = false;
+                            image.evented = false;
+                            image.globalCompositeOperation = 'xor';
+                            image.opacity = 0.5;
+                            this.canvas.add(image);
+                            /*
+                                when we paste a mask, we do not need additional logic implemented
+                                in MasksHandlerImpl::createDrawnObjectsArray.push using JS Proxy
+                                because we will not work with any drawing tools here, and it will cause the issue
+                                because this.tools may be undefined here
+                                when it is used inside the push custom implementation
+                            */
+                            this.drawnObjects = [image];
+                            this.canvas.renderAll();
                         }, { left, top });
-                    }));
+                    },
+                );
 
                 this.isInsertion = true;
             } else {
@@ -688,21 +686,19 @@ export class MasksHandlerImpl implements MasksHandler {
                     imageBitmap,
                     right - left + 1,
                     bottom - top + 1,
-                    (dataURL: string) => new Promise((resolve) => {
+                    (dataURL: string) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
-                            try {
-                                image.selectable = false;
-                                image.evented = false;
-                                image.globalCompositeOperation = 'xor';
-                                image.opacity = 0.5;
-                                this.canvas.add(image);
-                                this.drawnObjects.push(image);
-                                this.canvas.renderAll();
-                            } finally {
-                                resolve();
-                            }
+                            URL.revokeObjectURL(dataURL);
+                            image.selectable = false;
+                            image.evented = false;
+                            image.globalCompositeOperation = 'xor';
+                            image.opacity = 0.5;
+                            this.canvas.add(image);
+                            this.drawnObjects.push(image);
+                            this.canvas.renderAll();
                         }, { left, top });
-                    }));
+                    },
+                );
 
                 this.isEditing = true;
                 this.startTimestamp = Date.now();

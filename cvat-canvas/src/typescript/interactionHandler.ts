@@ -7,7 +7,7 @@ import * as SVG from 'svg.js';
 import consts from './consts';
 import Crosshair from './crosshair';
 import {
-    translateToSVG, stringifyPoints, translateToCanvas,
+    stringifyPoints, translateToCanvas,
     expandChannels, imageDataToDataURL, translateFromCanvas,
 } from './shared';
 import {
@@ -25,7 +25,7 @@ export interface InteractionHandler {
 type InteractorSettings = Required<InteractionData['settings']>;
 type SupportedShapes = SVG.Rect | SVG.Circle;
 
-const DELETE_BUTTON_OFFSET = 10;
+const DELETE_BUTTON_OFFSET = 8;
 
 function getTopRightPosition(shape: SVG.Rect | SVG.Circle): { x: number; y: number } {
     if (shape instanceof SVG.Rect) {
@@ -123,12 +123,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
             const group = deleteButtonGroup;
 
             const { x, y } = getTopRightPosition(shape);
+            const r = consts.BASE_POINT_SIZE / scale;
             group.children().forEach((child) => {
                 if (child instanceof SVG.Circle) {
-                    child.attr('r', this.effectivePointSize);
+                    child.attr('r', r);
                     child.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth });
                 } else if (child instanceof SVG.Path) {
-                    const coords = [3, 7].map((val) => (val / 10) * this.effectivePointSize * 2);
+                    const coords = [3, 7].map((val) => (val / 10) * r * 2);
                     const pathData = `M ${coords[0]} ${coords[0]} L ${coords[1]} ${coords[1]} M ${coords[1]} ${coords[0]} L ${coords[0]} ${coords[1]}`;
                     (child as SVG.Path).plot(pathData);
                     child.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth, linecap: 'round', linejoin: 'round' });
@@ -235,16 +236,22 @@ export class InteractionHandlerImpl implements InteractionHandler {
             deleteBtn.remove();
         });
 
-        this.intermediateShapes.forEach((shape) => {
-            shape.remove();
-        });
-
+        this.clearIntermediateShapes();
         this.rectanglePrompts = [];
         this.pointPrompts = [];
         this.allPrompts = [];
-        this.intermediateShapes = [];
         this.deletionButtons.clear();
         this.crosshair.hide();
+    }
+
+    private clearIntermediateShapes(): void {
+        this.intermediateShapes.forEach((shape) => {
+            if (shape.node instanceof SVGImageElement) {
+                URL.revokeObjectURL(shape.node.href.baseVal);
+            }
+            shape.remove();
+        });
+        this.intermediateShapes = [];
     }
 
     private onMouseMove = (e: MouseEvent) => {
@@ -381,15 +388,16 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private drawDeleteButton(shape: SVG.Rect | SVG.Circle): void {
         const { scale } = this.geometry;
+        const r = consts.BASE_POINT_SIZE / scale;
         let { x, y } = getTopRightPosition(shape);
 
         const deleteButtonGroup = this.container.group().addClass('cvat_interaction_delete_button') as SVG.G;
-        const circleBg = deleteButtonGroup.circle(this.effectivePointSize * 2)
+        const circleBg = deleteButtonGroup.circle(r * 2)
             .fill('#ff3333')
             .stroke({ color: '#ffffff', width: this.effectiveStrokeWidth })
             .center(x + DELETE_BUTTON_OFFSET / scale, y - DELETE_BUTTON_OFFSET / scale);
 
-        const p = [3, 7].map((val) => (val / 10) * this.effectivePointSize * 2);
+        const p = [3, 7].map((val) => (val / 10) * r * 2);
         deleteButtonGroup.path(`M ${p[0]} ${p[0]} L ${p[1]} ${p[1]} M ${p[1]} ${p[0]} L ${p[0]} ${p[1]}`)
             .stroke({ color: '#ffffff', width: this.effectiveStrokeWidth, linecap: 'round', linejoin: 'round' })
             .center(x + DELETE_BUTTON_OFFSET / scale, y - DELETE_BUTTON_OFFSET / scale)
@@ -442,8 +450,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private putShapes(shapes: InteractionData['payload']['shapes']): void {
         // TODO: add ID and incremental update
-        this.intermediateShapes.forEach((shape) => shape.remove());
-        this.intermediateShapes = [];
+        this.clearIntermediateShapes();
 
         for (const shape of shapes) {
             const { points, shapeType } = shape;
@@ -478,11 +485,17 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     imageBitmap,
                     right - left + 1,
                     bottom - top + 1,
-                    (dataURL: string) => new Promise<void>((resolve, reject) => {
-                        image.loaded(() => resolve());
-                        image.error(() => reject());
-                        image.load(dataURL);
-                    })
+                    (dataURL: string) => {
+                        const destroy = () => URL.revokeObjectURL(dataURL);
+                        if (image.parent() !== null) {
+                            // still in DOM
+                            image.loaded(destroy);
+                            image.error(destroy);
+                            image.load(dataURL);
+                        } else {
+                            destroy();
+                        }
+                    },
                 );
             }
         }

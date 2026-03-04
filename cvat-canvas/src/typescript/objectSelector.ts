@@ -182,15 +182,12 @@ export class ObjectSelectorImpl implements ObjectSelector {
                                 imageBitmap,
                                 right - left + 1,
                                 bottom - top + 1,
-                                (dataURL: string) => new Promise((resolve, reject) => {
-                                    image.loaded(() => {
-                                        resolve();
-                                    });
-                                    image.error(() => {
-                                        reject();
-                                    });
+                                (dataURL: string) => {
+                                    const destroy = () => URL.revokeObjectURL(dataURL);
+                                    image.loaded(destroy);
+                                    image.error(destroy);
                                     image.load(dataURL);
-                                }),
+                                },
                             );
 
                             image.style('filter', 'drop-shadow(2px 4px 6px black)'); // for better visibility
