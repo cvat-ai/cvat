@@ -22,7 +22,7 @@ import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Switch from 'antd/lib/switch';
-import lodash, { omit } from 'lodash';
+import lodash from 'lodash';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor, InteractionResult } from 'cvat-canvas-wrapper';
@@ -390,18 +390,29 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private drawIntermediateShapesOnCanvas(): void {
         const { canvasInstance } = this.props;
         const { convertMasksToPolygons, thresholdValue } = this.state;
-        if (this.interaction.latestResponse.length) {
-            canvasInstance.interact({
-                enabled: true,
-                command: 'put_shapes',
-                payload: {
-                    shapes: this.interaction.latestResponse
-                        .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
-                        .map(({ rle, approximatedPoints }) => ({
-                            id: 'dummy',
-                            shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
-                            points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
-                        })),
+        const shapesToBeDrawn = this.interaction.latestResponse
+            .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
+            .filter(({ approximatedPoints }) => !convertMasksToPolygons || approximatedPoints.length >= 3)
+            .map(({ rle, approximatedPoints }) => ({
+                id: 'dummy',
+                shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
+                points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
+            }));
+
+        canvasInstance.interact({
+            enabled: true,
+            command: 'put_shapes',
+            payload: {
+                shapes: shapesToBeDrawn,
+            },
+        });
+        if (!shapesToBeDrawn.length && !this.noDataShownMessageDisplayed) {
+            this.noDataShownMessageDisplayed = true;
+            message.info({
+                content: 'No shapes to display',
+                duration: 1.5,
+                onClose: () => {
+                    this.noDataShownMessageDisplayed = false;
                 },
             });
         }
@@ -610,12 +621,20 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                 if (isRectangleRequired && !boxes.length) {
                     // there should be at least one box to proceed
-                    canvasInstance.interact({ enabled: true, command: 'draw_box' });
+                    canvasInstance.interact({
+                        enabled: true,
+                        command: 'draw_box',
+                        settings: { crosshair: true },
+                    });
                     return;
                 }
 
                 // auto-switch to points when something is already drawn
-                canvasInstance.interact({ enabled: true, command: 'draw_points', settings: { points_type: 'any' } });
+                canvasInstance.interact({
+                    enabled: true,
+                    command: 'draw_points',
+                    settings: { crosshair: false },
+                });
 
                 if (posPoints.length < minPosPoints || negPoints.length < minNegPoints) {
                     // there should be enough points to proceed
@@ -954,6 +973,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         let objects: ObjectState[] = [];
         if (convertMasksToPolygons) {
             objects = objectsToConstruct
+                .filter(({ approximatedPoints }) => approximatedPoints.length >= 3)
                 .map(({ approximatedPoints }) => {
                     return new core.classes.ObjectState({
                         shapeType: ShapeType.POLYGON,
@@ -1123,13 +1143,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             disabled={!activeTracker || fetching || frame === jobInstance.stopFrame}
                             onClick={() => {
                                 if (activeTracker && activeLabelID) {
-                                    this.setState({ mode: 'tracking' });
-
-                                    canvasInstance.cancel();
-                                    canvasInstance.interact({ enabled: true, command: 'draw_box' });
-
                                     const { onSwitchToolsBlockerState } = this.props;
-                                    onInteractionStart(activeTracker, activeLabelID, {});
+                                    this.setState({ mode: 'tracking' });
+                                    const parameters = { command: 'draw_box' as const, settings: { crosshair: true } };
+                                    canvasInstance.cancel();
+                                    canvasInstance.interact({ enabled: true, ...parameters });
+                                    onInteractionStart(activeTracker, activeLabelID, parameters);
                                     onSwitchToolsBlockerState({ buttonVisible: false });
                                 }
                             }}
@@ -1251,19 +1270,21 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 if (activeInteractor && activeLabelID && labels.length) {
                                     this.setState({ mode: 'interaction' });
                                     canvasInstance.cancel();
-                                    const interactorParameters = {
-                                        ...omit(activeInteractor.params.canvas, 'startWithBoxOptional'),
-                                        // replace 'optional' with true or false depending on user specified setting
-                                        ...(activeInteractor.params.canvas.startWithBoxOptional ? {
-                                            startWithBox: startInteractingWithBox,
-                                        } : {
-                                            startWithBox: activeInteractor.params.canvas.startWithBox,
-                                        }),
-                                    };
+                                    const startWithBox = activeInteractor.params.canvas.startWithBoxOptional ? (
+                                        startInteractingWithBox
+                                    ) : activeInteractor.params.canvas.startWithBox ?? false;
 
-                                    const command = interactorParameters.startWithBox ? 'draw_box' : 'draw_points';
-                                    canvasInstance.interact({ enabled: true, command });
-                                    onInteractionStart(activeInteractor, activeLabelID, interactorParameters);
+                                    const parameters = {
+                                        command: startWithBox ? 'draw_box' as const : 'draw_points' as const,
+                                        settings: {
+                                            allowPointsSliding: false,
+                                            removalStrategy: 'any' as const,
+                                            points_type: 'any' as const,
+                                            crosshair: startWithBox,
+                                        }
+                                    };
+                                    canvasInstance.interact({ enabled: true, ...parameters });
+                                    onInteractionStart(activeInteractor, activeLabelID, parameters);
                                 }
                             }}
                         >

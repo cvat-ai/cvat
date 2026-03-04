@@ -149,7 +149,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
         if (interactData.enabled) {
             this.enabled = true;
         } else if (this.enabled) {
-            this.onInteraction(null, true);
+            this.notify(true);
+            this.onInteraction(null);
             this.release();
         }
 
@@ -247,9 +248,22 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private onMouseMove = (e: MouseEvent) => {
-        const [x, y] = translateToSVG((this.container.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
+        const [x, y] = [e.offsetX, e.offsetY];
         this.lastMousePosition = { x, y };
         this.crosshair.move(x, y);
+
+        if (this.command === 'draw_points' && this.settings.allowPointsSliding && this.pointPrompts.length) {
+            const lastPoint = this.pointPrompts[this.pointPrompts.length - 1];
+            const [cx, cy] = [lastPoint.cx(), lastPoint.cy()];
+            const threshold = 5;
+            if (Math.hypot(cx - x, cy - y) > threshold) {
+                this.notify(false, [{
+                    points: translateFromCanvas(this.geometry.offset, [x, y]),
+                    shapeType: 'points',
+                    type: 'positive' as const,
+                }]);
+            }
+        }
     }
 
     private onMouseDown = (e: MouseEvent) => {
@@ -478,7 +492,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         // TODO: implement
     }
 
-    private notify(): void {
+    private notify(finished = false, extras: InteractionResult[] = []): void {
         const transformed = this.allPrompts.map((shape) => {
             if (shape instanceof SVG.Rect) {
                 const [x, y] = [shape.x(), shape.y()];
@@ -501,6 +515,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
             throw new Error('Unknown shape type');
         });
 
-        this.onInteraction(transformed);
+        this.onInteraction(transformed.concat(extras), finished);
     }
 }

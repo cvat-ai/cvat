@@ -2114,20 +2114,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.mode = Mode.IDLE;
             }
             this.interactionHandler.interact(data);
-            // if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape)) {
-            //     if (!data.intermediateShape) {
-            //         this.canvas.style.cursor = 'crosshair';
-            //         this.mode = Mode.INTERACT;
-            //     }
-            //     this.interactionHandler.interact(data);
-            // } else {
-            //     if (!data.enabled) {
-            //         this.canvas.style.cursor = '';
-            //     }
-            //     if (this.mode !== Mode.IDLE) {
-            //         this.interactionHandler.interact(data);
-            //     }
-            // }
         } else if (reason === UpdateReasons.MERGE) {
             const data: MergeData = this.controller.mergeData;
             if (data.enabled) {

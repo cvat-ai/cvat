@@ -121,7 +121,7 @@ const mapDispatchToProps = {
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
-    private latestPoints: number[];
+    private latestPoints: [number, number][];
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
@@ -185,11 +185,16 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     this.latestPoints,
                     thresholdFromAccuracy(approxPolyAccuracy),
                 );
+
                 canvasInstance.interact({
                     enabled: true,
-                    intermediateShape: {
-                        shapeType: ShapeType.POLYGON,
-                        points: approx.flat(),
+                    command: 'put_shapes',
+                    payload: {
+                        shapes: [{
+                            id: null,
+                            shapeType: ShapeType.POLYGON,
+                            points: approx.flat(),
+                        }],
                     },
                 });
             }
@@ -223,42 +228,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             return;
         }
 
-        const { shapesUpdated, isDone, shapes } = (e as CustomEvent).detail;
+        const { finished, shapes } = (e as CustomEvent).detail;
         const pressedPoints = convertShapesForInteractor(shapes, 'points', 'positive').flat();
         try {
-            if (shapesUpdated) {
-                this.latestPoints = await this.runCVAlgorithm(pressedPoints);
-                let points = [];
-                if (toolsBlockerState.algorithmsLocked && this.latestPoints.length > 2) {
-                    // disable approximation for latest two points to disable fickering
-                    const [x, y] = this.latestPoints.slice(-2);
-                    this.latestPoints.splice(this.latestPoints.length - 2, 2);
-                    points = openCVWrapper.contours.approxPoly(
-                        this.latestPoints,
-                        thresholdFromAccuracy(approxPolyAccuracy),
-                        false,
-                    );
-                    points.push([x, y]);
-                } else {
-                    points = openCVWrapper.contours.approxPoly(
-                        this.latestPoints,
-                        thresholdFromAccuracy(approxPolyAccuracy),
-                        false,
-                    );
-                }
-                canvasInstance.interact({
-                    enabled: true,
-                    intermediateShape: {
-                        shapeType: ShapeType.POLYGON,
-                        points: points.flat(),
-                    },
-                });
-            }
-
-            if (isDone) {
+            if (finished) {
                 // need to recalculate without the latest sliding point
                 const finalPoints = await this.runCVAlgorithm(pressedPoints);
-                if (finalPoints.length >= 6) {
+                if (finalPoints.length >= 3) {
                     const finalObject = new core.classes.ObjectState({
                         frame,
                         objectType: ObjectType.SHAPE,
@@ -273,6 +249,37 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     });
                     createAnnotations([finalObject]);
                 }
+            } else {
+                this.latestPoints = await this.runCVAlgorithm(pressedPoints);
+                let points = [];
+                if (toolsBlockerState.algorithmsLocked && this.latestPoints.length) {
+                    // disable approximation for the last point
+                    const [x, y] = this.latestPoints.pop()!;
+                    points = openCVWrapper.contours.approxPoly(
+                        this.latestPoints,
+                        thresholdFromAccuracy(approxPolyAccuracy),
+                        false,
+                    );
+                    points.push([x, y]);
+                } else {
+                    points = openCVWrapper.contours.approxPoly(
+                        this.latestPoints,
+                        thresholdFromAccuracy(approxPolyAccuracy),
+                        false,
+                    );
+                }
+
+                canvasInstance.interact({
+                    enabled: true,
+                    command: 'put_shapes',
+                    payload: {
+                        shapes: [{
+                            id: null,
+                            shapeType: ShapeType.POLYGON,
+                            points: points.flat(),
+                        }],
+                    },
+                });
             }
         } catch (error: any) {
             notification.error({
@@ -290,12 +297,19 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         });
     };
 
-    private async runCVAlgorithm(pressedPoints: number[]): Promise<number[]> {
+    private async runCVAlgorithm(pressedPoints: number[]): Promise<[number, number][]> {
         if (!this.activeTool || pressedPoints.length === 0) {
             return [];
         }
         const points = await this.activeTool.run(pressedPoints);
-        return points;
+        return points.reduce((acc: [number, number][], val: number, idx: number) => {
+            if (idx % 2 === 0) {
+                acc.push([val, val]);
+            } else {
+                acc[acc.length - 1][1] = val;
+            }
+            return acc;
+        }, []);
     }
 
     private async initializeOpenCV():Promise<void> {
@@ -348,14 +362,18 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                 className='cvat-opencv-scissors-tool-button'
                                 onClick={() => {
                                     this.activeTool = openCVWrapper.segmentation.intelligentScissorsFactory();
+                                    const parameters = {
+                                        command: 'draw_points' as const,
+                                        settings: {
+                                            allowPointsSliding: true,
+                                            removalStrategy: 'last' as const,
+                                            points_type: 'positive' as const,
+                                        },
+                                    };
 
                                     canvasInstance.cancel();
-                                    const interactorParameters = this.activeTool.params.canvas;
-                                    onInteractionStart(this.activeTool, activeLabelID, interactorParameters);
-                                    canvasInstance.interact({
-                                        enabled: true,
-                                        ...interactorParameters,
-                                    });
+                                    onInteractionStart(this.activeTool, activeLabelID, parameters);
+                                    canvasInstance.interact({ enabled: true, ...parameters });
                                 }}
                             >
                                 <ScissorOutlined />

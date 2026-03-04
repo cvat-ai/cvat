@@ -1501,7 +1501,7 @@ export function pasteShapeAsync(): ThunkAction {
 export function interactWithCanvas(
     activeInteractor: MLModel | OpenCVTool,
     activeLabelID: number,
-    activeInteractorParameters: MLModel['params']['canvas'],
+    activeInteractorParameters: CombinedState['annotation']['drawing']['activeInteractorParameters'],
 ): AnyAction {
     return {
         type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
@@ -1537,18 +1537,11 @@ export function repeatDrawShapeAsync(): ThunkAction {
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor && activeInteractorParameters && activeLabelID && canvasInstance instanceof Canvas) {
             if (activeInteractor.kind.includes('tracker')) {
-                canvasInstance.interact({
-                    enabled: true,
-                    shapeType: 'rectangle',
-                });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID, {}));
+                canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
                 dispatch(switchToolsBlockerState({ buttonVisible: false }));
             } else {
-                canvasInstance.interact({
-                    enabled: true,
-                    shapeType: 'points',
-                    ...activeInteractorParameters,
-                });
+                canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
                 dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
             }
 
@@ -1593,7 +1586,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(activeShapeType),
-                skeletonSVG: activeShapeType === ShapeType.SKELETON ? activeLabel.structure.svg : undefined,
+                skeletonSVG: activeShapeType === ShapeType.SKELETON ? activeLabel.structure!.svg : undefined,
             });
         }
     };
