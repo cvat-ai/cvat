@@ -1975,13 +1975,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     this.stateToBeSplitted = objectState;
                     this.drawnObjects[castedClientID].cuboid.setColor(this.receiveShapeColor(objectState));
                 } else if (this.mode === Mode.IDLE && !this.isCtrlDown) {
-                    if (!this.hoverNeedsUpdate) {
+                    const intersectedClientID = intersects[0]?.object?.name || null;
+                    const activeClientID = this.model.data.activeElement.clientID;
+                    if (activeClientID !== null && !this.hoverNeedsUpdate) {
                         return;
                     }
                     this.hoverNeedsUpdate = false;
 
-                    const intersectedClientID = intersects[0]?.object?.name || null;
-                    if (this.model.data.activeElement.clientID !== intersectedClientID) {
+                    if (activeClientID !== intersectedClientID) {
                         const object = intersectedClientID ?
                             this.views.perspective.scene.getObjectByName(intersectedClientID) :
                             null;
