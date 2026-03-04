@@ -45,28 +45,41 @@ def _convert_dicom_to_images(dicom_dir, output_dir):
             intercept = float(getattr(ds, 'RescaleIntercept', 0))
             pixel_array = pixel_array * slope + intercept
 
-            # If 3D volume, take the middle slice
+            # Extract individual slices/frames
             samples = getattr(ds, 'SamplesPerPixel', 1)
-            if pixel_array.ndim == 3 and samples == 1:
-                mid = pixel_array.shape[0] // 2
-                pixel_array = pixel_array[mid]
+            expected_ndim = 2 if samples == 1 else 3
 
-            # Normalize to 0-255
-            vmin, vmax = pixel_array.min(), pixel_array.max()
-            if vmax > vmin:
-                pixel_array = (pixel_array - vmin) / (vmax - vmin) * 255
-            pixel_array = pixel_array.astype(np.uint8)
+            # Collect all 2D slices from the volume
+            slices = []
+            if pixel_array.ndim == expected_ndim:
+                slices = [pixel_array]
+            elif pixel_array.ndim > expected_ndim:
+                # Flatten extra leading dims to get a list of 2D/3D frames
+                flat = pixel_array.reshape(-1, *pixel_array.shape[-(expected_ndim):])
+                slices = [flat[i] for i in range(flat.shape[0])]
+            else:
+                slices = [pixel_array]
 
             # Handle YBR color space
             photometric = getattr(ds, 'PhotometricInterpretation', '')
-            if 'YBR' in photometric:
-                from pydicom.pixel_data_handlers.util import convert_color_space
-                pixel_array = convert_color_space(pixel_array, photometric, 'RGB')
 
             basename = osp.splitext(filename)[0]
-            out_path = osp.join(output_dir, f'{basename}.png')
-            Image.fromarray(pixel_array).save(out_path)
-            created.append(out_path)
+            num_digits = len(str(len(slices)))
+            for idx, sl in enumerate(slices):
+                # Normalize to 0-255
+                vmin, vmax = sl.min(), sl.max()
+                if vmax > vmin:
+                    sl = (sl - vmin) / (vmax - vmin) * 255
+                sl = sl.astype(np.uint8)
+
+                if 'YBR' in photometric:
+                    from pydicom.pixel_data_handlers.util import convert_color_space
+                    sl = convert_color_space(sl, photometric, 'RGB')
+
+                suffix = f'_{str(idx).zfill(num_digits)}' if len(slices) > 1 else ''
+                out_path = osp.join(output_dir, f'{basename}{suffix}.png')
+                Image.fromarray(sl).save(out_path)
+                created.append(out_path)
 
     return created
 
