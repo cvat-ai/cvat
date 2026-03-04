@@ -576,11 +576,11 @@ class Data(models.Model):
             and not hasattr(self, "video")
         )
 
-    def move_to_backing_cs(self, backing_cs_id: int) -> None:
+    def move_to_backing_cs(self, backing_cs: CloudStorage) -> None:
         assert self.supports_backing_cs()
         assert not self.local_storage_backing_cs_id
 
-        self.local_storage_backing_cs_id = backing_cs_id
+        self.local_storage_backing_cs = backing_cs
 
         cloud_storage_instance = self.get_cloud_storage_instance()
         assert cloud_storage_instance

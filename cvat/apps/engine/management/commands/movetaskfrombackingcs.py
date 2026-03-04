@@ -16,8 +16,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         task_id: int = options["task_id"]
 
-        task = Task.objects.get(id=task_id)
-        data = task.require_data()
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist:
+            raise CommandError(f"Task #{task_id} does not exist")
+
+        data = task.data
+        if not data:
+            raise CommandError(f"Task #{task_id} has no attached data")
 
         if not data.supports_backing_cs():
             raise CommandError(f"Task #{task_id} does not support backing cloud storage")

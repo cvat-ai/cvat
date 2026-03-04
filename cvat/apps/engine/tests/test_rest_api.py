@@ -55,6 +55,7 @@ from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
     AttributeSpec,
     AttributeType,
+    CloudStorage,
     Data,
     DimensionType,
     Job,
@@ -7968,7 +7969,7 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
 
         # Move the task to backing cloud storage.
         with self.captureOnCommitCallbacks(execute=True):
-            data.move_to_backing_cs(self.cloud_storage_id)
+            data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
 
         self.assertEqual(data.local_storage_backing_cs_id, self.cloud_storage_id)
 
@@ -8002,7 +8003,7 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
             return PurePath(f"data/{data.id}/raw", rel_path).as_posix()
 
         with self.captureOnCommitCallbacks(execute=True):
-            data.move_to_backing_cs(self.cloud_storage_id)
+            data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
 
         for p in self._IMAGE_PATHS:
             self.assertTrue(self.mock_aws.file_exists(cloud_key(p)))
