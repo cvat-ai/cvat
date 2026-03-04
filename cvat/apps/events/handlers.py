@@ -199,11 +199,8 @@ def organization_slug(instance):
 
 
 def get_instance_diff(old_data, data):
-    ignore_related_fields = ("labels",)
     diff = {}
     for prop, value in data.items():
-        if prop in ignore_related_fields:
-            continue
         old_value = old_data.get(prop)
         if old_value != value:
             diff[prop] = {
@@ -298,10 +295,22 @@ def get_serializer(instance):
     return serializer
 
 
-def get_serializer_without_url(instance):
+SERIALIZER_CLEAN_UP_FIELDS = [
+    (ProjectReadSerializer, ["tasks", "labels"]),
+    (TaskReadSerializer, ["jobs", "labels"]),
+    (JobReadSerializer, ["labels", "issues", "replicas_count", "consensus_replicas"]),
+    (IssueReadSerializer, ["comments"]),
+]
+
+
+def get_cleaned_up_serializer(instance):
     serializer = get_serializer(instance)
     if serializer:
         serializer.fields.pop("url", None)
+        for serializer_class, fields_to_pop in SERIALIZER_CLEAN_UP_FIELDS:
+            if isinstance(serializer, serializer_class):
+                for field in fields_to_pop:
+                    serializer.fields.pop(field, None)
     return serializer
 
 
@@ -320,7 +329,7 @@ def handle_create(scope, instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    serializer = get_serializer_without_url(instance=instance)
+    serializer = get_cleaned_up_serializer(instance=instance)
     try:
         payload = serializer.data
     except Exception:
@@ -355,8 +364,8 @@ def handle_update(scope, instance, old_instance, **kwargs):
     uname = user_name(instance)
     uemail = user_email(instance)
 
-    old_serializer = get_serializer_without_url(instance=old_instance)
-    serializer = get_serializer_without_url(instance=instance)
+    old_serializer = get_cleaned_up_serializer(instance=old_instance)
+    serializer = get_cleaned_up_serializer(instance=instance)
     diff = get_instance_diff(old_data=old_serializer.data, data=serializer.data)
 
     for prop, change in diff.items():

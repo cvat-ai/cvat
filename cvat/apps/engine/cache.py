@@ -696,17 +696,21 @@ class MediaCache:
             except ValueError as ex:
                 raise Exception("Invalid related image path") from ex
 
-        manifest_path = db_data.get_manifest_path()
-
         with ExitStack() as es:
-            media = []
+            ThroughModel = models.RelatedFile.images.through
 
-            if (
-                os.path.isfile(manifest_path)
-                and db_data.storage == models.StorageChoice.CLOUD_STORAGE
-            ):
-                reader = ImageReaderWithManifest(manifest_path)
+            db_related_files = (
+                ThroughModel.objects.filter(relatedfile__data=db_data, image__frame__in=frame_ids)
+                .order_by("image__frame", "relatedfile__path")
+                .values_list("image__frame", "relatedfile__path")
+            )
 
+            media = [
+                (frame_id, [_validate_ri_path(ri_path) for _, ri_path in frame_ris])
+                for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0])
+            ]
+
+            if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
                 db_cloud_storage = db_data.cloud_storage
                 if not db_cloud_storage:
                     raise CloudStorageMissingError("Task is no longer connected to cloud storage")
@@ -714,53 +718,29 @@ class MediaCache:
 
                 tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
                 files_to_download: list[PurePath] = []
-                for frame_id, frame in zip(
-                    frame_ids, reader.iterate_frames(frame_ids), strict=True
-                ):
-                    frame_media = []
-
-                    for ri_filename in frame.get("meta", {}).get("related_images", []):
-                        ri_filename = _validate_ri_path(ri_filename)
-                        ri_realpath = os.path.join(tmp_dir, ri_filename)
-
-                        files_to_download.append(ri_filename)
-                        frame_media.append((ri_realpath, os.fspath(ri_filename)))
-
-                    media.append((frame_id, frame_media))
+                for _, frame_media in media:
+                    files_to_download.extend(frame_media)
 
                 storage_client.bulk_download_to_dir(files_to_download, upload_dir=tmp_dir)
+                media_base_dir = tmp_dir
             else:
-                ThroughModel = models.RelatedFile.images.through
-
-                db_related_files = (
-                    ThroughModel.objects.filter(
-                        relatedfile__data=db_data, image__frame__in=frame_ids
-                    )
-                    .order_by("image__frame", "relatedfile__path")
-                    .values_list("image__frame", "relatedfile__path")
-                )
-
-                media = []
-                for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0]):
-                    frame_media = []
-
-                    for _, ri_path in frame_ris:
-                        ri_filename = _validate_ri_path(ri_path)
-                        ri_realpath = os.path.join(raw_data_dir, ri_filename)
-                        frame_media.append((ri_realpath, os.fspath(ri_filename)))
-
-                    media.append((frame_id, frame_media))
+                media_base_dir = raw_data_dir
 
             for frame_id, frame_media in media:
                 if truncate_common_filename_prefix:
                     # Truncate RI prefixes on the per-frame basis
-                    common_prefix = os.path.commonpath(os.path.dirname(m[1]) for m in frame_media)
+                    common_prefix = os.path.commonpath(os.path.dirname(m) for m in frame_media)
 
-                    frame_media = [
-                        (m[0], os.path.relpath(m[1], common_prefix)) for m in frame_media
+                    frame_media_tuples = [
+                        (os.path.join(media_base_dir, m), os.path.relpath(m, common_prefix))
+                        for m in frame_media
+                    ]
+                else:
+                    frame_media_tuples = [
+                        (os.path.join(media_base_dir, m), os.fspath(m)) for m in frame_media
                     ]
 
-                for m in frame_media:
+                for m in frame_media_tuples:
                     if decode:
                         m = load_image(m)
 

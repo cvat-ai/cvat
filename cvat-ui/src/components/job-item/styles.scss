@@ -72,14 +72,6 @@
         margin-top: $grid-unit-size;
     }
 
-    .cvat-consensus-job-collapse {
-        margin-top: $grid-unit-size * 1.5;
-
-        .ant-collapse-item > .ant-collapse-header {
-            align-items: center;
-        }
-    }
-
     .job-actions-menu {
         position: absolute;
         top: $grid-unit-size * 6.5;
