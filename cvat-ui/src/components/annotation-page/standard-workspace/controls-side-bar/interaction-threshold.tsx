@@ -15,7 +15,7 @@ interface Props {
 }
 
 export const MIN_THRESHOLD = 0.2;
-export const MAX_THRESHOLD = 1;
+export const MAX_THRESHOLD = 0.9;
 
 function InteractorThreshold(props: Props): React.ReactPortal | null {
     const { thresholdValue, onChange } = props;
@@ -24,10 +24,7 @@ function InteractorThreshold(props: Props): React.ReactPortal | null {
     return target ?
         ReactDOM.createPortal(
             <Row align='middle' className='cvat-interactor-threshold-wrapper'>
-                <Col span={8}>
-                    <Text>Threshold: </Text>
-                </Col>
-                <Col offset={1} span={15}>
+                <Col span={24}>
                     <Slider
                         value={thresholdValue}
                         min={MIN_THRESHOLD}
@@ -39,6 +36,7 @@ function InteractorThreshold(props: Props): React.ReactPortal | null {
                         onChange={onChange}
                     />
                 </Col>
+                <Text type='secondary'>confidence</Text>
             </Row>,
             target,
         ) :

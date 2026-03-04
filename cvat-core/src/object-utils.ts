@@ -317,28 +317,34 @@ export function cropMask(rle: number[], width: number, height: number): number[]
     return croppedRLE;
 }
 
-export function mask2Rle(mask: number[]): number[] {
-    return mask.reduce((acc, val, idx, arr) => {
-        if (idx > 0) {
-            if (arr[idx - 1] === val) {
-                acc[acc.length - 1] += 1;
-            } else {
-                acc.push(1);
-            }
+export function mask2Rle(mask: ArrayLike<number>): number[] {
+    const acc: number[] = [];
+    const n = mask.length;
+    if (n === 0) {
+        return acc
+    };
 
-            return acc;
-        }
+    // idx = 0
+    const first = mask[0];
+    if (first > 0) {
+        // 0,0,0,1 => [3,1]
+        // 1,1,0,0 => [0,2,2]
+        acc.push(0, 1);
+    } else {
+        acc.push(1);
+    }
 
-        if (val > 0) {
-            // 0, 0, 0, 1 => [3, 1]
-            // 1, 1, 0, 0 => [0, 2, 2]
-            acc.push(0, 1);
+    // idx > 0
+    for (let idx = 1; idx < n; idx++) {
+        const val = mask[idx];
+        if (mask[idx - 1] === val) {
+            acc[acc.length - 1] += 1;
         } else {
             acc.push(1);
         }
+    }
 
-        return acc;
-    }, []);
+    return acc;
 }
 
 export function rle2Mask(rle: number[], width: number, height: number): number[] {

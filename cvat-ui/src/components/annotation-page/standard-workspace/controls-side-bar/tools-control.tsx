@@ -53,6 +53,7 @@ import InteractorThreshold from 'components/annotation-page/standard-workspace/c
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
+import { any } from 'prop-types';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -161,6 +162,7 @@ interface State {
     trackedShapes: TrackedShape[];
     fetching: boolean;
     interactorResponseReceived: boolean;
+    showConfidenceControl: boolean;
     approxPolyAccuracy: number;
     thresholdValue: number;
     mode: 'detection' | 'interaction' | 'tracking';
@@ -263,6 +265,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             trackedShapes: [],
             fetching: false,
             interactorResponseReceived: false,
+            showConfidenceControl: false,
             mode: 'interaction',
             portals: [],
         };
@@ -324,6 +327,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.setState({
                 approxPolyAccuracy: defaultApproxPolyAccuracy,
                 interactorResponseReceived: false,
+                showConfidenceControl: false,
             });
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
@@ -458,23 +462,21 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                 const latestResponse: ToolsControlComponent['interaction']['latestResponse'] = [];
                 for (const item of response) {
-                    let { mask, points, bounds, confidence } = item;
-                    const maskHeight = mask.length;
-                    const maskWidth = mask[0].length;
-
-                    bounds = bounds ?? [0, 0, maskWidth - 1, maskHeight - 1];
-                    points = points ?? this.receivePointsFromMask(mask, bounds[0], bounds[1]);
+                    let { points, bounds, confidence } = item;
+                    const width = bounds[2] - bounds[0] + 1;
+                    const height = bounds[3] - bounds[1] + 1;
+                    points = points ?? this.receivePointsFromMask(item.mask, bounds[0], bounds[1], width, height);
 
                     if (points.length < 3) {
-                        item.mask = []; // free memory
+                        Object.assign(item, { mask: null }); // free memory
                         continue;
                     }
 
                     const approximated = this.approximateResponsePoints(points!);
-                    const rle = core.utils.mask2Rle(mask.flat());
+                    const rle = core.utils.mask2Rle(item.mask);
                     rle.push(...bounds);
 
-                    item.mask = []; // free memory
+                    Object.assign(item, { mask: null }); // free memory
                     latestResponse.push({
                         rle,
                         points,
@@ -484,7 +486,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 }
 
                 this.interaction.latestResponse = latestResponse;
-                this.setState({ interactorResponseReceived: !!response.length });
+                this.setState({
+                    interactorResponseReceived: !!response.length,
+                    showConfidenceControl: response.some(({ confidence }) => typeof confidence === 'number'),
+                });
             } finally {
                 if (this.interaction.id === interactionId && this.interaction.hideMessage) {
                     this.interaction.hideMessage();
@@ -1012,35 +1017,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private receivePointsFromMask(
-        mask: number[][] | ArrayBuffer,
+        mask: Uint8ClampedArray,
         left: number,
         top: number,
-        width?: number,
-        height?: number,
+        width: number,
+        height: number,
     ): [number, number][] {
         if (!openCVWrapper.isInitialized) {
             throw new Error('OpenCV was not initialized');
         }
 
-        let maskWidth: number;
-        let maskHeight: number;
-        let maskData: Uint8Array;
-
-        if (mask instanceof ArrayBuffer) {
-            if (width === undefined || height === undefined) {
-                throw new Error('Width and height are required when passing ArrayBuffer');
-            }
-            maskWidth = width;
-            maskHeight = height;
-            maskData = new Uint8Array(mask);
-        } else {
-            // Handle legacy 2D array format
-            maskWidth = mask[0].length;
-            maskHeight = mask.length;
-            maskData = new Uint8Array(mask.flat());
-        }
-
-        const src = openCVWrapper.mat.fromData(maskWidth, maskHeight, MatType.CV_8UC1, maskData);
+        const src = openCVWrapper.mat.fromData(width, height, MatType.CV_8UC1, mask);
         try {
             const polygons = openCVWrapper.contours.findContours(src);
             if (polygons.length) {
@@ -1441,10 +1428,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const {
-            interactors, detectors, trackers, isActivated, canvasInstance, labels, frameIsDeleted,
+            interactors, detectors, trackers, isActivated,
+            canvasInstance, labels, frameIsDeleted,
         } = this.props;
         const {
-            fetching, approxPolyAccuracy, interactorResponseReceived, mode, portals, convertMasksToPolygons,
+            fetching, approxPolyAccuracy, interactorResponseReceived,
+            showConfidenceControl, mode, portals, convertMasksToPolygons,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -1474,17 +1463,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const interactionContent: JSX.Element | null = showInteractionContent ? (
             <>
-                <InteractorThreshold
-                    thresholdValue={this.state.thresholdValue}
-                    onChange={(value: number) => {
-                        this.setState({ thresholdValue: value });
-                    }}
-                />
                 { convertMasksToPolygons && (
                     <ApproximationAccuracy
                         approxPolyAccuracy={approxPolyAccuracy}
                         onChange={(value: number) => {
                             this.setState({ approxPolyAccuracy: value });
+                        }}
+                    />
+                )}
+                { showConfidenceControl && (
+                    <InteractorThreshold
+                        thresholdValue={this.state.thresholdValue}
+                        onChange={(value: number) => {
+                            this.setState({ thresholdValue: value });
                         }}
                     />
                 )}

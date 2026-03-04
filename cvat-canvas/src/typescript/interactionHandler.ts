@@ -454,8 +454,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
             point.on('mouseenter.interaction', (e: MouseEvent) => {
                 if (pointCanBeRemoved()) {
-                    e.preventDefault();
-                    e.stopPropagation();
                     point.addClass('cvat_canvas_removable_interaction_point');
                     point.attr({ 'stroke-width': this.effectiveStrokeWidth * 1.5, r: this.effectivePointSize * 1.1 });
                 }
@@ -467,9 +465,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             });
 
             point.on('mousedown.interaction', (e: MouseEvent): void => {
+                e.preventDefault();
+                e.stopPropagation();
                 if (pointCanBeRemoved()) {
-                    e.preventDefault();
-                    e.stopPropagation();
                     this.deleteShape(point);
                 }
             });

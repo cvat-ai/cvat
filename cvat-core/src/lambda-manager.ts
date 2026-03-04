@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
@@ -15,7 +16,12 @@ export type InteractorResultsPrev = {
     bounds?: [number, number, number, number];
 }
 
-export type InteractorResults = (InteractorResultsPrev & { confidence: number })[];
+export type InteractorResults = Omit<InteractorResultsPrev, 'mask'> & {
+    mask: Uint8ClampedArray;
+    bounds: [number, number, number, number];
+    points?: [number, number][];
+    confidence?: number;
+}[];
 
 export interface MinimalShape {
     type: ShapeType;
@@ -91,12 +97,10 @@ class LambdaManager {
 
         if (model.kind === ModelKind.INTERACTOR && !Array.isArray(result) && 'mask' in result) {
             // wrap old interfaces for backward compatibility
-            // it was: -> { mask: [], points: [], bounds: [] }
-            // will be: -> [{ mask: [], points: [], bounds: [] }]
-            // not ideally from design perspective, but quick and good enough client-only solution
             return [{
-                ...result,
-                confidence: 1,
+                ..._.omit(result, ['mask']),
+                mask: new Uint8ClampedArray(result.mask.flat()),
+                bounds: result.bounds ?? [0, 0, result.mask[0].length - 1, result.mask.length - 1],
             }] as InteractorResults;
         }
 

@@ -19,7 +19,7 @@ export interface Segmentation {
 }
 
 export interface MatSpace {
-    fromData: (width: number, height: number, type: MatType, data: number[]) => any;
+    fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => any;
 }
 
 export interface MatVectorSpace {
@@ -142,7 +142,7 @@ export class OpenCVWrapper {
     public get mat(): MatSpace {
         const { cv } = this;
         return {
-            fromData: (width: number, height: number, type: MatType, data: number[]) => {
+            fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => {
                 this.checkInitialization();
                 const typeToCVType = {
                     [MatType.CV_8UC1]: cv.CV_8UC1,
