@@ -873,7 +873,7 @@ def create_thread(
             'start': db_data.start_frame,
             'stop': data['stop_frame'],
         }
-        if media_type in {'archive', 'zip', 'pdf'} and db_data.storage == models.StorageChoice.SHARE:
+        if media_type in {'archive', 'zip', 'pdf', 'dicom'} and db_data.storage == models.StorageChoice.SHARE:
             details['extract_dir'] = db_data.get_upload_dirname()
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
