@@ -5,8 +5,7 @@
 source "$(dirname "$0")/check_env.sh"
 
 common_env
-resolve_model
-resolve_keypoints_file
+resolve_model_params
 
 # Hardcoded for YOLO
 
@@ -33,7 +32,7 @@ if FUNCTION_ID=$(curl --get --fail --data-urlencode "filter=$FILTER" "${ORG_CURL
 else
     echo -e "Function with name $FUNCTION_NAME not found. Proceeding to create a new one.\nPlease have some patience, function creation might take some time..."
     # Register the YOLO function in CVAT
-    RAW_OUTPUT="$(cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function create-native "$FUNCTION_NAME" --function-file="$FUNCTION_FILE_PATH" -p model=str:"$MODEL" "${KEYPOINTS_FILE_ARGS[@]}")"
+    RAW_OUTPUT="$(cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function create-native "$FUNCTION_NAME" --function-file="$FUNCTION_FILE_PATH" $MODEL_CONFIG_PARAMS)"
     FUNCTION_ID=$(echo "$RAW_OUTPUT" | tail -1 | tr -d '[:space:]')
     if [[ $FUNCTION_ID =~ ^[0-9]+$ ]]; then
       echo "Successfully created $FUNCTION_NAME function"

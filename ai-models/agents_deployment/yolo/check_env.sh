@@ -27,24 +27,6 @@ resolve_org_slug() {
     fi
 }
 
-resolve_model() {
-    if [ -z "$MODEL" ]; then
-        echo "Warning: MODEL environment variable not found. Default is yolo26s.pt"
-        MODEL="yolo26s.pt"
-    else
-        echo "Using MODEL: $MODEL"
-    fi
-}
-
-resolve_keypoints_file() {
-    KEYPOINTS_FILE_ARGS=()
-    if [ -z "$KEYPOINTS_FILE_PATH" ]; then
-        echo "Warning: KEYPOINTS_FILE_PATH environment variable not found. Default keypoints will be used"
-    else
-        KEYPOINTS_FILE_ARGS=(-p keypoint_names_path=str:"$KEYPOINTS_FILE_PATH")
-    fi
-}
-
 resolve_cuda() {
     if [ "$USE_CUDA" = "true" ]; then
         echo "Using CUDA! Please ensure that you are using proper image with CUDA support"
@@ -53,6 +35,24 @@ resolve_cuda() {
         echo "Info: USE_CUDA environment variable not found. Model will run on CPU."
     fi
 }
+
+resolve_model_params() {
+    if [ -z "$MODEL_CONFIG_PARAMS" ]; then
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable not found. Default model will be used: yolo26s.pt"
+        MODEL_CONFIG_PARAMS="-p model=str:yolo26s.pt"
+        MODEL="yolo26s.pt"
+    elif result=$(echo "$MODEL_CONFIG_PARAMS" | grep -oP 'model=str:\K[^ ]+'); then
+        echo "Extracted MODEL from MODEL_CONFIG_PARAMS: $result"
+        MODEL="$result"
+    else
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable is set but model param is malformed. Your config will be discarded. Default values will be used."
+        echo "MODEL_CONFIG_PARAMS should contain model in format -p model=str:your_model.pt"
+        echo "Following params will be used for cvat-cli: -p model=str:yolo26s.pt"
+        MODEL_CONFIG_PARAMS="-p model=str:yolo26s.pt"
+        MODEL="yolo26s.pt"
+    fi
+}
+
 
 common_env() {
     validate_access_token

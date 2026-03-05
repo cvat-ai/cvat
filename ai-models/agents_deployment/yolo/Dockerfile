@@ -33,6 +33,7 @@ COPY --chmod=755 ai-models/agents_deployment/yolo/function_registration.sh .
 COPY --chmod=755 ai-models/agents_deployment/yolo/function_deregistration.sh .
 COPY --chmod=755 ai-models/agents_deployment/yolo/check_env.sh .
 COPY --chmod=755 ai-models/agents_deployment/yolo/entrypoint.sh .
+COPY --chmod=755 ai-models/agents_deployment/yolo/keypoints.txt .
 
 USER agent
 

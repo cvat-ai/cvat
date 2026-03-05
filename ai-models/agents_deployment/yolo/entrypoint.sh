@@ -5,8 +5,7 @@
 source "$(dirname "$0")/check_env.sh"
 
 common_env
-resolve_model
-resolve_keypoints_file
+resolve_model_params
 resolve_cuda
 
 if [ -f /shared/FUNCTION_ID ]; then
@@ -26,5 +25,5 @@ fi
 FUNCTION_FILE_PATH="func.py"
 
 echo "Running YOLO function agent for FUNCTION_ID: $FUNCTION_ID with MODEL: $MODEL..."
-
-exec cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" -p model=str:"$MODEL" "${USE_CUDA_ARGS[@]}" "${KEYPOINTS_FILE_ARGS[@]}"
+# $MODEL_CONFIG_PARAMS should be unquoted to be passed as separate arguments to cvat-cli.
+exec cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" $MODEL_CONFIG_PARAMS "${USE_CUDA_ARGS[@]}"
