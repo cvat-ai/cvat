@@ -245,7 +245,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 obj_bbox: number[][];
             };
         } | null;
-        hideMessage: (() => void) | null;
+        closeFetchingMessage: (() => void) | null;
+        noShapesMessage: (() => void) | null;
     };
 
     public constructor(props: Props) {
@@ -275,7 +276,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             latestPostponedEvent: null,
             latestResponse: [],
             latestRequest: null,
-            hideMessage: null,
+            closeFetchingMessage: null,
+            noShapesMessage: null,
         };
     }
 
@@ -307,10 +309,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (prevProps.isActivated && !isActivated) {
             window.removeEventListener('contextmenu', this.contextmenuDisabler);
-            // hide interaction message if exists
-            if (this.interaction.hideMessage) {
-                this.interaction.hideMessage();
-                this.interaction.hideMessage = null;
+
+            // hide interaction messages if exists
+            for (const messageCallback of ['closeFetchingMessage', 'noShapesMessage'] as const) {
+                if (this.interaction[messageCallback]) {
+                    this.interaction[messageCallback]();
+                    this.interaction[messageCallback] = null;
+                }
             }
         } else if (!prevProps.isActivated && isActivated) {
             // reset flags when start interaction/tracking
@@ -320,7 +325,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 latestPostponedEvent: null,
                 latestResponse: [],
                 latestRequest: null,
-                hideMessage: null,
+                closeFetchingMessage: null,
+                noShapesMessage: null,
             };
 
             this.setState({
@@ -410,15 +416,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             },
         });
 
-        if (!shapesToBeDrawn.length && !this.noDataShownMessageDisplayed) {
-            this.noDataShownMessageDisplayed = true;
-            message.info({
-                content: 'No shapes to display',
-                duration: 1.5,
-                onClose: () => {
-                    this.noDataShownMessageDisplayed = false;
-                },
-            });
+        if (!shapesToBeDrawn.length) {
+            if (!this.interaction.noShapesMessage) {
+                this.interaction.noShapesMessage = message.info({
+                    content: 'No shapes to display',
+                    duration: 0,
+                });
+            }
+        } else if (this.interaction.noShapesMessage) {
+            this.interaction.noShapesMessage();
+            this.interaction.noShapesMessage = null;
         }
     }
 
@@ -438,7 +445,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.interaction.latestRequest = null;
 
         try {
-            this.interaction.hideMessage = message.loading({
+            this.interaction.closeFetchingMessage = message.loading({
                 content: `Waiting for a response from ${activeInteractor?.name}`,
                 duration: 0,
                 className: 'cvat-tracking-notice',
@@ -486,9 +493,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     showConfidenceControl,
                 });
             } finally {
-                if (this.interaction.id === interactionId && this.interaction.hideMessage) {
-                    this.interaction.hideMessage();
-                    this.interaction.hideMessage = null;
+                if (this.interaction.id === interactionId) {
+                    this.interaction?.closeFetchingMessage();
+                    this.interaction.closeFetchingMessage = null;
                 }
 
                 this.setState({ fetching: false });
