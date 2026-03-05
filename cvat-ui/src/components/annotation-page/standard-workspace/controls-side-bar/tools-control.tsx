@@ -571,12 +571,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private interactionListener = async (e: Event): Promise<void> => {
-        const { toolsBlockerState } = this.props;
-        const { mode } = this.state;
+        const { toolsBlockerState, isActivated, canvasInstance } = this.props;
+        const { activeInteractor, mode } = this.state;
+
+        if (!isActivated || !activeInteractor) {
+            return;
+        }
 
         if (mode === 'interaction') {
-            const { canvasInstance } = this.props;
-            const { activeInteractor } = this.state;
             const { shapes, finished } = (e as CustomEvent<{ shapes: InteractionResult[], finished: boolean }>).detail;
 
             if (finished) {
