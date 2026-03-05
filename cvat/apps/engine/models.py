@@ -13,7 +13,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from enum import Enum, IntEnum
 from functools import cached_property
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.conf import settings
@@ -29,12 +29,14 @@ from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
+from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import MaybeUndefined
 from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
 
 if TYPE_CHECKING:
+    from cvat.apps.engine.cloud_provider import AbstractCloudStorage
     from cvat.apps.organizations.models import Organization
 
 
@@ -445,6 +447,8 @@ class Data(models.Model):
     # Storage descriptors
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
     storage = models.CharField(max_length=15, choices=StorageChoice.choices(), default=StorageChoice.LOCAL)
+    local_storage_backing_cs = models.ForeignKey(CloudStorage, on_delete=models.PROTECT, null=True, related_name="+")
+    local_storage_backing_cs_id: int | None
     cloud_storage = models.ForeignKey(CloudStorage, on_delete=models.SET_NULL, null=True, related_name='data')
 
     # Task creation parameters
@@ -539,6 +543,96 @@ class Data(models.Model):
     @property
     def validation_mode(self) -> ValidationMode | None:
         return getattr(getattr(self, 'validation_layout', None), 'mode', None)
+
+    def get_all_media_rel_paths(self) -> list[PurePath]:
+        if video := getattr(self, "video", None):
+            return [PurePath(video.path)]
+        else:
+            return (
+                [PurePath(image.path) for image in self.images.filter(is_placeholder=False)]
+                + [PurePath(f.path) for f in self.related_files.all()]
+            )
+
+    def get_cloud_storage_instance(self) -> AbstractCloudStorage | None:
+        from .cloud_provider import SubdirectoryCloudStorage, db_storage_to_storage_instance
+
+        if self.storage == StorageChoice.CLOUD_STORAGE:
+            if self.cloud_storage_id is None:
+                raise CloudStorageMissingError("Task is not connected to cloud storage")
+
+            return db_storage_to_storage_instance(self.cloud_storage)
+
+        if self.storage == StorageChoice.LOCAL and self.local_storage_backing_cs:
+            return SubdirectoryCloudStorage(
+                db_storage_to_storage_instance(self.local_storage_backing_cs), f"data/{self.id}/raw"
+            )
+
+        return None
+
+    def supports_backing_cs(self) -> bool:
+        return (
+            self.storage == StorageChoice.LOCAL
+            and self.storage_method == StorageMethodChoice.CACHE
+            and not hasattr(self, "video")
+        )
+
+    def move_to_backing_cs(self, backing_cs: CloudStorage) -> None:
+        assert self.supports_backing_cs()
+        assert not self.local_storage_backing_cs_id
+
+        self.local_storage_backing_cs = backing_cs
+
+        cloud_storage_instance = self.get_cloud_storage_instance()
+        assert cloud_storage_instance
+
+        upload_dir = self.get_upload_dirname()
+        assert (upload_dir / self.MANIFEST_FILENAME).is_file()
+
+        rel_paths_to_move = self.get_all_media_rel_paths()
+
+        cloud_storage_instance.bulk_upload_from_dir(rel_paths_to_move, upload_dir)
+
+        self.save(update_fields=["local_storage_backing_cs"])
+
+        def clear_original_files() -> None:
+            parents = set()
+
+            for path in rel_paths_to_move:
+                (upload_dir / path).unlink()
+                parents.update(path.parents)
+
+            # Delete all empty parent directories, except for upload_dir itself.
+            parents.remove(PurePath())
+
+            for parent in sorted(parents, key=lambda path: -len(path.parts)):
+                try:
+                    (upload_dir / parent).rmdir()
+                except OSError:
+                    pass
+
+        transaction.on_commit(clear_original_files, robust=True)
+
+    def move_from_backing_cs(self) -> None:
+        assert self.supports_backing_cs()
+        assert self.local_storage_backing_cs_id
+
+        cloud_storage_instance = self.get_cloud_storage_instance()
+        assert cloud_storage_instance
+
+        upload_dir = self.get_upload_dirname()
+
+        rel_paths_to_move = self.get_all_media_rel_paths()
+
+        cloud_storage_instance.bulk_download_to_dir(rel_paths_to_move, upload_dir)
+
+        self.local_storage_backing_cs = None
+        self.save(update_fields=["local_storage_backing_cs"])
+
+        def clear_original_files() -> None:
+            cloud_storage_instance.bulk_delete([p.as_posix() for p in rel_paths_to_move])
+
+        transaction.on_commit(clear_original_files, robust=True)
+
 
 
 class Video(models.Model):
