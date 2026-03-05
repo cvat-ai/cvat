@@ -49,7 +49,6 @@ from cvat.apps.dataset_manager.views import (
 )
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.serializers import (
@@ -480,17 +479,95 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             self._manifest_was_filtered = True
 
+    def _write_data_from_cloud_storage(self, zip_object: ZipFile, target_dir: str) -> None:
+        assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
+
+        target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
+        data_dir = self._db_data.get_upload_dirname()
+
+        self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
+
+        files_for_local_copy = []
+
+        media_files_to_download: list[PurePath] = []
+        for media_file in self._db_data.related_files.all():
+            media_path = PurePath(media_file.path)
+
+            local_path = os.path.join(data_dir, media_path)
+            if os.path.exists(local_path):
+                files_for_local_copy.append(local_path)
+            else:
+                media_files_to_download.append(media_path)
+
+        frame_ids_to_download = []
+        frame_names_to_download = []
+        for media_file in self._db_data.images.all():
+            media_path = media_file.path
+
+            local_path = os.path.join(data_dir, media_path)
+            if os.path.exists(local_path):
+                files_for_local_copy.append(local_path)
+            else:
+                frame_ids_to_download.append(media_file.frame)
+                frame_names_to_download.append(media_file.path)
+
+        if media_files_to_download:
+            storage_client = self._db_data.get_cloud_storage_instance()
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                storage_client.bulk_download_to_dir(
+                    files=media_files_to_download, upload_dir=Path(tmp_dir)
+                )
+
+                self._write_files(
+                    source_dir=tmp_dir,
+                    zip_object=zip_object,
+                    files=[os.path.join(tmp_dir, file) for file in media_files_to_download],
+                    target_dir=target_data_dir,
+                )
+
+        if frame_ids_to_download:
+            media_cache = MediaCache()
+            with closing(
+                media_cache.read_raw_images(
+                    self._db_task, frame_ids=frame_ids_to_download, decode=False
+                )
+            ) as frame_iter:
+                # Avoid closing the frame iter before the files are copied
+                downloaded_paths = []
+                for _ in frame_ids_to_download:
+                    downloaded_paths.append(next(frame_iter)[1])
+
+                tmp_dir = downloaded_paths[0].removesuffix(frame_names_to_download[0])
+
+                self._write_files(
+                    source_dir=tmp_dir,
+                    zip_object=zip_object,
+                    files=downloaded_paths,
+                    target_dir=target_data_dir,
+                )
+
+        self._write_files(
+            source_dir=data_dir,
+            zip_object=zip_object,
+            files=files_for_local_copy,
+            target_dir=target_data_dir,
+        )
+
     def _write_data(self, zip_object: ZipFile, target_dir: str) -> None:
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
 
         if self._db_data.storage == StorageChoice.LOCAL:
             data_dir = self._db_data.get_upload_dirname()
-            self._write_directory(
-                source_dir=data_dir,
-                zip_object=zip_object,
-                target_dir=target_data_dir,
-                exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME],
-            )
+            if self._db_data.local_storage_backing_cs:
+                self._write_data_from_cloud_storage(zip_object, target_dir)
+            else:
+                self._write_directory(
+                    source_dir=data_dir,
+                    zip_object=zip_object,
+                    target_dir=target_data_dir,
+                    exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME],
+                )
+
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
             if hasattr(self._db_data, "video"):
@@ -508,8 +585,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
 
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
-            assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
-
             data_dir = self._db_data.get_upload_dirname()
 
             if self._lightweight:
@@ -520,75 +595,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     target_dir=target_data_dir,
                 )
             else:
-                self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
-
-                files_for_local_copy = []
-
-                media_files_to_download: list[PurePath] = []
-                for media_file in self._db_data.related_files.all():
-                    media_path = PurePath(media_file.path)
-
-                    local_path = os.path.join(data_dir, media_path)
-                    if os.path.exists(local_path):
-                        files_for_local_copy.append(local_path)
-                    else:
-                        media_files_to_download.append(media_path)
-
-                frame_ids_to_download = []
-                frame_names_to_download = []
-                for media_file in self._db_data.images.all():
-                    media_path = media_file.path
-
-                    local_path = os.path.join(data_dir, media_path)
-                    if os.path.exists(local_path):
-                        files_for_local_copy.append(local_path)
-                    else:
-                        frame_ids_to_download.append(media_file.frame)
-                        frame_names_to_download.append(media_file.path)
-
-                if media_files_to_download:
-                    storage_client = db_storage_to_storage_instance(self._db_data.cloud_storage)
-                    with tempfile.TemporaryDirectory() as tmp_dir:
-                        storage_client.bulk_download_to_dir(
-                            files=media_files_to_download, upload_dir=Path(tmp_dir)
-                        )
-
-                        self._write_files(
-                            source_dir=tmp_dir,
-                            zip_object=zip_object,
-                            files=[os.path.join(tmp_dir, file) for file in media_files_to_download],
-                            target_dir=target_data_dir,
-                        )
-
-                if frame_ids_to_download:
-                    media_cache = MediaCache()
-                    with closing(
-                        iter(
-                            media_cache.read_raw_images(
-                                self._db_task, frame_ids=frame_ids_to_download, decode=False
-                            )
-                        )
-                    ) as frame_iter:
-                        # Avoid closing the frame iter before the files are copied
-                        downloaded_paths = []
-                        for _ in frame_ids_to_download:
-                            downloaded_paths.append(next(frame_iter)[1])
-
-                        tmp_dir = downloaded_paths[0].removesuffix(frame_names_to_download[0])
-
-                        self._write_files(
-                            source_dir=tmp_dir,
-                            zip_object=zip_object,
-                            files=downloaded_paths,
-                            target_dir=target_data_dir,
-                        )
-
-                self._write_files(
-                    source_dir=data_dir,
-                    zip_object=zip_object,
-                    files=files_for_local_copy,
-                    target_dir=target_data_dir,
-                )
+                self._write_data_from_cloud_storage(zip_object, target_dir)
         else:
             raise NotImplementedError
 
