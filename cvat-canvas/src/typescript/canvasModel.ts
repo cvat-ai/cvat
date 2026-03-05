@@ -129,7 +129,6 @@ export interface InteractionData {
     command?: 'draw_points' | 'draw_box' | 'put_shapes' | 'refine';
     payload?: {
         shapes: {
-            id: unknown;
             shapeType: string;
             points: ArrayLike<number>;
         }[];
@@ -138,7 +137,7 @@ export interface InteractionData {
         crosshair?: boolean; // default is false
         points_type?: 'any' | 'positive' | 'negative'; // default is any
         removalStrategy?: 'any' | 'last'; // default is any
-        allowPointsSliding?: boolean; // default is false
+        appendCursorPositionAsPoint?: boolean; // default is false
     };
 }
 

@@ -191,7 +191,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     command: 'put_shapes',
                     payload: {
                         shapes: [{
-                            id: null,
                             shapeType: ShapeType.POLYGON,
                             points: approx.flat(),
                         }],
@@ -274,7 +273,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     command: 'put_shapes',
                     payload: {
                         shapes: [{
-                            id: null,
                             shapeType: ShapeType.POLYGON,
                             points: points.flat(),
                         }],
@@ -365,7 +363,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                     const parameters = {
                                         command: 'draw_points' as const,
                                         settings: {
-                                            allowPointsSliding: true,
+                                            appendCursorPositionAsPoint: true,
                                             removalStrategy: 'last' as const,
                                             points_type: 'positive' as const,
                                         },

@@ -78,8 +78,4 @@ export default class Crosshair {
             this.y.attr('stroke-width', consts.BASE_STROKE_WIDTH / (2 * scale));
         }
     }
-
-    public visible(): boolean {
-        return !!this.x && !!this.y;
-    }
 }

@@ -403,7 +403,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
             .filter(({ approximatedPoints }) => !convertMasksToPolygons || approximatedPoints.length >= 3)
             .map(({ rle, approximatedPoints }) => ({
-                id: 'dummy',
                 shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
                 points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
             }));
@@ -1256,7 +1255,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     const parameters = {
                                         command: startWithBox ? 'draw_box' as const : 'draw_points' as const,
                                         settings: {
-                                            allowPointsSliding: false,
+                                            appendCursorPositionAsPoint: false,
                                             removalStrategy: 'any' as const,
                                             points_type: 'any' as const,
                                             crosshair: startWithBox,

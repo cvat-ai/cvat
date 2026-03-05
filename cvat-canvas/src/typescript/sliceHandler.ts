@@ -5,7 +5,7 @@
 import * as SVG from 'svg.js';
 import {
     stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG,
-    findIntersection, zipChannels, Segment, findClosestPointOnSegment, segmentsFromPoints,
+    findIntersection, imageDataToRLE, Segment, findClosestPointOnSegment, segmentsFromPoints,
     toReversed,
 } from './shared';
 import {
@@ -356,12 +356,12 @@ export class SliceHandlerImpl implements SliceHandler {
                 const context = offscreenCanvas.getContext('2d');
                 drawOverOffscreenCanvas(context, shape as any as SVGImageElement);
                 applyOffscreenCanvasMask(context, polygon1);
-                const firstShape = zipChannels(context.getImageData(0, 0, width, height).data);
+                const firstShape = imageDataToRLE(context.getImageData(0, 0, width, height).data);
                 // @ts-ignore error TS2339 https://github.com/microsoft/TypeScript/issues/55162
                 context.reset();
                 drawOverOffscreenCanvas(context, shape as any as SVGImageElement);
                 applyOffscreenCanvasMask(context, polygon2);
-                const secondShape = zipChannels(context.getImageData(0, 0, width, height).data);
+                const secondShape = imageDataToRLE(context.getImageData(0, 0, width, height).data);
                 this.onSliceDone(sliceData.state, [firstShape, secondShape], Date.now() - this.startTimestamp);
             } else if (sliceData.shapeType === 'polygon') {
                 this.onSliceDone(

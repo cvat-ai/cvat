@@ -11,7 +11,7 @@ import {
 import consts from './consts';
 import { DrawHandler } from './drawHandler';
 import {
-    PropType, computeWrappingBox, zipChannels, expandChannels, imageDataToDataURL,
+    PropType, computeWrappingBox, imageDataToRLE, RLEToImageData, imageDataToDataURL,
 } from './shared';
 
 interface WrappingBBox {
@@ -226,7 +226,7 @@ export class MasksHandlerImpl implements MasksHandler {
         return imageData;
     }
 
-    private updateHidden(value: boolean) {
+    private updateHidden(value: boolean): void {
         this.isHidden = value;
 
         // Need to update style of upper canvas explicitly because update of default cursor is not applied immediately
@@ -330,7 +330,7 @@ export class MasksHandlerImpl implements MasksHandler {
         if (this.brushMarker) {
             this.canvas.add(this.brushMarker);
         }
-        const rle = zipChannels(imageData);
+        const rle = imageDataToRLE(imageData);
         const emptyMask = rle.length < 2;
         this.tool.onBlockUpdated({
             eraser: emptyMask,
@@ -400,7 +400,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 const continueInserting = options.e.ctrlKey;
                 const wrappingBbox = this.getDrawnObjectsWrappingBox();
                 const imageData = this.imageDataFromCanvas(wrappingBbox);
-                const rle = zipChannels(imageData);
+                const rle = imageDataToRLE(imageData);
                 rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
 
                 this.onDrawDone({
@@ -589,7 +589,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 const { points } = drawData.initialState;
                 const color = fabric.Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
-                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+                const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
                 imageDataToDataURL(
                     imageBitmap,
                     right - left + 1,
@@ -635,7 +635,7 @@ export class MasksHandlerImpl implements MasksHandler {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
                     this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
-                    const rle = zipChannels(imageData);
+                    const rle = imageDataToRLE(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
 
                     const isEmptyMask = rle.length < 6;
@@ -681,7 +681,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 const { points } = editData.state;
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
-                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+                const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
                 imageDataToDataURL(
                     imageBitmap,
                     right - left + 1,
@@ -717,7 +717,7 @@ export class MasksHandlerImpl implements MasksHandler {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
                     this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
-                    const rle = zipChannels(imageData);
+                    const rle = imageDataToRLE(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
                     const isEmptyMask = rle.length < 6;
                     if (isEmptyMask) {

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
-import { expandChannels, imageDataToDataURL, translateToSVG } from './shared';
+import { RLEToImageData, imageDataToDataURL, translateToSVG } from './shared';
 import { Geometry } from './canvasModel';
 import consts from './consts';
 
@@ -168,7 +168,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
                             const { points } = objectState;
                             const colorRGB = [252, 251, 252];
                             const [left, top, right, bottom] = points.slice(-4);
-                            const imageBitmap = expandChannels(colorRGB[0], colorRGB[1], colorRGB[2], points);
+                            const imageBitmap = RLEToImageData(colorRGB[0], colorRGB[1], colorRGB[2], points);
 
                             const bbox = shape.bbox();
                             const image = this.canvas.image().attr({
@@ -183,7 +183,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
                                 right - left + 1,
                                 bottom - top + 1,
                                 (dataURL: string) => {
-                                    const destroy = () => URL.revokeObjectURL(dataURL);
+                                    const destroy = (): void => URL.revokeObjectURL(dataURL);
                                     image.loaded(destroy);
                                     image.error(destroy);
                                     image.load(dataURL);

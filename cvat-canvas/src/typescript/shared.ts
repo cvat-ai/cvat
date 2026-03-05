@@ -60,7 +60,7 @@ export interface DrawnState {
 
 // Translate point array from the canvas coordinate system
 // to the coordinate system of a client
-export function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
+export function translateFromSVG(svg: SVGSVGElement, points: ArrayLike<number>): number[] {
     const output = [];
     const transformationMatrix = svg.getScreenCTM() as DOMMatrix;
     let pt = svg.createSVGPoint();
@@ -76,7 +76,7 @@ export function translateFromSVG(svg: SVGSVGElement, points: number[]): number[]
 
 // Translate point array from the coordinate system of a client
 // to the canvas coordinate system
-export function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
+export function translateToSVG(svg: SVGSVGElement, points: ArrayLike<number>): number[] {
     const output = [];
     const transformationMatrix = (svg.getScreenCTM() as DOMMatrix).inverse();
     let pt = svg.createSVGPoint();
@@ -154,7 +154,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
     return shapeSize;
 }
 
-export function rotate2DPoints(cx: number, cy: number, angle: number, points: number[]): number[] {
+export function rotate2DPoints(cx: number, cy: number, angle: number, points: ArrayLike<number>): number[] {
     const rad = (Math.PI / 180) * angle;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
@@ -228,19 +228,17 @@ export function readPointsFromShape(shape: SVG.Shape): number[] {
     return pointsToNumberArray(points);
 }
 
-export function stringifyPoints(points: number[]): string;
+export function stringifyPoints(points: ArrayLike<number>): string;
 export function stringifyPoints(points: Point[]): string;
-export function stringifyPoints(points: (Point | number)[]): string {
+export function stringifyPoints(points: Point[] | ArrayLike<number>): string {
     if (typeof points[0] === 'number') {
-        return points.reduce((acc: string, val: number, idx: number): string => {
-            if (idx % 2) {
-                return `${acc},${val}`;
-            }
-
-            return `${acc} ${val}`.trim();
-        }, '');
+        const tmp = [];
+        for (let i = 0; i < points.length; i += 2) {
+            tmp.push(`${points[i]},${points[i + 1]}`);
+        }
+        return tmp.join(' ');
     }
-    return points.map((point: Point): string => `${point.x},${point.y}`).join(' ');
+    return (points as Point[]).map((point: Point): string => `${point.x},${point.y}`).join(' ');
 }
 
 export function clamp(x: number, min: number, max: number): number {
@@ -273,7 +271,7 @@ export function translateFromCanvas(offset: number, points: ArrayLike<number>): 
     return result;
 }
 
-export function computeWrappingBox(points: number[], margin = 0): Box & BBox {
+export function computeWrappingBox(points: ArrayLike<number>, margin = 0): Box & BBox {
     let xtl = Number.MAX_SAFE_INTEGER;
     let ytl = Number.MAX_SAFE_INTEGER;
     let xbr = Number.MIN_SAFE_INTEGER;
@@ -390,7 +388,7 @@ export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
 }
 
 export function imageDataToDataURL(
-    imageBitmap: Uint8ClampedArray,
+    imageBitmap: Uint8ClampedArray<ArrayBuffer>,
     width: number,
     height: number,
     handleResult: (dataURL: string) => void,
@@ -405,7 +403,7 @@ export function imageDataToDataURL(
     });
 }
 
-export function zipChannels(imageData: Uint8ClampedArray): number[] {
+export function imageDataToRLE(imageData: Uint8ClampedArray): number[] {
     const rle = [];
 
     let prev = 0;
@@ -425,8 +423,13 @@ export function zipChannels(imageData: Uint8ClampedArray): number[] {
     return rle;
 }
 
-export function expandChannels(r: number, g: number, b: number, encoded: ArrayLike<number>): Uint8ClampedArray {
-    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray {
+export function RLEToImageData(
+    r: number,
+    g: number,
+    b: number,
+    encoded: ArrayLike<number>,
+): Uint8ClampedArray<ArrayBuffer> {
+    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray<ArrayBuffer> {
         const decoded = new Uint8ClampedArray(width * height * 4).fill(0);
         const { length } = rle;
         let decodedIdx = 0;
@@ -435,6 +438,7 @@ export function expandChannels(r: number, g: number, b: number, encoded: ArrayLi
 
         while (i < length - 4) {
             let count = rle[i];
+
             while (count > 0) {
                 decoded[decodedIdx + 0] = r;
                 decoded[decodedIdx + 1] = g;

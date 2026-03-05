@@ -31,7 +31,7 @@ import {
     pointsToNumberArray, parsePoints, displayShapeSize, scalarProduct,
     vectorLength, ShapeSizeElement, DrawnState, rotate2DPoints,
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
-    imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
+    imageDataToDataURL, RLEToImageData, stringifyPoints, imageDataToRLE,
     composeShapeDimensions, getRoundedRotation,
     clamp,
 } from './shared';
@@ -300,6 +300,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         shapes: InteractionResult[] | null,
         finished = false,
     ): void => {
+        // whenever prompts are updated, interactor sends corresponding event with prompts
+        // when finished, it also sends finish flag equals to "true"
+        // when cancelled or closed, shapes equals to "null"
         if (Array.isArray(shapes) || finished) {
             const event: CustomEvent = new CustomEvent('canvas.interacted', {
                 bubbles: false,
@@ -518,7 +521,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 Promise.all(objects.map((state) => {
                     const [curLeft, , curRight] = state.points.slice(-4, -1);
-                    const image = new ImageData(expandChannels(255, 255, 255, state.points), curRight - curLeft + 1);
+                    const image = new ImageData(RLEToImageData(255, 255, 255, state.points), curRight - curLeft + 1);
                     return createImageBitmap(image);
                 })).then((results) => {
                     const canvas = new OffscreenCanvas(right - left + 1, bottom - top + 1);
@@ -530,7 +533,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                     const imageData = canvas.getContext('2d')
                         .getImageData(0, 0, right - left + 1, bottom - top + 1);
-                    const rle = zipChannels(imageData.data);
+                    const rle = imageDataToRLE(imageData.data);
                     rle.push(left, top, right, bottom);
                     this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
                         bubbles: false,
@@ -2312,7 +2315,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'mask') {
                     const { points } = state;
                     const [left, top, right, bottom] = points.slice(-4);
-                    const imageBitmap = expandChannels(255, 255, 255, points);
+                    const imageBitmap = RLEToImageData(255, 255, 255, points);
                     imageDataToDataURL(
                         imageBitmap,
                         right - left + 1,
@@ -2674,10 +2677,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             number,
         ] => [state, +state.getAttribute('data-z-order')]);
 
-        const crosshair = Array.from(this.content.getElementsByClassName('cvat_canvas_crosshair'));
-        crosshair.forEach((line: SVGLineElement): void => this.content.append(line));
-        const interaction = Array.from(this.content.getElementsByClassName('cvat_interaction_point'));
-        interaction.forEach((circle: SVGCircleElement): void => this.content.append(circle));
+        Array.from(this.content.getElementsByClassName('cvat_canvas_crosshair'))
+            .forEach((line: SVGLineElement): void => this.content.append(line));
+        Array.from(this.content.getElementsByClassName('cvat_interaction_point')).concat(
+            Array.from(this.content.getElementsByClassName('cvat_interaction_rectangle')),
+        ).forEach((interactionShape: SVGCircleElement): void => this.content.append(interactionShape));
 
         const needSort = states.some((pair): boolean => pair[1] !== states[0][1]);
         if (!states.length || !needSort) {
@@ -3356,7 +3360,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const colorization = this.getShapeColorization(state);
         const color = fabric.Color.fromHex(colorization.fill).getSource();
         const [left, top, right, bottom] = points.slice(-4);
-        const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+        const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
 
         const image = this.adoptedContent.image().attr({
             clientID: state.clientID,
@@ -3374,8 +3378,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             imageBitmap,
             right - left + 1,
             bottom - top + 1,
-            (dataURL: string) => {
-                const destroy = () => URL.revokeObjectURL(dataURL);
+            (dataURL: string): void => {
+                const destroy = (): void => URL.revokeObjectURL(dataURL);
                 image.loaded(destroy);
                 image.error(destroy);
                 image.load(dataURL);

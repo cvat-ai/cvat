@@ -1313,7 +1313,7 @@ export class DrawHandlerImpl implements DrawHandler {
         point.fill({ opacity: this.isHidden ? 0 : 1 });
     }
 
-    private updateHidden(value: boolean) {
+    private updateHidden(value: boolean): void {
         this.isHidden = value;
 
         if (value) {
