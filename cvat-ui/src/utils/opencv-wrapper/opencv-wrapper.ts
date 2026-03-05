@@ -219,10 +219,10 @@ export class OpenCVWrapper {
                         let prevX = contour.data32S[0] - 1;
                         let prevY = contour.data32S[1] - 1;
                         let contourLength = 0;
-                        for (let i = 0; i < contour.data32S.length; i += 2) {
+                        for (let j = 0; j < contour.data32S.length; j += 2) {
                             // subtract offset we created when copied source image
-                            const x = contour.data32S[i] - 1;
-                            const y = contour.data32S[i + 1] - 1;
+                            const x = contour.data32S[j] - 1;
+                            const y = contour.data32S[j + 1] - 1;
                             converted.push([x, y]);
                             contourLength += Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
                             prevX = x;
@@ -291,9 +291,9 @@ export class OpenCVWrapper {
             try {
                 const contours = this.contours.findContours(src);
                 if (contours.length) {
-                    return contours.map((contour) => contour.map((val) => {
-                        return [val[0] + left, val[1] + top];
-                    }));
+                    return contours.map((contour) => contour.map((val) => (
+                        [val[0] + left, val[1] + top]
+                    )));
                 }
                 throw new Error('Empty contour received from state');
             } finally {
@@ -316,7 +316,7 @@ export class OpenCVWrapper {
         }
 
         return this.getContoursFromStateSync(state);
-    }
+    };
 
     public getContourFromState = async (state: ObjectState): Promise<[number, number][]> => {
         const contours = await this.getContoursFromState({

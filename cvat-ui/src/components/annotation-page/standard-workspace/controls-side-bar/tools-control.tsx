@@ -30,7 +30,7 @@ import {
     getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
     MinimalShape, InteractorResults, TrackerResults,
 } from 'cvat-core-wrapper';
-import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
+import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
     CombinedState, ActiveControl, ToolsBlockerState, PluginComponent,
 } from 'reducers';
@@ -49,7 +49,7 @@ import CVATMarkdown from 'components/common/cvat-markdown';
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
-import InteractorThreshold from 'components/annotation-page/standard-workspace/controls-side-bar/interaction-threshold';
+import ConfidenceThreshold from 'components/annotation-page/standard-workspace/controls-side-bar/confidence-threshold';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
@@ -299,7 +299,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const {
             isActivated, defaultApproxPolyAccuracy, states, toolsBlockerState,
         } = this.props;
-        const { approxPolyAccuracy, mode, activeTracker } = this.state;
+        const {
+            approxPolyAccuracy, mode, activeTracker, thresholdValue,
+        } = this.state;
 
         if (prevProps.states !== states || prevState.activeTracker !== activeTracker) {
             this.setState({
@@ -345,7 +347,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.onInteraction(this.interaction.latestPostponedEvent);
         }
 
-        if (prevState.thresholdValue !== this.state.thresholdValue) {
+        if (prevState.thresholdValue !== thresholdValue) {
             if (isActivated && mode === 'interaction') {
                 this.drawIntermediateShapesOnCanvas();
             }
@@ -353,7 +355,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
             if (isActivated && mode === 'interaction') {
-                this.interaction.latestResponse.map(({ points }, idx) => {
+                this.interaction.latestResponse.forEach(({ points }, idx) => {
                     const approximated = this.approximateResponsePoints(points);
                     this.interaction.latestResponse[idx].approximatedPoints = approximated;
                 });
@@ -395,38 +397,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction.isAborted = true;
         }
     };
-
-    private drawIntermediateShapesOnCanvas(): void {
-        const { canvasInstance } = this.props;
-        const { convertMasksToPolygons, thresholdValue } = this.state;
-        const shapesToBeDrawn = this.interaction.latestResponse
-            .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
-            .filter(({ approximatedPoints }) => !convertMasksToPolygons || approximatedPoints.length >= 3)
-            .map(({ rle, approximatedPoints }) => ({
-                shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
-                points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
-            }));
-
-        canvasInstance.interact({
-            enabled: true,
-            command: 'put_shapes',
-            payload: {
-                shapes: shapesToBeDrawn,
-            },
-        });
-
-        if (!shapesToBeDrawn.length) {
-            if (!this.interaction.noShapesMessage) {
-                this.interaction.noShapesMessage = message.info({
-                    content: 'No shapes to display',
-                    duration: 0,
-                });
-            }
-        } else if (this.interaction.noShapesMessage) {
-            this.interaction.noShapesMessage();
-            this.interaction.noShapesMessage = null;
-        }
-    }
 
     private runInteractionRequest = async (interactionId: string): Promise<void> => {
         const { jobInstance } = this.props;
@@ -684,6 +654,38 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeTracker: trackers.filter((tracker: MLModel) => tracker.id === value)[0],
         });
     };
+
+    private drawIntermediateShapesOnCanvas(): void {
+        const { canvasInstance } = this.props;
+        const { convertMasksToPolygons, thresholdValue } = this.state;
+        const shapesToBeDrawn = this.interaction.latestResponse
+            .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
+            .filter(({ approximatedPoints }) => !convertMasksToPolygons || approximatedPoints.length >= 3)
+            .map(({ rle, approximatedPoints }) => ({
+                shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
+                points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
+            }));
+
+        canvasInstance.interact({
+            enabled: true,
+            command: 'put_shapes',
+            payload: {
+                shapes: shapesToBeDrawn,
+            },
+        });
+
+        if (!shapesToBeDrawn.length) {
+            if (!this.interaction.noShapesMessage) {
+                this.interaction.noShapesMessage = message.info({
+                    content: 'No shapes to display',
+                    duration: 0,
+                });
+            }
+        } else if (this.interaction.noShapesMessage) {
+            this.interaction.noShapesMessage();
+            this.interaction.noShapesMessage = null;
+        }
+    }
 
     private collectTrackerPortals(): React.ReactPortal[] {
         const { states, fetchAnnotations } = this.props;
@@ -980,22 +982,22 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         if (convertMasksToPolygons) {
             objects = objectsToConstruct
                 .filter(({ approximatedPoints }) => approximatedPoints.length >= 3)
-                .map(({ approximatedPoints }) => {
-                    return new core.classes.ObjectState({
+                .map(({ approximatedPoints }) => (
+                    new core.classes.ObjectState({
                         shapeType: ShapeType.POLYGON,
                         points: approximatedPoints.flat(),
                         ...common,
-                    });
-                });
+                    })
+                ));
         } else {
             objects = objectsToConstruct
-                .map(({ rle }) => {
-                    return new core.classes.ObjectState({
+                .map(({ rle }) => (
+                    new core.classes.ObjectState({
                         shapeType: ShapeType.MASK,
                         points: Array.from(rle),
                         ...common,
-                    });
-                });
+                    })
+                ));
         }
         createAnnotations(objects);
     }
@@ -1259,7 +1261,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             removalStrategy: 'any' as const,
                                             points_type: 'any' as const,
                                             crosshair: startWithBox,
-                                        }
+                                        },
                                     };
                                     canvasInstance.interact({ enabled: true, ...parameters });
                                     onInteractionStart(activeInteractor, activeLabelID, parameters);
@@ -1423,7 +1425,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             canvasInstance, labels, frameIsDeleted,
         } = this.props;
         const {
-            fetching, approxPolyAccuracy, interactorResponseReceived,
+            fetching, approxPolyAccuracy, interactorResponseReceived, thresholdValue,
             showConfidenceControl, mode, portals, convertMasksToPolygons,
         } = this.state;
 
@@ -1463,8 +1465,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     />
                 )}
                 { showConfidenceControl && (
-                    <InteractorThreshold
-                        thresholdValue={this.state.thresholdValue}
+                    <ConfidenceThreshold
+                        thresholdValue={thresholdValue}
                         onChange={(value: number) => {
                             this.setState({ thresholdValue: value });
                         }}

@@ -3,11 +3,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { ModelKind, RQStatus, ShapeType, Source } from './enums';
+import {
+    ModelKind, RQStatus, ShapeType, Source,
+} from './enums';
 import { SerializedCollection, SerializedShape } from './server-response-types';
 import { mask2Rle } from './rle-utils';
 
@@ -15,7 +16,7 @@ export type InteractorResultsPrev = {
     mask: number[][];
     points?: [number, number][];
     bounds?: [number, number, number, number];
-}
+};
 
 type InteractorShape = Pick<SerializedShape, 'group' | 'source' | 'attributes' | 'occluded' | 'rotation' | 'type'> & {
     points: Int32Array;
@@ -108,7 +109,7 @@ class LambdaManager {
                 const maskWidth = result.mask[0].length;
                 const rle = mask2Rle(result.mask.flat());
                 if (!rle.length) {
-                    rle.push(0, 0, 0, 0)
+                    rle.push(0, 0, 0, 0);
                 } else {
                     rle.push(0, 0, maskWidth - 1, maskHeight - 1);
                 }
@@ -121,9 +122,11 @@ class LambdaManager {
                         occluded: false,
                         rotation: 0,
                         type: ShapeType.MASK,
-                    }]
+                    }],
                 };
-            } else if (Array.isArray(result.shapes)) {
+            }
+
+            if (Array.isArray(result.shapes)) {
                 // perhaps already returned object according to the new interface
                 // in this case we just skip shapes which are not supported on client
                 return {
@@ -143,7 +146,7 @@ class LambdaManager {
                         rotation: typeof item.rotation === 'number' ? item.rotation : 0,
                         type: item.type ?? ShapeType.MASK,
                     })).filter((item) => item.type === ShapeType.MASK),
-                }
+                };
             }
         }
 

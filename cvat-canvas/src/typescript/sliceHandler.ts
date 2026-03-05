@@ -530,14 +530,13 @@ export class SliceHandlerImpl implements SliceHandler {
                 }], 'force');
 
                 sliceData.getContour(state).then((contour) => {
-                    const { shapeType } = state;
                     if (this.startTimestamp === startTimestamp && this.enabled) {
                         // checking if a user does not left mode / reinit it
                         this.initialize({
                             enabled: true,
                             contour: contour.flat(),
                             state,
-                            shapeType,
+                            shapeType: state.shapeType,
                         });
                     }
                 }).catch((error: unknown) => {

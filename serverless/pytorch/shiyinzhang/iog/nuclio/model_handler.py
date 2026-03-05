@@ -10,6 +10,7 @@ import torch
 from networks.mainnetwork import Network
 from dataloaders import helpers
 
+
 def mask_to_rle(mask):
     [height, width] = mask.shape
     pixels = (np.asarray(mask).reshape(-1) != 0).astype(np.uint8)
@@ -23,6 +24,7 @@ def mask_to_rle(mask):
 
     rle.extend([0, 0, width - 1, height - 1])
     return rle
+
 
 class ModelHandler:
     def __init__(self):

@@ -17,7 +17,7 @@ interface Props {
 export const MIN_THRESHOLD = 0.2;
 export const MAX_THRESHOLD = 0.9;
 
-function InteractorThreshold(props: Props): React.ReactPortal | null {
+function ConfidenceThreshold(props: Props): React.ReactPortal | null {
     const { thresholdValue, onChange } = props;
     const target = window.document.getElementsByClassName('cvat-canvas-container')[0];
 
@@ -43,4 +43,4 @@ function InteractorThreshold(props: Props): React.ReactPortal | null {
         null;
 }
 
-export default React.memo(InteractorThreshold);
+export default React.memo(ConfidenceThreshold);

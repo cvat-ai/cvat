@@ -16,7 +16,7 @@ import {
 export function convertShapesForInteractor(
     shapes: InteractionResult[],
     shapeType: 'points' | 'rectangle',
-    type: 'positive' | 'negative'
+    type: 'positive' | 'negative',
 ): number[][] {
     const reducer = (acc: number[][], _: number, index: number, array: number[]): number[][] => {
         if (!(index % 2)) {

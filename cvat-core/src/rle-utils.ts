@@ -7,7 +7,7 @@ export function mask2Rle(mask: ArrayLike<number>): number[] {
     const n = mask.length;
     if (n === 0) {
         return acc;
-    };
+    }
 
     // idx = 0
     const first = mask[0];

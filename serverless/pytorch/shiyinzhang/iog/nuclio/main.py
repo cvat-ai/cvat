@@ -36,17 +36,23 @@ def handler(context, event):
         neg_points = []
 
     return context.Response(
-        body=json.dumps({
-            "shapes": [{
-                "points": context.user_data.model.handle(image, obj_bbox, pos_points, neg_points, threshold),
-                "group": 0,
-                "source": "semi-auto",
-                "attributes": [],
-                "occluded": False,
-                "rotation": 0,
-                "type": "mask",
-            }]
-        }),
+        body=json.dumps(
+            {
+                "shapes": [
+                    {
+                        "points": context.user_data.model.handle(
+                            image, obj_bbox, pos_points, neg_points, threshold
+                        ),
+                        "group": 0,
+                        "source": "semi-auto",
+                        "attributes": [],
+                        "occluded": False,
+                        "rotation": 0,
+                        "type": "mask",
+                    }
+                ]
+            }
+        ),
         headers={},
         content_type="application/json",
         status_code=200,
