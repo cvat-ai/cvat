@@ -2260,8 +2260,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const ctx = this.bitmap.getContext('2d');
         ctx.imageSmoothingEnabled = false;
         if (ctx) {
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, width, height);
+            ctx.clearRect(0, 0, width, height);
             for (const state of states) {
                 if (state.hidden || state.outside) continue;
                 ctx.fillStyle = 'white';
@@ -2326,8 +2325,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 img.addEventListener('load', () => {
                                     ctx.drawImage(img, left, top);
                                     URL.revokeObjectURL(dataURL);
-                                });
+                                }, { once: true });
+                                img.addEventListener('error', () => {
+                                    URL.revokeObjectURL(dataURL);
+                                }, { once: true });
                                 img.src = dataURL;
+                            } else {
+                                URL.revokeObjectURL(dataURL);
                             }
                         },
                     );
@@ -2603,10 +2607,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (state.clientID in this.svgShapes) {
-                this.svgShapes[state.clientID].fire('remove');
-                this.svgShapes[state.clientID].off('click');
-                this.svgShapes[state.clientID].off('remove');
-                this.svgShapes[state.clientID].remove();
+                const shape = this.svgShapes[state.clientID];
+                const { node } = shape;
+                shape.fire('remove');
+                shape.off('click');
+                shape.off('remove');
+                if (node instanceof SVGImageElement) {
+                    URL.revokeObjectURL(node.href.baseVal);
+                }
+                shape.remove();
                 delete this.svgShapes[state.clientID];
             }
 
@@ -3380,9 +3389,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             bottom - top + 1,
             (dataURL: string): void => {
                 const destroy = (): void => URL.revokeObjectURL(dataURL);
-                image.loaded(destroy);
-                image.error(destroy);
-                image.load(dataURL);
+                if (image.parent() !== null) {
+                    image.loaded(destroy);
+                    image.error(destroy);
+                    image.load(dataURL);
+                } else {
+                    destroy();
+                }
             },
         );
 
