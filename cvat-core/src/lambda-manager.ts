@@ -12,12 +12,6 @@ import {
 import { SerializedCollection, SerializedShape } from './server-response-types';
 import { mask2Rle } from './rle-utils';
 
-export type InteractorResultsPrev = {
-    mask: number[][];
-    points?: [number, number][];
-    bounds?: [number, number, number, number];
-};
-
 type InteractorShape = Pick<SerializedShape, 'group' | 'source' | 'attributes' | 'occluded' | 'rotation' | 'type'> & {
     points: Int32Array;
 };
