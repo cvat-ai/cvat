@@ -257,12 +257,20 @@ export function vectorLength(vector: Vector2D): number {
     return Math.sqrt(sqrI + sqrJ);
 }
 
-export function translateToCanvas(offset: number, points: number[]): number[] {
-    return points.map((coord: number): number => coord + offset);
+export function translateToCanvas(offset: number, points: ArrayLike<number>): number[] {
+    const result: number[] = [];
+    for (let i = 0; i < points.length; i++) {
+        result.push(points[i] + offset);
+    }
+    return result;
 }
 
-export function translateFromCanvas(offset: number, points: number[]): number[] {
-    return points.map((coord: number): number => coord - offset);
+export function translateFromCanvas(offset: number, points: ArrayLike<number>): number[] {
+    const result: number[] = [];
+    for (let i = 0; i < points.length; i++) {
+        result.push(points[i] - offset);
+    }
+    return result;
 }
 
 export function computeWrappingBox(points: number[], margin = 0): Box & BBox {
@@ -417,8 +425,8 @@ export function zipChannels(imageData: Uint8ClampedArray): number[] {
     return rle;
 }
 
-export function expandChannels(r: number, g: number, b: number, encoded: number[]): Uint8ClampedArray {
-    function rle2Mask(rle: number[], width: number, height: number): Uint8ClampedArray {
+export function expandChannels(r: number, g: number, b: number, encoded: ArrayLike<number>): Uint8ClampedArray {
+    function rle2Mask(rle: ArrayLike<number>, width: number, height: number): Uint8ClampedArray {
         const decoded = new Uint8ClampedArray(width * height * 4).fill(0);
         const { length } = rle;
         let decodedIdx = 0;
@@ -442,7 +450,10 @@ export function expandChannels(r: number, g: number, b: number, encoded: number[
         return decoded;
     }
 
-    const [left, top, right, bottom] = encoded.slice(-4);
+    const left = encoded[encoded.length - 4];
+    const top = encoded[encoded.length - 3];
+    const right = encoded[encoded.length - 2];
+    const bottom = encoded[encoded.length - 1];
     return rle2Mask(encoded, right - left + 1, bottom - top + 1);
 }
 

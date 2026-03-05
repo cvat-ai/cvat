@@ -53,7 +53,6 @@ import InteractorThreshold from 'components/annotation-page/standard-workspace/c
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
-import { any } from 'prop-types';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -232,7 +231,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         isAborted: boolean;
         latestPostponedEvent: Event | null;
         latestResponse: {
-            rle: number[];
+            rle: Int32Array;
             points: [number, number][];
             approximatedPoints: [number, number][];
             confidence: number;
@@ -410,6 +409,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 shapes: shapesToBeDrawn,
             },
         });
+
         if (!shapesToBeDrawn.length && !this.noDataShownMessageDisplayed) {
             this.noDataShownMessageDisplayed = true;
             message.info({
@@ -461,34 +461,29 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 }
 
                 const latestResponse: ToolsControlComponent['interaction']['latestResponse'] = [];
-                for (const item of response) {
-                    let { points, bounds, confidence } = item;
-                    const width = bounds[2] - bounds[0] + 1;
-                    const height = bounds[3] - bounds[1] + 1;
-                    points = points ?? this.receivePointsFromMask(item.mask, bounds[0], bounds[1], width, height);
-
-                    if (points.length < 3) {
-                        Object.assign(item, { mask: null }); // free memory
+                let showConfidenceControl = false;
+                for (const item of response.shapes) {
+                    const polygonPoints = this.receivePointsFromMask(item.points);
+                    if (polygonPoints.length < 3) {
                         continue;
                     }
 
-                    const approximated = this.approximateResponsePoints(points!);
-                    const rle = core.utils.mask2Rle(item.mask);
-                    rle.push(...bounds);
-
-                    Object.assign(item, { mask: null }); // free memory
+                    const approximated = this.approximateResponsePoints(polygonPoints!);
+                    const confidenceAttr = item.attributes.find((attr) => attr.spec_id === 0);
+                    const confidence = confidenceAttr ? +confidenceAttr.value : 1;
+                    showConfidenceControl = showConfidenceControl || !!confidenceAttr;
                     latestResponse.push({
-                        rle,
-                        points,
+                        rle: item.points,
+                        points: polygonPoints,
                         approximatedPoints: approximated,
-                        confidence: confidence ?? 1,
+                        confidence,
                     });
                 }
 
                 this.interaction.latestResponse = latestResponse;
                 this.setState({
-                    interactorResponseReceived: !!response.length,
-                    showConfidenceControl: response.some(({ confidence }) => typeof confidence === 'number'),
+                    interactorResponseReceived: !!latestResponse.length,
+                    showConfidenceControl,
                 });
             } finally {
                 if (this.interaction.id === interactionId && this.interaction.hideMessage) {
@@ -991,7 +986,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 .map(({ rle }) => {
                     return new core.classes.ObjectState({
                         shapeType: ShapeType.MASK,
-                        points: rle,
+                        points: Array.from(rle),
                         ...common,
                     });
                 });
@@ -1016,27 +1011,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
-    private receivePointsFromMask(
-        mask: Uint8ClampedArray,
-        left: number,
-        top: number,
-        width: number,
-        height: number,
-    ): [number, number][] {
+    private receivePointsFromMask(mask: Int32Array): [number, number][] {
         if (!openCVWrapper.isInitialized) {
             throw new Error('OpenCV was not initialized');
         }
 
-        const src = openCVWrapper.mat.fromData(width, height, MatType.CV_8UC1, mask);
-        try {
-            const polygons = openCVWrapper.contours.findContours(src);
-            if (polygons.length) {
-                return polygons[0].map<[number, number]>((val) => [val[0] + left, val[1] + top]);
-            }
-            return [];
-        } finally {
-            src.delete();
+        const polygons = openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });
+        if (polygons.length) {
+            return polygons[0].map<[number, number]>((val) => [val[0], val[1]]);
         }
+
+        return [];
     }
 
     private approximateResponsePoints(points: [number, number][]): [number, number][] {

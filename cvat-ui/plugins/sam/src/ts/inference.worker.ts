@@ -26,11 +26,6 @@ export interface DecodeBody {
     height: number;
 }
 
-export interface WorkerOutput {
-    action: WorkerAction;
-    error?: string;
-}
-
 export interface WorkerInput {
     action: WorkerAction;
     payload: InitBody | DecodeBody;

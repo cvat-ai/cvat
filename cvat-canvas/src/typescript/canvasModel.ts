@@ -131,7 +131,7 @@ export interface InteractionData {
         shapes: {
             id: unknown;
             shapeType: string;
-            points: number[];
+            points: ArrayLike<number>;
         }[];
     };
     settings?: {

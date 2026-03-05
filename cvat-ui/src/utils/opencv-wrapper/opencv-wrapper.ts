@@ -273,22 +273,19 @@ export class OpenCVWrapper {
         };
     }
 
-    public getContoursFromState = async (state: ObjectState): Promise<[number, number][][]> => {
-        const points = state.points as number[];
+    public getContoursFromStateSync = (
+        state: { points: Int32Array; shapeType: ShapeType },
+    ): [number, number][][] => {
         if (state.shapeType === ShapeType.MASK) {
-            if (!this.isInitialized) {
-                try {
-                    await this.initialize(() => {});
-                } catch (error: any) {
-                    throw new Error('Could not initialize OpenCV');
-                }
-            }
-
-            const [left, top, right, bottom] = points.slice(-4);
+            const { length } = state.points;
+            const left = state.points[length - 4];
+            const top = state.points[length - 3];
+            const right = state.points[length - 2];
+            const bottom = state.points[length - 1];
             const width = right - left + 1;
             const height = bottom - top + 1;
 
-            const mask = core.utils.rle2Mask(points.slice(0, -4), width, height);
+            const mask = core.utils.rle2Mask(state.points.subarray(0, -4), width, height);
             const src = this.mat.fromData(width, height, MatType.CV_8UC1, mask);
 
             try {
@@ -307,8 +304,25 @@ export class OpenCVWrapper {
         throw new Error(`Not implemented getContour for ${state.shapeType}`);
     };
 
+    public getContoursFromState = async (
+        state: { points: Int32Array; shapeType: ShapeType },
+    ): Promise<[number, number][][]> => {
+        if (!this.isInitialized) {
+            try {
+                await this.initialize(() => {});
+            } catch (error: any) {
+                throw new Error('Could not initialize OpenCV');
+            }
+        }
+
+        return this.getContoursFromStateSync(state);
+    }
+
     public getContourFromState = async (state: ObjectState): Promise<[number, number][]> => {
-        const contours = await this.getContoursFromState(state);
+        const contours = await this.getContoursFromState({
+            points: Int32Array.from(state.points!),
+            shapeType: state.shapeType,
+        });
         return contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
     };
 

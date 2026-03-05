@@ -13,7 +13,6 @@ import Select from 'antd/lib/select';
 
 import {
     MAX_ACCURACY,
-    marks,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { clamp } from 'utils/math';
 
@@ -320,7 +319,6 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         value={defaultApproxPolyAccuracy}
                         dots
                         onChange={onChangeDefaultApproxPolyAccuracy}
-                        marks={marks}
                     />
                 </Col>
                 <Col>

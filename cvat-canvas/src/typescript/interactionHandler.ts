@@ -269,7 +269,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 this.container.node.prepend(shape.node);
                 this.intermediateShapes.push(shape);
             } else if (shapeType === 'mask') {
-                const [left, top, right, bottom] = points.slice(-4);
+                const left = points[points.length - 4];
+                const top = points[points.length - 3];
+                const right = points[points.length - 2];
+                const bottom = points[points.length - 1];
                 const imageBitmap = expandChannels(255, 255, 255, points);
                 const image = this.container.image().attr({
                     'color-rendering': 'optimizeQuality',

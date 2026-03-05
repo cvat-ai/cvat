@@ -36,7 +36,7 @@ function InteractorThreshold(props: Props): React.ReactPortal | null {
                         onChange={onChange}
                     />
                 </Col>
-                <Text type='secondary'>confidence</Text>
+                <Text type='secondary'>minimum confidence filter</Text>
             </Row>,
             target,
         ) :
