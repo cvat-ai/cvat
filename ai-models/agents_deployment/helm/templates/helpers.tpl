@@ -54,18 +54,6 @@ Common environment variables
       key: {{ .secretKey }}
 {{- end }}
 {{- end }}
-{{- if .Values.agent.model_id }}
-- name: MODEL_ID
-  value: {{ .Values.agent.model_id | quote }}
-{{- end }}
-{{- if .Values.agent.model }}
-- name: MODEL
-  value: {{ .Values.agent.model | quote }}
-{{- end }}
-{{- if .Values.agent.keypoints_file_path }}
-- name: KEYPOINTS_FILE_PATH
-  value: {{ .Values.agent.keypoints_file_path | quote }}
-{{- end }}
 - name: NAMESPACE
   value: {{ .Release.Namespace }}
 - name: CONFIGMAP_NAME
@@ -88,3 +76,21 @@ runAsNonRoot: true
 runAsUser: 1000
 runAsGroup: 1000
 {{- end }}
+
+
+{{/*
+Configure command arguments for cvat-cli
+*/}}
+{{/*I have to use extra var here $val because i need to trim leading space that is generated in range loop and i cannot just pass range output into trim */}}
+{{- define "agent.modelParams" -}}
+{{- $preset := index .Values.agent.modelPresets .Values.agent.preset | default dict -}}
+{{- $merged := merge .Values.agent.modelParams $preset -}}
+{{- $val := "" -}}
+{{- range $key, $v := $merged -}}
+{{- if $v.value -}}
+{{- $val = printf "%s -p %s=%s:%s" $val $key $v.type $v.value -}}
+{{- end -}}
+{{- end -}}
+- name: MODEL_CONFIG_PARAMS
+  value: {{ $val | trim | quote }}
+{{- end -}}

@@ -7,6 +7,13 @@ image:
   pullPolicy: IfNotPresent
 
 agent:
+  ### Common configuration
+  # Please specify the number of agent replicas you want to deploy.
+  replicaCount: 1
+  # Please specify the organization slug in CVAT if you want to deploy agent under organization. Else leave empty.
+  org_slug: ""
+  # Please specify if you want to use GPU for your agent. Ensure that you are using a compatible image and your K8s cluster has GPU resources available.
+  use_cuda: false
   # Please replace with your actual CVAT instance URL.
   cvat_base_url: "https://app.cvat.ai"
   # You can provide the CVAT access token directly here, but it's recommended to use Kubernetes Secrets for better security.
@@ -14,22 +21,34 @@ agent:
   # Token takes precedence over the secret, so if both are provided, the value here will be used.
   cvat_access_token: ""
 
-  ### SAM2 configuration
-  # Please specify the model ID for SAM you want to use. You can find available models on Hugging Face, ex: https://huggingface.co/models?search=facebook%2Fsam2.
-  #  model_id: "facebook/sam2-hiera-tiny"
+  ### Model configuration
 
-  ###YOLO configuration
-  # Please specify the model to use for YOLO agent https://docs.ultralytics.com/models/yolo26/#supported-tasks-and-modes
-  model: "yolo26s.pt"
-  # Please specify the path to the keypoints file if you are using a YOLO model that requires it, such as a pose estimation model.
-  # By default, the 17 keypoint names from the COCO dataset (`nose`, `left_eye`, `right_eye`, etc.) will be used
-  keypoints_file_path: ""
+  modelPresets:
+    yolo:
+      model:
+        type: str
+        value: "yolo26s.pt"
+      keypoint_names_path:
+        type: str
+        value: ""
+    sam2:
+      model_id:
+        type: str
+        value: "facebook/sam2.1-hiera-tiny"
 
-  ### Common configuration
-  # Please specify the number of agent replicas you want to deploy.
-  replicaCount: 1
-  org_slug: ""
-  use_cuda: false
+  # Please pick a preset for your agent's model configuration. The preset will automatically fill in the necessary parameters for the chosen model type. If you choose a preset, you can still override specific parameters in the `modelParams` section below.
+  # Keys with empty 'value' will be ignored.
+  preset: sam2
+  modelParams: { }
+#  modelParams:
+#      model:
+#        type: str
+#        value: "yolo26l.pt"
+#      test_value:
+#        type: str
+#        value: "exampleValue"
+
+  ### Resources and env
   resources:
     limits:
       cpu: 1
