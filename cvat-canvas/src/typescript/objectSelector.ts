@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
-import { expandChannels, imageDataToDataURL, translateToSVG } from './shared';
+import { RLEToImageData, imageDataToDataURL, translateToSVG } from './shared';
 import { Geometry } from './canvasModel';
 import consts from './consts';
 
@@ -150,6 +150,13 @@ export class ObjectSelectorImpl implements ObjectSelector {
         }
     };
 
+    private resetAllAppearances(): void {
+        for (const clientID of Object.keys(this.resetAppearance)) {
+            this.resetAppearance[clientID]();
+        }
+        this.resetAppearance = {};
+    }
+
     public enable(callback: (selected: ObjectState[]) => void, filter?: SelectionFilter): void {
         if (!this.isEnabled) {
             window.document.addEventListener('mouseup', this.onMouseUp);
@@ -168,7 +175,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
                             const { points } = objectState;
                             const colorRGB = [252, 251, 252];
                             const [left, top, right, bottom] = points.slice(-4);
-                            const imageBitmap = expandChannels(colorRGB[0], colorRGB[1], colorRGB[2], points);
+                            const imageBitmap = RLEToImageData(colorRGB[0], colorRGB[1], colorRGB[2], points);
 
                             const bbox = shape.bbox();
                             const image = this.canvas.image().attr({
@@ -182,20 +189,26 @@ export class ObjectSelectorImpl implements ObjectSelector {
                                 imageBitmap,
                                 right - left + 1,
                                 bottom - top + 1,
-                                (dataURL: string) => new Promise((resolve, reject) => {
-                                    image.loaded(() => {
-                                        resolve();
-                                    });
-                                    image.error(() => {
-                                        reject();
-                                    });
-                                    image.load(dataURL);
-                                }),
+                                (dataURL: string) => {
+                                    const destroy = (): void => URL.revokeObjectURL(dataURL);
+                                    if (image.parent() !== null) {
+                                        // still in DOM
+                                        image.loaded(destroy);
+                                        image.error(destroy);
+                                        image.load(dataURL);
+                                    } else {
+                                        destroy();
+                                    }
+                                },
                             );
 
                             image.style('filter', 'drop-shadow(2px 4px 6px black)'); // for better visibility
                             image.attr('opacity', 0.5);
+
                             return () => {
+                                if (image.node instanceof SVGImageElement) {
+                                    URL.revokeObjectURL(image.node.href.baseVal);
+                                }
                                 image.remove();
                                 shape.removeClass('cvat_canvas_shape_selection');
                             };
@@ -234,17 +247,11 @@ export class ObjectSelectorImpl implements ObjectSelector {
         this.canvas.node.removeEventListener('mousemove', this.onMouseMove);
         this.canvas.node.removeEventListener('click', this.findObjectOnClick);
 
-        if (this.selectionRect) {
-            this.selectionRect.remove();
-            this.selectionRect = null;
-        }
+        this.selectionRect?.remove();
+        this.selectionRect = null;
 
-        for (const clientID of Object.keys(this.resetAppearance)) {
-            this.resetAppearance[clientID]();
-        }
-
+        this.resetAllAppearances();
         this.onSelectCallback = null;
-        this.resetAppearance = {};
         this.isEnabled = false;
     }
 
@@ -274,12 +281,8 @@ export class ObjectSelectorImpl implements ObjectSelector {
 
     public resetSelected(): void {
         if (this.isEnabled) {
-            for (const clientID of Object.keys(this.resetAppearance)) {
-                this.resetAppearance[clientID]();
-            }
             this.selectedObjects = {};
-            this.resetAppearance = {};
-
+            this.resetAllAppearances();
             if (this.onSelectCallback) {
                 this.onSelectCallback([]);
             }
