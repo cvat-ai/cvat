@@ -16,6 +16,81 @@ context('CSV Export from different pages', () => {
     const taskIDs = [];
     const jobIDs = [];
 
+    function verifyDescendingOrder(ids) {
+        for (let i = 0; i < ids.length - 1; i++) {
+            expect(ids[i]).to.be.greaterThan(ids[i + 1]);
+        }
+        expect(ids).to.deep.equal([...ids].sort((a, b) => b - a));
+    }
+
+    const validators = {
+        jobId: (columns) => {
+            const jobId = parseInt(columns[0], 10);
+            expect(jobIDs).to.include(jobId);
+        },
+        taskId: (expectedTaskId = null) => (columns) => {
+            const taskId = parseInt(columns[2], 10);
+            expect(taskIDs).to.include(taskId);
+            if (expectedTaskId !== null) {
+                expect(taskId).to.equal(expectedTaskId);
+            }
+        },
+        taskIdFromColumn: (columnIndex) => (columns) => {
+            const taskId = parseInt(columns[columnIndex], 10);
+            expect(taskIDs).to.include(taskId);
+        },
+        taskName: (columnIndex) => (columns) => {
+            const taskName = columns[columnIndex];
+            expect(taskNames).to.include(taskName);
+        },
+        jobUrls: (columns) => {
+            const jobId = parseInt(columns[0], 10);
+            const taskId = parseInt(columns[2], 10);
+            expect(columns[1]).to.include(`/tasks/${taskId}/jobs/${jobId}`);
+            expect(columns[4]).to.include(`/tasks/${taskId}`);
+            expect(columns[7]).to.include(`/projects/${projectID}`);
+        },
+        taskUrls: (columns) => {
+            const taskId = parseInt(columns[0], 10);
+            expect(columns[2]).to.include(`/tasks/${taskId}`);
+            expect(columns[5]).to.include(`/projects/${projectID}`);
+        },
+        projectData: (idColumn, nameColumn) => (columns) => {
+            expect(columns[idColumn]).to.equal(String(projectID));
+            expect(columns[nameColumn]).to.equal(projectName);
+        },
+        hasTaskName: (columns, row) => {
+            const hasTaskName = taskNames.some((name) => row.includes(name));
+            expect(hasTaskName).to.equal(true);
+        },
+    };
+
+    function createRowValidator(columnValidators) {
+        return (row) => {
+            const columns = row.split(',');
+            columnValidators.forEach((validator) => validator(columns, row));
+        };
+    }
+
+    function createJobRowValidator(expectedTaskId = null) {
+        return createRowValidator([
+            validators.jobId,
+            validators.taskId(expectedTaskId),
+            validators.jobUrls,
+            validators.projectData(5, 6),
+            validators.hasTaskName,
+        ]);
+    }
+
+    function createTaskRowValidator() {
+        return createRowValidator([
+            validators.taskIdFromColumn(0),
+            validators.taskName(1),
+            validators.taskUrls,
+            validators.projectData(3, 4),
+        ]);
+    }
+
     before(() => {
         cy.headlessLogout();
         cy.visit('/auth/login');
@@ -66,15 +141,21 @@ context('CSV Export from different pages', () => {
             const expectedFileName = `cvat-jobs-${timestamp}.csv`;
             cy.verifyDownload(expectedFileName);
 
+            const collectedJobIds = [];
             cy.checkCsvFileContent(
                 expectedFileName,
                 'ID,Job URL,Task ID,Task Name,Task URL,Project ID,Project Name,Project URL',
                 3,
-                (row, index) => {
-                    expect(row).to.include(taskNames[taskNames.length - index - 1]);
-                    expect(row).to.include(projectName);
+                (row) => {
+                    const columns = row.split(',');
+                    const jobId = parseInt(columns[0], 10);
+                    collectedJobIds.push(jobId);
+                    createJobRowValidator()(row);
                 },
             );
+            cy.wrap(null).then(() => {
+                verifyDescendingOrder(collectedJobIds);
+            });
         });
     });
 
@@ -94,14 +175,21 @@ context('CSV Export from different pages', () => {
             const expectedFileName = `cvat-tasks-${timestamp}.csv`;
             cy.verifyDownload(expectedFileName);
 
+            const collectedTaskIds = [];
             cy.checkCsvFileContent(
                 expectedFileName,
                 'ID,Name,Task URL,Project ID,Project Name,Project URL',
                 3,
                 (row) => {
-                    expect(row).to.include(projectName);
+                    const columns = row.split(',');
+                    const taskId = parseInt(columns[0], 10);
+                    collectedTaskIds.push(taskId);
+                    createTaskRowValidator()(row);
                 },
             );
+            cy.wrap(null).then(() => {
+                verifyDescendingOrder(collectedTaskIds);
+            });
         });
     });
 
@@ -120,10 +208,7 @@ context('CSV Export from different pages', () => {
                 expectedFileName,
                 'ID,Job URL,Task ID,Task Name,Task URL,Project ID,Project Name,Project URL',
                 2,
-                (row) => {
-                    expect(row).to.include(taskNames[0]);
-                    expect(row).to.include(projectName);
-                },
+                createJobRowValidator(taskIDs[0]),
             );
         });
     });
@@ -140,12 +225,50 @@ context('CSV Export from different pages', () => {
             const expectedFileName = `cvat-tasks-${timestamp}.csv`;
             cy.verifyDownload(expectedFileName);
 
+            const collectedTaskIds = [];
             cy.checkCsvFileContent(
                 expectedFileName,
                 'ID,Name,Task URL,Project ID,Project Name,Project URL',
                 3,
                 (row) => {
-                    expect(row).to.include(projectName);
+                    const columns = row.split(',');
+                    const taskId = parseInt(columns[0], 10);
+                    collectedTaskIds.push(taskId);
+                    createTaskRowValidator()(row);
+                },
+            );
+            cy.wrap(null).then(() => {
+                verifyDescendingOrder(collectedTaskIds);
+            });
+        });
+    });
+
+    describe('Test CSV export from Projects page', () => {
+        it('Export projects list as CSV from Projects page', () => {
+            cy.visit('/projects');
+            cy.get('.cvat-projects-page').should('exist').and('be.visible');
+            cy.get('.cvat-spinner').should('not.exist');
+
+            cy.get('.cvat-projects-page-search-bar input').type(projectName);
+            cy.get('.cvat-projects-page-search-bar .ant-input-search-button').click();
+            cy.get('.cvat-spinner').should('not.exist');
+
+            cy.get('.cvat-projects-export-csv-button').click();
+
+            const timestamp = new Date().toISOString().split('T')[0];
+            const expectedFileName = `cvat-projects-${timestamp}.csv`;
+            cy.verifyDownload(expectedFileName);
+
+            cy.checkCsvFileContent(
+                expectedFileName,
+                'ID,Name,Project URL',
+                2,
+                (row) => {
+                    const columns = row.split(',');
+                    const projectId = parseInt(columns[0], 10);
+                    expect(projectId).to.equal(projectID);
+                    expect(columns[1]).to.equal(projectName);
+                    expect(columns[2]).to.include(`/projects/${projectID}`);
                 },
             );
         });
