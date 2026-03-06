@@ -50,8 +50,8 @@ If you did, make sure all containers are stopped by `docker compose down`.
   using `docker compose` because it runs nuclio dashboard which manages all serverless functions.
 
   ```bash
-  ./serverless/deploy_cpu.sh serverless/openvino/dextr
-  ./serverless/deploy_cpu.sh serverless/openvino/omz/public/yolo-v3-tf
+  ./serverless/deploy_cpu.sh serverless/pytorch/facebookresearch/sam/nuclio
+  ./serverless/deploy_cpu.sh serverless/onnx/WongKinYiu/yolov7/nuclio
   ```
 
   #### GPU Support

@@ -264,9 +264,9 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             remove_meta_command = f'redis-cli -e HDEL "{corrupted_job_key}" meta'
 
             if request.config.getoption("--platform") == "local":
-                stdout, _ = docker_exec_redis_inmem(["sh", "-c", remove_meta_command])
+                stdout = docker_exec_redis_inmem(["sh", "-c", remove_meta_command])
             else:
-                stdout, _ = kube_exec_redis_inmem(
+                stdout = kube_exec_redis_inmem(
                     [
                         "sh",
                         "-c",

@@ -1,0 +1,18 @@
+=== CVAT SAM2 Agent ===
+
+Agent deployed with {{ .Values.agent.replicaCount }} replica(s).
+CVAT URL: {{ .Values.agent.cvat_base_url }}
+Model:    {{ .Values.agent.model_id }}
+
+The function registration job runs as a pre-install/pre-upgrade hook.
+Check its status:
+  kubectl get jobs -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+View agent logs:
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }},app.kubernetes.io/component!=job -f
+
+{{- if .Values.agent.cvat_access_token }}
+WARNING: You are using a hardcoded CVAT access token in plain text. This token WILL be visible in the Helm release history and in pod definition.
+Consider using .Values.agent.secret_env to store the token in a Kubernetes Secret for better security.
+NB! this token overrides the value from .Values.agent.secret_env if both are set.
+{{- end }}
