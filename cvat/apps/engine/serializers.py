@@ -46,7 +46,7 @@ from cvat.apps.engine.cloud_provider import (
 from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
-from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
@@ -62,6 +62,7 @@ from cvat.apps.engine.utils import (
     reverse,
     take_by,
 )
+from cvat.apps.iam.permissions import get_iam_context
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
 from utils.dataset_manifest import ImageManifestManager
@@ -737,23 +738,65 @@ class JobReadListSerializer(serializers.ListSerializer):
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
             page_task_ids = set(j.get_task_id() for j in page)
-            visible_tasks_perm = TaskPermission.create_scope_list(request)
+
+            # Prefetch related object visibility
+            # This avoids N+1 queries when serializing
+            iam_context = get_iam_context(request, None)
+            visible_tasks_perm = TaskPermission.create_scope_list(request, iam_context)
             visible_tasks_queryset = models.Task.objects.filter(id__in=page_task_ids)
-            visible_tasks = set(
-                visible_tasks_perm.filter(visible_tasks_queryset).values_list("id", flat=True)
+            visible_task_ids = set(
+                visible_tasks_perm
+                .filter(visible_tasks_queryset)
+                .values_list("id", flat=True)
             )
 
-            job_ids = set(j.id for j in page)
+            page_project_ids = set(
+                job.segment.task.project_id
+                for job in page
+                if job.segment.task_id in visible_task_ids
+            )
+            visible_projects_perm = ProjectPermission.create_scope_list(request, iam_context)
+            visible_projects_queryset = models.Project.objects.filter(id__in=page_project_ids)
+            visible_project_ids = set(
+                visible_projects_perm
+                .filter(visible_projects_queryset)
+                .values_list("id", flat=True)
+            )
+
+            page_storage_ids = set(
+                v
+                for job in page
+                if job.segment.task_id in visible_task_ids
+                for v in (job.segment.task.source_storage_id, job.segment.task.target_storage_id)
+            )
+            visible_storages = {
+                s.id: s for s in models.Storage.objects.filter(id__in=page_storage_ids)
+            }
+
+            # Join the prefetched objects
+            for job in page:
+                job.user_can_view_task = job.segment.task_id in visible_task_ids
+
+                if job.segment.task_id in visible_task_ids:
+                    task = job.segment.task
+
+                    if task.source_storage_id in visible_storages:
+                        task.source_storage = visible_storages[task.source_storage_id]
+
+                    if task.target_storage_id in visible_storages:
+                        task.target_storage = visible_storages[task.target_storage_id]
+
+                    if task.project_id:
+                        task.user_can_view_project = task.project_id in visible_project_ids
+
             # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
             # limiting it only for the page
+            job_ids = set(j.id for j in page)
             issue_counts = dict(
                 models.Job.objects.with_issue_counts().filter(
                     id__in=job_ids
                 ).values_list("id", "issue__count")
             )
-
-            # Fetching it here removes 1 extra join for all jobs in the COUNT(*) request,
-            # limiting it only for the page
             children_counts = dict(
                 models.Job.objects.with_child_jobs_counts().filter(
                     id__in=job_ids
@@ -761,7 +804,6 @@ class JobReadListSerializer(serializers.ListSerializer):
             )
 
             for job in page:
-                job.user_can_view_task = job.get_task_id() in visible_tasks
                 job.issue__count = issue_counts.get(job.id, 0)
                 job.child_jobs__count = children_counts.get(job.id, 0)
 
@@ -771,7 +813,9 @@ class JobReadListSerializer(serializers.ListSerializer):
 @extend_schema_serializer(deprecate_fields=["consensus_replicas"])
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="get_task_id")
+    task_name = serializers.SerializerMethodField()
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
+    project_name = serializers.SerializerMethodField()
     guide_id = serializers.ReadOnlyField(source="get_guide_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
@@ -795,7 +839,7 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
+        fields = ('url', 'id', 'task_id', 'task_name', 'project_id', 'project_name', 'assignee', 'guide_id',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
@@ -805,6 +849,41 @@ class JobReadSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
         list_serializer_class = JobReadListSerializer
+
+    def _can_see_task(self, instance: models.Job) -> bool:
+        request = self.context.get('request')
+        if not request:
+            return False
+
+        can_see_task = getattr(instance, "user_can_view_task", None)
+        if can_see_task is None:
+            perm = TaskPermission.create_scope_view(request, instance.segment.task)
+            can_see_task = perm.check_access().allow
+
+        return can_see_task
+
+    def _can_see_project(self, instance: models.Job) -> bool:
+        request = self.context.get('request')
+        if not request:
+            return False
+
+        can_see_project = getattr(instance.segment.task, "user_can_view_project", None)
+        if can_see_project is None:
+            if not instance.segment.task.project_id:
+                return False
+
+            perm = ProjectPermission.create_scope_view(request, instance.segment.task.project)
+            can_see_project = perm.check_access().allow
+
+        return can_see_project
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_task_name(self, instance: models.Job) -> str | None:
+        return instance.segment.task.name if self._can_see_task(instance) else None
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_project_name(self, instance: models.Job) -> str | None:
+        return instance.segment.task.project.name if self._can_see_project(instance) else None
 
     def to_representation(self, instance: models.Job):
         data = super().to_representation(instance)
@@ -816,18 +895,11 @@ class JobReadSerializer(serializers.ModelSerializer):
             data['replicas_count'] = getattr(instance, "child_jobs__count", 0)
             data['consensus_replicas'] = data['replicas_count']
 
-        if request := self.context.get('request'):
-            can_view_task = getattr(instance, "user_can_view_task", None)
-            if can_view_task is None:
-                perm = TaskPermission.create_scope_view(request, instance.segment.task)
-                result = perm.check_access()
-                can_view_task = result.allow
-
-            if can_view_task:
-                if task_source_storage := instance.get_source_storage():
-                    data['source_storage'] = StorageSerializer(task_source_storage).data
-                if task_target_storage := instance.get_target_storage():
-                    data['target_storage'] = StorageSerializer(task_target_storage).data
+        if self._can_see_task(instance):
+            if task_source_storage := instance.get_source_storage():
+                data['source_storage'] = StorageSerializer(task_source_storage).data
+            if task_target_storage := instance.get_target_storage():
+                data['target_storage'] = StorageSerializer(task_target_storage).data
 
         return data
 
@@ -2381,7 +2453,7 @@ class DataSerializer(serializers.ModelSerializer):
 
 class TaskReadListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
-        if isinstance(data, list) and data:
+        if (request := self.context.get('request')) and isinstance(data, list) and data:
             # Optimized prefetch only for the current page
             page: list[models.Task] = data
 
@@ -2390,6 +2462,7 @@ class TaskReadListSerializer(serializers.ListSerializer):
             # doing the same DB computations twice - one time for the page retrieval
             # and another one for the COUNT(*) request to get the total count
             page_task_ids = set(t.id for t in page)
+
             job_summary_fields = [m.value for m in models.TaskQuerySet.JobSummaryFields]
             job_counts = {
                 task["id"]: task
@@ -2399,7 +2472,23 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 .values("id", *job_summary_fields)
             }
 
+            # Prefetch visible related objects
+            # This avoids N+1 queries when serializing
+            page_project_ids = set(task.project_id for task in page)
+            visible_projects_perm = ProjectPermission.create_scope_list(request)
+            visible_projects_queryset = models.Project.objects.filter(id__in=page_project_ids)
+            visible_projects = {
+                p.id: p for p in visible_projects_perm
+                .filter(visible_projects_queryset)
+                .only("id", "name")
+            }
+
             for task in page:
+                if task.project_id:
+                    task.user_can_view_project = task.project_id in visible_projects
+                    if task.user_can_view_project:
+                        task.project = visible_projects[task.project_id]
+
                 task_job_summary = job_counts.get(task.id)
                 for k in job_summary_fields:
                     setattr(task, k, task_job_summary[k])
@@ -2414,12 +2503,13 @@ class TaskReadSerializer(serializers.ModelSerializer):
     data_cloud_storage_id = serializers.ReadOnlyField(source='data.cloud_storage_id', required=False)
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
-    data = serializers.ReadOnlyField(source='data.id', required=False)
+    data = serializers.ReadOnlyField(source='data_id', required=False)
     owner = BasicUserSerializer(required=False, allow_null=True)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
+    project_name = serializers.SerializerMethodField()
     guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
-    organization_id = serializers.IntegerField(source='organization.id', required=False, read_only=True, allow_null=True)
+    organization_id = serializers.IntegerField(required=False, read_only=True, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
@@ -2435,7 +2525,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'project_id', 'project_name', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_original_chunk_type', 'data_compressed_chunk_type',
             'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data', 'dimension',
@@ -2453,6 +2543,25 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     def get_consensus_enabled(self, instance: models.Task) -> bool:
         return instance.consensus_replicas > 0
+
+    def _can_see_project(self, instance: models.Task) -> bool:
+        request = self.context.get('request')
+        if not request:
+            return False
+
+        can_see_project = getattr(instance, "user_can_view_project", None)
+        if can_see_project is None:
+            if not instance.project_id:
+                return False
+
+            perm = ProjectPermission.create_scope_view(request, instance.project)
+            can_see_project = perm.check_access().allow
+
+        return can_see_project
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_project_name(self, instance: models.Task) -> str | None:
+        return instance.project.name if self._can_see_project(instance) else None
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
