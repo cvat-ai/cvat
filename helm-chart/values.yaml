@@ -374,6 +374,8 @@ redis:
       allowInsecureImages: true
   external:
     host: 127.0.0.1
+  ssl:
+    enabled: false
   architecture: standalone
   auth:
     existingSecret: "cvat-redis-secret"
