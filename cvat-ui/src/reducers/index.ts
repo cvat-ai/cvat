@@ -301,7 +301,6 @@ export interface BulkActionsState {
 
 export enum SupportedPlugins {
     ANALYTICS = 'ANALYTICS',
-    MODELS = 'MODELS',
 }
 
 export type PluginsList = {

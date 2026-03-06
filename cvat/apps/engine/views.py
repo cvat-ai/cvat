@@ -276,10 +276,8 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request: ExtendedRequest):
         data = {
-            'GIT_INTEGRATION': False, # kept for backwards compatibility
             'ANALYTICS': settings.ANALYTICS_ENABLED,
-            'MODELS': to_bool(os.environ.get("CVAT_SERVERLESS", False)),
-            'PREDICT': False, # FIXME: it is unused anymore (for UI only)
+            'MODELS': to_bool(os.environ.get("CVAT_SERVERLESS", False)), # not used anymore, remove later
         }
         return Response(PluginsSerializer(data).data)
 
