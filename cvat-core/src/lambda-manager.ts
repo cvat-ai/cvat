@@ -20,6 +20,12 @@ export interface MinimalShape {
     points: number[];
 }
 
+export interface AutoClassifierResultItem {
+    label: string;
+    clientID: number;
+    confidence?: number;
+}
+
 export interface TrackerResults {
     states: any[];
     shapes: MinimalShape[];
@@ -79,7 +85,8 @@ class LambdaManager {
         return result.id;
     }
 
-    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | SerializedCollection> {
+    async call(taskID, model, args): Promise<
+        TrackerResults | InteractorResults | AutoClassifierResultItem[] | SerializedCollection> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
