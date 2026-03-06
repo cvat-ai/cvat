@@ -1,8 +1,7 @@
-=== CVAT SAM2 Agent ===
+=== CVAT Agent ===
 
 Agent deployed with {{ .Values.agent.replicaCount }} replica(s).
 CVAT URL: {{ .Values.agent.cvat_base_url }}
-Model:    {{ .Values.agent.model_id }}
 
 The function registration job runs as a pre-install/pre-upgrade hook.
 Check its status:

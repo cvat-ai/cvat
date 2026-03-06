@@ -28,6 +28,7 @@ spec:
                 name: {{ include "agent.fullname" . }}-config
           env:
             {{- include "agent.commonEnv" . | nindent 12 }}
+            {{- include "agent.modelParams" . | nindent 12 }}
             - name: USE_CUDA
               value: {{ .Values.agent.use_cuda | default "false" | quote }}
             {{- range .Values.agent.envVars }}
