@@ -531,6 +531,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 child.center(x + DELETE_BUTTON_OFFSET / scale, y - DELETE_BUTTON_OFFSET / scale);
             });
         });
+
+        this.intermediateShapes.forEach((shape) => {
+            shape.fill({ opacity: this.effectiveShapeOpacity });
+        });
     }
 
     public interact(interactData: InteractionData): void {
