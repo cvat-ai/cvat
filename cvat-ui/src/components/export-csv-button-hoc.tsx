@@ -19,6 +19,7 @@ interface CSVExportButtonConfig<T, Q> {
     className: string;
     tooltipTitle: string;
     columns: CSVColumn<T>[];
+    uniqueKey?: keyof T | null;
     fetchPage: (
         query: NonNullableProperties<Q>,
         page: number,
@@ -46,7 +47,7 @@ function createCSVExportButton<T, Q>(
             const filename = `cvat-${config.resourceName}-${timestamp}.csv`;
 
             if (predefinedData) {
-                const csvWriter = new IncrementalCSVWriter(columns);
+                const csvWriter = new IncrementalCSVWriter(columns, config.uniqueKey ?? null);
                 csvWriter.addBatch(predefinedData);
                 const csvContent = csvWriter.getContent();
                 downloadCSV(csvContent, filename);
@@ -55,12 +56,20 @@ function createCSVExportButton<T, Q>(
 
             dispatch(exportToCSVAsync({
                 columns,
+                uniqueKey: config.uniqueKey ?? null,
                 fetchPage: async (page: number, pageSize: number) => {
-                    const filteredQuery = filterNull({
+                    const baseQuery = {
                         ...query,
                         page,
                         pageSize,
-                    }) as NonNullableProperties<Q>;
+                    };
+
+                    // Add default sort by ID descending if no sort is specified
+                    if (!('sort' in baseQuery && baseQuery.sort)) {
+                        (baseQuery as any).sort = '-id';
+                    }
+
+                    const filteredQuery = filterNull(baseQuery) as NonNullableProperties<Q>;
                     return config.fetchPage(filteredQuery, page, pageSize);
                 },
                 filename,

@@ -40,6 +40,7 @@ const JobsCSVExportButton = createCSVExportButton<Job, JobsQuery>({
     className: 'cvat-jobs-export-csv-button',
     tooltipTitle: 'Export jobs to CSV',
     columns,
+    uniqueKey: 'id',
     fetchPage: async (query) => {
         const jobs = await cvat.jobs.get(query);
         return {

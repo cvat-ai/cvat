@@ -40,14 +40,28 @@ export interface CSVColumn<T> {
 class IncrementalCSVWriter<T> {
     private columns: CSVColumn<T>[];
     private rows: string[] = [];
+    private uniqueKey: keyof T | null;
+    private seenKeys: Set<string | number> = new Set();
 
-    constructor(columns: CSVColumn<T>[]) {
+    constructor(columns: CSVColumn<T>[], uniqueKey: keyof T | null = null) {
         this.columns = columns;
+        this.uniqueKey = uniqueKey;
         this.rows.push(this.generateHeader());
     }
 
     addBatch(items: T[]): void {
         items.forEach((item) => {
+            if (this.uniqueKey !== null) {
+                const keyValue = item[this.uniqueKey];
+                if (keyValue !== null && keyValue !== undefined) {
+                    const keyStr = String(keyValue);
+                    if (this.seenKeys.has(keyStr)) {
+                        return;
+                    }
+                    this.seenKeys.add(keyStr);
+                }
+            }
+
             this.rows.push(this.generateRow(item));
         });
     }

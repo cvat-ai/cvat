@@ -41,6 +41,7 @@ const ProjectsCSVExportButton = createCSVExportButton<Project, ProjectsQuery>({
     className: 'cvat-projects-export-csv-button',
     tooltipTitle: 'Export projects to CSV',
     columns,
+    uniqueKey: 'id',
     fetchPage: async (query) => {
         const projects = await cvat.projects.get(query);
         return {

@@ -38,6 +38,7 @@ const TasksCSVExportButton = createCSVExportButton<Task, TasksQuery>({
     className: 'cvat-tasks-export-csv-button',
     tooltipTitle: 'Export tasks to CSV',
     columns,
+    uniqueKey: 'id',
     fetchPage: async (query) => {
         const tasks = await cvat.tasks.get(query);
         return {
