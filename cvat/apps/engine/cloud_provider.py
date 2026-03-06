@@ -1271,6 +1271,10 @@ def export_resource_to_cloud_storage(
     rq_job_meta = ExportRQMeta.for_job(rq_job)
 
     storage = db_storage_to_storage_instance(db_storage)
-    storage.upload_file(Path(file_path), rq_job_meta.result_filename)
+    filename = rq_job_meta.result_filename
+    if storage.prefix:
+        filename = os.path.join(storage.prefix, filename)
+
+    storage.upload_file(Path(file_path), filename)
 
     return file_path
