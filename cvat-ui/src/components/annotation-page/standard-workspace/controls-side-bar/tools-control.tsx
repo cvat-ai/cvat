@@ -315,7 +315,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             // hide interaction messages if exists
             for (const messageCallback of ['closeFetchingMessage', 'noShapesMessage'] as const) {
                 if (this.interaction[messageCallback]) {
-                    this.interaction[messageCallback]();
+                    this.interaction[messageCallback]?.();
                     this.interaction[messageCallback] = null;
                 }
             }
