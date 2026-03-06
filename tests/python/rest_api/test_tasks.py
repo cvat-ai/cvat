@@ -40,7 +40,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from rest_api._test_base import TestTasksBase
+from rest_api._test_base import SHARE_DIR, TestTasksBase
 from rest_api.utils import (
     DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
@@ -55,6 +55,7 @@ from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
 from shared.utils.config import (
+    ASSETS_DIR,
     delete_method,
     get_method,
     make_api_client,
@@ -1510,6 +1511,11 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
+    def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
+        original_task_id = 30
+        backup_file = ASSETS_DIR / "backups" / "task_30_backup_pre_consensus_replica_removal.zip"
+        self._test_can_restore_task_from_backup(original_task_id, backup_file=backup_file)
+
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
         # Reproduces the problem with empty 'mode' in a restored task,
@@ -1537,15 +1543,48 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
-    def _test_can_restore_task_from_backup(self, task_id: int, lightweight_backup: bool = False):
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
+        cloud_storage_id = next(cs["id"] for cs in cloud_storages if cs["resource"] == "backingcs")
+
+        with make_sdk_client(self.user) as client:
+            task = client.tasks.create_from_data(
+                models.TaskWriteRequest(name="Canvas3D"),
+                [SHARE_DIR / "test_canvas3d.zip"],
+                data_params={"use_cache": True},
+            )
+
+            container_exec_cvat(
+                request, ["./manage.py", "movetasktobackingcs", str(task.id), str(cloud_storage_id)]
+            )
+
+            backup_path = self.tmp_dir / "backup.zip"
+            task.download_backup(backup_path)
+
+            with zipfile.ZipFile(backup_path) as zip_file:
+                names = zip_file.namelist()
+
+                assert any(name.endswith(".pcd") for name in names)
+                assert any(name.endswith(".png") for name in names)
+
+            self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
+
+    def _test_can_restore_task_from_backup(
+        self,
+        task_id: int,
+        *,
+        lightweight_backup: bool = False,
+        backup_file: Path | None = None,
+    ):
         old_task = self.client.tasks.retrieve(task_id)
         _, response = self.client.api_client.tasks_api.retrieve(task_id)
         task_json = json.loads(response.data)
 
-        filename = self.tmp_dir / f"task_{old_task.id}_backup.zip"
-        old_task.download_backup(filename, lightweight=lightweight_backup)
+        if not backup_file:
+            backup_file = self.tmp_dir / f"task_{old_task.id}_backup.zip"
+            old_task.download_backup(backup_file, lightweight=lightweight_backup)
 
-        new_task = self.client.tasks.create_from_backup(filename)
+        new_task = self.client.tasks.create_from_backup(backup_file)
 
         old_meta = json.loads(old_task.api.retrieve_data_meta(old_task.id)[1].data)
         new_meta = json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data)
@@ -4366,9 +4405,9 @@ class TestPatchExportFrames(TestTasksBase):
         args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
 
         if media_type == SourceDataType.images:
-            spec, task_id = next(self._image_task_fxt_base(**args))
+            spec, task_id = self._image_task_fxt_base(**args)
         else:
-            spec, task_id = next(self._uploaded_video_task_fxt_base(**args))
+            spec, task_id = self._uploaded_video_task_fxt_base(**args)
 
         with make_sdk_client(self._USERNAME) as client:
             task = client.tasks.retrieve(task_id)
