@@ -7,6 +7,8 @@ from .base import *  # pylint: disable=wildcard-import
 
 DEBUG = False
 
+CSRF_TRUSTED_ORIGINS = [item for item in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if item]
+
 NUCLIO["HOST"] = os.getenv("CVAT_NUCLIO_HOST", "nuclio")
 
 # Django-sendfile:
