@@ -856,6 +856,9 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
 
     segment_set: models.manager.RelatedManager[Segment]
 
+    user_can_view_task: MaybeUndefined[bool]
+    "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
+
     # Extend default permission model
     class Meta:
         default_permissions = ()

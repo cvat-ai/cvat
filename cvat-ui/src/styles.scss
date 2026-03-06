@@ -256,3 +256,9 @@ html, body {
         }
     }
 }
+
+.cvat-jobs-export-csv-button,
+.cvat-tasks-export-csv-button,
+.cvat-projects-export-csv-button {
+    margin-top: 0.5 * $grid-unit-size;
+}

@@ -126,6 +126,7 @@ export interface SerializedTask {
     overlap: number | null;
     owner: SerializedUser;
     project_id: number | null;
+    project_name: string | null;
     guide_id: number | null;
     segment_size: number;
     size: number;
@@ -149,6 +150,7 @@ export interface SerializedJob {
     labels: { count: number; url: string };
     mode: TaskMode;
     project_id: number | null;
+    project_name: string | null;
     guide_id: number | null;
     stage: JobStage;
     state: JobState;
@@ -157,6 +159,7 @@ export interface SerializedJob {
     start_frame: number;
     stop_frame: number;
     task_id: number;
+    task_name: string;
     updated_date: string;
     created_date: string;
     url: string;
