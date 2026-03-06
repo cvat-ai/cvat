@@ -2963,10 +2963,8 @@ class ChapterSerializer(serializers.Serializer):
     metadata = ChapterMetadataSerializer(many=False)
 
 class PluginsSerializer(serializers.Serializer):
-    GIT_INTEGRATION = serializers.BooleanField()
     ANALYTICS = serializers.BooleanField()
     MODELS = serializers.BooleanField()
-    PREDICT = serializers.BooleanField()
 
 class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)

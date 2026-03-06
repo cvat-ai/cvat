@@ -10066,19 +10066,13 @@ components:
     Plugins:
       type: object
       properties:
-        GIT_INTEGRATION:
-          type: boolean
         ANALYTICS:
           type: boolean
         MODELS:
           type: boolean
-        PREDICT:
-          type: boolean
       required:
       - ANALYTICS
-      - GIT_INTEGRATION
       - MODELS
-      - PREDICT
     ProjectFileRequest:
       type: object
       properties:
