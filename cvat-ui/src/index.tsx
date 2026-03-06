@@ -68,7 +68,6 @@ interface StateToProps {
     userAgreementsFetching: boolean;
     notifications: NotificationsState;
     user: any;
-    isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
@@ -119,7 +118,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         notifications: state.notifications,
         user: auth.user,
         pluginComponents: plugins.components,
-        isModelPluginActive: plugins.list.MODELS,
         invitationsFetching: invitations.fetching,
         invitationsInitialized: invitations.initialized,
         requestsFetching: requests.fetching,
