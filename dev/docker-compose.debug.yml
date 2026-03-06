@@ -1,0 +1,110 @@
+services:
+  cvat_server:
+    image: cvat/server:dev-debug
+    build:
+      context: .
+      dockerfile: dev/Dockerfile.server.debug
+      args:
+        CVAT_VERSION: "${CVAT_VERSION:-dev}"
+    environment:
+      CVAT_DEBUG_ENABLED: "yes"
+      CVAT_DEBUG_WAIT: "${CVAT_DEBUG_WAIT_CLIENT:-no}"
+      NUMPROCS: 1
+    volumes:
+      - ./cvat:/home/django/cvat:delegated
+      - ./manage.py:/home/django/manage.py:delegated
+      - ./utils:/home/django/utils:delegated
+
+  cvat_worker_utils:
+    profiles: ["workers"]
+    image: cvat/server:dev-debug
+    environment:
+      CVAT_DEBUG_ENABLED: "yes"
+      NUMPROCS: 1
+    volumes:
+      - ./cvat:/home/django/cvat:delegated
+      - ./manage.py:/home/django/manage.py:delegated
+      - ./utils:/home/django/utils:delegated
+
+  cvat_worker_import:
+    profiles: ["workers"]
+    image: cvat/server:dev-debug
+    environment:
+      CVAT_DEBUG_ENABLED: "yes"
+      NUMPROCS: 1
+    volumes:
+      - ./cvat:/home/django/cvat:delegated
+      - ./manage.py:/home/django/manage.py:delegated
+      - ./utils:/home/django/utils:delegated
+
+  cvat_worker_export:
+    profiles: ["workers"]
+    image: cvat/server:dev-debug
+    environment:
+      CVAT_DEBUG_ENABLED: "yes"
+      NUMPROCS: 1
+    volumes:
+      - ./cvat:/home/django/cvat:delegated
+      - ./manage.py:/home/django/manage.py:delegated
+      - ./utils:/home/django/utils:delegated
+
+  cvat_worker_annotation:
+    profiles: ["workers"]
+    image: cvat/server:dev-debug
+    environment:
+      CVAT_DEBUG_ENABLED: "yes"
+      NUMPROCS: 1
+    volumes:
+      - ./cvat:/home/django/cvat:delegated
+      - ./manage.py:/home/django/manage.py:delegated
+      - ./utils:/home/django/utils:delegated
+
+  cvat_worker_webhooks:
+    profiles: ["workers"]
+    image: cvat/server:dev-debug
+    environment:
+      CVAT_DEBUG_ENABLED: "yes"
+      NUMPROCS: 1
+    volumes:
+      - ./cvat:/home/django/cvat:delegated
+      - ./manage.py:/home/django/manage.py:delegated
+      - ./utils:/home/django/utils:delegated
+
+  cvat_worker_quality_reports:
+    profiles: ["workers"]
+    image: cvat/server:dev-debug
+    environment:
+      CVAT_DEBUG_ENABLED: "yes"
+      NUMPROCS: 1
+    volumes:
+      - ./cvat:/home/django/cvat:delegated
+      - ./manage.py:/home/django/manage.py:delegated
+      - ./utils:/home/django/utils:delegated
+
+  cvat_worker_chunks:
+    profiles: ["workers"]
+    image: cvat/server:dev-debug
+    environment:
+      CVAT_DEBUG_ENABLED: "yes"
+      NUMPROCS: 1
+    volumes:
+      - ./cvat:/home/django/cvat:delegated
+      - ./manage.py:/home/django/manage.py:delegated
+      - ./utils:/home/django/utils:delegated
+
+  cvat_worker_consensus:
+    profiles: ["workers"]
+    image: cvat/server:dev-debug
+    environment:
+      CVAT_DEBUG_ENABLED: "yes"
+      NUMPROCS: 1
+    volumes:
+      - ./cvat:/home/django/cvat:delegated
+      - ./manage.py:/home/django/manage.py:delegated
+      - ./utils:/home/django/utils:delegated
+
+  cvat_vector:
+    profiles: ["analytics"]
+
+  cvat_grafana:
+    profiles: ["analytics"]

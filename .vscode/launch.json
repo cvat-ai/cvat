@@ -6,7 +6,7 @@
     "configurations": [
 
         {
-            "name": "REST API tests: Attach to server",
+            "name": "docker: attach server",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -26,7 +26,7 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ annotation worker",
+            "name": "docker: attach worker annotation",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -46,7 +46,7 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ export worker",
+            "name": "docker: attach worker export",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -66,7 +66,7 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ import worker",
+            "name": "docker: attach worker import",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -86,7 +86,7 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ quality reports worker",
+            "name": "docker: attach worker quality reports",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -106,7 +106,7 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ consensus worker",
+            "name": "docker: attach worker consensus",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -420,6 +420,19 @@
                 "server: django",
                 "server: RQ - worker",
                 "server: RQ - scheduler",
+            ]
+        },
+        {
+            "name": "docker: attach backend debug",
+            "preLaunchTask": "docker: up workers",
+            "stopAll": true,
+            "configurations": [
+                "docker: attach server",
+                "docker: attach worker annotation",
+                "docker: attach worker export",
+                "docker: attach worker import",
+                "docker: attach worker quality reports",
+                "docker: attach worker consensus",
             ]
         }
     ]
