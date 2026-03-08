@@ -109,7 +109,7 @@ const defaultState: State = {
 };
 
 const UploadFileErrorMessages = {
-    one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file or multiple images. ',
+    one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file, a single DICOM file, or multiple images. ',
     multi: 'Wrong list of files. You can upload one or more videos. ',
 };
 

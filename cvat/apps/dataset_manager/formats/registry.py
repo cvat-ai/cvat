@@ -153,3 +153,4 @@ import cvat.apps.dataset_manager.formats.velodynepoint
 import cvat.apps.dataset_manager.formats.vggface2
 import cvat.apps.dataset_manager.formats.widerface
 import cvat.apps.dataset_manager.formats.yolo
+import cvat.apps.dataset_manager.formats.dicom

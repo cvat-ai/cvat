@@ -7,7 +7,17 @@ export function getFileContentTypeByMimeType(mimeType: string): string {
 }
 
 export function getFileContentType(file: File): string {
-    return getFileContentTypeByMimeType(file.type);
+    // Check extension first for medical formats the browser doesn't recognize as image/video
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    if (MEDICAL_EXTENSIONS.includes(ext)) return 'dicom';
+
+    const mimeType = getFileContentTypeByMimeType(file.type);
+    if (mimeType) return mimeType;
+
+    // Fallback to extension for files with no MIME type
+    if (IMAGE_EXTENSIONS.includes(ext)) return 'image';
+    if (VIDEO_EXTENSIONS.includes(ext)) return 'video';
+    return '';
 }
 
 export function checkFileTypesEqual(files: File[]): boolean {
@@ -19,6 +29,9 @@ export function checkFileTypesEqual(files: File[]): boolean {
 function getUrlExtension(url: string): string {
     return (url.split(/[#?]/)[0].split('.').pop()?.trim() || '').toLowerCase();
 }
+
+// Medical image formats treated as images
+const MEDICAL_EXTENSIONS = ['dcm'];
 
 // source https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
 const IMAGE_EXTENSIONS = ['3ds', 'ag', 'arw', 'bay', 'bmp', 'bmq', 'cgm', 'cr2', 'crw', 'cs1', 'cs2', 'cur', 'dcr',
