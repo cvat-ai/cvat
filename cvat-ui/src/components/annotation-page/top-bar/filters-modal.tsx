@@ -84,7 +84,9 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
     labels.forEach((label: any): void => {
         addAttributeSubfields(subfields, adjustName(label.name), label.name, label.attributes);
 
-        // For skeleton labels, add each sublabel as a separate top-level entry
+        // Skeleton sublabels are filterable via the Label dropdown instead,
+        // which gives access to all builtin properties (occluded, width, height, rotation, etc.)
+        // in addition to user-defined attributes listed below
         if (label.type === 'skeleton' && label.structure?.sublabels) {
             label.structure.sublabels.forEach((sublabel: any): void => {
                 const sublabelKey = adjustName(`${label.name} / ${sublabel.name}`);

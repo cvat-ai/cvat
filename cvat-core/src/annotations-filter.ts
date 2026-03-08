@@ -79,6 +79,7 @@ interface ConvertedAttributes {
 interface ConvertedObjectData {
     width: number | null;
     height: number | null;
+    rotation: number | null;
     attr: Record<string, ConvertedAttributes>;
     label: string;
     serverID: number;
@@ -101,6 +102,7 @@ export default class AnnotationsFilter {
             }, {});
 
             let [width, height]: (number | null)[] = [null, null];
+            let rotation: number | null = null;
             if (state.objectType !== ObjectType.TAG) {
                 const points =
                     state.shapeType === ShapeType.SKELETON
@@ -113,6 +115,10 @@ export default class AnnotationsFilter {
                         : state.points;
 
                 ({ width, height } = getDimensions(points, state.shapeType as ShapeType));
+
+                if (state.shapeType === ShapeType.RECTANGLE || state.shapeType === ShapeType.ELLIPSE) {
+                    rotation = state.rotation ?? null;
+                }
             }
 
             const attributes = Object.keys(state.attributes).reduce(
@@ -131,6 +137,7 @@ export default class AnnotationsFilter {
             objects.push({
                 width,
                 height,
+                rotation,
                 attr: attrData,
                 label: state.label.name,
                 serverID: state.serverID,
@@ -179,6 +186,7 @@ export default class AnnotationsFilter {
                     objects.push({
                         width: elWidth,
                         height: elHeight,
+                        rotation: element.rotation ?? null,
                         attr: elementAttrData,
                         label: sublabelName,
                         serverID: state.serverID,
@@ -242,7 +250,12 @@ export default class AnnotationsFilter {
                 const points =
                     shape.type === ShapeType.SKELETON ? shape.elements.map((el) => el.points).flat() : shape.points;
                 let [width, height]: (number | null)[] = [null, null];
+                let rotation: number | null = null;
                 ({ width, height } = getDimensions(points, shape.type));
+
+                if (shape.type === ShapeType.RECTANGLE || shape.type === ShapeType.ELLIPSE) {
+                    rotation = shape.rotation ?? null;
+                }
 
                 const attrData: Record<string, ConvertedAttributes> = {
                     [adjustName(label.name)]: convertAttributes(shape.attributes),
@@ -251,6 +264,7 @@ export default class AnnotationsFilter {
                 const mainEntry: ConvertedObjectData = {
                     width,
                     height,
+                    rotation,
                     attr: attrData,
                     label: label.name,
                     serverID: shape.id ?? null,
@@ -284,6 +298,7 @@ export default class AnnotationsFilter {
                             entries.push({
                                 width: elWidth,
                                 height: elHeight,
+                                rotation: element.rotation ?? null,
                                 attr: elementAttrData,
                                 label: sublabelName,
                                 serverID: shape.id ?? null,
@@ -306,6 +321,7 @@ export default class AnnotationsFilter {
                 return {
                     width: null,
                     height: null,
+                    rotation: null,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(tag.attributes),
                     },
@@ -329,6 +345,7 @@ export default class AnnotationsFilter {
                 const mainEntry: ConvertedObjectData = {
                     width: null,
                     height: null,
+                    rotation: null,
                     attr: attrData,
                     label: labelByID[track.label_id]?.name ?? null,
                     serverID: track.id,
@@ -355,6 +372,7 @@ export default class AnnotationsFilter {
                             entries.push({
                                 width: null,
                                 height: null,
+                                rotation: null,
                                 attr: elementAttrData,
                                 label: sublabelName,
                                 serverID: track.id,
