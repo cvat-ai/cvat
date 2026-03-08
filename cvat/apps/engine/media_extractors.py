@@ -500,16 +500,33 @@ class DicomReader(ImageListReader):
         os.makedirs(self._tmp_dir, exist_ok=True)
 
         ds = pydicom.dcmread(self._dicom_source)
-        pixel_array = ds.pixel_array.astype(np.float64)
+        pixel_array = ds.pixel_array
 
-        # Apply rescale slope/intercept
-        slope = float(getattr(ds, "RescaleSlope", 1))
-        intercept = float(getattr(ds, "RescaleIntercept", 0))
-        pixel_array = pixel_array * slope + intercept
+        samples = getattr(ds, "SamplesPerPixel", 1)
+        photometric = getattr(ds, "PhotometricInterpretation", "")
+        is_color = samples > 1
+
+        # Convert YBR color space on raw data before any normalization.
+        # Skip for JPEG-compressed transfer syntaxes — the JPEG decoder
+        # already converts YBR to RGB during decompression.
+        if is_color and "YBR" in photometric:
+            ts_uid = str(getattr(ds.file_meta, "TransferSyntaxUID", ""))
+            is_jpeg = ts_uid.startswith("1.2.840.10008.1.2.4.")
+            if not is_jpeg:
+                from pydicom.pixel_data_handlers.util import convert_color_space
+
+                pixel_array = convert_color_space(pixel_array, photometric, "RGB")
+
+        pixel_array = pixel_array.astype(np.float64)
+
+        # Apply rescale slope/intercept only for grayscale (CT/MRI Hounsfield units etc.)
+        if not is_color:
+            slope = float(getattr(ds, "RescaleSlope", 1))
+            intercept = float(getattr(ds, "RescaleIntercept", 0))
+            pixel_array = pixel_array * slope + intercept
 
         # Extract all slices/frames
-        samples = getattr(ds, "SamplesPerPixel", 1)
-        expected_ndim = 2 if samples == 1 else 3
+        expected_ndim = 2 if not is_color else 3
 
         if pixel_array.ndim == expected_ndim:
             slices = [pixel_array]
@@ -519,7 +536,6 @@ class DicomReader(ImageListReader):
         else:
             slices = [pixel_array]
 
-        photometric = getattr(ds, "PhotometricInterpretation", "")
         num_digits = len(str(len(slices)))
         output_paths = []
 
@@ -528,11 +544,6 @@ class DicomReader(ImageListReader):
             if vmax > vmin:
                 sl = (sl - vmin) / (vmax - vmin) * 255
             sl = sl.astype(np.uint8)
-
-            if "YBR" in photometric:
-                from pydicom.pixel_data_handlers.util import convert_color_space
-
-                sl = convert_color_space(sl, photometric, "RGB")
 
             suffix = f"_{str(idx).zfill(num_digits)}" if len(slices) > 1 else ""
             output_path = os.path.join(self._tmp_dir, f"{_basename}{suffix}.png")
