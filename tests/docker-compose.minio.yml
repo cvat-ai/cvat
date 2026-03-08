@@ -43,32 +43,35 @@ services:
       MINIO_ACCESS_KEY: "minio_access_key"
       MINIO_SECRET_KEY: "minio_secret_key"
       MINIO_ALIAS: "local_minio"
-      PRIVATE_BUCKET: "private"
-      PUBLIC_BUCKET: "public"
-      TEST_BUCKET: "test"
-      IMPORT_EXPORT_BUCKET: "importexportbucket"
     volumes:
       - ./tests/cypress/e2e/actions_tasks/assets/case_65_manifest/:/mnt/images_with_manifest:ro
       - ./tests/mounted_file_share/:/mnt/mounted_file_share:ro
     networks:
       - cvat
-    entrypoint: >
-      /bin/sh -c "
-      $${MC_PATH} config host add --quiet --api s3v4 $${MINIO_ALIAS} $${MINIO_HOST} $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
-      $${MC_PATH} mb $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET} $${MINIO_ALIAS}/$${IMPORT_EXPORT_BUCKET};
-      for BUCKET in $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET} $${MINIO_ALIAS}/$${IMPORT_EXPORT_BUCKET};
-      do
-          if [ $${BUCKET} == $${MINIO_ALIAS}/$${PRIVATE_BUCKET} ]
-          then
-            FULL_PATH=$${BUCKET}/sub;
-          else
-            FULL_PATH=$${BUCKET};
-          fi
-          $${MC_PATH} cp --recursive /mnt/mounted_file_share/ /mnt/images_with_manifest $${FULL_PATH}/
-          for i in 1 2;
-          do
-              $${MC_PATH} cp /mnt/images_with_manifest/manifest.jsonl $${FULL_PATH}/images_with_manifest/manifest_$${i}.jsonl;
-          done;
-      done;
-      $${MC_PATH} policy set public $${MINIO_ALIAS}/$${PUBLIC_BUCKET};
-      "
+    entrypoint: []
+    command:
+      - bash
+      - -c
+      - |
+        $${MC_PATH} config host add --quiet --api s3v4 $${MINIO_ALIAS} $${MINIO_HOST} $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY}
+
+        BUCKETS=(private public test importexportbucket)
+        $${MC_PATH} mb "$${BUCKETS[@]/#/$${MINIO_ALIAS}/}"
+
+        for BUCKET in "$${BUCKETS[@]}"
+        do
+            if [ $${BUCKET} == private ]
+            then
+              FULL_PATH=$${MINIO_ALIAS}/$${BUCKET}/sub
+            else
+              FULL_PATH=$${MINIO_ALIAS}/$${BUCKET}
+            fi
+            $${MC_PATH} cp --recursive /mnt/mounted_file_share/ /mnt/images_with_manifest $${FULL_PATH}/
+            for i in 1 2
+            do
+                $${MC_PATH} cp /mnt/images_with_manifest/manifest.jsonl $${FULL_PATH}/images_with_manifest/manifest_$${i}.jsonl
+            done
+        done
+        $${MC_PATH} policy set public $${MINIO_ALIAS}/public
+
+        $${MC_PATH} mb "$${MINIO_ALIAS}/backingcs"

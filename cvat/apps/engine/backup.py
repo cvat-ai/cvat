@@ -10,7 +10,7 @@ import re
 import shutil
 import tempfile
 from abc import ABCMeta, abstractmethod
-from collections import deque
+from collections import defaultdict, deque
 from collections.abc import Collection, Iterable
 from contextlib import closing
 from copy import deepcopy
@@ -26,6 +26,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
+from django.db.models import Min, Prefetch
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
@@ -48,7 +49,6 @@ from cvat.apps.dataset_manager.views import (
 )
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import DataChoice, StorageChoice
 from cvat.apps.engine.serializers import (
@@ -229,7 +229,6 @@ class _TaskBackupBase(_BackupBase):
             "status",
             "subset",
             "labels",
-            "consensus_replicas",
         }
 
         return self._prepare_meta(allowed_fields, task)
@@ -346,11 +345,14 @@ class _TaskBackupBase(_BackupBase):
         if not self._db_task:
             return
 
-        db_segments = list(self._db_task.segment_set.all().prefetch_related("job_set"))
-        db_segments.sort(key=lambda i: i.job_set.first().id)
+        db_segments = (
+            self._db_task.segment_set.annotate(min_job_id=Min("job__id"))
+            .order_by("min_job_id")
+            .prefetch_related(Prefetch("job_set", queryset=models.Job.objects.order_by("id")))
+        )
 
         for db_segment in db_segments:
-            yield from sorted(db_segment.job_set.all(), key=lambda db_job: db_job.id)
+            yield from db_segment.job_set.all()
 
 
 class _ExporterBase(metaclass=ABCMeta):
@@ -477,17 +479,95 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             self._manifest_was_filtered = True
 
+    def _write_data_from_cloud_storage(self, zip_object: ZipFile, target_dir: str) -> None:
+        assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
+
+        target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
+        data_dir = self._db_data.get_upload_dirname()
+
+        self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
+
+        files_for_local_copy = []
+
+        media_files_to_download: list[PurePath] = []
+        for media_file in self._db_data.related_files.all():
+            media_path = PurePath(media_file.path)
+
+            local_path = os.path.join(data_dir, media_path)
+            if os.path.exists(local_path):
+                files_for_local_copy.append(local_path)
+            else:
+                media_files_to_download.append(media_path)
+
+        frame_ids_to_download = []
+        frame_names_to_download = []
+        for media_file in self._db_data.images.all():
+            media_path = media_file.path
+
+            local_path = os.path.join(data_dir, media_path)
+            if os.path.exists(local_path):
+                files_for_local_copy.append(local_path)
+            else:
+                frame_ids_to_download.append(media_file.frame)
+                frame_names_to_download.append(media_file.path)
+
+        if media_files_to_download:
+            storage_client = self._db_data.get_cloud_storage_instance()
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                storage_client.bulk_download_to_dir(
+                    files=media_files_to_download, upload_dir=Path(tmp_dir)
+                )
+
+                self._write_files(
+                    source_dir=tmp_dir,
+                    zip_object=zip_object,
+                    files=[os.path.join(tmp_dir, file) for file in media_files_to_download],
+                    target_dir=target_data_dir,
+                )
+
+        if frame_ids_to_download:
+            media_cache = MediaCache()
+            with closing(
+                media_cache.read_raw_images(
+                    self._db_task, frame_ids=frame_ids_to_download, decode=False
+                )
+            ) as frame_iter:
+                # Avoid closing the frame iter before the files are copied
+                downloaded_paths = []
+                for _ in frame_ids_to_download:
+                    downloaded_paths.append(next(frame_iter)[1])
+
+                tmp_dir = downloaded_paths[0].removesuffix(frame_names_to_download[0])
+
+                self._write_files(
+                    source_dir=tmp_dir,
+                    zip_object=zip_object,
+                    files=downloaded_paths,
+                    target_dir=target_data_dir,
+                )
+
+        self._write_files(
+            source_dir=data_dir,
+            zip_object=zip_object,
+            files=files_for_local_copy,
+            target_dir=target_data_dir,
+        )
+
     def _write_data(self, zip_object: ZipFile, target_dir: str) -> None:
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
 
         if self._db_data.storage == StorageChoice.LOCAL:
             data_dir = self._db_data.get_upload_dirname()
-            self._write_directory(
-                source_dir=data_dir,
-                zip_object=zip_object,
-                target_dir=target_data_dir,
-                exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME],
-            )
+            if self._db_data.local_storage_backing_cs:
+                self._write_data_from_cloud_storage(zip_object, target_dir)
+            else:
+                self._write_directory(
+                    source_dir=data_dir,
+                    zip_object=zip_object,
+                    target_dir=target_data_dir,
+                    exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME],
+                )
+
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
             if hasattr(self._db_data, "video"):
@@ -505,8 +585,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
 
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
-            assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
-
             data_dir = self._db_data.get_upload_dirname()
 
             if self._lightweight:
@@ -517,75 +595,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     target_dir=target_data_dir,
                 )
             else:
-                self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
-
-                files_for_local_copy = []
-
-                media_files_to_download: list[PurePath] = []
-                for media_file in self._db_data.related_files.all():
-                    media_path = PurePath(media_file.path)
-
-                    local_path = os.path.join(data_dir, media_path)
-                    if os.path.exists(local_path):
-                        files_for_local_copy.append(local_path)
-                    else:
-                        media_files_to_download.append(media_path)
-
-                frame_ids_to_download = []
-                frame_names_to_download = []
-                for media_file in self._db_data.images.all():
-                    media_path = media_file.path
-
-                    local_path = os.path.join(data_dir, media_path)
-                    if os.path.exists(local_path):
-                        files_for_local_copy.append(local_path)
-                    else:
-                        frame_ids_to_download.append(media_file.frame)
-                        frame_names_to_download.append(media_file.path)
-
-                if media_files_to_download:
-                    storage_client = db_storage_to_storage_instance(self._db_data.cloud_storage)
-                    with tempfile.TemporaryDirectory() as tmp_dir:
-                        storage_client.bulk_download_to_dir(
-                            files=media_files_to_download, upload_dir=Path(tmp_dir)
-                        )
-
-                        self._write_files(
-                            source_dir=tmp_dir,
-                            zip_object=zip_object,
-                            files=[os.path.join(tmp_dir, file) for file in media_files_to_download],
-                            target_dir=target_data_dir,
-                        )
-
-                if frame_ids_to_download:
-                    media_cache = MediaCache()
-                    with closing(
-                        iter(
-                            media_cache.read_raw_images(
-                                self._db_task, frame_ids=frame_ids_to_download, decode=False
-                            )
-                        )
-                    ) as frame_iter:
-                        # Avoid closing the frame iter before the files are copied
-                        downloaded_paths = []
-                        for _ in frame_ids_to_download:
-                            downloaded_paths.append(next(frame_iter)[1])
-
-                        tmp_dir = downloaded_paths[0].removesuffix(frame_names_to_download[0])
-
-                        self._write_files(
-                            source_dir=tmp_dir,
-                            zip_object=zip_object,
-                            files=downloaded_paths,
-                            target_dir=target_data_dir,
-                        )
-
-                self._write_files(
-                    source_dir=data_dir,
-                    zip_object=zip_object,
-                    files=files_for_local_copy,
-                    target_dir=target_data_dir,
-                )
+                self._write_data_from_cloud_storage(zip_object, target_dir)
         else:
             raise NotImplementedError
 
@@ -598,8 +608,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
 
             serialized_task = task_serializer.data
-            if serialized_task.pop("consensus_enabled", False):
-                serialized_task["consensus_replicas"] = self._db_task.consensus_replicas
 
             task = self._prepare_task_meta(serialized_task)
             task["labels"] = [
@@ -1012,6 +1020,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data["job_file_mapping"] = job_file_mapping
 
+        self._manifest["consensus_replicas"] = self._determine_replica_counts(jobs)
+
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
         task_data_path = self._db_task.get_dirname()
@@ -1080,14 +1090,45 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             db_job.status = job["status"]
             db_job.save()
 
+    @staticmethod
+    def _get_job_type(job: dict) -> models.JobType:
+        try:
+            # The type field will be missing in backups created before the GT jobs were introduced
+            raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
+            job_type = models.JobType(raw_job_type)
+        except ValueError:
+            raise ValidationError(f"Unexpected job type {raw_job_type}")
+        return job_type
+
+    def _collect_replica_counts(self, jobs: dict) -> dict[models.JobType, list[int]]:
+        replica_counts = []
+        for job in jobs:
+            job_type = self._get_job_type(job)
+
+            if job_type != models.JobType.CONSENSUS_REPLICA:
+                replica_counts.append([job_type, 0])
+            else:
+                if not replica_counts:
+                    raise ValidationError(
+                        f"Invalid job order, jobs of type '{job_type}' "
+                        "must follow their parent jobs."
+                    )
+
+                replica_counts[-1][1] += 1
+
+        replica_counts_map = defaultdict(list)
+        for primary_type, count in replica_counts:
+            replica_counts_map[primary_type].append(count)
+
+        return replica_counts_map
+
+    def _determine_replica_counts(self, jobs: dict) -> int:
+        replica_counts = self._collect_replica_counts(jobs)
+        return min(replica_counts.get(models.JobType.ANNOTATION, [0]))
+
     def _import_gt_jobs(self, jobs):
         for job in jobs:
-            # The type field will be missing in backups created before the GT jobs were introduced
-            try:
-                raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
-                job_type = models.JobType(raw_job_type)
-            except ValueError:
-                raise ValidationError(f"Unexpected job type {raw_job_type}")
+            job_type = self._get_job_type(job)
 
             if job_type == models.JobType.GROUND_TRUTH:
                 job_serializer = JobWriteSerializer(
