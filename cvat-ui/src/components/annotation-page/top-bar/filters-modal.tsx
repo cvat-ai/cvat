@@ -30,6 +30,7 @@ import {
     fetchAnnotationsAsync,
     showFilters,
     setNavigationType,
+    setFilterAnnotations,
 } from 'actions/annotation-actions';
 
 const { FieldDropdown } = AntdWidgets;
@@ -87,12 +88,13 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
 };
 
 function FiltersModalComponent(): JSX.Element {
-    const { labels, activeFilters, visible, navigationType } = useSelector(
+    const { labels, activeFilters, visible, navigationType, filterAnnotations } = useSelector(
         (state: CombinedState) => ({
             labels: state.annotation.job.labels,
             activeFilters: state.annotation.annotations.filters,
             visible: state.annotation.filtersPanelVisible,
             navigationType: state.annotation.player.navigationType,
+            filterAnnotations: state.annotation.annotations.filterAnnotations,
         }),
         shallowEqual,
     );
@@ -247,6 +249,11 @@ function FiltersModalComponent(): JSX.Element {
         dispatch(setNavigationType(checked ? NavigationType.FILTERED : NavigationType.REGULAR));
     };
 
+    const handleFilterAnnotationsChange = (checked: boolean): void => {
+        dispatch(setFilterAnnotations(checked));
+        dispatch(fetchAnnotationsAsync());
+    };
+
     const confirmModal = (): void => {
         const currentFilter: StoredFilter = {
             id: QbUtils.uuid(),
@@ -364,13 +371,20 @@ function FiltersModalComponent(): JSX.Element {
                     renderBuilder={renderBuilder}
                 />
             )}
-            <div className='cvat-filters-modal-navigation-checkbox'>
+            <div className='cvat-filters-modal-checkboxes'>
                 <Checkbox
                     disabled={!isModalConfirmable() && !activeFilters.length}
                     checked={navigationType === NavigationType.FILTERED}
                     onChange={(e) => handleNavigationTypeChange(e.target.checked)}
                 >
-                    Filter frames only (navigate through filtered frames)
+                    Filter frames
+                </Checkbox>
+                <Checkbox
+                    disabled={!isModalConfirmable() && !activeFilters.length}
+                    checked={filterAnnotations}
+                    onChange={(e) => handleFilterAnnotationsChange(e.target.checked)}
+                >
+                    Filter annotations
                 </Checkbox>
             </div>
         </Modal>

@@ -38,6 +38,7 @@ import { updateJobAsync } from './jobs-actions';
 
 interface AnnotationsParameters {
     filters: object[];
+    filterAnnotations: boolean;
     frame: number;
     showAllInterpolationTracks: boolean;
     showGroundTruth: boolean;
@@ -62,7 +63,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
     const state: CombinedState = getStore().getState();
     const {
         annotation: {
-            annotations: { filters },
+            annotations: { filters, filterAnnotations },
             player: {
                 frame: { number: frame },
                 navigationType,
@@ -71,7 +72,6 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
                 instance: jobInstance,
                 groundTruthInfo: { groundTruthInstance, validationLayout },
             },
-            job: { instance: jobInstance, groundTruthInfo: { groundTruthInstance, validationLayout } },
             workspace,
         },
         settings: {
@@ -82,6 +82,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
 
     return {
         filters,
+        filterAnnotations,
         frame,
         jobInstance: jobInstance as Job,
         groundTruthInstance,
@@ -190,6 +191,7 @@ export enum AnnotationActionTypes {
     UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
     HIGHLIGHT_CONFLICT = 'HIGHLIGHT_CONFCLICT',
     HOVERED_CHAPTER = 'HOVERED_CHAPTER',
+    SET_FILTER_ANNOTATIONS = 'SET_FILTER_ANNOTATIONS',
 }
 
 export function setHoveredChapter(id: number | null): AnyAction {
@@ -292,36 +294,39 @@ function wrapAnnotationsInGTJob(states: ObjectState[]): ObjectState[] {
 const userUnlockedInReviewMode = new Set<number>();
 
 function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
-    return states.map((state: ObjectState) => new Proxy(state, {
-        get(target, prop) {
-            if (prop === 'lock') {
-                if (target.isGroundTruth) {
-                    return true;
-                }
+    return states.map(
+        (state: ObjectState) =>
+            new Proxy(state, {
+                get(target, prop) {
+                    if (prop === 'lock') {
+                        if (target.isGroundTruth) {
+                            return true;
+                        }
 
-                // If user explicitly unlocked this object, return actual lock state
-                if (userUnlockedInReviewMode.has(target.clientID as number)) {
+                        // If user explicitly unlocked this object, return actual lock state
+                        if (userUnlockedInReviewMode.has(target.clientID as number)) {
+                            return Reflect.get(target, prop);
+                        }
+                        return true;
+                    }
                     return Reflect.get(target, prop);
-                }
-                return true;
-            }
-            return Reflect.get(target, prop);
-        },
-        set(target, prop, value) {
-            if (prop === 'lock') {
-                if (target.isGroundTruth) {
-                    return Reflect.set(target, prop, true);
-                }
+                },
+                set(target, prop, value) {
+                    if (prop === 'lock') {
+                        if (target.isGroundTruth) {
+                            return Reflect.set(target, prop, true);
+                        }
 
-                if (!value) {
-                    userUnlockedInReviewMode.add(target.clientID as number);
-                } else {
-                    userUnlockedInReviewMode.delete(target.clientID as number);
-                }
-            }
-            return Reflect.set(target, prop, value);
-        },
-    }));
+                        if (!value) {
+                            userUnlockedInReviewMode.add(target.clientID as number);
+                        } else {
+                            userUnlockedInReviewMode.delete(target.clientID as number);
+                        }
+                    }
+                    return Reflect.set(target, prop, value);
+                },
+            }),
+    );
 }
 
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
@@ -332,21 +337,19 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
 }> {
     const {
         filters,
+        filterAnnotations,
         frame,
         showAllInterpolationTracks,
         jobInstance,
         showGroundTruth,
         groundTruthInstance,
         validationLayout,
-        navigationType,
-        filters, frame, showAllInterpolationTracks, jobInstance,
-        showGroundTruth, groundTruthInstance, validationLayout,
         workspace,
     } = receiveAnnotationsParameters();
 
-    // When "Filter frames only" is active (FILTERED navigation), show all annotations
-    // on the current frame while navigation still uses the stored filters
-    const displayFilters = navigationType === NavigationType.FILTERED ? [] : filters;
+    // When "Filter annotations" is off, show all annotations on the frame
+    // while navigation can still use the stored filters independently
+    const displayFilters = filterAnnotations ? filters : [];
 
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
     let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, displayFilters);
@@ -385,48 +388,22 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     };
 }
 
-const userUnlockedInReviewMode = new Set<number>();
-
-function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
-    return states.map(
-        (state: ObjectState) =>
-            new Proxy(state, {
-                get(target, prop) {
-                    if (prop === 'lock') {
-                        // If user explicitly unlocked this object, return actual lock state
-                        if (userUnlockedInReviewMode.has(target.clientID as number)) {
-                            return Reflect.get(target, prop);
-                        }
-                        return target.isGroundTruth ? Reflect.get(target, prop) : true;
-                    }
-                    return Reflect.get(target, prop);
-                },
-                set(target, prop, value) {
-                    if (prop === 'lock') {
-                        if (!value && !target.isGroundTruth) {
-                            userUnlockedInReviewMode.add(target.clientID as number);
-                        } else if (value === true) {
-                            userUnlockedInReviewMode.delete(target.clientID as number);
-                        }
-                    }
-                    return Reflect.set(target, prop, value);
-                },
-            }),
-    );
+export function setFilterAnnotations(filterAnnotations: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_FILTER_ANNOTATIONS,
+        payload: { filterAnnotations },
+    };
 }
 
 export function fetchAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             const { states, history, minZ, maxZ } = await fetchAnnotations();
-
-            const { workspace } = getState().annotation;
-            const finalStates = workspace === Workspace.REVIEW ? wrapStatesForReviewMode(states) : states;
 
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
-                    states: finalStates,
+                    states,
                     history,
                     minZ,
                     maxZ,
@@ -1262,8 +1239,6 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
                 states = wrapStatesForReviewMode(states);
             }
 
-            const needToUpdateAll = states
-                .some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null);
             if (needToUpdateAll) {
                 dispatch(fetchAnnotationsAsync());
                 return;
