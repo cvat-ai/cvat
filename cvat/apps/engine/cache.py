@@ -890,7 +890,7 @@ class MediaCache:
         # Otherwise we might need to download files.
         # This is not needed for video tasks, as it will reduce performance,
         # because of reading multiple files (chunks)
-        from cvat.apps.engine.frame_provider import FrameOutputType, make_frame_provider
+        from cvat.apps.engine.media_providers.frame_provider import FrameOutputType, make_frame_provider
 
         task_frame_provider = make_frame_provider(db_task)
 
@@ -998,7 +998,7 @@ class MediaCache:
                 os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg")
             )
         else:
-            from cvat.apps.engine.frame_provider import (  # avoid circular import
+            from cvat.apps.engine.media_providers.frame_provider import (  # avoid circular import
                 FrameOutputType,
                 make_frame_provider,
             )

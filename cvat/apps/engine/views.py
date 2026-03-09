@@ -58,7 +58,7 @@ from cvat.apps.engine.cache import (
 from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
-from cvat.apps.engine.frame_provider import (
+from cvat.apps.engine.media_providers.frame_provider import (
     DataWithMeta,
     IFrameProvider,
     JobFrameProvider,

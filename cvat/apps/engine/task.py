@@ -26,7 +26,7 @@ from django.forms.models import model_to_dict
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.media_providers.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
