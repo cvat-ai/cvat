@@ -40,7 +40,7 @@ context('CSV Export from different pages', () => {
             expect(taskIDs).to.include(taskId);
         },
         taskName: (columnIndex) => (columns) => {
-            const taskName = columns[columnIndex];
+            const taskName = columns[columnIndex].replace(/^"|"$/g, '');
             expect(taskNames).to.include(taskName);
         },
         jobUrls: (columns) => {
@@ -57,10 +57,11 @@ context('CSV Export from different pages', () => {
         },
         projectData: (idColumn, nameColumn) => (columns) => {
             expect(columns[idColumn]).to.equal(String(projectID));
-            expect(columns[nameColumn]).to.equal(projectName);
+            const projectNameValue = columns[nameColumn].replace(/^"|"$/g, '');
+            expect(projectNameValue).to.equal(projectName);
         },
         hasTaskName: (columns, row) => {
-            const hasTaskName = taskNames.some((name) => row.includes(name));
+            const hasTaskName = taskNames.some((name) => row.includes(`"${name}"`));
             expect(hasTaskName).to.equal(true);
         },
     };
@@ -267,7 +268,10 @@ context('CSV Export from different pages', () => {
                     const columns = row.split(',');
                     const projectId = parseInt(columns[0], 10);
                     expect(projectId).to.equal(projectID);
-                    expect(columns[1]).to.equal(projectName);
+                    // Remove quotes from project name for comparison
+                    const projectNameValue = columns[1].replace(/^"|"$/g, '');
+                    expect(projectNameValue).to.equal(projectName);
+                    // URL is a string and will be quoted
                     expect(columns[2]).to.include(`/projects/${projectID}`);
                 },
             );
