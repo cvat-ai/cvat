@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save, pre_save
-from django.dispatch import receiver
+from django.dispatch import Signal, receiver
 from rest_framework.exceptions import ValidationError
 
 from .models import Asset, CloudStorage, Data, Job, JobType, Profile, Project, StatusChoice, Task
@@ -134,3 +134,5 @@ def __delete_cloudstorage_handler(instance, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_storage_dirname(), ignore_errors=True)
     )
+
+cache_item_created_signal = Signal()

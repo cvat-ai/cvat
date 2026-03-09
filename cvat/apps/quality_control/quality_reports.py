@@ -65,6 +65,7 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictSeverity,
     AnnotationConflictType,
     AnnotationType,
+    QualitySettings,
 )
 from cvat.apps.quality_control.utils import array_safe_divide
 
@@ -608,9 +609,9 @@ class DatasetQualityEstimator:
         ds_data_provider: JobDataProvider,
         gt_data_provider: JobDataProvider,
         *,
-        requirements: Sequence[models.QualityRequirement],
+        settings: QualitySettings,
     ) -> None:
-        self._requirements = requirements
+        self.settings = settings
 
         self._ds_data_provider = ds_data_provider
         self._gt_data_provider = gt_data_provider
@@ -661,14 +662,14 @@ class DatasetQualityEstimator:
         # TODO: Process requirements in the dependency order, shape reqs > attribute reqs
         shape_reqs = [
             req
-            for req in self._requirements
+            for req in self.settings.requirements
             if req.annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE
         ]
         # TODO: optimize - reuse distances for matching configurations
 
         attribute_reqs = [
             req
-            for req in self._requirements
+            for req in self.settings.requirements
             if req.annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
         ]
 
@@ -834,7 +835,7 @@ class TaskQualityCalculator:
             }
 
             quality_requirements = [
-                ComparisonParameters.from_settings(r) for r in quality_settings.requirements
+                ComparisonParameters.from_settings(r) for r in quality_settings.requirements.all()
             ]
             job_comparison_reports: dict[int, ComparisonReport] = {}
             for job in jobs:
