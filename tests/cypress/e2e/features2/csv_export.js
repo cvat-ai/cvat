@@ -268,10 +268,8 @@ context('CSV Export from different pages', () => {
                     const columns = row.split(',');
                     const projectId = parseInt(columns[0], 10);
                     expect(projectId).to.equal(projectID);
-                    // Remove quotes from project name for comparison
                     const projectNameValue = columns[1].replace(/^"|"$/g, '');
                     expect(projectNameValue).to.equal(projectName);
-                    // URL is a string and will be quoted
                     expect(columns[2]).to.include(`/projects/${projectID}`);
                 },
             );
