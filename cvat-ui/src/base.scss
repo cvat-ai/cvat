@@ -186,6 +186,7 @@ $scroll-breakpoint: 1300px;
     > .cvat-resource-list-wrapper {
         flex-grow: 1;
         overflow-y: auto;
+        scrollbar-gutter: stable;
         padding-top: $grid-unit-size;
         align-items: start;
     }

@@ -10,8 +10,6 @@
     @include cvat-resource-page;
 
     .cvat-tasks-page-top-bar {
-        margin-right: $grid-unit-size;
-
         > div {
             display: flex;
             justify-content: space-between;
