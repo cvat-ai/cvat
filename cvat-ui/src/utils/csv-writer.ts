@@ -5,12 +5,12 @@
 export function escapeCSVValue(value: any): string {
     if (value === null || value === undefined) return '';
 
-    const str = String(value);
-    // Escape if contains comma, quote, or newline
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
+    if (typeof value !== 'string') {
+        return String(value);
     }
-    return str;
+
+    const escapedStr = value.replace(/"/g, '""');
+    return `"${escapedStr}"`;
 }
 
 export function downloadCSV(content: string, filename: string): void {
@@ -72,7 +72,7 @@ class IncrementalCSVWriter<T> {
 
     private generateHeader(): string {
         return this.columns
-            .map((col) => escapeCSVValue(col.header))
+            .map((col) => col.header)
             .join(',');
     }
 
@@ -91,7 +91,7 @@ export function generateCSV<T>(
     data: T[],
     columns: Array<{ title: string; accessor: (item: T) => any }>,
 ): string {
-    const header = columns.map((col) => escapeCSVValue(col.title)).join(',');
+    const header = columns.map((col) => col.title).join(',');
 
     if (!data || data.length === 0) {
         return header;
