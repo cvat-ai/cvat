@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.59.1'></a>
+## \[2.59.1\] - 2026-03-09
+
+### Fixed
+
+- Missing escaping for string fields in `.csv` export
+  (<https://github.com/cvat-ai/cvat/pull/10345>)
+
 <a id='changelog-2.59.0'></a>
 ## \[2.59.0\] - 2026-03-06
 
