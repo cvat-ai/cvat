@@ -368,7 +368,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return value
 
     def get_extra_kwargs(self):
-        defaults = models.QualitySettings.get_defaults()
+        defaults = models.QualityRequirement.get_defaults()
 
         extra_kwargs = super().get_extra_kwargs()
 

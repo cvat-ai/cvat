@@ -262,7 +262,7 @@ class QualitySettings(TimestampedModel):
         constraints = [
             models.CheckConstraint(
                 name="quality_settings_task_or_project",
-                condition=models.Q(task_id__isnull=False) ^ models.Q(project_id__isnull=False),
+                check=models.Q(task_id__isnull=False) ^ models.Q(project_id__isnull=False),
             )
         ]
 
@@ -336,7 +336,7 @@ class QualityRequirement(TimestampedModel):
 
     annotation_type = models.CharField(
         max_length=32,
-        choices=QualityRequirementAnnotationType.choices(),
+        choices=QualityRequirementAnnotationType.choices,
     )
 
     target_metric = models.CharField(
