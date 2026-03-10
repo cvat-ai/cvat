@@ -12,6 +12,7 @@ import {
     switchShowingInterpolatedTracks,
     switchShowingObjectsTextAlways,
     switchAutomaticBordering,
+    switchMagneticSnap,
     switchIntelligentPolygonCrop,
     changeDefaultApproxPolyAccuracy,
     switchTextFontSize,
@@ -34,6 +35,7 @@ interface StateToProps {
     showObjectsTextAlways: boolean;
     defaultApproxPolyAccuracy: number;
     automaticBordering: boolean;
+    magneticSnap: boolean;
     adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     textFontSize: number;
@@ -50,6 +52,7 @@ interface DispatchToProps {
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchMagneticSnap(enabled: boolean): void;
     onSwitchAdaptiveZoom(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
@@ -69,6 +72,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        magneticSnap,
         adaptiveZoom,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
@@ -86,6 +90,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        magneticSnap,
         adaptiveZoom,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
@@ -104,6 +109,7 @@ const mapDispatchToProps: DispatchToProps = {
     onSwitchShowingInterpolatedTracks: switchShowingInterpolatedTracks,
     onSwitchShowingObjectsTextAlways: switchShowingObjectsTextAlways,
     onSwitchAutomaticBordering: switchAutomaticBordering,
+    onSwitchMagneticSnap: switchMagneticSnap,
     onSwitchAdaptiveZoom: switchAdaptiveZoom,
     onSwitchIntelligentPolygonCrop: switchIntelligentPolygonCrop,
     onChangeDefaultApproxPolyAccuracy: changeDefaultApproxPolyAccuracy,

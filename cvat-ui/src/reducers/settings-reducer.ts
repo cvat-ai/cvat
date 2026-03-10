@@ -33,6 +33,8 @@ const defaultState: SettingsState = {
         autoSaveInterval: 15 * 60 * 1000,
         focusedObjectPadding: 50,
         automaticBordering: false,
+        magneticSnap: false,
+        magnetRadius: 10,
         adaptiveZoom: true,
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
@@ -342,6 +344,24 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     automaticBordering: action.payload.automaticBordering,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_MAGNETIC_SNAP: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    magneticSnap: action.payload.magneticSnap,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_MAGNET_RADIUS: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    magnetRadius: action.payload.magnetRadius,
                 },
             };
         }

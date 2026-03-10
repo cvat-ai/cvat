@@ -24,6 +24,7 @@ interface Props {
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
     automaticBordering: boolean;
+    magneticSnap: boolean;
     adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
@@ -39,6 +40,7 @@ interface Props {
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchMagneticSnap(enabled: boolean): void;
     onSwitchAdaptiveZoom(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeTextFontSize(fontSize: number): void;
@@ -56,6 +58,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        magneticSnap,
         adaptiveZoom,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
@@ -70,6 +73,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingInterpolatedTracks,
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
+        onSwitchMagneticSnap,
         onSwitchAdaptiveZoom,
         onSwitchIntelligentPolygonCrop,
         onChangeDefaultApproxPolyAccuracy,
@@ -218,6 +222,24 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 <Col span={24}>
                     <Text type='secondary'>
                         Enable automatic bordering for polygons and polylines during drawing/editing
+                    </Text>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-magnetic-snap cvat-player-setting'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={magneticSnap}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchMagneticSnap(event.target.checked);
+                        }}
+                    >
+                        Smart snapping
+                    </Checkbox>
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>
+                        Automatically snap points to nearby points when editing shapes
                     </Text>
                 </Col>
             </Row>

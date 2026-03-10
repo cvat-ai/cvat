@@ -78,6 +78,7 @@ export enum ColorBy {
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
+    magneticSnap?: boolean;
     adaptiveZoom?: boolean;
     displayAllText?: boolean;
     textFontSize?: number;
@@ -98,6 +99,7 @@ export interface Configuration {
     resetZoom?: boolean;
     hideEditedObject?: boolean;
     focusedObjectPadding?: number;
+    magnetRadius?: number;
 }
 
 export interface BrushTool {
@@ -401,6 +403,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             configuration: {
                 smoothImage: true,
                 autoborders: false,
+                magneticSnap: false,
+                magnetRadius: 10,
                 adaptiveZoom: true,
                 displayAllText: false,
                 showProjections: false,
@@ -965,6 +969,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (typeof configuration.autoborders === 'boolean') {
             this.data.configuration.autoborders = configuration.autoborders;
+        }
+        if (typeof configuration.magneticSnap === 'boolean') {
+            this.data.configuration.magneticSnap = configuration.magneticSnap;
+        }
+        if (typeof configuration.magnetRadius === 'number' && configuration.magnetRadius > 0) {
+            this.data.configuration.magnetRadius = configuration.magnetRadius;
         }
         if (typeof configuration.adaptiveZoom === 'boolean') {
             this.data.configuration.adaptiveZoom = configuration.adaptiveZoom;

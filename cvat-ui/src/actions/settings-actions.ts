@@ -45,6 +45,8 @@ export enum SettingsActionTypes {
     CHANGE_FOCUSED_OBJECT_PADDING = 'CHANGE_FOCUSED_OBJECT_PADDING',
     CHANGE_DEFAULT_APPROX_POLY_THRESHOLD = 'CHANGE_DEFAULT_APPROX_POLY_THRESHOLD',
     SWITCH_AUTOMATIC_BORDERING = 'SWITCH_AUTOMATIC_BORDERING',
+    SWITCH_MAGNETIC_SNAP = 'SWITCH_MAGNETIC_SNAP',
+    CHANGE_MAGNET_RADIUS = 'CHANGE_MAGNET_RADIUS',
     SWITCH_ADAPTIVE_ZOOM = 'SWITCH_ADAPTIVE_ZOOM',
     SWITCH_INTELLIGENT_POLYGON_CROP = 'SWITCH_INTELLIGENT_POLYGON_CROP',
     SWITCH_SHOWNIG_INTERPOLATED_TRACKS = 'SWITCH_SHOWNIG_INTERPOLATED_TRACKS',
@@ -328,6 +330,24 @@ export function switchAutomaticBordering(automaticBordering: boolean): AnyAction
         type: SettingsActionTypes.SWITCH_AUTOMATIC_BORDERING,
         payload: {
             automaticBordering,
+        },
+    };
+}
+
+export function switchMagneticSnap(magneticSnap: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_MAGNETIC_SNAP,
+        payload: {
+            magneticSnap,
+        },
+    };
+}
+
+export function changeMagnetRadius(magnetRadius: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_MAGNET_RADIUS,
+        payload: {
+            magnetRadius,
         },
     };
 }
