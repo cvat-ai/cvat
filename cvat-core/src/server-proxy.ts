@@ -23,7 +23,7 @@ import {
     SerializedApiToken, APIApiTokensFilter,
 } from './server-response-types';
 import { APIApiTokenModifiableFields } from './server-request-types';
-import { PaginatedResource, UpdateStatusData } from './core-types';
+import { PaginatedResource, SerializedModel, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
@@ -1829,11 +1829,17 @@ function exportEvents(params: APIAnalyticsEventsFilter): Promise<string> {
     return promise;
 }
 
-async function getLambdaFunctions() {
+async function getLambdaFunctions(): Promise<SerializedModel[]> {
     const { backendAPI } = config;
 
+    const url = `${backendAPI}/lambda/functions`;
     try {
-        const response = await Axios.get(`${backendAPI}/lambda/functions`);
+        const head = await Axios.head(url, { validateStatus: (status) => status === 200 || status === 404 });
+        if (head.status === 404) {
+            return [];
+        }
+
+        const response = await Axios.get(url);
         return response.data;
     } catch (errorData) {
         if (errorData.response.status === 503) {

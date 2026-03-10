@@ -24,6 +24,7 @@ export interface Canvas3dView {
     html(): ViewsDOM;
     render(): void;
     keyControls(keys: KeyboardEvent): void;
+    focusObjectByClientId(clientID: number, animate?: boolean): void;
 }
 
 export enum CameraAction {
@@ -128,6 +129,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
+    private hoverNeedsUpdate: boolean;
+
+    public focusObjectByClientId(clientID: number, animate: boolean = true): void {
+        const cuboidModel = this.drawnObjects[clientID];
+        if (cuboidModel) {
+            this.fitObject(cuboidModel.cuboid, animate);
+        }
+    }
 
     private action: {
         translation: any;
@@ -205,6 +214,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
 
         this.isCtrlDown = false;
+        this.hoverNeedsUpdate = false;
         this.action = {
             scan: null,
             detected: false,
@@ -397,6 +407,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const { mouseVector } = this.views.perspective.rayCaster as { mouseVector: THREE.Vector2 };
             mouseVector.x = ((event.clientX - (canvas.offsetLeft + rect.left)) / canvas.clientWidth) * 2 - 1;
             mouseVector.y = -((event.clientY - (canvas.offsetTop + rect.top)) / canvas.clientHeight) * 2 + 1;
+            this.hoverNeedsUpdate = true;
         });
 
         canvasPerspectiveView.addEventListener('click', (e: MouseEvent): void => {
@@ -411,6 +422,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const intersectionClientID = +(intersects[0]?.object?.name) || null;
             const objectState = Number.isInteger(intersectionClientID) ? this.model.objects
                 .find((state: ObjectState) => state.clientID === intersectionClientID) : null;
+
+            if (objectState) {
+                this.dispatchEvent(
+                    new CustomEvent('canvas.clicked', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            clientID: intersectionClientID,
+                        },
+                    }),
+                );
+            }
 
             const handleClick = (targetList: ObjectState[]): void => {
                 const objectStateIdx = targetList
@@ -466,6 +489,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 } else {
                     const clientID = intersects[0].object.name;
                     this.fitObject(this.drawnObjects[clientID].cuboid, true);
+
+                    this.dispatchEvent(
+                        new CustomEvent('canvas.doubleclicked', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                clientID: Number(clientID),
+                            },
+                        }),
+                    );
                 }
                 return;
             }
@@ -1374,7 +1407,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             // in input data is incorrect
                             let cloud = null;
                             try {
-                                console.error = () => {};
+                                console.error = () => { };
                                 cloud = loader.parse(data) as THREE.Points;
                             } finally {
                                 console.error = defaultImpl;
@@ -1942,15 +1975,28 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     this.stateToBeSplitted = objectState;
                     this.drawnObjects[castedClientID].cuboid.setColor(this.receiveShapeColor(objectState));
                 } else if (this.mode === Mode.IDLE && !this.isCtrlDown) {
-                    if (this.model.data.activeElement.clientID !== clientID) {
-                        const object = this.views.perspective.scene.getObjectByName(clientID);
-                        if (object === undefined) return;
+                    const intersectedClientID = intersects[0]?.object?.name || null;
+                    const activeClientID = this.model.data.activeElement.clientID;
+                    if (activeClientID !== null && !this.hoverNeedsUpdate) {
+                        return;
+                    }
+                    this.hoverNeedsUpdate = false;
+
+                    if (activeClientID !== intersectedClientID) {
+                        const object = intersectedClientID ?
+                            this.views.perspective.scene.getObjectByName(intersectedClientID) :
+                            null;
+                        if (intersectedClientID && object === undefined) return;
+
+                        const numericClientID =
+                            typeof intersectedClientID === 'string' ? +intersectedClientID : null;
+
                         this.dispatchEvent(
                             new CustomEvent('canvas.selected', {
                                 bubbles: false,
                                 cancelable: true,
                                 detail: {
-                                    clientID: castedClientID,
+                                    clientID: numericClientID,
                                 },
                             }),
                         );
@@ -2134,11 +2180,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // small check to avoid case when points change their relative orientation
         if (
             Math.sign(crosslyingPointInternalCoordinates.x - cuboidNodes[currentPointNumber][0]) !==
-                Math.sign(crosslyingPointInternalCoordinates.x - currentPointInternalCoordinates.x) ||
+            Math.sign(crosslyingPointInternalCoordinates.x - currentPointInternalCoordinates.x) ||
             Math.sign(crosslyingPointInternalCoordinates.y - cuboidNodes[currentPointNumber][1]) !==
-                Math.sign(crosslyingPointInternalCoordinates.y - currentPointInternalCoordinates.y) ||
+            Math.sign(crosslyingPointInternalCoordinates.y - currentPointInternalCoordinates.y) ||
             Math.sign(crosslyingPointInternalCoordinates.z - cuboidNodes[currentPointNumber][2]) !==
-                Math.sign(crosslyingPointInternalCoordinates.z - currentPointInternalCoordinates.z)
+            Math.sign(crosslyingPointInternalCoordinates.z - currentPointInternalCoordinates.z)
         ) {
             return;
         }

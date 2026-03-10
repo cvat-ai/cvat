@@ -27,6 +27,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 18,
+      "project_name": "project with tags",
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -44,6 +45,7 @@
         "location": "local"
       },
       "task_id": 35,
+      "task_name": "task with tags",
       "type": "annotation",
       "updated_date": "2025-11-13T11:32:48.469000Z",
       "url": "http://localhost:8080/api/jobs/63"
@@ -72,6 +74,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -89,6 +92,7 @@
         "location": "local"
       },
       "task_id": 34,
+      "task_name": "task with frame step and gt job",
       "type": "ground_truth",
       "updated_date": "2025-08-01T11:44:47.600000Z",
       "url": "http://localhost:8080/api/jobs/62"
@@ -117,6 +121,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -134,6 +139,7 @@
         "location": "local"
       },
       "task_id": 34,
+      "task_name": "task with frame step and gt job",
       "type": "annotation",
       "updated_date": "2025-08-01T11:45:33.617000Z",
       "url": "http://localhost:8080/api/jobs/61"
@@ -162,6 +168,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -179,6 +186,7 @@
         "location": "local"
       },
       "task_id": 34,
+      "task_name": "task with frame step and gt job",
       "type": "annotation",
       "updated_date": "2025-08-01T11:44:47.547000Z",
       "url": "http://localhost:8080/api/jobs/60"
@@ -207,6 +215,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -224,6 +233,7 @@
         "location": "local"
       },
       "task_id": 34,
+      "task_name": "task with frame step and gt job",
       "type": "annotation",
       "updated_date": "2025-08-01T11:44:47.537000Z",
       "url": "http://localhost:8080/api/jobs/59"
@@ -252,6 +262,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "project_name": "project 4",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
@@ -261,6 +272,7 @@
       "stop_frame": 9,
       "target_storage": null,
       "task_id": 33,
+      "task_name": "task with honeypots",
       "type": "ground_truth",
       "updated_date": "2025-05-05T15:38:37.188000Z",
       "url": "http://localhost:8080/api/jobs/58"
@@ -289,6 +301,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "project_name": "project 4",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -298,6 +311,7 @@
       "stop_frame": 7,
       "target_storage": null,
       "task_id": 33,
+      "task_name": "task with honeypots",
       "type": "annotation",
       "updated_date": "2025-05-05T15:35:00.515000Z",
       "url": "http://localhost:8080/api/jobs/57"
@@ -326,6 +340,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "project_name": "project 4",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -335,6 +350,7 @@
       "stop_frame": 4,
       "target_storage": null,
       "task_id": 33,
+      "task_name": "task with honeypots",
       "type": "annotation",
       "updated_date": "2025-05-05T15:35:00.493000Z",
       "url": "http://localhost:8080/api/jobs/56"
@@ -363,6 +379,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "project_name": "project 4",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
@@ -372,6 +389,7 @@
       "stop_frame": 3,
       "target_storage": null,
       "task_id": 32,
+      "task_name": "task with gt job",
       "type": "ground_truth",
       "updated_date": "2025-05-05T15:38:29.597000Z",
       "url": "http://localhost:8080/api/jobs/55"
@@ -400,6 +418,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 17,
+      "project_name": "project 4",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -409,6 +428,7 @@
       "stop_frame": 3,
       "target_storage": null,
       "task_id": 32,
+      "task_name": "task with gt job",
       "type": "annotation",
       "updated_date": "2025-05-05T15:35:00.294000Z",
       "url": "http://localhost:8080/api/jobs/54"
@@ -437,6 +457,7 @@
       "organization": null,
       "parent_job_id": 51,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -454,6 +475,7 @@
         "location": "local"
       },
       "task_id": 31,
+      "task_name": "sandbox task with consensus",
       "type": "consensus_replica",
       "updated_date": "2025-01-27T16:43:47.462000Z",
       "url": "http://localhost:8080/api/jobs/53"
@@ -482,6 +504,7 @@
       "organization": null,
       "parent_job_id": 51,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -499,6 +522,7 @@
         "location": "local"
       },
       "task_id": 31,
+      "task_name": "sandbox task with consensus",
       "type": "consensus_replica",
       "updated_date": "2025-01-27T16:43:07.696000Z",
       "url": "http://localhost:8080/api/jobs/52"
@@ -527,6 +551,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 2,
       "source_storage": {
         "cloud_storage_id": null,
@@ -544,6 +569,7 @@
         "location": "local"
       },
       "task_id": 31,
+      "task_name": "sandbox task with consensus",
       "type": "annotation",
       "updated_date": "2025-01-27T16:42:31.660000Z",
       "url": "http://localhost:8080/api/jobs/51"
@@ -572,6 +598,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -589,6 +616,7 @@
         "location": "local"
       },
       "task_id": 30,
+      "task_name": "task with consensus and honeypots",
       "type": "ground_truth",
       "updated_date": "2025-01-14T17:21:56.768000Z",
       "url": "http://localhost:8080/api/jobs/50"
@@ -617,6 +645,7 @@
       "organization": 2,
       "parent_job_id": 46,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -634,6 +663,7 @@
         "location": "local"
       },
       "task_id": 30,
+      "task_name": "task with consensus and honeypots",
       "type": "consensus_replica",
       "updated_date": "2025-01-14T17:24:51.333000Z",
       "url": "http://localhost:8080/api/jobs/49"
@@ -662,6 +692,7 @@
       "organization": 2,
       "parent_job_id": 46,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -679,6 +710,7 @@
         "location": "local"
       },
       "task_id": 30,
+      "task_name": "task with consensus and honeypots",
       "type": "consensus_replica",
       "updated_date": "2025-01-14T17:19:51.388000Z",
       "url": "http://localhost:8080/api/jobs/48"
@@ -707,6 +739,7 @@
       "organization": 2,
       "parent_job_id": 46,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -724,6 +757,7 @@
         "location": "local"
       },
       "task_id": 30,
+      "task_name": "task with consensus and honeypots",
       "type": "consensus_replica",
       "updated_date": "2025-01-14T17:23:55.551000Z",
       "url": "http://localhost:8080/api/jobs/47"
@@ -752,6 +786,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 3,
       "source_storage": {
         "cloud_storage_id": null,
@@ -769,6 +804,7 @@
         "location": "local"
       },
       "task_id": 30,
+      "task_name": "task with consensus and honeypots",
       "type": "annotation",
       "updated_date": "2025-01-14T17:24:20.174000Z",
       "url": "http://localhost:8080/api/jobs/46"
@@ -797,6 +833,7 @@
       "organization": 2,
       "parent_job_id": 42,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -814,6 +851,7 @@
         "location": "local"
       },
       "task_id": 30,
+      "task_name": "task with consensus and honeypots",
       "type": "consensus_replica",
       "updated_date": "2025-02-03T15:22:52.241000Z",
       "url": "http://localhost:8080/api/jobs/45"
@@ -842,6 +880,7 @@
       "organization": 2,
       "parent_job_id": 42,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -859,6 +898,7 @@
         "location": "local"
       },
       "task_id": 30,
+      "task_name": "task with consensus and honeypots",
       "type": "consensus_replica",
       "updated_date": "2025-01-14T17:19:51.388000Z",
       "url": "http://localhost:8080/api/jobs/44"
@@ -887,6 +927,7 @@
       "organization": 2,
       "parent_job_id": 42,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -904,6 +945,7 @@
         "location": "local"
       },
       "task_id": 30,
+      "task_name": "task with consensus and honeypots",
       "type": "consensus_replica",
       "updated_date": "2025-02-03T15:25:32.413000Z",
       "url": "http://localhost:8080/api/jobs/43"
@@ -932,6 +974,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 3,
       "source_storage": {
         "cloud_storage_id": null,
@@ -949,6 +992,7 @@
         "location": "local"
       },
       "task_id": 30,
+      "task_name": "task with consensus and honeypots",
       "type": "annotation",
       "updated_date": "2025-02-03T15:25:42.655000Z",
       "url": "http://localhost:8080/api/jobs/42"
@@ -977,6 +1021,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -986,6 +1031,7 @@
       "stop_frame": 28,
       "target_storage": null,
       "task_id": 29,
+      "task_name": "task with honeypots",
       "type": "ground_truth",
       "updated_date": "2024-10-01T12:38:26.967000Z",
       "url": "http://localhost:8080/api/jobs/41"
@@ -1014,6 +1060,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -1023,6 +1070,7 @@
       "stop_frame": 22,
       "target_storage": null,
       "task_id": 29,
+      "task_name": "task with honeypots",
       "type": "annotation",
       "updated_date": "2024-10-01T12:36:21.651000Z",
       "url": "http://localhost:8080/api/jobs/40"
@@ -1051,6 +1099,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -1060,6 +1109,7 @@
       "stop_frame": 15,
       "target_storage": null,
       "task_id": 29,
+      "task_name": "task with honeypots",
       "type": "annotation",
       "updated_date": "2024-10-01T12:36:21.628000Z",
       "url": "http://localhost:8080/api/jobs/39"
@@ -1088,6 +1138,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -1097,6 +1148,7 @@
       "stop_frame": 7,
       "target_storage": null,
       "task_id": 29,
+      "task_name": "task with honeypots",
       "type": "annotation",
       "updated_date": "2024-10-01T12:36:21.606000Z",
       "url": "http://localhost:8080/api/jobs/38"
@@ -1125,6 +1177,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 10,
+      "project_name": "project 6",
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1142,6 +1195,7 @@
         "location": "local"
       },
       "task_id": 28,
+      "task_name": "task 1",
       "type": "annotation",
       "updated_date": "2024-09-23T21:42:23.045000Z",
       "url": "http://localhost:8080/api/jobs/37"
@@ -1170,6 +1224,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1187,6 +1242,7 @@
         "location": "local"
       },
       "task_id": 27,
+      "task_name": "task assigned to maintainer",
       "type": "annotation",
       "updated_date": "2024-09-23T10:52:04.507000Z",
       "url": "http://localhost:8080/api/jobs/36"
@@ -1215,6 +1271,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1232,6 +1289,7 @@
         "location": "local"
       },
       "task_id": 26,
+      "task_name": "task assigned to owner",
       "type": "annotation",
       "updated_date": "2024-09-23T10:51:32.932000Z",
       "url": "http://localhost:8080/api/jobs/35"
@@ -1260,6 +1318,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 14,
+      "project_name": "project with subsets",
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1277,6 +1336,7 @@
         "location": "local"
       },
       "task_id": 25,
+      "task_name": "task-validation",
       "type": "annotation",
       "updated_date": "2024-07-15T15:34:53.594000Z",
       "url": "http://localhost:8080/api/jobs/34"
@@ -1305,6 +1365,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 14,
+      "project_name": "project with subsets",
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1322,6 +1383,7 @@
         "location": "local"
       },
       "task_id": 24,
+      "task_name": "task_train",
       "type": "annotation",
       "updated_date": "2024-07-15T15:33:10.549000Z",
       "url": "http://localhost:8080/api/jobs/33"
@@ -1350,6 +1412,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
@@ -1359,6 +1422,7 @@
       "stop_frame": 10,
       "target_storage": null,
       "task_id": 23,
+      "task_name": "task with several jobs and ground truth job",
       "type": "ground_truth",
       "updated_date": "2024-03-21T20:50:20.020000Z",
       "url": "http://localhost:8080/api/jobs/32"
@@ -1387,6 +1451,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
@@ -1396,6 +1461,7 @@
       "stop_frame": 10,
       "target_storage": null,
       "task_id": 23,
+      "task_name": "task with several jobs and ground truth job",
       "type": "annotation",
       "updated_date": "2024-03-21T20:50:27.594000Z",
       "url": "http://localhost:8080/api/jobs/31"
@@ -1424,6 +1490,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
@@ -1433,6 +1500,7 @@
       "stop_frame": 9,
       "target_storage": null,
       "task_id": 23,
+      "task_name": "task with several jobs and ground truth job",
       "type": "annotation",
       "updated_date": "2024-03-21T20:50:33.610000Z",
       "url": "http://localhost:8080/api/jobs/30"
@@ -1461,6 +1529,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
@@ -1470,6 +1539,7 @@
       "stop_frame": 4,
       "target_storage": null,
       "task_id": 23,
+      "task_name": "task with several jobs and ground truth job",
       "type": "annotation",
       "updated_date": "2024-03-21T20:50:39.585000Z",
       "url": "http://localhost:8080/api/jobs/29"
@@ -1498,6 +1568,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
@@ -1507,6 +1578,7 @@
       "stop_frame": 10,
       "target_storage": null,
       "task_id": 22,
+      "task_name": "task3_with_gt_job",
       "type": "ground_truth",
       "updated_date": "2023-11-24T15:18:55.216000Z",
       "url": "http://localhost:8080/api/jobs/28"
@@ -1535,6 +1607,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -1544,6 +1617,7 @@
       "stop_frame": 10,
       "target_storage": null,
       "task_id": 22,
+      "task_name": "task3_with_gt_job",
       "type": "annotation",
       "updated_date": "2023-11-24T15:23:30.269000Z",
       "url": "http://localhost:8080/api/jobs/27"
@@ -1572,6 +1646,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1589,6 +1664,7 @@
         "location": "local"
       },
       "task_id": 21,
+      "task_name": "task with several jobs",
       "type": "annotation",
       "updated_date": "2023-03-27T19:08:40.166000Z",
       "url": "http://localhost:8080/api/jobs/26"
@@ -1617,6 +1693,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1634,6 +1711,7 @@
         "location": "local"
       },
       "task_id": 21,
+      "task_name": "task with several jobs",
       "type": "annotation",
       "updated_date": "2023-03-27T19:08:27.216000Z",
       "url": "http://localhost:8080/api/jobs/25"
@@ -1662,6 +1740,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 12,
+      "project_name": "project with attributes",
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1679,6 +1758,7 @@
         "location": "local"
       },
       "task_id": 20,
+      "task_name": "task in project with attributes",
       "type": "annotation",
       "updated_date": "2023-03-10T11:57:49.019000Z",
       "url": "http://localhost:8080/api/jobs/24"
@@ -1707,6 +1787,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1724,6 +1805,7 @@
         "location": "local"
       },
       "task_id": 19,
+      "task_name": "task with attributes",
       "type": "annotation",
       "updated_date": "2023-03-10T11:56:55.066000Z",
       "url": "http://localhost:8080/api/jobs/23"
@@ -1752,6 +1834,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 11,
+      "project_name": "project7",
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1769,6 +1852,7 @@
         "location": "local"
       },
       "task_id": 18,
+      "task_name": "task in project7",
       "type": "annotation",
       "updated_date": "2023-03-01T15:36:38.114000Z",
       "url": "http://localhost:8080/api/jobs/22"
@@ -1797,6 +1881,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -1806,6 +1891,7 @@
       "stop_frame": 4,
       "target_storage": null,
       "task_id": 17,
+      "task_name": "task_3_org2",
       "type": "annotation",
       "updated_date": "2023-02-10T14:05:26.022000Z",
       "url": "http://localhost:8080/api/jobs/21"
@@ -1834,6 +1920,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 8,
+      "project_name": "project with video data",
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1851,6 +1938,7 @@
         "location": "local"
       },
       "task_id": 15,
+      "task_name": "task with video data",
       "type": "annotation",
       "updated_date": "2022-12-01T12:53:35.354000Z",
       "url": "http://localhost:8080/api/jobs/19"
@@ -1879,6 +1967,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 5,
+      "project_name": "project5",
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": null,
@@ -1896,6 +1985,7 @@
         "location": "local"
       },
       "task_id": 14,
+      "task_name": "task1 in project5",
       "type": "annotation",
       "updated_date": "2022-09-23T11:57:02.302000Z",
       "url": "http://localhost:8080/api/jobs/18"
@@ -1924,6 +2014,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 4,
+      "project_name": "project4",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -1933,6 +2024,7 @@
       "stop_frame": 4,
       "target_storage": null,
       "task_id": 13,
+      "task_name": "task1_in_project4",
       "type": "annotation",
       "updated_date": "2022-12-05T07:47:01.633000Z",
       "url": "http://localhost:8080/api/jobs/17"
@@ -1967,6 +2059,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": 2,
+      "project_name": "project2",
       "replicas_count": 0,
       "source_storage": {
         "cloud_storage_id": 3,
@@ -1984,6 +2077,7 @@
         "location": "cloud_storage"
       },
       "task_id": 11,
+      "task_name": "task1_in_project2",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/16"
@@ -2012,6 +2106,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 1,
+      "project_name": "project1",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -2021,6 +2116,7 @@
       "stop_frame": 19,
       "target_storage": null,
       "task_id": 9,
+      "task_name": "task1_in_project1",
       "type": "annotation",
       "updated_date": "2022-11-03T13:57:26.346000Z",
       "url": "http://localhost:8080/api/jobs/14"
@@ -2049,6 +2145,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 1,
+      "project_name": "project1",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "acceptance",
@@ -2058,6 +2155,7 @@
       "stop_frame": 14,
       "target_storage": null,
       "task_id": 9,
+      "task_name": "task1_in_project1",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/13"
@@ -2086,6 +2184,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 1,
+      "project_name": "project1",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "validation",
@@ -2095,6 +2194,7 @@
       "stop_frame": 9,
       "target_storage": null,
       "task_id": 9,
+      "task_name": "task1_in_project1",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/12"
@@ -2129,6 +2229,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": 1,
+      "project_name": "project1",
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -2138,6 +2239,7 @@
       "stop_frame": 4,
       "target_storage": null,
       "task_id": 9,
+      "task_name": "task1_in_project1",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/11"
@@ -2172,6 +2274,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -2181,6 +2284,7 @@
       "stop_frame": 13,
       "target_storage": null,
       "task_id": 8,
+      "task_name": "task1",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/10"
@@ -2209,6 +2313,7 @@
       "organization": 2,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -2218,6 +2323,7 @@
       "stop_frame": 10,
       "target_storage": null,
       "task_id": 7,
+      "task_name": "task_2_org2",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/9"
@@ -2246,6 +2352,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -2255,6 +2362,7 @@
       "stop_frame": 0,
       "target_storage": null,
       "task_id": 6,
+      "task_name": "task3",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/8"
@@ -2289,6 +2397,7 @@
       "organization": null,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -2298,6 +2407,7 @@
       "stop_frame": 24,
       "target_storage": null,
       "task_id": 5,
+      "task_name": "task2",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/7"
@@ -2332,6 +2442,7 @@
       "organization": 1,
       "parent_job_id": null,
       "project_id": null,
+      "project_name": null,
       "replicas_count": 0,
       "source_storage": null,
       "stage": "annotation",
@@ -2341,6 +2452,7 @@
       "stop_frame": 22,
       "target_storage": null,
       "task_id": 2,
+      "task_name": "task2",
       "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/2"
