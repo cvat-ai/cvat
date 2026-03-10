@@ -149,9 +149,14 @@ function AnnotationGuidePage(): JSX.Element {
                 <div
                     className='cvat-guide-page-editor-wrapper'
                     onDragOver={(event: React.DragEvent) => {
-                        event.preventDefault();
+                        if (!(event.target as HTMLElement).closest('.w-md-editor-preview')) {
+                            event.preventDefault();
+                        }
                     }}
                     onDrop={(event: React.DragEvent) => {
+                        if ((event.target as HTMLElement).closest('.w-md-editor-preview')) {
+                            return;
+                        }
                         const { dataTransfer } = event;
                         const { files } = dataTransfer;
                         if (files.length) {
@@ -178,6 +183,9 @@ function AnnotationGuidePage(): JSX.Element {
                             }
                         }}
                         onDrop={(event: React.DragEvent) => {
+                            if ((event.target as HTMLElement).closest('.w-md-editor-preview')) {
+                                return;
+                            }
                             const { dataTransfer } = event;
                             const { files } = dataTransfer;
                             if (files.length) {
