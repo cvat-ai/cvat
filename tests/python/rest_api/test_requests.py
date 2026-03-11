@@ -13,7 +13,7 @@ from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 
 from shared.fixtures.data import Container
-from shared.fixtures.init import docker_exec_redis_inmem, kube_exec_redis_inmem
+from infra.fixtures import container_exec_redis_inmem
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
@@ -264,16 +264,14 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             corrupted_job_key = f"rq:job:{corrupted_job['id']}"
             remove_meta_command = f'redis-cli -e HDEL "{corrupted_job_key}" meta'
 
-            if request.config.getoption("--platform") == "local":
-                stdout = docker_exec_redis_inmem(["sh", "-c", remove_meta_command])
-            else:
-                stdout = kube_exec_redis_inmem(
-                    [
-                        "sh",
-                        "-c",
-                        'export REDISCLI_AUTH="${REDIS_PASSWORD}" && ' + remove_meta_command,
-                    ]
-                )
+            stdout = container_exec_redis_inmem(
+                request,
+                [
+                    "sh",
+                    "-c",
+                    'export REDISCLI_AUTH="${REDIS_PASSWORD}" && ' + remove_meta_command,
+                ],
+            )
             assert bool(int(stdout.strip()))
 
             _, response = api_client.requests_api.list(_check_status=False, _parse_response=False)

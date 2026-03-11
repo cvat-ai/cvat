@@ -5,37 +5,35 @@
 import json
 import sys
 import argparse
+from collections import defaultdict
+from hashlib import sha1
 from pathlib import Path
 from subprocess import STDOUT, Popen
 from time import monotonic
 from time import sleep
 from typing import Callable
 
+import pytest
 from _pytest.reports import TestReport
+
+from infra.config import project_config, run_prefix_from_config
+from infra.instances.base_instance import InfraInstance, InfraPlugin
+from infra.parsing import parse_debug_services
+from infra.system_utils import pick_free_port, run_command
 
 PROFILE_ORDER = {"core": 0, "extended": 1, "full": 2}
 PARALLEL_PROFILES = tuple(PROFILE_ORDER.keys())
 
 
-def add_pytest_options(group) -> None:
+def add_parallel_pytest_options(group) -> None:
     group._addoption(
         "--parallel",
         action="store",
+        type=int,
         default=None,
         help=(
-            "Run tests in parallel lanes with profile list, e.g. "
-            "--parallel core,extended,full or --parallel core*4"
-        ),
-    )
-    group._addoption(
-        "--parallel-profile-mismatch",
-        action="store",
-        default="error",
-        choices=("error", "replace"),
-        help=(
-            "When --parallel and --infra=up are used with already running lane stacks, "
-            "handle stored lane profile mismatch as: 'error' (fail fast) or "
-            "'replace' (down and recreate only mismatched lanes)."
+            "Run tests in N parallel instances (local platform only for now), "
+            "e.g. --parallel 4"
         ),
     )
     group._addoption(
@@ -50,39 +48,28 @@ def add_pytest_options(group) -> None:
     )
     group._addoption("--parallel-child", action="store_true", default=False, help=argparse.SUPPRESS)
     group._addoption("--parallel-lane-index", action="store", default=0, type=int, help=argparse.SUPPRESS)
-    group._addoption("--parallel-lane-profile", action="store", default="core", help=argparse.SUPPRESS)
+    group._addoption("--parallel-lane-profile", action="store", default="full", help=argparse.SUPPRESS)
     group._addoption("--parallel-lane-profiles", action="store", default="", help=argparse.SUPPRESS)
     group._addoption("--parallel-events-file", action="store", default="", help=argparse.SUPPRESS)
 
 
-def parse_parallel_profiles(value: str | None, allowed_profiles: tuple[str, ...]) -> list[str]:
+def parse_parallel_count(value: int | None) -> int:
+    if value is None:
+        return 0
+    if value <= 0:
+        raise ValueError("--parallel must be a positive integer")
+    return int(value)
+
+
+def parse_lane_profiles(value: str | None, allowed_profiles: tuple[str, ...]) -> list[str]:
     if not value:
         return []
-    profiles: list[str] = []
-    for entry in (part.strip() for part in value.split(",") if part.strip()):
-        if "*" not in entry:
-            profiles.append(entry)
-            continue
-
-        profile, _, multiplier_raw = entry.partition("*")
-        profile = profile.strip()
-        multiplier_raw = multiplier_raw.strip()
-        if not profile or not multiplier_raw or "*" in multiplier_raw:
-            raise ValueError(
-                f"Invalid parallel profile entry '{entry}'. "
-                "Use '<profile>*<count>', e.g. 'core*4'."
-            )
-        if not multiplier_raw.isdigit() or int(multiplier_raw) <= 0:
-            raise ValueError(
-                f"Invalid parallel profile multiplier in '{entry}'. "
-                "Count must be a positive integer."
-            )
-        profiles.extend([profile] * int(multiplier_raw))
+    profiles = [part.strip() for part in value.split(",") if part.strip()]
 
     invalid = sorted(set(profiles) - set(allowed_profiles))
     if invalid:
         raise ValueError(
-            f"Unknown parallel profile(s): {', '.join(invalid)}. "
+            f"Unknown lane profile(s): {', '.join(invalid)}. "
             f"Allowed: {', '.join(allowed_profiles)}"
         )
     return profiles
@@ -96,10 +83,384 @@ def assigned_lane_index(required: str, lane_profiles: list[str], lane_loads: lis
     eligible = [idx for idx, lane_profile in enumerate(lane_profiles) if lane_supports(required, lane_profile)]
     if not eligible:
         return -1
-
-    # Deterministic load-aware balancing:
-    # pick the least loaded eligible lane, tie-breaking by lane index.
     return min(eligible, key=lambda idx: (lane_loads[idx], idx))
+
+
+class ParallelInstance(InfraInstance):
+    plugin_class: type[InfraPlugin]
+    @classmethod
+    def can_handle_config(cls, config) -> bool:
+        if config.getoption("--parallel-child"):
+            return False
+        try:
+            parallel_count = parse_parallel_count(config.getoption("--parallel"))
+        except ValueError:
+            return True
+        return parallel_count > 1
+
+    @classmethod
+    def can_handle(cls, session, deps) -> bool:
+        config = session.config
+        return cls.can_handle_config(config)
+
+    def start(self) -> None:
+        config = self.config
+        infra_mode = getattr(config, "_cvat_infra_mode")
+
+        try:
+            parallel_count = parse_parallel_count(config.getoption("--parallel"))
+        except ValueError as ex:
+            raise pytest.UsageError(str(ex)) from ex
+        if parallel_count <= 1:
+            return
+        if config.getoption("--platform") != "local":
+            raise pytest.UsageError(
+                "--platform kube with --parallel > 1 is not implemented yet"
+            )
+
+        debug_services = parse_debug_services(config.getoption("--container-debug"))
+        rebuild = config.getoption("--rebuild")
+        cleanup = config.getoption("--cleanup")
+        dumpdb = config.getoption("--dumpdb")
+        vscode = config.getoption("--vscode")
+        if any((rebuild, cleanup, dumpdb, vscode, bool(debug_services))):
+            raise pytest.UsageError(
+                "--parallel does not support --rebuild/--cleanup/--dumpdb/--vscode/--container-debug in parent mode"
+            )
+
+        if infra_mode in {"up", "down"}:
+            lanes_raw = str(config.getoption("--parallel-lane-profiles") or "")
+            if lanes_raw:
+                profiles = parse_lane_profiles(lanes_raw, PARALLEL_PROFILES)
+                if len(profiles) != parallel_count:
+                    raise pytest.UsageError(
+                        f"--parallel-lane-profiles count ({len(profiles)}) must match --parallel ({parallel_count})"
+                    )
+            else:
+                profiles = _default_lane_profiles_for_count(parallel_count)
+            try:
+                run_parallel_infra_mode(
+                    session=self.session,
+                    profiles=profiles,
+                    run_prefix=run_prefix_from_config(config),
+                    infra_mode=infra_mode,
+                    pick_free_port=lambda start, used_ports: pick_free_port(
+                        start, used_ports, logger=self.deps.logger
+                    ),
+                    runtime_dir_for_project=lambda name: project_config(name).runtime_dir,
+                )
+            except Exception as ex:
+                pytest.exit(str(ex), returncode=1)
+            pytest.exit(
+                f"Parallel infra '{infra_mode}' finished for {len(profiles)} lane(s)",
+                returncode=0,
+            )
+
+        # Parent process does not manage a separate infra stack in parallel mode.
+        return
+
+
+class ParallelPlugin(InfraPlugin):
+    @classmethod
+    def register_options(cls, group) -> None:
+        add_parallel_pytest_options(group)
+        # Internal-only per-lane port overrides passed by the parallel parent process.
+        group._addoption("--test-http-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
+        group._addoption("--test-logs-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
+        group._addoption("--test-minio-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
+        group._addoption(
+            "--test-minio-console-port", action="store", default=None, type=int, help=argparse.SUPPRESS
+        )
+
+    @classmethod
+    def configure(cls, config) -> None:
+        configure_parallel_plugin(config)
+
+    @classmethod
+    def collection_modifyitems(cls, config, items) -> None:
+        modify_collection_for_parallel(config, items)
+
+    @classmethod
+    def runtestloop(cls, session):
+        return parallel_runtestloop(session)
+
+    @classmethod
+    def can_handle_config(cls, config) -> bool:
+        if config.getoption("--parallel-child"):
+            return True
+        try:
+            parallel_count = parse_parallel_count(config.getoption("--parallel"))
+        except ValueError:
+            return True
+        return parallel_count > 1
+
+ParallelInstance.plugin_class = ParallelPlugin
+
+
+def _emit_parallel_event(events_file: str, payload: dict) -> None:
+    if not events_file:
+        return
+    with open(events_file, "a") as f:
+        f.write(json.dumps(payload) + "\n")
+
+
+def _required_infra_profile(item) -> str:
+    explicit_marker = item.get_closest_marker("infra_profile")
+    if explicit_marker:
+        if explicit_marker.args:
+            return explicit_marker.args[0]
+        return "core"
+    return "core"
+
+
+def _lane_supports(required: str, lane_profile: str) -> bool:
+    return PROFILE_ORDER[lane_profile] >= PROFILE_ORDER[required]
+
+
+def _default_lane_profiles_for_count(parallel_count: int) -> list[str]:
+    # Without collected tests (e.g. "pytest ... --parallel N up"), keep one
+    # full-capability lane and maximize lightweight core lanes.
+    if parallel_count <= 0:
+        return []
+    if parallel_count == 1:
+        return ["full"]
+    return ["full"] + ["core"] * (parallel_count - 1)
+
+
+def _planned_lane_profiles(items, parallel_count: int) -> list[str]:
+    if parallel_count <= 0:
+        return []
+
+    required_counts = {"core": 0, "extended": 0, "full": 0}
+    for item in items:
+        required = _required_infra_profile(item)
+        if required not in required_counts:
+            raise pytest.UsageError(
+                f"Unknown infra profile '{required}' in marker for test '{item.nodeid}'"
+            )
+        required_counts[required] += 1
+
+    core_count = required_counts["core"]
+    extended_count = required_counts["extended"]
+    full_count = required_counts["full"]
+    total_count = core_count + extended_count + full_count
+
+    best: tuple[float, int, int, int] | None = None
+    for full_lanes in range(0, parallel_count + 1):
+        for extended_lanes in range(0, parallel_count - full_lanes + 1):
+            core_lanes = parallel_count - full_lanes - extended_lanes
+
+            if full_count > 0 and full_lanes == 0:
+                continue
+            if extended_count > 0 and (extended_lanes + full_lanes) == 0:
+                continue
+
+            ext_eligible = extended_lanes + full_lanes
+            if ext_eligible == 0:
+                ext_eligible = 1
+            full_eligible = full_lanes if full_lanes > 0 else 1
+
+            # Approximate worst lane load:
+            # core tests run on all lanes, extended on extended+full lanes,
+            # full on full lanes.
+            estimated_makespan = (
+                core_count / parallel_count
+                + extended_count / ext_eligible
+                + (full_count / full_eligible if full_count > 0 else 0.0)
+            )
+
+            # Keep cores preferred unless heavier lanes materially improve balancing.
+            lane_unit = max(1.0, total_count / parallel_count if parallel_count else 1.0)
+            profile_penalty = lane_unit * (0.12 * extended_lanes + 0.25 * full_lanes)
+            score = estimated_makespan + profile_penalty
+
+            candidate = (score, full_lanes, extended_lanes, core_lanes)
+            if best is None or candidate < best:
+                best = candidate
+
+    if best is None:
+        return _default_lane_profiles_for_count(parallel_count)
+
+    _, full_lanes, extended_lanes, core_lanes = best
+    return ["full"] * full_lanes + ["extended"] * extended_lanes + ["core"] * core_lanes
+
+
+def _parallel_group_key(item) -> str:
+    parts = item.nodeid.split("::")
+    grouping_marker = item.get_closest_marker("parallel_group")
+    grouping = str(grouping_marker.args[0]).lower() if grouping_marker and grouping_marker.args else "case"
+
+    if grouping == "case":
+        return item.nodeid
+
+    if len(parts) >= 3 and "[" not in parts[1]:
+        if grouping == "function":
+            return "::".join([parts[0], parts[1], parts[2].split("[", 1)[0]])
+        return "::".join([parts[0], parts[1]])
+
+    if len(parts) >= 2:
+        return "::".join([parts[0], parts[1].split("[", 1)[0]])
+
+    return item.nodeid.split("[", 1)[0]
+
+
+def _stable_shuffle_key(value: str, seed: int | None) -> tuple[str, str]:
+    material = value if seed is None else f"{seed}:{value}"
+    return sha1(material.encode("utf-8")).hexdigest(), value
+
+
+class _ParallelEventPlugin:
+    def __init__(self, events_file: str):
+        self._events_file = events_file
+
+    def pytest_runtest_logreport(self, report) -> None:
+        _emit_parallel_event(
+            self._events_file,
+            {
+                "type": "report",
+                "report": report._to_json(),
+            },
+        )
+
+    def pytest_runtest_logstart(self, nodeid: str, location) -> None:
+        _emit_parallel_event(
+            self._events_file,
+            {
+                "type": "logstart",
+                "nodeid": nodeid,
+                "location": list(location) if location else None,
+            },
+        )
+
+    def pytest_runtest_logfinish(self, nodeid: str, location) -> None:
+        _emit_parallel_event(
+            self._events_file,
+            {
+                "type": "logfinish",
+                "nodeid": nodeid,
+                "location": list(location) if location else None,
+            },
+        )
+
+
+def configure_parallel_plugin(config) -> None:
+    events_file = str(config.getoption("--parallel-events-file") or "")
+    plugin_name = "cvat_parallel_event_plugin"
+    if config.pluginmanager.get_plugin(plugin_name) is None:
+        config.pluginmanager.register(_ParallelEventPlugin(events_file), plugin_name)
+
+
+def modify_collection_for_parallel(config, items) -> None:
+    events_file = str(config.getoption("--parallel-events-file") or "")
+    shuffle_seed = config.getoption("--parallel-shuffle-seed")
+    is_parallel_child = bool(config.getoption("--parallel-child"))
+    lane_index = int(config.getoption("--parallel-lane-index"))
+
+    lanes_raw = str(config.getoption("--parallel-lane-profiles") or "")
+    lane_profiles = parse_lane_profiles(lanes_raw, PARALLEL_PROFILES) if lanes_raw else []
+    if is_parallel_child and not lane_profiles:
+        lane_profiles = [str(config.getoption("--parallel-lane-profile"))]
+
+    selected = []
+    deselected = []
+    lane_loads = [0] * len(lane_profiles) if is_parallel_child else []
+    lane_by_nodeid: dict[str, int] = {}
+    required_by_nodeid: dict[str, str] = {}
+
+    for item in items:
+        required = _required_infra_profile(item)
+        if required not in PROFILE_ORDER:
+            raise pytest.UsageError(
+                f"Unknown infra profile '{required}' in marker for test '{item.nodeid}'"
+            )
+        required_by_nodeid[item.nodeid] = required
+
+    if is_parallel_child:
+        grouped_items: dict[tuple[str, str], list] = defaultdict(list)
+        for item in items:
+            group_key = _parallel_group_key(item)
+            required = required_by_nodeid[item.nodeid]
+            grouped_items[(group_key, required)].append(item)
+
+        required_order = ("full", "extended", "core")
+        grouped_by_required: dict[str, list[tuple[str, str]]] = {
+            required: [] for required in required_order
+        }
+        for grouped_key in grouped_items:
+            grouped_by_required[grouped_key[1]].append(grouped_key)
+
+        for required in required_order:
+            for grouped_key in sorted(
+                grouped_by_required[required],
+                key=lambda key: _stable_shuffle_key(f"{key[0]}|{key[1]}", shuffle_seed),
+            ):
+                module_items = grouped_items[grouped_key]
+                _, module_required = grouped_key
+                lane = assigned_lane_index(module_required, lane_profiles, lane_loads)
+                if lane < 0:
+                    raise pytest.UsageError(
+                        f"No eligible lane profile for required profile '{module_required}'"
+                    )
+                lane_loads[lane] += len(module_items)
+                for item in module_items:
+                    lane_by_nodeid[item.nodeid] = lane
+
+    for item in items:
+        required = required_by_nodeid[item.nodeid]
+        item.add_marker(pytest.mark.infra_profile(required))
+        item.add_marker(getattr(pytest.mark, f"infra_required_{required}"))
+
+        if is_parallel_child and lane_by_nodeid[item.nodeid] != lane_index:
+            deselected.append(item)
+            continue
+
+        selected.append(item)
+
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+    items[:] = selected
+
+    _emit_parallel_event(
+        events_file,
+        {
+            "type": "collected",
+            "selected": len(selected),
+            "deselected": len(deselected),
+        },
+    )
+
+
+def parallel_runtestloop(session):
+    from infra.config import logger
+
+    config = session.config
+    try:
+        parallel_count = parse_parallel_count(config.getoption("--parallel"))
+    except ValueError as ex:
+        raise pytest.UsageError(str(ex)) from ex
+    if parallel_count <= 1 or config.getoption("--parallel-child"):
+        return None
+
+    lanes_raw = str(config.getoption("--parallel-lane-profiles") or "")
+    if lanes_raw:
+        profiles = parse_lane_profiles(lanes_raw, PARALLEL_PROFILES)
+        if len(profiles) != parallel_count:
+            raise pytest.UsageError(
+                f"--parallel-lane-profiles count ({len(profiles)}) must match --parallel ({parallel_count})"
+            )
+    else:
+        profiles = _planned_lane_profiles(session.items, parallel_count)
+
+    run_parallel_lanes(
+        config=config,
+        session=session,
+        profiles=profiles,
+        run_prefix=run_prefix_from_config(config),
+        pick_free_port=lambda start, used_ports: pick_free_port(start, used_ports, logger=logger),
+        runtime_dir_for_project=lambda project_name: project_config(project_name).runtime_dir,
+        run_command=lambda cmd, capture: run_command(cmd, capture_output=capture, logger=logger),
+    )
+    return True
 
 
 def without_option(args: list[str], *option_names: str) -> list[str]:
@@ -179,7 +540,6 @@ def run_parallel_lanes(
         base_args,
         "--parallel",
         "--run-prefix",
-        "--infra-profile",
     )
     is_collect_only = any(arg in {"--collect-only", "--co"} for arg in base_args)
 
@@ -211,7 +571,6 @@ def run_parallel_lanes(
             f"--parallel-lane-profile={profile}",
             f"--parallel-lane-profiles={lanes_csv}",
             f"--run-prefix={project_name}",
-            f"--infra-profile={profile}",
             f"--test-http-port={ports['http_port']}",
             f"--test-logs-port={ports['logs_port']}",
             f"--test-minio-port={ports['minio_port']}",
@@ -362,23 +721,6 @@ def run_parallel_lanes(
                         f"selected={selected_count} started={started_count} "
                         f"idle_before_finish={idle_sec:.1f}s"
                     )
-
-                # If run succeeded, verify assignment integrity:
-                # every selected test started exactly once across lanes.
-                if combined_rc == 0:
-                    all_started = set().union(*started_nodeids_by_lane.values())
-                    total_started = sum(len(v) for v in started_nodeids_by_lane.values())
-                    if total_started != len(all_started):
-                        write_line(
-                            "[parallel] warning: duplicate test execution detected across lanes",
-                            red=True,
-                        )
-                    if total_selected and len(all_started) != total_selected:
-                        write_line(
-                            "[parallel] warning: selected/started mismatch "
-                            f"(selected={total_selected}, started={len(all_started)})",
-                            red=True,
-                        )
     finally:
         for _, _, _, _, _, _, lane_log in lane_processes:
             lane_log.close()
@@ -405,8 +747,70 @@ def run_parallel_lanes(
                     )
 
     elapsed = monotonic() - start_ts
+    _write_parallel_distribution_debug(
+        runtime_dir_for_project=runtime_dir_for_project,
+        run_prefix=run_prefix,
+        profiles=profiles,
+        collected_by_lane=collected_by_lane,
+        started_nodeids_by_lane=started_nodeids_by_lane,
+        lane_done_at=lane_done_at,
+    )
     write_line(f"[parallel] total elapsed: {elapsed:.1f}s")
     return combined_rc
+
+
+def _write_parallel_distribution_debug(
+    *,
+    runtime_dir_for_project,
+    run_prefix: str,
+    profiles: list[str],
+    collected_by_lane: dict[int, int],
+    started_nodeids_by_lane: dict[int, set[str]],
+    lane_done_at: dict[int, float | None],
+) -> None:
+    if not profiles:
+        return
+
+    lane_dirs = [
+        runtime_dir_for_project(f"{run_prefix}{idx}") if len(profiles) > 1 else runtime_dir_for_project(run_prefix)
+        for idx in range(1, len(profiles) + 1)
+    ]
+    root = lane_dirs[0].parent if lane_dirs else Path(".")
+    out = root / f"parallel-distribution-{run_prefix}.json"
+
+    done_times = [t for t in lane_done_at.values() if t is not None]
+    last_done = max(done_times) if done_times else None
+
+    lanes = []
+    for lane_idx, profile in enumerate(profiles, start=1):
+        finished_at = lane_done_at.get(lane_idx)
+        idle_sec = (
+            max(0.0, float(last_done - finished_at))
+            if last_done is not None and finished_at is not None
+            else 0.0
+        )
+        lanes.append(
+            {
+                "lane_index": lane_idx,
+                "profile": profile,
+                "selected": int(collected_by_lane.get(lane_idx, 0)),
+                "started": int(len(started_nodeids_by_lane.get(lane_idx, set()))),
+                "idle_before_finish_sec": round(idle_sec, 3),
+            }
+        )
+
+    payload = {
+        "run_prefix": run_prefix,
+        "lane_count": len(profiles),
+        "lanes": lanes,
+        "total_selected": int(sum(collected_by_lane.values())),
+        "total_started": int(sum(len(v) for v in started_nodeids_by_lane.values())),
+    }
+    try:
+        with open(out, "w") as f:
+            json.dump(payload, f, indent=2, sort_keys=True)
+    except OSError:
+        return
 
 
 def run_parallel_infra_mode(
@@ -415,7 +819,6 @@ def run_parallel_infra_mode(
     profiles: list[str],
     run_prefix: str,
     infra_mode: str,
-    profile_mismatch_policy: str,
     pick_free_port: Callable[[int, set[int]], int],
     runtime_dir_for_project: Callable[[str], Path],
 ) -> None:
@@ -424,7 +827,6 @@ def run_parallel_infra_mode(
         base_args,
         "--parallel",
         "--run-prefix",
-        "--infra-profile",
         "--infra",
     )
     base_args = [arg for arg in base_args if arg not in {"up", "down"}]
@@ -471,18 +873,7 @@ def run_parallel_infra_mode(
         ):
             mismatch_lanes.append((lane_idx, project_name, saved_profile, requested_profile))
 
-    if mismatch_lanes and profile_mismatch_policy == "error":
-        details = "; ".join(
-            f"lane {lane_idx} ({project_name}): saved={saved} requested={requested}"
-            for lane_idx, project_name, saved, requested in mismatch_lanes
-        )
-        raise RuntimeError(
-            "Parallel infra 'up' profile mismatch detected: "
-            f"{details}. "
-            "Use '--parallel-profile-mismatch=replace' to recreate only mismatched lanes."
-        )
-
-    if mismatch_lanes and profile_mismatch_policy == "replace":
+    if mismatch_lanes:
         down_processes: list[tuple[int, str, Popen]] = []
         for lane_idx, project_name, _, _ in mismatch_lanes:
             down_cmd = [
@@ -523,15 +914,14 @@ def run_parallel_infra_mode(
             "pytest",
             *base_args,
             "--parallel-child",
+            f"--parallel-lane-profile={profile}",
             f"--run-prefix={project_name}",
-            f"--infra-profile={profile}",
             f"--infra={infra_mode}",
             f"--test-http-port={ports['http_port']}",
             f"--test-logs-port={ports['logs_port']}",
             f"--test-minio-port={ports['minio_port']}",
             f"--test-minio-console-port={ports['minio_console_port']}",
         ]
-        # Run infra actions concurrently; inherit stdout/stderr to keep normal pytest CLI behavior.
         lane_processes.append((lane_idx, project_name, Popen(cmd)))  # nosec
 
     failed: list[tuple[int, str, int]] = []

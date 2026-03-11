@@ -50,7 +50,7 @@ from rest_api.utils import (
     export_dataset,
     export_task_dataset,
 )
-from shared.fixtures.init import container_exec_cvat
+from infra.fixtures import container_exec_cvat
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames

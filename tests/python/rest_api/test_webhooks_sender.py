@@ -9,7 +9,7 @@ from time import sleep, time
 import pytest
 from deepdiff import DeepDiff
 
-from shared.fixtures.init import CVAT_ROOT_DIR
+from infra.config import CVAT_ROOT_DIR
 from shared.utils.config import delete_method, get_method, patch_method, post_method
 
 # Testing webhook functionality:

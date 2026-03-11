@@ -58,28 +58,20 @@ which are used by containers for the testing system.
   pytest ./tests/python --run-prefix p1 down
   ```
 
-- For lighter local runs, use profile-based infrastructure:
+- Parallel lanes:
 
   ```shell
-  # core: base services + key workers (annotation, chunks, import, export)
-  pytest ./tests/python --run-prefix p1 --infra-profile core --infra up
+  # Run with 4 local parallel lanes
+  pytest ./tests/python --parallel 4
 
-  # extended: core + worker services
-  pytest ./tests/python --run-prefix p2 --infra-profile extended --infra up
-
-  # Run a server-focused subset against core profile
-  pytest ./tests/python/rest_api/test_server.py --run-prefix p1 --infra-profile core
+  # Explicitly manage infra lifecycle for the same parallel run-prefix
+  pytest ./tests/python --run-prefix p1 --parallel 4 up
+  pytest ./tests/python --run-prefix p1 --parallel 4
+  pytest ./tests/python --run-prefix p1 --parallel 4 down
   ```
 
-- Parallel lanes can be started with explicit profile list:
-
-  ```shell
-  pytest ./tests/python --parallel core,extended,full
-  pytest ./tests/python --parallel core*4
-  pytest ./tests/python --parallel core*3,full
-  ```
-
-  Note for `zsh`: quote values with `*` (`--parallel 'core*4'`).
+- Lane profiles are selected automatically by the scheduler based on collected
+  tests and `@pytest.mark.infra_profile("core|extended|full")`.
 
 - macOS benchmark runs:
 
@@ -92,21 +84,8 @@ which are used by containers for the testing system.
   This affects only the wrapped command runtime and does not require changing system power settings.
 
 - Reusing running lanes with different profiles:
-
-  ```shell
-  # Fail fast on mismatch (default)
-  pytest ./tests/python --run-prefix p1 --parallel core,core,full,core up
-
-  # Recreate only mismatched lanes
-  pytest ./tests/python --run-prefix p1 --parallel core,core,full,core up \
-      --parallel-profile-mismatch=replace
-  ```
-
-- Profile routing is automatic:
-  - `infra_profile("full")` tests run in `full`
-  - worker-dependent modules (task data/import/export/upload paths) run in `extended`
-  - the rest run in `core`
-  - override any test/module explicitly with `@pytest.mark.infra_profile("core|extended|full")`
+  Existing stacks are reused when possible. If configuration is incompatible,
+  the runner recreates the affected instances automatically.
 
 - Short aliases are supported for convenience:
 
@@ -115,15 +94,10 @@ which are used by containers for the testing system.
   pytest ./tests/python --run-prefix p1 down
   ```
 
-- You can run tests against an externally managed CVAT instance:
-
-  ```shell
-  pytest ./tests/python --infra external --base-url http://localhost:8080
-  ```
-
 - Defaults:
-  - `pytest ./tests/python` uses `--run-prefix test` and `--infra-profile full`.
-  - `--parallel core` behaves as one isolated lane (child process orchestration).
+  - `pytest ./tests/python` uses `--run-prefix test`, `--platform local`, `--infra auto`.
+  - `--parallel` accepts a positive integer (`--parallel 2`, `--parallel 4`, ...).
+  - `--parallel 1` behaves like a regular single-process run.
 
 ## How to upgrade testing assets?
 
