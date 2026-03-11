@@ -45,6 +45,10 @@ jobs:
         run: |
           npm ci
 
+      - name: Sync versions in docs
+        run: |
+          ./site/scripts/sync-versions.sh
+
       - name: Build docs
         run: |
           pip install -r site/requirements.txt
