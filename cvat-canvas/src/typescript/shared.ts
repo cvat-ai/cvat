@@ -565,3 +565,86 @@ export function toReversed<T>(array: Array<T>): Array<T> {
 
 export type Segment = [[number, number], [number, number]];
 export type PropType<T, Prop extends keyof T> = T[Prop];
+
+export interface SnapPoint {
+    x: number;
+    y: number;
+    clientID: number;
+}
+
+export function extractSnapPointsFromState(drawnState: DrawnState, offset: number): number[] {
+    if (!drawnState || !drawnState.points) {
+        return [];
+    }
+
+    let points: number[] = [];
+    const canvasPoints = translateToCanvas(offset, drawnState.points);
+
+    if (drawnState.shapeType === 'polygon' || drawnState.shapeType === 'polyline' || drawnState.shapeType === 'points') {
+        points = canvasPoints;
+    } else if (drawnState.shapeType === 'rectangle') {
+        const [xtl, ytl, xbr, ybr] = canvasPoints;
+        points = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
+    }
+
+    return points;
+}
+
+export function findNearestSnapPoint(
+    x: number,
+    y: number,
+    allStates: Record<number, DrawnState>,
+    offset: number,
+    snapRadius: number,
+    excludeClientID: number | null = null,
+): SnapPoint | null {
+    let nearestPoint: SnapPoint | null = null;
+    let minDistance = snapRadius;
+
+    for (const clientIDStr of Object.keys(allStates)) {
+        const clientID = +clientIDStr;
+
+        if (clientID === excludeClientID) {
+            continue;
+        }
+
+        const drawnState = allStates[clientID];
+        const points = extractSnapPointsFromState(drawnState, offset);
+
+        for (let i = 0; i < points.length; i += 2) {
+            const px = points[i];
+            const py = points[i + 1];
+
+            const dx = x - px;
+            const dy = y - py;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestPoint = { x: px, y: py, clientID };
+            }
+        }
+    }
+
+    return nearestPoint;
+}
+
+export function applySnapToPoint(
+    x: number,
+    y: number,
+    allStates: Record<number, DrawnState>,
+    offset: number,
+    snapRadius: number,
+    excludeClientID: number | null = null,
+): [number, number] {
+    const snapTarget = findNearestSnapPoint(x, y, allStates, offset, snapRadius, excludeClientID);
+
+    if (snapTarget) {
+        const distance = Math.sqrt((x - snapTarget.x) ** 2 + (y - snapTarget.y) ** 2);
+        if (distance <= snapRadius) {
+            return [snapTarget.x, snapTarget.y];
+        }
+    }
+
+    return [x, y];
+}

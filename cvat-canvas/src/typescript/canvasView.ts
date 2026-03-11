@@ -33,7 +33,7 @@ import {
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
     composeShapeDimensions, getRoundedRotation,
-    clamp,
+    clamp, findNearestSnapPoint as findNearestSnapPointHelper,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -964,44 +964,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         const snapRadius = this.configuration.magnetRadius / this.geometry.scale;
-        let nearestPoint: { x: number; y: number; clientID: number } | null = null;
-        let minDistance = snapRadius;
-
-        for (const clientIDStr of Object.keys(this.svgShapes)) {
-            const clientID = +clientIDStr;
-
-            if (clientID === excludeClientID) {
-                continue;
-            }
-
-            const drawnState = this.drawnStates[clientID];
-            if (!drawnState || !drawnState.points) {
-                continue;
-            }
-
-            let points: number[] = [];
-            if (drawnState.shapeType === 'polygon' || drawnState.shapeType === 'polyline' || drawnState.shapeType === 'points') {
-                points = this.translateToCanvas(drawnState.points);
-            } else if (drawnState.shapeType === 'rectangle') {
-                const [xtl, ytl, xbr, ybr] = this.translateToCanvas(drawnState.points);
-                points = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
-            }
-
-            for (let i = 0; i < points.length; i += 2) {
-                const px = points[i];
-                const py = points[i + 1];
-
-                const dx = x - px;
-                const dy = y - py;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestPoint = { x: px, y: py, clientID };
-                }
-            }
-        }
-        return nearestPoint;
+        return findNearestSnapPointHelper(
+            x,
+            y,
+            this.drawnStates,
+            this.geometry.offset,
+            snapRadius,
+            excludeClientID,
+        );
     }
 
     private selectize(value: boolean, shape: SVG.Element): void {
@@ -1404,24 +1374,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                         if (draggedPointIndex >= 0 && draggedPointIndex < pointsArray.length) {
                             const [currentX, currentY] = pointsArray[draggedPointIndex];
-                            const snapRadius = this.configuration.magnetRadius / this.geometry.scale;
 
                             const snapTarget = this.findNearestSnapPoint(
                                 currentX,
                                 currentY,
                                 state.clientID,
                             );
-                            console.log(snapTarget);
 
                             if (snapTarget) {
-                                const distance = Math.sqrt(
-                                    (currentX - snapTarget.x) ** 2 + (currentY - snapTarget.y) ** 2,
-                                );
-                                if (distance <= snapRadius) {
-                                    // Apply snap by modifying the point in the array
-                                    pointsArray[draggedPointIndex] = [snapTarget.x, snapTarget.y];
-                                    (shape as any).plot(pointsArray);
-                                }
+                                pointsArray[draggedPointIndex] = [snapTarget.x, snapTarget.y];
+                                (shape as any).plot(pointsArray);
                             }
                         }
                     }
