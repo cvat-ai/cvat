@@ -60,7 +60,7 @@ jobs:
           GOOGLE_TAG_ID: G-GVSBK1DNK5
 
       - name: Preview docs
-        if: github.event_name == 'push' && github.ref != 'refs/heads/develop'
+        if: github.event_name == 'pull_request' && github.ref != 'refs/heads/develop'
         uses: actions/upload-artifact@v4
         with:
           name: docs-site
