@@ -192,7 +192,7 @@ module.exports = (env) => {
             },
         },
         plugins: [
-new ExecScriptsPlugin(pluginPaths.filter(({ script }) => !!script)),
+            new ExecScriptsPlugin(pluginPaths.filter(({ script }) => !!script)),
             new HtmlWebpackPlugin({
                 template: './src/index.html',
                 inject: 'body',
