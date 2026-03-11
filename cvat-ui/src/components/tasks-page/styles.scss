@@ -27,6 +27,10 @@
 
                     display: flex;
                     margin-right: $grid-unit-size * 4;
+
+                    &:last-child {
+                        margin-right: $grid-unit-size * 2.5;
+                    }
                 }
 
                 .cvat-tasks-page-search-bar {
