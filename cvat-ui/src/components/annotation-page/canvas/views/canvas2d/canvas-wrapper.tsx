@@ -113,7 +113,6 @@ interface StateToProps {
     curZLayer: number;
     automaticBordering: boolean;
     magneticSnap: boolean;
-    magnetRadius: number;
     adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     switchableAutomaticBordering: boolean;
@@ -197,7 +196,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 showTagsOnFrame,
                 automaticBordering,
                 magneticSnap,
-                magnetRadius,
                 adaptiveZoom,
                 intelligentPolygonCrop,
                 textFontSize,
@@ -256,7 +254,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         maxZLayer,
         automaticBordering,
         magneticSnap,
-        magnetRadius,
         adaptiveZoom,
         intelligentPolygonCrop,
         workspace,
@@ -395,7 +392,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             automaticBordering,
             magneticSnap,
-            magnetRadius,
             adaptiveZoom,
             intelligentPolygonCrop,
             showObjectsTextAlways,
@@ -426,7 +422,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
             magneticSnap,
-            magnetRadius,
             adaptiveZoom,
             showProjections,
             showConflicts: showGroundTruth,
@@ -477,7 +472,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showAllInterpolationTracks,
             automaticBordering,
             magneticSnap,
-            magnetRadius,
             adaptiveZoom,
             intelligentPolygonCrop,
             showProjections,
@@ -494,7 +488,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.showObjectsTextAlways !== showObjectsTextAlways ||
             prevProps.automaticBordering !== automaticBordering ||
             prevProps.magneticSnap !== magneticSnap ||
-            prevProps.magnetRadius !== magnetRadius ||
             prevProps.adaptiveZoom !== adaptiveZoom ||
             prevProps.showProjections !== showProjections ||
             prevProps.intelligentPolygonCrop !== intelligentPolygonCrop ||
@@ -517,7 +510,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 displayAllText: showObjectsTextAlways,
                 autoborders: automaticBordering,
                 magneticSnap,
-                magnetRadius,
                 adaptiveZoom,
                 showProjections,
                 intelligentPolygonCrop,

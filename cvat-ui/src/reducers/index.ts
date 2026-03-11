@@ -992,7 +992,6 @@ export interface WorkspaceSettingsState {
     focusedObjectPadding: number;
     automaticBordering: boolean;
     magneticSnap: boolean;
-    magnetRadius: number;
     adaptiveZoom: boolean;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
