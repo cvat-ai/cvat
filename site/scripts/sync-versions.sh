@@ -2,6 +2,8 @@
 
 set -x
 
+mkdir -p site/data
+
 NUCLIO_VERSION=$(grep -o --perl-regexp 'nuclio/dashboard:\K[0-9.]+' components/serverless/docker-compose.serverless.yml)
 cat > site/data/versions.yaml << EOF
 nuclio:
