@@ -14,6 +14,7 @@ module.exports = {
     ignorePatterns: [
         '.eslintrc.cjs',
         'webpack.config.js',
+        'exec-scripts-webpack-plugin.cjs',
         'src/assets/opencv*.js',
         'node_modules/**',
         'dist/**',

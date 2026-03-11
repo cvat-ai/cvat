@@ -3,35 +3,45 @@
 //
 // SPDX-License-Identifier: MIT
 
+const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
+const ExecScriptsPlugin = require('./exec-scripts-webpack-plugin.cjs');
 
 module.exports = (env) => {
-    const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
-    const defaultPlugins = ['plugins/sam'];
-
-    const sourceMapsDisabled = (process.env.DISABLE_SOURCE_MAPS || 'false').toLocaleLowerCase() === 'true';
+const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
-    const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
-        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins;
+    const sourceMapsDisabled = (process.env.DISABLE_SOURCE_MAPS || 'false').toLocaleLowerCase() === 'true';
     const sourceMapsToken = process.env.SOURCE_MAPS_TOKEN || '';
 
-    const transformedPlugins = pluginsList
-        .filter((plugin) => !!plugin).reduce((acc, _path, index) => ({
-            ...acc,
-            [`plugin_${index}`]: {
-                dependOn: 'cvat-ui',
-                // path can be absolute, in this case it is accepted as is
-                // also the path can be relative to cvat-ui root directory
-                import: path.isAbsolute(_path) ? _path : path.join(__dirname, _path, 'src', 'ts', 'index.tsx'),
-            },
-        }), {});
+    const defaultPlugins = ['plugins/sam'];
+    const plugins = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
+        .map((plugin) => plugin.trim()).filter((plugin) => !!plugin) : defaultPlugins;
+
+    const pluginPaths = plugins.map((pluginPath) => {
+        const abs = path.isAbsolute(pluginPath) ? pluginPath : path.join(__dirname, pluginPath);
+        const prepareScript = path.join(abs, 'prepare.cjs');
+        return {
+            cwd: abs,
+            entrypoint: path.join(abs, 'src', 'ts', 'index.tsx'),
+            script: fs.existsSync(prepareScript) ? prepareScript : null,
+        };
+    }).filter(({ entrypoint }) => {
+        if (!fs.existsSync(entrypoint)) {
+            console.warn(`Not found entrypoint ${entrypoint}. The plugin skipped.`);
+            return false;
+        }
+        return true;
+    });
 
     console.log('Source maps: ', sourceMapsDisabled ? 'disabled' : 'enabled');
-    console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
+    console.log('Plugins:');
+    for (const { entrypoint } of pluginPaths) {
+        console.log(`- ${entrypoint}`);
+    }
 
     const host = process.env.CVAT_UI_HOST ?? 'localhost';
     const port = process.env.CVAT_UI_PORT ?? 3000;
@@ -41,7 +51,15 @@ module.exports = (env) => {
         devtool: sourceMapsDisabled ? false : 'source-map',
         entry: {
             'cvat-ui': './src/index.tsx',
-            ...transformedPlugins,
+            ...pluginPaths.reduce((acc, { entrypoint }, index) => ({
+                ...acc,
+                [`plugin_${index}`]: {
+                    dependOn: 'cvat-ui',
+                    // path can be absolute, in this case it is accepted as is
+                    // also the path can be relative to cvat-ui root directory
+                    import: entrypoint,
+                },
+            }), {})
         },
         output: {
             path: path.resolve(__dirname, 'dist'),
@@ -174,6 +192,7 @@ module.exports = (env) => {
             },
         },
         plugins: [
+new ExecScriptsPlugin(pluginPaths.filter(({ script }) => !!script)),
             new HtmlWebpackPlugin({
                 template: './src/index.html',
                 inject: 'body',
@@ -206,7 +225,7 @@ module.exports = (env) => {
                     {
                         from: 'plugins/**/assets/*.(onnx|js)',
                         to  : 'assets/[name][ext]',
-                    }
+                    },
                 ],
             }),
             ...(!sourceMapsDisabled && sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
