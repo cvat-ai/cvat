@@ -8,7 +8,7 @@ Review your model's dependencies carefully and include necessary packages to Doc
 3. You should have `func.py` file that acts as adapter between your agent and CVAT.
 You can refer to existing adapters for YOLO, SAM2 or transformers for inspiration.
 4. It could be a good idea to support some build args like `$USE_GPU` to allow users to choose between CPU and GPU versions of the image.
-Right now we are focused ot `pytorch` CPU or GPU wheels.
+Right now we are focused on `pytorch` CPU or GPU wheels.
 5. Your image should implement following functionality
     - Register function that will be powered by your agent in CVAT.
     - Run agent that will be polling CVAT for new tasks. (Entrypoint)
