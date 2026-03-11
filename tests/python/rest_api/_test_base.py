@@ -14,7 +14,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from rest_api.utils import calc_end_frame, create_task, iter_exclude, unique
-from shared.fixtures.init import container_exec_cvat
+from infra.fixtures import container_exec_cvat
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
