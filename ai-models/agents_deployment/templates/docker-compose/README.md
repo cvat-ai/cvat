@@ -1,7 +1,7 @@
 ### This is an example Dockerfile template and docker compose for deploying your agent in CVAT.
 
 
-##### The general approach is:
+##### The general Dockerfile approach is:
 
 1. Select base image to use with your agent. We use `python:3.14-slim` as it is a lightweight image with Python 3.14
    installed.
@@ -24,3 +24,16 @@ Please refer to shell scripts `entrypoint.sh`, `function_registration.sh` and `f
 examples of how to use cvat-cli to implement these capabilities.
 
 6. It's a good idea to run your container with non-root user.
+
+### Docker compose
+
+Docker compose is very simple:
+
+All services use the same image.
+
+1. It runs function registration script in the container (`cvat-function-register` service).
+2. `cvat-function-register` service creates a file on shared volume.
+3. `cvat-agent` service run agents that connect to CVAT function that was created in step 1.
+4. When agent is not needed user should run `cvat-function-deregister` service manually to delete function from CVAT.
+
+It's easy to configure docker compose using `.env` file that should be located in the same folder as `docker-compose.yaml`
