@@ -24,7 +24,7 @@ interface Props {
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
     automaticBordering: boolean;
-    magneticSnap: boolean;
+    pointSnap: boolean;
     adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
@@ -40,7 +40,7 @@ interface Props {
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
-    onSwitchMagneticSnap(enabled: boolean): void;
+    onSwitchPointSnap(enabled: boolean): void;
     onSwitchAdaptiveZoom(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeTextFontSize(fontSize: number): void;
@@ -58,7 +58,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
-        magneticSnap,
+        pointSnap,
         adaptiveZoom,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
@@ -73,7 +73,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingInterpolatedTracks,
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
-        onSwitchMagneticSnap,
+        onSwitchPointSnap,
         onSwitchAdaptiveZoom,
         onSwitchIntelligentPolygonCrop,
         onChangeDefaultApproxPolyAccuracy,
@@ -225,16 +225,16 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     </Text>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-magnetic-snap cvat-player-setting'>
+            <Row className='cvat-workspace-settings-point-snap cvat-player-setting'>
                 <Col span={24}>
                     <Checkbox
                         className='cvat-text-color'
-                        checked={magneticSnap}
+                        checked={pointSnap}
                         onChange={(event: CheckboxChangeEvent): void => {
-                            onSwitchMagneticSnap(event.target.checked);
+                            onSwitchPointSnap(event.target.checked);
                         }}
                     >
-                        Smart snapping
+                        Snap to point
                     </Checkbox>
                 </Col>
                 <Col span={24}>

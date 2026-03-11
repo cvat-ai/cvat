@@ -629,22 +629,36 @@ export function findNearestSnapPoint(
     return nearestPoint;
 }
 
-export function applySnapToPoint(
-    x: number,
-    y: number,
+export function applySnapToShapePoint(
+    shape: any,
+    pointIndex: number,
     allStates: Record<number, DrawnState>,
     offset: number,
     snapRadius: number,
     excludeClientID: number | null = null,
-): [number, number] {
-    const snapTarget = findNearestSnapPoint(x, y, allStates, offset, snapRadius, excludeClientID);
+): boolean {
+    const pointsArray = shape.array().valueOf();
 
-    if (snapTarget) {
-        const distance = Math.sqrt((x - snapTarget.x) ** 2 + (y - snapTarget.y) ** 2);
-        if (distance <= snapRadius) {
-            return [snapTarget.x, snapTarget.y];
-        }
+    if (pointIndex < 0 || pointIndex >= pointsArray.length) {
+        return false;
     }
 
-    return [x, y];
+    const [currentX, currentY] = pointsArray[pointIndex];
+
+    const snapTarget = findNearestSnapPoint(
+        currentX,
+        currentY,
+        allStates,
+        offset,
+        snapRadius,
+        excludeClientID,
+    );
+
+    if (snapTarget) {
+        pointsArray[pointIndex] = [snapTarget.x, snapTarget.y];
+        shape.plot(pointsArray);
+        return true;
+    }
+
+    return false;
 }

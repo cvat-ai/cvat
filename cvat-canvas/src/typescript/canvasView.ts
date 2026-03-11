@@ -34,6 +34,7 @@ import {
     imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
     composeShapeDimensions, getRoundedRotation,
     clamp, findNearestSnapPoint as findNearestSnapPointHelper,
+    applySnapToShapePoint,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -959,11 +960,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         y: number,
         excludeClientID: number | null,
     ): { x: number; y: number; clientID: number } | null {
-        if (!this.configuration.magneticSnap) {
+        if (!this.configuration.pointSnap) {
             return null;
         }
 
-        const snapRadius = this.configuration.magnetRadius / this.geometry.scale;
+        const snapRadius = this.configuration.snapRadius / this.geometry.scale;
         return findNearestSnapPointHelper(
             x,
             y,
@@ -1366,26 +1367,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     resized = true;
                     onResizing();
 
-                    // Apply magnetic snap for polygon/polyline point editing
-                    if (this.configuration.magneticSnap &&
+                    if (this.configuration.pointSnap &&
                         ['polygon', 'polyline', 'points'].includes(state.shapeType) &&
-                        draggedPointIndex !== null) {
-                        const pointsArray = (shape as any).array().valueOf();
+                        draggedPointIndex !== null &&
+                        draggedPointIndex >= 0) {
+                        const snapRadius = this.configuration.snapRadius / this.geometry.scale;
 
-                        if (draggedPointIndex >= 0 && draggedPointIndex < pointsArray.length) {
-                            const [currentX, currentY] = pointsArray[draggedPointIndex];
-
-                            const snapTarget = this.findNearestSnapPoint(
-                                currentX,
-                                currentY,
-                                state.clientID,
-                            );
-
-                            if (snapTarget) {
-                                pointsArray[draggedPointIndex] = [snapTarget.x, snapTarget.y];
-                                (shape as any).plot(pointsArray);
-                            }
-                        }
+                        applySnapToShapePoint(
+                            shape,
+                            draggedPointIndex,
+                            this.drawnStates,
+                            this.geometry.offset,
+                            snapRadius,
+                            state.clientID,
+                        );
                     }
 
                     if (state.shapeType === 'skeleton' && e.target) {
@@ -1691,6 +1686,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.geometry,
             this.configuration,
         );
+        this.drawHandler.setDrawnStatesGetter(() => this.drawnStates);
         this.masksHandler = new MasksHandlerImpl(
             this.onDrawDone,
             this.controller.draw.bind(this.controller),
