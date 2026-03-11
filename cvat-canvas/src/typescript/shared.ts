@@ -630,15 +630,14 @@ export function findNearestSnapPoint(
 }
 
 export function applySnapToShapePoint(
-    shape: any,
+    shape: SVG.Polygon | SVG.PolyLine,
     pointIndex: number,
     allStates: Record<number, DrawnState>,
     offset: number,
     snapRadius: number,
     excludeClientID: number | null = null,
 ): boolean {
-    const pointsArray = shape.array().valueOf();
-
+    const pointsArray: number[][] = (shape as any).array().valueOf();
     if (pointIndex < 0 || pointIndex >= pointsArray.length) {
         return false;
     }

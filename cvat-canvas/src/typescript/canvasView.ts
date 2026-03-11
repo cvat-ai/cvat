@@ -1374,7 +1374,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         const snapRadius = this.configuration.snapRadius / this.geometry.scale;
 
                         applySnapToShapePoint(
-                            shape,
+                            shape as SVG.Polygon | SVG.PolyLine,
                             draggedPointIndex,
                             this.drawnStates,
                             this.geometry.offset,
