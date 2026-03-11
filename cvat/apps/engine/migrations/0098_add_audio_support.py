@@ -2,7 +2,7 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
-def fill_media_type(apps, schema_editor):
+def fill_task_media_type(apps, schema_editor):
     Task = apps.get_model("engine", "Task")
 
     Task.objects.filter(media_type="", dimension__iexact="3d").update(media_type="point_cloud")
@@ -107,5 +107,5 @@ class Migration(migrations.Migration):
                 "default_permissions": (),
             },
         ),
-        migrations.RunPython(fill_media_type, migrations.RunPython.noop),
+        migrations.RunPython(fill_task_media_type, migrations.RunPython.noop),
     ]

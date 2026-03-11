@@ -59,6 +59,7 @@ from cvat.apps.engine.utils import (
     md5_hash,
 )
 from utils.dataset_manifest import ImageManifestManager
+from utils.dataset_manifest.utils import Openable
 
 slogger = ServerLogManager(__name__)
 
@@ -587,6 +588,17 @@ class MediaCache:
         )
 
     @staticmethod
+    def read_raw_audio(db_task: models.Task) -> tuple[Openable, str]:
+        db_data = db_task.require_data()
+
+        if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+            raise NotImplementedError()
+
+        filename = str(db_data.audio.path)
+        data_dir = db_data.get_raw_data_dirname()
+        return (data_dir / filename, filename)
+
+    @staticmethod
     def read_raw_images(
         db_task: models.Task, frame_ids: Sequence[int], *, decode: bool = True
     ) -> Generator[tuple[PIL.Image.Image | str, str], None, None]:
@@ -890,7 +902,10 @@ class MediaCache:
         # Otherwise we might need to download files.
         # This is not needed for video tasks, as it will reduce performance,
         # because of reading multiple files (chunks)
-        from cvat.apps.engine.media_providers.frame_provider import FrameOutputType, make_frame_provider
+        from cvat.apps.engine.media_providers.frame_provider import (
+            FrameOutputType,
+            make_frame_provider,
+        )
 
         task_frame_provider = make_frame_provider(db_task)
 

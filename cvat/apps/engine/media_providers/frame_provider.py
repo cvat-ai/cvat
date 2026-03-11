@@ -11,10 +11,9 @@ from abc import ABCMeta, abstractmethod
 from bisect import bisect
 from collections import OrderedDict
 from collections.abc import Iterator, Sequence
-from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, Generic, TypeAlias, TypeVar, overload
+from typing import Any, TypeAlias, overload
 
 import av
 import cv2
@@ -32,11 +31,9 @@ from cvat.apps.engine.media_providers.media_chunks import (
     ReaderFactory,
 )
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
-from cvat.apps.engine.media_providers.media_provider import IMediaProvider
+from cvat.apps.engine.media_providers.media_provider import IMediaProvider, DataWithMeta
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.utils import take_by
-
-_T = TypeVar("_T")
 
 
 class FrameOutputType(Enum):
@@ -48,12 +45,6 @@ class FrameOutputType(Enum):
 Frame2d: TypeAlias = BytesIO | np.ndarray | Image.Image
 Frame3d: TypeAlias = BytesIO
 AnyFrame: TypeAlias = Frame2d | Frame3d
-
-
-@dataclass
-class DataWithMeta(Generic[_T]):
-    data: _T
-    mime: str
 
 
 class IFrameProvider(IMediaProvider, metaclass=ABCMeta):

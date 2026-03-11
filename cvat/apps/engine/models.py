@@ -451,6 +451,7 @@ class Data(models.Model):
         null=True, default=None)
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         null=True, default=None)
+    audio_chunks: MaybeUndefined[models.manager.RelatedManager[AudioChunkInfo]]
 
     # Storage descriptors
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
@@ -565,6 +566,32 @@ class Audio(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="audio", null=True)
     path = models.CharField(max_length=1024)
     sampling_rate = models.PositiveIntegerField()
+
+    chunks: MaybeUndefined[models.manager.RelatedManager[AudioChunkInfo]]
+
+    class Meta:
+        default_permissions = ()
+
+
+class AudioChunkInfo(models.Model):
+    data = models.ForeignKey(
+        Data,
+        on_delete=models.CASCADE,
+        related_name="audio_chunks",
+        related_query_name="audio_chunk",
+    )
+    audio = models.ForeignKey(
+        Audio,
+        on_delete=models.CASCADE,
+        related_name="chunks",
+        related_query_name="chunk"
+    )
+
+    key = models.CharField(max_length=128, primary_key=True)
+
+    left_padding = models.PositiveIntegerField(default=0)
+    right_padding = models.PositiveIntegerField(default=0)
+    content_offset = models.PositiveIntegerField(default=0)
 
     class Meta:
         default_permissions = ()

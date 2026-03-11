@@ -58,6 +58,7 @@ from cvat.apps.engine.cache import (
 from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
+from cvat.apps.engine.media_providers.audio_provider import AudioDataWithMeta, IAudioProvider, JobAudioProvider, TaskAudioProvider
 from cvat.apps.engine.media_providers.frame_provider import (
     DataWithMeta,
     IFrameProvider,
@@ -65,6 +66,7 @@ from cvat.apps.engine.media_providers.frame_provider import (
     TaskFrameProvider,
 )
 from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
+from cvat.apps.engine.media_providers.media_provider import IMediaProvider
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
@@ -164,6 +166,8 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
+_DATA_START_OFFSET_HEADER_NAME = 'X-Data-Start-Offset'
+# _DATA_END_OFFSET_HEADER_NAME = 'X-Data-End-Offset'
 _RETRY_AFTER_TIMEOUT = 10
 
 
@@ -546,36 +550,51 @@ class _DataGetter(metaclass=ABCMeta):
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
 
     @abstractmethod
-    def _get_frame_provider(self) -> IFrameProvider: ...
+    def _get_media_provider(self) -> IFrameProvider | IAudioProvider: ...
+
+    def _get_data_response(self) -> HttpResponse:
+        media_provider = self._get_media_provider()
+
+        if self.type == 'chunk':
+            data = media_provider.get_chunk(self.number, quality=self.quality)
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=self._get_chunk_response_headers(data),
+            )
+        elif self.type == 'frame':
+            if isinstance(media_provider, IAudioProvider):
+                # TODO: refactor
+                raise ValidationError(
+                    "Frame requests are not available for this data",
+                    code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            data = media_provider.get_frame(self.number, quality=self.quality)
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == 'preview':
+            data = media_provider.get_preview()
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == 'context_image':
+            if isinstance(media_provider, IAudioProvider):
+                # TODO: refactor
+                raise ValidationError(
+                    "Context image requests are not available for this data",
+                    code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            data = media_provider.get_frame_context_images_chunk(self.number)
+            if not data:
+                return HttpResponseNotFound()
+
+            return HttpResponse(data.data, content_type=data.mime)
+        else:
+            return Response(data='unknown data type {}.'.format(self.type),
+                status=status.HTTP_400_BAD_REQUEST)
 
     def __call__(self):
-        frame_provider = self._get_frame_provider()
-
         try:
-            if self.type == 'chunk':
-                data = frame_provider.get_chunk(self.number, quality=self.quality)
-                return HttpResponse(
-                    data.data.getvalue(),
-                    content_type=data.mime,
-                    headers=self._get_chunk_response_headers(data),
-                )
-            elif self.type == 'frame' or self.type == 'preview':
-                if self.type == 'preview':
-                    data = frame_provider.get_preview()
-                else:
-                    data = frame_provider.get_frame(self.number, quality=self.quality)
-
-                return HttpResponse(data.data.getvalue(), content_type=data.mime)
-
-            elif self.type == 'context_image':
-                data = frame_provider.get_frame_context_images_chunk(self.number)
-                if not data:
-                    return HttpResponseNotFound()
-
-                return HttpResponse(data.data, content_type=data.mime)
-            else:
-                return Response(data='unknown data type {}.'.format(self.type),
-                    status=status.HTTP_400_BAD_REQUEST)
+            return self._get_data_response()
         except (ValidationError, PermissionDenied, NotFound) as ex:
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
@@ -607,10 +626,19 @@ class _DataGetter(metaclass=ABCMeta):
         size_checksum = zlib.crc32(str(len(data)).encode())
         return str(zlib.crc32(data[:self._CHUNK_HEADER_BYTES_LENGTH], size_checksum))
 
-    def _make_chunk_response_headers(self, checksum: str, updated_date: datetime) -> dict[str, str]:
+    def _make_chunk_response_headers(
+        self,
+        checksum: str,
+        updated_date: datetime,
+        *,
+        data_start_offset: int | None = None,
+        data_end_offset: int | None = None,
+    ) -> dict[str, str]:
         return {
             _DATA_CHECKSUM_HEADER_NAME: str(checksum or ''),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(updated_date),
+            _DATA_START_OFFSET_HEADER_NAME: str(data_start_offset or ''),
+            # _DATA_END_OFFSET_HEADER_NAME: str(data_end_offset or ''),
         }
 
 class _TaskDataGetter(_DataGetter):
@@ -625,12 +653,26 @@ class _TaskDataGetter(_DataGetter):
         super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
         self._db_task = db_task
 
-    def _get_frame_provider(self) -> TaskFrameProvider:
-        return TaskFrameProvider(self._db_task)
+    def _get_media_provider(self) -> TaskFrameProvider | TaskAudioProvider:
+        match self._db_task.media_type:
+            case models.MediaType.AUDIO:
+                return TaskAudioProvider(self._db_task)
+            case models.MediaType.IMAGE | models.MediaType.VIDEO | models.MediaType.POINT_CLOUD:
+                return TaskFrameProvider(self._db_task)
+            case _ as media_type:
+                assert False, f"Unknown media type {media_type}"
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
+        extra_params = {}
+        if self._db_task.media_type == models.MediaType.AUDIO:
+            assert isinstance(chunk_data, AudioDataWithMeta)
+            extra_params["data_start_offset"] = chunk_data.start_offset
+            # extra_params["data_end_offset"] = chunk_data.end_offset
+
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data), self._db_task.get_chunks_updated_date(),
+            self._get_chunk_checksum(chunk_data),
+            self._db_task.get_chunks_updated_date(),
+            **extra_params
         )
 
 
@@ -670,51 +712,48 @@ class _JobDataGetter(_DataGetter):
 
         self._db_job = db_job
 
-    def _get_frame_provider(self) -> JobFrameProvider:
-        return JobFrameProvider(self._db_job)
+    def _get_media_provider(self) -> JobFrameProvider | JobAudioProvider:
+        match self._db_job.segment.task.media_type:
+            case models.MediaType.AUDIO:
+                return JobAudioProvider(self._db_job)
+            case models.MediaType.IMAGE | models.MediaType.VIDEO | models.MediaType.POINT_CLOUD:
+                return JobFrameProvider(self._db_job)
+            case _ as media_type:
+                assert False, f"Unknown media type {media_type}"
 
-    def __call__(self):
+    def _get_data_response(self):
         if self.type == 'chunk':
             # Reproduce the task chunk indexing
-            frame_provider = self._get_frame_provider()
+            media_provider = self._get_media_provider()
 
-            try:
-                if self.index is not None:
-                    data = frame_provider.get_chunk(
-                        self.index, quality=self.quality, is_task_chunk=False
-                    )
-                else:
-                    data = frame_provider.get_chunk(
-                        self.number, quality=self.quality, is_task_chunk=True
-                    )
+            if self.index is not None:
+                data = media_provider.get_chunk(
+                    self.index, quality=self.quality, is_task_chunk=False
+                )
+            else:
+                data = media_provider.get_chunk(
+                    self.number, quality=self.quality, is_task_chunk=True
+                )
 
-                return HttpResponse(
-                    data.data.getvalue(),
-                    content_type=data.mime,
-                    headers=self._get_chunk_response_headers(data),
-                )
-            except (TimeoutError, CvatChunkTimestampMismatchError, LockError):
-                return Response(
-                    status=status.HTTP_429_TOO_MANY_REQUESTS,
-                    headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
-                )
-            except CacheTooLargeDataError as ex:
-                return Response(
-                    data=str(ex),
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-            except CloudStorageMissingError as ex:
-                return Response(
-                    data=str(ex),
-                    status=status.HTTP_409_CONFLICT,
-                )
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=self._get_chunk_response_headers(data),
+            )
         else:
-            return super().__call__()
+            return super()._get_data_response()
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
+        extra_params = {}
+        if self._db_task.media_type == models.MediaType.AUDIO:
+            assert isinstance(chunk_data, AudioDataWithMeta)
+            extra_params["data_start_offset"] = chunk_data.start_offset
+            # extra_params["data_end_offset"] = chunk_data.end_offset
+
         return self._make_chunk_response_headers(
             self._get_chunk_checksum(chunk_data),
-            self._db_job.segment.chunks_updated_date
+            self._db_job.segment.chunks_updated_date,
+            **extra_params
         )
 
 
@@ -1248,6 +1287,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.HEADER, type=OpenApiTypes.DATETIME, required=False,
                 response=[200],
                 description="Data update date, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_START_OFFSET_HEADER_NAME,
+                location=OpenApiParameter.HEADER, type=OpenApiTypes.INT, required=False,
+                response=[200],
+                description="Data start offset, applicable for chunks only",
             )
         ],
         responses={
