@@ -1361,7 +1361,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     start = Date.now();
                     this.resizableShape = shape;
                     const detail = (e.detail.event.detail as any);
-                    draggedPointIndex = detail.i !== undefined ? detail.i : null;
+                    draggedPointIndex = detail?.i ?? null;
                 })
                 .on('resizing', (e: CustomEvent): void => {
                     resized = true;
