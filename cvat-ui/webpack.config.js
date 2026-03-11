@@ -12,7 +12,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 const ExecScriptsPlugin = require('./exec-scripts-webpack-plugin.cjs');
 
 module.exports = (env) => {
-const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
+    const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
     const sourceMapsDisabled = (process.env.DISABLE_SOURCE_MAPS || 'false').toLocaleLowerCase() === 'true';
     const sourceMapsToken = process.env.SOURCE_MAPS_TOKEN || '';
