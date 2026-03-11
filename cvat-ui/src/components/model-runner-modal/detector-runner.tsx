@@ -12,6 +12,7 @@ import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
 import Tag from 'antd/lib/tag';
+import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 import { ArrowRightOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 
@@ -22,7 +23,6 @@ import {
 } from 'cvat-core-wrapper';
 
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
-import Input from 'antd/lib/input';
 
 interface Props {
     withCleanup: boolean;
