@@ -573,7 +573,7 @@ class Audio(models.Model):
         default_permissions = ()
 
 
-class AudioChunkInfo(models.Model):
+class AudioChunkInfo(TimestampedModel):
     data = models.ForeignKey(
         Data,
         on_delete=models.CASCADE,

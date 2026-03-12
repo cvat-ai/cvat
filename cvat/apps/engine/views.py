@@ -58,14 +58,19 @@ from cvat.apps.engine.cache import (
 from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
-from cvat.apps.engine.media_providers.audio_provider import AudioDataWithMeta, IAudioProvider, JobAudioProvider, TaskAudioProvider
+from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
+from cvat.apps.engine.media_providers.audio_provider import (
+    AudioDataWithMeta,
+    IAudioProvider,
+    JobAudioProvider,
+    TaskAudioProvider,
+)
 from cvat.apps.engine.media_providers.frame_provider import (
     DataWithMeta,
     IFrameProvider,
     JobFrameProvider,
     TaskFrameProvider,
 )
-from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
 from cvat.apps.engine.media_providers.media_provider import IMediaProvider
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
@@ -745,7 +750,7 @@ class _JobDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         extra_params = {}
-        if self._db_task.media_type == models.MediaType.AUDIO:
+        if self._db_job.segment.task.media_type == models.MediaType.AUDIO:
             assert isinstance(chunk_data, AudioDataWithMeta)
             extra_params["data_start_offset"] = chunk_data.start_offset
             # extra_params["data_end_offset"] = chunk_data.end_offset

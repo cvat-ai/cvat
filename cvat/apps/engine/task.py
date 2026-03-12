@@ -26,7 +26,6 @@ from django.forms.models import model_to_dict
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.media_providers.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
@@ -43,6 +42,7 @@ from cvat.apps.engine.media_extractors import (
     load_image,
     sort,
 )
+from cvat.apps.engine.media_providers.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector

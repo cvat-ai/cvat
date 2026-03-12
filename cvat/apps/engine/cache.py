@@ -846,19 +846,43 @@ class MediaCache:
         db_task = db_segment.task
         db_data = db_task.require_data()
 
-        chunk_size = db_data.chunk_size
-        chunk_frame_ids = list(db_segment.frame_set)[
-            chunk_size * chunk_number : chunk_size * (chunk_number + 1)
-        ]
+        chunk_key = self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
 
-        return self.prepare_custom_range_segment_chunk(db_task, chunk_frame_ids, quality=quality)
+        chunk_size = db_data.chunk_size
+        chunk_start_frame_index = chunk_size * chunk_number
+        chunk_end_frame_index = chunk_size * (chunk_number + 1)
+        chunk_frame_range = db_segment.frame_set[chunk_start_frame_index:chunk_end_frame_index]
+        return self.prepare_custom_range_segment_chunk(
+            db_task, chunk_frame_range, quality=quality, cache=self, chunk_key=chunk_key
+        )
 
     @classmethod
     def prepare_custom_range_segment_chunk(
-        cls, db_task: models.Task, frame_ids: Sequence[int], *, quality: models.FrameQuality
+        cls,
+        db_task: models.Task,
+        frame_ids: Sequence[int],
+        *,
+        quality: models.FrameQuality,
+        cache: MediaCache,
+        chunk_key: str,
     ) -> DataWithMime:
-        with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
-            return prepare_chunk(frame_iter, quality=quality, db_task=db_task)
+        match db_task.media_type:
+            case models.MediaType.AUDIO:
+                from cvat.apps.engine.media_providers.audio_provider import TaskAudioProvider
+
+                return TaskAudioProvider._build_audio_chunk(
+                    db_task=db_task,
+                    chunk_frames=(frame_ids[0], frame_ids[-1]),
+                    quality=quality,
+                    cache=cache,
+                    chunk_key=chunk_key,
+                )
+
+            case models.MediaType.IMAGE | models.MediaType.VIDEO | models.MediaType.POINT_CLOUD:
+                with closing(cls._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
+                    return prepare_image_chunk(frame_iter, quality=quality, db_task=db_task)
+            case _ as media_type:
+                assert False, f"Unknown media type '{media_type}'"
 
     def prepare_masked_range_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: models.FrameQuality
@@ -871,6 +895,7 @@ class MediaCache:
             chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
 
+        assert db_task.media_type != models.MediaType.AUDIO
         return self.prepare_custom_masked_range_segment_chunk(
             db_task, chunk_frame_ids, chunk_number, quality=quality
         )
@@ -1116,7 +1141,7 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     return output_buf, PREVIEW_MIME
 
 
-def prepare_chunk(
+def prepare_image_chunk(
     task_chunk_frames: Iterator[tuple[Any, str]],
     *,
     quality: models.FrameQuality,
