@@ -1,0 +1,16 @@
+# Extends the main compose stack with a dev container service
+services:
+  cvat_dev:
+    image: mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    environment:
+      # Backend services reachable by container hostname
+      CVAT_HOST: cvat_server
+      CVAT_API_URL: http://cvat_server:8080
+    networks:
+      - cvat
+    depends_on:
+      - cvat_server
+      - cvat_ui

@@ -1,0 +1,39 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+# Compose overlay that seeds a Fusion demo project automatically.
+#
+# Usage (one command):
+#   docker compose -f docker-compose.yml -f docker-compose.fusion-demo.yml up -d
+#
+# Once all services are healthy, open:
+#   http://localhost:8080
+#   Credentials: admin / admin
+#
+# The "Fusion Demo Project" will be pre-created with linked 2D + 3D annotations.
+# Open the Fusion Viewer from the project's action menu, or navigate directly to:
+#   http://localhost:8080/fusion/<project-id>
+#
+# To tear down:
+#   docker compose -f docker-compose.yml -f docker-compose.fusion-demo.yml down -v
+
+services:
+  cvat_fusion_demo_init:
+    container_name: cvat_fusion_demo_init
+    image: cvat/server:${CVAT_VERSION:-dev}
+    restart: "no"
+    depends_on:
+      cvat_server:
+        condition: service_started
+      cvat_opa:
+        condition: service_started
+    environment:
+      CVAT_HOST: ${CVAT_HOST:-localhost}
+      CVAT_DEMO_USER: ${CVAT_DEMO_USER:-admin}
+      CVAT_DEMO_PASS: ${CVAT_DEMO_PASS:-admin}
+    entrypoint: ["bash", "/opt/fusion-demo/seed.sh"]
+    volumes:
+      - ./utils/fusion_demo_seed.sh:/opt/fusion-demo/seed.sh:ro
+    networks:
+      - cvat

@@ -1,5 +1,6 @@
 name: CI
 on:
+  workflow_dispatch:
   push:
     branches:
       - 'master'
@@ -21,9 +22,11 @@ env:
 jobs:
   search_cache:
     if: |
-      github.event.pull_request.draft == false &&
-      !startsWith(github.event.pull_request.title, '[WIP]') &&
-      !startsWith(github.event.pull_request.title, '[Dependent]')
+      github.event_name == 'push' || (
+        github.event.pull_request.draft == false &&
+        !startsWith(github.event.pull_request.title, '[WIP]') &&
+        !startsWith(github.event.pull_request.title, '[Dependent]')
+      )
     uses: ./.github/workflows/search-cache.yml
 
   build:
@@ -304,7 +307,7 @@ jobs:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
                 'actions_objects', 'actions_objects2', 'actions_users',
                 'actions_projects_models', 'canvas3d_functionality',
-                'issues_prs', 'issues_prs2', 'features', 'features2']
+                'issues_prs', 'issues_prs2', 'features', 'features2', 'fusion']
     steps:
       - uses: actions/checkout@v4
 
@@ -375,6 +378,12 @@ jobs:
               --browser chrome \
               --config-file cypress_canvas3d.config.js \
               --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+          elif [[ ${{ matrix.specs }} == fusion ]]; then
+            npx cypress run \
+              --headed \
+              --browser chrome \
+              --config-file cypress.fusion.config.js \
+              --spec 'cypress/e2e/fusion/setup_fusion.js,cypress/e2e/fusion/fusion_viewer.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
@@ -423,6 +432,87 @@ jobs:
         with:
           name: allure-results-e2e-${{ matrix.specs }}
           path: tests/allure-results-e2e
+
+  fusion_demo_smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v4
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
+
+      - name: Download CVAT UI image
+        uses: actions/download-artifact@v4
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
+
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker image ls -a
+
+      - name: Run fusion demo (one-command smoke test)
+        run: |
+          chmod +x ./utils/setup_fusion_demo.sh
+          ./utils/setup_fusion_demo.sh
+
+      - name: Verify demo tasks via API
+        run: |
+          # Verify the API is reachable
+          curl -sf -u admin:admin http://localhost:8080/api/server/about | python3 -c "import sys,json; d=json.load(sys.stdin); assert 'version' in d"
+
+          # Verify 2D task exists and has annotations
+          TASK2D_ID=$(curl -sf -u admin:admin 'http://localhost:8080/api/tasks?search=2D+Camera' \
+            | python3 -c "import sys,json; r=json.load(sys.stdin)['results']; assert len(r)==1; print(r[0]['id'])")
+          echo "Found 2D task: $TASK2D_ID"
+          JOB2D_ID=$(curl -sf -u admin:admin "http://localhost:8080/api/jobs?task_id=$TASK2D_ID" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['results'][0]['id'])")
+          ANN2D=$(curl -sf -u admin:admin "http://localhost:8080/api/jobs/$JOB2D_ID/annotations" \
+            | python3 -c "import sys,json; s=json.load(sys.stdin)['shapes']; assert len(s)>=3, f'Expected 3 2D shapes, got {len(s)}'; print(len(s))")
+          echo "2D annotations: $ANN2D"
+
+          # Verify 3D task exists and has annotations
+          TASK3D_ID=$(curl -sf -u admin:admin 'http://localhost:8080/api/tasks?search=3D+LiDAR' \
+            | python3 -c "import sys,json; r=json.load(sys.stdin)['results']; assert len(r)==1; print(r[0]['id'])")
+          echo "Found 3D task: $TASK3D_ID"
+          JOB3D_ID=$(curl -sf -u admin:admin "http://localhost:8080/api/jobs?task_id=$TASK3D_ID" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['results'][0]['id'])")
+          ANN3D=$(curl -sf -u admin:admin "http://localhost:8080/api/jobs/$JOB3D_ID/annotations" \
+            | python3 -c "import sys,json; s=json.load(sys.stdin)['shapes']; assert len(s)>=3, f'Expected 3 3D shapes, got {len(s)}'; print(len(s))")
+          echo "3D annotations: $ANN3D"
+
+          # Verify linked annotations share the same link_ids
+          curl -sf -u admin:admin "http://localhost:8080/api/jobs/$JOB2D_ID/annotations" | python3 -c "
+          import sys, json
+          shapes = json.load(sys.stdin)['shapes']
+          links = {a['value'] for s in shapes for a in s.get('attributes',[]) if a['value']}
+          assert 'link-car-001' in links, f'Missing link-car-001 in {links}'
+          assert 'link-ped-001' in links, f'Missing link-ped-001 in {links}'
+          print('Link IDs verified:', links)
+          "
+
+          echo "All fusion demo checks passed!"
+
+      - name: Creating a log file on failure
+        if: failure()
+        run: |
+          mkdir -p ${{ github.workspace }}/fusion_demo_logs
+          docker logs cvat_server > ${{ github.workspace }}/fusion_demo_logs/cvat_server.log 2>&1 || true
+          docker logs cvat_opa > ${{ github.workspace }}/fusion_demo_logs/cvat_opa.log 2>&1 || true
+          docker logs cvat_fusion_demo_init > ${{ github.workspace }}/fusion_demo_logs/fusion_init.log 2>&1 || true
+
+      - name: Uploading logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fusion_demo_smoke_logs
+          path: ${{ github.workspace }}/fusion_demo_logs
 
   helm_rest_api_testing:
     needs: build

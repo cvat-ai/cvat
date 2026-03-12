@@ -1,0 +1,57 @@
+{
+    "name": "CVAT Fusion Dev",
+    "dockerComposeFile": ["../docker-compose.yml", "../docker-compose.dev.yml", "docker-compose.devcontainer.yml"],
+    "service": "cvat_dev",
+    "workspaceFolder": "/workspace",
+
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "lts",
+            "installYarnUsingApt": false
+        },
+        "ghcr.io/devcontainers/features/python:1": {
+            "version": "3.10"
+        },
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+    },
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "ms-python.python",
+                "ms-python.black-formatter",
+                "ms-python.isort",
+                "eamodio.gitlens",
+                "streetsidesoftware.code-spell-checker"
+            ],
+            "settings": {
+                "typescript.tsdk": "node_modules/typescript/lib",
+                "editor.defaultFormatter": "esbenp.prettier-vscode",
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "[python]": {
+                    "editor.defaultFormatter": "ms-python.black-formatter"
+                },
+                "python.formatting.blackArgs": ["--line-length", "100"],
+                "eslint.workingDirectories": [
+                    "cvat-ui",
+                    "cvat-core",
+                    "cvat-canvas",
+                    "cvat-canvas3d",
+                    "cvat-data"
+                ]
+            }
+        }
+    },
+
+    "forwardPorts": [3000, 7000, 8080],
+    "portsAttributes": {
+        "3000": { "label": "CVAT UI (dev server)", "onAutoForward": "notify" },
+        "7000": { "label": "CVAT API (proxy)", "onAutoForward": "silent" },
+        "8080": { "label": "CVAT Server", "onAutoForward": "silent" }
+    },
+
+    "postCreateCommand": ".devcontainer/post-create.sh",
+    "remoteUser": "node"
+}
