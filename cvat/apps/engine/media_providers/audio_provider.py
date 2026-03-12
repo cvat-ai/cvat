@@ -8,31 +8,31 @@ import itertools
 import math
 from abc import ABCMeta, abstractmethod
 from bisect import bisect
-from collections import OrderedDict
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from io import BytesIO
 from typing import Literal, TypeVar
 
-from attrs import define
 import av
-from django.db.models import prefetch_related_objects
+import django
 import numpy as np
+from attrs import define
+from django.db.models import prefetch_related_objects
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache, prepare_chunk
-from cvat.apps.engine.media_providers.media_chunks import (
-    BufferChunkLoader,
-    ChunkLoader,
-    FileChunkLoader,
-    ReaderFactory,
-)
+from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache
 from cvat.apps.engine.media_extractors import (
     AudioReader,
     IChunkWriter,
     IMediaReader,
     Mp3ChunkWriter,
+)
+from cvat.apps.engine.media_providers.media_chunks import (
+    BufferChunkLoader,
+    ChunkLoader,
+    FileChunkLoader,
+    ReaderFactory,
 )
 from cvat.apps.engine.media_providers.media_provider import DataWithMeta, IMediaProvider
 from cvat.apps.engine.utils import take_by
@@ -68,6 +68,10 @@ class IAudioProvider(IMediaProvider, metaclass=ABCMeta):
 
     def _get_rel_frame_number(self, db_data: models.Data, abs_frame_number: int) -> int:
         return (abs_frame_number - db_data.start_frame) // db_data.get_frame_step()
+
+
+class _ChunkAlreadyExistsError(Exception):
+    pass
 
 
 class TaskAudioProvider(IAudioProvider):
@@ -130,19 +134,19 @@ class TaskAudioProvider(IAudioProvider):
             min(db_data.start_frame + task_chunk_stop_frame, db_data.stop_frame) + 1,
         )
 
-        matching_segments: list[models.Segment] = [
-            s
-            for s in (
-                self._db_task.segment_set.filter(type=models.SegmentType.RANGE)
-                .order_by("start_frame")
-                .all()
-            )
-            if ranges_overlap(task_chunk_frame_range, range(s.start_frame, s.stop_frame))
-        ]
+        matching_segments: list[models.Segment] = sorted(
+            [
+                # Filter and sort here to avoid extra requests
+                s
+                for s in self._db_task.segment_set.all()
+                if s.type == models.SegmentType.RANGE
+                if ranges_overlap(task_chunk_frame_range, range(s.start_frame, s.stop_frame))
+            ],
+            key=lambda s: s.start_frame,
+        )
         assert matching_segments
 
         # Don't put this into set_callback to avoid data duplication in the cache
-
         if len(matching_segments) == 1:
             segment_audio_provider = SegmentAudioProvider(matching_segments[0])
             matching_chunk_index = segment_audio_provider.find_matching_chunk(
@@ -187,47 +191,71 @@ class TaskAudioProvider(IAudioProvider):
             start_offset=chunk_info.content_offset,
         )
 
-    @staticmethod
+    @classmethod
     def _chunk_create_callback(
+        cls,
         db_task: models.Task | int,
         chunk_frames: tuple[int, int],
         index: int,
         quality: models.FrameQuality,
     ) -> DataWithMime:
-        # Create and return a joined / cleaned chunk
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(id=db_task)
 
-        db_data = db_task.require_data()
-
         cache = MediaCache()
         chunk_key = cache._make_chunk_key(db_task, chunk_number=index, quality=quality)
+
+        return cls._build_audio_chunk(
+            db_task=db_task,
+            chunk_frames=chunk_frames,
+            quality=quality,
+            cache=cache,
+            chunk_key=chunk_key,
+        )
+
+    @classmethod
+    def _build_audio_chunk(
+        cls,
+        db_task: models.Task,
+        chunk_frames: tuple[int, int],
+        *,
+        quality: models.FrameQuality,
+        cache: MediaCache,
+        chunk_key: str,
+    ):
+        db_data = db_task.require_data()
 
         try:
             chunk_info = db_data.audio_chunks.get(key=chunk_key)
         except models.AudioChunkInfo.DoesNotExist:
             chunk_info = models.AudioChunkInfo(data=db_data, audio=db_data.audio, key=chunk_key)
             chunk_info_created = True
-
-            # TODO: implement padding optimization
             padding = "auto"
         else:
             chunk_info_created = False
             padding = (chunk_info.left_padding, chunk_info.right_padding)
 
         source_audio_file, _ = cache.read_raw_audio(db_task)
-        reader = AudioReader([source_audio_file])
+        reader = AudioReader([source_audio_file], start=chunk_frames[0], stop=chunk_frames[1])
 
-        chunk_data, padding = create_audio_chunk(
-            db_data, reader, payload_range=chunk_frames, quality=quality, padding=padding
-        )
+        chunk_data, padding = create_audio_chunk(db_data, reader, quality=quality, padding=padding)
 
         if chunk_info_created:
             # TODO: handle possible existing value
             chunk_info.left_padding = padding[0]
             chunk_info.right_padding = padding[1]
             chunk_info.content_offset = padding[2]
-            chunk_info.save()
+
+            try:
+                chunk_info.save(
+                    # Updates should not normally happen here.
+                    # If another thread created the same chunk concurrently,
+                    # we should fail chunk creation to avoid data duplication in the cache.
+                    # The client will have to retry their chunk request.
+                    force_insert=True,
+                )
+            except Exception as e:
+                raise _ChunkAlreadyExistsError() from e
 
         return chunk_data
 
@@ -244,10 +272,11 @@ class TaskAudioProvider(IAudioProvider):
 
         segment = next(
             (
+                # Filter and sort here to avoid extra requests
                 s
                 for s in sorted(
                     self._db_task.segment_set.all(),
-                    key=lambda s: s.type != models.SegmentType.RANGE,  # prioritize RANGE segments
+                    key=lambda s: s.type != models.SegmentType.RANGE,
                 )
                 if abs_frame_number in s.frame_set
             ),
@@ -339,11 +368,67 @@ class SegmentAudioProvider(IAudioProvider):
         for loader in self._loaders.values():
             loader.unload()
 
-    def __len__(self):
-        return self._db_segment.frame_count
+    def find_matching_chunk(self, frames: Sequence[int]) -> int | None:
+        return next(
+            (
+                i
+                for i, chunk_frames in enumerate(
+                    take_by(
+                        sorted(self._db_segment.frame_set), self._db_segment.task.data.chunk_size
+                    )
+                )
+                if frames == set(chunk_frames)
+            ),
+            None,
+        )
+
+    def get_preview(self) -> DataWithMeta[BytesIO]:
+        cache = MediaCache()
+        preview, mime = cache.get_or_set_segment_preview(self._db_segment)
+        return DataWithMeta[BytesIO](preview, mime=mime)
+
+    def get_chunk(
+        self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
+    ) -> AudioDataWithMeta[BytesIO]:
+        return_type = AudioDataWithMeta[BytesIO]
+
+        chunk = self._get_or_create_chunk(chunk_number=chunk_number, quality=quality)
+
+        cache = MediaCache()
+        chunk_key = cache._make_chunk_key(
+            self._db_segment, chunk_number=chunk_number, quality=quality
+        )
+        chunk_info = self._db_segment.task.data.audio_chunks.get(key=chunk_key)
+        assert chunk_info
+
+        return return_type(
+            data=chunk.data,
+            mime=chunk.mime,
+            start_offset=chunk_info.content_offset,
+        )
+
+    def _get_or_create_chunk(
+        self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
+    ) -> DataWithMeta[BytesIO]:
+        chunk_number = self.validate_chunk_number(chunk_number)
+        chunk_data, mime = self._loaders[quality].read_chunk(chunk_number)
+        return DataWithMeta[BytesIO](chunk_data, mime=mime)
+
+    def invalidate_chunks(self, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL):
+        cache = MediaCache()
+        cache.remove_segment_preview(self._db_segment)
+        number_of_chunks = math.ceil(
+            self._db_segment.frame_count / self._db_segment.task.data.chunk_size
+        )
+        cache.remove_segments_chunks(
+            [
+                {"db_segment": self._db_segment, "chunk_number": chunk_id, "quality": quality}
+                for chunk_id in range(number_of_chunks)
+            ]
+        )
 
     def get_frame_index(self, frame_number: int) -> int | None:
-        segment_frames = sorted(self._db_segment.frame_set)
+        segment_frames = self._db_segment.frame_set
         abs_frame_number = self._get_abs_frame_number(self._db_segment.task.data, frame_number)
         frame_index = bisect(segment_frames, abs_frame_number) - 1
         if not (
@@ -365,20 +450,6 @@ class SegmentAudioProvider(IAudioProvider):
     def get_chunk_number(self, frame_number: int) -> int:
         return self.get_frame_index(frame_number) // self._db_segment.task.data.chunk_size
 
-    def find_matching_chunk(self, frames: Sequence[int]) -> int | None:
-        return next(
-            (
-                i
-                for i, chunk_frames in enumerate(
-                    take_by(
-                        sorted(self._db_segment.frame_set), self._db_segment.task.data.chunk_size
-                    )
-                )
-                if frames == set(chunk_frames)
-            ),
-            None,
-        )
-
     def validate_chunk_number(self, chunk_number: int) -> int:
         segment_size = self._db_segment.frame_count
         last_chunk = math.ceil(segment_size / self._db_segment.task.data.chunk_size) - 1
@@ -389,31 +460,6 @@ class SegmentAudioProvider(IAudioProvider):
             )
 
         return chunk_number
-
-    def get_preview(self) -> AudioDataWithMeta[BytesIO]:
-        cache = MediaCache()
-        preview, mime = cache.get_or_set_segment_preview(self._db_segment)
-        return AudioDataWithMeta[BytesIO](preview, mime=mime)
-
-    def get_chunk(
-        self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
-    ) -> AudioDataWithMeta[BytesIO]:
-        chunk_number = self.validate_chunk_number(chunk_number)
-        chunk_data, mime = self._loaders[quality].read_chunk(chunk_number)
-        return AudioDataWithMeta[BytesIO](chunk_data, mime=mime)
-
-    def invalidate_chunks(self, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL):
-        cache = MediaCache()
-        cache.remove_segment_preview(self._db_segment)
-        number_of_chunks = math.ceil(
-            self._db_segment.frame_count / self._db_segment.task.data.chunk_size
-        )
-        cache.remove_segments_chunks(
-            [
-                {"db_segment": self._db_segment, "chunk_number": chunk_id, "quality": quality}
-                for chunk_id in range(number_of_chunks)
-            ]
-        )
 
 
 class JobAudioProvider(SegmentAudioProvider):
@@ -430,9 +476,33 @@ class JobAudioProvider(SegmentAudioProvider):
         if not is_task_chunk:
             return super().get_chunk(chunk_number, quality=quality)
 
+        return_type = AudioDataWithMeta[BytesIO]
+
+        chunk = self._get_or_create_task_chunk(chunk_number=chunk_number, quality=quality)
+
+        cache = MediaCache()
+        chunk_key = (
+            cache._make_chunk_key(self._db_segment, chunk_number=chunk_number, quality=quality)
+            + "-task"
+        )
+        chunk_info = self._db_segment.task.data.audio_chunks.get(key=chunk_key)
+        assert chunk_info
+
+        return return_type(
+            data=chunk.data,
+            mime=chunk.mime,
+            start_offset=chunk_info.content_offset,
+        )
+
+    def _get_or_create_task_chunk(
+        self,
+        chunk_number: int,
+        *,
+        quality: models.FrameQuality = models.FrameQuality.ORIGINAL,
+    ) -> DataWithMeta[BytesIO]:
         # Backward compatibility for the "number" parameter
         # Reproduce the task chunks, limited by this job
-        return_type = AudioDataWithMeta[BytesIO]
+        return_type = DataWithMeta[BytesIO]
 
         task_audio_provider = TaskAudioProvider(self._db_segment.task)
         segment_start_chunk = task_audio_provider.get_chunk_number(self._db_segment.start_frame)
@@ -450,25 +520,22 @@ class JobAudioProvider(SegmentAudioProvider):
             return return_type(cached_chunk[0], cached_chunk[1])
 
         db_data = self._db_segment.task.require_data()
-        step = db_data.get_frame_step()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
         task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1
-        task_chunk_frame_set = set(
-            range(
-                db_data.start_frame + task_chunk_start_frame * step,
-                min(db_data.start_frame + task_chunk_stop_frame * step, db_data.stop_frame) + step,
-                step,
-            )
+        task_chunk_frame_set = range(
+            db_data.start_frame + task_chunk_start_frame,
+            min(db_data.start_frame + task_chunk_stop_frame, db_data.stop_frame) + 1,
         )
 
         # Don't put this into set_callback to avoid data duplication in the cache
-        matching_chunk = self.find_matching_chunk(sorted(task_chunk_frame_set))
+        matching_chunk = self.find_matching_chunk(task_chunk_frame_set)
         if matching_chunk is not None:
             return self.get_chunk(matching_chunk, quality=quality)
 
-        segment_chunk_frame_ids = sorted(
-            task_chunk_frame_set.intersection(self._db_segment.frame_set)
-        )
+        if self._db_segment.type != models.SegmentType.RANGE:
+            raise NotImplementedError
+
+        segment_chunk_frame_ids = range_overlap(task_chunk_frame_set, self._db_segment.frame_set)
 
         buffer, mime_type = cache.get_or_set_segment_task_chunk(
             self._db_segment,
@@ -478,7 +545,7 @@ class JobAudioProvider(SegmentAudioProvider):
                 callable=self._chunk_create_callback,
                 args=[
                     self._db_segment,
-                    segment_chunk_frame_ids,
+                    (segment_chunk_frame_ids[0], segment_chunk_frame_ids[-1]),
                     chunk_number,
                     quality,
                 ],
@@ -490,30 +557,28 @@ class JobAudioProvider(SegmentAudioProvider):
     @staticmethod
     def _chunk_create_callback(
         db_segment: models.Segment | int,
-        segment_chunk_frame_ids: list[int],
+        segment_chunk_frame_ids: tuple[int, int],
         chunk_number: int,
         quality: models.FrameQuality,
     ) -> DataWithMime:
-        # Create and return a joined / cleaned chunk
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)
 
-        if db_segment.type == models.SegmentType.RANGE:
-            return MediaCache.prepare_custom_range_segment_chunk(
-                db_task=db_segment.task,
-                frame_ids=segment_chunk_frame_ids,
-                quality=quality,
-            )
-        elif db_segment.type == models.SegmentType.SPECIFIC_FRAMES:
-            return MediaCache.prepare_custom_masked_range_segment_chunk(
-                db_task=db_segment.task,
-                frame_ids=segment_chunk_frame_ids,
-                chunk_number=chunk_number,
-                quality=quality,
-                insert_placeholders=True,
-            )
-        else:
+        if db_segment.type != models.SegmentType.RANGE:
             assert False
+
+        cache = MediaCache()
+        chunk_key = (
+            cache._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality) + "-task"
+        )
+
+        return cache.prepare_custom_range_segment_chunk(
+            db_task=db_segment.task,
+            frame_ids=segment_chunk_frame_ids,
+            quality=quality,
+            cache=cache,
+            chunk_key=chunk_key,
+        )
 
 
 def ranges_overlap(a: range, b: range) -> bool:
@@ -521,7 +586,7 @@ def ranges_overlap(a: range, b: range) -> bool:
 
 
 def range_overlap(a: range, b: range) -> range:
-    return range(max(a.start, b.start), min(a.stop, b.stop))
+    return range(max(a.start, b.start), min(a.stop, b.stop) + 1)
 
 
 def add_padding(
@@ -581,7 +646,6 @@ def create_audio_chunk(
     payload_reader: AudioReader,
     *,
     quality: models.FrameQuality,
-    payload_range: tuple[int, int] | None = None,
     padding: tuple[int, int] | Literal["auto"] | None = None,
 ) -> tuple[DataWithMime, tuple[int, int, int]]:
     assert db_data.compressed_chunk_type == models.DataChoice.AUDIO_MP3
@@ -594,20 +658,17 @@ def create_audio_chunk(
 
     writer = Mp3ChunkWriter(quality=frame_quality_to_audio_quality[quality])
 
-    payload_start, payload_stop = payload_range or (None, None)
-
     if padding == "auto":
         left_padding, right_padding, payload_offset = find_best_padding(
             payload_reader=payload_reader,
-            payload_start=payload_start,
-            payload_stop=payload_stop,
             writer=writer,
             step=500,
         )
     else:
         left_padding, right_padding = padding or (0, 0)
+        payload_offset = left_padding
 
-    payload = payload_reader.read_frames(start=payload_start, stop=payload_stop)
+    payload = payload_reader.read_frames()
 
     if left_padding or right_padding:
         payload = add_padding(payload, left_padding_ms=left_padding, right_padding_ms=right_padding)
@@ -649,10 +710,10 @@ def collect_samples(frames: Iterator[AudioReader.AudioFrame]) -> np.ndarray:
 
 def find_best_padding(
     payload_reader: AudioReader,
-    payload_start: int,
-    payload_stop: int,
     *,
     writer: IChunkWriter,
+    payload_start: int | None = None,
+    payload_stop: int | None = None,
     step: int = 20,
     min_left_padding: int = 0,
     min_right_padding: int = 0,
@@ -662,6 +723,12 @@ def find_best_padding(
 ) -> tuple[int, int]:
     assert max_left_padding >= 0 and max_right_padding >= 0
     assert min_left_padding >= 0 and min_right_padding >= 0
+
+    if payload_start is None:
+        payload_start = payload_reader.start
+
+    if payload_stop is None:
+        payload_stop = payload_reader.stop
 
     def payload_frames_factory():
         return payload_reader.read_frames(start=payload_start, stop=payload_stop)
@@ -793,7 +860,7 @@ def match_samples(
         max_window_pos = max(0, min(max_window_pos, max_offset))
 
     for offset in range(0, max_window_pos + 1):
-        # TODO: maybe downsample, but it can lead to imprecise results
+        # TODO: maybe downsample, but it can lead to inaccurate results
         haystack_frame = haystack[..., offset : offset + window_size]
         score = np.sum(np.abs(haystack_frame - needle))
 

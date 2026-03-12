@@ -23,15 +23,15 @@ from PIL import Image
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache, prepare_chunk
+from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache, prepare_image_chunk
+from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.media_providers.media_chunks import (
     BufferChunkLoader,
     ChunkLoader,
     FileChunkLoader,
     ReaderFactory,
 )
-from cvat.apps.engine.media_extractors import VideoReader, ZipReader
-from cvat.apps.engine.media_providers.media_provider import IMediaProvider, DataWithMeta
+from cvat.apps.engine.media_providers.media_provider import DataWithMeta, IMediaProvider
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.utils import take_by
 
@@ -260,7 +260,7 @@ class TaskFrameProvider(IFrameProvider):
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
-        return prepare_chunk(
+        return prepare_image_chunk(
             task_chunk_frames.values(),
             quality=quality,
             db_task=db_task,
