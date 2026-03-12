@@ -463,7 +463,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 });
             } finally {
                 if (this.interaction.id === interactionId) {
-                    this.interaction?.closeFetchingMessage();
+                    this.interaction.closeFetchingMessage?.();
                     this.interaction.closeFetchingMessage = null;
                 }
 
