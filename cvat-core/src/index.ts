@@ -88,9 +88,6 @@ export default interface CVATCore {
         request: <T = unknown>(
             ...args: Parameters<typeof serverProxy.server.request>
         ) => Promise<T>;
-        setAuthData: (
-            ...args: Parameters<typeof serverProxy.server.setAuthData>
-        ) => Promise<void>;
         installedApps: () => Promise<Record<string, boolean>>;
         apiSchema: typeof serverProxy.server.apiSchema;
     };
