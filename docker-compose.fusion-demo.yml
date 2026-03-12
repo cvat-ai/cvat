@@ -12,7 +12,7 @@
 #   Credentials: admin / admin
 #
 # The "Fusion Demo Project" will be pre-created with linked 2D + 3D annotations.
-# Open the Fusion Viewer from the project's action menu, or navigate directly to:
+# Open the Fusion Editor from the project's action menu, or navigate directly to:
 #   http://localhost:8080/fusion/<project-id>
 #
 # To tear down:

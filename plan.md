@@ -2,228 +2,243 @@
 
 ## Overview
 
-Build a CVAT UI plugin (`plugins/fusion`) that adds a `/fusion/:projectId` route showing a **side-by-side 2D image + 3D point cloud viewer**. Annotations are linked via a `link_id` text attribute on shared labels. Visual linking uses synchronized color-coding and selection highlighting. A companion Python script (`utils/fusion_export.py`) exports two cross-referenced COCO JSON files.
+Build a CVAT UI plugin (`plugins/fusion`) that adds a `/fusion` route showing a **side-by-side editable 2D + 3D annotation workspace** in a single GUI. Annotators can **draw, edit, move, resize, and rotate** both 2D rectangles and 3D cuboids without leaving the fusion viewer. Annotations are linked via a `link_id` text attribute on shared labels. Visual linking uses synchronized color-coding and cross-panel selection highlighting. A companion Python script (`utils/fusion_export.py`) exports two cross-referenced COCO JSON files.
 
-**Zero core CVAT modifications** — everything goes through the plugin system and public APIs.
+**Zero core CVAT modifications** — everything goes through the plugin system, the real `cvat-canvas` / `cvat-canvas3d` libraries, and public APIs.
 
 ---
 
-## Architecture
+## Architecture (v2 — Editable Side-by-Side)
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│  /fusion/:projectId  (custom route via plugins.components.router)│
-│                                                                  │
-│  ┌──────────────────────┐  ┌──────────────────────┐             │
-│  │   2D Panel           │  │   3D Panel           │             │
-│  │   <canvas> + SVG     │  │   THREE.js scene     │             │
-│  │   bbox overlays      │  │   point cloud +      │             │
-│  │   click to select    │  │   cuboid wireframes   │             │
-│  │                      │  │   click to select     │             │
-│  └──────────────────────┘  └──────────────────────┘             │
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Link Controls  |  Annotation List (linked / unlinked)    │   │
-│  │  [Link] [Unlink] [Save All]  | filter by label/status    │   │
-│  └──────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│  /fusion?task2d=X&task3d=Y  (plugin route via components.router)        │
+│                                                                          │
+│  ┌─ Toolbar ────────────────────────────────────────────────────────┐   │
+│  │  [Select] [Draw Rect▾] [Draw Cuboid▾] | Label: [car ▾] | [Save] │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+│  ┌── Left Half ──────────────┐  ┌── Right Half ─────────────────────┐   │
+│  │                            │  │                                    │   │
+│  │   2D Canvas (cvat-canvas) │  │   3D Perspective (cvat-canvas3d)  │   │
+│  │   • draw rectangles       │  │   • draw cuboids                   │   │
+│  │   • drag / resize / rotate│  │   • orbit camera                   │   │
+│  │   • click to select       │  │   • click to select                │   │
+│  │                            │  │                                    │   │
+│  │                            │  ├──────────┬──────────┬─────────────┤   │
+│  │                            │  │   Top    │   Side   │   Front     │   │
+│  │                            │  │  (ortho) │  (ortho) │  (ortho)    │   │
+│  │                            │  │  drag to │  drag to │  drag to    │   │
+│  │                            │  │  edit    │  edit    │  edit       │   │
+│  └────────────────────────────┘  └──────────┴──────────┴─────────────┘   │
+│                                                                          │
+│  ┌── Bottom Bar ────────────────────────────────────────────────────┐   │
+│  │  Link Controls  |  Annotation List (linked / unlinked)           │   │
+│  │  [Link] [Unlink] [Save All]  | joined table by link_id          │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+│  ┌── Auto-Link Prompt (modal, shown after drawing) ─────────────────┐   │
+│  │  "Link this rectangle to a 3D cuboid? Select one or [Skip]"      │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
 
-1. Plugin mounts → `core.projects.get({ id })` → find 2D task + 3D task by `dimension`
+1. Plugin mounts → load 2D + 3D tasks by ID (query params) or by project dimension
 2. Get jobs from each task → store `Job` instances
-3. Frame slider change → fetch frame data + annotations from both jobs via `cvat-core` API
-4. Annotations with matching `link_id` attribute get the same color (UUID → HSL hue hash)
-5. Selecting an annotation in one panel highlights its linked pair in the other
-6. "Link" button: generate UUID, write to `link_id` attribute on both annotations, save
+3. Frame slider change → fetch `frameData` + `objectStates[]` from both jobs
+4. Instantiate real `Canvas` (2D) and `Canvas3d` (3D) → call `canvas.setup(frameData, objectStates)` on each
+5. Annotations with matching `link_id` get color-coded via `ObjectState.color` = `linkIdToColor(link_id)`
+6. Canvas events (`canvas.drawn`, `canvas.edited`, `canvas.selected`) drive annotation CRUD and cross-panel sync
+7. After drawing, an auto-link prompt encourages pairing the new annotation in the other view
+
+### Editing Capabilities (NEW in v2)
+
+- **2D Panel**: Full `cvat-canvas` — draw rectangles, drag, resize, rotate, undo/redo
+- **3D Panel**: Full `cvat-canvas3d` — draw cuboids in perspective view, translate/resize/rotate in orthographic sub-views (top/side/front)
+- **Cross-selection sync**: selecting a linked annotation in one panel activates its partner in the other
+- **Auto-link prompt**: after drawing in either panel, a modal prompts linking to the other view
 
 ### Linking Mechanism
 
 - Each project label has a **text attribute** named `link_id` (mutable, no default)
-- When linking: `crypto.randomUUID()` → written to both the 2D bbox and 3D cuboid
+- When linking: `generateUUID()` → written to both the 2D bbox and 3D cuboid
 - Colors: `hashCode(link_id) % 360 → HSL hue`, unlinked = gray
 - Persisted via `job.annotations.put([state])` + `job.annotations.save()`
 
 ---
 
-## File Structure
+## File Structure (v2)
 
 ```
 cvat-ui/plugins/fusion/
 ├── src/ts/
-│   ├── index.tsx              # Plugin entry: register route + project action
-│   ├── fusion-page.tsx        # Main page: layout, data fetching, frame nav
-│   ├── consts.ts              # Shared constants (LINK_ID_ATTR_NAME, etc.)
+│   ├── index.tsx                        # Plugin entry: register route + task action
+│   ├── fusion-page.tsx                  # Main page: orchestration, state, layout
+│   ├── consts.ts                        # Shared constants (LINK_ID_ATTR_NAME, etc.)
 │   ├── utils/
-│   │   └── color.ts           # link_id → color hashing
+│   │   └── color.ts                     # link_id → color hashing
 │   └── panels/
-│       ├── canvas2d-panel.tsx  # 2D image + bbox overlay panel
-│       ├── canvas3d-panel.tsx  # THREE.js point cloud + cuboid panel
-│       ├── link-controls.tsx   # Link/Unlink/Save buttons
-│       └── annotation-list.tsx # Linked annotations table
+│       ├── editable-canvas2d-panel.tsx   # NEW: wraps real cvat-canvas for 2D editing
+│       ├── editable-canvas3d-panel.tsx   # NEW: wraps real cvat-canvas3d for 3D editing
+│       ├── fusion-toolbar.tsx            # NEW: draw/select toolbar + label picker
+│       ├── link-controls.tsx             # Link/Unlink/Save buttons (existing)
+│       └── annotation-list.tsx           # Linked annotations table (existing)
 
 utils/
-└── fusion_export.py           # Python COCO export script (uses cvat-sdk)
+└── fusion_export.py                     # Python COCO export script (uses cvat-sdk)
 ```
+
+Old view-only panels (`canvas2d-panel.tsx`, `canvas3d-panel.tsx`) are kept for reference
+but no longer imported by `fusion-page.tsx`.
 
 ---
 
-## Implementation Steps
+## Implementation Streams (Parallelizable)
 
-### Step 1: Shared Types & Utilities (in plugin)
+### Stream A — Editable 2D Panel (`editable-canvas2d-panel.tsx`)
 
-**consts.ts** — shared constants:
-```ts
-export const LINK_ID_ATTR_NAME = 'link_id';
-```
+**Independent. No deps on B/C/D.**
 
-**utils/color.ts** — deterministic color from link_id:
-```ts
-export function linkIdToColor(linkId: string | null): string  // returns HSL string
-export function hashString(str: string): number               // djb2 hash
-```
+- React component wrapping the real `Canvas` from `cvat-canvas/src/typescript/canvas`
+- On mount: `new Canvas()`, append `canvas.html()` into container ref, `canvas.configure()`, `canvas.fitCanvas()`
+- On `job`/`frame` change: `job.frames.get(frame)` → `canvas.setup(frameData, objectStates)`
+- DOM events on `canvas.html()`: `canvas.drawn`, `canvas.edited`, `canvas.selected`, `canvas.clicked`, `canvas.deactivated`, `canvas.setup`, `canvas.error`
+- `canvas.drawn` → construct `ObjectState`, `job.annotations.put(...)`, re-fetch, fire `onAnnotationCreated`
+- `canvas.edited` → update `state.points`/`state.rotation`, `state.save()`, re-fetch
+- `canvas.selected` → `onSelectAnnotation(clientID)` to parent
+- Expose via `forwardRef` + `useImperativeHandle`: `startDraw(shapeType, label)`, `cancelDraw()`, `activate(clientID)`, `getMode()`
+- `ResizeObserver` → `canvas.fitCanvas()` on container resize
+- Import CSS from `cvat-canvas` scoped within `.fusion-canvas2d-container`
 
-### Step 2: Plugin Shell + Router (`index.tsx`)
+### Stream B — Editable 3D Panel (`editable-canvas3d-panel.tsx`)
 
-- Listen for `plugins.ready`, call `window.cvatUI.registerComponent(builder)`
-- In builder:
-  - `addUIComponent('router', FusionRouteComponent, { weight: 10, shouldBeRendered: () => true })`
-  - `addUIComponent('projectActions.items', FusionActionItem, { weight: 50, shouldBeRendered: () => true })`
-- `FusionRouteComponent` returns `<Route exact path="/fusion/:projectId" component={FusionPage} />`
-- `FusionActionItem` renders a menu item that navigates to `/fusion/:projectId`
+**Independent. No deps on A/C/D.**
 
-### Step 3: Fusion Page (`fusion-page.tsx`)
+- React component wrapping the real `Canvas3d` from `cvat-canvas3d/src/typescript/canvas3d`
+- On mount: `new Canvas3d()`, get `ViewsDOM`, append `perspective` + `top`/`side`/`front` into sub-containers
+- Start `requestAnimationFrame` loop calling `canvas3d.render()`
+- Keyboard: `keydown`/`keyup` → `canvas3d.keyControls(event)` for camera
+- On `job`/`frame` change: `job.frames.get(frame)` → `canvas3d.setup(frameData, objectStates)`
+- Events on `.html().perspective`: `canvas.drawn`, `canvas.edited`, `canvas.selected`, `canvas.clicked`, `canvas.setup`, `canvas.error`
+- `canvas.drawn` → construct cuboid `ObjectState`, persist, fire `onAnnotationCreated`
+- `canvas.edited` → update `state.points`, save, re-fetch
+- Expose: `startDraw(label)`, `cancelDraw()`, `activate(clientID)`, `getMode()`
+- CSS grid layout: perspective ~70% height, 3 ortho views split remaining 30%
 
-- Route param: `projectId`
-- On mount: fetch project → find 2D/3D tasks → get first job from each
-- State: `{ frame, annotations2d, annotations3d, selectedLinkId, loading }`
-- Layout: Ant Design `Row`/`Col` grid — 2D panel (span 12), 3D panel (span 12), bottom bar (span 24)
-- Frame slider: `<Slider>` from 0 to `min(task2d.size, task3d.size) - 1`
-- On frame change: `job2d.annotations.get(frame)` + `job3d.annotations.get(frame)` → update state
+### Stream C — Toolbar (`fusion-toolbar.tsx`)
 
-### Step 4: 2D Canvas Panel (`canvas2d-panel.tsx`)
+**Independent. No deps on A/B/D.**
 
-- Props: `{ job, frame, annotations, selectedLinkId, onSelectAnnotation }`
-- Fetch image: `job.frames.get(frame)` → `frameData.data()` → `ImageBitmap`
-- Render to `<canvas>` via `drawImage()`
-- Overlay: SVG layer on top, one `<rect>` per rectangle annotation
-- Colors: `linkIdToColor(getLinkId(annotation))` — shared with 3D panel
-- Click handler: find which rect was clicked → call `onSelectAnnotation(state)`
-- Selected annotation: thicker border + pulsing animation
+- Controls: Draw Rectangle (2D), Draw Cuboid (3D), Select, Label Picker dropdown, Save All
+- Tracks `activeControl: 'select' | 'draw2d' | 'draw3d'` and `selectedLabel`
+- Callbacks: `onStartDraw2d(label)`, `onStartDraw3d(label)`, `onCancelDraw()`, `onSave()`
+- Visual: active tool highlighted, label color indicator
 
-### Step 5: 3D Canvas Panel (`canvas3d-panel.tsx`)
+### Stream D — Fusion Page Orchestration (`fusion-page.tsx` rewrite)
 
-- Props: same as 2D panel
-- THREE.js setup: `Scene`, `PerspectiveCamera`, `WebGLRenderer`, `OrbitControls`
-- Point cloud: `job.frames.get(frame)` → load PCD data → `PCDLoader` or direct `BufferGeometry`
-- Cuboid rendering: for each cuboid annotation, `points` array → `THREE.EdgesGeometry` from `BoxGeometry` with position/rotation/scale
-- Colors: same `linkIdToColor()` function
-- Selection: `Raycaster` on click → find intersected cuboid → `onSelectAnnotation(state)`
-- Selected cuboid: emissive highlight or thicker wireframe
+**Depends on A/B/C interfaces (not implementations).**
 
-### Step 6: Link Controls (`link-controls.tsx`)
+- Hold refs to both editable panels via `useRef`
+- Annotation state: `annotations2d[]`, `annotations3d[]` re-fetched after every CRUD op
+- Both panels call `canvas.setup()` when annotations change
+- Cross-selection sync: `onSelectAnnotation` → look up `link_id` → `activate(partnerClientID)` on other panel
+- Auto-link prompt: after `onAnnotationCreated`, show Ant Design `Modal.confirm` — "Link this annotation?" Next selection in opposite panel auto-links
+- Color-coding: set `ObjectState.color = linkIdToColor(getLinkId(state))` before `setup()`
+- Frame navigation: `Slider`, re-fetch + re-setup both canvases on change
+- Keyboard shortcuts: `S` = save, `Ctrl+Z` = undo, `N` = draw rect, `M` = draw cuboid, `Esc` = cancel
 
-- Props: `{ selected2d, selected3d, onLink, onUnlink, onSave }`
-- "Link" button (enabled when both selected):
-  - `uuid = crypto.randomUUID()`
-  - Update `link_id` attribute on both ObjectStates
-  - `job2d.annotations.put([state2d])` + `job3d.annotations.put([state3d])`
-  - Notify parent to refresh
-- "Unlink" button (enabled when a linked annotation is selected):
-  - Clear `link_id` on both the 2D and 3D annotations
-- "Save" button: `job2d.annotations.save()` + `job3d.annotations.save()`
+### Stream E — Tests & Demo Updates
 
-### Step 7: Annotation List (`annotation-list.tsx`)
+**Independent. Runs after A+B merge.**
 
-- Table columns: `[Color | Link ID | 2D (label, bbox) | 3D (label, cuboid) | Actions]`
-- Rows built by joining 2D and 3D annotations on `link_id`
-- Status badges: ✅ Linked (both present), ⚠️ 2D only, ⚠️ 3D only
-- Click row → set `selectedLinkId` → both panels highlight
-
-### Step 8: COCO Export Script (`utils/fusion_export.py`)
-
-- CLI: `python utils/fusion_export.py --host URL --project-id N --output-dir DIR`
-- Uses `cvat_sdk.core` to authenticate and fetch data
-- Fetches project → tasks → jobs → annotations (CVAT API)
-- Output `coco_2d.json`:
-  ```json
-  {
-    "images": [{"id": 0, "file_name": "frame_000000.png", "width": W, "height": H}],
-    "categories": [{"id": 1, "name": "car"}],
-    "annotations": [{
-      "id": 1, "image_id": 0, "category_id": 1,
-      "bbox": [x, y, w, h], "area": w*h, "iscrowd": 0,
-      "attributes": {"link_id": "uuid-here"}
-    }]
-  }
-  ```
-- Output `coco_3d.json`:
-  ```json
-  {
-    "images": [{"id": 0, "file_name": "frame_000000.pcd"}],
-    "categories": [{"id": 1, "name": "car"}],
-    "annotations": [{
-      "id": 1, "image_id": 0, "category_id": 1,
-      "bbox_3d": {"center": [cx,cy,cz], "dimensions": [dx,dy,dz], "rotation": [rx,ry,rz]},
-      "attributes": {"link_id": "uuid-here"}
-    }]
-  }
-  ```
-- Join key: `attributes.link_id` across both files
-
-### Step 9: Webpack Config Update
-
-Add `'plugins/fusion'` to `defaultPlugins` in `cvat-ui/webpack.config.js` line 15:
-```js
-const defaultPlugins = ['plugins/sam', 'plugins/fusion'];
-```
+- Update `utils/fusion_demo_seed.sh` — more frames/annotations for editing exercises
+- Update `tests/fusion_smoke_test.md` — add editing test cases
+- Verify `utils/fusion_export.py` still works with annotations from editable panels
 
 ---
 
 ## Parallelization — Agent Assignment
 
-| Agent | Scope | Files Created | Depends On |
-|-------|-------|---------------|------------|
-| **A: Plugin Shell** | index.tsx, fusion-page.tsx, consts.ts, utils/color.ts, link-controls.tsx, annotation-list.tsx | 6 files | None |
-| **B: 2D Panel** | canvas2d-panel.tsx | 1 file | Shared interface contract only |
-| **C: 3D Panel** | canvas3d-panel.tsx | 1 file | Shared interface contract only |
-| **D: COCO Export** | fusion_export.py | 1 file | Completely independent (Python) |
+| Agent | Scope | Files Created/Modified | Depends On |
+|-------|-------|------------------------|------------|
+| **A: Editable 2D Panel** | `editable-canvas2d-panel.tsx` | 1 new file | None (interface contract only) |
+| **B: Editable 3D Panel** | `editable-canvas3d-panel.tsx` | 1 new file | None (interface contract only) |
+| **C: Toolbar** | `fusion-toolbar.tsx` | 1 new file | None (interface contract only) |
+| **D: Fusion Page** | `fusion-page.tsx` rewrite | 1 modified file | A+B+C interfaces (not impls) |
+| **E: Tests/Demo** | Demo scripts, test docs | TBD | A+B merged |
 
-**Shared interface contract** (all agents use):
+**Shared interface contracts** (all agents use):
+
 ```ts
-// Props for panel components
-interface PanelProps {
-    job: any;          // cvat-core Job instance
-    frame: number;
-    annotations: any[];  // ObjectState[]
-    selectedLinkId: string | null;
-    onSelectAnnotation: (state: any) => void;
+// Imperative handle for 2D panel (forwardRef)
+interface Canvas2DHandle {
+    startDraw(shapeType: 'rectangle', label: any): void;
+    cancelDraw(): void;
+    activate(clientID: number | null): void;
+    getMode(): string;
 }
 
-// Constants
-LINK_ID_ATTR_NAME = 'link_id'
+// Imperative handle for 3D panel (forwardRef)
+interface Canvas3DHandle {
+    startDraw(label: any): void;
+    cancelDraw(): void;
+    activate(clientID: number | null): void;
+    getMode(): string;
+}
 
-// Color utility
-linkIdToColor(linkId: string | null): string
+// Props for editable panel components
+interface EditablePanelProps {
+    job: any;                                  // cvat-core Job instance
+    frame: number;
+    annotations: ObjectState[];
+    onAnnotationCreated: (state: ObjectState) => void;
+    onAnnotationEdited: (state: ObjectState) => void;
+    onSelectAnnotation: (clientID: number) => void;
+}
+
+// Toolbar props
+interface FusionToolbarProps {
+    labels: any[];                             // from job.labels
+    activeControl: 'select' | 'draw2d' | 'draw3d';
+    selectedLabel: any;
+    onStartDraw2d: (label: any) => void;
+    onStartDraw3d: (label: any) => void;
+    onCancelDraw: () => void;
+    onSave: () => void;
+    onLabelChange: (label: any) => void;
+}
+
+// Constants (existing)
+LINK_ID_ATTR_NAME = 'link_id';
+
+// Color utility (existing)
+linkIdToColor(linkId: string | null): string;
+getLinkIdFromState(state: ObjectState): string | null;
 ```
 
-**Integration order**: D finishes independently. B and C produce standalone panel components. A produces the shell that imports B+C. Final wiring: webpack config edit + build test.
+**Integration order**: A, B, C build independently. D integrates them. E validates.
 
 ---
 
 ## Verification Checklist
 
-- [ ] `yarn workspace cvat-ui run start` compiles with plugin
-- [ ] Navigate to `/fusion/1` → page renders without errors
-- [ ] 2D panel shows image with bbox overlays
-- [ ] 3D panel shows point cloud with cuboid wireframes
-- [ ] Clicking annotation in 2D highlights linked pair in 3D (and vice versa)
-- [ ] "Link" assigns same UUID to both annotations and colors match
-- [ ] "Unlink" clears link_id from both
-- [ ] "Save" persists to server
-- [ ] Export: `python utils/fusion_export.py` produces valid coco_2d.json + coco_3d.json
-- [ ] link_id values match across both export files
+- [ ] `yarn workspace cvat-ui run start` compiles with updated plugin
+- [ ] Navigate to `/fusion/:projectId` → page renders with side-by-side layout
+- [ ] 2D panel shows real image with CVAT canvas bboxes (not custom rendering)
+- [ ] 3D panel shows point cloud with cuboid overlays via `Canvas3d`
+- [ ] Draw rectangle in 2D panel → annotation persists via `job.annotations.put()`
+- [ ] Draw cuboid in 3D panel → annotation persists
+- [ ] Edit annotation by dragging/resizing → changes persist via `state.save()`
+- [ ] Click annotation in 2D → linked annotation highlights in 3D (and vice versa)
+- [ ] Auto-link prompt appears after drawing, next opposite-panel click links them
+- [ ] "Link" assigns same UUID; colors match across both panels
+- [ ] "Unlink" clears `link_id` from both 2D and 3D annotations
+- [ ] "Save" persists all changes to server
+- [ ] Frame slider: both panels update correctly on frame change
+- [ ] Resize: both panels refit correctly (2D `fitCanvas()`, 3D layout recalculates)
+- [ ] Export: `fusion_export.py` still produces valid COCO with `link_id` join keys
 
 ---
 
@@ -231,8 +246,11 @@ linkIdToColor(linkId: string | null): string
 
 | Decision | Why |
 |----------|-----|
+| **Embed real CVAT canvases** over custom renderers | Full annotation parity (draw, edit, resize, rotate, undo) without re-implementing canvas logic |
+| **Draw + Edit** over view-only | Annotators need a single GUI — creating and modifying annotations in place |
 | **Plugin route** over core CVAT changes | Avoids modifying Redux single-job constraint. Uses existing `components.router` plugin slot |
-| **View-only panels** (no annotation drawing) | Users create annotations in native CVAT. Fusion viewer is for linking + reviewing. Avoids reimplementing canvas draw logic |
 | **`link_id` text attribute** over group IDs | Groups are job-scoped integers; a UUID text attribute crosses task boundaries and survives export |
-| **Two COCO files** over one merged | Each remains valid COCO schema; `link_id` in `attributes` is the join key |
-| **4-way parallelism** | 2D panel, 3D panel, plugin shell, Python export are independent with clean interface |
+| **Auto-link prompt** after drawing | Reduces manual linking burden — prompt when intent is fresh |
+| **Left 2D / Right 3D + ortho** layout | Mirrors standard AV annotation workflows; ortho views give precise 3D alignment |
+| **forwardRef + useImperativeHandle** | Clean parent→child control for draw/activate without prop drilling |
+| **5-stream parallelism** | 2D panel, 3D panel, toolbar, orchestration, tests — minimal cross-deps |

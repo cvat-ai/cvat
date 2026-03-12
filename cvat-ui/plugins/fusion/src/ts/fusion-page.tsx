@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { RouteComponentProps, useLocation } from 'react-router-dom';
 import Layout from 'antd/lib/layout';
 import Slider from 'antd/lib/slider';
@@ -11,16 +11,16 @@ import Typography from 'antd/lib/typography';
 import Row from 'antd/lib/row';
 import Col from 'antd/lib/col';
 import Alert from 'antd/lib/alert';
-import Button from 'antd/lib/button';
+import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
-import { SaveOutlined } from '@ant-design/icons';
 
 import { getCore } from './index';
-import Canvas2DPanel from './panels/canvas2d-panel';
-import Canvas3DPanel from './panels/canvas3d-panel';
+import EditableCanvas2DPanel from './panels/editable-canvas2d-panel';
+import EditableCanvas3DPanel from './panels/editable-canvas3d-panel';
+import FusionToolbar from './panels/fusion-toolbar';
 import LinkControls from './panels/link-controls';
 import AnnotationList from './panels/annotation-list';
-import { getLinkIdFromState } from './utils/color';
+import { getLinkIdFromState, linkIdToColor } from './utils/color';
 import { LINK_ID_ATTR_NAME } from './consts';
 
 const { Title } = Typography;
@@ -33,6 +33,22 @@ function generateUUID(): string {
     });
 }
 
+// Canvas2DHandle (from editable-canvas2d-panel):
+// interface Canvas2DHandle {
+//     startDraw(shapeType: string, label: any): void;
+//     cancelDraw(): void;
+//     activate(clientID: number | null): void;
+//     getMode(): string;
+// }
+//
+// Canvas3DHandle (from editable-canvas3d-panel):
+// interface Canvas3DHandle {
+//     startDraw(label: any): void;
+//     cancelDraw(): void;
+//     activate(clientID: number | null): void;
+//     getMode(): string;
+// }
+
 interface MatchParams {
     projectId?: string;
 }
@@ -44,7 +60,7 @@ function FusionPage(props: Props): JSX.Element {
     const location = useLocation();
     const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-    // Support both /fusion?task2d=X&task3d=Y  and legacy /fusion/:projectId
+    // Support both /fusion?task2d=X&task3d=Y and legacy /fusion/:projectId
     const task2dParam = queryParams.get('task2d');
     const task3dParam = queryParams.get('task3d');
     const projectIdParam = match.params.projectId;
@@ -62,8 +78,19 @@ function FusionPage(props: Props): JSX.Element {
     const [selected3d, setSelected3d] = useState<any>(null);
     const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
     const [headerLabel, setHeaderLabel] = useState<string>('Fusion Viewer');
+    const [activeControl, setActiveControl] = useState<'select' | 'draw2d' | 'draw3d'>('select');
+    const [selectedLabel, setSelectedLabel] = useState<any>(null);
+    const [saving, setSaving] = useState(false);
+    const [pendingLinkSource, setPendingLinkSource] = useState<
+        { panel: '2d' | '3d'; clientID: number } | null
+    >(null);
 
-    // Load tasks/jobs on mount — supports both task-based and legacy project-based modes
+    const canvas2dRef = useRef<any>(null);
+    const canvas3dRef = useRef<any>(null);
+
+    // ------------------------------------------------------------------
+    // Job initialization — supports both task-based and project-based modes
+    // ------------------------------------------------------------------
     useEffect(() => {
         let cancelled = false;
 
@@ -96,6 +123,11 @@ function FusionPage(props: Props): JSX.Element {
             setJob3d(fullJob3d);
             setMaxFrame(Math.min(task2d.size, task3d.size) - 1);
             setHeaderLabel(`Fusion Viewer — 2D #${task2d.id} + 3D #${task3d.id}`);
+
+            // Auto-select the first label
+            if (fullJob2d.labels?.length) {
+                setSelectedLabel(fullJob2d.labels[0]);
+            }
         }
 
         async function initFromProject(pid: number): Promise<void> {
@@ -129,6 +161,11 @@ function FusionPage(props: Props): JSX.Element {
             setJob3d(fullJob3d);
             setMaxFrame(Math.min(task2d.size, task3d.size) - 1);
             setHeaderLabel(`Fusion Viewer — Project #${pid}`);
+
+            // Auto-select the first label
+            if (fullJob2d.labels?.length) {
+                setSelectedLabel(fullJob2d.labels[0]);
+            }
         }
 
         async function init(): Promise<void> {
@@ -156,7 +193,9 @@ function FusionPage(props: Props): JSX.Element {
         return () => { cancelled = true; };
     }, [task2dParam, task3dParam, projectIdParam, isTaskMode]);
 
-    // Fetch annotations when frame or jobs change
+    // ------------------------------------------------------------------
+    // Fetch annotations when frame or jobs change (with link-id colour coding)
+    // ------------------------------------------------------------------
     useEffect(() => {
         let cancelled = false;
 
@@ -169,11 +208,19 @@ function FusionPage(props: Props): JSX.Element {
                     job3d.annotations.get(frame),
                 ]);
                 if (cancelled) return;
+
+                // Apply link-id colour coding
+                ann2d.forEach((s: any) => { s.color = linkIdToColor(getLinkIdFromState(s)); });
+                ann3d.forEach((s: any) => { s.color = linkIdToColor(getLinkIdFromState(s)); });
+
                 setAnnotations2d(ann2d);
                 setAnnotations3d(ann3d);
             } catch (err: any) {
                 if (!cancelled) {
-                    notification.error({ message: 'Failed to load annotations', description: err?.message });
+                    notification.error({
+                        message: 'Failed to load annotations',
+                        description: err?.message,
+                    });
                 }
             }
         }
@@ -197,32 +244,257 @@ function FusionPage(props: Props): JSX.Element {
         if (paired3d) setSelected3d(paired3d);
     }, [selectedLinkId, annotations2d, annotations3d]);
 
-    const handleSelect2d = useCallback((state: any) => {
-        setSelected2d(state);
-        const lid = getLinkIdFromState(state);
-        if (lid) setSelectedLinkId(lid);
-    }, []);
-
-    const handleSelect3d = useCallback((state: any) => {
-        setSelected3d(state);
-        const lid = getLinkIdFromState(state);
-        if (lid) setSelectedLinkId(lid);
-    }, []);
-
-    const handleSelectLinkId = useCallback((linkId: string | null) => {
-        setSelectedLinkId(linkId);
-    }, []);
-
+    // ------------------------------------------------------------------
+    // Refresh annotations helper (with colour coding)
+    // ------------------------------------------------------------------
     const refreshAnnotations = useCallback(async () => {
         if (!job2d || !job3d) return;
         const [ann2d, ann3d] = await Promise.all([
             job2d.annotations.get(frame),
             job3d.annotations.get(frame),
         ]);
+        ann2d.forEach((s: any) => { s.color = linkIdToColor(getLinkIdFromState(s)); });
+        ann3d.forEach((s: any) => { s.color = linkIdToColor(getLinkIdFromState(s)); });
         setAnnotations2d(ann2d);
         setAnnotations3d(ann3d);
     }, [frame, job2d, job3d]);
 
+    // ------------------------------------------------------------------
+    // Auto-link helpers
+    // ------------------------------------------------------------------
+    const performAutoLink = useCallback(async (
+        state2d: any,
+        state3d: any,
+    ): Promise<void> => {
+        const spec2d = state2d.label?.attributes?.find(
+            (attr: any) => attr.name === LINK_ID_ATTR_NAME,
+        );
+        const spec3d = state3d.label?.attributes?.find(
+            (attr: any) => attr.name === LINK_ID_ATTR_NAME,
+        );
+
+        if (!spec2d || !spec3d) {
+            notification.warning({
+                message: 'Cannot auto-link',
+                description: `Both labels must have a "${LINK_ID_ATTR_NAME}" attribute.`,
+            });
+            return;
+        }
+
+        const uuid = generateUUID();
+        state2d.attributes[spec2d.id] = uuid;
+        state3d.attributes[spec3d.id] = uuid;
+
+        await Promise.all([
+            job2d.annotations.put([state2d]),
+            job3d.annotations.put([state3d]),
+        ]);
+
+        setPendingLinkSource(null);
+        setSelectedLinkId(uuid);
+        await refreshAnnotations();
+
+        notification.success({ message: 'Annotations linked automatically' });
+    }, [job2d, job3d, refreshAnnotations]);
+
+    // ------------------------------------------------------------------
+    // Draw orchestration
+    // ------------------------------------------------------------------
+    const handleStartDraw2d = useCallback((label: any) => {
+        setActiveControl('draw2d');
+        setSelectedLabel(label);
+        canvas2dRef.current?.startDraw('rectangle', label);
+    }, []);
+
+    const handleStartDraw3d = useCallback((label: any) => {
+        setActiveControl('draw3d');
+        setSelectedLabel(label);
+        canvas3dRef.current?.startDraw(label);
+    }, []);
+
+    const handleCancelDraw = useCallback(() => {
+        setActiveControl('select');
+        canvas2dRef.current?.cancelDraw();
+        canvas3dRef.current?.cancelDraw();
+    }, []);
+
+    // ------------------------------------------------------------------
+    // Annotation created handlers
+    // ------------------------------------------------------------------
+    const handleAnnotationCreated2d = useCallback(async (drawState: any) => {
+        if (!job2d || !selectedLabel) return;
+        try {
+            const ObjectState = getCore().classes.ObjectState;
+            const objectState = new ObjectState({
+                frame,
+                objectType: 'shape',
+                shapeType: drawState.shapeType || 'rectangle',
+                points: drawState.points,
+                label: selectedLabel,
+                zOrder: drawState.zOrder || 0,
+            });
+
+            await job2d.annotations.put([objectState]);
+            await refreshAnnotations();
+            setActiveControl('select');
+
+            // Auto-link prompt
+            const createdClientID = objectState.clientID;
+            setPendingLinkSource({ panel: '2d', clientID: createdClientID });
+            Modal.confirm({
+                title: 'Link this annotation?',
+                content: 'Click an annotation in the 3D panel to link them.',
+                okText: 'Waiting for selection…',
+                okButtonProps: { disabled: true },
+                cancelText: 'Skip',
+                onCancel: () => setPendingLinkSource(null),
+            });
+        } catch (err: any) {
+            notification.error({
+                message: 'Failed to create 2D annotation',
+                description: err?.message,
+            });
+        }
+    }, [job2d, selectedLabel, frame, refreshAnnotations]);
+
+    const handleAnnotationCreated3d = useCallback(async (drawState: any) => {
+        if (!job3d || !selectedLabel) return;
+        try {
+            const ObjectState = getCore().classes.ObjectState;
+            const objectState = new ObjectState({
+                frame,
+                objectType: drawState.objectType || 'shape',
+                shapeType: 'cuboid',
+                points: drawState.points,
+                label: selectedLabel,
+                attributes: drawState.attributes || {},
+            });
+
+            await job3d.annotations.put([objectState]);
+            await refreshAnnotations();
+            setActiveControl('select');
+
+            // Auto-link prompt
+            const createdClientID = objectState.clientID;
+            setPendingLinkSource({ panel: '3d', clientID: createdClientID });
+            Modal.confirm({
+                title: 'Link this annotation?',
+                content: 'Click an annotation in the 2D panel to link them.',
+                okText: 'Waiting for selection…',
+                okButtonProps: { disabled: true },
+                cancelText: 'Skip',
+                onCancel: () => setPendingLinkSource(null),
+            });
+        } catch (err: any) {
+            notification.error({
+                message: 'Failed to create 3D annotation',
+                description: err?.message,
+            });
+        }
+    }, [job3d, selectedLabel, frame, refreshAnnotations]);
+
+    // ------------------------------------------------------------------
+    // Annotation edited handlers
+    // ------------------------------------------------------------------
+    const handleAnnotationEdited2d = useCallback(async (
+        state: any,
+        points: number[],
+        rotation: number,
+    ) => {
+        try {
+            state.points = points;
+            state.rotation = rotation;
+            await state.save();
+            await refreshAnnotations();
+        } catch (err: any) {
+            notification.error({
+                message: 'Failed to update 2D annotation',
+                description: err?.message,
+            });
+        }
+    }, [refreshAnnotations]);
+
+    const handleAnnotationEdited3d = useCallback(async (state: any, points: number[]) => {
+        try {
+            state.points = points;
+            await state.save();
+            await refreshAnnotations();
+        } catch (err: any) {
+            notification.error({
+                message: 'Failed to update 3D annotation',
+                description: err?.message,
+            });
+        }
+    }, [refreshAnnotations]);
+
+    // ------------------------------------------------------------------
+    // Selection + cross-panel sync
+    // ------------------------------------------------------------------
+    const handleSelect2d = useCallback(async (clientID: number) => {
+        const state = annotations2d.find((s: any) => s.clientID === clientID);
+        if (!state) return;
+        setSelected2d(state);
+
+        const lid = getLinkIdFromState(state);
+        if (lid) {
+            setSelectedLinkId(lid);
+            // Activate linked 3D partner
+            const partner = annotations3d.find(
+                (s: any) => getLinkIdFromState(s) === lid,
+            );
+            if (partner) {
+                canvas3dRef.current?.activate(partner.clientID);
+            }
+        }
+
+        // Auto-link: if pending source is from 3D, link it with this 2D annotation
+        if (pendingLinkSource?.panel === '3d') {
+            const source3d = annotations3d.find(
+                (s: any) => s.clientID === pendingLinkSource.clientID,
+            );
+            if (source3d) {
+                Modal.destroyAll();
+                await performAutoLink(state, source3d);
+            }
+        }
+    }, [annotations2d, annotations3d, pendingLinkSource, performAutoLink]);
+
+    const handleSelect3d = useCallback(async (clientID: number) => {
+        const state = annotations3d.find((s: any) => s.clientID === clientID);
+        if (!state) return;
+        setSelected3d(state);
+
+        const lid = getLinkIdFromState(state);
+        if (lid) {
+            setSelectedLinkId(lid);
+            // Activate linked 2D partner
+            const partner = annotations2d.find(
+                (s: any) => getLinkIdFromState(s) === lid,
+            );
+            if (partner) {
+                canvas2dRef.current?.activate(partner.clientID);
+            }
+        }
+
+        // Auto-link: if pending source is from 2D, link it with this 3D annotation
+        if (pendingLinkSource?.panel === '2d') {
+            const source2d = annotations2d.find(
+                (s: any) => s.clientID === pendingLinkSource.clientID,
+            );
+            if (source2d) {
+                Modal.destroyAll();
+                await performAutoLink(source2d, state);
+            }
+        }
+    }, [annotations2d, annotations3d, pendingLinkSource, performAutoLink]);
+
+    const handleSelectLinkId = useCallback((linkId: string | null) => {
+        setSelectedLinkId(linkId);
+    }, []);
+
+    // ------------------------------------------------------------------
+    // Link / Unlink / Save
+    // ------------------------------------------------------------------
     const handleLink = useCallback(async () => {
         if (!selected2d || !selected3d) return;
 
@@ -312,6 +584,7 @@ function FusionPage(props: Props): JSX.Element {
     const handleSave = useCallback(async () => {
         if (!job2d || !job3d) return;
         try {
+            setSaving(true);
             await Promise.all([
                 job2d.annotations.save(),
                 job3d.annotations.save(),
@@ -319,8 +592,39 @@ function FusionPage(props: Props): JSX.Element {
             notification.success({ message: 'Annotations saved' });
         } catch (err: any) {
             notification.error({ message: 'Save failed', description: err?.message });
+        } finally {
+            setSaving(false);
         }
     }, [job2d, job3d]);
+
+    // ------------------------------------------------------------------
+    // Keyboard shortcuts
+    // ------------------------------------------------------------------
+    useEffect(() => {
+        function onKeyDown(e: KeyboardEvent): void {
+            // Ignore shortcuts when typing in input / textarea elements
+            const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+            if (tag === 'input' || tag === 'textarea') return;
+
+            if (e.key === 'n' || e.key === 'N') {
+                if (selectedLabel) {
+                    handleStartDraw2d(selectedLabel);
+                }
+            } else if (e.key === 'm' || e.key === 'M') {
+                if (selectedLabel) {
+                    handleStartDraw3d(selectedLabel);
+                }
+            } else if (e.key === 'Escape') {
+                handleCancelDraw();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                handleSave();
+            }
+        }
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [selectedLabel, handleStartDraw2d, handleStartDraw3d, handleCancelDraw, handleSave]);
 
     // ---------- Render ----------
 
@@ -358,10 +662,20 @@ function FusionPage(props: Props): JSX.Element {
                 <Title level={4} style={{ margin: 0 }}>
                     {headerLabel}
                 </Title>
-                <Button type='primary' icon={<SaveOutlined />} onClick={handleSave}>
-                    Save
-                </Button>
             </div>
+
+            {/* Toolbar */}
+            <FusionToolbar
+                labels={job2d?.labels || []}
+                activeControl={activeControl}
+                selectedLabel={selectedLabel}
+                onStartDraw2d={handleStartDraw2d}
+                onStartDraw3d={handleStartDraw3d}
+                onCancelDraw={handleCancelDraw}
+                onSave={handleSave}
+                onLabelChange={setSelectedLabel}
+                saving={saving}
+            />
 
             {/* Frame slider */}
             <div style={{ padding: '4px 16px 0' }}>
@@ -374,23 +688,27 @@ function FusionPage(props: Props): JSX.Element {
                 />
             </div>
 
-            {/* Panels */}
+            {/* Panels — side by side */}
             <Row style={{ flex: 1, minHeight: 0, overflow: 'hidden' }} gutter={0}>
                 <Col span={12} style={{ height: '100%' }}>
-                    <Canvas2DPanel
+                    <EditableCanvas2DPanel
+                        ref={canvas2dRef}
                         job={job2d}
                         frame={frame}
                         annotations={annotations2d}
-                        selectedLinkId={selectedLinkId}
+                        onAnnotationCreated={handleAnnotationCreated2d}
+                        onAnnotationEdited={handleAnnotationEdited2d}
                         onSelectAnnotation={handleSelect2d}
                     />
                 </Col>
                 <Col span={12} style={{ height: '100%' }}>
-                    <Canvas3DPanel
+                    <EditableCanvas3DPanel
+                        ref={canvas3dRef}
                         job={job3d}
                         frame={frame}
                         annotations={annotations3d}
-                        selectedLinkId={selectedLinkId}
+                        onAnnotationCreated={handleAnnotationCreated3d}
+                        onAnnotationEdited={handleAnnotationEdited3d}
                         onSelectAnnotation={handleSelect3d}
                     />
                 </Col>

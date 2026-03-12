@@ -58,7 +58,7 @@ if [ -n "$EXISTING_2D" ]; then
   EXISTING_3D=$(curl -sf -u "$USER:$PASS" "$API/tasks?search=Fusion+Demo+-+3D+LiDAR" 2>/dev/null \
     | python3 -c "import sys,json; r=json.load(sys.stdin)['results']; print(r[0]['id'] if r else '')" 2>/dev/null || echo "")
   info "Fusion demo tasks already exist (2D=$EXISTING_2D, 3D=$EXISTING_3D). Skipping seed."
-  printf "\n${G}  Viewer: http://$PUBLIC_HOST:8080/fusion?task2d=$EXISTING_2D&task3d=$EXISTING_3D${NC}\n\n"
+  printf "\n${G}  Editor: http://$PUBLIC_HOST:8080/fusion?task2d=$EXISTING_2D&task3d=$EXISTING_3D${NC}\n\n"
   exit 0
 fi
 
