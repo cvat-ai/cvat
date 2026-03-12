@@ -130,19 +130,19 @@ Profile routing is automatic:
 - the rest run in `core`
 - you can override with `@pytest.mark.infra_profile("core|extended|full")`
 
-If you need to rebuild your CVAT images add `--rebuild` option:
+If you need to rebuild CVAT images without running tests:
 ```bash
 pytest ./tests/python --rebuild
 ```
 
-If you need to persist data volumes across test sessions add `--keep-data` option
+If you want to rebuild and then start containers:
 ```bash
-pytest ./tests/python --start-services --keep-data
+pytest ./tests/python --infra up --rebuild
 ```
 
-If you want to get a code coverage report, use special option for it:
+If you want to get a code coverage report:
 ```bash
-COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --rebuild --cov --cov-report xml
+COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --cov --cov-report xml
 ```
 
 **Debugging**

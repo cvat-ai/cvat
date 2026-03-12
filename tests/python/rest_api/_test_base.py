@@ -556,7 +556,7 @@ class TestTasksBase:
     @fixture(scope="class")
     @parametrize(
         "cloud_storage_id",
-        [pytest.param(5, marks=[pytest.mark.with_external_services])],
+        [pytest.param(5, marks=[pytest.mark.infra_profile("full")])],
     )
     def fxt_backing_cs_images_task_with_related_images(
         self, request: pytest.FixtureRequest, cloud_storage_id: int

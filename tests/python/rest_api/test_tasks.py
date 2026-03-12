@@ -1567,7 +1567,7 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("full")
     def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
         cloud_storage_id = next(cs["id"] for cs in cloud_storages if cs["resource"] == "backingcs")
 

@@ -14,7 +14,7 @@ def add_infra_options(parser):
     group._addoption(
         "--rebuild",
         action="store_true",
-        help="Rebuild CVAT images and then start containers. (default: %(default)s)",
+        help="Rebuild CVAT images and exit without running tests. (default: %(default)s)",
     )
 
     group._addoption(
@@ -54,6 +54,15 @@ def add_infra_options(parser):
         help=(
             "Infrastructure mode: auto (default behavior), up (start services and exit), "
             "down (stop services and exit)."
+        ),
+    )
+    group._addoption(
+        "--skip-version-check",
+        action="store_true",
+        default=False,
+        help=(
+            "Skip startup sanity check for sdk/cli/server image versions. "
+            "(default: %(default)s)"
         ),
     )
     return group

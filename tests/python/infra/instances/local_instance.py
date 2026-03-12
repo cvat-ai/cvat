@@ -13,8 +13,10 @@ import pytest
 from infra.config import (
     CLICKHOUSE_INIT_SCRIPT,
     DEFAULT_PROJECT_NAME,
+    InfraMode,
     infra_profile,
     logger,
+    parse_infra_mode,
     prefixed_container_name,
     project_config,
     run_prefix_from_config,
@@ -153,6 +155,9 @@ def _configure_runtime_env(
     os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
     os.environ["CVAT_BASE_URL"] = base_url or f"http://localhost:{port_config['http_port']}"
     os.environ["CVAT_MINIO_ENDPOINT_URL"] = f"http://localhost:{port_config['minio_port']}"
+    # tests/docker-compose.minio.yml uses these compose envs for host bindings.
+    os.environ["CVAT_TEST_MINIO_PORT"] = str(port_config["minio_port"])
+    os.environ["CVAT_TEST_MINIO_CONSOLE_PORT"] = str(port_config["minio_console_port"])
 
     # config.py can be imported before session_start (e.g. by conftest),
     # so refresh module-level constants to the current runtime values.
@@ -173,7 +178,7 @@ def preconfigure_local_runtime_env(config) -> None:
     when running with --run-prefix.
     """
     project_name = run_prefix_from_config(config)
-    infra_mode = config.getoption("--infra")
+    infra_mode = parse_infra_mode(config.getoption("--infra"))
     requested_debug_services = parse_debug_services(config.getoption("--container-debug"))
     debug_port_base = int(config.getoption("--container-debug-port-base"))
     os.environ["CVAT_TEST_INFRA_PROFILE"] = config.getoption("--parallel-lane-profile")
@@ -181,7 +186,7 @@ def preconfigure_local_runtime_env(config) -> None:
     if config.getoption("--platform") != "local":
         return
 
-    if infra_mode == "down":
+    if infra_mode == InfraMode.DOWN:
         os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         return
 
@@ -329,6 +334,27 @@ def project_containers_running(project_name: str, running_containers_fn) -> bool
         f"{project_name}_traefik_1",
     }
     return expected.issubset(containers)
+
+
+def _profile_required_services(profile: str) -> set[str]:
+    # Containers that distinguish core vs extended/full capabilities.
+    if profile == "core":
+        return set()
+    if profile == "extended":
+        return {"cvat_clickhouse", "minio", "webhook_receiver"}
+    if profile == "full":
+        return {"cvat_clickhouse", "minio", "webhook_receiver", "cvat_ui", "cvat_grafana", "cvat_vector"}
+    return set()
+
+
+def profile_services_ready(
+    project_name: str, profile: str, running_containers_fn
+) -> bool:
+    required = _profile_required_services(profile)
+    if not required:
+        return True
+    containers = set(running_containers_fn())
+    return all(f"{project_name}_{service}_1" in containers for service in required)
 
 
 def dump_db(*, prefixed_container_name, running_containers_fn, cvat_db_dir: Path) -> None:
@@ -494,6 +520,19 @@ def start_services(
 
     run_command_fn(
         docker_compose(project_name, dc_files, project_directory) + ["up", "-d", *["--build"] * rebuild],
+        False,
+    )
+
+
+def rebuild_services(
+    *,
+    project_name: str,
+    dc_files: list[Path],
+    project_directory: Path,
+    run_command_fn,
+) -> None:
+    run_command_fn(
+        docker_compose(project_name, dc_files, project_directory) + ["build"],
         False,
     )
 
@@ -665,13 +704,13 @@ def stop_project_services_best_effort(
 
 def cleanup_after_session(
     *,
-    infra_mode: str,
+    infra_mode: InfraMode,
     run_prefix: str,
     profiles: list[str],
     is_parallel_child: bool,
     stop_project_services_best_effort_fn,
 ) -> None:
-    if infra_mode != "auto":
+    if infra_mode != InfraMode.AUTO:
         return
 
     def should_stop_project(project_name: str) -> bool:
@@ -731,7 +770,9 @@ class LocalInstance(InfraInstance):
             dc_files += self.deps.extra_dc_files
         return dc_files
 
-    def _run_local_lifecycle(self, *, infra_mode: str, dumpdb: bool, cleanup: bool, rebuild: bool) -> None:
+    def _run_local_lifecycle(
+        self, *, infra_mode: InfraMode, dumpdb: bool, cleanup: bool, rebuild: bool
+    ) -> None:
         from infra import health as infra_health
 
         project_cfg = project_config(cvat_root_dir=self.deps.cvat_root_dir)
@@ -760,6 +801,16 @@ class LocalInstance(InfraInstance):
             _delete_compose_files(container_name_files)
             pytest.exit("All generated test files have been deleted", returncode=0)
 
+        project_running = project_containers_running(project_name, running_containers_fn)
+        if infra_mode == InfraMode.REUSE:
+            if not project_running:
+                raise pytest.UsageError(
+                    f"--infra={InfraMode.REUSE} requires running services for project '{project_name}'"
+                )
+            infra_health.wait_for_services(self.deps.waiting_time)
+            infra_health.wait_for_auth_login_ready()
+            return
+
         _delete_compose_files(container_name_files)
         _create_compose_files(
             container_name_files,
@@ -771,7 +822,16 @@ class LocalInstance(InfraInstance):
             worker_utils_container="cvat_worker_utils",
         )
 
-        if infra_mode == "down":
+        if infra_mode == InfraMode.AUTO and rebuild:
+            rebuild_services(
+                project_name=project_name,
+                dc_files=dc_files,
+                project_directory=self.deps.cvat_root_dir,
+                run_command_fn=run_local_command,
+            )
+            pytest.exit("CVAT images have been rebuilt", returncode=0)
+
+        if infra_mode == InfraMode.DOWN:
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
@@ -781,8 +841,25 @@ class LocalInstance(InfraInstance):
             project_cfg.delete_state()
             pytest.exit("All testing containers are stopped", returncode=0)
 
-        project_running = project_containers_running(project_name, running_containers_fn)
-        if infra_mode == "up":
+        if (
+            infra_mode == InfraMode.AUTO
+            and project_running
+            and not profile_services_ready(project_name, infra_profile(), running_containers_fn)
+        ):
+            logger.warning(
+                "Project '%s' is running but missing required services for profile '%s'; recreating stack",
+                project_name,
+                infra_profile(),
+            )
+            stop_services(
+                project_name=project_name,
+                dc_files=dc_files,
+                project_directory=self.deps.cvat_root_dir,
+                run_command_fn=run_local_command,
+            )
+            project_running = False
+
+        if infra_mode == InfraMode.UP:
             if not project_running:
                 start_services(
                     project_name=project_name,
@@ -797,7 +874,7 @@ class LocalInstance(InfraInstance):
             infra_health.wait_for_auth_login_ready()
             pytest.exit("All necessary containers have been created and started.", returncode=0)
 
-        if infra_mode == "auto":
+        if infra_mode == InfraMode.AUTO:
             # In auto mode, tear down only stacks that this session had to start.
             set_auto_started(not project_running)
 
@@ -836,7 +913,7 @@ class LocalInstance(InfraInstance):
         if config.getoption("--collect-only"):
             return
 
-        if infra_mode == "down":
+        if infra_mode == InfraMode.DOWN:
             os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         else:
             resolve_local_project_context(self.session)
@@ -848,7 +925,7 @@ class LocalInstance(InfraInstance):
             rebuild=config.getoption("--rebuild"),
         )
 
-        if infra_mode == "auto":
+        if infra_mode == InfraMode.AUTO:
             maybe_wait_for_vscode_attach(self.session, cvat_root_dir=self.deps.cvat_root_dir)
 
     def finish(self) -> None:
@@ -867,7 +944,7 @@ class LocalInstance(InfraInstance):
                 sleep=sleep,
             )
 
-        infra_mode = getattr(self.config, "_cvat_infra_mode", "auto")
+        infra_mode = getattr(self.config, "_cvat_infra_mode", InfraMode.AUTO)
         run_prefix = run_prefix_from_config(self.config)
         try:
             from infra.instances.parallel_instance import parse_parallel_count

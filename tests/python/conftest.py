@@ -8,11 +8,14 @@ from infra.config import (
     CVAT_DB_DIR,
     CVAT_ROOT_DIR,
     DEFAULT_INFRA_PROFILE,
+    InfraMode,
     PROFILE_DC_FILES,
     RUNTIME_ROOT_DIR,
     logger,
+    parse_infra_mode,
 )
 from infra.instances import InfraInstance, InstanceConfig
+from infra.version_check import run_sanity_version_check
 
 # Register fixture modules explicitly.
 pytest_plugins = [
@@ -49,14 +52,14 @@ def pytest_sessionstart(session) -> None:
     config = session.config
 
     # Support legacy positional control commands (`up`/`down`) while keeping `--infra` as source of truth.
-    infra_mode = config.getoption("--infra")
-    if infra_mode == "auto":
+    infra_mode = parse_infra_mode(config.getoption("--infra"))
+    if infra_mode == InfraMode.AUTO:
         args = list(config.args)
-        for candidate in ("up", "down"):
+        for candidate in (str(InfraMode.UP), str(InfraMode.DOWN)):
             if candidate in args:
                 args.remove(candidate)
                 config.args[:] = args
-                infra_mode = candidate
+                infra_mode = parse_infra_mode(candidate)
                 break
 
     setattr(config, "_cvat_infra_mode", infra_mode)
@@ -66,17 +69,27 @@ def pytest_sessionstart(session) -> None:
     dumpdb = bool(config.getoption("--dumpdb"))
     collect_only = bool(config.getoption("--collect-only"))
     platform = str(config.getoption("--platform"))
-    if collect_only and any((rebuild, cleanup, dumpdb, infra_mode in {"up", "down"})):
+    if collect_only and any((rebuild, cleanup, dumpdb, infra_mode in {InfraMode.UP, InfraMode.DOWN})):
         raise pytest.UsageError(
             "--collect-only is not compatible with --rebuild/--cleanup/--dumpdb/--infra=up/down"
         )
-    if platform == "kube" and any((rebuild, cleanup, dumpdb, infra_mode != "auto")):
+    if platform == "kube" and any((rebuild, cleanup, dumpdb, infra_mode != InfraMode.AUTO)):
         raise pytest.UsageError(
             "--platform=kube is not compatible with --rebuild/--cleanup/--dumpdb/--infra"
         )
 
     if config.getoption("--container-debug-wait") and not config.getoption("--container-debug"):
         raise pytest.UsageError("--container-debug-wait requires --container-debug with at least one service")
+
+    should_run_version_check = (
+        not collect_only
+        and infra_mode != InfraMode.DOWN
+        and not any((rebuild, cleanup, dumpdb))
+        and not bool(config.getoption("--parallel-child"))
+        and not bool(config.getoption("--skip-version-check"))
+    )
+    if should_run_version_check:
+        run_sanity_version_check(cvat_root_dir=CVAT_ROOT_DIR, platform=platform)
 
     instance_config = InstanceConfig(
         cvat_root_dir=CVAT_ROOT_DIR,

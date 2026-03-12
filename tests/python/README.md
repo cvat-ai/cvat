@@ -30,6 +30,12 @@ the server calling REST API directly (as it done by users).
    ```shell
    pip install -r ./tests/python/requirements.txt
    ```
+1. Version precheck is strict by default (except explicit `--infra down`):
+   - installed `cvat-sdk` and `cvat-cli` major.minor must match repository versions
+   - if server is reachable, `/api/server/about` major.minor must match repository SDK version
+   - otherwise on local platform, fallback check uses `cvat/server:${CVAT_VERSION:-dev}` major.minor
+   If they differ, pytest exits before running tests.
+   Use `--skip-version-check` to bypass this sanity check when needed.
 1. Stop any other CVAT containers which you run previously. They keep ports
 which are used by containers for the testing system.
 

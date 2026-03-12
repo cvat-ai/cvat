@@ -8,6 +8,7 @@ import os
 import re
 import tempfile
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -20,7 +21,19 @@ CVAT_DB_DIR = CVAT_ROOT_DIR / "tests/python/shared/assets/cvat_db"
 CLICKHOUSE_INIT_SCRIPT = "components/analytics/clickhouse/init.py"
 DEFAULT_PROJECT_NAME = "test"
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")
-DEFAULT_INFRA_MODE = "auto"
+
+
+class InfraMode(str, Enum):
+    AUTO = "auto"
+    UP = "up"
+    DOWN = "down"
+    REUSE = "reuse"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+DEFAULT_INFRA_MODE = str(InfraMode.AUTO)
 DEFAULT_INFRA_PROFILE = "full"
 BASE_DC_FILES = [
     "tests/docker-compose.file_share.yml",
@@ -34,7 +47,7 @@ PROFILE_DC_FILES = {
     "full": [],
 }
 RUNTIME_ROOT_DIR = Path(tempfile.gettempdir()) / "cvat_pytest_infra"
-INFRA_MODES = ("auto", "up", "down")
+INFRA_MODES = tuple(str(mode) for mode in InfraMode)
 INFRA_PROFILES = tuple(PROFILE_DC_FILES.keys())
 
 
@@ -66,6 +79,15 @@ def validate_project_name(name: str) -> str:
 
 def run_prefix_from_config(config) -> str:
     return validate_project_name(config.getoption("--run-prefix"))
+
+
+def parse_infra_mode(value: str) -> InfraMode:
+    try:
+        return InfraMode(value)
+    except ValueError as ex:
+        raise pytest.UsageError(
+            f"Unknown infra mode {value!r}. Allowed: {', '.join(INFRA_MODES)}"
+        ) from ex
 
 
 @dataclass(frozen=True)
