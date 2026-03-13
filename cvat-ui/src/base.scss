@@ -38,6 +38,7 @@ $box-shadow-transition: 0.2s;
 $monospaced-fonts-stack: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono,
     Courier New, monospace;
 $scroll-breakpoint: 1300px;
+$annotation-view-control-transition: 0.1s transform;
 
 .cvat-base-preview {
     .ant-spin {

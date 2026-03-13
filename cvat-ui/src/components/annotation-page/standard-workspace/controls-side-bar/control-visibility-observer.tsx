@@ -46,7 +46,7 @@ export function ExtraControlsControl(): JSX.Element {
         >
             <SmallDashOutlined
                 style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
-                className='cvat-extra-controls-control cvat-antd-icon-control'
+                className='cvat-extra-controls-control'
             />
         </CustomPopover>
     );

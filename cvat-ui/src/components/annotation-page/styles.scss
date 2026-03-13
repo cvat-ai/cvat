@@ -52,6 +52,7 @@
         }
 
         > span[role='img'] {
+            transition: $annotation-view-control-transition;
             font-size: 20px;
         }
 
@@ -117,6 +118,7 @@
         font-size: 20px;
         margin: 0 4px;
         color: $player-buttons-color;
+        transition: $annotation-view-control-transition;
 
         &:hover {
             transform: scale(1.1);
