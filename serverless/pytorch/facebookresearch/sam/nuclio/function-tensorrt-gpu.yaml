@@ -1,0 +1,91 @@
+# Copyright (C) 2026 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+metadata:
+  name: trt-facebookresearch-sam-vit-h
+  namespace: cvat
+  annotations:
+    name: Segment Anything Tensorrt
+    version: 2
+    type: interactor
+    spec:
+    min_pos_points: 0
+    min_neg_points: 0
+    startswith_box_optional: true
+    animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/develop/site/content/en/images/hrnet_example.gif
+    help_message: The interactor allows to get a mask of an object using at least one positive, and any negative points inside it
+
+spec:
+  description: Interactive object segmentation with Segment-Anything
+  runtime: 'python:3.10'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/sam
+    - name: CKPT
+      value: /opt/nuclio/sam/sam_vit_h_4b8939-sim.engine
+    - name: CUDA_VISIBLE_DEVICES
+      value: "0"  # Select GPU device
+  build:
+    image: cvat.pth.facebookresearch.sam.vit_h:latest-gpu
+    baseImage: ubuntu:22.04
+    directives:
+      preCopy:
+      # set NVIDIA container runtime settings
+        - kind: ENV
+          value: NVIDIA_VISIBLE_DEVICES=all
+        - kind: ENV
+          value: NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # disable interactive frontend
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+      # set workdir
+        - kind: WORKDIR
+          value: /opt/nuclio/sam
+      # install basic deps
+        - kind: RUN
+          value: apt-get update && apt-get -y install curl git python3 python3-pip python-is-python3 ffmpeg libsm6 libxext6 && rm -rf /var/lib/apt/lists/*
+      # NOTE!!!: install suitable version lib of pytorch reference: https://pytorch.org/get-started/previous-versions/
+        - kind: RUN
+          value: pip install torch==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cu130 --no-cache-dir
+      # NOTE!!!: install suitable version lib of tensorrt reference:
+      # https://docs.nvidia.com/deeplearning/tensorrt/latest/installing-tensorrt/installing.html#python-package-index-installation
+      # cuda version reference tensorrt < 10.8.0:
+      #   https://docs.nvidia.com/deeplearning/tensorrt/archives/index.html
+      # cuda version reference tensorrt >= 10.8.0:
+      #   https://docs.nvidia.com/deeplearning/tensorrt/10.14.1/getting-started/release-notes.html
+        - kind: RUN
+          value: pip3 install tensorrt-cu13==10.14.1.48 --no-cache-dir
+      # install sam deps
+        - kind: RUN
+          value: pip3 install pycocotools matplotlib numpy opencv-python onnx onnxscript onnxsim --no-cache-dir
+      # fix onnxsim save large models (>2GB) issue, The latest current version 0.4.36 (maybe will fix in feature version)
+        - kind: RUN
+          value: sed -i 's/except ValueError:/except (ValueError, RuntimeError):/' $(python -c "import onnxsim; print(onnxsim.onnx_simplifier.__file__)")
+      # download sam code
+        - kind: RUN
+          value: git init && git remote add origin https://github.com/facebookresearch/segment-anything.git && git fetch origin main && git checkout origin/main -- .
+      # download sam weights
+        - kind: RUN
+          value: curl -O https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
+      # convert model to tensorrt
+        - kind: RUN
+          value: python3 -m scripts.export_encoder --mode trt --model sam_vit_h --simplify
+  triggers:
+    httpTrigger:
+      numWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
