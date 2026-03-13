@@ -3,9 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import { LRUCache } from 'lru-cache';
-import { CVATCore, MLModel, Job } from 'cvat-core-wrapper';
+import {
+    CVATCore, MLModel, Job, InteractorResults,
+    Source, ShapeType,
+} from 'cvat-core-wrapper';
 import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
-import { InitBody, DecodeBody, WorkerAction } from './inference.worker';
+import {
+    InitBody, DecodeBody, WorkerAction, SAMOutputItem,
+} from './inference.worker';
 
 interface SAMPlugin {
     name: string;
@@ -50,7 +55,7 @@ interface SAMPlugin {
         lastClicks: ClickType[];
     };
     callbacks: {
-        onStatusChange: ((status: string) => void) | null;
+        mask2Rle: ((points: Uint8ClampedArray) => number[]) | null;
     };
 }
 
@@ -58,25 +63,6 @@ interface ClickType {
     clickType: 0 | 1 | 2 | 3;
     x: number;
     y: number;
-}
-
-function toMatImage(input: number[], width: number, height: number): number[][] {
-    const image = Array(height).fill(0);
-    for (let i = 0; i < image.length; i++) {
-        image[i] = Array(width).fill(0);
-    }
-
-    for (let i = 0; i < input.length; i++) {
-        const row = Math.floor(i / width);
-        const col = i % width;
-        image[row][col] = input[i] > 0 ? 255 : 0;
-    }
-
-    return image;
-}
-
-function onnxToImage(input: any, width: number, height: number): number[][] {
-    return toMatImage(input, width, height);
 }
 
 function getModelScale(w: number, h: number): number {
@@ -270,17 +256,27 @@ const samPlugin: SAMPlugin = {
                                     }
 
                                     if (!e.data.error) {
-                                        const {
-                                            mask, lowResMask, xtl, ytl, xbr, ybr,
-                                        } = e.data.payload;
-                                        const imageData = onnxToImage(mask, xbr - xtl + 1, ybr - ytl + 1);
-                                        plugin.data.lowResMasks.set(key, lowResMask);
+                                        const payload = e.data.payload as SAMOutputItem[];
                                         plugin.data.lastClicks = clicks;
 
                                         resolve({
-                                            mask: imageData,
-                                            bounds: [xtl, ytl, xbr, ybr],
-                                        });
+                                            shapes: payload.map((item) => {
+                                                const { mask_input: maskInput, bounds } = item;
+                                                const rle = plugin.callbacks.mask2Rle!(item.points);
+                                                rle.push(...(rle.length ? bounds : [0, 0, 0, 0]));
+
+                                                plugin.data.lowResMasks.set(key, maskInput);
+                                                return {
+                                                    points: Int32Array.from(rle),
+                                                    group: 0,
+                                                    source: Source.SEMI_AUTO,
+                                                    occluded: false,
+                                                    rotation: 0,
+                                                    type: ShapeType.MASK,
+                                                    attributes: [],
+                                                };
+                                            }),
+                                        } as InteractorResults);
                                     } else {
                                         reject(new Error(`Decoder error. ${e.data.error}`));
                                     }
@@ -317,12 +313,13 @@ const samPlugin: SAMPlugin = {
         lastClicks: [],
     },
     callbacks: {
-        onStatusChange: null,
+        mask2Rle: null,
     },
 };
 
 const builder: ComponentBuilder = ({ core }) => {
     samPlugin.data.core = core;
+    samPlugin.callbacks.mask2Rle = core.utils.mask2Rle;
     core.plugins.register(samPlugin);
 
     return {
