@@ -39,7 +39,7 @@ import defaultLayout, { ItemLayout, ViewType } from './canvas-layout.conf';
 
 const ReactGridLayout = WidthProvider(RGL);
 
-const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
+const ViewFabric = (itemLayout: ItemLayout, fullscreenKey?: string): JSX.Element => {
     const { viewType: type, offset } = itemLayout;
 
     let component = null;
@@ -51,7 +51,7 @@ const ViewFabric = (itemLayout: ItemLayout): JSX.Element => {
             component = <PerspectiveViewComponent />;
             break;
         case ViewType.RELATED_IMAGE:
-            component = <ContextImage offset={offset} />;
+            component = <ContextImage offset={offset} fullscreenKey={fullscreenKey} />;
             break;
         case ViewType.CANVAS_3D_FRONT:
             component = <FrontViewComponent />;
@@ -210,7 +210,7 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
         window.dispatchEvent(new Event('resize'));
     }, [layoutConfig]);
 
-    const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value));
+    const children = layoutConfig.map((value: ItemLayout) => ViewFabric(value, fullscreenKey));
     const layout = layoutConfig.map((value: ItemLayout) => ({
         x: value.x,
         y: value.y,
