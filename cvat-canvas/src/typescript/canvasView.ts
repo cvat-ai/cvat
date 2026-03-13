@@ -6,6 +6,7 @@
 import polylabel from 'polylabel';
 import { fabric } from 'fabric';
 import * as SVG from 'svg.js';
+import * as martinez from 'martinez-polygon-clipping';
 
 import 'svg.draggable.js';
 import 'svg.resize.js';
@@ -511,46 +512,166 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }));
             } else if (this.mode === Mode.JOIN && objects.length > 1) {
                 this.mode = Mode.IDLE;
-                let [left, top, right, bottom] = objects[0].points.slice(-4);
-                objects.forEach((state) => {
-                    const [curLeft, curTop, curRight, curBottom] = state.points.slice(-4);
-                    left = Math.min(left, curLeft);
-                    top = Math.min(top, curTop);
-                    right = Math.max(right, curRight);
-                    bottom = Math.max(bottom, curBottom);
-                });
 
-                Promise.all(objects.map((state) => {
-                    const [curLeft, , curRight] = state.points.slice(-4, -1);
-                    const image = new ImageData(expandChannels(255, 255, 255, state.points), curRight - curLeft + 1);
-                    return createImageBitmap(image);
-                })).then((results) => {
-                    const canvas = new OffscreenCanvas(right - left + 1, bottom - top + 1);
-                    results.forEach((bitmap, idx) => {
-                        const [curLeft, curTop] = objects[idx].points.slice(-4, -2);
-                        canvas.getContext('2d').drawImage(bitmap, curLeft - left, curTop - top);
-                        bitmap.close();
+                const allPolygons = objects.every((state) => state.shapeType === 'polygon');
+                const allMasks = objects.every((state) => state.shapeType === 'mask');
+                if (allPolygons) {
+                    this.joinPolygons(objects, duration);
+                } else if (allMasks) {
+                    let [left, top, right, bottom] = objects[0].points.slice(-4);
+                    objects.forEach((state) => {
+                        const [curLeft, curTop, curRight, curBottom] = state.points.slice(-4);
+                        left = Math.min(left, curLeft);
+                        top = Math.min(top, curTop);
+                        right = Math.max(right, curRight);
+                        bottom = Math.max(bottom, curBottom);
                     });
 
-                    const imageData = canvas.getContext('2d')
-                        .getImageData(0, 0, right - left + 1, bottom - top + 1);
-                    const rle = zipChannels(imageData.data);
-                    rle.push(left, top, right, bottom);
-                    this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
-                        bubbles: false,
-                        cancelable: true,
-                        detail: {
-                            duration,
-                            states: objects,
-                            points: rle,
-                        },
-                    }));
-                }).catch(this.onError);
+                    Promise.all(objects.map((state) => {
+                        const [curLeft, , curRight] = state.points.slice(-4, -1);
+                        const expanded = expandChannels(255, 255, 255, state.points);
+                        const image = new ImageData(expanded, curRight - curLeft + 1);
+                        return createImageBitmap(image);
+                    })).then((results) => {
+                        const canvas = new OffscreenCanvas(right - left + 1, bottom - top + 1);
+                        results.forEach((bitmap, idx) => {
+                            const [curLeft, curTop] = objects[idx].points.slice(-4, -2);
+                            canvas.getContext('2d').drawImage(bitmap, curLeft - left, curTop - top);
+                            bitmap.close();
+                        });
+
+                        const imageData = canvas.getContext('2d')
+                            .getImageData(0, 0, right - left + 1, bottom - top + 1);
+                        const rle = zipChannels(imageData.data);
+                        rle.push(left, top, right, bottom);
+                        this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                duration,
+                                states: objects,
+                                points: rle,
+                            },
+                        }));
+                    }).catch(this.onError);
+                } else {
+                    this.onError(new Error('Can only join objects of the same type (all polygons or all masks)'));
+                }
             }
         } else {
             this.dispatchCanceledEvent();
         }
     };
+
+    private joinPolygons(objects: any[], duration: number): void {
+        try {
+            // Convert CVAT polygon format to martinez format
+            // CVAT format: [x1, y1, x2, y2, ...] (flat array)
+            // martinez format: [[[x1, y1], [x2, y2], ...]] (GeoJSON Polygon)
+            const polygons: martinez.Polygon[] = objects.map((state) => {
+                const { points } = state;
+                const coords: martinez.Position[] = [];
+
+                for (let i = 0; i < points.length; i += 2) {
+                    coords.push([points[i], points[i + 1]]);
+                }
+
+                const firstPoint = coords[0];
+                const lastPoint = coords[coords.length - 1];
+                if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
+                    coords.push([firstPoint[0], firstPoint[1]]);
+                }
+
+                return [coords];
+            });
+
+            let result: martinez.Geometry = polygons[0];
+            for (let i = 1; i < polygons.length; i += 1) {
+                result = martinez.union(result, polygons[i]);
+                if (!result) {
+                    throw new Error('Union operation failed - polygons may be invalid');
+                }
+            }
+
+            if (!result || result.length === 0) {
+                throw new Error('Union operation resulted in empty polygon');
+            }
+
+            const validationError = this.validateUnionResult(result);
+            if (validationError) {
+                this.onError(new Error(validationError));
+                this.dispatchCanceledEvent();
+                return;
+            }
+
+            const processedResults = this.processPolygonUnionResult(result);
+            const { points } = processedResults[0];
+
+            this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    duration,
+                    states: objects,
+                    points,
+                    shapeType: 'polygon',
+                },
+            }));
+        } catch (error) {
+            this.onError(error);
+            this.dispatchCanceledEvent();
+        }
+    }
+
+    private validateUnionResult(result: martinez.Geometry): string | null {
+        // martinez.union result format (MultiPolygon):
+        // [
+        //   [ // first polygon
+        //     [[x, y], ...],  // exterior ring
+        //     [[x, y], ...],  // hole 1 (if exists)
+        //   ],
+        //   [ // second polygon (if disjoint)
+        //     [[x, y], ...],
+        //   ]
+        // ]
+
+        // Check for multiple disjoint polygons
+        if (result.length > 1) {
+            return 'Cannot join these polygons: the union operation produced multiple separate polygons. ' +
+                'This happens when the selected polygons do not overlap or share edges. Please select polygons that touch or overlap.';
+        }
+
+        // Check for holes in the polygon
+        for (const polygon of result) {
+            if (polygon.length > 1) {
+                return 'Cannot join these polygons: the operation would create a shape with holes, ' +
+                    'which is not supported by CVAT. Please select different polygons or use the mask tool.';
+            }
+        }
+
+        return null;
+    }
+
+    private processPolygonUnionResult(result: martinez.Geometry): { shapeType: string; points: number[] }[] {
+        const results: { shapeType: string; points: number[] }[] = [];
+
+        for (const polygon of result) {
+            const exterior = polygon[0] as martinez.Ring;
+
+            // Convert to flat CVAT array format (remove closing point)
+            const exteriorPoints: number[] = [];
+            for (let i = 0; i < exterior.length - 1; i += 1) {
+                exteriorPoints.push(exterior[i][0], exterior[i][1]);
+            }
+
+            results.push({
+                shapeType: 'polygon',
+                points: exteriorPoints,
+            });
+        }
+
+        return results;
+    }
 
     private onSliceDone = (state?: any, results?: number[][], duration?: number): void => {
         if (state && results && typeof duration !== 'undefined') {
@@ -2148,11 +2269,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.onMessage([{
                     type: 'text',
                     icon: 'info',
-                    content: 'Click masks you would like to join together. To unselect click selected mask one more time',
+                    content: 'Click polygons or masks you would like to join together. To unselect click selected shape one more time',
                 }], 'join');
 
                 this.groupHandler.group(data, {
-                    shapeType: ['mask'],
+                    shapeType: ['mask', 'polygon'],
                     objectType: ['shape'],
                 });
             }
