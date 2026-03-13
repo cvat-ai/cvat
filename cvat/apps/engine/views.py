@@ -578,7 +578,7 @@ class _DataGetter(metaclass=ABCMeta):
             data = media_provider.get_frame(self.number, quality=self.quality)
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == 'preview':
-            data = media_provider.get_preview()
+            data = media_provider.get_preview_image()
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         elif self.type == 'context_image':
             if isinstance(media_provider, IAudioProvider):

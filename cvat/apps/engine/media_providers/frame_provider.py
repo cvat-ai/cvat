@@ -86,7 +86,7 @@ class IFrameProvider(IMediaProvider, metaclass=ABCMeta):
     def get_chunk_number(self, frame_number: int) -> int: ...
 
     @abstractmethod
-    def get_preview(self) -> DataWithMeta[BytesIO]: ...
+    def get_preview_image(self) -> DataWithMeta[BytesIO]: ...
 
     @abstractmethod
     def get_chunk(
@@ -163,8 +163,8 @@ class TaskFrameProvider(IFrameProvider):
         """
         return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
-    def get_preview(self) -> DataWithMeta[BytesIO]:
-        return self._get_segment_frame_provider(0).get_preview()
+    def get_preview_image(self) -> DataWithMeta[BytesIO]:
+        return self._get_segment_frame_provider(0).get_preview_image()
 
     def get_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
@@ -477,7 +477,7 @@ class SegmentFrameProvider(IFrameProvider):
 
         return chunk_number
 
-    def get_preview(self) -> DataWithMeta[BytesIO]:
+    def get_preview_image(self) -> DataWithMeta[BytesIO]:
         cache = MediaCache()
         preview, mime = cache.get_or_set_segment_preview(self._db_segment)
         return DataWithMeta[BytesIO](preview, mime=mime)

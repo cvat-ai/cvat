@@ -566,6 +566,7 @@ class Audio(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="audio", null=True)
     path = models.CharField(max_length=1024)
     sampling_rate = models.PositiveIntegerField()
+    has_cover_image = models.BooleanField(default=False)
 
     chunks: MaybeUndefined[models.manager.RelatedManager[AudioChunkInfo]]
 

@@ -14,10 +14,11 @@ from io import BytesIO
 from typing import Literal, TypeVar
 
 import av
-import django
 import numpy as np
+import PIL.Image
 from attrs import define
 from django.db.models import prefetch_related_objects
+from matplotlib import pyplot as plt
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
@@ -36,6 +37,7 @@ from cvat.apps.engine.media_providers.media_chunks import (
 )
 from cvat.apps.engine.media_providers.media_provider import DataWithMeta, IMediaProvider
 from cvat.apps.engine.utils import take_by
+from utils.dataset_manifest.utils import MemOpenable
 
 _T = TypeVar("_T")
 
@@ -56,7 +58,7 @@ class IAudioProvider(IMediaProvider, metaclass=ABCMeta):
     def get_chunk_number(self, frame_number: int) -> int: ...
 
     @abstractmethod
-    def get_preview(self) -> AudioDataWithMeta[BytesIO]: ...
+    def get_preview_image(self) -> AudioDataWithMeta[BytesIO]: ...
 
     @abstractmethod
     def get_chunk(
@@ -112,8 +114,8 @@ class TaskAudioProvider(IAudioProvider):
         """
         return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
-    def get_preview(self) -> AudioDataWithMeta[BytesIO]:
-        return self._get_segment_audio_provider(0).get_preview()
+    def get_preview_image(self) -> DataWithMeta[BytesIO]:
+        return self._get_segment_audio_provider(0).get_preview_image()
 
     def _get_or_create_chunk(
         self, chunk_number: int, *, quality: models.FrameQuality = models.FrameQuality.ORIGINAL
@@ -373,16 +375,24 @@ class SegmentAudioProvider(IAudioProvider):
             (
                 i
                 for i, chunk_frames in enumerate(
-                    take_by(
-                        sorted(self._db_segment.frame_set), self._db_segment.task.data.chunk_size
-                    )
+                    take_by(self._db_segment.frame_set, self._db_segment.task.data.chunk_size)
                 )
                 if frames == set(chunk_frames)
             ),
             None,
         )
 
-    def get_preview(self) -> DataWithMeta[BytesIO]:
+    def get_preview_image(self) -> DataWithMeta[BytesIO]:
+        task_audio_provider = TaskAudioProvider(self._db_segment.task)
+        first_segment = task_audio_provider._get_segment(
+            task_audio_provider.validate_frame_number(0)
+        )
+        if self._db_segment.task.data.audio.has_cover_image and (
+            first_segment.id != self._db_segment.id
+        ):
+            # Reuse the cover image cached for the first segment
+            return task_audio_provider.get_preview_image()
+
         cache = MediaCache()
         preview, mime = cache.get_or_set_segment_preview(self._db_segment)
         return DataWithMeta[BytesIO](preview, mime=mime)
@@ -504,6 +514,11 @@ class JobAudioProvider(SegmentAudioProvider):
         # Reproduce the task chunks, limited by this job
         return_type = DataWithMeta[BytesIO]
 
+        cache = MediaCache()
+        cached_chunk = cache.get_segment_task_chunk(self._db_segment, chunk_number, quality=quality)
+        if cached_chunk:
+            return return_type(cached_chunk[0], cached_chunk[1])
+
         task_audio_provider = TaskAudioProvider(self._db_segment.task)
         segment_start_chunk = task_audio_provider.get_chunk_number(self._db_segment.start_frame)
         segment_stop_chunk = task_audio_provider.get_chunk_number(self._db_segment.stop_frame)
@@ -513,11 +528,6 @@ class JobAudioProvider(SegmentAudioProvider):
                 "The chunk number should be in the "
                 f"[{segment_start_chunk}, {segment_stop_chunk}] range"
             )
-
-        cache = MediaCache()
-        cached_chunk = cache.get_segment_task_chunk(self._db_segment, chunk_number, quality=quality)
-        if cached_chunk:
-            return return_type(cached_chunk[0], cached_chunk[1])
 
         db_data = self._db_segment.task.require_data()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
@@ -686,7 +696,9 @@ def create_audio_chunk(
 class SampleMatcher:
     matching_sampling_rate = 8000
 
-    def get_samples_for_matching(self, frames: Iterator[IMediaReader.AudioFrame]) -> np.ndarray:
+    def get_samples_for_matching(
+        self, frames: Iterator[IMediaReader.AudioFrame]
+    ) -> np.ndarray | None:
         resampler = av.AudioResampler(format="s16p", rate=self.matching_sampling_rate)
         output_frames = [
             (resampled_frame, None)
@@ -696,7 +708,62 @@ class SampleMatcher:
         return collect_samples(output_frames)
 
 
-def collect_samples(frames: Iterator[AudioReader.AudioFrame]) -> np.ndarray:
+@define
+class PreviewImageBuilder:
+    sampling_rate: int = 100
+
+    size: tuple[int, int] = (1000, 200)
+    "(w, h)"
+
+    output_color: tuple[int, int, int] = (8, 151, 156)
+    "(r, g, b) color for the waveform"
+
+    def _get_samples(self, frames: Iterator[IMediaReader.AudioFrame]) -> np.ndarray:
+        resampler = av.AudioResampler(format="flt", layout="mono", rate=self.sampling_rate)
+        output_frames = [
+            (resampled_frame, None)
+            for input_frame, _ in frames
+            for resampled_frame in resampler.resample(input_frame)
+        ]
+        return collect_samples(output_frames)
+
+    def create_preview(self, reader: AudioReader) -> PIL.Image.Image:
+        preview = reader.get_preview_image()
+        if preview is None:
+            preview = self.create_from_waveform(reader)
+
+        return preview
+
+    def create_from_waveform(self, reader: AudioReader) -> PIL.Image.Image:
+        samples = self._get_samples(reader)[0]
+        samples_max = np.max(np.abs(samples))
+
+        dpi = 100
+        fig = plt.figure(1, figsize=(self.size[0] // dpi, self.size[1] // dpi), dpi=dpi)
+        plt.plot(
+            range(len(samples)), samples, linewidth=0.125, color=np.asarray(self.output_color) / 255
+        )
+        plt.xticks()
+        plt.yticks()
+        ax = fig.axes[0]
+        ax.set_ylim(-samples_max, samples_max)
+        plt.axis("off")
+        plt.tight_layout()
+
+        output_file = BytesIO()
+
+        fig.savefig(output_file, transparent=True)
+        output_file.seek(0)
+
+        return PIL.Image.open(output_file)
+
+    def create_from_image(self, image: PIL.Image.Image) -> PIL.Image.Image:
+        image = image.copy()
+        image.thumbnail(self.size)
+        return image
+
+
+def collect_samples(frames: Iterator[AudioReader.AudioFrame]) -> np.ndarray | None:
     samples = None
     for frame, _ in frames:
         frame_samples = frame.to_ndarray()
@@ -735,6 +802,14 @@ def find_best_padding(
 
     sample_matcher = SampleMatcher()
     payload_samples_for_matching = sample_matcher.get_samples_for_matching(payload_frames_factory())
+    if payload_samples_for_matching is None:
+        error_guess_message = ""
+
+        payload_length = payload_stop - payload_start
+        if payload_length < 1000:
+            error_guess_message = f"Payload is too small: {payload_length}"
+
+        raise Exception(" ".join(["Could not find the payload.", error_guess_message]))
 
     def check_padding(
         left_padding: int, right_padding: int
@@ -756,7 +831,12 @@ def find_best_padding(
         writer.save_as_chunk(chunk_payload_frames, result_file)
         result_file.seek(0)
 
-        result_reader = AudioReader([result_file])
+        result_bytes = result_file.getvalue()
+        if not result_bytes:
+            # If the payload was too small to write anything, there will be an empty file
+            return None, None, None
+
+        result_reader = AudioReader([MemOpenable(result_bytes)])
         if result_reader.length < payload_stop - payload_start + 1:
             return None, None, None
 

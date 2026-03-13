@@ -59,7 +59,7 @@ from cvat.apps.engine.utils import (
     md5_hash,
 )
 from utils.dataset_manifest import ImageManifestManager
-from utils.dataset_manifest.utils import Openable
+from utils.dataset_manifest.utils import MemOpenable, Openable
 
 slogger = ServerLogManager(__name__)
 
@@ -1032,24 +1032,50 @@ class MediaCache:
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)
 
-        if db_segment.task.dimension == models.DimensionType.DIM_3D:
-            # TODO
-            preview = PIL.Image.open(
-                os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg")
-            )
-        else:
-            from cvat.apps.engine.media_providers.frame_provider import (  # avoid circular import
-                FrameOutputType,
-                make_frame_provider,
-            )
+        match db_segment.task.media_type:
+            case models.MediaType.POINT_CLOUD:
+                # TODO
+                preview = PIL.Image.open(
+                    os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg")
+                )
+            case models.MediaType.AUDIO:
+                from cvat.apps.engine.media_extractors import AudioReader
+                from cvat.apps.engine.media_providers.audio_provider import (
+                    PreviewImageBuilder,
+                    SegmentAudioProvider,
+                )
 
-            task_frame_provider = make_frame_provider(db_segment.task)
-            segment_frame_provider = make_frame_provider(db_segment)
-            preview = segment_frame_provider.get_frame(
-                task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
-                quality=models.FrameQuality.COMPRESSED,
-                out_type=FrameOutputType.PIL,
-            ).data
+                preview = None
+                if db_segment.task.data.audio.has_cover_image:
+                    source_audio = self.read_raw_audio(db_segment.task)[0]
+                    reader = AudioReader([source_audio])
+                    preview = reader.get_preview_image()
+
+                if not preview:
+                    segment_media_provider = SegmentAudioProvider(db_segment)
+                    chunk = segment_media_provider.get_chunk(
+                        0,
+                        quality=models.FrameQuality.COMPRESSED,
+                    )
+                    reader = AudioReader([MemOpenable(chunk.data.getvalue())])
+                    preview_builder = PreviewImageBuilder()
+                    preview = preview_builder.create_preview(reader)
+            case models.MediaType.IMAGE | models.MediaType.VIDEO:
+                from cvat.apps.engine.media_providers.frame_provider import (  # avoid circular import
+                    FrameOutputType,
+                    make_frame_provider,
+                )
+
+                task_frame_provider = make_frame_provider(db_segment.task)
+                segment_frame_provider = make_frame_provider(db_segment)
+
+                preview = segment_frame_provider.get_frame(
+                    task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
+                    quality=models.FrameQuality.COMPRESSED,
+                    out_type=FrameOutputType.PIL,
+                ).data
+            case _ as media_type:
+                assert False, f"Unknown media type {media_type}"
 
         return prepare_preview_image(preview)
 
