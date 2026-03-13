@@ -55,7 +55,6 @@ interface StateToProps {
     changePasswordDialogShown: boolean;
     logoutFetching: boolean;
     isAnalyticsPluginActive: boolean;
-    isModelsPluginActive: boolean;
     organizationFetching: boolean;
     currentOrganization: any | null;
     organizationsList: Organization[];
@@ -122,7 +121,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         changePasswordDialogShown,
         logoutFetching,
         isAnalyticsPluginActive: list.ANALYTICS,
-        isModelsPluginActive: list.MODELS,
         organizationFetching,
         currentOrganization,
         organizationsList,
@@ -164,7 +162,6 @@ function HeaderComponent(props: Props): JSX.Element {
         shortcutsModalVisible,
         switchSettingsShortcut,
         isAnalyticsPluginActive,
-        isModelsPluginActive,
         organizationFetching,
         currentOrganization,
         organizationsList,
@@ -464,20 +461,18 @@ function HeaderComponent(props: Props): JSX.Element {
                 >
                     Requests
                 </Button>
-                {isModelsPluginActive ? (
-                    <Button
-                        className={getButtonClassName('models')}
-                        type='link'
-                        value='models'
-                        href='/models'
-                        onClick={(event: React.MouseEvent): void => {
-                            event.preventDefault();
-                            history.push('/models');
-                        }}
-                    >
-                        Models
-                    </Button>
-                ) : null}
+                <Button
+                    className={getButtonClassName('models')}
+                    type='link'
+                    value='models'
+                    href='/models'
+                    onClick={(event: React.MouseEvent): void => {
+                        event.preventDefault();
+                        history.push('/models');
+                    }}
+                >
+                    Models
+                </Button>
                 {isAnalyticsPluginActive && user.hasAnalyticsAccess ? (
                     <Button
                         className={getButtonClassName('analytics', false)}

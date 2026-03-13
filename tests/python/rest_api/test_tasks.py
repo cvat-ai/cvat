@@ -40,7 +40,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from rest_api._test_base import TestTasksBase
+from rest_api._test_base import SHARE_DIR, TestTasksBase
 from rest_api.utils import (
     DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
@@ -77,6 +77,38 @@ def count_frame_uses(data: Sequence[int], *, included_frames: Sequence[int]) -> 
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTasks:
+    def _compute_expected_project_name(
+        self, user_id, task, projects, users, is_project_staff, org_staff
+    ):
+        project_id = task.get("project_id")
+        if not project_id:
+            return None
+
+        user = users.map.get(user_id)
+        if user and user.get("is_superuser"):
+            project = projects[project_id]
+            return project["name"]
+
+        project = projects[project_id]
+        project_org = project.get("organization")
+        project_org_staff = org_staff(project_org) if project_org else set()
+
+        can_view_project = user_id in project_org_staff or is_project_staff(user_id, project_id)
+
+        return project["name"] if can_view_project else None
+
+    def _get_expected_tasks_data(
+        self, user_id, tasks, projects, users, is_project_staff, org_staff
+    ):
+        expected_tasks = []
+        for task in tasks:
+            expected_task = deepcopy(task)
+            expected_task["project_name"] = self._compute_expected_project_name(
+                user_id, task, projects, users, is_project_staff, org_staff
+            )
+            expected_tasks.append(expected_task)
+        return expected_tasks
+
     def _test_task_list_200(self, user, project_id, data, exclude_paths="", **kwargs):
         with make_api_client(user) as api_client:
             results = get_paginated_collection(
@@ -85,10 +117,28 @@ class TestGetTasks:
                 project_id=project_id,
                 **kwargs,
             )
-            assert DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths) == {}
+            exclude_regex = []
+            if exclude_paths:
+                if isinstance(exclude_paths, str):
+                    exclude_regex.append(exclude_paths)
+                else:
+                    exclude_regex.extend(exclude_paths)
+            assert (
+                DeepDiff(data, results, ignore_order=True, exclude_regex_paths=exclude_regex) == {}
+            )
 
     def _test_users_to_see_task_list(
-        self, project_id, tasks, users, is_staff, is_allow, is_project_staff, **kwargs
+        self,
+        project_id,
+        tasks,
+        users,
+        is_staff,
+        is_allow,
+        is_project_staff,
+        projects,
+        all_users,
+        org_staff,
+        **kwargs,
     ):
         if is_staff:
             users = [user for user in users if is_project_staff(user["id"], project_id)]
@@ -100,9 +150,13 @@ class TestGetTasks:
             if not is_allow:
                 # Users outside project or org should not know if one exists.
                 # Thus, no error should be produced on a list request.
-                tasks = []
+                expected_tasks = []
+            else:
+                expected_tasks = self._get_expected_tasks_data(
+                    user["id"], tasks, projects, all_users, is_project_staff, org_staff
+                )
 
-            self._test_task_list_200(user["username"], project_id, tasks, **kwargs)
+            self._test_task_list_200(user["username"], project_id, expected_tasks, **kwargs)
 
     def _test_assigned_users_to_see_task_data(self, tasks, users, is_task_staff, **kwargs):
         for task in tasks:
@@ -125,14 +179,32 @@ class TestGetTasks:
         ],
     )
     def test_project_tasks_visibility(
-        self, project_id, groups, users, tasks, is_staff, is_allow, find_users, is_project_staff
+        self,
+        project_id,
+        groups,
+        users,
+        tasks,
+        projects,
+        is_staff,
+        is_allow,
+        find_users,
+        is_project_staff,
+        org_staff,
     ):
-        users = find_users(privilege=groups)
-        tasks = list(filter(lambda x: x["project_id"] == project_id, tasks))
-        assert len(tasks)
+        test_users = find_users(privilege=groups)
+        tasks_list = list(filter(lambda x: x["project_id"] == project_id, tasks))
+        assert len(tasks_list)
 
         self._test_users_to_see_task_list(
-            project_id, tasks, users, is_staff, is_allow, is_project_staff
+            project_id,
+            tasks_list,
+            test_users,
+            is_staff,
+            is_allow,
+            is_project_staff,
+            projects,
+            users,
+            org_staff,
         )
 
     @pytest.mark.parametrize("project_id, groups", [(1, "user")])
@@ -161,16 +233,28 @@ class TestGetTasks:
         is_staff,
         is_allow,
         tasks,
+        projects,
+        users,
         is_task_staff,
         is_project_staff,
+        org_staff,
         find_users,
     ):
-        users = find_users(org=org["id"], role=role)
-        tasks = list(filter(lambda x: x["project_id"] == project_id, tasks))
-        assert len(tasks)
+        test_users = find_users(org=org["id"], role=role)
+        tasks_list = list(filter(lambda x: x["project_id"] == project_id, tasks))
+        assert len(tasks_list)
 
         self._test_users_to_see_task_list(
-            project_id, tasks, users, is_staff, is_allow, is_project_staff, org=org["slug"]
+            project_id,
+            tasks_list,
+            test_users,
+            is_staff,
+            is_allow,
+            is_project_staff,
+            projects,
+            users,
+            org_staff,
+            org=org["slug"],
         )
 
     @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
@@ -1459,6 +1543,32 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
+        cloud_storage_id = next(cs["id"] for cs in cloud_storages if cs["resource"] == "backingcs")
+
+        with make_sdk_client(self.user) as client:
+            task = client.tasks.create_from_data(
+                models.TaskWriteRequest(name="Canvas3D"),
+                [SHARE_DIR / "test_canvas3d.zip"],
+                data_params={"use_cache": True},
+            )
+
+            container_exec_cvat(
+                request, ["./manage.py", "movetasktobackingcs", str(task.id), str(cloud_storage_id)]
+            )
+
+            backup_path = self.tmp_dir / "backup.zip"
+            task.download_backup(backup_path)
+
+            with zipfile.ZipFile(backup_path) as zip_file:
+                names = zip_file.namelist()
+
+                assert any(name.endswith(".pcd") for name in names)
+                assert any(name.endswith(".png") for name in names)
+
+            self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
+
     def _test_can_restore_task_from_backup(
         self,
         task_id: int,
@@ -1574,6 +1684,7 @@ class TestTaskBackups:
                     r"root\['organization'\]",  # depends on the task setup, deprecated field
                     r"root\['organization_id'\]",  # depends on the task setup
                     r"root\['project_id'\]",  # should be dropped
+                    r"root\['project_name'\]",  # permission-dependent field
                     r"root\['data_cloud_storage_id'\]",  # should be dropped
                     r"root(\['.*'\])*\['url'\]",  # depends on the task id
                     r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
@@ -4294,9 +4405,9 @@ class TestPatchExportFrames(TestTasksBase):
         args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
 
         if media_type == SourceDataType.images:
-            spec, task_id = next(self._image_task_fxt_base(**args))
+            spec, task_id = self._image_task_fxt_base(**args)
         else:
-            spec, task_id = next(self._uploaded_video_task_fxt_base(**args))
+            spec, task_id = self._uploaded_video_task_fxt_base(**args)
 
         with make_sdk_client(self._USERNAME) as client:
             task = client.tasks.retrieve(task_id)

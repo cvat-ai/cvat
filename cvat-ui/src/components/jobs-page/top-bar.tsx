@@ -14,6 +14,7 @@ import {
     defaultVisibility,
     ResourceSelectionInfo,
 } from 'components/resource-sorting-filtering';
+import JobsCSVExportButton from './jobs-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -79,6 +80,7 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
                             )}
                             onApplyFilter={onApplyFilter}
                         />
+                        <JobsCSVExportButton query={query} />
                     </div>
                 </div>
             </Col>
