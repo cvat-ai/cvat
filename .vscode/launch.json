@@ -420,7 +420,8 @@
                 "server: django",
                 "server: RQ - worker",
                 "server: RQ - scheduler",
-            ]
+            ],
+            "stopAll": true,
         }
     ]
 }
