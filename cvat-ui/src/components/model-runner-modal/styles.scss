@@ -53,14 +53,12 @@
     @extend .cvat-labels-attributes-mapper-tree;
 
     width: 100%;
+    max-height: $grid-unit-size * 64;
+    overflow-y: auto;
+    overflow-x: hidden;
 
     span {
         text-align: center;
-    }
-
-    &:has(.cvat-runner-label-mapper) {
-        max-height: $grid-unit-size * 64;
-        overflow: hidden auto;
     }
 
     > .cvat-runner-label-mapper {
@@ -92,8 +90,14 @@
 
 
 
-.cvat-run-model-content > div:not(first-child) {
-    margin-top: $grid-unit-size;
+.cvat-run-model-content {
+    max-height: 60vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    > div:not(first-child) {
+        margin-top: $grid-unit-size;
+    }
 }
 
 .cvat-run-model-content-remove-mapping-icon {
