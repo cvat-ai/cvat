@@ -296,7 +296,7 @@ class QualitySettings(TimestampedModel):
 
     @classmethod
     def get_job_filter_terms(cls) -> list[str]:
-        from .quality_reports import TaskQualityCalculator
+        from .quality_calculators import TaskQualityCalculator
 
         return sorted(TaskQualityCalculator.JOB_FILTER_LOOKUPS.keys())
 
@@ -332,7 +332,7 @@ class QualityRequirement(TimestampedModel):
         blank=False,
     )
 
-    name = models.CharField(max_length=100, blank=False)
+    name = models.CharField(max_length=250, blank=False)
 
     annotation_type = models.CharField(
         max_length=32,
@@ -346,6 +346,9 @@ class QualityRequirement(TimestampedModel):
     )
 
     target_metric_threshold = models.FloatField(default=0.7)
+
+    filter = models.TextField(blank=True)
+    enabled = models.BooleanField(default=True)
 
     # An attribute-based requirement must have a parent shape-based requirement to be computable
     parent = models.ForeignKey("self", on_delete=models.DO_NOTHING, null=True, blank=True)

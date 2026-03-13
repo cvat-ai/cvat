@@ -18,7 +18,7 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.profiler import silk_profile
-from cvat.apps.quality_control.quality_reports import (
+from cvat.apps.quality_control.quality_calculators import (
     ProjectQualityCalculator,
     TaskQualityCalculator,
 )
