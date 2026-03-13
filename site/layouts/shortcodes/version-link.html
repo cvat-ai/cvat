@@ -1,0 +1,3 @@
+{{- $name := .Get "name" -}}
+{{- $tool := index .Site.Data.versions $name -}}
+<a href="{{ $tool.url }}/{{ $tool.version }}">{{ .Inner }}</a>
