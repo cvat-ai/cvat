@@ -8,7 +8,7 @@ services:
     environment:
       CVAT_BASE_URL:
       CVAT_ACCESS_TOKEN:
-      MODEL_ID:
+      MODEL_CONFIG_PARAMS:
       ORG_SLUG:
 
   cvat-agent:
@@ -23,8 +23,9 @@ services:
     environment:
       CVAT_BASE_URL:
       CVAT_ACCESS_TOKEN:
-      MODEL_ID:
+      MODEL_CONFIG_PARAMS:
       ORG_SLUG:
+      USE_CUDA:
 
   #NB! MANUAL RUN!
   # docker compose run --rm cvat-function-deregister
