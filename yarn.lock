@@ -5775,7 +5775,6 @@ __metadata:
     json-logic-js: "npm:^2.0.1"
     platform: "npm:^1.3.5"
     quickhull: "npm:^1.0.3"
-    store: "npm:^2.0.12"
     tus-js-client: "npm:^3.0.1"
   languageName: unknown
   linkType: soft
@@ -16709,13 +16708,6 @@ __metadata:
   version: 2.0.2
   resolution: "statuses@npm:2.0.2"
   checksum: 10c0/a9947d98ad60d01f6b26727570f3bcceb6c8fa789da64fe6889908fe2e294d57503b14bf2b5af7605c2d36647259e856635cd4c49eab41667658ec9d0080ec3f
-  languageName: node
-  linkType: hard
-
-"store@npm:^2.0.12":
-  version: 2.0.12
-  resolution: "store@npm:2.0.12"
-  checksum: 10c0/a25a1461aab251bc4b620c7da9e876fbad7a233817e271514893a922c512ac1e80a938ae3d764aa4432556ef6f32068d46ecd830fe2bfaa591eb4a9587aa3988
   languageName: node
   linkType: hard
 
