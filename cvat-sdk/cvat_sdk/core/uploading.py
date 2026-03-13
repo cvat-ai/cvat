@@ -134,7 +134,6 @@ class Uploader:
         query_params: dict[str, Any] = None,
         fields: dict[str, Any] | None = None,
         pbar: ProgressReporter | None = None,
-        logger=None,
     ) -> urllib3.HTTPResponse:
         """
         Annotation uploads:
@@ -171,7 +170,7 @@ class Uploader:
         self._tus_start_upload(url, query_params=query_params)
         with self._uploading_task(pbar, file_size):
             real_filename = self._upload_file_data_with_tus(
-                url=url, filename=filename, meta=meta, pbar=pbar, logger=logger
+                url=url, filename=filename, meta=meta, pbar=pbar
             )
         query_params["filename"] = real_filename
         return self._tus_finish_upload(url, query_params=query_params, fields=fields)
@@ -182,14 +181,14 @@ class Uploader:
             total=total_size, desc="Uploading data", unit_scale=True, unit="B", unit_divisor=1024
         )
 
-    def _upload_file_data_with_tus(self, url, filename, *, meta, pbar, logger=None) -> str:
+    def _upload_file_data_with_tus(self, url, filename, *, meta, pbar) -> str:
         with open(filename, "rb") as input_file:
             return _upload_with_tus(
                 self._client.api_client,
                 create_url=url.rstrip("/") + "/",
                 metadata=meta,
                 file_stream=StreamWithProgress(input_file, pbar),
-                logger=logger or self._client.logger,
+                logger=self._client.logger,
             )
 
     def _tus_start_upload(self, url, *, query_params=None):
@@ -323,7 +322,6 @@ class DataUploader(Uploader):
                     filename,
                     meta={"filename": filename.name},
                     pbar=pbar,
-                    logger=self._client.logger.debug,
                 )
 
         return self._tus_finish_upload(url, fields=kwargs)
