@@ -157,6 +157,7 @@ export enum HistoryActions {
 export enum ModelKind {
     DETECTOR = 'detector',
     INTERACTOR = 'interactor',
+    AUTOCLASSIFIER = 'autoClassifier',
     TRACKER = 'tracker',
     REID = 'reid',
 }

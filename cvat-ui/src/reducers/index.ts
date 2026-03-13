@@ -518,6 +518,7 @@ export interface ModelsState {
     fetching: boolean;
     creatingStatus: string;
     interactors: MLModel[];
+    autoClassifiers: MLModel[];
     detectors: MLModel[];
     trackers: MLModel[];
     reid: MLModel[];

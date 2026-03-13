@@ -1,0 +1,69 @@
+metadata:
+  name: YOLOv8m-cls
+  namespace: cvat
+  annotations:
+    name: YOLOv8m Classify
+    version: 8
+    type: autoClassifier
+    spec: |  # Model of classify support label example, here just for CVAT models introduce.
+      [
+        { "id":  0, "name": "Person" },
+        { "id":  1, "name": "Cat" },
+        { "id":  2, "name": "Dog" }
+      ]
+    help_message: Auto Classifier can help you select annotation label.
+spec:
+  description: Auto Classifier to Annotation Label
+  runtime: 'python:3.10'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: CUDA_VISIBLE_DEVICES
+      value: "0"  # Select GPU device
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: compute,utility  # Choice GPU capabilities
+    - name: USE_SEGMENT
+      value: "0"  # Mask inference mode
+    - name: BATCH_SIZES
+      value: "4"  # Inference batch size when enabled GPU
+    - name: THRESHOLD
+      value: "0.65"  # Classify threshold, label will set Null when confidence value lower THRESHOLD
+  build:
+    image: cvat.auto.classifier.ultralytics:latest-gpu
+    baseImage: ubuntu:22.04
+    directives:
+      preCopy:
+        # set NVIDIA container runtime settings
+        - kind: ENV
+          value: NVIDIA_VISIBLE_DEVICES=all
+        - kind: ENV
+          value: NVIDIA_DRIVER_CAPABILITIES=compute,utility
+        # disable interactive frontend
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+        # set workdir
+        - kind: WORKDIR
+          value: /opt/nuclio/ultralytics
+        # install basic deps
+        - kind: RUN
+          value: apt-get update && apt-get -y install curl git python3 python3-pip python-is-python3 ffmpeg libsm6 libxext6 && rm -rf /var/lib/apt/lists/*
+        # install ultralytics deps
+        - kind: RUN
+          value: pip3 install ultralytics --no-cache-dir
+  triggers:
+    http-request:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+        port: 10083
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
