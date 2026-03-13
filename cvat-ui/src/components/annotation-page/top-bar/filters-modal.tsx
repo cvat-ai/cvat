@@ -6,7 +6,14 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import {
-    Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils, AntdConfig, AntdWidgets,
+    Builder,
+    Config,
+    ImmutableTree,
+    JsonLogicTree,
+    Query,
+    Utils as QbUtils,
+    AntdConfig,
+    AntdWidgets,
 } from '@react-awesome-query-builder/antd';
 
 import { omit } from 'lodash';
@@ -15,9 +22,16 @@ import Popover from 'antd/lib/popover';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
-import { CombinedState } from 'reducers';
+import Checkbox from 'antd/lib/checkbox';
+import { CombinedState, NavigationType } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
-import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
+import {
+    changeAnnotationsFilters,
+    fetchAnnotationsAsync,
+    showFilters,
+    setNavigationType,
+    setFilterAnnotations,
+} from 'actions/annotation-actions';
 
 const { FieldDropdown } = AntdWidgets;
 
@@ -74,11 +88,13 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
 };
 
 function FiltersModalComponent(): JSX.Element {
-    const { labels, activeFilters, visible } = useSelector(
+    const { labels, activeFilters, visible, navigationType, filterAnnotations } = useSelector(
         (state: CombinedState) => ({
             labels: state.annotation.job.labels,
             activeFilters: state.annotation.annotations.filters,
             visible: state.annotation.filtersPanelVisible,
+            navigationType: state.annotation.player.navigationType,
+            filterAnnotations: state.annotation.annotations.filterAnnotations,
         }),
         shallowEqual,
     );
@@ -95,7 +111,7 @@ function FiltersModalComponent(): JSX.Element {
                 label: {
                     label: 'Label',
                     type: 'select',
-                    valueSources: ['value'] as ('value')[],
+                    valueSources: ['value'] as 'value'[],
                     fieldSettings: {
                         listValues: labels.map((label: any) => ({
                             value: label.name,
@@ -229,6 +245,15 @@ function FiltersModalComponent(): JSX.Element {
         dispatch(showFilters(false));
     };
 
+    const handleNavigationTypeChange = (checked: boolean): void => {
+        dispatch(setNavigationType(checked ? NavigationType.FILTERED : NavigationType.REGULAR));
+    };
+
+    const handleFilterAnnotationsChange = (checked: boolean): void => {
+        dispatch(setFilterAnnotations(checked));
+        dispatch(fetchAnnotationsAsync());
+    };
+
     const confirmModal = (): void => {
         const currentFilter: StoredFilter = {
             id: QbUtils.uuid(),
@@ -241,10 +266,9 @@ function FiltersModalComponent(): JSX.Element {
         applyFilters([currentFilter.logic]);
     };
 
-    const isModalConfirmable = (): boolean => (
-        (QbUtils.queryString(immutableTree, config) || '')
-            .trim().length > 0 && QbUtils.isValidTree(immutableTree, config)
-    );
+    const isModalConfirmable = (): boolean =>
+        (QbUtils.queryString(immutableTree, config) || '').trim().length > 0 &&
+        QbUtils.isValidTree(immutableTree, config);
 
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
@@ -334,17 +358,12 @@ function FiltersModalComponent(): JSX.Element {
                     overlayClassName='cvat-recently-used-filters-dropdown'
                     content={menu}
                 >
-                    <Button
-                        type='text'
-                        className='cvat-filters-modal-recently-used-button'
-                    >
-                        Recently used
-                        {' '}
-                        <DownOutlined />
+                    <Button type='text' className='cvat-filters-modal-recently-used-button'>
+                        Recently used <DownOutlined />
                     </Button>
                 </Popover>
             </div>
-            { !!config.fields && (
+            {!!config.fields && (
                 <Query
                     {...config}
                     value={immutableTree as ImmutableTree}
@@ -352,6 +371,22 @@ function FiltersModalComponent(): JSX.Element {
                     renderBuilder={renderBuilder}
                 />
             )}
+            <div className='cvat-filters-modal-checkboxes'>
+                <Checkbox
+                    disabled={!isModalConfirmable() && !activeFilters.length}
+                    checked={navigationType === NavigationType.FILTERED}
+                    onChange={(e) => handleNavigationTypeChange(e.target.checked)}
+                >
+                    Filter frames
+                </Checkbox>
+                <Checkbox
+                    disabled={!isModalConfirmable() && !activeFilters.length}
+                    checked={filterAnnotations}
+                    onChange={(e) => handleFilterAnnotationsChange(e.target.checked)}
+                >
+                    Filter annotations
+                </Checkbox>
+            </div>
         </Modal>
     );
 }
