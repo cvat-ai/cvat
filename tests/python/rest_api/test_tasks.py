@@ -77,6 +77,38 @@ def count_frame_uses(data: Sequence[int], *, included_frames: Sequence[int]) -> 
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTasks:
+    def _compute_expected_project_name(
+        self, user_id, task, projects, users, is_project_staff, org_staff
+    ):
+        project_id = task.get("project_id")
+        if not project_id:
+            return None
+
+        user = users.map.get(user_id)
+        if user and user.get("is_superuser"):
+            project = projects[project_id]
+            return project["name"]
+
+        project = projects[project_id]
+        project_org = project.get("organization")
+        project_org_staff = org_staff(project_org) if project_org else set()
+
+        can_view_project = user_id in project_org_staff or is_project_staff(user_id, project_id)
+
+        return project["name"] if can_view_project else None
+
+    def _get_expected_tasks_data(
+        self, user_id, tasks, projects, users, is_project_staff, org_staff
+    ):
+        expected_tasks = []
+        for task in tasks:
+            expected_task = deepcopy(task)
+            expected_task["project_name"] = self._compute_expected_project_name(
+                user_id, task, projects, users, is_project_staff, org_staff
+            )
+            expected_tasks.append(expected_task)
+        return expected_tasks
+
     def _test_task_list_200(self, user, project_id, data, exclude_paths="", **kwargs):
         with make_api_client(user) as api_client:
             results = get_paginated_collection(
@@ -85,10 +117,28 @@ class TestGetTasks:
                 project_id=project_id,
                 **kwargs,
             )
-            assert DeepDiff(data, results, ignore_order=True, exclude_paths=exclude_paths) == {}
+            exclude_regex = []
+            if exclude_paths:
+                if isinstance(exclude_paths, str):
+                    exclude_regex.append(exclude_paths)
+                else:
+                    exclude_regex.extend(exclude_paths)
+            assert (
+                DeepDiff(data, results, ignore_order=True, exclude_regex_paths=exclude_regex) == {}
+            )
 
     def _test_users_to_see_task_list(
-        self, project_id, tasks, users, is_staff, is_allow, is_project_staff, **kwargs
+        self,
+        project_id,
+        tasks,
+        users,
+        is_staff,
+        is_allow,
+        is_project_staff,
+        projects,
+        all_users,
+        org_staff,
+        **kwargs,
     ):
         if is_staff:
             users = [user for user in users if is_project_staff(user["id"], project_id)]
@@ -100,9 +150,13 @@ class TestGetTasks:
             if not is_allow:
                 # Users outside project or org should not know if one exists.
                 # Thus, no error should be produced on a list request.
-                tasks = []
+                expected_tasks = []
+            else:
+                expected_tasks = self._get_expected_tasks_data(
+                    user["id"], tasks, projects, all_users, is_project_staff, org_staff
+                )
 
-            self._test_task_list_200(user["username"], project_id, tasks, **kwargs)
+            self._test_task_list_200(user["username"], project_id, expected_tasks, **kwargs)
 
     def _test_assigned_users_to_see_task_data(self, tasks, users, is_task_staff, **kwargs):
         for task in tasks:
@@ -125,14 +179,32 @@ class TestGetTasks:
         ],
     )
     def test_project_tasks_visibility(
-        self, project_id, groups, users, tasks, is_staff, is_allow, find_users, is_project_staff
+        self,
+        project_id,
+        groups,
+        users,
+        tasks,
+        projects,
+        is_staff,
+        is_allow,
+        find_users,
+        is_project_staff,
+        org_staff,
     ):
-        users = find_users(privilege=groups)
-        tasks = list(filter(lambda x: x["project_id"] == project_id, tasks))
-        assert len(tasks)
+        test_users = find_users(privilege=groups)
+        tasks_list = list(filter(lambda x: x["project_id"] == project_id, tasks))
+        assert len(tasks_list)
 
         self._test_users_to_see_task_list(
-            project_id, tasks, users, is_staff, is_allow, is_project_staff
+            project_id,
+            tasks_list,
+            test_users,
+            is_staff,
+            is_allow,
+            is_project_staff,
+            projects,
+            users,
+            org_staff,
         )
 
     @pytest.mark.parametrize("project_id, groups", [(1, "user")])
@@ -161,16 +233,28 @@ class TestGetTasks:
         is_staff,
         is_allow,
         tasks,
+        projects,
+        users,
         is_task_staff,
         is_project_staff,
+        org_staff,
         find_users,
     ):
-        users = find_users(org=org["id"], role=role)
-        tasks = list(filter(lambda x: x["project_id"] == project_id, tasks))
-        assert len(tasks)
+        test_users = find_users(org=org["id"], role=role)
+        tasks_list = list(filter(lambda x: x["project_id"] == project_id, tasks))
+        assert len(tasks_list)
 
         self._test_users_to_see_task_list(
-            project_id, tasks, users, is_staff, is_allow, is_project_staff, org=org["slug"]
+            project_id,
+            tasks_list,
+            test_users,
+            is_staff,
+            is_allow,
+            is_project_staff,
+            projects,
+            users,
+            org_staff,
+            org=org["slug"],
         )
 
     @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
@@ -1600,6 +1684,7 @@ class TestTaskBackups:
                     r"root\['organization'\]",  # depends on the task setup, deprecated field
                     r"root\['organization_id'\]",  # depends on the task setup
                     r"root\['project_id'\]",  # should be dropped
+                    r"root\['project_name'\]",  # permission-dependent field
                     r"root\['data_cloud_storage_id'\]",  # should be dropped
                     r"root(\['.*'\])*\['url'\]",  # depends on the task id
                     r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
