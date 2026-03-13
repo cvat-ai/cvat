@@ -29,7 +29,7 @@ drf-spectacular==0.26.2
 google-cloud-storage~=3.0
 lxml>=5.2.1,<6
 natsort==8.0.0
-numpy~=1.22.2
+numpy~=2.0
 opencv-python-headless~=4.8
 
 # Partial json reading
