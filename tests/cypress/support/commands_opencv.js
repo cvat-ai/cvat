@@ -42,9 +42,10 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
 });
 
 Cypress.Commands.add('opencvCheckObjectParameters', (objectType) => {
-    const listCanvasShapeId = [];
+    cy.get('.cvat_canvas_shape').should('have.length.greaterThan', 0);
     cy.document().then((doc) => {
-        const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
+        const listCanvasShapeId = [];
+        const listCanvasShape = Array.from(doc.getElementsByClassName('cvat_canvas_shape'));
         for (let i = 0; i < listCanvasShape.length; i++) {
             listCanvasShapeId.push(listCanvasShape[i].id.match(/\d+$/));
         }

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { CSSProperties } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import Text from 'antd/lib/typography/Text';
 import Slider from 'antd/lib/slider';
@@ -15,20 +15,6 @@ interface Props {
 }
 
 export const MAX_ACCURACY = 13;
-
-export const marks: Record<number, { style: CSSProperties; label: JSX.Element }> = {};
-marks[0] = {
-    style: {
-        color: '#1890ff',
-    },
-    label: <strong>less</strong>,
-};
-marks[MAX_ACCURACY] = {
-    style: {
-        color: '#61c200',
-    },
-    label: <strong>more</strong>,
-};
 
 export function thresholdFromAccuracy(approxPolyAccuracy: number): number {
     const approxPolyMaxDistance = MAX_ACCURACY - approxPolyAccuracy;
@@ -53,10 +39,7 @@ function ApproximationAccuracy(props: Props): React.ReactPortal | null {
     return target ?
         ReactDOM.createPortal(
             <Row align='middle' className='cvat-approx-poly-threshold-wrapper'>
-                <Col span={5}>
-                    <Text>Points: </Text>
-                </Col>
-                <Col offset={1} span={18}>
+                <Col span={24}>
                     <Slider
                         value={approxPolyAccuracy}
                         min={0}
@@ -67,9 +50,9 @@ function ApproximationAccuracy(props: Props): React.ReactPortal | null {
                             open: false,
                         }}
                         onChange={onChange}
-                        marks={marks}
                     />
                 </Col>
+                <Text type='secondary'>approximation accuracy</Text>
             </Row>,
             target,
         ) :
