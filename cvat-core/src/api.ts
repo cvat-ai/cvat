@@ -126,10 +126,6 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data, requestConfig);
                 return result;
             },
-            async setAuthData(response) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.setAuthData, response);
-                return result;
-            },
             async installedApps() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
                 return result;
