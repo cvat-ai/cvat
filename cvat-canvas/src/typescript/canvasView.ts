@@ -568,9 +568,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // Convert CVAT polygon format to martinez format
             // CVAT format: [x1, y1, x2, y2, ...] (flat array)
             // martinez format: [[[x1, y1], [x2, y2], ...]] (GeoJSON Polygon)
-            const polygons = objects.map((state) => {
+            const polygons: martinez.Polygon[] = objects.map((state) => {
                 const { points } = state;
-                const coords: number[][] = [];
+                const coords: martinez.Position[] = [];
 
                 for (let i = 0; i < points.length; i += 2) {
                     coords.push([points[i], points[i + 1]]);
@@ -585,9 +585,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 return [coords];
             });
 
-            let result: any = polygons[0];
+            let result: martinez.Geometry = polygons[0];
             for (let i = 1; i < polygons.length; i += 1) {
-                result = martinez.union(result as any, polygons[i] as any);
+                result = martinez.union(result, polygons[i]);
                 if (!result) {
                     throw new Error('Union operation failed - polygons may be invalid');
                 }
@@ -597,14 +597,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 throw new Error('Union operation resulted in empty polygon');
             }
 
-            // Validate the union result
             const validationError = this.validateUnionResult(result);
             if (validationError) {
                 this.onError(new Error(validationError));
+                this.dispatchCanceledEvent();
                 return;
             }
 
-            // Convert result back to CVAT format - we know there's exactly one polygon now
             const processedResults = this.processPolygonUnionResult(result);
             const { points } = processedResults[0];
 
@@ -620,11 +619,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }));
         } catch (error) {
             this.onError(error);
+            this.dispatchCanceledEvent();
         }
     }
 
-    private validateUnionResult(result: number[][][]): string | null {
-        // martinez.union result format:
+    private validateUnionResult(result: martinez.Geometry): string | null {
+        // martinez.union result format (MultiPolygon):
         // [
         //   [ // first polygon
         //     [[x, y], ...],  // exterior ring
@@ -637,13 +637,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Check for multiple disjoint polygons
         if (result.length > 1) {
-            return 'Cannot join these polygons: the selected polygons do not overlap or touch each other, ' +
-                'which would result in multiple separate shapes. Please select polygons that share edges or overlap.';
+            return 'Cannot join these polygons: the union operation produced multiple separate polygons. ' +
+                'This happens when the selected polygons do not overlap or share edges. Please select polygons that touch or overlap.';
         }
 
         // Check for holes in the polygon
         for (const polygon of result) {
-            // If polygon has more than 1 ring, it has holes
             if (polygon.length > 1) {
                 return 'Cannot join these polygons: the operation would create a shape with holes, ' +
                     'which is not supported by CVAT. Please select different polygons or use the mask tool.';
@@ -653,11 +652,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return null;
     }
 
-    private processPolygonUnionResult(result: number[][][]): any[] {
-        const results: any[] = [];
+    private processPolygonUnionResult(result: martinez.Geometry): { shapeType: string; points: number[] }[] {
+        const results: { shapeType: string; points: number[] }[] = [];
 
         for (const polygon of result) {
-            const exterior = polygon[0]; // Only exterior ring (holes already checked)
+            const exterior = polygon[0] as martinez.Ring;
 
             // Convert to flat CVAT array format (remove closing point)
             const exteriorPoints: number[] = [];
