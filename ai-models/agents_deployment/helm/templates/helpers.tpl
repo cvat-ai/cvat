@@ -82,9 +82,9 @@ runAsGroup: 1000
 Configure command arguments for cvat-cli
 */}}
 {{/*I have to use extra var here $val because i need to trim leading space that is generated in range loop and i cannot just pass range output into trim */}}
-{{- define "agent.modelParams" -}}
+{{- define "agent.modelParamsOverride" -}}
 {{- $preset := index .Values.agent.modelPresets .Values.agent.preset | default dict -}}
-{{- $merged := merge .Values.agent.modelParams $preset -}}
+{{- $merged := merge .Values.agent.modelParamsOverride $preset -}}
 {{- $val := "" -}}
 {{- range $key, $v := $merged -}}
 {{- if $v.value -}}

@@ -35,12 +35,14 @@ agent:
       model_id:
         type: str
         value: "facebook/sam2.1-hiera-tiny"
+    custom:
+      # use modelParamsOverride to specify custom parameters for your model.
 
-  # Please pick a preset for your agent's model configuration. The preset will automatically fill in the necessary parameters for the chosen model type. If you choose a preset, you can still override specific parameters in the `modelParams` section below.
+  # Please pick a preset for your agent's model configuration. The preset will automatically fill in the necessary parameters for the chosen model type. If you choose a preset, you can still override specific parameters in the `modelParamsOverride` section below.
   # Keys with empty 'value' will be ignored.
   preset: sam2
-  modelParams: { }
-#  modelParams:
+  modelParamsOverride: { }
+#  modelParamsOverride:
 #      model:
 #        type: str
 #        value: "yolo26l.pt"
