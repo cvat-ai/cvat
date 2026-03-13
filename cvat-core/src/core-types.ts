@@ -54,6 +54,7 @@ export interface SerializedModel {
     startswith_box_optional?: boolean;
     created_date?: string;
     updated_date?: string;
+    is_promptable?: boolean;
 }
 
 export interface UpdateStatusData {

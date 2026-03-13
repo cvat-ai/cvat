@@ -12,6 +12,7 @@ import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
 import Tag from 'antd/lib/tag';
+import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 import { ArrowRightOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 
@@ -43,6 +44,7 @@ export interface AnnotateTaskRequestBody {
     cleanup: boolean;
     conv_mask_to_poly: boolean;
     threshold?: number;
+    prompt?: string;
 }
 
 function convertMappingToServer(mapping: FullMapping): ServerMapping {
@@ -75,12 +77,14 @@ function DetectorRunner(props: Props): JSX.Element {
     const [mapping, setMapping] = useState<FullMapping>([]);
     const [convertMasksToPolygons, setConvertMasksToPolygons] = useState<boolean>(false);
     const [detectorThreshold, setDetectorThreshold] = useState<number | null>(null);
+    const [prompt, setPrompt] = useState<string>('');
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
 
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
     const isReId = model?.kind === ModelKind.REID;
+    const isPromptable = model?.isPromptable ?? false;
     const convertMasks2PolygonVisible = isDetector &&
         [LabelType.ANY, LabelType.MASK].includes(model.returnType);
 
@@ -205,6 +209,24 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Row>
                 </div>
             )}
+            {isDetector && isPromptable && (
+                <div className='cvat-detector-runner-prompt-wrapper'>
+                    <Row align='middle' justify='start'>
+                        <Col span={24}>
+                            <Text>Text Prompt</Text>
+                        </Col>
+                        <Col span={24}>
+                            <Input
+                                placeholder='Enter text prompt for the detector'
+                                value={prompt}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                    setPrompt(e.target.value);
+                                }}
+                            />
+                        </Col>
+                    </Row>
+                </div>
+            )}
             {isReId ? (
                 <div>
                     <Row align='middle' justify='start'>
@@ -264,6 +286,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                     cleanup,
                                     conv_mask_to_poly: convertMasksToPolygons,
                                     ...(detectorThreshold !== null ? { threshold: detectorThreshold } : {}),
+                                    ...(prompt ? { prompt } : {}),
                                 };
 
                                 runInference(model, body);
