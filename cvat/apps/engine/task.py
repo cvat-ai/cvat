@@ -1366,10 +1366,13 @@ def _create_audio_dataset_descriptors(
 ) -> tuple[models.Audio, int]:
     size = extractor.length
 
+    cover_image = extractor.get_preview_image()
+
     audio = models.Audio(
         data=db_data,
         path=audio_path.relative_to(upload_dir),
         sampling_rate=extractor.sampling_rate,
+        has_cover_image=cover_image is not None,
     )
 
     return audio, size
@@ -1820,7 +1823,10 @@ def create_thread(
 
         # Creating huge chunks is not recommended for smooth playback
         # Smaller chunks occupy ~5-15% more, but encoded faster
-        db_data.chunk_size = min(db_data.chunk_size, 2 * 60 * extractor.FRAME_RATE)
+        # Using too small chunks can lead to encoding failures
+        db_data.chunk_size = max(
+            min(db_data.chunk_size, 2 * 60 * extractor.FRAME_RATE), 5 * extractor.FRAME_RATE
+        )
     else:
         assert False, f"Unexpected media type {db_task.media_type}"
 
@@ -1898,7 +1904,7 @@ def create_thread(
         not (is_data_in_cloud and is_backup_restore)
         and not db_task.media_type == models.MediaType.AUDIO
     ):  # TODO: support audio
-        TaskFrameProvider(db_task=db_task).get_preview()
+        TaskFrameProvider(db_task=db_task).get_preview_image()
 
 
 def _create_static_chunks(

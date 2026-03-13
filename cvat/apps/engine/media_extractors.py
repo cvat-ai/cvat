@@ -29,6 +29,7 @@ import av.codec
 import av.container
 import av.video.stream
 import numpy as np
+import PIL.Image
 from natsort import os_sorted
 from PIL import Image, ImageFile, ImageOps
 from pyunpack import Archive
@@ -603,6 +604,7 @@ class VideoReader(IMediaReader):
             step=step,
             start=start,
             stop=stop,
+            dimension=DimensionType.DIM_2D,
         )
 
         (source_path,) = source_paths
@@ -1030,6 +1032,18 @@ class AudioReader(IMediaReader):
                 pass
 
         return self._frame_count
+
+    def get_preview_image(self) -> PIL.Image.Image | None:
+        with self._source_path.open("rb") as source_file, av.open(source_file, "r") as container:
+            if not container.streams.video:
+                return None
+
+            frame = None
+            for frame in VideoReader([self._source_path]):
+                break
+
+            if frame is not None:
+                return frame[0].to_image()
 
 
 class IChunkWriter(ABC):
