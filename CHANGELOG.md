@@ -16,6 +16,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.59.1'></a>
+## \[2.59.1\] - 2026-03-09
+
+### Fixed
+
+- Missing escaping for string fields in `.csv` export
+  (<https://github.com/cvat-ai/cvat/pull/10345>)
+
+<a id='changelog-2.59.0'></a>
+## \[2.59.0\] - 2026-03-06
+
+### Added
+
+- Docker compose to run SAM2 agent
+  (<https://github.com/cvat-ai/cvat/pull/10272>)
+
+- Added support for using cloud storage as backing storage for local tasks
+  (<https://github.com/cvat-ai/cvat/pull/10282>)
+
+- Feature to download Projects, Tasks, Jobs list as `.csv` table
+  (<https://github.com/cvat-ai/cvat/pull/10312>)
+
+### Changed
+
+- Changed the display of parent and replica jobs to a flat list.
+  For convenience, jobs are now marked with “parent” and “replica” tags.
+  By default, replica jobs are hidden using a filter, but they can be shown if needed.
+  (<https://github.com/cvat-ai/cvat/pull/10217>)
+
+- Consistent behaviour for Tab/Shift+Tab on 2D and 3D workspace
+  (<https://github.com/cvat-ai/cvat/pull/10299>)
+
+- Filters on a task page and on jobs page now create a new browser history entry,
+  enabling Back/Forward navigation between filter states.
+  (<https://github.com/cvat-ai/cvat/pull/10217>)
+
+- Models page is now always visible on UI, regardless of whether the serverless module is installed
+  (<https://github.com/cvat-ai/cvat/pull/10333>)
+
+### Deprecated
+
+- \[Server API\] `GET api/jobs` and `GET api/jobs/{id}/` responses:
+  - `consensus_replicas` - deprecated in favor of the new `replicas_count` field,
+  (<https://github.com/cvat-ai/cvat/pull/10217>)
+
+- Property `MODELS` from `/api/server/plugins` now unused on client and soon will be removed from the response
+  (<https://github.com/cvat-ai/cvat/pull/10333>)
+
+### Removed
+
+- Field `consensus_replicas`, used for consensus-based tasks, removed from task backups.
+  Backups created before this change can still be imported, but newer backups will require
+  a recent CVAT version.
+  (<https://github.com/cvat-ai/cvat/pull/10294>)
+
+- Deprecated properties `GIT_INTEGRATION` and `PREDICT` from `/api/server/plugins`
+  (<https://github.com/cvat-ai/cvat/pull/10333>)
+
+### Fixed
+
+- The `POST /api/task/<id>/data` endpoint now responds with a correct
+  `Location` header when invoked without a trailing slash
+  (<https://github.com/cvat-ai/cvat/pull/10266>)
+
+- Ground truth annotations are not locked in review mode of regular jobs
+  (<https://github.com/cvat-ai/cvat/pull/10273>)
+
+<a id='changelog-2.58.0'></a>
+## \[2.58.0\] - 2026-02-23
+
+### Added
+
+- Added a new annotation filter to find rotated bounding boxes and ellipses.
+  (<https://github.com/cvat-ai/cvat/pull/10291>)
+
+### Fixed
+
+- Memory leaks on 3D canvas because of unreleased GL resources
+  (<https://github.com/cvat-ai/cvat/pull/10268>)
+
+<a id='changelog-2.57.0'></a>
+## \[2.57.0\] - 2026-02-17
+
+### Added
+
+- Ability to change zOrder of an object one by one, using corresponding buttons in object menu or shortcuts
+  (<https://github.com/cvat-ai/cvat/pull/9063>)
+
+### Fixed
+
+- Creation of extra "create" and "update" events on children summary field
+  updates and inclusion of invalid data in the events for these fields
+  (<https://github.com/cvat-ai/cvat/pull/10257>)
+
+- Fixed a crash on fetching an empty related image chunk
+  of a task in cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10277>)
+
+- Fixed creating a task from an attached file share in the case where
+  at least one image and one directory are specified
+  (<https://github.com/cvat-ai/cvat/pull/10281>)
+
 <a id='changelog-2.56.1'></a>
 ## \[2.56.1\] - 2026-02-03
 

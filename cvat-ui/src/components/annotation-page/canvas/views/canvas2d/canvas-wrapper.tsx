@@ -24,6 +24,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     AnnotationConflict, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
+import { scrollAndExpandState } from 'utils/objects-sidebar';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
@@ -808,18 +809,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasShapeClicked = (e: any): void => {
         const { onExpandObject } = this.props;
-        const { clientID, parentID } = e.detail.state;
-        let sidebarItem = null;
-        if (Number.isInteger(parentID)) {
-            sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-element-${clientID}`);
-        } else {
-            sidebarItem = window.document.getElementById(`cvat-objects-sidebar-state-item-${clientID}`);
-        }
-
-        if (sidebarItem) {
-            sidebarItem.scrollIntoView();
-        }
-        onExpandObject(e.detail.state);
+        scrollAndExpandState(e.detail.state, onExpandObject);
     };
 
     private onCanvasShapeDeactivated = (e: any): void => {
@@ -1150,13 +1140,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     if (nextState.objectType !== ObjectType.TAG && canvasInstance) {
                         canvasInstance.focus(nextState.clientID, focusedObjectPadding);
                     }
-                    const sidebarItem = window.document.getElementById(
-                        `cvat-objects-sidebar-state-item-${nextState.clientID}`,
-                    );
-                    if (sidebarItem) {
-                        sidebarItem.scrollIntoView();
-                    }
-                    onExpandObject(nextState);
+                    scrollAndExpandState(nextState, onExpandObject);
                 }
             }
         };

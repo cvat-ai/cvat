@@ -16,6 +16,7 @@ import { Config } from '@react-awesome-query-builder/antd';
 import jsonLogic from 'json-logic-js';
 
 import { ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import { generateCSV, downloadCSV as triggerCSVDownload } from 'utils/csv-writer';
 import CVATTooltip from './cvat-tooltip';
 
 type Props = TableProps & {
@@ -81,43 +82,21 @@ function CVATTable(props: Props): JSX.Element {
     const [filteredDataSource, setFilteredDataSource] = useState<typeof dataSource>(dataSource);
     const [modifiedColumns, setModifiedColumns] = useState<NonNullable<typeof columns>>([]);
 
-    const downloadCSV = useCallback(() => {
+    const handleDownloadCSV = useCallback(() => {
         if (csvExport && columns) {
-            // function to export as CSV properly handling commas, line breaks and double quotes in both header/fields
-            const header = columns
-                .filter((column: any) => !!column.dataIndex).map((column: any) => ({
+            // Extract columns with dataIndex for CSV export
+            const csvColumns = columns
+                .filter((column: any) => !!column.dataIndex)
+                .map((column: any) => ({
                     title: stringifyDataIndex(column.dataIndex),
-                    dataIndex: column.dataIndex as string | string[],
+                    accessor: (dataItem: any) => getValueFromDataItem<string>(dataItem, column.dataIndex),
                 }));
 
-            let csv = '';
-            if (filteredDataSource) {
-                const rows = filteredDataSource
-                    .map((dataItem) => header.map(({ dataIndex }) => {
-                        const value = getValueFromDataItem<string>(dataItem, dataIndex);
-                        if (typeof value === 'string') {
-                            return `"${value.replace(/"/g, '""')}"`;
-                        }
-                        return value;
-                    }).join(','));
-                csv = `${header.map((column) => column.title).join(',')}\n${rows.join('\n')}`;
-            } else {
-                csv = header.map((column) => column.title).join(',');
-            }
+            const csvContent = generateCSV([...(filteredDataSource || [])], csvColumns);
 
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-
-            try {
-                a.setAttribute('href', url);
-                a.setAttribute('download', csvExport.filename);
-                a.click();
-            } finally {
-                a.remove();
-            }
+            triggerCSVDownload(csvContent, csvExport.filename);
         }
-    }, [csvExport?.filename, filteredDataSource, columns]);
+    }, [csvExport, filteredDataSource, columns]);
 
     useEffect(() => {
         if (columns) {
@@ -186,7 +165,7 @@ function CVATTable(props: Props): JSX.Element {
                                 className='cvat-table-export-csv-button'
                                 type='link'
                                 icon={<DownloadOutlined />}
-                                onClick={downloadCSV}
+                                onClick={handleDownloadCSV}
                             />
                         ) }
                     </Space>

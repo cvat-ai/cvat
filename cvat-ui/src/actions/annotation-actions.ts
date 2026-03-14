@@ -38,6 +38,7 @@ interface AnnotationsParameters {
     jobInstance: Job;
     groundTruthInstance: Job | null;
     validationLayout: JobValidationLayout | null;
+    workspace: Workspace;
 }
 
 const cvat = getCore();
@@ -59,6 +60,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
                 frame: { number: frame },
             },
             job: { instance: jobInstance, groundTruthInfo: { groundTruthInstance, validationLayout } },
+            workspace,
         },
         settings: {
             workspace: { showAllInterpolationTracks },
@@ -74,6 +76,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
         validationLayout,
         showAllInterpolationTracks,
         showGroundTruth,
+        workspace,
     };
 }
 
@@ -270,6 +273,41 @@ function wrapAnnotationsInGTJob(states: ObjectState[]): ObjectState[] {
     }));
 }
 
+const userUnlockedInReviewMode = new Set<number>();
+
+function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
+    return states.map((state: ObjectState) => new Proxy(state, {
+        get(target, prop) {
+            if (prop === 'lock') {
+                if (target.isGroundTruth) {
+                    return true;
+                }
+
+                // If user explicitly unlocked this object, return actual lock state
+                if (userUnlockedInReviewMode.has(target.clientID as number)) {
+                    return Reflect.get(target, prop);
+                }
+                return true;
+            }
+            return Reflect.get(target, prop);
+        },
+        set(target, prop, value) {
+            if (prop === 'lock') {
+                if (target.isGroundTruth) {
+                    return Reflect.set(target, prop, true);
+                }
+
+                if (!value) {
+                    userUnlockedInReviewMode.add(target.clientID as number);
+                } else {
+                    userUnlockedInReviewMode.delete(target.clientID as number);
+                }
+            }
+            return Reflect.set(target, prop, value);
+        },
+    }));
+}
+
 async function fetchAnnotations(predefinedFrame?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
     history: CombinedState['annotation']['annotations']['history'];
@@ -279,6 +317,7 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     const {
         filters, frame, showAllInterpolationTracks, jobInstance,
         showGroundTruth, groundTruthInstance, validationLayout,
+        workspace,
     } = receiveAnnotationsParameters();
 
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
@@ -300,6 +339,10 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
         }
     }
 
+    if (workspace === Workspace.REVIEW) {
+        states = wrapStatesForReviewMode(states);
+    }
+
     const history = await jobInstance.actions.get();
 
     return {
@@ -308,33 +351,6 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
         minZ,
         maxZ,
     };
-}
-
-const userUnlockedInReviewMode = new Set<number>();
-
-function wrapStatesForReviewMode(states: ObjectState[]): ObjectState[] {
-    return states.map((state: ObjectState) => new Proxy(state, {
-        get(target, prop) {
-            if (prop === 'lock') {
-                // If user explicitly unlocked this object, return actual lock state
-                if (userUnlockedInReviewMode.has(target.clientID as number)) {
-                    return Reflect.get(target, prop);
-                }
-                return target.isGroundTruth ? Reflect.get(target, prop) : true;
-            }
-            return Reflect.get(target, prop);
-        },
-        set(target, prop, value) {
-            if (prop === 'lock') {
-                if (!value && !target.isGroundTruth) {
-                    userUnlockedInReviewMode.add(target.clientID as number);
-                } else if (value === true) {
-                    userUnlockedInReviewMode.delete(target.clientID as number);
-                }
-            }
-            return Reflect.set(target, prop, value);
-        },
-    }));
 }
 
 export function fetchAnnotationsAsync(): ThunkAction {
@@ -771,12 +787,8 @@ export function changeFrameAsync(
                 states, maxZ, minZ, history,
             } = await fetchAnnotations(toFrame);
 
-            // Wrap states with Proxy in review mode
-            let finalStates = states;
             if (state.annotation.workspace === Workspace.REVIEW) {
-                // Clear user unlocks when changing frame since we're showing different objects
                 userUnlockedInReviewMode.clear();
-                finalStates = wrapStatesForReviewMode(states);
             }
 
             dispatch({
@@ -786,7 +798,7 @@ export function changeFrameAsync(
                     data,
                     filename: data.filename,
                     relatedFiles: data.relatedFiles,
-                    states: finalStates,
+                    states,
                     history,
                     minZ,
                     maxZ,
@@ -1167,8 +1179,7 @@ export function updateActiveControl(activeControl: ActiveControl): AnyAction {
 
 export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
-        const { jobInstance } = receiveAnnotationsParameters();
-
+        const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
             if (statesToUpdate.some((state: any): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
@@ -1180,6 +1191,10 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
 
             if (jobInstance.type === JobType.GROUND_TRUTH) {
                 states = wrapAnnotationsInGTJob(states);
+            }
+
+            if (workspace === Workspace.REVIEW) {
+                states = wrapStatesForReviewMode(states);
             }
 
             const needToUpdateAll = states
@@ -1501,7 +1516,7 @@ export function pasteShapeAsync(): ThunkAction {
 export function interactWithCanvas(
     activeInteractor: MLModel | OpenCVTool,
     activeLabelID: number,
-    activeInteractorParameters: MLModel['params']['canvas'],
+    activeInteractorParameters: CombinedState['annotation']['drawing']['activeInteractorParameters'],
 ): AnyAction {
     return {
         type: AnnotationActionTypes.INTERACT_WITH_CANVAS,
@@ -1537,18 +1552,11 @@ export function repeatDrawShapeAsync(): ThunkAction {
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor && activeInteractorParameters && activeLabelID && canvasInstance instanceof Canvas) {
             if (activeInteractor.kind.includes('tracker')) {
-                canvasInstance.interact({
-                    enabled: true,
-                    shapeType: 'rectangle',
-                });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID, {}));
+                canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
+                dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
                 dispatch(switchToolsBlockerState({ buttonVisible: false }));
             } else {
-                canvasInstance.interact({
-                    enabled: true,
-                    shapeType: 'points',
-                    ...activeInteractorParameters,
-                });
+                canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
                 dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
             }
 
@@ -1593,7 +1601,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(activeShapeType),
-                skeletonSVG: activeShapeType === ShapeType.SKELETON ? activeLabel.structure.svg : undefined,
+                skeletonSVG: activeShapeType === ShapeType.SKELETON ? activeLabel.structure!.svg : undefined,
             });
         }
     };
