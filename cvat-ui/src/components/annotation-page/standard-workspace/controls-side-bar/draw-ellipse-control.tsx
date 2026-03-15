@@ -10,6 +10,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { EllipseIcon } from 'icons';
 import { ShapeType } from 'cvat-core-wrapper';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 import withVisibilityHandling from './handle-popover-visibility';
 
@@ -22,6 +23,7 @@ export interface Props {
 const CustomPopover = withVisibilityHandling(Popover, 'draw-ellipse');
 function DrawEllipseControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
+    const tooltip = isDrawing ? 'Draw an ellipse' : 'Draw an ellipse (shape or track)';
     const dynamicPopoverProps = isDrawing ? {
         overlayStyle: {
             display: 'none',
@@ -46,7 +48,9 @@ function DrawEllipseControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.ELLIPSE} />}
         >
-            <Icon {...dynamicIconProps} component={EllipseIcon} />
+            <CVATTooltip title={tooltip} placement='right'>
+                <Icon {...dynamicIconProps} component={EllipseIcon} />
+            </CVATTooltip>
         </CustomPopover>
     );
 }

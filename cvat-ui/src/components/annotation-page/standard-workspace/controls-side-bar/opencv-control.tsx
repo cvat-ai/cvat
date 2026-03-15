@@ -591,7 +591,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         }
                     }}
                 >
-                    <Icon {...dynamicIconProps} component={OpenCVIcon} />
+                    <CVATTooltip title='OpenCV tools' placement='right'>
+                        <Icon {...dynamicIconProps} component={OpenCVIcon} />
+                    </CVATTooltip>
                 </CustomPopover>
                 {isActivated ? (
                     <ApproximationAccuracy
