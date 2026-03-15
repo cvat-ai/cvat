@@ -4,11 +4,14 @@
 
 import logging
 import os
+from subprocess import PIPE, STDOUT, Popen
+from time import monotonic, sleep
 
 from infra.config import RuntimeInfraConfig
+from infra.db_restore import PsycopgDatabaseRestorer
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.debug.host_debug import maybe_wait_for_vscode_attach
-from infra.system_utils import kubectl_cp, run_command
+from infra.system_utils import kubectl_cp, pick_free_port, run_command
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +46,6 @@ def kube_exec_cvat(command: list[str] | str):
     return run_command(_command, logger=logger)[0]
 
 
-def kube_exec_cvat_db(command):
-    pod_name = kube_get_db_pod_name()
-    run_command(["kubectl", "exec", pod_name, "--"] + command, logger=logger)
-
-
 def kube_exec_redis_inmem(command):
     pod_name = kube_get_redis_inmem_pod_name()
     return run_command(["kubectl", "exec", pod_name, "--"] + command, logger=logger)[0]
@@ -72,6 +70,12 @@ class KubeInstance(InfraInstance):
     exec_cvat = staticmethod(kube_exec_cvat)
     exec_redis_inmem = staticmethod(kube_exec_redis_inmem)
 
+    def __init__(self, session, deps):
+        super().__init__(session, deps)
+        self._db_restorer: PsycopgDatabaseRestorer | None = None
+        self._db_port_forward_proc: Popen | None = None
+        self._db_forward_port: int | None = None
+
     @classmethod
     def can_handle_config(cls, config) -> bool:
         return config.getoption("--platform") == "kube"
@@ -91,30 +95,19 @@ class KubeInstance(InfraInstance):
 
         self.restore_cvat_data()
         server_pod_name = kube_get_server_pod_name()
-        db_pod_name = kube_get_db_pod_name()
-        kubectl_cp(self.deps.cvat_db_dir / "restore.sql", f"{db_pod_name}:/tmp/restore.sql", logger=logger)
         kubectl_cp(self.deps.cvat_db_dir / "data.json", f"{server_pod_name}:/tmp/data.json", logger=logger)
 
         infra_health.wait_for_services()
         self.exec_cvat(["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"])
-        kube_exec_cvat_db(
-            [
-                "/bin/sh",
-                "-c",
-                "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql",
-            ]
-        )
+        self._get_db_restorer().restore_from_template(source_db="cvat", target_db="test_db")
 
         maybe_wait_for_vscode_attach(self.session, cvat_root_dir=self.deps.cvat_root_dir)
 
     def restore_db(self) -> None:
-        kube_exec_cvat_db(
-            [
-                "/bin/sh",
-                "-c",
-                "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql",
-            ]
-        )
+        self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")
+
+    def finish(self) -> None:
+        self._close_db_restorer()
 
     def restore_cvat_data(self) -> None:
         pod_name = kube_get_server_pod_name()
@@ -144,6 +137,87 @@ class KubeInstance(InfraInstance):
     def restore_redis_ondisk(self) -> None:
         kube_exec_redis_ondisk(
             ["sh", "-c", 'REDISCLI_AUTH="${CVAT_REDIS_ONDISK_PASSWORD}" redis-cli -e -p 6666 flushall']
+        )
+
+    def _close_db_restorer(self) -> None:
+        if self._db_restorer is not None:
+            self._db_restorer.close()
+            self._db_restorer = None
+
+        if self._db_port_forward_proc is None:
+            return
+
+        if self._db_port_forward_proc.poll() is None:
+            self._db_port_forward_proc.terminate()
+            try:
+                self._db_port_forward_proc.wait(timeout=5)
+            except BaseException:
+                self._db_port_forward_proc.kill()
+                self._db_port_forward_proc.wait(timeout=5)
+
+        self._db_port_forward_proc = None
+        self._db_forward_port = None
+
+    def _start_db_port_forward(self) -> int:
+        if self._db_port_forward_proc is not None and self._db_forward_port is not None:
+            if self._db_port_forward_proc.poll() is None:
+                return self._db_forward_port
+            self._close_db_restorer()
+
+        local_port = pick_free_port(15432, set(), logger=logger)
+        db_pod_name = kube_get_db_pod_name()
+        self._db_port_forward_proc = Popen(  # nosec
+            [
+                "kubectl",
+                "port-forward",
+                f"pod/{db_pod_name}",
+                f"{local_port}:5432",
+            ],
+            stdout=PIPE,
+            stderr=STDOUT,
+            text=True,
+        )
+        self._db_forward_port = local_port
+        os.environ["CVAT_TEST_DB_PORT"] = str(local_port)
+        return local_port
+
+    def _get_db_restorer(self) -> PsycopgDatabaseRestorer:
+        if self._db_restorer is not None:
+            return self._db_restorer
+
+        local_port = self._start_db_port_forward()
+        deadline = monotonic() + 20
+        last_error = ""
+
+        while monotonic() < deadline:
+            proc = self._db_port_forward_proc
+            if proc is None:
+                break
+            rc = proc.poll()
+            if rc is not None:
+                output = proc.stdout.read() if proc.stdout else ""
+                raise RuntimeError(
+                    "kubectl port-forward for PostgreSQL exited unexpectedly "
+                    f"with code {rc}. Output:\n{output}"
+                )
+
+            try:
+                self._db_restorer = PsycopgDatabaseRestorer(
+                    host="127.0.0.1",
+                    port=local_port,
+                    user="postgres",
+                    password="cvat_postgresql_postgres",
+                    postgres_db="postgres",
+                    connect_timeout_s=1,
+                )
+                return self._db_restorer
+            except BaseException as ex:
+                last_error = str(ex)
+                sleep(0.2)
+
+        raise RuntimeError(
+            "Failed to initialize psycopg PostgreSQL restorer for kubernetes "
+            f"within timeout. Last error: {last_error}"
         )
 
 

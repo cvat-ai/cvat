@@ -28,6 +28,7 @@ class InfraMode(str, Enum):
     AUTO = "auto"
     UP = "up"
     DOWN = "down"
+    RESTORE_DB = "restore-db"
     REUSE = "reuse"
 
     def __str__(self) -> str:
@@ -127,6 +128,11 @@ class ProjectInfraConfig:
     def host_logs_port(self) -> int:
         state = self.load_state() or {}
         return int(state.get("logs_port", 8090))
+
+    @property
+    def host_db_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("db_port", 15432))
 
     def prefixed_container_name(self, container: str) -> str:
         return f"{self.project_name}_{container}_1"

@@ -30,7 +30,7 @@ the server calling REST API directly (as it done by users).
    ```shell
    pip install -r ./tests/python/requirements.txt
    ```
-1. Version precheck is strict by default (except explicit `--infra down`):
+1. Version precheck is strict by default (except explicit `--infra down|restore-db`):
    - installed `cvat-sdk` and `cvat-cli` major.minor must match repository versions
    - if server is reachable, `/api/server/about` major.minor must match repository SDK version
    - otherwise on local platform, fallback check uses `cvat/server:${CVAT_VERSION:-dev}` major.minor
@@ -62,7 +62,12 @@ which are used by containers for the testing system.
 
   # Stop and remove the project infrastructure
   pytest ./tests/python --run-prefix p1 down
+
+  # Restore DB from test assets and refresh test_db snapshot
+  pytest ./tests/python --run-prefix p1 restore-db
   ```
+
+  `restore-db` is a single-instance maintenance command and is not supported with `--parallel`.
 
 - Parallel lanes:
 
@@ -98,6 +103,7 @@ which are used by containers for the testing system.
   ```shell
   pytest ./tests/python --run-prefix p1 up
   pytest ./tests/python --run-prefix p1 down
+  pytest ./tests/python --run-prefix p1 restore-db
   ```
 
 - Defaults:
@@ -181,14 +187,7 @@ Assets directory has two parts:
   successful restoring of test db
   - `cvat_data.tar.bz2` --- archive with data volumes;
   - `data.json` --- file required for DB restoring.
-    Contains all information about test db;
-  - `restore.sql` --- SQL script for creating copy of database and
-  killing connection for `cvat` database.
-  Script should be run with variable declaration:
-  ```
-  # create database <new> with template <existing>
-  psql -U root -d postgres -v from=<existing> -v to=<new> restore.sql
-  ```
+    Contains all information about test db.
 - `*.json` files --- these file contains all necessary data for getting
   expected results from HTTP responses
 
@@ -240,12 +239,10 @@ Assets directory has two parts:
    python3 tests/python/shared/utils/dump_objects.py
    ```
 
-1. If your test infrastructure has been corrupted and you have errors during db restoring.
-   You should to create (or recreate) `cvat` database:
+1. If your test infrastructure has been corrupted and you have DB restore errors,
+   reset DB state from test assets:
    ```
-   docker exec test_cvat_db_1 dropdb --if-exists cvat
-   docker exec test_cvat_db_1 createdb cvat
-   docker exec test_cvat_server_1 python manage.py migrate
+   pytest tests/python --run-prefix test restore-db
    ```
 
 1. Perform migrate when some relation does not exists. Example of error message:
@@ -257,14 +254,8 @@ Assets directory has two parts:
    docker exec test_cvat_server_1 python manage.py migrate
    ```
 
-1. If for some reason you need to recreate cvat database, but using `dropdb`
-   you have error message:
+1. If you get errors related to active DB connections or partial DB state,
+   do not run manual SQL commands. Use:
    ```
-   ERROR:  database "cvat" is being accessed by other users
-   DETAIL:  There are 1 other session(s) using the database.
-   ```
-   In this case you should terminate all existent connections for cvat database,
-   you can perform it with command:
-   ```
-   docker exec test_cvat_db_1 psql -U root -d postgres -v from=cvat_server -v to=test_db -f restore.sql
+   pytest tests/python --run-prefix test restore-db
    ```

@@ -111,6 +111,8 @@ class ParallelInstance(InfraInstance):
             raise pytest.UsageError(
                 "--parallel does not support --rebuild/--cleanup/--dumpdb/--vscode/--container-debug in parent mode"
             )
+        if infra_mode == InfraMode.RESTORE_DB:
+            raise pytest.UsageError("--infra=restore-db is not supported with --parallel")
 
         if infra_mode in {InfraMode.UP, InfraMode.DOWN}:
             profiles = _default_lane_profiles_for_count(parallel_count)
@@ -139,6 +141,7 @@ class ParallelPlugin(InfraPlugin):
         # Internal-only per-lane port overrides passed by the parallel parent process.
         group._addoption("--test-http-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
         group._addoption("--test-logs-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
+        group._addoption("--test-db-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
         group._addoption("--test-minio-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
         group._addoption(
             "--test-minio-console-port", action="store", default=None, type=int, help=argparse.SUPPRESS
@@ -565,7 +568,7 @@ def run_parallel_lanes(
         "--parallel",
         "--run-prefix",
     )
-    base_args = [arg for arg in base_args if arg not in {"up", "down"}]
+    base_args = [arg for arg in base_args if arg not in {"up", "down", "restore-db"}]
     is_collect_only = any(arg in {"--collect-only", "--co"} for arg in base_args)
     if is_collect_only:
         return 0
@@ -583,6 +586,7 @@ def run_parallel_lanes(
             {
                 "http_port": pick_free_port(18080, used_ports, logger=logger),
                 "logs_port": pick_free_port(18090, used_ports, logger=logger),
+                "db_port": pick_free_port(15432, used_ports, logger=logger),
                 "minio_port": pick_free_port(19000, used_ports, logger=logger),
                 "minio_console_port": pick_free_port(19001, used_ports, logger=logger),
             }
@@ -870,6 +874,7 @@ def run_parallel_lanes(
                     f"--run-prefix={project_name}",
                     f"--test-http-port={ports['http_port']}",
                     f"--test-logs-port={ports['logs_port']}",
+                    f"--test-db-port={ports['db_port']}",
                     f"--test-minio-port={ports['minio_port']}",
                     f"--test-minio-console-port={ports['minio_console_port']}",
                     f"--parallel-events-file={lane_events_path}",
@@ -1116,6 +1121,7 @@ def run_parallel_infra_mode(
                 saved_ports = {
                     "http_port": int(state["http_port"]),
                     "logs_port": int(state["logs_port"]),
+                    "db_port": int(state["db_port"]),
                     "minio_port": int(state["minio_port"]),
                     "minio_console_port": int(state["minio_console_port"]),
                 }
@@ -1126,6 +1132,7 @@ def run_parallel_infra_mode(
             saved_ports = {
                 "http_port": pick_free_port(18080, used_ports, logger=logger),
                 "logs_port": pick_free_port(18090, used_ports, logger=logger),
+                "db_port": pick_free_port(15432, used_ports, logger=logger),
                 "minio_port": pick_free_port(19000, used_ports, logger=logger),
                 "minio_console_port": pick_free_port(19001, used_ports, logger=logger),
             }
@@ -1203,6 +1210,7 @@ def run_parallel_infra_mode(
             f"--infra={infra_mode}",
             f"--test-http-port={ports['http_port']}",
             f"--test-logs-port={ports['logs_port']}",
+            f"--test-db-port={ports['db_port']}",
             f"--test-minio-port={ports['minio_port']}",
             f"--test-minio-console-port={ports['minio_console_port']}",
         ]

@@ -49,7 +49,7 @@ def add_infra_options(parser):
         choices=RuntimeInfraConfig.get_infra_modes(),
         help=(
             "Infrastructure mode: auto (default behavior), up (start services and exit), "
-            "down (stop services and exit)."
+            "down (stop services and exit), restore-db (restore DB from test assets and exit)."
         ),
     )
     group._addoption(

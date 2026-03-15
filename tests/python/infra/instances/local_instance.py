@@ -15,6 +15,7 @@ from infra.config import (
     InfraMode,
     RuntimeInfraConfig,
 )
+from infra.db_restore import PsycopgDatabaseRestorer
 from infra.debug import (
     DEFAULT_DEBUG_PORT_BASE,
     DEBUG_SERVICE_TO_CONTAINER,
@@ -152,6 +153,7 @@ def _configure_runtime_env(
     # tests/docker-compose.minio.yml uses these compose envs for host bindings.
     os.environ["CVAT_TEST_MINIO_PORT"] = str(port_config["minio_port"])
     os.environ["CVAT_TEST_MINIO_CONSOLE_PORT"] = str(port_config["minio_console_port"])
+    os.environ["CVAT_TEST_DB_PORT"] = str(port_config["db_port"])
 
     # config.py can be imported before session_start (e.g. by conftest),
     # so refresh module-level constants to the current runtime values.
@@ -190,6 +192,7 @@ def preconfigure_local_runtime_env(config) -> None:
         default_project_name=RuntimeInfraConfig.get_default_project_name(),
         test_http_port=config.getoption("test_http_port"),
         test_logs_port=config.getoption("test_logs_port"),
+        test_db_port=config.getoption("test_db_port"),
         test_minio_port=config.getoption("test_minio_port"),
         test_minio_console_port=config.getoption("test_minio_console_port"),
     )
@@ -221,6 +224,7 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
         default_project_name=RuntimeInfraConfig.get_default_project_name(),
         test_http_port=config.getoption("test_http_port"),
         test_logs_port=config.getoption("test_logs_port"),
+        test_db_port=config.getoption("test_db_port"),
         test_minio_port=config.getoption("test_minio_port"),
         test_minio_console_port=config.getoption("test_minio_console_port"),
     )
@@ -339,6 +343,11 @@ def profile_services_ready(project_name: str, profile: str) -> bool:
     return all(f"{project_name}_{service}_1" in containers for service in required)
 
 
+def project_db_port_ready(project_name: str, expected_host_port: int) -> bool:
+    service_ports = project_service_port_map(project_name).get("cvat_db", {})
+    return int(service_ports.get(5432, -1)) == expected_host_port
+
+
 def dump_db(*, prefixed_container_name, cvat_db_dir: Path) -> None:
     if prefixed_container_name("cvat_server") not in running_containers():
         pytest.exit("CVAT is not running")
@@ -397,6 +406,7 @@ def resolve_port_config(
     default_project_name: str,
     test_http_port: int | None = None,
     test_logs_port: int | None = None,
+    test_db_port: int | None = None,
     test_minio_port: int | None = None,
     test_minio_console_port: int | None = None,
 ) -> dict:
@@ -406,6 +416,7 @@ def resolve_port_config(
         return {
             "http_port": int(test_http_port if test_http_port is not None else state.get("http_port", 8080)),
             "logs_port": int(test_logs_port if test_logs_port is not None else state.get("logs_port", 8090)),
+            "db_port": int(test_db_port if test_db_port is not None else state.get("db_port", 15432)),
             "minio_port": int(test_minio_port if test_minio_port is not None else state.get("minio_port", 9000)),
             "minio_console_port": int(
                 test_minio_console_port
@@ -430,6 +441,9 @@ def resolve_port_config(
             "logs_port": int(test_logs_port)
             if test_logs_port is not None
             else int(traefik_ports.get(8090, state.get("logs_port", 18090))),
+            "db_port": int(test_db_port)
+            if test_db_port is not None
+            else int(running_service_ports.get("cvat_db", {}).get(5432, state.get("db_port", 15432))),
             "minio_port": int(test_minio_port)
             if test_minio_port is not None
             else int(minio_ports.get(9000, state.get("minio_port", 19000))),
@@ -456,6 +470,9 @@ def resolve_port_config(
         "logs_port": int(test_logs_port)
         if test_logs_port is not None
         else _state_port("logs_port", 18090, used_ports),
+        "db_port": int(test_db_port)
+        if test_db_port is not None
+        else _state_port("db_port", 15432, used_ports),
         "minio_port": int(test_minio_port)
         if test_minio_port is not None
         else _state_port("minio_port", 19000, used_ports),
@@ -623,6 +640,10 @@ def _create_compose_files(
                     service_env["TRAEFIK_PROVIDERS_DOCKER_CONSTRAINTS"] = (
                         f"Label(`com.docker.compose.project`,`{project_cfg.project_name}`)"
                     )
+                if service_name == "cvat_db":
+                    service_config["ports"] = [
+                        f"{project_cfg.host_db_port}:5432",
+                    ]
 
                 apply_compose_debug(
                     service_name, service_config, is_dev=is_dev_compose, debug_state=debug_state
@@ -704,9 +725,31 @@ class LocalInstance(InfraInstance):
     exec_cvat = staticmethod(local_exec_cvat)
     exec_redis_inmem = staticmethod(local_exec_redis_inmem)
 
+    def __init__(self, session, deps):
+        super().__init__(session, deps)
+        self._db_restorer: PsycopgDatabaseRestorer | None = None
+
     @classmethod
     def can_handle_config(cls, config) -> bool:
         return config.getoption("--platform") == "local"
+
+    def _close_db_restorer(self) -> None:
+        if self._db_restorer is None:
+            return
+        self._db_restorer.close()
+        self._db_restorer = None
+
+    def _get_db_restorer(self) -> PsycopgDatabaseRestorer:
+        if self._db_restorer is None:
+            project_cfg = RuntimeInfraConfig.get_project_config()
+            self._db_restorer = PsycopgDatabaseRestorer(
+                host="127.0.0.1",
+                port=project_cfg.host_db_port,
+                user="root",
+                postgres_db="postgres",
+            )
+
+        return self._db_restorer
 
     @staticmethod
     def collect_code_coverage_from_containers() -> None:
@@ -754,6 +797,19 @@ class LocalInstance(InfraInstance):
         dc_files = self._build_local_dc_files(project_cfg)
         container_name_files = project_cfg.generated_compose_files
 
+        def restore_databases_from_assets() -> None:
+            self.restore_cvat_data()
+            docker_cp(
+                self.deps.cvat_db_dir / "data.json",
+                f"{prefixed_name('cvat_server')}:/tmp/data.json",
+            )
+            infra_health.wait_for_services(self.deps.waiting_time)
+            self.exec_cvat(
+                ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+            )
+            self._get_db_restorer().restore_from_template(source_db="cvat", target_db="test_db")
+            infra_health.wait_for_auth_login_ready()
+
         def set_auto_started(value: bool) -> None:
             state = project_cfg.load_state() or {}
             state["auto_started"] = value
@@ -796,6 +852,7 @@ class LocalInstance(InfraInstance):
             pytest.exit("CVAT images have been rebuilt", returncode=0)
 
         if infra_mode == InfraMode.DOWN:
+            self._close_db_restorer()
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
@@ -816,6 +873,22 @@ class LocalInstance(InfraInstance):
                 project_name,
                 RuntimeInfraConfig.get_infra_profile(),
             )
+            self._close_db_restorer()
+            stop_services(
+                project_name=project_name,
+                dc_files=dc_files,
+                project_directory=self.deps.cvat_root_dir,
+            )
+            project_running = False
+        elif (
+            project_running
+            and not project_db_port_ready(project_name, project_cfg.host_db_port)
+        ):
+            logger.warning(
+                "Project '%s' is running but PostgreSQL host port mapping is missing/outdated; recreating stack",
+                project_name,
+            )
+            self._close_db_restorer()
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
@@ -836,6 +909,18 @@ class LocalInstance(InfraInstance):
             infra_health.wait_for_auth_login_ready()
             pytest.exit("All necessary containers have been created and started.", returncode=0)
 
+        if infra_mode == InfraMode.RESTORE_DB:
+            if not project_running:
+                start_services(
+                    project_name=project_name,
+                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                    dc_files=dc_files,
+                    rebuild=bool(rebuild),
+                    project_directory=self.deps.cvat_root_dir,
+                )
+            restore_databases_from_assets()
+            pytest.exit("CVAT database has been restored from test assets.", returncode=0)
+
         if infra_mode == InfraMode.AUTO:
             # In auto mode, tear down only stacks that this session had to start.
             set_auto_started(not project_running)
@@ -849,21 +934,7 @@ class LocalInstance(InfraInstance):
                 project_directory=self.deps.cvat_root_dir,
             )
 
-        self.restore_cvat_data()
-        docker_cp(
-            self.deps.cvat_db_dir / "restore.sql",
-            f"{prefixed_name('cvat_db')}:/tmp/restore.sql",
-        )
-        docker_cp(
-            self.deps.cvat_db_dir / "data.json",
-            f"{prefixed_name('cvat_server')}:/tmp/data.json",
-        )
-        infra_health.wait_for_services(self.deps.waiting_time)
-        self.exec_cvat(["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"])
-        local_exec(
-            "cvat_db", "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
-        )
-        infra_health.wait_for_auth_login_ready()
+        restore_databases_from_assets()
 
     def start(self) -> None:
         config = self.config
@@ -895,6 +966,8 @@ class LocalInstance(InfraInstance):
         if self.config.getoption("--collect-only"):
             return
 
+        self._close_db_restorer()
+
         if os.environ.get("COVERAGE_PROCESS_START"):
             self.collect_code_coverage_from_containers()
 
@@ -917,10 +990,7 @@ class LocalInstance(InfraInstance):
         )
 
     def restore_db(self) -> None:
-        local_exec(
-            "cvat_db",
-            "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql",
-        )
+        self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")
 
     def restore_cvat_data(self) -> None:
         project_cfg = RuntimeInfraConfig.get_project_config()

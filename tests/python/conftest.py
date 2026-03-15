@@ -56,11 +56,11 @@ def pytest_runtestloop(session):
 def pytest_sessionstart(session) -> None:
     config = session.config
 
-    # Support legacy positional control commands (`up`/`down`) while keeping `--infra` as source of truth.
+    # Support positional control commands while keeping `--infra` as source of truth.
     infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
     if infra_mode == InfraMode.AUTO:
         args = list(config.args)
-        for candidate in (str(InfraMode.UP), str(InfraMode.DOWN)):
+        for candidate in (str(InfraMode.UP), str(InfraMode.DOWN), str(InfraMode.RESTORE_DB)):
             if candidate in args:
                 args.remove(candidate)
                 config.args[:] = args
@@ -74,21 +74,26 @@ def pytest_sessionstart(session) -> None:
     dumpdb = bool(config.getoption("--dumpdb"))
     collect_only = bool(config.getoption("--collect-only"))
     platform = str(config.getoption("--platform"))
-    if collect_only and any((rebuild, cleanup, dumpdb, infra_mode in {InfraMode.UP, InfraMode.DOWN})):
+    parallel = config.getoption("--parallel")
+    if collect_only and any(
+        (rebuild, cleanup, dumpdb, infra_mode in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB})
+    ):
         raise pytest.UsageError(
-            "--collect-only is not compatible with --rebuild/--cleanup/--dumpdb/--infra=up/down"
+            "--collect-only is not compatible with --rebuild/--cleanup/--dumpdb/--infra=up/down/restore-db"
         )
     if platform == "kube" and any((rebuild, cleanup, dumpdb, infra_mode != InfraMode.AUTO)):
         raise pytest.UsageError(
             "--platform=kube is not compatible with --rebuild/--cleanup/--dumpdb/--infra"
         )
+    if infra_mode == InfraMode.RESTORE_DB and parallel is not None:
+        raise pytest.UsageError("--infra=restore-db is not supported with --parallel")
 
     if config.getoption("--container-debug-wait") and not config.getoption("--container-debug"):
         raise pytest.UsageError("--container-debug-wait requires --container-debug with at least one service")
 
     should_run_version_check = (
         not collect_only
-        and infra_mode != InfraMode.DOWN
+        and infra_mode not in {InfraMode.DOWN, InfraMode.RESTORE_DB}
         and not any((rebuild, cleanup, dumpdb))
         and not bool(config.getoption("--parallel-child"))
         and not bool(config.getoption("--skip-version-check"))

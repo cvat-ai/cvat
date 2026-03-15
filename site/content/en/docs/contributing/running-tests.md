@@ -76,6 +76,9 @@ pytest ./tests/python --run-prefix p1
 
 # Stop and remove that stack
 pytest ./tests/python --run-prefix p1 --infra down
+
+# Restore DB from test assets and refresh test_db snapshot
+pytest ./tests/python --run-prefix p1 --infra restore-db
 ```
 
 You can also use shorthand aliases:
@@ -83,7 +86,10 @@ You can also use shorthand aliases:
 ```bash
 pytest ./tests/python --run-prefix p1 up
 pytest ./tests/python --run-prefix p1 down
+pytest ./tests/python --run-prefix p1 restore-db
 ```
+
+`restore-db` is single-instance only and is not supported with `--parallel`.
 
 To run against an externally managed CVAT instance:
 
