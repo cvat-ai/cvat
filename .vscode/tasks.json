@@ -33,6 +33,24 @@
                   "endsPattern": "compiled"
                 }
             }
+        },
+        {
+            "label": "docker: up workers",
+            "type": "shell",
+            "command": "./dev/cvat-debug.sh up-workers",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "docker: restart server",
+            "type": "shell",
+            "command": "./dev/cvat-debug.sh restart-server",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
         }
     ]
 }
