@@ -5,16 +5,11 @@
 import pytest
 from infra import options as infra_options
 from infra.config import (
-    CVAT_DB_DIR,
-    CVAT_ROOT_DIR,
-    DEFAULT_INFRA_PROFILE,
     InfraMode,
-    PROFILE_DC_FILES,
-    RUNTIME_ROOT_DIR,
-    logger,
-    parse_infra_mode,
+    RuntimeInfraConfig,
 )
 from infra.instances import InfraInstance, InstanceConfig
+from infra.profiler import RuntimeProfilerPlugin
 from infra.version_check import run_sanity_version_check
 
 # Register fixture modules explicitly.
@@ -26,8 +21,14 @@ pytest_plugins = [
 
 
 def pytest_configure(config) -> None:
+    RuntimeInfraConfig.initialize(config)
+
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.configure(config)
+
+    plugin_name = "cvat_runtime_profiler"
+    if config.pluginmanager.get_plugin(plugin_name) is None:
+        config.pluginmanager.register(RuntimeProfilerPlugin(config), plugin_name)
 
 
 def pytest_addoption(parser):
@@ -36,7 +37,11 @@ def pytest_addoption(parser):
 
 
 def pytest_report_header(config):
-    return f"CVAT pytest runtime directory: {RUNTIME_ROOT_DIR}"
+    return (
+        f"CVAT pytest runtime directory: {RuntimeInfraConfig.get_runtime_root_dir()}\n"
+        f"CVAT pytest run id: {RuntimeInfraConfig.get_run_id()}\n"
+        f"CVAT pytest run artifacts: {RuntimeInfraConfig.get_run_dir()}"
+    )
 
 
 def pytest_runtestloop(session):
@@ -52,14 +57,14 @@ def pytest_sessionstart(session) -> None:
     config = session.config
 
     # Support legacy positional control commands (`up`/`down`) while keeping `--infra` as source of truth.
-    infra_mode = parse_infra_mode(config.getoption("--infra"))
+    infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
     if infra_mode == InfraMode.AUTO:
         args = list(config.args)
         for candidate in (str(InfraMode.UP), str(InfraMode.DOWN)):
             if candidate in args:
                 args.remove(candidate)
                 config.args[:] = args
-                infra_mode = parse_infra_mode(candidate)
+                infra_mode = RuntimeInfraConfig.parse_infra_mode(candidate)
                 break
 
     setattr(config, "_cvat_infra_mode", infra_mode)
@@ -89,16 +94,17 @@ def pytest_sessionstart(session) -> None:
         and not bool(config.getoption("--skip-version-check"))
     )
     if should_run_version_check:
-        run_sanity_version_check(cvat_root_dir=CVAT_ROOT_DIR, platform=platform)
+        run_sanity_version_check(
+            cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=platform
+        )
 
     instance_config = InstanceConfig(
-        cvat_root_dir=CVAT_ROOT_DIR,
-        cvat_db_dir=CVAT_DB_DIR,
+        cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(),
+        cvat_db_dir=RuntimeInfraConfig.get_cvat_db_dir(),
         waiting_time=300,
         extra_dc_files=None,
-        default_infra_profile=DEFAULT_INFRA_PROFILE,
-        profile_dc_files=PROFILE_DC_FILES,
-        logger=logger,
+        default_infra_profile=RuntimeInfraConfig.get_default_infra_profile(),
+        profile_dc_files=RuntimeInfraConfig.get_profile_dc_files(),
     )
     instance = InfraInstance.create(session, instance_config)
     setattr(config, "_cvat_infra_instance", instance)

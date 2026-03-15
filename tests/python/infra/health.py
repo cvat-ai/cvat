@@ -2,14 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
 import os
 from http import HTTPStatus
 from time import sleep
 
-from infra.config import (
-    get_server_url as _get_server_url,
-    logger,
-)
+from infra.config import RuntimeInfraConfig
+
+logger = logging.getLogger(__name__)
 
 
 def wait_for_services(num_secs: int = 300) -> None:
@@ -18,7 +18,7 @@ def wait_for_services(num_secs: int = 300) -> None:
     for i in range(num_secs):
         logger.debug("waiting for the server to load ... (%s)", i)
         try:
-            response = requests.get(_get_server_url("api/server/health/", format="json"))
+            response = requests.get(RuntimeInfraConfig.get_server_url("api/server/health/", format="json"))
             statuses = response.json()
             logger.debug("server status: \n%s", statuses)
             if response.status_code == HTTPStatus.OK:
@@ -35,7 +35,7 @@ def wait_for_services(num_secs: int = 300) -> None:
 def wait_for_auth_login_ready(num_secs: int = 180) -> None:
     import requests
 
-    login_url = _get_server_url("api/auth/login")
+    login_url = RuntimeInfraConfig.get_server_url("api/auth/login")
     payload = {
         "username": "admin2",
         "password": os.environ.get("CVAT_TEST_USER_PASS", "!Q@W#E$R"),

@@ -2,28 +2,31 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
 import json
 import sys
 import argparse
 import signal
+import math
 from collections import defaultdict, deque
 from hashlib import sha1
 from pathlib import Path
 from subprocess import STDOUT, Popen
 from time import monotonic
 from time import sleep
-from typing import Callable
 
 import pytest
 from _pytest.reports import TestReport
 
-from infra.config import InfraMode, project_config, run_prefix_from_config
+from infra.config import InfraMode, RuntimeInfraConfig
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.parsing import parse_debug_services
-from infra.system_utils import pick_free_port, run_command
+from infra.system_utils import pick_free_port
 
 PROFILE_ORDER = {"core": 0, "extended": 1, "full": 2}
-_DYNAMIC_CHUNK_SIZE = 40
+_MIN_BATCH_SIZE = 100
+_MAX_BATCH_SIZE = 200
+logger = logging.getLogger(__name__)
 
 
 def add_parallel_pytest_options(group) -> None:
@@ -77,7 +80,7 @@ class ParallelInstance(InfraInstance):
             parallel_count = parse_parallel_count(config.getoption("--parallel"))
         except ValueError:
             return True
-        return parallel_count > 1
+        return parallel_count > 0
 
     @classmethod
     def can_handle(cls, session, deps) -> bool:
@@ -92,7 +95,7 @@ class ParallelInstance(InfraInstance):
             parallel_count = parse_parallel_count(config.getoption("--parallel"))
         except ValueError as ex:
             raise pytest.UsageError(str(ex)) from ex
-        if parallel_count <= 1:
+        if parallel_count <= 0:
             return
         if config.getoption("--platform") != "local":
             raise pytest.UsageError(
@@ -115,12 +118,8 @@ class ParallelInstance(InfraInstance):
                 run_parallel_infra_mode(
                     session=self.session,
                     profiles=profiles,
-                    run_prefix=run_prefix_from_config(config),
+                    run_prefix=RuntimeInfraConfig.get_run_prefix_from_config(config),
                     infra_mode=infra_mode,
-                    pick_free_port=lambda start, used_ports: pick_free_port(
-                        start, used_ports, logger=self.deps.logger
-                    ),
-                    runtime_dir_for_project=lambda name: project_config(name).runtime_dir,
                 )
             except Exception as ex:
                 pytest.exit(str(ex), returncode=1)
@@ -147,6 +146,7 @@ class ParallelPlugin(InfraPlugin):
 
     @classmethod
     def configure(cls, config) -> None:
+        configure_parallel_batch_args(config)
         configure_parallel_plugin(config)
 
     @classmethod
@@ -165,7 +165,7 @@ class ParallelPlugin(InfraPlugin):
             parallel_count = parse_parallel_count(config.getoption("--parallel"))
         except ValueError:
             return True
-        return parallel_count > 1
+        return parallel_count > 0
 
 ParallelInstance.plugin_class = ParallelPlugin
 
@@ -175,6 +175,41 @@ def _emit_parallel_event(events_file: str, payload: dict) -> None:
         return
     with open(events_file, "a") as f:
         f.write(json.dumps(payload) + "\n")
+
+
+def _load_batch_nodeids(batch_file: str) -> list[str]:
+    with open(batch_file, "r") as f:
+        return [line.strip() for line in f if line.strip()]
+
+
+def _nodeid_cli_arg(nodeid: str) -> str:
+    path, sep, rest = nodeid.partition("::")
+    path_candidate = Path(path)
+    if not path_candidate.exists():
+        prefixed = Path("tests/python") / path
+        if prefixed.exists():
+            path = prefixed.as_posix()
+    return path + (f"{sep}{rest}" if sep else "")
+
+
+def configure_parallel_batch_args(config) -> None:
+    if not config.getoption("--parallel-child"):
+        return
+
+    batch_file = str(config.getoption("--parallel-batch-file") or "")
+    if not batch_file:
+        return
+
+    try:
+        batch_nodeids = _load_batch_nodeids(batch_file)
+    except OSError as ex:
+        raise pytest.UsageError(f"Cannot read --parallel-batch-file={batch_file!r}: {ex}") from ex
+
+    if not batch_nodeids:
+        raise pytest.UsageError(f"--parallel-batch-file={batch_file!r} is empty")
+
+    setattr(config, "_cvat_parallel_allowed_nodeids", tuple(batch_nodeids))
+    config.args[:] = [_nodeid_cli_arg(nodeid) for nodeid in batch_nodeids]
 
 
 def _required_infra_profile(item) -> str:
@@ -284,22 +319,11 @@ def _stable_shuffle_key(value: str, seed: int | None) -> tuple[str, str]:
     return sha1(material.encode("utf-8")).hexdigest(), value
 
 
-def _nodeid_cli_arg(nodeid: str) -> str:
-    path, sep, rest = nodeid.partition("::")
-    path_candidate = Path(path)
-    if not path_candidate.exists():
-        prefixed = Path("tests/python") / path
-        if prefixed.exists():
-            path = prefixed.as_posix()
-    return path + (f"{sep}{rest}" if sep else "")
-
-
-def _build_dynamic_chunks(
+def _build_dynamic_groups(
     items,
     *,
     shuffle_seed: int | None,
-    chunk_size: int = _DYNAMIC_CHUNK_SIZE,
-) -> dict[str, list[list[str]]]:
+):
     grouped_items: dict[tuple[str, str], list[str]] = defaultdict(list)
     for item in items:
         required = _required_infra_profile(item)
@@ -310,26 +334,15 @@ def _build_dynamic_chunks(
     for grouped_key in grouped_items:
         grouped_by_required[grouped_key[1]].append(grouped_key)
 
-    result: dict[str, list[list[str]]] = {k: [] for k in PROFILE_ORDER}
+    result: dict[str, deque[list[str]]] = {k: deque() for k in PROFILE_ORDER}
     required_order = ("full", "extended", "core")
     for required in required_order:
         ordered_groups = sorted(
             grouped_by_required[required],
             key=lambda key: _stable_shuffle_key(f"{key[0]}|{key[1]}", shuffle_seed),
         )
-        chunk: list[str] = []
-        chunk_len = 0
         for grouped_key in ordered_groups:
-            group_nodeids = grouped_items[grouped_key]
-            group_len = len(group_nodeids)
-            if chunk and chunk_len + group_len > chunk_size:
-                result[required].append(chunk)
-                chunk = []
-                chunk_len = 0
-            chunk.extend(group_nodeids)
-            chunk_len += group_len
-        if chunk:
-            result[required].append(chunk)
+            result[required].append(grouped_items[grouped_key])
 
     return result
 
@@ -393,11 +406,14 @@ def modify_collection_for_parallel(config, items) -> None:
         required_by_nodeid[item.nodeid] = required
 
     if is_parallel_child and batch_file:
-        try:
-            with open(batch_file, "r") as f:
-                allowed_nodeids = {line.strip() for line in f if line.strip()}
-        except OSError as ex:
-            raise pytest.UsageError(f"Cannot read --parallel-batch-file={batch_file!r}: {ex}") from ex
+        batch_nodeids = getattr(config, "_cvat_parallel_allowed_nodeids", None)
+        if batch_nodeids is None:
+            try:
+                batch_nodeids = _load_batch_nodeids(batch_file)
+            except OSError as ex:
+                raise pytest.UsageError(f"Cannot read --parallel-batch-file={batch_file!r}: {ex}") from ex
+
+        allowed_nodeids = set(batch_nodeids)
 
         for item in items:
             required = required_by_nodeid[item.nodeid]
@@ -446,14 +462,12 @@ def modify_collection_for_parallel(config, items) -> None:
 
 
 def parallel_runtestloop(session):
-    from infra.config import logger
-
     config = session.config
     try:
         parallel_count = parse_parallel_count(config.getoption("--parallel"))
     except ValueError as ex:
         raise pytest.UsageError(str(ex)) from ex
-    if parallel_count <= 1 or config.getoption("--parallel-child"):
+    if parallel_count <= 0 or config.getoption("--parallel-child"):
         return None
 
     profiles = _planned_lane_profiles(session.items, parallel_count)
@@ -462,10 +476,7 @@ def parallel_runtestloop(session):
         config=config,
         session=session,
         profiles=profiles,
-        run_prefix=run_prefix_from_config(config),
-        pick_free_port=lambda start, used_ports: pick_free_port(start, used_ports, logger=logger),
-        runtime_dir_for_project=lambda project_name: project_config(project_name).runtime_dir,
-        run_command=lambda cmd, capture: run_command(cmd, capture_output=capture, logger=logger),
+        run_prefix=RuntimeInfraConfig.get_run_prefix_from_config(config),
     )
     return True
 
@@ -494,6 +505,9 @@ def stream_parallel_events(
     collected_by_lane: dict[int, int],
     deselected_by_lane: dict[int, int],
     collection_seen_lanes: set[int],
+    collection_events_by_lane: dict[int, int],
+    collection_items_by_lane: dict[int, int],
+    deselected_items_by_lane: dict[int, int],
 ) -> list[dict]:
     new_events: list[dict] = []
     for lane_idx, event_path in lane_event_paths.items():
@@ -512,8 +526,13 @@ def stream_parallel_events(
                     continue
 
                 if event.get("type") == "collected":
-                    collected_by_lane[lane_idx] = int(event.get("selected", 0))
-                    deselected_by_lane[lane_idx] = int(event.get("deselected", 0))
+                    selected = int(event.get("selected", 0))
+                    deselected = int(event.get("deselected", 0))
+                    collected_by_lane[lane_idx] = selected
+                    deselected_by_lane[lane_idx] = deselected
+                    collection_events_by_lane[lane_idx] += 1
+                    collection_items_by_lane[lane_idx] += selected + deselected
+                    deselected_items_by_lane[lane_idx] += deselected
                     collection_seen_lanes.add(lane_idx)
                     continue
 
@@ -530,9 +549,6 @@ def run_parallel_lanes(
     session,
     profiles: list[str],
     run_prefix: str,
-    pick_free_port: Callable[[int, set[int]], int],
-    runtime_dir_for_project: Callable[[str], Path],
-    run_command: Callable[[list[str], bool], tuple[str, str]],
 ) -> int:
     terminal_reporter = config.pluginmanager.getplugin("terminalreporter")
 
@@ -543,6 +559,7 @@ def run_parallel_lanes(
             print(line)
 
     base_args = list(config.invocation_params.args)
+    tests_root_arg = str(config.rootdir)
     base_args = without_option(
         base_args,
         "--parallel",
@@ -553,30 +570,21 @@ def run_parallel_lanes(
     if is_collect_only:
         return 0
     shuffle_seed = config.getoption("--parallel-shuffle-seed")
-    dynamic_chunk_size = max(
-        1,
-        min(
-            _DYNAMIC_CHUNK_SIZE,
-            (len(session.items) + (len(profiles) * 4) - 1) // max(1, len(profiles) * 4),
-        ),
-    )
-    chunk_queues = {
-        required: deque(chunks)
-        for required, chunks in _build_dynamic_chunks(
-            session.items, shuffle_seed=shuffle_seed, chunk_size=dynamic_chunk_size
-        ).items()
-    }
+    grouped_queues = _build_dynamic_groups(session.items, shuffle_seed=shuffle_seed)
     total_selected = len(session.items)
+    run_artifacts_dir = RuntimeInfraConfig.get_run_dir()
+    lane_artifacts_dir = run_artifacts_dir / "lanes"
+    lane_artifacts_dir.mkdir(parents=True, exist_ok=True)
 
     used_ports: set[int] = set()
     lane_ports: list[dict[str, int]] = []
     for _ in profiles:
         lane_ports.append(
             {
-                "http_port": pick_free_port(18080, used_ports),
-                "logs_port": pick_free_port(18090, used_ports),
-                "minio_port": pick_free_port(19000, used_ports),
-                "minio_console_port": pick_free_port(19001, used_ports),
+                "http_port": pick_free_port(18080, used_ports, logger=logger),
+                "logs_port": pick_free_port(18090, used_ports, logger=logger),
+                "minio_port": pick_free_port(19000, used_ports, logger=logger),
+                "minio_console_port": pick_free_port(19001, used_ports, logger=logger),
             }
         )
 
@@ -584,10 +592,9 @@ def run_parallel_lanes(
     for lane_idx, profile in enumerate(profiles, start=1):
         project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
         ports = lane_ports[lane_idx - 1]
-        lane_runtime_dir = runtime_dir_for_project(project_name)
-        lane_runtime_dir.mkdir(parents=True, exist_ok=True)
-        lane_log_path = lane_runtime_dir / f"parallel-lane-{lane_idx}-{profile}.log"
-        lane_events_path = lane_runtime_dir / f"parallel-lane-{lane_idx}-{profile}.events.jsonl"
+        RuntimeInfraConfig.write_context_for_project(project_name)
+        lane_log_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-{profile}.log"
+        lane_events_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-{profile}.events.jsonl"
         lane_events_path.unlink(missing_ok=True)
         lane_log = open(lane_log_path, "w")
 
@@ -620,6 +627,9 @@ def run_parallel_lanes(
     lane_positions = {lane_idx: 0 for lane_idx in lane_event_paths}
     collected_by_lane = {lane_idx: 0 for lane_idx in lane_event_paths}
     deselected_by_lane = {lane_idx: 0 for lane_idx in lane_event_paths}
+    collection_events_by_lane = {lane_idx: 0 for lane_idx in lane_event_paths}
+    collection_items_by_lane = {lane_idx: 0 for lane_idx in lane_event_paths}
+    deselected_items_by_lane = {lane_idx: 0 for lane_idx in lane_event_paths}
     collection_seen_lanes: set[int] = set()
     lane_done_at: dict[int, float | None] = {lane_idx: None for lane_idx in lane_event_paths}
     outcome_counts = {"passed": 0, "failed": 0, "skipped": 0, "error": 0}
@@ -627,6 +637,36 @@ def run_parallel_lanes(
     started_nodeids_by_lane: dict[int, set[str]] = {
         lane_idx: set() for lane_idx in lane_event_paths
     }
+    required_remaining = {
+        required: sum(len(group) for group in grouped_queues[required]) for required in PROFILE_ORDER
+    }
+    required_total = dict(required_remaining)
+    eligible_lanes_total = {
+        required: sum(1 for lane_profile in profiles if lane_supports(required, lane_profile))
+        for required in PROFILE_ORDER
+    }
+    core_only_uniform_mode = (
+        required_total["core"] > 0
+        and required_total["extended"] == 0
+        and required_total["full"] == 0
+        and all(profile == "core" for profile in profiles)
+    )
+    core_uniform_target = (
+        math.ceil(required_total["core"] / max(1, eligible_lanes_total["core"]))
+        if core_only_uniform_mode
+        else 0
+    )
+    lane_batch_count = {lane_idx: 0 for lane_idx in lane_event_paths}
+    lane_batch_wall_seconds = {lane_idx: 0.0 for lane_idx in lane_event_paths}
+    lane_active_started_at: dict[int, float | None] = {
+        lane_idx: None for lane_idx in lane_event_paths
+    }
+    lane_report_seconds = {
+        lane_idx: {"setup": 0.0, "call": 0.0, "teardown": 0.0} for lane_idx in lane_event_paths
+    }
+    infra_up_duration = 0.0
+    execution_duration = 0.0
+    infra_down_duration = 0.0
 
     def replay_events(events: list[dict]) -> None:
         for event in events:
@@ -642,6 +682,11 @@ def run_parallel_lanes(
                     started_nodeids_by_lane[lane_idx].add(event["nodeid"])
             elif event_type == "report":
                 report = TestReport._from_json(event["report"])
+                lane_idx = event.get("lane_index")
+                if isinstance(lane_idx, int):
+                    when = str(report.when)
+                    if when in lane_report_seconds[lane_idx]:
+                        lane_report_seconds[lane_idx][when] += float(report.duration or 0.0)
                 if report.outcome == "skipped" and isinstance(report.longrepr, list):
                     report.longrepr = tuple(report.longrepr)
                 if terminal_reporter:
@@ -673,23 +718,74 @@ def run_parallel_lanes(
             return ("extended", "core")
         return ("core",)
 
+    def _active_eligible_lanes(required: str) -> int:
+        return max(
+            1,
+            sum(
+                1
+                for idx, lane_profile in enumerate(profiles, start=1)
+                if lane_done_at[idx] is None and lane_supports(required, lane_profile)
+            ),
+        )
+
+    def _target_chunk_size(required: str) -> int:
+        remaining = required_remaining[required]
+        if remaining <= 0:
+            return 0
+
+        if core_only_uniform_mode and required == "core":
+            return max(1, core_uniform_target)
+
+        total_eligible = eligible_lanes_total[required]
+        if total_eligible <= 1:
+            return remaining
+
+        # Small suites should keep lanes occupied instead of forcing large chunks.
+        if required_total[required] < _MIN_BATCH_SIZE * total_eligible:
+            active_eligible = _active_eligible_lanes(required)
+            return max(40, math.ceil(remaining / active_eligible))
+
+        active_eligible = _active_eligible_lanes(required)
+        completed = required_total[required] - remaining
+        progress = completed / required_total[required] if required_total[required] else 1.0
+
+        # First half: larger chunks (roughly 2 waves of work).
+        if progress < 0.5:
+            target = math.ceil(remaining / max(1, active_eligible * 2))
+            return max(_MIN_BATCH_SIZE, min(_MAX_BATCH_SIZE, target))
+
+        # Tail phase: smaller adaptive chunks to reduce idle stragglers.
+        target = math.ceil(remaining / active_eligible)
+        return max(40, min(140, target))
+
     def claim_chunk(lane_profile: str) -> tuple[str | None, list[str] | None]:
         for required in next_required_order(lane_profile):
-            queue = chunk_queues[required]
-            if queue:
-                return required, queue.popleft()
+            queue = grouped_queues[required]
+            if not queue:
+                continue
+
+            target = _target_chunk_size(required)
+            if target <= 0:
+                continue
+
+            chunk: list[str] = []
+            while queue and (len(chunk) < target or not chunk):
+                chunk.extend(queue.popleft())
+
+            required_remaining[required] -= len(chunk)
+            return required, chunk
         return None, None
 
     try:
+        infra_up_start = monotonic()
         run_parallel_infra_mode(
             session=session,
             profiles=profiles,
             run_prefix=run_prefix,
             infra_mode=InfraMode.UP,
-            pick_free_port=pick_free_port,
-            runtime_dir_for_project=runtime_dir_for_project,
-            report_fn=write_line,
         )
+        infra_up_duration = monotonic() - infra_up_start
+        execution_start = monotonic()
 
         while True:
             new_events = stream_parallel_events(
@@ -698,6 +794,9 @@ def run_parallel_lanes(
                 collected_by_lane,
                 deselected_by_lane,
                 collection_seen_lanes,
+                collection_events_by_lane,
+                collection_items_by_lane,
+                deselected_items_by_lane,
             )
 
             if terminal_reporter:
@@ -709,6 +808,10 @@ def run_parallel_lanes(
                 if proc is not None:
                     rc = proc.poll()
                     if rc is not None:
+                        batch_started = lane_active_started_at[lane_idx]
+                        if batch_started is not None:
+                            lane_batch_wall_seconds[lane_idx] += monotonic() - batch_started
+                            lane_active_started_at[lane_idx] = None
                         mode = lane_active_mode[lane_idx]
                         normalized_rc = 0 if rc == 5 else rc
                         if normalized_rc != 0:
@@ -719,7 +822,7 @@ def run_parallel_lanes(
                         lane_active_mode[lane_idx] = None
                         active_procs[lane_idx] = None
 
-            has_pending_chunks = any(chunk_queues[required] for required in PROFILE_ORDER)
+            has_pending_chunks = any(grouped_queues[required] for required in PROFILE_ORDER)
             for (
                 project_name,
                 lane_idx,
@@ -742,7 +845,7 @@ def run_parallel_lanes(
                 scheduled_by_lane[lane_idx] += len(chunk)
                 batch_counter_by_lane[lane_idx] += 1
                 batch_file = (
-                    runtime_dir_for_project(project_name)
+                    lane_artifacts_dir
                     / f"parallel-lane-{lane_idx}-{profile}-batch-{batch_counter_by_lane[lane_idx]}.txt"
                 )
                 with open(batch_file, "w") as f:
@@ -750,7 +853,6 @@ def run_parallel_lanes(
                         f.write(nodeid)
                         f.write("\n")
 
-                nodeid_paths = sorted({_nodeid_cli_arg(nodeid).split("::", 1)[0] for nodeid in chunk})
                 lane_infra_mode = (
                     InfraMode.AUTO if lane_needs_bootstrap[lane_idx] else InfraMode.REUSE
                 )
@@ -759,6 +861,7 @@ def run_parallel_lanes(
                     "-m",
                     "pytest",
                     "-q",
+                    tests_root_arg,
                     "--platform=local",
                     f"--infra={lane_infra_mode}",
                     "--parallel-child",
@@ -770,10 +873,11 @@ def run_parallel_lanes(
                     f"--test-minio-port={ports['minio_port']}",
                     f"--test-minio-console-port={ports['minio_console_port']}",
                     f"--parallel-events-file={lane_events_path}",
-                    *nodeid_paths,
                 ]
                 active_procs[lane_idx] = Popen(cmd, stdout=lane_log, stderr=STDOUT)  # nosec
                 lane_active_mode[lane_idx] = lane_infra_mode
+                lane_active_started_at[lane_idx] = monotonic()
+                lane_batch_count[lane_idx] += 1
 
             all_lanes_done = all(done is not None for done in lane_done_at.values())
             no_active = all(active_procs[lane_idx] is None for lane_idx in active_procs)
@@ -789,8 +893,12 @@ def run_parallel_lanes(
                 collected_by_lane,
                 deselected_by_lane,
                 collection_seen_lanes,
+                collection_events_by_lane,
+                collection_items_by_lane,
+                deselected_items_by_lane,
             )
         )
+        execution_duration = monotonic() - execution_start
 
         if session is not None:
             failed_reports = outcome_counts["failed"] + outcome_counts["error"]
@@ -835,44 +943,90 @@ def run_parallel_lanes(
             try:
                 # Cleanup should be best-effort and resilient even if user presses Ctrl+C again.
                 signal.signal(signal.SIGINT, signal.SIG_IGN)
-                for project_name, _, _, _, _, _, _ in lane_processes:
-                    try:
-                        run_command(
-                            [
-                                sys.executable,
-                                "-m",
-                                "pytest",
-                                *base_args,
-                                f"--run-prefix={project_name}",
-                                "--infra=down",
-                                "-q",
-                            ],
-                            True,
+                down_start = monotonic()
+                down_processes: list[tuple[str, Path, Popen, object]] = []
+                for project_name, lane_idx, profile, *_ in lane_processes:
+                    down_log_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-{profile}-infra-down.log"
+                    down_log = open(down_log_path, "w")
+                    cmd = [
+                        sys.executable,
+                        "-m",
+                        "pytest",
+                        *base_args,
+                        "--parallel-child",
+                        f"--run-prefix={project_name}",
+                        "--infra=down",
+                        "-q",
+                    ]
+                    down_processes.append(
+                        (
+                            project_name,
+                            down_log_path,
+                            Popen(cmd, stdout=down_log, stderr=STDOUT),  # nosec
+                            down_log,
                         )
+                    )
+
+                for project_name, down_log_path, proc, down_log in down_processes:
+                    try:
+                        rc = proc.wait()
+                        if rc != 0:
+                            write_line(
+                                f"[parallel] failed to stop project {project_name}: rc={rc} log={down_log_path}",
+                                red=True,
+                            )
                     except BaseException as ex:
                         write_line(
                             f"[parallel] failed to stop project {project_name}: {ex}",
                             red=True,
                         )
+                    finally:
+                        down_log.close()
+                infra_down_duration = monotonic() - down_start
             finally:
                 signal.signal(signal.SIGINT, old_sigint_handler)
 
     elapsed = monotonic() - start_ts
     _write_parallel_distribution_debug(
-        runtime_dir_for_project=runtime_dir_for_project,
+        run_artifacts_dir=run_artifacts_dir,
         run_prefix=run_prefix,
         profiles=profiles,
         scheduled_by_lane=scheduled_by_lane,
         started_nodeids_by_lane=started_nodeids_by_lane,
         lane_done_at=lane_done_at,
     )
+    write_line(
+        "[parallel][perf] phase_durations "
+        f"infra_up={infra_up_duration:.1f}s execution={execution_duration:.1f}s "
+        f"infra_down={infra_down_duration:.1f}s total={elapsed:.1f}s"
+    )
+    for _, lane_idx, profile, _, lane_log_path, _, _ in lane_processes:
+        report_setup = lane_report_seconds[lane_idx]["setup"]
+        report_call = lane_report_seconds[lane_idx]["call"]
+        report_teardown = lane_report_seconds[lane_idx]["teardown"]
+        report_total = report_setup + report_call + report_teardown
+        batch_wall = lane_batch_wall_seconds[lane_idx]
+        overhead = max(0.0, batch_wall - report_total)
+        collected_items = collection_items_by_lane[lane_idx]
+        deselected_items = deselected_items_by_lane[lane_idx]
+        coll_events = collection_events_by_lane[lane_idx]
+        avg_collected = (collected_items / coll_events) if coll_events else 0.0
+        deselect_ratio = (deselected_items / collected_items) if collected_items else 0.0
+        write_line(
+            "[parallel][perf] lane "
+            f"{lane_idx} profile={profile} batches={lane_batch_count[lane_idx]} "
+            f"batch_wall={batch_wall:.1f}s report_time={report_total:.1f}s "
+            f"overhead={overhead:.1f}s setup={report_setup:.1f}s call={report_call:.1f}s "
+            f"teardown={report_teardown:.1f}s avg_collected={avg_collected:.1f} "
+            f"deselected_ratio={deselect_ratio:.2f} log={lane_log_path}"
+        )
     write_line(f"[parallel] total elapsed: {elapsed:.1f}s")
     return combined_rc
 
 
 def _write_parallel_distribution_debug(
     *,
-    runtime_dir_for_project,
+    run_artifacts_dir: Path,
     run_prefix: str,
     profiles: list[str],
     scheduled_by_lane: dict[int, int],
@@ -882,12 +1036,7 @@ def _write_parallel_distribution_debug(
     if not profiles:
         return
 
-    lane_dirs = [
-        runtime_dir_for_project(f"{run_prefix}{idx}") if len(profiles) > 1 else runtime_dir_for_project(run_prefix)
-        for idx in range(1, len(profiles) + 1)
-    ]
-    root = lane_dirs[0].parent if lane_dirs else Path(".")
-    out = root / f"parallel-distribution-{run_prefix}.json"
+    out = run_artifacts_dir / f"parallel-distribution-{run_prefix}.json"
 
     done_times = [t for t in lane_done_at.values() if t is not None]
     last_done = max(done_times) if done_times else None
@@ -930,9 +1079,6 @@ def run_parallel_infra_mode(
     profiles: list[str],
     run_prefix: str,
     infra_mode: InfraMode,
-    pick_free_port: Callable[[int, set[int]], int],
-    runtime_dir_for_project: Callable[[str], Path],
-    report_fn: Callable[[str], None] | None = None,
 ) -> None:
     base_args = list(session.config.invocation_params.args)
     base_args = without_option(
@@ -942,13 +1088,22 @@ def run_parallel_infra_mode(
         "--infra",
     )
     base_args = [arg for arg in base_args if arg not in {"up", "down"}]
+    run_artifacts_dir = RuntimeInfraConfig.get_run_dir()
+    terminal_reporter = session.config.pluginmanager.getplugin("terminalreporter")
+
+    def emit(line: str, **markup) -> None:
+        if terminal_reporter:
+            terminal_reporter.write_line(line, **markup)
+        else:
+            print(line)
 
     used_ports: set[int] = set()
     lane_ports: list[dict[str, int]] = []
     mismatch_lanes: list[tuple[int, str, str, str]] = []
     for lane_idx, requested_profile in enumerate(profiles, start=1):
         project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
-        state_file = runtime_dir_for_project(project_name) / "state.json"
+        RuntimeInfraConfig.write_context_for_project(project_name)
+        state_file = RuntimeInfraConfig.get_project_config(project_name).runtime_dir / "state.json"
 
         saved_ports: dict[str, int] | None = None
         saved_profile: str | None = None
@@ -969,10 +1124,10 @@ def run_parallel_infra_mode(
 
         if saved_ports is None:
             saved_ports = {
-                "http_port": pick_free_port(18080, used_ports),
-                "logs_port": pick_free_port(18090, used_ports),
-                "minio_port": pick_free_port(19000, used_ports),
-                "minio_console_port": pick_free_port(19001, used_ports),
+                "http_port": pick_free_port(18080, used_ports, logger=logger),
+                "logs_port": pick_free_port(18090, used_ports, logger=logger),
+                "minio_port": pick_free_port(19000, used_ports, logger=logger),
+                "minio_console_port": pick_free_port(19001, used_ports, logger=logger),
             }
         else:
             used_ports.update(saved_ports.values())
@@ -985,13 +1140,13 @@ def run_parallel_infra_mode(
         ):
             mismatch_lanes.append((lane_idx, project_name, saved_profile, requested_profile))
 
+    lane_artifacts_dir = run_artifacts_dir / "lanes"
+    lane_artifacts_dir.mkdir(parents=True, exist_ok=True)
+
     if mismatch_lanes:
         down_processes: list[tuple[int, str, Path, Popen, object]] = []
-        emit = report_fn or print
         for lane_idx, project_name, _, _ in mismatch_lanes:
-            lane_runtime_dir = runtime_dir_for_project(project_name)
-            lane_runtime_dir.mkdir(parents=True, exist_ok=True)
-            lane_log_path = lane_runtime_dir / f"parallel-lane-{lane_idx}-infra-reconcile-down.log"
+            lane_log_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-infra-reconcile-down.log"
             lane_log = open(lane_log_path, "w")
             down_cmd = [
                 sys.executable,
@@ -1031,15 +1186,11 @@ def run_parallel_infra_mode(
                 f"{details}"
             )
 
-    emit = report_fn or print
-
     lane_processes: list[tuple[int, str, str, Path, Popen, object]] = []
     for lane_idx, profile in enumerate(profiles, start=1):
         project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
         ports = lane_ports[lane_idx - 1]
-        lane_runtime_dir = runtime_dir_for_project(project_name)
-        lane_runtime_dir.mkdir(parents=True, exist_ok=True)
-        lane_log_path = lane_runtime_dir / f"parallel-lane-{lane_idx}-infra-{infra_mode}.log"
+        lane_log_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-infra-{infra_mode}.log"
         lane_log = open(lane_log_path, "w")
         cmd = [
             sys.executable,

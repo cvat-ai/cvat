@@ -2,11 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from infra.config import (
-    DEFAULT_INFRA_MODE,
-    DEFAULT_PROJECT_NAME,
-    INFRA_MODES,
-)
+from infra.config import RuntimeInfraConfig
 
 
 def add_infra_options(parser):
@@ -39,7 +35,7 @@ def add_infra_options(parser):
     group._addoption(
         "--run-prefix",
         action="store",
-        default=DEFAULT_PROJECT_NAME,
+        default=RuntimeInfraConfig.get_default_project_name(),
         help=(
             "Prefix used for a test run identity. "
             "It is used as docker compose project/container prefix and runtime state namespace "
@@ -49,8 +45,8 @@ def add_infra_options(parser):
     group._addoption(
         "--infra",
         action="store",
-        default=DEFAULT_INFRA_MODE,
-        choices=INFRA_MODES,
+        default=RuntimeInfraConfig.get_default_infra_mode(),
+        choices=RuntimeInfraConfig.get_infra_modes(),
         help=(
             "Infrastructure mode: auto (default behavior), up (start services and exit), "
             "down (stop services and exit)."

@@ -2,12 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
 import os
 
-from infra.config import CLICKHOUSE_INIT_SCRIPT, logger, run_prefix_from_config
+from infra.config import RuntimeInfraConfig
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.debug.host_debug import maybe_wait_for_vscode_attach
 from infra.system_utils import kubectl_cp, run_command
+
+logger = logging.getLogger(__name__)
 
 
 def kube_get_pod_name(label_filter):
@@ -84,7 +87,7 @@ class KubeInstance(InfraInstance):
         if config.getoption("--collect-only"):
             return
 
-        os.environ["CVAT_TEST_RUN_PREFIX"] = run_prefix_from_config(config)
+        os.environ["CVAT_TEST_RUN_PREFIX"] = RuntimeInfraConfig.get_run_prefix_from_config(config)
 
         self.restore_cvat_data()
         server_pod_name = kube_get_server_pod_name()
@@ -119,7 +122,7 @@ class KubeInstance(InfraInstance):
         self.exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
     def restore_clickhouse_db(self) -> None:
-        self.exec_cvat(["/bin/sh", "-c", f'python "{CLICKHOUSE_INIT_SCRIPT}" --clear'])
+        self.exec_cvat(["/bin/sh", "-c", f'python "{RuntimeInfraConfig.get_clickhouse_init_script()}" --clear'])
 
     def restore_redis_inmem(self) -> None:
         self.exec_redis_inmem(

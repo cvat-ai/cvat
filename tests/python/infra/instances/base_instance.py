@@ -16,7 +16,6 @@ class InstanceConfig:
     extra_dc_files: Any  # Optional extra docker-compose override files.
     default_infra_profile: Any  # Fallback profile when state/profile is missing.
     profile_dc_files: Any  # Mapping from infra profile to compose overrides.
-    logger: Any  # Shared logger for infra lifecycle diagnostics.
 
 
 class InfraPlugin(ABC):

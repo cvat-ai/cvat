@@ -145,9 +145,9 @@ def run_sanity_version_check(*, cvat_root_dir: Path, platform: str) -> None:
     expected_version = expected_repo_versions(cvat_root_dir)["cvat-sdk"]
     check_python_package_versions(cvat_root_dir)
     try:
-        from infra.config import base_url
+        from infra.config import RuntimeInfraConfig
 
-        about_version = get_server_about_version(base_url())
+        about_version = get_server_about_version(RuntimeInfraConfig.get_base_url())
         check_server_version_major_minor(about_version, expected_version)
         return
     except RuntimeError:

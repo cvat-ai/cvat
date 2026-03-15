@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
 import os
 import re
 from pathlib import Path
@@ -11,15 +12,8 @@ import yaml
 
 import pytest
 from infra.config import (
-    CLICKHOUSE_INIT_SCRIPT,
-    DEFAULT_PROJECT_NAME,
     InfraMode,
-    infra_profile,
-    logger,
-    parse_infra_mode,
-    prefixed_container_name,
-    project_config,
-    run_prefix_from_config,
+    RuntimeInfraConfig,
 )
 from infra.debug import (
     DEFAULT_DEBUG_PORT_BASE,
@@ -31,6 +25,8 @@ from infra.parsing import parse_debug_services
 from infra.system_utils import docker_cp, is_port_free, pick_free_port, run_command
 
 from infra.instances.base_instance import InfraInstance, InfraPlugin
+
+logger = logging.getLogger(__name__)
 
 _COVERED_CONTAINERS = (
     "cvat_server",
@@ -81,8 +77,6 @@ def resolve_debug_port_config(
     project_running: bool,
     running_service_ports: dict[str, dict[int, int]],
     used_ports: set[int],
-    is_port_free,
-    pick_free_port,
 ) -> dict[str, int]:
     if not requested_services:
         return {}
@@ -99,13 +93,13 @@ def resolve_debug_port_config(
             continue
 
         stored_host_port = stored_ports.get(service_name)
-        if isinstance(stored_host_port, int) and (project_running or is_port_free(stored_host_port)):
+        if isinstance(stored_host_port, int) and (project_running or is_port_free(stored_host_port, logger=logger)):
             debug_ports[service_name] = stored_host_port
             used_ports.add(stored_host_port)
             continue
 
         start = debug_port_base + offset
-        debug_ports[service_name] = pick_free_port(start, used_ports)
+        debug_ports[service_name] = pick_free_port(start, used_ports, logger=logger)
 
     return debug_ports
 
@@ -177,8 +171,8 @@ def preconfigure_local_runtime_env(config) -> None:
     This prevents import-time constants from sticking to localhost:8080
     when running with --run-prefix.
     """
-    project_name = run_prefix_from_config(config)
-    infra_mode = parse_infra_mode(config.getoption("--infra"))
+    project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
+    infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
     requested_debug_services = parse_debug_services(config.getoption("--container-debug"))
     debug_port_base = int(config.getoption("--container-debug-port-base"))
     os.environ["CVAT_TEST_INFRA_PROFILE"] = config.getoption("--parallel-lane-profile")
@@ -190,32 +184,21 @@ def preconfigure_local_runtime_env(config) -> None:
         os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         return
 
-    project_cfg = project_config(project_name)
+    project_cfg = RuntimeInfraConfig.get_project_config(project_name)
     port_config = resolve_port_config(
         project_cfg,
-        default_project_name=DEFAULT_PROJECT_NAME,
+        default_project_name=RuntimeInfraConfig.get_default_project_name(),
         test_http_port=config.getoption("test_http_port"),
         test_logs_port=config.getoption("test_logs_port"),
         test_minio_port=config.getoption("test_minio_port"),
         test_minio_console_port=config.getoption("test_minio_console_port"),
-        run_command_fn=lambda cmd, capture=True: run_command(cmd, capture_output=capture, logger=logger),
-        running_containers_fn=lambda: running_containers(
-            lambda cmd, capture=True: run_command(cmd, capture_output=capture, logger=logger)
-        ),
-        logger=logger,
     )
     project_state = project_cfg.load_state() or {}
-    project_running = project_containers_running(
-        project_cfg.project_name,
-        lambda: running_containers(
-            lambda cmd, capture=True: run_command(cmd, capture_output=capture, logger=logger)
-        ),
-    )
-    run_local_command = lambda cmd, capture=True: run_command(cmd, capture_output=capture, logger=logger)
+    project_running = project_containers_running(project_cfg.project_name)
     running_service_ports = (
-        project_service_port_map(project_cfg.project_name, run_local_command) if project_running else {}
+        project_service_port_map(project_cfg.project_name) if project_running else {}
     )
-    used_ports = project_host_ports(project_cfg.project_name, run_local_command)
+    used_ports = project_host_ports(project_cfg.project_name)
     debug_ports = resolve_debug_port_config(
         requested_services=requested_debug_services,
         debug_port_base=debug_port_base,
@@ -223,8 +206,6 @@ def preconfigure_local_runtime_env(config) -> None:
         project_running=project_running,
         running_service_ports=running_service_ports,
         used_ports=used_ports,
-        is_port_free=lambda port: is_port_free(port, logger=logger),
-        pick_free_port=lambda start, used_ports: pick_free_port(start, used_ports, logger=logger),
     )
     setattr(config, "_cvat_debug_services", requested_debug_services)
     setattr(config, "_cvat_debug_ports", debug_ports)
@@ -233,30 +214,25 @@ def preconfigure_local_runtime_env(config) -> None:
 
 def resolve_local_project_context(session) -> tuple[str, dict]:
     config = session.config
-    project_name = run_prefix_from_config(config)
-    project_cfg = project_config(project_name)
-    run_local_command = lambda cmd, capture=True: run_command(cmd, capture_output=capture, logger=logger)
-    running_containers_fn = lambda: running_containers(run_local_command)
+    project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
+    project_cfg = RuntimeInfraConfig.get_project_config(project_name)
     port_config = resolve_port_config(
         project_cfg,
-        default_project_name=DEFAULT_PROJECT_NAME,
+        default_project_name=RuntimeInfraConfig.get_default_project_name(),
         test_http_port=config.getoption("test_http_port"),
         test_logs_port=config.getoption("test_logs_port"),
         test_minio_port=config.getoption("test_minio_port"),
         test_minio_console_port=config.getoption("test_minio_console_port"),
-        run_command_fn=run_local_command,
-        running_containers_fn=running_containers_fn,
-        logger=logger,
     )
     requested_debug_services = parse_debug_services(config.getoption("--container-debug"))
     debug_wait = bool(config.getoption("--container-debug-wait"))
     debug_port_base = int(config.getoption("--container-debug-port-base"))
     project_state = project_cfg.load_state() or {}
-    project_running = project_containers_running(project_cfg.project_name, running_containers_fn)
+    project_running = project_containers_running(project_cfg.project_name)
     running_service_ports = (
-        project_service_port_map(project_cfg.project_name, run_local_command) if project_running else {}
+        project_service_port_map(project_cfg.project_name) if project_running else {}
     )
-    used_ports = project_host_ports(project_cfg.project_name, run_local_command)
+    used_ports = project_host_ports(project_cfg.project_name)
     debug_ports = resolve_debug_port_config(
         requested_services=requested_debug_services,
         debug_port_base=debug_port_base,
@@ -264,8 +240,6 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
         project_running=project_running,
         running_service_ports=running_service_ports,
         used_ports=used_ports,
-        is_port_free=lambda port: is_port_free(port, logger=logger),
-        pick_free_port=lambda start, used_ports: pick_free_port(start, used_ports, logger=logger),
     )
     setattr(config, "_cvat_debug_services", requested_debug_services)
     setattr(config, "_cvat_debug_ports", debug_ports)
@@ -290,26 +264,36 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
 
 def local_exec(container, command, capture_output=True):
     return run_command(
-        f"docker exec -u root {prefixed_container_name(container)} {command}",
+        f"docker exec -u root {RuntimeInfraConfig.get_prefixed_container_name(container)} {command}",
         capture_output=capture_output,
         logger=logger,
     )[0]
 
 
 def local_exec_cvat(command: list[str] | str):
-    base = f"docker exec {prefixed_container_name('cvat_server')}"
+    base = f"docker exec {RuntimeInfraConfig.get_prefixed_container_name('cvat_server')}"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return run_command(_command, logger=logger)[0]
 
 
 def local_exec_redis_inmem(command):
     return run_command(
-        ["docker", "exec", prefixed_container_name("cvat_redis_inmem")] + command, logger=logger
+        ["docker", "exec", RuntimeInfraConfig.get_prefixed_container_name("cvat_redis_inmem")]
+        + command,
+        logger=logger,
     )[0]
 
 
 def local_exec_redis_ondisk(command):
-    run_command(["docker", "exec", prefixed_container_name("cvat_redis_ondisk")] + command, logger=logger)
+    run_command(
+        ["docker", "exec", RuntimeInfraConfig.get_prefixed_container_name("cvat_redis_ondisk")]
+        + command,
+        logger=logger,
+    )
+
+
+def _run_local_command(command, capture=True):
+    return run_command(command, capture_output=capture, logger=logger)
 
 _REDIS_INMEM_KEEP_KEYS = (
     "rq:worker:",
@@ -321,13 +305,13 @@ _REDIS_INMEM_KEEP_KEYS = (
 )
 
 
-def running_containers(run_command_fn) -> list[str]:
-    stdout, _ = run_command_fn("docker ps --format {{.Names}}")
+def running_containers() -> list[str]:
+    stdout, _ = _run_local_command("docker ps --format {{.Names}}")
     return [cn for cn in stdout.split("\n") if cn]
 
 
-def project_containers_running(project_name: str, running_containers_fn) -> bool:
-    containers = set(running_containers_fn())
+def project_containers_running(project_name: str) -> bool:
+    containers = set(running_containers())
     expected = {
         f"{project_name}_cvat_server_1",
         f"{project_name}_cvat_db_1",
@@ -347,18 +331,16 @@ def _profile_required_services(profile: str) -> set[str]:
     return set()
 
 
-def profile_services_ready(
-    project_name: str, profile: str, running_containers_fn
-) -> bool:
+def profile_services_ready(project_name: str, profile: str) -> bool:
     required = _profile_required_services(profile)
     if not required:
         return True
-    containers = set(running_containers_fn())
+    containers = set(running_containers())
     return all(f"{project_name}_{service}_1" in containers for service in required)
 
 
-def dump_db(*, prefixed_container_name, running_containers_fn, cvat_db_dir: Path) -> None:
-    if prefixed_container_name("cvat_server") not in running_containers_fn():
+def dump_db(*, prefixed_container_name, cvat_db_dir: Path) -> None:
+    if prefixed_container_name("cvat_server") not in running_containers():
         pytest.exit("CVAT is not running")
     with open(cvat_db_dir / "data.json", "w") as output:
         try:
@@ -376,9 +358,9 @@ def dump_db(*, prefixed_container_name, running_containers_fn, cvat_db_dir: Path
             pytest.exit("Database dump failed.\n")
 
 
-def project_host_ports(project_name: str, run_command_fn) -> set[int]:
+def project_host_ports(project_name: str) -> set[int]:
     ports: set[int] = set()
-    output, _ = run_command_fn(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"])
+    output, _ = _run_local_command(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"])
     for line in output.splitlines():
         if not line.startswith(f"{project_name}_"):
             continue
@@ -387,9 +369,9 @@ def project_host_ports(project_name: str, run_command_fn) -> set[int]:
     return ports
 
 
-def project_service_port_map(project_name: str, run_command_fn) -> dict[str, dict[int, int]]:
+def project_service_port_map(project_name: str) -> dict[str, dict[int, int]]:
     service_ports: dict[str, dict[int, int]] = {}
-    output, _ = run_command_fn(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"])
+    output, _ = _run_local_command(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"])
     for line in output.splitlines():
         if not line.startswith(f"{project_name}_"):
             continue
@@ -417,9 +399,6 @@ def resolve_port_config(
     test_logs_port: int | None = None,
     test_minio_port: int | None = None,
     test_minio_console_port: int | None = None,
-    run_command_fn,
-    running_containers_fn,
-    logger=None,
 ) -> dict:
     state = project_cfg.load_state() or {}
 
@@ -435,10 +414,10 @@ def resolve_port_config(
             ),
         }
 
-    project_running = project_containers_running(project_cfg.project_name, running_containers_fn)
-    project_ports = project_host_ports(project_cfg.project_name, run_command_fn) if project_running else set()
+    project_running = project_containers_running(project_cfg.project_name)
+    project_ports = project_host_ports(project_cfg.project_name) if project_running else set()
     running_service_ports = (
-        project_service_port_map(project_cfg.project_name, run_command_fn) if project_running else {}
+        project_service_port_map(project_cfg.project_name) if project_running else {}
     )
 
     if project_running:
@@ -507,18 +486,16 @@ def start_services(
     dc_files: list[Path],
     rebuild: bool,
     project_directory: Path,
-    running_containers_fn,
-    run_command_fn,
 ) -> None:
     if project_name == default_project_name and any(
-        [cn in ["cvat_server", "cvat_db"] for cn in running_containers_fn()]
+        [cn in ["cvat_server", "cvat_db"] for cn in running_containers()]
     ):
         pytest.exit(
             "It's looks like you already have running cvat containers. Stop them and try again. "
-            f"List of running containers: {', '.join(running_containers_fn())}"
+            f"List of running containers: {', '.join(running_containers())}"
         )
 
-    run_command_fn(
+    _run_local_command(
         docker_compose(project_name, dc_files, project_directory) + ["up", "-d", *["--build"] * rebuild],
         False,
     )
@@ -529,9 +506,8 @@ def rebuild_services(
     project_name: str,
     dc_files: list[Path],
     project_directory: Path,
-    run_command_fn,
 ) -> None:
-    run_command_fn(
+    _run_local_command(
         docker_compose(project_name, dc_files, project_directory) + ["build"],
         False,
     )
@@ -542,13 +518,12 @@ def stop_services(
     project_name: str,
     dc_files: list[Path],
     project_directory: Path,
-    run_command_fn,
 ) -> None:
-    run_command_fn(
+    _run_local_command(
         docker_compose(project_name, dc_files, project_directory) + ["down", "-v", "--remove-orphans"],
         False,
     )
-    container_ids, _ = run_command_fn(
+    container_ids, _ = _run_local_command(
         [
             "docker",
             "ps",
@@ -559,18 +534,13 @@ def stop_services(
     )
     stale_ids = [container_id for container_id in container_ids.splitlines() if container_id]
     if stale_ids:
-        run_command_fn(["docker", "rm", "-f", *stale_ids], False)
+        _run_local_command(["docker", "rm", "-f", *stale_ids], False)
 
 
 def _create_compose_files(
     container_name_files: list[Path],
     cvat_root_dir: Path,
     project_cfg,
-    *,
-    apply_compose_debug,
-    covered_containers: list[str],
-    server_container: str,
-    worker_utils_container: str,
 ):
     state = project_cfg.load_state() or {}
     debug_state = state.get("debug", {})
@@ -633,11 +603,11 @@ def _create_compose_files(
                 if is_dev_compose:
                     service_config.pop("ports", None)
 
-                if not is_dev_compose and service_name in (server_container, worker_utils_container):
+                if not is_dev_compose and service_name in ("cvat_server", "cvat_worker_utils"):
                     service_env = service_config["environment"]
                     service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
 
-                if not is_dev_compose and service_name in covered_containers:
+                if not is_dev_compose and service_name in _COVERED_CONTAINERS:
                     service_env = service_config["environment"]
                     service_env["COVERAGE_PROCESS_START"] = ".coveragerc"
                     service_config["volumes"].append(
@@ -672,9 +642,8 @@ def stop_project_services_best_effort(
     project_name: str,
     default_infra_profile: str,
     profile_dc_files: dict[str, list[str]],
-    logger,
 ) -> None:
-    project_cfg = project_config(project_name)
+    project_cfg = RuntimeInfraConfig.get_project_config(project_name)
     saved_state = project_cfg.load_state() or {}
     saved_profile = str(saved_state.get("infra_profile") or default_infra_profile)
 
@@ -688,9 +657,6 @@ def stop_project_services_best_effort(
             project_name=project_name,
             dc_files=dc_files,
             project_directory=project_cfg.cvat_root_dir,
-            run_command_fn=lambda cmd, capture=True: run_command(
-                cmd, capture_output=capture, logger=logger
-            ),
         )
     except BaseException:
         logger.warning(
@@ -708,22 +674,29 @@ def cleanup_after_session(
     run_prefix: str,
     profiles: list[str],
     is_parallel_child: bool,
-    stop_project_services_best_effort_fn,
 ) -> None:
     if infra_mode != InfraMode.AUTO:
         return
 
     def should_stop_project(project_name: str) -> bool:
-        state = project_config(project_name).load_state() or {}
+        state = RuntimeInfraConfig.get_project_config(project_name).load_state() or {}
         return bool(state.get("auto_started", False))
 
     if profiles and not is_parallel_child:
         for lane_idx in range(1, len(profiles) + 1):
             project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
             if should_stop_project(project_name):
-                stop_project_services_best_effort_fn(project_name)
+                stop_project_services_best_effort(
+                    project_name=project_name,
+                    default_infra_profile=RuntimeInfraConfig.get_default_infra_profile(),
+                    profile_dc_files=RuntimeInfraConfig.get_profile_dc_files(),
+                )
     elif should_stop_project(run_prefix):
-        stop_project_services_best_effort_fn(run_prefix)
+        stop_project_services_best_effort(
+            project_name=run_prefix,
+            default_infra_profile=RuntimeInfraConfig.get_default_infra_profile(),
+            profile_dc_files=RuntimeInfraConfig.get_profile_dc_files(),
+        )
 
 
 class LocalInstance(InfraInstance):
@@ -736,24 +709,22 @@ class LocalInstance(InfraInstance):
         return config.getoption("--platform") == "local"
 
     @staticmethod
-    def collect_code_coverage_from_containers(
-        *, covered_containers, docker_exec, docker_cp, prefixed_container_name, sleep
-    ) -> None:
-        for container in covered_containers():
+    def collect_code_coverage_from_containers() -> None:
+        for container in _COVERED_CONTAINERS:
             process_command = "python3"
 
             # find process with code coverage
-            pid = docker_exec(container, f"pidof {process_command} -o 1")
+            pid = local_exec(container, f"pidof {process_command} -o 1")
 
             # stop process with code coverage
-            docker_exec(container, f"kill -15 {pid}")
+            local_exec(container, f"kill -15 {pid}")
             sleep(3)
 
             # get code coverage report
-            docker_exec(container, "coverage combine", capture_output=False)
-            docker_exec(container, "coverage json", capture_output=False)
+            local_exec(container, "coverage combine", capture_output=False)
+            local_exec(container, "coverage json", capture_output=False)
             docker_cp(
-                f"{prefixed_container_name(container)}:home/django/coverage.json",
+                f"{RuntimeInfraConfig.get_prefixed_container_name(container)}:home/django/coverage.json",
                 f"coverage_{container}.json",
             )
 
@@ -763,7 +734,9 @@ class LocalInstance(InfraInstance):
 
     def _build_local_dc_files(self, project_cfg) -> list[Path]:
         dc_files = project_cfg.dc_files
-        active_profile_files = self.deps.profile_dc_files.get(infra_profile(), [])
+        active_profile_files = self.deps.profile_dc_files.get(
+            RuntimeInfraConfig.get_infra_profile(), []
+        )
         if active_profile_files:
             dc_files += [project_cfg.cvat_root_dir / f for f in active_profile_files]
         if self.deps.extra_dc_files is not None:
@@ -775,14 +748,11 @@ class LocalInstance(InfraInstance):
     ) -> None:
         from infra import health as infra_health
 
-        project_cfg = project_config(cvat_root_dir=self.deps.cvat_root_dir)
+        project_cfg = RuntimeInfraConfig.get_project_config(cvat_root_dir=self.deps.cvat_root_dir)
         project_name = project_cfg.project_name
+        prefixed_name = project_cfg.prefixed_container_name
         dc_files = self._build_local_dc_files(project_cfg)
         container_name_files = project_cfg.generated_compose_files
-        run_local_command = lambda cmd, capture=True: run_command(
-            cmd, capture_output=capture, logger=logger
-        )
-        running_containers_fn = lambda: running_containers(run_local_command)
 
         def set_auto_started(value: bool) -> None:
             state = project_cfg.load_state() or {}
@@ -791,8 +761,7 @@ class LocalInstance(InfraInstance):
 
         if dumpdb:
             dump_db(
-                prefixed_container_name=prefixed_container_name,
-                running_containers_fn=running_containers_fn,
+                prefixed_container_name=prefixed_name,
                 cvat_db_dir=self.deps.cvat_db_dir,
             )
             pytest.exit("data.json has been updated", returncode=0)
@@ -801,7 +770,7 @@ class LocalInstance(InfraInstance):
             _delete_compose_files(container_name_files)
             pytest.exit("All generated test files have been deleted", returncode=0)
 
-        project_running = project_containers_running(project_name, running_containers_fn)
+        project_running = project_containers_running(project_name)
         if infra_mode == InfraMode.REUSE:
             if not project_running:
                 raise pytest.UsageError(
@@ -816,10 +785,6 @@ class LocalInstance(InfraInstance):
             container_name_files,
             self.deps.cvat_root_dir,
             project_cfg,
-            apply_compose_debug=apply_compose_debug,
-            covered_containers=list(_COVERED_CONTAINERS),
-            server_container="cvat_server",
-            worker_utils_container="cvat_worker_utils",
         )
 
         if infra_mode == InfraMode.AUTO and rebuild:
@@ -827,7 +792,6 @@ class LocalInstance(InfraInstance):
                 project_name=project_name,
                 dc_files=dc_files,
                 project_directory=self.deps.cvat_root_dir,
-                run_command_fn=run_local_command,
             )
             pytest.exit("CVAT images have been rebuilt", returncode=0)
 
@@ -836,7 +800,6 @@ class LocalInstance(InfraInstance):
                 project_name=project_name,
                 dc_files=dc_files,
                 project_directory=self.deps.cvat_root_dir,
-                run_command_fn=run_local_command,
             )
             project_cfg.delete_state()
             pytest.exit("All testing containers are stopped", returncode=0)
@@ -844,18 +807,19 @@ class LocalInstance(InfraInstance):
         if (
             infra_mode == InfraMode.AUTO
             and project_running
-            and not profile_services_ready(project_name, infra_profile(), running_containers_fn)
+            and not profile_services_ready(
+                project_name, RuntimeInfraConfig.get_infra_profile()
+            )
         ):
             logger.warning(
                 "Project '%s' is running but missing required services for profile '%s'; recreating stack",
                 project_name,
-                infra_profile(),
+                RuntimeInfraConfig.get_infra_profile(),
             )
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
                 project_directory=self.deps.cvat_root_dir,
-                run_command_fn=run_local_command,
             )
             project_running = False
 
@@ -863,12 +827,10 @@ class LocalInstance(InfraInstance):
             if not project_running:
                 start_services(
                     project_name=project_name,
-                    default_project_name=DEFAULT_PROJECT_NAME,
+                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
                     dc_files=dc_files,
                     rebuild=bool(rebuild),
                     project_directory=self.deps.cvat_root_dir,
-                    running_containers_fn=running_containers_fn,
-                    run_command_fn=run_local_command,
                 )
             infra_health.wait_for_services(self.deps.waiting_time)
             infra_health.wait_for_auth_login_ready()
@@ -881,22 +843,20 @@ class LocalInstance(InfraInstance):
         if not project_running:
             start_services(
                 project_name=project_name,
-                default_project_name=DEFAULT_PROJECT_NAME,
+                default_project_name=RuntimeInfraConfig.get_default_project_name(),
                 dc_files=dc_files,
                 rebuild=bool(rebuild),
                 project_directory=self.deps.cvat_root_dir,
-                running_containers_fn=running_containers_fn,
-                run_command_fn=run_local_command,
             )
 
         self.restore_cvat_data()
         docker_cp(
             self.deps.cvat_db_dir / "restore.sql",
-            f"{project_name}_cvat_db_1:/tmp/restore.sql",
+            f"{prefixed_name('cvat_db')}:/tmp/restore.sql",
         )
         docker_cp(
             self.deps.cvat_db_dir / "data.json",
-            f"{project_name}_cvat_server_1:/tmp/data.json",
+            f"{prefixed_name('cvat_server')}:/tmp/data.json",
         )
         infra_health.wait_for_services(self.deps.waiting_time)
         self.exec_cvat(["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"])
@@ -908,7 +868,7 @@ class LocalInstance(InfraInstance):
     def start(self) -> None:
         config = self.config
         infra_mode = getattr(config, "_cvat_infra_mode")
-        project_name = run_prefix_from_config(config)
+        project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
 
         if config.getoption("--collect-only"):
             return
@@ -936,16 +896,10 @@ class LocalInstance(InfraInstance):
             return
 
         if os.environ.get("COVERAGE_PROCESS_START"):
-            self.collect_code_coverage_from_containers(
-                covered_containers=lambda: list(_COVERED_CONTAINERS),
-                docker_exec=local_exec,
-                docker_cp=docker_cp,
-                prefixed_container_name=prefixed_container_name,
-                sleep=sleep,
-            )
+            self.collect_code_coverage_from_containers()
 
         infra_mode = getattr(self.config, "_cvat_infra_mode", InfraMode.AUTO)
-        run_prefix = run_prefix_from_config(self.config)
+        run_prefix = RuntimeInfraConfig.get_run_prefix_from_config(self.config)
         try:
             from infra.instances.parallel_instance import parse_parallel_count
 
@@ -955,20 +909,11 @@ class LocalInstance(InfraInstance):
         profiles = ["lane"] * parallel_count if parallel_count > 1 else []
         is_parallel_child = bool(self.config.getoption("--parallel-child"))
 
-        def stop_project_for_cleanup(project_name: str) -> None:
-            stop_project_services_best_effort(
-                project_name=project_name,
-                default_infra_profile=self.deps.default_infra_profile,
-                profile_dc_files=self.deps.profile_dc_files,
-                logger=self.deps.logger,
-            )
-
         cleanup_after_session(
             infra_mode=infra_mode,
             run_prefix=run_prefix,
             profiles=profiles,
             is_parallel_child=is_parallel_child,
-            stop_project_services_best_effort_fn=stop_project_for_cleanup,
         )
 
     def restore_db(self) -> None:
@@ -978,14 +923,21 @@ class LocalInstance(InfraInstance):
         )
 
     def restore_cvat_data(self) -> None:
+        project_cfg = RuntimeInfraConfig.get_project_config()
         docker_cp(
             self.deps.cvat_db_dir / "cvat_data.tar.bz2",
-            f"{prefixed_container_name('cvat_server')}:/tmp/cvat_data.tar.bz2",
+            f"{project_cfg.prefixed_container_name('cvat_server')}:/tmp/cvat_data.tar.bz2",
         )
         self.exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
     def restore_clickhouse_db(self) -> None:
-        self.exec_cvat(["/bin/sh", "-c", f'python "{CLICKHOUSE_INIT_SCRIPT}" --clear'])
+        self.exec_cvat(
+            [
+                "/bin/sh",
+                "-c",
+                f'python "{RuntimeInfraConfig.get_clickhouse_init_script()}" --clear',
+            ]
+        )
 
     def restore_redis_inmem(self) -> None:
         self.exec_redis_inmem(
