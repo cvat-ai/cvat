@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script runs SAM2 model agent in the CVAT.
+# This script runs YOLO model agent in the CVAT.
 
 source "$(dirname "$0")/check_env.sh"
 
@@ -24,7 +24,6 @@ fi
 
 FUNCTION_FILE_PATH="func.py"
 
-echo "Running SAM2 function agent for FUNCTION_ID: $FUNCTION_ID with MODEL_ID: $MODEL_ID..."
-
+echo "Running YOLO function agent for FUNCTION_ID: $FUNCTION_ID with MODEL: $MODEL..."
 # $MODEL_CONFIG_PARAMS should be unquoted to be passed as separate arguments to cvat-cli.
 exec cvat-cli --server-host "$CVAT_BASE_URL" "${ORG_SLUG_ARGS[@]}" function run-agent "$FUNCTION_ID" --function-file="$FUNCTION_FILE_PATH" $MODEL_CONFIG_PARAMS "${USE_CUDA_ARGS[@]}"
