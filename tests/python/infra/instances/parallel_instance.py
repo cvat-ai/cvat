@@ -238,6 +238,12 @@ def _default_lane_profiles_for_count(parallel_count: int) -> list[str]:
     return ["full"] + ["core"] * (parallel_count - 1)
 
 
+def _lane_artifacts_dir(base_dir: Path, lane_idx: int, profile: str) -> Path:
+    lane_dir = base_dir / f"lane-{lane_idx}-{profile}"
+    lane_dir.mkdir(parents=True, exist_ok=True)
+    return lane_dir
+
+
 def _planned_lane_profiles(items, parallel_count: int) -> list[str]:
     if parallel_count <= 0:
         return []
@@ -263,8 +269,6 @@ def _planned_lane_profiles(items, parallel_count: int) -> list[str]:
 
             if full_count > 0 and full_lanes == 0:
                 continue
-            if extended_count > 0 and extended_lanes == 0:
-                continue
             if extended_count > 0 and (extended_lanes + full_lanes) == 0:
                 continue
 
@@ -282,9 +286,12 @@ def _planned_lane_profiles(items, parallel_count: int) -> list[str]:
                 + (full_count / full_eligible if full_count > 0 else 0.0)
             )
 
-            # Keep cores preferred unless heavier lanes materially improve balancing.
+            # Prefer lightweight core lanes unless heavier lanes materially improve balancing.
             lane_unit = max(1.0, total_count / parallel_count if parallel_count else 1.0)
-            profile_penalty = lane_unit * (0.12 * extended_lanes + 0.25 * full_lanes)
+            # Full lanes are much more expensive than core lanes.
+            # Extended lanes are also heavier and should be introduced only
+            # when they provide a meaningful throughput gain.
+            profile_penalty = lane_unit * (0.24 * extended_lanes + 0.35 * full_lanes)
             score = estimated_makespan + profile_penalty
 
             candidate = (score, full_lanes, extended_lanes, core_lanes)
@@ -305,6 +312,18 @@ def _parallel_group_key(item) -> str:
 
     if grouping == "case":
         return item.nodeid
+
+    if grouping == "fixture":
+        # Keep tests that share the same fixture-case parameter together
+        # to reuse expensive class-scoped fixture setup inside a single batch.
+        param_value = ""
+        if "[" in item.nodeid and item.nodeid.endswith("]"):
+            param_value = item.nodeid.rsplit("[", 1)[1][:-1]
+        fixture_case = param_value.split("-", 1)[0] if param_value else "<no-param>"
+        if len(parts) >= 2:
+            class_part = parts[1].split("[", 1)[0]
+            return f"{parts[0]}::{class_part}::{fixture_case}"
+        return f"{item.nodeid.split('[', 1)[0]}::{fixture_case}"
 
     if len(parts) >= 3 and "[" not in parts[1]:
         if grouping == "function":
@@ -342,7 +361,10 @@ def _build_dynamic_groups(
     for required in required_order:
         ordered_groups = sorted(
             grouped_by_required[required],
-            key=lambda key: _stable_shuffle_key(f"{key[0]}|{key[1]}", shuffle_seed),
+            key=lambda key: (
+                -len(grouped_items[key]),
+                _stable_shuffle_key(f"{key[0]}|{key[1]}", shuffle_seed),
+            ),
         )
         for grouped_key in ordered_groups:
             result[required].append(grouped_items[grouped_key])
@@ -592,13 +614,14 @@ def run_parallel_lanes(
             }
         )
 
-    lane_processes: list[tuple[str, int, str, dict[str, int], Path, Path, object]] = []
+    lane_processes: list[tuple[str, int, str, dict[str, int], Path, Path, Path, object]] = []
     for lane_idx, profile in enumerate(profiles, start=1):
         project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
         ports = lane_ports[lane_idx - 1]
         RuntimeInfraConfig.write_context_for_project(project_name)
-        lane_log_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-{profile}.log"
-        lane_events_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-{profile}.events.jsonl"
+        lane_dir = _lane_artifacts_dir(lane_artifacts_dir, lane_idx, profile)
+        lane_log_path = lane_dir / "runner.log"
+        lane_events_path = lane_dir / "events.jsonl"
         lane_events_path.unlink(missing_ok=True)
         lane_log = open(lane_log_path, "w")
 
@@ -607,27 +630,29 @@ def run_parallel_lanes(
             f"profile={profile} project={project_name} log={lane_log_path}"
         )
         lane_processes.append(
-            (project_name, lane_idx, profile, ports, lane_log_path, lane_events_path, lane_log)
+            (project_name, lane_idx, profile, ports, lane_dir, lane_log_path, lane_events_path, lane_log)
         )
 
     active_procs: dict[int, Popen | None] = {
-        lane_idx: None for _, lane_idx, _, _, _, _, _ in lane_processes
+        lane_idx: None for _, lane_idx, _, _, _, _, _, _ in lane_processes
     }
     lane_needs_bootstrap: dict[int, bool] = {
-        lane_idx: True for _, lane_idx, _, _, _, _, _ in lane_processes
+        lane_idx: True for _, lane_idx, _, _, _, _, _, _ in lane_processes
     }
     lane_active_mode: dict[int, InfraMode | None] = {
-        lane_idx: None for _, lane_idx, _, _, _, _, _ in lane_processes
+        lane_idx: None for _, lane_idx, _, _, _, _, _, _ in lane_processes
     }
     scheduled_by_lane: dict[int, int] = {
-        lane_idx: 0 for _, lane_idx, _, _, _, _, _ in lane_processes
+        lane_idx: 0 for _, lane_idx, _, _, _, _, _, _ in lane_processes
     }
     batch_counter_by_lane: dict[int, int] = {
-        lane_idx: 0 for _, lane_idx, _, _, _, _, _ in lane_processes
+        lane_idx: 0 for _, lane_idx, _, _, _, _, _, _ in lane_processes
     }
     combined_rc = 0
     start_ts = monotonic()
-    lane_event_paths = {lane_idx: events for _, lane_idx, _, _, _, events, _ in lane_processes}
+    lane_event_paths = {
+        lane_idx: events for _, lane_idx, _, _, _, _, events, _ in lane_processes
+    }
     lane_positions = {lane_idx: 0 for lane_idx in lane_event_paths}
     collected_by_lane = {lane_idx: 0 for lane_idx in lane_event_paths}
     deselected_by_lane = {lane_idx: 0 for lane_idx in lane_event_paths}
@@ -732,7 +757,7 @@ def run_parallel_lanes(
             ),
         )
 
-    def _target_chunk_size(required: str) -> int:
+    def _target_chunk_size(required: str, *, active_eligible_override: int | None = None) -> int:
         remaining = required_remaining[required]
         if remaining <= 0:
             return 0
@@ -744,12 +769,15 @@ def run_parallel_lanes(
         if total_eligible <= 1:
             return remaining
 
+        active_eligible = (
+            max(1, active_eligible_override)
+            if active_eligible_override is not None
+            else _active_eligible_lanes(required)
+        )
+
         # Small suites should keep lanes occupied instead of forcing large chunks.
         if required_total[required] < _MIN_BATCH_SIZE * total_eligible:
-            active_eligible = _active_eligible_lanes(required)
-            return max(40, math.ceil(remaining / active_eligible))
-
-        active_eligible = _active_eligible_lanes(required)
+            return max(1, math.ceil(remaining / active_eligible))
         completed = required_total[required] - remaining
         progress = completed / required_total[required] if required_total[required] else 1.0
 
@@ -762,13 +790,39 @@ def run_parallel_lanes(
         target = math.ceil(remaining / active_eligible)
         return max(40, min(140, target))
 
-    def claim_chunk(lane_profile: str) -> tuple[str | None, list[str] | None]:
+    def _dispatch_slots() -> dict[str, int]:
+        return {
+            required: sum(
+                1
+                for idx, lane_profile in enumerate(profiles, start=1)
+                if active_procs[idx] is None
+                and lane_done_at[idx] is None
+                and lane_supports(required, lane_profile)
+            )
+            for required in PROFILE_ORDER
+        }
+
+    def _consume_dispatch_slot(
+        dispatch_slots: dict[str, int],
+        lane_profile: str,
+    ) -> None:
+        for required in PROFILE_ORDER:
+            if lane_supports(required, lane_profile):
+                dispatch_slots[required] = max(0, dispatch_slots[required] - 1)
+
+    def claim_chunk(
+        lane_profile: str,
+        dispatch_slots: dict[str, int],
+    ) -> tuple[str | None, list[str] | None]:
         for required in next_required_order(lane_profile):
             queue = grouped_queues[required]
             if not queue:
                 continue
 
-            target = _target_chunk_size(required)
+            target = _target_chunk_size(
+                required,
+                active_eligible_override=dispatch_slots.get(required),
+            )
             if target <= 0:
                 continue
 
@@ -777,7 +831,9 @@ def run_parallel_lanes(
                 chunk.extend(queue.popleft())
 
             required_remaining[required] -= len(chunk)
+            _consume_dispatch_slot(dispatch_slots, lane_profile)
             return required, chunk
+        _consume_dispatch_slot(dispatch_slots, lane_profile)
         return None, None
 
     try:
@@ -807,7 +863,7 @@ def run_parallel_lanes(
                 terminal_reporter._numcollected = total_selected
             replay_events(new_events)
 
-            for _, lane_idx, _, _, _, _, _ in lane_processes:
+            for _, lane_idx, _, _, _, _, _, _ in lane_processes:
                 proc = active_procs[lane_idx]
                 if proc is not None:
                     rc = proc.poll()
@@ -827,11 +883,13 @@ def run_parallel_lanes(
                         active_procs[lane_idx] = None
 
             has_pending_chunks = any(grouped_queues[required] for required in PROFILE_ORDER)
+            dispatch_slots = _dispatch_slots()
             for (
                 project_name,
                 lane_idx,
                 profile,
                 ports,
+                lane_dir,
                 _,
                 lane_events_path,
                 lane_log,
@@ -841,17 +899,16 @@ def run_parallel_lanes(
                 if lane_done_at[lane_idx] is not None:
                     continue
 
-                _, chunk = claim_chunk(profile)
+                _, chunk = claim_chunk(profile, dispatch_slots)
                 if chunk is None:
                     lane_done_at[lane_idx] = monotonic()
                     continue
 
                 scheduled_by_lane[lane_idx] += len(chunk)
                 batch_counter_by_lane[lane_idx] += 1
-                batch_file = (
-                    lane_artifacts_dir
-                    / f"parallel-lane-{lane_idx}-{profile}-batch-{batch_counter_by_lane[lane_idx]}.txt"
-                )
+                batches_dir = lane_dir / "batches"
+                batches_dir.mkdir(parents=True, exist_ok=True)
+                batch_file = batches_dir / f"batch-{batch_counter_by_lane[lane_idx]}.txt"
                 with open(batch_file, "w") as f:
                     for nodeid in chunk:
                         f.write(nodeid)
@@ -917,7 +974,7 @@ def run_parallel_lanes(
             done_times = [t for t in lane_done_at.values() if t is not None]
             if done_times:
                 last_done = max(done_times)
-                for _, lane_idx, profile, _, lane_log_path, _, _ in lane_processes:
+                for _, lane_idx, profile, _, _, lane_log_path, _, _ in lane_processes:
                     selected_count = scheduled_by_lane.get(lane_idx, 0)
                     started_count = len(started_nodeids_by_lane.get(lane_idx, set()))
                     finished_at = lane_done_at.get(lane_idx)
@@ -940,7 +997,7 @@ def run_parallel_lanes(
                 except BaseException:
                     pass
 
-        for _, _, _, _, _, _, lane_log in lane_processes:
+        for _, _, _, _, _, _, _, lane_log in lane_processes:
             lane_log.close()
 
         if not is_collect_only:
@@ -950,8 +1007,8 @@ def run_parallel_lanes(
                 signal.signal(signal.SIGINT, signal.SIG_IGN)
                 down_start = monotonic()
                 down_processes: list[tuple[str, Path, Popen, object]] = []
-                for project_name, lane_idx, profile, *_ in lane_processes:
-                    down_log_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-{profile}-infra-down.log"
+                for project_name, lane_idx, profile, _, lane_dir, *_ in lane_processes:
+                    down_log_path = lane_dir / "infra-down.log"
                     down_log = open(down_log_path, "w")
                     cmd = [
                         sys.executable,
@@ -1005,7 +1062,7 @@ def run_parallel_lanes(
         f"infra_up={infra_up_duration:.1f}s execution={execution_duration:.1f}s "
         f"infra_down={infra_down_duration:.1f}s total={elapsed:.1f}s"
     )
-    for _, lane_idx, profile, _, lane_log_path, _, _ in lane_processes:
+    for _, lane_idx, profile, _, _, lane_log_path, _, _ in lane_processes:
         report_setup = lane_report_seconds[lane_idx]["setup"]
         report_call = lane_report_seconds[lane_idx]["call"]
         report_teardown = lane_report_seconds[lane_idx]["teardown"]
@@ -1152,8 +1209,9 @@ def run_parallel_infra_mode(
 
     if mismatch_lanes:
         down_processes: list[tuple[int, str, Path, Popen, object]] = []
-        for lane_idx, project_name, _, _ in mismatch_lanes:
-            lane_log_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-infra-reconcile-down.log"
+        for lane_idx, project_name, _, requested_profile in mismatch_lanes:
+            lane_dir = _lane_artifacts_dir(lane_artifacts_dir, lane_idx, requested_profile)
+            lane_log_path = lane_dir / "infra-reconcile-down.log"
             lane_log = open(lane_log_path, "w")
             down_cmd = [
                 sys.executable,
@@ -1197,7 +1255,8 @@ def run_parallel_infra_mode(
     for lane_idx, profile in enumerate(profiles, start=1):
         project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
         ports = lane_ports[lane_idx - 1]
-        lane_log_path = lane_artifacts_dir / f"parallel-lane-{lane_idx}-infra-{infra_mode}.log"
+        lane_dir = _lane_artifacts_dir(lane_artifacts_dir, lane_idx, profile)
+        lane_log_path = lane_dir / f"infra-{infra_mode}.log"
         lane_log = open(lane_log_path, "w")
         cmd = [
             sys.executable,

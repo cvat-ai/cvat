@@ -4377,8 +4377,9 @@ class TestTrackImportExport:
             (5, False),
         ]
 
-
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+# Keep this class atomic in parallel runs to avoid re-running heavy class-scoped setup per batch.
+@pytest.mark.parallel_group("class")
 class TestImportWithComplexFilenames:
     @pytest.fixture(
         autouse=True,

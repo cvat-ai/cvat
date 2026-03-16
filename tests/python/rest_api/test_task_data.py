@@ -1735,9 +1735,10 @@ class TestPostTaskData:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
-@pytest.mark.parallel_group("function")
+# Group by fixture-case so all tests using the same task fixture run together:
+# this preserves class-scoped fixture reuse while avoiding a single huge class chunk.
+@pytest.mark.parallel_group("fixture")
 class TestTaskData(TestTasksBase):
-    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
 
@@ -1777,7 +1778,6 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the task frames availability, it can make many requests
         timeout=300
     )
-    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -1823,7 +1823,6 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the task chunks availability, it can make many requests
         timeout=300
     )
-    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_task_chunks(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -1942,7 +1941,6 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the task meta availability, it can make many requests
         timeout=300
     )
-    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_annotation_job_meta(self, task_spec: ITaskSpec, task_id: int):
         segment_params = self._compute_annotation_segment_params(task_spec)
@@ -1983,7 +1981,6 @@ class TestTaskData(TestTasksBase):
                 else:
                     assert len(job_meta.frames) == job_meta.size
 
-    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._tasks_with_simple_gt_job_cases)
     def test_can_get_simple_gt_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -2040,7 +2037,6 @@ class TestTaskData(TestTasksBase):
                 # there are placeholders on the non-included places
                 assert len(job_meta.frames) == task_spec.size
 
-    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._tasks_with_honeypots_cases)
     def test_can_get_honeypot_gt_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -2113,7 +2109,6 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job frames availability, it can make many requests
         timeout=300
     )
-    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     def test_can_get_job_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -2166,7 +2161,6 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job chunks availability, it can make many requests
         timeout=300
     )
-    @pytest.mark.parallel_group("case")
     @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: ITaskSpec, task_id: int, indexing: str):
