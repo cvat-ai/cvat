@@ -33,8 +33,7 @@ import {
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
     composeShapeDimensions, getRoundedRotation,
-    clamp, findNearestSnapPoint as findNearestSnapPointHelper,
-    applySnapToShapePoint,
+    clamp, applySnapToShapePoint,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
