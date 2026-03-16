@@ -171,8 +171,7 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
-_DATA_START_OFFSET_HEADER_NAME = 'X-Data-Start-Offset'
-# _DATA_END_OFFSET_HEADER_NAME = 'X-Data-End-Offset'
+_DATA_START_OFFSET_HEADER_NAME = 'X-Media-Offset'
 _RETRY_AFTER_TIMEOUT = 10
 
 
@@ -643,7 +642,6 @@ class _DataGetter(metaclass=ABCMeta):
             _DATA_CHECKSUM_HEADER_NAME: str(checksum or ''),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(updated_date),
             _DATA_START_OFFSET_HEADER_NAME: str(data_start_offset or ''),
-            # _DATA_END_OFFSET_HEADER_NAME: str(data_end_offset or ''),
         }
 
 class _TaskDataGetter(_DataGetter):
@@ -672,7 +670,6 @@ class _TaskDataGetter(_DataGetter):
         if self._db_task.media_type == models.MediaType.AUDIO:
             assert isinstance(chunk_data, AudioDataWithMeta)
             extra_params["data_start_offset"] = chunk_data.start_offset
-            # extra_params["data_end_offset"] = chunk_data.end_offset
 
         return self._make_chunk_response_headers(
             self._get_chunk_checksum(chunk_data),
@@ -753,7 +750,6 @@ class _JobDataGetter(_DataGetter):
         if self._db_job.segment.task.media_type == models.MediaType.AUDIO:
             assert isinstance(chunk_data, AudioDataWithMeta)
             extra_params["data_start_offset"] = chunk_data.start_offset
-            # extra_params["data_end_offset"] = chunk_data.end_offset
 
         return self._make_chunk_response_headers(
             self._get_chunk_checksum(chunk_data),
