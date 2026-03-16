@@ -19,7 +19,7 @@ export interface Segmentation {
 }
 
 export interface MatSpace {
-    fromData: (width: number, height: number, type: MatType, data: number[]) => any;
+    fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => any;
 }
 
 export interface MatVectorSpace {
@@ -27,9 +27,9 @@ export interface MatVectorSpace {
 }
 
 export interface Contours {
-    convexHull: (src: any) => number[];
-    findContours: (src: any, findLongest: boolean) => number[][];
-    approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[][];
+    convexHull: (src: [number, number][][]) => [number, number][];
+    findContours: (src: any) => [number, number][][];
+    approxPoly: (points: [number, number][], threshold: number, closed?: boolean) => [number, number][];
 }
 
 export interface ImgProc {
@@ -142,7 +142,7 @@ export class OpenCVWrapper {
     public get mat(): MatSpace {
         const { cv } = this;
         return {
-            fromData: (width: number, height: number, type: MatType, data: number[]) => {
+            fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => {
                 this.checkInitialization();
                 const typeToCVType = {
                     [MatType.CV_8UC1]: cv.CV_8UC1,
@@ -169,21 +169,27 @@ export class OpenCVWrapper {
     public get contours(): Contours {
         const { cv } = this;
         return {
-            convexHull: (contours: number[][]): number[] => {
+            convexHull: (contours: [number, number][][]): [number, number][] => {
                 this.checkInitialization();
 
-                const points = contours.flat();
+                const points = contours.flat(2) as number[];
                 const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
                 const output = new cv.Mat();
                 try {
                     cv.convexHull(input, output, false, true);
-                    return Array.from(output.data32S);
+                    const result = Array.from(output.data32S as number[]);
+                    const converted: [number, number][] = [];
+                    for (let i = 0; i < result.length; i += 2) {
+                        converted.push([result[i], result[i + 1]]);
+                    }
+                    return converted;
                 } finally {
                     output.delete();
                     input.delete();
                 }
             },
-            findContours: (src: any, findLongest: boolean): number[][] => {
+            findContours: (src: any): [number, number][][] => {
+                type ArrayWithPixelLength = Array<Array<[number, number]> & { pixelLength?: number }>;
                 this.checkInitialization();
 
                 const contours = this.matVector.empty();
@@ -191,7 +197,7 @@ export class OpenCVWrapper {
                 const expanded = new cv.Mat();
                 const kernel = cv.Mat.ones(2, 2, cv.CV_8U);
                 const anchor = new cv.Point(-1, -1);
-                const jsContours: number[][] = [];
+                const jsContours: ArrayWithPixelLength = [];
                 try {
                     cv.copyMakeBorder(src, expanded, 1, 1, 1, 1, cv.BORDER_CONSTANT);
                     // morpth transform to get better contour including all the pixels
@@ -204,11 +210,31 @@ export class OpenCVWrapper {
                         cv.BORDER_CONSTANT,
                         cv.morphologyDefaultBorderValue(),
                     );
+
                     cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
                     for (let i = 0; i < contours.size(); i++) {
                         const contour = contours.get(i);
-                        // subtract offset we created when copied source image
-                        jsContours.push(Array.from(contour.data32S as number[]).map((el) => el - 1));
+                        const converted: [number, number][] = [];
+
+                        let prevX = contour.data32S[0] - 1;
+                        let prevY = contour.data32S[1] - 1;
+                        let contourLength = 0;
+                        for (let j = 0; j < contour.data32S.length; j += 2) {
+                            // subtract offset we created when copied source image
+                            const x = contour.data32S[j] - 1;
+                            const y = contour.data32S[j + 1] - 1;
+                            converted.push([x, y]);
+                            contourLength += Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
+                            prevX = x;
+                            prevY = y;
+                        }
+
+                        Object.defineProperty(converted, 'pixelLength', {
+                            value: contourLength,
+                            writable: false,
+                        });
+
+                        jsContours.push(converted);
                         contour.delete();
                     }
                 } finally {
@@ -218,28 +244,23 @@ export class OpenCVWrapper {
                     contours.delete();
                 }
 
-                if (findLongest) {
-                    return [jsContours.sort((arr1, arr2) => arr2.length - arr1.length)[0]];
-                }
-
-                return jsContours;
+                return jsContours.sort((arr1, arr2) => (arr2.pixelLength || 0) - (arr1.pixelLength || 0));
             },
-            approxPoly: (points: number[] | number[][], threshold: number, closed = true): number[][] => {
+            approxPoly: (points: [number, number][], threshold: number, closed = true): [number, number][] => {
                 this.checkInitialization();
 
-                const isArrayOfArrays = Array.isArray(points[0]);
                 if (points.length < 3) {
-                    // one pair of coordinates [x, y], approximation not possible
-                    return (isArrayOfArrays ? points : [points]) as number[][];
+                    // nothing to approximate
+                    return points;
                 }
-                const rows = isArrayOfArrays ? points.length : points.length / 2;
-                const cols = 2;
 
+                const rows = points.length;
+                const cols = 2;
                 const approx = new cv.Mat();
                 const contour = cv.matFromArray(rows, cols, cv.CV_32FC1, points.flat());
                 try {
                     cv.approxPolyDP(contour, approx, threshold, closed); // approx output type is CV_32F
-                    const result = [];
+                    const result: [number, number][] = [];
                     for (let row = 0; row < approx.rows; row++) {
                         result.push([approx.floatAt(row, 0), approx.floatAt(row, 1)]);
                     }
@@ -252,47 +273,56 @@ export class OpenCVWrapper {
         };
     }
 
-    public getContoursFromState = async (state: ObjectState): Promise<number[][]> => {
-        const points = state.points as number[];
+    public getContoursFromStateSync = (
+        state: { points: Int32Array; shapeType: ShapeType },
+    ): [number, number][][] => {
         if (state.shapeType === ShapeType.MASK) {
-            if (!this.isInitialized) {
-                try {
-                    await this.initialize(() => {});
-                } catch (error: any) {
-                    throw new Error('Could not initialize OpenCV');
-                }
-            }
-
-            const [left, top, right, bottom] = points.slice(-4);
+            const { length } = state.points;
+            const left = state.points[length - 4];
+            const top = state.points[length - 3];
+            const right = state.points[length - 2];
+            const bottom = state.points[length - 1];
             const width = right - left + 1;
             const height = bottom - top + 1;
 
-            const mask = core.utils.rle2Mask(points.slice(0, -4), width, height);
+            const mask = core.utils.rle2Mask(state.points.subarray(0, -4), width, height);
             const src = this.mat.fromData(width, height, MatType.CV_8UC1, mask);
 
             try {
-                const contours = this.contours.findContours(src, false);
+                const contours = this.contours.findContours(src);
                 if (contours.length) {
-                    return contours.map((contour) => contour.map((val, idx) => {
-                        if (idx % 2) {
-                            return val + top;
-                        }
-                        return val + left;
-                    }));
+                    return contours.map((contour) => contour.map((val) => (
+                        [val[0] + left, val[1] + top]
+                    )));
                 }
                 throw new Error('Empty contour received from state');
             } finally {
                 src.delete();
             }
-        } else if (state.shapeType === ShapeType.POLYGON) {
-            return [points];
         }
 
         throw new Error(`Not implemented getContour for ${state.shapeType}`);
     };
 
-    public getContourFromState = async (state: ObjectState): Promise<number[]> => {
-        const contours = await this.getContoursFromState(state);
+    public getContoursFromState = async (
+        state: { points: Int32Array; shapeType: ShapeType },
+    ): Promise<[number, number][][]> => {
+        if (!this.isInitialized) {
+            try {
+                await this.initialize(() => {});
+            } catch (error: any) {
+                throw new Error('Could not initialize OpenCV');
+            }
+        }
+
+        return this.getContoursFromStateSync(state);
+    };
+
+    public getContourFromState = async (state: ObjectState): Promise<[number, number][]> => {
+        const contours = await this.getContoursFromState({
+            points: Int32Array.from(state.points!),
+            shapeType: state.shapeType,
+        });
         return contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
     };
 

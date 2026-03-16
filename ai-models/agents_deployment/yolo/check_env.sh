@@ -27,21 +27,6 @@ resolve_org_slug() {
     fi
 }
 
-
-resolve_model_params() {
-    if [ -z "$MODEL_CONFIG_PARAMS" ]; then
-        echo "Warning: MODEL_CONFIG_PARAMS environment variable not found. Default model will be used facebook/sam2.1-hiera-tiny"
-        MODEL_CONFIG_PARAMS="-p model_id=str:facebook/sam2.1-hiera-tiny"
-    elif result=$(echo "$MODEL_CONFIG_PARAMS" | grep -oP 'model_id=str:\K[^ ]+'); then
-        echo "Extracted MODEL_ID from MODEL_CONFIG_PARAMS: $result"
-        export MODEL_ID="$result"
-    else
-        echo "Error: MODEL_CONFIG_PARAMS environment variable is set but does not contain model_id format i can understand"
-        echo "using default MODEL_ID: facebook/sam2.1-hiera-tiny"
-        MODEL_CONFIG_PARAMS="-p model_id=str:facebook/sam2.1-hiera-tiny"
-    fi
-}
-
 resolve_cuda() {
     if [ "$USE_CUDA" = "true" ]; then
         echo "Using CUDA! Please ensure that you are using proper image with CUDA support"
@@ -50,6 +35,24 @@ resolve_cuda() {
         echo "Info: USE_CUDA environment variable not found. Model will run on CPU."
     fi
 }
+
+resolve_model_params() {
+    if [ -z "$MODEL_CONFIG_PARAMS" ]; then
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable not found. Default model will be used: yolo26s.pt"
+        MODEL_CONFIG_PARAMS="-p model=str:yolo26s.pt"
+        MODEL="yolo26s.pt"
+    elif result=$(echo "$MODEL_CONFIG_PARAMS" | grep -oP 'model=str:\K[^ ]+'); then
+        echo "Extracted MODEL from MODEL_CONFIG_PARAMS: $result"
+        MODEL="$result"
+    else
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable is set but model param is malformed. Your config will be discarded. Default values will be used."
+        echo "MODEL_CONFIG_PARAMS should contain model in format -p model=str:your_model.pt"
+        echo "Following params will be used for cvat-cli: -p model=str:yolo26s.pt"
+        MODEL_CONFIG_PARAMS="-p model=str:yolo26s.pt"
+        MODEL="yolo26s.pt"
+    fi
+}
+
 
 common_env() {
     validate_access_token
