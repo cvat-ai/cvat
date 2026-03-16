@@ -5918,6 +5918,7 @@ __metadata:
     stylelint: "npm:^15.10.2"
     stylelint-config-standard-scss: "npm:^11.1.0"
     typescript: "npm:5.0.2"
+    uuid: "npm:^13.0.0"
     vfile-reporter-json: "npm:^2.0.2"
     webpack: "npm:^5.104.1"
     webpack-cli: "npm:^5.1.4"
@@ -18097,6 +18098,15 @@ __metadata:
   version: 1.0.1
   resolution: "utils-merge@npm:1.0.1"
   checksum: 10c0/02ba649de1b7ca8854bfe20a82f1dfbdda3fb57a22ab4a8972a63a34553cf7aa51bc9081cf7e001b035b88186d23689d69e71b510e610a09a4c66f68aa95b672
+  languageName: node
+  linkType: hard
+
+"uuid@npm:^13.0.0":
+  version: 13.0.0
+  resolution: "uuid@npm:13.0.0"
+  bin:
+    uuid: dist-node/bin/uuid
+  checksum: 10c0/950e4c18d57fef6c69675344f5700a08af21e26b9eff2bf2180427564297368c538ea11ac9fb2e6528b17fc3966a9fd2c5049361b0b63c7d654f3c550c9b3d67
   languageName: node
   linkType: hard
 

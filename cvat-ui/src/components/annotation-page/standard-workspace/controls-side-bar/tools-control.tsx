@@ -22,7 +22,7 @@ import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Switch from 'antd/lib/switch';
-import lodash from 'lodash';
+import { v4 } from 'uuid';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor, InteractionResult } from 'cvat-canvas-wrapper';
@@ -489,10 +489,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             return;
         }
 
-        if (!this.interaction.id) {
-            this.interaction.id = lodash.uniqueId('interaction_');
-        }
-
+        this.interaction.id ??= v4();
         const { shapes } = (e as CustomEvent).detail;
         const interactor = activeInteractor as MLModel;
         const boxes = convertShapesForInteractor(shapes, 'rectangle', 'positive');
