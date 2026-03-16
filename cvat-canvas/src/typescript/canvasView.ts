@@ -498,8 +498,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onMessage(null, 'join');
         }
 
-        if (objects && typeof duration !== 'undefined') {
-            if (this.mode === Mode.GROUP && objects.length > 1) {
+        if (objects && typeof duration !== 'undefined' && objects.length > 1) {
+            if (this.mode === Mode.GROUP) {
                 this.mode = Mode.IDLE;
                 this.canvas.dispatchEvent(new CustomEvent('canvas.grouped', {
                     bubbles: false,
@@ -509,14 +509,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         states: objects,
                     },
                 }));
-            } else if (this.mode === Mode.JOIN && objects.length > 1) {
+            } else if (this.mode === Mode.JOIN) {
                 this.mode = Mode.IDLE;
 
-                const allPolygons = objects.every((state) => state.shapeType === 'polygon');
-                const allMasks = objects.every((state) => state.shapeType === 'mask');
-                if (allPolygons) {
+                const { shapeType } = objects[0];
+                if (shapeType === 'polygon') {
                     this.joinPolygons(objects, duration);
-                } else if (allMasks) {
+                } else if (shapeType === 'mask') {
                     let [left, top, right, bottom] = objects[0].points.slice(-4);
                     objects.forEach((state) => {
                         const [curLeft, curTop, curRight, curBottom] = state.points.slice(-4);
@@ -554,8 +553,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             },
                         }));
                     }).catch(this.onError);
-                } else {
-                    this.onError(new Error('Can only join objects of the same type (all polygons or all masks)'));
                 }
             }
         } else {
@@ -637,8 +634,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Check for multiple disjoint polygons
         if (result.length > 1) {
-            return 'Cannot join these polygons: the union operation produced multiple separate polygons. ' +
-                'This happens when the selected polygons do not overlap or share edges. Please select polygons that touch or overlap.';
+            return 'Cannot join these polygons: The union operation produced multiple separate polygons. ' +
+                'This happens when the selected polygons do not overlap, do not share edges, or self-intersect.';
         }
 
         // Check for holes in the polygon
@@ -2272,6 +2269,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.groupHandler.group(data, {
                     shapeType: ['mask', 'polygon'],
                     objectType: ['shape'],
+                    restrictToFirstSelectedType: true,
                 });
             }
         } else if (reason === UpdateReasons.SLICE) {
