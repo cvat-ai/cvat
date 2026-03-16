@@ -955,26 +955,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         pathElement.dmove(-pathElement.width() / 2, -pathElement.height() / 2);
     }
 
-    private findNearestSnapPoint(
-        x: number,
-        y: number,
-        excludeClientID: number | null,
-    ): { x: number; y: number; clientID: number } | null {
-        if (!this.configuration.pointSnap) {
-            return null;
-        }
-
-        const snapRadius = this.configuration.snapRadius / this.geometry.scale;
-        return findNearestSnapPointHelper(
-            x,
-            y,
-            this.drawnStates,
-            this.geometry.offset,
-            snapRadius,
-            excludeClientID,
-        );
-    }
-
     private selectize(value: boolean, shape: SVG.Element): void {
         const mousedownHandler = (e: MouseEvent): void => {
             if (e.button !== 0) return;

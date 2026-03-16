@@ -572,25 +572,53 @@ export interface SnapPoint {
     clientID: number;
 }
 
-export function extractSnapPointsFromState(drawnState: DrawnState, offset: number): number[] {
-    if (!drawnState || !drawnState.points) {
+const snapPointsCache = new Map<string, number[]>();
+const MAX_CACHE_SIZE = 500;
+
+function extractSnapPointsFromState(drawnState: DrawnState, offset: number): number[] {
+    if (!drawnState.points) {
         return [];
     }
 
-    let points: number[] = [];
-    const canvasPoints = translateToCanvas(offset, drawnState.points);
-
-    if (drawnState.shapeType === 'polygon' || drawnState.shapeType === 'polyline' || drawnState.shapeType === 'points') {
-        points = canvasPoints;
-    } else if (drawnState.shapeType === 'rectangle') {
-        const [xtl, ytl, xbr, ybr] = canvasPoints;
-        points = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
+    if (!['polygon', 'polyline', 'points', 'rectangle'].includes(drawnState.shapeType)) {
+        return [];
     }
 
-    return points;
+    const cacheKey = `${drawnState.clientID}-${drawnState.updated}-${offset}`;
+    const cached = snapPointsCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    const canvasPoints = translateToCanvas(offset, drawnState.points);
+
+    let result: number[];
+    if (drawnState.shapeType === 'polygon' || drawnState.shapeType === 'polyline' || drawnState.shapeType === 'points') {
+        result = canvasPoints;
+    } else if (drawnState.shapeType === 'rectangle') {
+        const [xtl, ytl, xbr, ybr] = canvasPoints;
+        result = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
+    } else {
+        result = [];
+    }
+
+    snapPointsCache.set(cacheKey, result);
+
+    if (snapPointsCache.size > MAX_CACHE_SIZE) {
+        const entriesToDelete = Math.floor(MAX_CACHE_SIZE * 0.1);
+        const iterator = snapPointsCache.keys();
+        for (let i = 0; i < entriesToDelete; i++) {
+            const key = iterator.next().value;
+            if (key) {
+                snapPointsCache.delete(key);
+            }
+        }
+    }
+
+    return result;
 }
 
-export function findNearestSnapPoint(
+function findNearestSnapPoint(
     x: number,
     y: number,
     allStates: Record<number, DrawnState>,
@@ -617,9 +645,9 @@ export function findNearestSnapPoint(
 
             const dx = x - px;
             const dy = y - py;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const distance = Math.hypot(dx, dy);
 
-            if (distance < minDistance) {
+            if (distance <= minDistance) {
                 minDistance = distance;
                 nearestPoint = { x: px, y: py, clientID };
             }
@@ -636,10 +664,10 @@ export function applySnapToShapePoint(
     offset: number,
     snapRadius: number,
     excludeClientID: number | null = null,
-): boolean {
+): void {
     const pointsArray: number[][] = (shape as any).array().valueOf();
     if (pointIndex < 0 || pointIndex >= pointsArray.length) {
-        return false;
+        return;
     }
 
     const [currentX, currentY] = pointsArray[pointIndex];
@@ -656,8 +684,5 @@ export function applySnapToShapePoint(
     if (snapTarget) {
         pointsArray[pointIndex] = [snapTarget.x, snapTarget.y];
         shape.plot(pointsArray);
-        return true;
     }
-
-    return false;
 }
