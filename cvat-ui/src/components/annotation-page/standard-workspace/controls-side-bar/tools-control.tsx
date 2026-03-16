@@ -1006,12 +1006,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private async initializeOpenCV(): Promise<void> {
         if (!openCVWrapper.isInitialized) {
-            const hide = message.loading('OpenCV client initialization..', 0);
+            const hide = message.loading('Initializing contour utilities..', 0);
             try {
                 await openCVWrapper.initialize(() => {});
             } catch (error: any) {
                 notification.error({
-                    message: 'Could not initialize OpenCV',
+                    message: 'Could not initialize contour utilities',
                     description: <CVATMarkdown>{error.message}</CVATMarkdown>,
                     duration: null,
                 });
