@@ -317,51 +317,6 @@ export function cropMask(rle: number[], width: number, height: number): number[]
     return croppedRLE;
 }
 
-export function mask2Rle(mask: number[]): number[] {
-    return mask.reduce((acc, val, idx, arr) => {
-        if (idx > 0) {
-            if (arr[idx - 1] === val) {
-                acc[acc.length - 1] += 1;
-            } else {
-                acc.push(1);
-            }
-
-            return acc;
-        }
-
-        if (val > 0) {
-            // 0, 0, 0, 1 => [3, 1]
-            // 1, 1, 0, 0 => [0, 2, 2]
-            acc.push(0, 1);
-        } else {
-            acc.push(1);
-        }
-
-        return acc;
-    }, []);
-}
-
-export function rle2Mask(rle: number[], width: number, height: number): number[] {
-    const decoded = Array(width * height).fill(0);
-    const { length } = rle;
-    let decodedIdx = 0;
-    let value = 0;
-    let i = 0;
-
-    while (i < length) {
-        let count = rle[i];
-        while (count > 0) {
-            decoded[decodedIdx] = value;
-            decodedIdx++;
-            count--;
-        }
-        i++;
-        value = Math.abs(value - 1);
-    }
-
-    return decoded;
-}
-
 export function propagateShapes<T extends SerializedShape | ObjectState>(
     shapes: T[], from: number, to: number, frameNumbers: number[],
 ): T[] {
