@@ -63,7 +63,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
     const width = 5000;
     const height = 5000;
-    const delta = 30;
+    const delta = 35;
     const step = 62.5;
     const maxTextWidth = undefined;
     const textHeightPx = 981.25;
