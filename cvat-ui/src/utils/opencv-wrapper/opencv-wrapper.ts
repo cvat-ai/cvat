@@ -124,9 +124,13 @@ export class OpenCVWrapper {
 
             if (cacheStore) {
                 try {
-                    const cachedResponse = new Response(bytes.slice(), {
-                        headers: response.headers,
-                    });
+                    // content may be gzip-encoded, but we store decoded version
+                    // so, need to remove irrelevant headers
+                    const headers = new Headers(response.headers);
+                    headers.delete('Content-Encoding');
+                    headers.delete('Content-Length');
+                    headers.set('Content-Length', bytes.length.toString());
+                    const cachedResponse = new Response(bytes.slice(), { headers });
                     await cacheStore.put(config.OPENCV_PATH, cachedResponse);
                 } catch (_) {
                     // could not write to cache, but ok, do nothing
