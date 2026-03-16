@@ -134,6 +134,16 @@ class ProjectInfraConfig:
         state = self.load_state() or {}
         return int(state.get("db_port", 15432))
 
+    @property
+    def host_redis_inmem_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("redis_inmem_port", 16379))
+
+    @property
+    def host_redis_ondisk_port(self) -> int:
+        state = self.load_state() or {}
+        return int(state.get("redis_ondisk_port", 16666))
+
     def prefixed_container_name(self, container: str) -> str:
         return f"{self.project_name}_{container}_1"
 

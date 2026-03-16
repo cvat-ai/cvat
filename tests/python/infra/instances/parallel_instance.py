@@ -138,14 +138,6 @@ class ParallelPlugin(InfraPlugin):
     @classmethod
     def register_options(cls, group) -> None:
         add_parallel_pytest_options(group)
-        # Internal-only per-lane port overrides passed by the parallel parent process.
-        group._addoption("--test-http-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
-        group._addoption("--test-logs-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
-        group._addoption("--test-db-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
-        group._addoption("--test-minio-port", action="store", default=None, type=int, help=argparse.SUPPRESS)
-        group._addoption(
-            "--test-minio-console-port", action="store", default=None, type=int, help=argparse.SUPPRESS
-        )
 
     @classmethod
     def configure(cls, config) -> None:
@@ -242,6 +234,40 @@ def _lane_artifacts_dir(base_dir: Path, lane_idx: int, profile: str) -> Path:
     lane_dir = base_dir / f"lane-{lane_idx}-{profile}"
     lane_dir.mkdir(parents=True, exist_ok=True)
     return lane_dir
+
+
+def _allocate_lane_ports(used_ports: set[int]) -> dict[str, int]:
+    return {
+        "http_port": pick_free_port(18080, used_ports, logger=logger),
+        "logs_port": pick_free_port(18090, used_ports, logger=logger),
+        "db_port": pick_free_port(15432, used_ports, logger=logger),
+        "redis_inmem_port": pick_free_port(16379, used_ports, logger=logger),
+        "redis_ondisk_port": pick_free_port(16666, used_ports, logger=logger),
+        "minio_port": pick_free_port(19000, used_ports, logger=logger),
+        "minio_console_port": pick_free_port(19001, used_ports, logger=logger),
+    }
+
+
+def _persist_lane_state(project_name: str, profile: str, ports: dict[str, int]) -> None:
+    project_cfg = RuntimeInfraConfig.get_project_config(project_name)
+    state = project_cfg.load_state() or {}
+    state.update(
+        {
+            "project_name": project_name,
+            "infra_profile": profile,
+            "base_url": f"http://localhost:{ports['http_port']}",
+            "minio_endpoint_url": f"http://localhost:{ports['minio_port']}",
+            **ports,
+        }
+    )
+    # Parallel parent mode does not support container debug.
+    state["debug"] = {
+        "services": [],
+        "wait": False,
+        "port_base": 0,
+        "ports": {},
+    }
+    project_cfg.save_state(state)
 
 
 def _planned_lane_profiles(items, parallel_count: int) -> list[str]:
@@ -604,21 +630,14 @@ def run_parallel_lanes(
     used_ports: set[int] = set()
     lane_ports: list[dict[str, int]] = []
     for _ in profiles:
-        lane_ports.append(
-            {
-                "http_port": pick_free_port(18080, used_ports, logger=logger),
-                "logs_port": pick_free_port(18090, used_ports, logger=logger),
-                "db_port": pick_free_port(15432, used_ports, logger=logger),
-                "minio_port": pick_free_port(19000, used_ports, logger=logger),
-                "minio_console_port": pick_free_port(19001, used_ports, logger=logger),
-            }
-        )
+        lane_ports.append(_allocate_lane_ports(used_ports))
 
     lane_processes: list[tuple[str, int, str, dict[str, int], Path, Path, Path, object]] = []
     for lane_idx, profile in enumerate(profiles, start=1):
         project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
         ports = lane_ports[lane_idx - 1]
         RuntimeInfraConfig.write_context_for_project(project_name)
+        _persist_lane_state(project_name, profile, ports)
         lane_dir = _lane_artifacts_dir(lane_artifacts_dir, lane_idx, profile)
         lane_log_path = lane_dir / "runner.log"
         lane_events_path = lane_dir / "events.jsonl"
@@ -802,14 +821,6 @@ def run_parallel_lanes(
             for required in PROFILE_ORDER
         }
 
-    def _consume_dispatch_slot(
-        dispatch_slots: dict[str, int],
-        lane_profile: str,
-    ) -> None:
-        for required in PROFILE_ORDER:
-            if lane_supports(required, lane_profile):
-                dispatch_slots[required] = max(0, dispatch_slots[required] - 1)
-
     def claim_chunk(
         lane_profile: str,
         dispatch_slots: dict[str, int],
@@ -827,13 +838,27 @@ def run_parallel_lanes(
                 continue
 
             chunk: list[str] = []
-            while queue and (len(chunk) < target or not chunk):
+            while queue:
+                next_group = queue[0]
+                # Keep grouped tests together, but avoid packing multiple large
+                # groups into one chunk when they do not fit the current target.
+                # This prevents fixture-group heavy hitters from clustering into
+                # a single lane batch.
+                if chunk and len(chunk) + len(next_group) > target:
+                    break
                 chunk.extend(queue.popleft())
+                # Always dispatch at least one group, even if it is larger than
+                # target (single oversized group case).
+                if chunk and len(chunk) >= target:
+                    break
 
             required_remaining[required] -= len(chunk)
-            _consume_dispatch_slot(dispatch_slots, lane_profile)
+            # This lane consumed capacity only for the claimed requirement.
+            # Do not decrement unrelated buckets (e.g. claiming `full` should
+            # not reduce `core` dispatch slots), otherwise chunk sizes can be
+            # overinflated and lead to lane imbalance.
+            dispatch_slots[required] = max(0, dispatch_slots.get(required, 0) - 1)
             return required, chunk
-        _consume_dispatch_slot(dispatch_slots, lane_profile)
         return None, None
 
     try:
@@ -929,11 +954,6 @@ def run_parallel_lanes(
                     f"--parallel-batch-file={batch_file}",
                     f"--parallel-lane-profile={profile}",
                     f"--run-prefix={project_name}",
-                    f"--test-http-port={ports['http_port']}",
-                    f"--test-logs-port={ports['logs_port']}",
-                    f"--test-db-port={ports['db_port']}",
-                    f"--test-minio-port={ports['minio_port']}",
-                    f"--test-minio-console-port={ports['minio_console_port']}",
                     f"--parallel-events-file={lane_events_path}",
                 ]
                 active_procs[lane_idx] = Popen(cmd, stdout=lane_log, stderr=STDOUT)  # nosec
@@ -1179,6 +1199,8 @@ def run_parallel_infra_mode(
                     "http_port": int(state["http_port"]),
                     "logs_port": int(state["logs_port"]),
                     "db_port": int(state["db_port"]),
+                    "redis_inmem_port": int(state["redis_inmem_port"]),
+                    "redis_ondisk_port": int(state["redis_ondisk_port"]),
                     "minio_port": int(state["minio_port"]),
                     "minio_console_port": int(state["minio_console_port"]),
                 }
@@ -1186,13 +1208,7 @@ def run_parallel_infra_mode(
                 saved_ports = None
 
         if saved_ports is None:
-            saved_ports = {
-                "http_port": pick_free_port(18080, used_ports, logger=logger),
-                "logs_port": pick_free_port(18090, used_ports, logger=logger),
-                "db_port": pick_free_port(15432, used_ports, logger=logger),
-                "minio_port": pick_free_port(19000, used_ports, logger=logger),
-                "minio_console_port": pick_free_port(19001, used_ports, logger=logger),
-            }
+            saved_ports = _allocate_lane_ports(used_ports)
         else:
             used_ports.update(saved_ports.values())
 
@@ -1251,10 +1267,13 @@ def run_parallel_infra_mode(
                 f"{details}"
             )
 
+    for lane_idx, profile in enumerate(profiles, start=1):
+        project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
+        _persist_lane_state(project_name, profile, lane_ports[lane_idx - 1])
+
     lane_processes: list[tuple[int, str, str, Path, Popen, object]] = []
     for lane_idx, profile in enumerate(profiles, start=1):
         project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
-        ports = lane_ports[lane_idx - 1]
         lane_dir = _lane_artifacts_dir(lane_artifacts_dir, lane_idx, profile)
         lane_log_path = lane_dir / f"infra-{infra_mode}.log"
         lane_log = open(lane_log_path, "w")
@@ -1267,11 +1286,6 @@ def run_parallel_infra_mode(
             f"--parallel-lane-profile={profile}",
             f"--run-prefix={project_name}",
             f"--infra={infra_mode}",
-            f"--test-http-port={ports['http_port']}",
-            f"--test-logs-port={ports['logs_port']}",
-            f"--test-db-port={ports['db_port']}",
-            f"--test-minio-port={ports['minio_port']}",
-            f"--test-minio-console-port={ports['minio_console_port']}",
         ]
         emit(
             f"[parallel] infra={infra_mode} lane {lane_idx}/{len(profiles)} "

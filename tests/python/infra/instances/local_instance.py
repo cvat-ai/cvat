@@ -16,6 +16,7 @@ from infra.config import (
     RuntimeInfraConfig,
 )
 from infra.db_restore import PsycopgDatabaseRestorer
+from infra.redis_restore import RedisStateRestorer
 from infra.debug import (
     DEFAULT_DEBUG_PORT_BASE,
     DEBUG_SERVICE_TO_CONTAINER,
@@ -190,11 +191,6 @@ def preconfigure_local_runtime_env(config) -> None:
     port_config = resolve_port_config(
         project_cfg,
         default_project_name=RuntimeInfraConfig.get_default_project_name(),
-        test_http_port=config.getoption("test_http_port"),
-        test_logs_port=config.getoption("test_logs_port"),
-        test_db_port=config.getoption("test_db_port"),
-        test_minio_port=config.getoption("test_minio_port"),
-        test_minio_console_port=config.getoption("test_minio_console_port"),
     )
     project_state = project_cfg.load_state() or {}
     project_running = project_containers_running(project_cfg.project_name)
@@ -222,11 +218,6 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
     port_config = resolve_port_config(
         project_cfg,
         default_project_name=RuntimeInfraConfig.get_default_project_name(),
-        test_http_port=config.getoption("test_http_port"),
-        test_logs_port=config.getoption("test_logs_port"),
-        test_db_port=config.getoption("test_db_port"),
-        test_minio_port=config.getoption("test_minio_port"),
-        test_minio_console_port=config.getoption("test_minio_console_port"),
     )
     requested_debug_services = parse_debug_services(config.getoption("--container-debug"))
     debug_wait = bool(config.getoption("--container-debug-wait"))
@@ -288,26 +279,8 @@ def local_exec_redis_inmem(command):
     )[0]
 
 
-def local_exec_redis_ondisk(command):
-    run_command(
-        ["docker", "exec", RuntimeInfraConfig.get_prefixed_container_name("cvat_redis_ondisk")]
-        + command,
-        logger=logger,
-    )
-
-
 def _run_local_command(command, capture=True):
     return run_command(command, capture_output=capture, logger=logger)
-
-_REDIS_INMEM_KEEP_KEYS = (
-    "rq:worker:",
-    "rq:workers",
-    "rq:scheduler_instance:",
-    "rq:queues:",
-    "cvat:applied_migrations",
-    "cvat:applied_migration:",
-)
-
 
 def running_containers() -> list[str]:
     stdout, _ = _run_local_command("docker ps --format {{.Names}}")
@@ -346,6 +319,18 @@ def profile_services_ready(project_name: str, profile: str) -> bool:
 def project_db_port_ready(project_name: str, expected_host_port: int) -> bool:
     service_ports = project_service_port_map(project_name).get("cvat_db", {})
     return int(service_ports.get(5432, -1)) == expected_host_port
+
+
+def project_redis_ports_ready(
+    project_name: str,
+    *,
+    expected_inmem_host_port: int,
+    expected_ondisk_host_port: int,
+) -> bool:
+    service_ports = project_service_port_map(project_name)
+    inmem_port = int(service_ports.get("cvat_redis_inmem", {}).get(6379, -1))
+    ondisk_port = int(service_ports.get("cvat_redis_ondisk", {}).get(6666, -1))
+    return inmem_port == expected_inmem_host_port and ondisk_port == expected_ondisk_host_port
 
 
 def dump_db(*, prefixed_container_name, cvat_db_dir: Path) -> None:
@@ -404,25 +389,18 @@ def resolve_port_config(
     project_cfg,
     *,
     default_project_name: str,
-    test_http_port: int | None = None,
-    test_logs_port: int | None = None,
-    test_db_port: int | None = None,
-    test_minio_port: int | None = None,
-    test_minio_console_port: int | None = None,
 ) -> dict:
     state = project_cfg.load_state() or {}
 
     if project_cfg.project_name == default_project_name:
         return {
-            "http_port": int(test_http_port if test_http_port is not None else state.get("http_port", 8080)),
-            "logs_port": int(test_logs_port if test_logs_port is not None else state.get("logs_port", 8090)),
-            "db_port": int(test_db_port if test_db_port is not None else state.get("db_port", 15432)),
-            "minio_port": int(test_minio_port if test_minio_port is not None else state.get("minio_port", 9000)),
-            "minio_console_port": int(
-                test_minio_console_port
-                if test_minio_console_port is not None
-                else state.get("minio_console_port", 9001)
-            ),
+            "http_port": int(state.get("http_port", 8080)),
+            "logs_port": int(state.get("logs_port", 8090)),
+            "db_port": int(state.get("db_port", 15432)),
+            "redis_inmem_port": int(state.get("redis_inmem_port", 16379)),
+            "redis_ondisk_port": int(state.get("redis_ondisk_port", 16666)),
+            "minio_port": int(state.get("minio_port", 9000)),
+            "minio_console_port": int(state.get("minio_console_port", 9001)),
         }
 
     project_running = project_containers_running(project_cfg.project_name)
@@ -434,22 +412,16 @@ def resolve_port_config(
     if project_running:
         traefik_ports = running_service_ports.get("traefik", {})
         minio_ports = running_service_ports.get("minio", {})
+        redis_inmem_ports = running_service_ports.get("cvat_redis_inmem", {})
+        redis_ondisk_ports = running_service_ports.get("cvat_redis_ondisk", {})
         return {
-            "http_port": int(test_http_port)
-            if test_http_port is not None
-            else int(traefik_ports.get(8080, state.get("http_port", 18080))),
-            "logs_port": int(test_logs_port)
-            if test_logs_port is not None
-            else int(traefik_ports.get(8090, state.get("logs_port", 18090))),
-            "db_port": int(test_db_port)
-            if test_db_port is not None
-            else int(running_service_ports.get("cvat_db", {}).get(5432, state.get("db_port", 15432))),
-            "minio_port": int(test_minio_port)
-            if test_minio_port is not None
-            else int(minio_ports.get(9000, state.get("minio_port", 19000))),
-            "minio_console_port": int(test_minio_console_port)
-            if test_minio_console_port is not None
-            else int(minio_ports.get(9001, state.get("minio_console_port", 19001))),
+            "http_port": int(traefik_ports.get(8080, state.get("http_port", 18080))),
+            "logs_port": int(traefik_ports.get(8090, state.get("logs_port", 18090))),
+            "db_port": int(running_service_ports.get("cvat_db", {}).get(5432, state.get("db_port", 15432))),
+            "redis_inmem_port": int(redis_inmem_ports.get(6379, state.get("redis_inmem_port", 16379))),
+            "redis_ondisk_port": int(redis_ondisk_ports.get(6666, state.get("redis_ondisk_port", 16666))),
+            "minio_port": int(minio_ports.get(9000, state.get("minio_port", 19000))),
+            "minio_console_port": int(minio_ports.get(9001, state.get("minio_console_port", 19001))),
         }
 
     def _state_port(name: str, default_start: int, used_ports: set[int]) -> int:
@@ -464,23 +436,13 @@ def resolve_port_config(
 
     used_ports: set[int] = set()
     return {
-        "http_port": int(test_http_port)
-        if test_http_port is not None
-        else _state_port("http_port", 18080, used_ports),
-        "logs_port": int(test_logs_port)
-        if test_logs_port is not None
-        else _state_port("logs_port", 18090, used_ports),
-        "db_port": int(test_db_port)
-        if test_db_port is not None
-        else _state_port("db_port", 15432, used_ports),
-        "minio_port": int(test_minio_port)
-        if test_minio_port is not None
-        else _state_port("minio_port", 19000, used_ports),
-        "minio_console_port": int(
-            test_minio_console_port
-            if test_minio_console_port is not None
-            else _state_port("minio_console_port", 19001, used_ports)
-        ),
+        "http_port": _state_port("http_port", 18080, used_ports),
+        "logs_port": _state_port("logs_port", 18090, used_ports),
+        "db_port": _state_port("db_port", 15432, used_ports),
+        "redis_inmem_port": _state_port("redis_inmem_port", 16379, used_ports),
+        "redis_ondisk_port": _state_port("redis_ondisk_port", 16666, used_ports),
+        "minio_port": _state_port("minio_port", 19000, used_ports),
+        "minio_console_port": _state_port("minio_console_port", 19001, used_ports),
     }
 
 
@@ -644,6 +606,14 @@ def _create_compose_files(
                     service_config["ports"] = [
                         f"{project_cfg.host_db_port}:5432",
                     ]
+                if service_name == "cvat_redis_inmem":
+                    service_config["ports"] = [
+                        f"{project_cfg.host_redis_inmem_port}:6379",
+                    ]
+                if service_name == "cvat_redis_ondisk":
+                    service_config["ports"] = [
+                        f"{project_cfg.host_redis_ondisk_port}:6666",
+                    ]
 
                 apply_compose_debug(
                     service_name, service_config, is_dev=is_dev_compose, debug_state=debug_state
@@ -728,6 +698,7 @@ class LocalInstance(InfraInstance):
     def __init__(self, session, deps):
         super().__init__(session, deps)
         self._db_restorer: PsycopgDatabaseRestorer | None = None
+        self._redis_restorer: RedisStateRestorer | None = None
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
@@ -738,6 +709,12 @@ class LocalInstance(InfraInstance):
             return
         self._db_restorer.close()
         self._db_restorer = None
+
+    def _close_redis_restorer(self) -> None:
+        if self._redis_restorer is None:
+            return
+        self._redis_restorer.close()
+        self._redis_restorer = None
 
     def _get_db_restorer(self) -> PsycopgDatabaseRestorer:
         if self._db_restorer is None:
@@ -750,6 +727,16 @@ class LocalInstance(InfraInstance):
             )
 
         return self._db_restorer
+
+    def _get_redis_restorer(self) -> RedisStateRestorer:
+        if self._redis_restorer is None:
+            project_cfg = RuntimeInfraConfig.get_project_config()
+            self._redis_restorer = RedisStateRestorer(
+                host="127.0.0.1",
+                inmem_port=project_cfg.host_redis_inmem_port,
+                ondisk_port=project_cfg.host_redis_ondisk_port,
+            )
+        return self._redis_restorer
 
     @staticmethod
     def collect_code_coverage_from_containers() -> None:
@@ -853,6 +840,7 @@ class LocalInstance(InfraInstance):
 
         if infra_mode == InfraMode.DOWN:
             self._close_db_restorer()
+            self._close_redis_restorer()
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
@@ -874,6 +862,7 @@ class LocalInstance(InfraInstance):
                 RuntimeInfraConfig.get_infra_profile(),
             )
             self._close_db_restorer()
+            self._close_redis_restorer()
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
@@ -889,6 +878,27 @@ class LocalInstance(InfraInstance):
                 project_name,
             )
             self._close_db_restorer()
+            self._close_redis_restorer()
+            stop_services(
+                project_name=project_name,
+                dc_files=dc_files,
+                project_directory=self.deps.cvat_root_dir,
+            )
+            project_running = False
+        elif (
+            project_running
+            and not project_redis_ports_ready(
+                project_name,
+                expected_inmem_host_port=project_cfg.host_redis_inmem_port,
+                expected_ondisk_host_port=project_cfg.host_redis_ondisk_port,
+            )
+        ):
+            logger.warning(
+                "Project '%s' is running but Redis host port mapping is missing/outdated; recreating stack",
+                project_name,
+            )
+            self._close_db_restorer()
+            self._close_redis_restorer()
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
@@ -967,6 +977,7 @@ class LocalInstance(InfraInstance):
             return
 
         self._close_db_restorer()
+        self._close_redis_restorer()
 
         if os.environ.get("COVERAGE_PROCESS_START"):
             self.collect_code_coverage_from_containers()
@@ -1010,26 +1021,10 @@ class LocalInstance(InfraInstance):
         )
 
     def restore_redis_inmem(self) -> None:
-        self.exec_redis_inmem(
-            [
-                "sh",
-                "-c",
-                # Redis in-memory DB layout in CVAT:
-                # - DB 0: RQ metadata/worker queues (keep a small allowlist of runtime keys)
-                # - DB 1: Django cache/throttle counters (must be fully reset between tests)
-                # If DB 1 is not cleared, auth/about requests can be throttled (HTTP 429)
-                # in later tests due to stale counters from previous runs.
-                'redis-cli -e -n 0 --scan --pattern "*" |'
-                'grep -v "'
-                + r"\|".join(_REDIS_INMEM_KEEP_KEYS)
-                + '" |'
-                "xargs -r redis-cli -e -n 0 del && "
-                "redis-cli -e -n 1 flushdb",
-            ]
-        )
+        self._get_redis_restorer().restore_inmem()
 
     def restore_redis_ondisk(self) -> None:
-        local_exec_redis_ondisk(["redis-cli", "-e", "-p", "6666", "flushall"])
+        self._get_redis_restorer().restore_ondisk()
 
 
 class LocalPlugin(InfraPlugin):

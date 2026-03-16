@@ -9,6 +9,7 @@ from time import monotonic, sleep
 
 from infra.config import RuntimeInfraConfig
 from infra.db_restore import PsycopgDatabaseRestorer
+from infra.redis_restore import RedisStateRestorer
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.debug.host_debug import maybe_wait_for_vscode_attach
 from infra.system_utils import kubectl_cp, pick_free_port, run_command
@@ -51,20 +52,6 @@ def kube_exec_redis_inmem(command):
     return run_command(["kubectl", "exec", pod_name, "--"] + command, logger=logger)[0]
 
 
-def kube_exec_redis_ondisk(command):
-    pod_name = kube_get_redis_ondisk_pod_name()
-    run_command(["kubectl", "exec", pod_name, "--"] + command, logger=logger)
-
-_REDIS_INMEM_KEEP_KEYS = (
-    "rq:worker:",
-    "rq:workers",
-    "rq:scheduler_instance:",
-    "rq:queues:",
-    "cvat:applied_migrations",
-    "cvat:applied_migration:",
-)
-
-
 class KubeInstance(InfraInstance):
     plugin_class: type[InfraPlugin]
     exec_cvat = staticmethod(kube_exec_cvat)
@@ -75,6 +62,11 @@ class KubeInstance(InfraInstance):
         self._db_restorer: PsycopgDatabaseRestorer | None = None
         self._db_port_forward_proc: Popen | None = None
         self._db_forward_port: int | None = None
+        self._redis_restorer: RedisStateRestorer | None = None
+        self._redis_inmem_port_forward_proc: Popen | None = None
+        self._redis_inmem_forward_port: int | None = None
+        self._redis_ondisk_port_forward_proc: Popen | None = None
+        self._redis_ondisk_forward_port: int | None = None
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
@@ -108,6 +100,7 @@ class KubeInstance(InfraInstance):
 
     def finish(self) -> None:
         self._close_db_restorer()
+        self._close_redis_restorer()
 
     def restore_cvat_data(self) -> None:
         pod_name = kube_get_server_pod_name()
@@ -118,26 +111,10 @@ class KubeInstance(InfraInstance):
         self.exec_cvat(["/bin/sh", "-c", f'python "{RuntimeInfraConfig.get_clickhouse_init_script()}" --clear'])
 
     def restore_redis_inmem(self) -> None:
-        self.exec_redis_inmem(
-            [
-                "sh",
-                "-c",
-                # Keep the same semantics as local restore:
-                # preserve required RQ keys in DB 0, and fully reset cache/throttle state in DB 1.
-                'export REDISCLI_AUTH="${REDIS_PASSWORD}" && '
-                'redis-cli -e -n 0 --scan --pattern "*" | '
-                'grep -v "'
-                + r"\|".join(_REDIS_INMEM_KEEP_KEYS)
-                + '" | '
-                "xargs -r redis-cli -e -n 0 del && "
-                "redis-cli -e -n 1 flushdb",
-            ]
-        )
+        self._get_redis_restorer().restore_inmem()
 
     def restore_redis_ondisk(self) -> None:
-        kube_exec_redis_ondisk(
-            ["sh", "-c", 'REDISCLI_AUTH="${CVAT_REDIS_ONDISK_PASSWORD}" redis-cli -e -p 6666 flushall']
-        )
+        self._get_redis_restorer().restore_ondisk()
 
     def _close_db_restorer(self) -> None:
         if self._db_restorer is not None:
@@ -157,6 +134,33 @@ class KubeInstance(InfraInstance):
 
         self._db_port_forward_proc = None
         self._db_forward_port = None
+
+    def _close_redis_restorer(self) -> None:
+        if self._redis_restorer is not None:
+            self._redis_restorer.close()
+            self._redis_restorer = None
+
+        if self._redis_inmem_port_forward_proc is not None:
+            if self._redis_inmem_port_forward_proc.poll() is None:
+                self._redis_inmem_port_forward_proc.terminate()
+                try:
+                    self._redis_inmem_port_forward_proc.wait(timeout=5)
+                except BaseException:
+                    self._redis_inmem_port_forward_proc.kill()
+                    self._redis_inmem_port_forward_proc.wait(timeout=5)
+            self._redis_inmem_port_forward_proc = None
+            self._redis_inmem_forward_port = None
+
+        if self._redis_ondisk_port_forward_proc is not None:
+            if self._redis_ondisk_port_forward_proc.poll() is None:
+                self._redis_ondisk_port_forward_proc.terminate()
+                try:
+                    self._redis_ondisk_port_forward_proc.wait(timeout=5)
+                except BaseException:
+                    self._redis_ondisk_port_forward_proc.kill()
+                    self._redis_ondisk_port_forward_proc.wait(timeout=5)
+            self._redis_ondisk_port_forward_proc = None
+            self._redis_ondisk_forward_port = None
 
     def _start_db_port_forward(self) -> int:
         if self._db_port_forward_proc is not None and self._db_forward_port is not None:
@@ -180,6 +184,54 @@ class KubeInstance(InfraInstance):
         self._db_forward_port = local_port
         os.environ["CVAT_TEST_DB_PORT"] = str(local_port)
         return local_port
+
+    def _start_redis_inmem_port_forward(self) -> int:
+        if self._redis_inmem_port_forward_proc is not None and self._redis_inmem_forward_port is not None:
+            if self._redis_inmem_port_forward_proc.poll() is None:
+                return self._redis_inmem_forward_port
+            self._close_redis_restorer()
+
+        local_port = pick_free_port(16379, set(), logger=logger)
+        redis_pod_name = kube_get_redis_inmem_pod_name()
+        self._redis_inmem_port_forward_proc = Popen(  # nosec
+            [
+                "kubectl",
+                "port-forward",
+                f"pod/{redis_pod_name}",
+                f"{local_port}:6379",
+            ],
+            stdout=PIPE,
+            stderr=STDOUT,
+            text=True,
+        )
+        self._redis_inmem_forward_port = local_port
+        return local_port
+
+    def _start_redis_ondisk_port_forward(self) -> int:
+        if self._redis_ondisk_port_forward_proc is not None and self._redis_ondisk_forward_port is not None:
+            if self._redis_ondisk_port_forward_proc.poll() is None:
+                return self._redis_ondisk_forward_port
+            self._close_redis_restorer()
+
+        local_port = pick_free_port(16666, set(), logger=logger)
+        redis_pod_name = kube_get_redis_ondisk_pod_name()
+        self._redis_ondisk_port_forward_proc = Popen(  # nosec
+            [
+                "kubectl",
+                "port-forward",
+                f"pod/{redis_pod_name}",
+                f"{local_port}:6666",
+            ],
+            stdout=PIPE,
+            stderr=STDOUT,
+            text=True,
+        )
+        self._redis_ondisk_forward_port = local_port
+        return local_port
+
+    def _read_server_env(self, variable_name: str) -> str:
+        value = kube_exec_cvat(["sh", "-c", f'printf "%s" "${{{variable_name}:-}}"'])
+        return value.strip()
 
     def _get_db_restorer(self) -> PsycopgDatabaseRestorer:
         if self._db_restorer is not None:
@@ -218,6 +270,36 @@ class KubeInstance(InfraInstance):
         raise RuntimeError(
             "Failed to initialize psycopg PostgreSQL restorer for kubernetes "
             f"within timeout. Last error: {last_error}"
+        )
+
+    def _get_redis_restorer(self) -> RedisStateRestorer:
+        if self._redis_restorer is not None:
+            return self._redis_restorer
+
+        inmem_port = self._start_redis_inmem_port_forward()
+        ondisk_port = self._start_redis_ondisk_port_forward()
+        inmem_password = self._read_server_env("CVAT_REDIS_INMEM_PASSWORD") or None
+        ondisk_password = self._read_server_env("CVAT_REDIS_ONDISK_PASSWORD") or None
+
+        deadline = monotonic() + 20
+        last_error = ""
+        while monotonic() < deadline:
+            try:
+                self._redis_restorer = RedisStateRestorer(
+                    host="127.0.0.1",
+                    inmem_port=inmem_port,
+                    ondisk_port=ondisk_port,
+                    inmem_password=inmem_password,
+                    ondisk_password=ondisk_password,
+                )
+                return self._redis_restorer
+            except BaseException as ex:
+                last_error = str(ex)
+                sleep(0.2)
+
+        raise RuntimeError(
+            "Failed to initialize Redis restorer for kubernetes within timeout. "
+            f"Last error: {last_error}"
         )
 
 
