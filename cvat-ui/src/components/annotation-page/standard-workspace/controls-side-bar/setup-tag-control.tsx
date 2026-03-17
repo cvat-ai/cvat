@@ -30,4 +30,5 @@ function SetupTagControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(SetupTagControl, { displayName: 'SetupTagControl' });
 export default React.memo(SetupTagControl);
