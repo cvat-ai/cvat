@@ -5,7 +5,7 @@
 import * as SVG from 'svg.js';
 import {
     stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG,
-    findIntersection, zipChannels, Segment, findClosestPointOnSegment, segmentsFromPoints,
+    findIntersection, imageDataToRLE, Segment, findClosestPointOnSegment, segmentsFromPoints,
     toReversed,
 } from './shared';
 import {
@@ -356,12 +356,12 @@ export class SliceHandlerImpl implements SliceHandler {
                 const context = offscreenCanvas.getContext('2d');
                 drawOverOffscreenCanvas(context, shape as any as SVGImageElement);
                 applyOffscreenCanvasMask(context, polygon1);
-                const firstShape = zipChannels(context.getImageData(0, 0, width, height).data);
+                const firstShape = imageDataToRLE(context.getImageData(0, 0, width, height).data);
                 // @ts-ignore error TS2339 https://github.com/microsoft/TypeScript/issues/55162
                 context.reset();
                 drawOverOffscreenCanvas(context, shape as any as SVGImageElement);
                 applyOffscreenCanvasMask(context, polygon2);
-                const secondShape = zipChannels(context.getImageData(0, 0, width, height).data);
+                const secondShape = imageDataToRLE(context.getImageData(0, 0, width, height).data);
                 this.onSliceDone(sliceData.state, [firstShape, secondShape], Date.now() - this.startTimestamp);
             } else if (sliceData.shapeType === 'polygon') {
                 this.onSliceDone(
@@ -510,30 +510,40 @@ export class SliceHandlerImpl implements SliceHandler {
 
     public slice(sliceData: SliceData): void {
         const initializeWithContour = (state: any): void => {
-            this.startTimestamp = Date.now();
-            const { startTimestamp } = this;
+            const { shapeType, points } = state;
 
-            this.onMessage([{
-                type: 'text',
-                content: 'Getting shape contour',
-                icon: 'loading',
-            }], 'force');
+            if (state.shapeType === 'polygon') {
+                this.initialize({
+                    enabled: true,
+                    contour: points,
+                    state,
+                    shapeType,
+                });
+            } else {
+                this.startTimestamp = Date.now();
+                const { startTimestamp } = this;
 
-            sliceData.getContour(state).then((contour) => {
-                const { shapeType } = state;
-                if (this.startTimestamp === startTimestamp && this.enabled) {
-                    // checking if a user does not left mode / reinit it
-                    this.initialize({
-                        enabled: true,
-                        contour,
-                        state,
-                        shapeType,
-                    });
-                }
-            }).catch((error: unknown) => {
-                this.release();
-                this.onError(error);
-            });
+                this.onMessage([{
+                    type: 'text',
+                    content: 'Getting shape contour',
+                    icon: 'loading',
+                }], 'force');
+
+                sliceData.getContour(state).then((contour) => {
+                    if (this.startTimestamp === startTimestamp && this.enabled) {
+                        // checking if a user does not left mode / reinit it
+                        this.initialize({
+                            enabled: true,
+                            contour: contour.flat(),
+                            state,
+                            shapeType: state.shapeType,
+                        });
+                    }
+                }).catch((error: unknown) => {
+                    this.release();
+                    this.onError(error);
+                });
+            }
         };
 
         if (sliceData.enabled && !this.enabled && sliceData.getContour) {

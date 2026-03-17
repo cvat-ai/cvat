@@ -136,7 +136,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                     );
                 });
             });
-            cy.get('.cvat-appearance-selected-opacity-slider').click('left');
+            cy.get('.cvat-appearance-selected-opacity-slider').type('{home}');
             cy.get('.cvat-appearance-selected-opacity-slider').find('[role="slider"]')
                 .then((sliderSelectedOpacityLeft) => {
                     const sliderSelectedOpacityValuenow = sliderSelectedOpacityLeft.attr('aria-valuenow');
@@ -146,7 +146,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                         sliderSelectedOpacityValuenow / 100,
                     );
                 });
-            cy.get('.cvat-appearance-selected-opacity-slider').click('right');
+            cy.get('.cvat-appearance-selected-opacity-slider').type('{end}');
             cy.get('.cvat-appearance-selected-opacity-slider')
                 .find('[role="slider"]')
                 .then((sliderSelectedOpacityRight) => {
@@ -173,8 +173,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
             });
 
             cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
-                // The last point on the crosshair
-                expect(intermediateShape.attr('points').split(' ').length - 1).to.be.equal(pointsMap.length);
+                expect(intermediateShape.attr('points').split(' ').length).to.be.equal(pointsMap.length);
             });
 
             cy.get('.cvat-annotation-header-block-tool-button').click();

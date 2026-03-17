@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import FormData from 'form-data';
-import store from 'store';
 import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
@@ -347,11 +346,6 @@ Axios.interceptors.response.use((response) => {
 
     return response;
 });
-
-// Previously, we used to store an additional authentication token in local storage.
-// Now we don't, and if the user still has one stored, we'll remove it to prevent
-// unnecessary credential exposure.
-store.remove('token');
 
 function setAuthData(response: AxiosResponse): void {
     if (response.headers['set-cookie']) {
@@ -2473,7 +2467,6 @@ async function getQualityReports(
 
 export default Object.freeze({
     server: Object.freeze({
-        setAuthData,
         about,
         share,
         formats,
