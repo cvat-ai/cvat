@@ -9,7 +9,7 @@ import operator
 from abc import ABCMeta, abstractmethod
 from collections.abc import Sequence
 from enum import Enum
-from functools import cached_property
+from functools import cached_property, reduce
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
@@ -241,33 +241,32 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         with make_requests_session() as session:
             r = session.post(url, json=self.payload).json()["result"]
 
-        q_objects = []
-        ops_dict = {
+        binary_ops_dict = {
             "|": operator.or_,
             "&": operator.and_,
-            "~": operator.not_,
         }
-        for item in r:
-            if isinstance(item, str):
-                val1 = q_objects.pop()
-                if item == "~":
-                    q_objects.append(ops_dict[item](val1))
-                else:
-                    val2 = q_objects.pop()
-                    q_objects.append(ops_dict[item](val1, val2))
-            else:
-                q_objects.append(Q(**item))
 
-        if q_objects:
-            assert len(q_objects) == 1
-        else:
-            q_objects.append(Q())
+        def parse_filter(expr):
+            match expr:
+                case ["~", arg]:
+                    return ~parse_filter(arg)
+                case [op, *args]:
+                    return reduce(binary_ops_dict[op], map(parse_filter, args))
+                case {} if not expr:
+                    # Empty Q() exhibits some bizarre behavior when used in expressions
+                    # (e.g. ~Q() works the same as Q()), so we use this as a more predictable
+                    # "always true" filter.
+                    return ~Q(pk__in=[])
+                case {}:
+                    return Q(**expr)
+                case _:
+                    assert False, "unknown expression type"
 
         # By default, a QuerySet will not eliminate duplicate rows. If your
         # query spans multiple tables (e.g. members__user_id, owner_id), it's
         # possible to get duplicate results when a QuerySet is evaluated.
         # That's when you'd use distinct().
-        return queryset.filter(q_objects[0]).distinct()
+        return queryset.filter(parse_filter(r)).distinct()
 
     @classmethod
     def get_per_field_update_scopes(cls, request, scopes_per_field):
