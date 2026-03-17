@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
+import * as martinez from 'martinez-polygon-clipping';
 import consts from './consts';
 
 export interface ShapeSizeElement {
@@ -570,6 +571,58 @@ export function toReversed<T>(array: Array<T>): Array<T> {
         acc.push(val);
         return acc;
     }, []);
+}
+
+export function validateUnionResult(result: martinez.Geometry): void {
+    // martinez.union result format (MultiPolygon):
+    // [
+    //   [ // first polygon
+    //     [[x, y], ...],  // exterior ring
+    //     [[x, y], ...],  // hole 1 (if exists)
+    //   ],
+    //   [ // second polygon (if disjoint)
+    //     [[x, y], ...],
+    //   ]
+    // ]
+
+    // Check for multiple disjoint polygons
+    if (result.length > 1) {
+        throw new Error(
+            'Cannot join these polygons: The union operation produced multiple separate polygons. ' +
+            'This happens when the selected polygons do not overlap, do not share edges, or self-intersect.',
+        );
+    }
+
+    // Check for holes in the polygon
+    for (const polygon of result) {
+        if (polygon.length > 1) {
+            throw new Error(
+                'Cannot join these polygons: the operation would create a shape with holes, ' +
+                'which is not supported by CVAT. Please select different polygons or use the mask tool.',
+            );
+        }
+    }
+}
+
+export function processPolygonUnionResult(result: martinez.Geometry): { shapeType: string; points: number[] }[] {
+    const results: { shapeType: string; points: number[] }[] = [];
+
+    for (const polygon of result) {
+        const exterior = polygon[0] as martinez.Ring;
+
+        // Convert to flat CVAT array format (remove closing point)
+        const exteriorPoints: number[] = [];
+        for (let i = 0; i < exterior.length - 1; i += 1) {
+            exteriorPoints.push(exterior[i][0], exterior[i][1]);
+        }
+
+        results.push({
+            shapeType: 'polygon',
+            points: exteriorPoints,
+        });
+    }
+
+    return results;
 }
 
 export type Segment = [[number, number], [number, number]];
