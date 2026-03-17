@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
+import { LRUCache } from 'lru-cache';
 import consts from './consts';
 
 export interface ShapeSizeElement {
@@ -575,16 +576,19 @@ export function toReversed<T>(array: Array<T>): Array<T> {
 export type Segment = [[number, number], [number, number]];
 export type PropType<T, Prop extends keyof T> = T[Prop];
 
-export interface SnapPoint {
+interface SnapPoint {
     x: number;
     y: number;
     clientID: number;
 }
 
-const snapPointsCache = new Map<string, number[]>();
-const MAX_CACHE_SIZE = 500;
+const snapPointsCache = new LRUCache<string, Readonly<number[]>>({
+    max: 2000,
+    updateAgeOnGet: true,
+    updateAgeOnHas: true,
+});
 
-function extractSnapPointsFromState(drawnState: DrawnState, offset: number): number[] {
+function extractSnapPointsFromState(drawnState: DrawnState): Readonly<number[]> {
     if (!drawnState.points) {
         return [];
     }
@@ -593,36 +597,23 @@ function extractSnapPointsFromState(drawnState: DrawnState, offset: number): num
         return [];
     }
 
-    const cacheKey = `${drawnState.clientID}-${drawnState.updated}-${offset}`;
+    const cacheKey = `${drawnState.clientID}-${drawnState.updated}`;
     const cached = snapPointsCache.get(cacheKey);
     if (cached) {
         return cached;
     }
 
-    const canvasPoints = translateToCanvas(offset, drawnState.points);
-
-    let result: number[];
+    let result: Readonly<number[]>;
     if (drawnState.shapeType === 'polygon' || drawnState.shapeType === 'polyline' || drawnState.shapeType === 'points') {
-        result = canvasPoints;
+        result = drawnState.points;
     } else if (drawnState.shapeType === 'rectangle') {
-        const [xtl, ytl, xbr, ybr] = canvasPoints;
+        const [xtl, ytl, xbr, ybr] = drawnState.points;
         result = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
     } else {
         result = [];
     }
 
     snapPointsCache.set(cacheKey, result);
-
-    if (snapPointsCache.size > MAX_CACHE_SIZE) {
-        const entriesToDelete = Math.floor(MAX_CACHE_SIZE * 0.1);
-        const iterator = snapPointsCache.keys();
-        for (let i = 0; i < entriesToDelete; i++) {
-            const key = iterator.next().value;
-            if (key) {
-                snapPointsCache.delete(key);
-            }
-        }
-    }
 
     return result;
 }
@@ -635,6 +626,9 @@ function findNearestSnapPoint(
     snapRadius: number,
     excludeClientID: number | null = null,
 ): SnapPoint | null {
+    const imageX = x - offset;
+    const imageY = y - offset;
+
     let nearestPoint: SnapPoint | null = null;
     let minDistance = snapRadius;
 
@@ -646,19 +640,19 @@ function findNearestSnapPoint(
         }
 
         const drawnState = allStates[clientID];
-        const points = extractSnapPointsFromState(drawnState, offset);
+        const points = extractSnapPointsFromState(drawnState);
 
         for (let i = 0; i < points.length; i += 2) {
             const px = points[i];
             const py = points[i + 1];
 
-            const dx = x - px;
-            const dy = y - py;
+            const dx = imageX - px;
+            const dy = imageY - py;
             const distance = Math.hypot(dx, dy);
 
             if (distance <= minDistance) {
                 minDistance = distance;
-                nearestPoint = { x: px, y: py, clientID };
+                nearestPoint = { x: px + offset, y: py + offset, clientID };
             }
         }
     }
