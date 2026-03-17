@@ -46,29 +46,20 @@ allow if {
     organizations.is_member
 }
 
-filter := {} if { # Django Q object to filter list of entries
+filter := utils.add_organization_filter(base_filter, ["organization"])
+
+base_filter := {} if { # Django Q object to filter list of entries
     utils.is_admin
-    utils.is_sandbox
 } else := qobject if {
     utils.is_sandbox
     qobject := ["&",
         {"user": input.auth.user.id},
         {"is_active": true},
     ]
-} else := qobject if {
-    utils.is_admin
-    org_id := input.auth.organization.id
-    qobject := {"organization": org_id}
-} else := qobject if {
+} else := {} if {
     organizations.is_staff
-    org_id := input.auth.organization.id
-    qobject := {"organization": org_id}
 } else := qobject if {
-    org_id := input.auth.organization.id
-    qobject := ["&",
-        {"organization": org_id},
-        {"is_active": true},
-    ]
+    qobject := {"is_active": true}
 }
 
 allow if {
