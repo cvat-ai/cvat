@@ -251,6 +251,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                         circle.setAttribute('r', `${this.controlPointsSize / this.scale}`);
 
                         const mousedown = (event: MouseEvent): void => {
+                            if (event.button !== 0) {
+                                return;
+                            }
+
                             event.stopPropagation();
                             if (this.currentClick?.groupIdx !== groupIdx) {
                                 // first click on this group of points
@@ -343,13 +347,13 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     };
 
     private onContainerMouseDown = (e: MouseEvent): void => {
-        if (this.currentPreview === null) {
+        if (e.button !== 0 || this.currentPreview === null) {
             return;
         }
 
         const closestPointIdx = this.findClosestPointInClickedGroup(e);
         if (closestPointIdx === this.currentPreview.pointIdx) {
-            e.stopImmediatePropagation();
+            e.stopPropagation();
             this.currentPreview = null;
             this.pointsToRevertPreview = null;
             this.currentClick.pointIdx = closestPointIdx;
@@ -418,7 +422,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
             this.updateObjects();
 
             this.container.addEventListener('mousemove', this.onContainerMouseMove);
-            this.container.addEventListener('mousedown', this.onContainerMouseDown);
+            this.container.addEventListener('mousedown', this.onContainerMouseDown, { capture: true });
             this.currentShape.on('undopoint', (): void => {
                 this.currentClick = null;
                 this.currentPreview = null;
