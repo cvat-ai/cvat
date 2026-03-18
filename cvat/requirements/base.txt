@@ -65,7 +65,7 @@ dj-pagination==2.5.0
     # via -r cvat/requirements/base.in
 dj-rest-auth[with-social]==5.0.2
     # via -r cvat/requirements/base.in
-django==4.2.28
+django==4.2.29
     # via
     #   -r cvat/requirements/base.in
     #   dj-rest-auth
@@ -240,7 +240,7 @@ pycocotools==2.0.10
     # via datumaro
 pycparser==2.22
     # via cffi
-pyjwt[crypto]==2.10.1
+pyjwt[crypto]==2.12.1
     # via django-allauth
 pylogbeat==2.0.1
     # via python-logstash-async

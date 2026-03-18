@@ -95,12 +95,12 @@ const componentShortcuts: Record<string, KeyMapItem> = {
 
 registerComponentShortcuts(componentShortcuts);
 
-const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
-const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
-const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
-const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
-const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
-const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
+const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl, 'CursorControl');
+const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl, 'MoveControl');
+const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl, 'DrawCuboidControl');
+const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl, 'GroupControl');
+const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl, 'MergeControl');
+const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl, 'SplitControl');
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {

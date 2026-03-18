@@ -3181,7 +3181,6 @@ class TestImportTaskAnnotations:
                 url,
                 filename,
                 meta=params,
-                logger=self.client.logger.debug,
                 pbar=NullProgressReporter(),
             )
 
@@ -3212,7 +3211,6 @@ class TestImportTaskAnnotations:
             url,
             filename,
             meta=params,
-            logger=self.client.logger.debug,
             pbar=NullProgressReporter(),
         )
         number_of_files = 1

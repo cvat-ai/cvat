@@ -53,4 +53,5 @@ function DrawCuboidControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(DrawCuboidControl, { displayName: 'DrawCuboidControl' });
 export default React.memo(DrawCuboidControl);
