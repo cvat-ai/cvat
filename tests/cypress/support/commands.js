@@ -516,15 +516,16 @@ Cypress.Commands.add('openJob', (jobIdx = 0, removeAnnotations = true, expectedF
 });
 
 Cypress.Commands.add('pressSplitControl', () => {
-    cy.document().then((doc) => {
-        const [el] = doc.getElementsByClassName('cvat-extra-controls-control');
-        if (el) {
-            cy.get('.cvat-extra-controls-control').click();
+    cy.get('.cvat-extra-controls-control').then(($el) => {
+        if ($el.is(':visible')) {
+            cy.wrap($el).click();
         }
+    });
 
-        cy.get('.cvat-split-track-control').click();
+    cy.get('.cvat-split-track-control').click();
 
-        if (el) {
+    cy.get('.cvat-extra-controls-control').then(($el) => {
+        if ($el.is(':visible')) {
             cy.get('body').click();
         }
     });

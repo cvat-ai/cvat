@@ -358,7 +358,6 @@ class TasksRepo(
             meta=params,
             query_params=params,
             pbar=pbar,
-            logger=self._client.logger.debug,
         )
 
         rq_id = json.loads(response.data).get("rq_id")

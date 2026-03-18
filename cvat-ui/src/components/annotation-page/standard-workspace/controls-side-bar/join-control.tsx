@@ -82,4 +82,5 @@ function JoinControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(JoinControl, { displayName: 'JoinControl' });
 export default React.memo(JoinControl);

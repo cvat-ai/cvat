@@ -40,4 +40,5 @@ function ResizeControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(ResizeControl, { displayName: 'ResizeControl' });
 export default React.memo(ResizeControl);
