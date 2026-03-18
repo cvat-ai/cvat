@@ -24,6 +24,7 @@ import { usePrevious } from 'utils/hooks';
 import { MultiPlusIcon } from 'icons';
 import dimensions from 'utils/dimensions';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
+import TasksCSVExportButton from './tasks-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
@@ -100,6 +101,7 @@ export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JS
                             )}
                             onApplyFilter={onApplyFilter}
                         />
+                        <TasksCSVExportButton query={query} />
                     </div>
                 </div>
                 <div>

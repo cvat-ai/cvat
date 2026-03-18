@@ -22,6 +22,7 @@ import {
 } from 'components/resource-sorting-filtering';
 
 import dimensions from 'utils/dimensions';
+import ProjectsCSVExportButton from './projects-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './projects-filter-configuration';
@@ -98,6 +99,7 @@ function TopBarComponent(props: Readonly<Props>): JSX.Element {
                             )}
                             onApplyFilter={onApplyFilter}
                         />
+                        <ProjectsCSVExportButton query={query} />
                     </div>
                 </div>
                 <div>

@@ -36,7 +36,6 @@ from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
-from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     IChunkWriter,
@@ -593,14 +592,10 @@ class MediaCache:
         db_data = db_task.require_data()
         manifest_path = db_data.get_manifest_path()
 
-        if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+        if storage_client := db_data.get_cloud_storage_instance():
+            assert manifest_path.is_file()
             reader = ImageReaderWithManifest(manifest_path)
             with ExitStack() as es:
-                db_cloud_storage = db_data.cloud_storage
-                if not db_cloud_storage:
-                    raise CloudStorageMissingError("Task is no longer connected to cloud storage")
-                storage_client = db_storage_to_storage_instance(db_cloud_storage)
-
                 tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
                 # (storage filename, output filename)
                 files_to_download: list[tuple[str, PurePath]] = []
@@ -621,7 +616,7 @@ class MediaCache:
                     files_to_download, checksums, media
                 ):
                     if checksum and not md5_hash(media_item[1]) == checksum:
-                        slogger.cloud_storage[db_cloud_storage.id].warning(
+                        slogger.task[db_task.id].warning(
                             "Hash sums of files {} do not match".format(media_item[1])
                         )
 
@@ -710,12 +705,7 @@ class MediaCache:
                 for frame_id, frame_ris in groupby(db_related_files, key=lambda v: v[0])
             ]
 
-            if db_data.storage == models.StorageChoice.CLOUD_STORAGE:
-                db_cloud_storage = db_data.cloud_storage
-                if not db_cloud_storage:
-                    raise CloudStorageMissingError("Task is no longer connected to cloud storage")
-                storage_client = db_storage_to_storage_instance(db_cloud_storage)
-
+            if storage_client := db_data.get_cloud_storage_instance():
                 tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
                 files_to_download: list[PurePath] = []
                 for _, frame_media in media:

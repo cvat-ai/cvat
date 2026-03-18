@@ -17,8 +17,7 @@ extend-exclude = """
 ^/cvat/apps/(
     dataset_manager/bindings.py
     |engine/(
-        mixins.py
-        |models.py
+        models.py
         |serializers.py
         |views.py
     )

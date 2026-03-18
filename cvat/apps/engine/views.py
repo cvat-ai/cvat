@@ -276,10 +276,8 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request: ExtendedRequest):
         data = {
-            'GIT_INTEGRATION': False, # kept for backwards compatibility
             'ANALYTICS': settings.ANALYTICS_ENABLED,
-            'MODELS': to_bool(os.environ.get("CVAT_SERVERLESS", False)),
-            'PREDICT': False, # FIXME: it is unused anymore (for UI only)
+            'MODELS': to_bool(os.environ.get("CVAT_SERVERLESS", False)), # not used anymore, remove later
         }
         return Response(PluginsSerializer(data).data)
 
@@ -1656,12 +1654,18 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
     UploadMixin, DatasetMixin
 ):
-    queryset = Job.objects.select_related(
-        'assignee',
-        'segment__task__data',
-        'segment__task__project',
-        'segment__task__annotation_guide',
-        'segment__task__project__annotation_guide',
+    queryset = (
+        Job.objects
+        .select_related(
+            'assignee',
+            'segment__task',
+            'segment__task__project',
+        )
+        .prefetch_related(
+            'segment__task__data',
+            'segment__task__annotation_guide',
+            'segment__task__project__annotation_guide',
+        )
     )
 
     iam_organization_field = 'segment__task__organization'
@@ -1688,12 +1692,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
-
-            queryset = queryset.prefetch_related(
-                "segment__task__source_storage", "segment__task__target_storage"
-            )
+            # with_* optimized in JobReadListSerializer
         else:
-            # optimized in JobReadSerializer
             queryset = queryset.with_issue_counts().with_child_jobs_counts()
 
         return queryset

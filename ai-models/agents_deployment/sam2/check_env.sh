@@ -27,12 +27,18 @@ resolve_org_slug() {
     fi
 }
 
-resolve_model_id() {
-    if [ -z "$MODEL_ID" ]; then
-        echo "Warning: MODEL_ID environment variable not found. Default is facebook/sam2.1-hiera-tiny"
-        MODEL_ID="facebook/sam2.1-hiera-tiny"
+
+resolve_model_params() {
+    if [ -z "$MODEL_CONFIG_PARAMS" ]; then
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable not found. Default model will be used facebook/sam2.1-hiera-tiny"
+        MODEL_CONFIG_PARAMS="-p model_id=str:facebook/sam2.1-hiera-tiny"
+    elif result=$(echo "$MODEL_CONFIG_PARAMS" | grep -oP 'model_id=str:\K[^ ]+'); then
+        echo "Extracted MODEL_ID from MODEL_CONFIG_PARAMS: $result"
+        export MODEL_ID="$result"
     else
-        echo "Using MODEL_ID: $MODEL_ID"
+        echo "Error: MODEL_CONFIG_PARAMS environment variable is set but does not contain model_id format i can understand"
+        echo "using default MODEL_ID: facebook/sam2.1-hiera-tiny"
+        MODEL_CONFIG_PARAMS="-p model_id=str:facebook/sam2.1-hiera-tiny"
     fi
 }
 

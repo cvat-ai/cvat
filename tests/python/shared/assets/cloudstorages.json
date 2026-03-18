@@ -1,8 +1,28 @@
 {
-  "count": 4,
+  "count": 5,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "created_date": "2026-02-11T16:29:48Z",
+      "credentials_type": "KEY_SECRET_KEY_PAIR",
+      "description": "Bucket to be used as backing cloud storage for tasks",
+      "display_name": "Backing CS",
+      "id": 5,
+      "manifests": [],
+      "organization": null,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "provider_type": "AWS_S3_BUCKET",
+      "resource": "backingcs",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "updated_date": "2026-02-11T16:29:48Z"
+    },
     {
       "created_date": "2022-06-29T12:56:18.257000Z",
       "credentials_type": "KEY_SECRET_KEY_PAIR",
