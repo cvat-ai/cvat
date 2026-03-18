@@ -39,7 +39,6 @@ export interface DrawHandler {
     draw(drawData: DrawData, geometry: Geometry): void;
     transform(geometry: Geometry): void;
     cancel(): void;
-    setDrawnStatesGetter(getter: () => Record<number, DrawnState>): void;
 }
 
 interface FinalCoordinates {
@@ -1304,6 +1303,7 @@ export class DrawHandlerImpl implements DrawHandler {
         autoborderHandler: AutoborderHandler,
         geometry: Geometry,
         configuration: Configuration,
+        getDrawnStates: () => Record<number, DrawnState>,
     ) {
         this.autoborderHandler = autoborderHandler;
         this.configuration = configuration;
@@ -1323,7 +1323,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.crosshair = new Crosshair();
         this.drawInstance = null;
         this.pointsGroup = null;
-        this.getDrawnStates = null;
+        this.getDrawnStates = getDrawnStates;
         this.cursorPosition = {
             x: 0,
             y: 0,
@@ -1460,9 +1460,5 @@ export class DrawHandlerImpl implements DrawHandler {
     public cancel(): void {
         this.canceled = true;
         this.release();
-    }
-
-    public setDrawnStatesGetter(getter: () => Record<number, DrawnState>): void {
-        this.getDrawnStates = getter;
     }
 }

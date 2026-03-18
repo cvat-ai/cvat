@@ -1663,8 +1663,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.autoborderHandler,
             this.geometry,
             this.configuration,
+            () => this.drawnStates,
         );
-        this.drawHandler.setDrawnStatesGetter(() => this.drawnStates);
         this.masksHandler = new MasksHandlerImpl(
             this.onDrawDone,
             this.controller.draw.bind(this.controller),
