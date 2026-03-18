@@ -38,21 +38,29 @@ resolve_cuda() {
 
 resolve_model_params() {
     if [ -z "$MODEL_CONFIG_PARAMS" ]; then
-        echo "Warning: MODEL_CONFIG_PARAMS environment variable not found. Default model will be used: yolo26s.pt"
-        MODEL_CONFIG_PARAMS="-p model=str:yolo26s.pt"
-        MODEL="yolo26s.pt"
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable not found. Default model will be used: facebook/detr-resnet-50"
+        MODEL_CONFIG_PARAMS="-p model=facebook/detr-resnet-50"
+        MODEL="-p task=str:object-detection -p model=str:facebook/detr-resnet-50"
     elif result=$(echo "$MODEL_CONFIG_PARAMS" | grep -oP 'model=str:\K[^ ]+'); then
         echo "Extracted MODEL from MODEL_CONFIG_PARAMS: $result"
         MODEL="$result"
     else
         echo "Warning: MODEL_CONFIG_PARAMS environment variable is set but model param is malformed. Your config will be discarded. Default values will be used."
-        echo "MODEL_CONFIG_PARAMS should contain model in format -p model=str:your_model.pt"
-        echo "Following params will be used for cvat-cli: -p model=str:yolo26s.pt"
-        MODEL_CONFIG_PARAMS="-p model=str:yolo26s.pt"
-        MODEL="yolo26s.pt"
+        echo "MODEL_CONFIG_PARAMS should contain model in format -p model=str:your_model_name"
+        echo "Following params will be used for cvat-cli: -p task=str:object-detection -p model=str:facebook/detr-resnet-50"
+        MODEL_CONFIG_PARAMS="-p task=str:object-detection -p model=str:facebook/detr-resnet-50"
+        MODEL="facebook/detr-resnet-50"
     fi
 }
 
+resolve_function_name() {
+    if [ -z "$FUNCTION_NAME" ]; then
+        echo "Warning: FUNCTION_NAME environment variable not found. Default is TRANSFORMERS"
+        FUNCTION_NAME="TRANSFORMERS"
+    else
+        echo "Using FUNCTION_NAME: $FUNCTION_NAME"
+    fi
+}
 
 common_env() {
     validate_access_token

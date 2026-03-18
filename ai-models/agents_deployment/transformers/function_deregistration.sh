@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script removes the YOLO model function from the CVAT.
+# This script removes the transformers model function from the CVAT.
 
 source "$(dirname "$0")/check_env.sh"
 

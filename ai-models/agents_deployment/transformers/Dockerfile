@@ -4,9 +4,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     jq \
-    libxcb1 \
-    libgl1 \
-    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 ARG USE_GPU=false
@@ -20,7 +17,7 @@ WORKDIR /app
 
 RUN mkdir /shared && chown agent:agent /shared && chown agent:agent /app
 
-COPY ai-models/detector/yolo/requirements.txt .
+COPY ai-models/detector/transformers/requirements.txt .
 
 RUN if [ "$USE_GPU" = "true" ] && [ "$TARGETARCH" = "amd64" ]; then \
         echo "Building GPU image" && pip install --no-cache-dir cvat-cli -r requirements.txt; \
@@ -28,12 +25,11 @@ RUN if [ "$USE_GPU" = "true" ] && [ "$TARGETARCH" = "amd64" ]; then \
         echo "Building CPU only image" && pip install --no-cache-dir cvat-cli -r requirements.txt --extra-index-url=https://download.pytorch.org/whl/cpu; \
     fi
 
-COPY ai-models/detector/yolo/ .
-COPY --chmod=755 ai-models/agents_deployment/yolo/function_registration.sh .
-COPY --chmod=755 ai-models/agents_deployment/yolo/function_deregistration.sh .
-COPY --chmod=755 ai-models/agents_deployment/yolo/check_env.sh .
-COPY --chmod=755 ai-models/agents_deployment/yolo/entrypoint.sh .
-COPY --chmod=755 ai-models/agents_deployment/yolo/keypoints.txt .
+COPY ai-models/detector/transformers/ .
+COPY --chmod=755 ai-models/agents_deployment/transformers/function_registration.sh .
+COPY --chmod=755 ai-models/agents_deployment/transformers/function_deregistration.sh .
+COPY --chmod=755 ai-models/agents_deployment/transformers/check_env.sh .
+COPY --chmod=755 ai-models/agents_deployment/transformers/entrypoint.sh .
 
 USER agent
 

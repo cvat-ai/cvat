@@ -28,6 +28,7 @@ spec:
           command: ["./function_registration.sh"]
           env:
             {{- include "agent.commonEnv" . | nindent 12 }}
+            {{- include "agent.functionNameEnv" . | nindent 12 }}
             {{- include "agent.modelParamsOverride" . | nindent 12 }}
             {{- range .Values.job.envVars }}
             - name: {{ .name }}
