@@ -354,6 +354,13 @@ class Storage(models.Model):
     class Meta:
         default_permissions = ()
 
+    @classmethod
+    def get_or_create_cloud_storage_link(cls, cloud_storage: CloudStorage) -> "Storage":
+        storage, _ = cls.objects.get_or_create(
+            location=Location.CLOUD_STORAGE,
+            cloud_storage=cloud_storage,
+        )
+        return storage
 
 class ValidationMode(str, Enum):
     GT = "gt"

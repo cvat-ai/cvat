@@ -589,7 +589,60 @@ class TestPostTaskData:
         }
 
         kwargs = {"org_id": org_id} if org_id else {}
-        create_task(self._USERNAME, task_spec, data_spec, **kwargs)
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec, **kwargs)
+
+        response = get_method(self._USERNAME, f"tasks/{task_id}")
+        assert response.status_code == HTTPStatus.OK
+        task = response.json()
+        assert task["source_storage"]["location"] == "cloud_storage"
+        assert task["source_storage"]["cloud_storage_id"] == cloud_storage_id
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    def test_create_task_in_project_with_cloud_storage_files_persists_source_storage(
+        self,
+        cloud_storage_id: int,
+        cloud_storages,
+    ):
+        org_id = cloud_storages[cloud_storage_id]["organization"]
+
+        project_spec = {
+            "name": f"Project with cloud storage {cloud_storage_id}",
+            "labels": [{"name": "car"}],
+        }
+
+        response = post_method(self._USERNAME, "projects", project_spec, **({"org_id": org_id} if org_id else {}))
+        assert response.status_code == HTTPStatus.CREATED
+        project_id = response.json()["id"]
+
+        task_spec = {
+            "name": f"Task in project with files from cloud storage {cloud_storage_id}",
+            "project_id": project_id,
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": [
+                "sub/images_with_manifest/image_case_65_1.png",
+            ],
+        }
+
+        kwargs = {"org_id": org_id} if org_id else {}
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec, **kwargs)
+
+        response = get_method(self._USERNAME, f"tasks/{task_id}")
+        assert response.status_code == HTTPStatus.OK
+        task = response.json()
+        assert task["source_storage"]["location"] == "cloud_storage"
+        assert task["source_storage"]["cloud_storage_id"] == cloud_storage_id
+
+        response = get_method(self._USERNAME, f"projects/{project_id}")
+        assert response.status_code == HTTPStatus.OK
+        project = response.json()
+        assert project["source_storage"]["location"] == "cloud_storage"
+        assert project["source_storage"]["cloud_storage_id"] == cloud_storage_id
 
     def _create_task_with_cloud_data(
         self,
