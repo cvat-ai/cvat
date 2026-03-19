@@ -9,7 +9,7 @@ import MLModel from './ml-model';
 import {
     ModelKind, RQStatus, ShapeType, Source,
 } from './enums';
-import { SerializedCollection, SerializedShape } from './server-response-types';
+import { SerializedCollection, SerializedShape, SerializedFunctionRequest } from './server-response-types';
 import { mask2Rle } from './rle-utils';
 
 type InteractorShape = Pick<SerializedShape, 'group' | 'source' | 'attributes' | 'occluded' | 'rotation' | 'type'> & {
@@ -59,7 +59,7 @@ class LambdaManager {
         return { models, count: lambdaFunctions.length };
     }
 
-    async run(taskID: number, model: MLModel, args: any): Promise<string> {
+    async run(taskID: number, model: MLModel, args: any): Promise<SerializedFunctionRequest> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -80,8 +80,7 @@ class LambdaManager {
             function: model.id,
         };
 
-        const result = await serverProxy.lambda.run(body);
-        return result.id;
+        return serverProxy.lambda.run(body);
     }
 
     async call(taskID, model, args): Promise<TrackerResults | InteractorResults | SerializedCollection> {
@@ -143,7 +142,7 @@ class LambdaManager {
         return result;
     }
 
-    async requests(): Promise<any[]> {
+    async requests(): Promise<SerializedFunctionRequest[]> {
         const lambdaRequests = await serverProxy.lambda.requests();
         return lambdaRequests
             .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
@@ -185,10 +184,10 @@ class LambdaManager {
                         delete this.listening[requestID];
                         if (status === RQStatus.FINISHED) {
                             onUpdate
-                                .forEach((update) => update(status, response.progress || 100));
+                                .forEach((update) => update(status, response.progress ?? 100));
                         } else {
                             onUpdate
-                                .forEach((update) => update(status, response.progress || 0, response.exc_info || ''));
+                                .forEach((update) => update(status, response.progress ?? 0, response.exc_info ?? ''));
                         }
                     }
                 }

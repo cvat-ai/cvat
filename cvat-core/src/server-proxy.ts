@@ -13,7 +13,7 @@ import { axiosTusHttpStack } from './axios-tus';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
-    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, SerializedFunctionRequest,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
@@ -1843,7 +1843,7 @@ async function getLambdaFunctions(): Promise<SerializedModel[]> {
     }
 }
 
-async function runLambdaRequest(body) {
+async function runLambdaRequest(body): Promise<SerializedFunctionRequest> {
     const { backendAPI } = config;
 
     try {
@@ -1867,7 +1867,7 @@ async function callLambdaFunction(funId, body) {
     }
 }
 
-async function getLambdaRequests() {
+async function getLambdaRequests(): Promise<SerializedFunctionRequest[]> {
     const { backendAPI } = config;
 
     try {
