@@ -35,7 +35,7 @@ import {
     imageDataToDataURL, RLEToImageData, stringifyPoints, imageDataToRLE,
     composeShapeDimensions, getRoundedRotation,
     clamp, validateUnionResult, processPolygonUnionResult,
-    applySnapToShapePoint,
+    applySnapToShapePoint, isPolygonSelfIntersecting,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -128,6 +128,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     domain,
                     exception: exception instanceof Error ?
                         exception : new Error(`Unknown exception: "${exception}"`),
+                },
+            }),
+        );
+    };
+
+    private onWarning = (message: string, domain?: string): void => {
+        this.canvas.dispatchEvent(
+            new CustomEvent('canvas.warning', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    domain,
+                    message,
                 },
             }),
         );
@@ -527,10 +540,34 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private joinPolygons(objects: any[], duration: number): void {
         try {
+            const validObjects: any[] = [];
+            const selfIntersectingIndices: number[] = [];
+
+            objects.forEach((state, idx) => {
+                if (isPolygonSelfIntersecting(state.points)) {
+                    selfIntersectingIndices.push(idx);
+                } else {
+                    validObjects.push(state);
+                }
+            });
+
+            if (selfIntersectingIndices.length > 0) {
+                const excludedIds = selfIntersectingIndices.map((idx) => objects[idx].clientID).join(', ');
+                this.onWarning(
+                    `${selfIntersectingIndices.length} self-intersecting polygon${selfIntersectingIndices.length > 1 ? 's' : ''} excluded from merge ` +
+                    `(IDs: ${excludedIds}).`,
+                    'Join operation',
+                );
+            }
+
+            if (validObjects.length < 2) {
+                throw new Error('Cannot join: not enough valid polygons (need at least 2 non-self-intersecting polygons)');
+            }
+
             // Convert CVAT polygon format to martinez format
             // CVAT format: [x1, y1, x2, y2, ...] (flat array)
             // martinez format: [[[x1, y1], [x2, y2], ...]] (GeoJSON Polygon)
-            const polygons: martinez.Polygon[] = objects.map((state) => {
+            const polygons: martinez.Polygon[] = validObjects.map((state) => {
                 const { points } = state;
                 const coords: martinez.Position[] = [];
 
@@ -564,18 +601,28 @@ export class CanvasViewImpl implements CanvasView, Listener {
             validateUnionResult(result);
 
             const processedResults = processPolygonUnionResult(result);
-            const { points } = processedResults[0];
 
-            this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
-                bubbles: false,
-                cancelable: true,
-                detail: {
-                    duration,
-                    states: objects,
-                    points,
-                    shapeType: 'polygon',
-                },
-            }));
+            // Show warning if merge resulted in multiple disjoint polygons
+            if (processedResults.length > 1) {
+                this.onWarning(
+                    `Merge resulted in ${processedResults.length} separate polygons.`,
+                    'Join operation',
+                );
+            }
+
+            // Dispatch event for each resulting polygon
+            processedResults.forEach(({ points }) => {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        duration,
+                        states: validObjects,
+                        points,
+                        shapeType: 'polygon',
+                    },
+                }));
+            });
         } catch (error) {
             this.onError(error);
             this.dispatchCanceledEvent();

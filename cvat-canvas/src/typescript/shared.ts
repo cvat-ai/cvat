@@ -586,15 +586,7 @@ export function validateUnionResult(result: martinez.Geometry): void {
     //   ]
     // ]
 
-    // Check for multiple disjoint polygons
-    if (result.length > 1) {
-        throw new Error(
-            'Cannot join these polygons: The union operation produced multiple separate polygons. ' +
-            'This happens when the selected polygons do not overlap, do not share edges, or self-intersect.',
-        );
-    }
-
-    // Check for holes in the polygon
+    // Check for holes in any polygon (not supported by CVAT)
     for (const polygon of result) {
         if (polygon.length > 1) {
             throw new Error(
@@ -624,6 +616,61 @@ export function processPolygonUnionResult(result: martinez.Geometry): { shapeTyp
     }
 
     return results;
+}
+
+export function isPolygonSelfIntersecting(points: number[]): boolean {
+    if (points.length < 6) {
+        // Need at least 3 points (6 coordinates) for a polygon
+        return false;
+    }
+
+    const segments: Segment[] = [];
+    for (let i = 0; i < points.length - 2; i += 2) {
+        segments.push([
+            [points[i], points[i + 1]],
+            [points[i + 2], points[i + 3]],
+        ]);
+    }
+    // Close the polygon: last point to first point
+    segments.push([
+        [points[points.length - 2], points[points.length - 1]],
+        [points[0], points[1]],
+    ]);
+
+    // Check each segment against all non-adjacent segments
+    for (let i = 0; i < segments.length; i += 1) {
+        for (let j = i + 2; j < segments.length; j += 1) {
+            // Skip adjacent segments and the closing edge against the first edge
+            if (i === 0 && j === segments.length - 1) {
+                continue;
+            }
+
+            const intersection = findIntersection(segments[i], segments[j]);
+            if (intersection !== null) {
+                const [x, y] = intersection;
+                if (!Number.isNaN(x) && !Number.isNaN(y)) {
+                    const seg1Start = segments[i][0];
+                    const seg1End = segments[i][1];
+                    const seg2Start = segments[j][0];
+                    const seg2End = segments[j][1];
+
+                    const EPSILON = 1e-6;
+                    const isAtEndpoint = (
+                        (Math.abs(x - seg1Start[0]) < EPSILON && Math.abs(y - seg1Start[1]) < EPSILON) ||
+                        (Math.abs(x - seg1End[0]) < EPSILON && Math.abs(y - seg1End[1]) < EPSILON) ||
+                        (Math.abs(x - seg2Start[0]) < EPSILON && Math.abs(y - seg2Start[1]) < EPSILON) ||
+                        (Math.abs(x - seg2End[0]) < EPSILON && Math.abs(y - seg2End[1]) < EPSILON)
+                    );
+
+                    if (!isAtEndpoint) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 export type Segment = [[number, number], [number, number]];

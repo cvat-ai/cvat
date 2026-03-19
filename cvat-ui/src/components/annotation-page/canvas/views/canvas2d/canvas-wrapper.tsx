@@ -644,6 +644,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().removeEventListener('canvas.warning', this.onCanvasWarningOccurrence);
         canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
@@ -656,6 +657,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             const { onCanvasErrorOccurred } = this.props;
             onCanvasErrorOccurred(exception);
         }
+    };
+
+    private onCanvasWarningOccurrence = (event: any): void => {
+        const { message, domain } = event.detail;
+        notification.warning({
+            message: domain ? `${domain}` : 'Warning',
+            description: message,
+            duration: 5,
+            className: 'cvat-notification-warning-canvas',
+        });
     };
 
     private onCanvasMessage = (event: CustomEvent<{ messages: CanvasHint[] | null, topic: string }>): void => {
@@ -1100,6 +1111,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().addEventListener('canvas.warning', this.onCanvasWarningOccurrence);
         canvasInstance.html().addEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
