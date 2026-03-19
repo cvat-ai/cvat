@@ -126,7 +126,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
     const { taskID, requestID, functionID } = inferenceMeta;
 
     core.lambda
-        .listen(requestID, functionID, (status: RQStatus, progress: number, message?: string) => {
+        .listen(requestID, (status: RQStatus, progress: number, message?: string) => {
             if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
@@ -180,7 +180,7 @@ export function getInferenceStatusAsync(): ThunkAction {
             const requests = await core.lambda.requests();
             const newListenedIDs: Record<string, boolean> = {};
             requests
-                .map((request: any): object => ({
+                .map((request: any) => ({
                     taskID: +request.function.task,
                     requestID: request.id,
                     functionID: request.function.id,
@@ -225,7 +225,7 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
         try {
             const inference = getState().models.inferences[taskID];
-            await core.lambda.cancel(inference.id, inference.functionID);
+            await core.lambda.cancel(inference.id);
             dispatch(modelsActions.cancelInferenceSuccess(taskID, inference));
         } catch (error) {
             dispatch(modelsActions.cancelInferenceFailed(taskID, error));

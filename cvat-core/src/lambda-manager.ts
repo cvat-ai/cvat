@@ -35,22 +35,19 @@ export interface TrackerResults {
 }
 
 class LambdaManager {
-    private cachedList: MLModel[];
     private listening: Record<number, {
         onUpdate: ((status: RQStatus, progress: number, message?: string) => void)[];
-        functionID: string;
         timeout: number | null;
     }>;
 
     constructor() {
         this.listening = {};
-        this.cachedList = [];
     }
 
     async list(): Promise<{ models: MLModel[], count: number }> {
         const lambdaFunctions = await serverProxy.lambda.list();
-
         const models = [];
+
         for (const model of lambdaFunctions) {
             models.push(
                 new MLModel({
@@ -59,7 +56,6 @@ class LambdaManager {
             );
         }
 
-        this.cachedList = models;
         return { models, count: lambdaFunctions.length };
     }
 
@@ -153,38 +149,28 @@ class LambdaManager {
             .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
     }
 
-    async cancel(requestID, functionID): Promise<void> {
+    async cancel(requestID): Promise<void> {
         if (typeof requestID !== 'string') {
             throw new ArgumentError(`Request id argument is required to be a string. But got ${requestID}`);
         }
-        const model = this.cachedList.find((_model) => _model.id === functionID);
-        if (!model) {
-            throw new ArgumentError('Incorrect Function Id provided');
-        }
 
+        await serverProxy.lambda.cancel(requestID);
         if (this.listening[requestID]) {
             clearTimeout(this.listening[requestID].timeout);
             delete this.listening[requestID];
         }
-
-        await serverProxy.lambda.cancel(requestID);
     }
 
     async listen(
         requestID: string,
-        functionID: string | number,
         callback: (status: RQStatus, progress: number, message?: string) => void,
     ): Promise<void> {
-        const model = this.cachedList.find((_model) => _model.id === functionID);
-        if (!model) {
-            throw new ArgumentError('Incorrect function Id provided');
-        }
-
         if (requestID in this.listening) {
             this.listening[requestID].onUpdate.push(callback);
             // already listening, avoid sending extra requests
             return;
         }
+
         const timeoutCallback = (): void => {
             serverProxy.lambda.status(requestID).then((response) => {
                 const { status } = response;
@@ -226,7 +212,6 @@ class LambdaManager {
 
         this.listening[requestID] = {
             onUpdate: [callback],
-            functionID,
             timeout: window.setTimeout(timeoutCallback),
         };
     }
