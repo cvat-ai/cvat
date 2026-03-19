@@ -121,6 +121,9 @@ interface StateToProps {
     imageFilters: ImageFilter[];
     activeControl: ActiveControl;
     activeObjectHidden: boolean;
+    enableSelectiveDisplay: boolean;
+    selectiveLabels: number[];
+    selectiveAttributes: Record<number, number[]>;
 }
 
 interface DispatchToProps {
@@ -197,6 +200,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 controlPointsSize,
                 textPosition,
                 textContent,
+                enableSelectiveDisplay,
+                selectiveLabels,
+                selectiveAttributes,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, showGroundTruth,
@@ -263,6 +269,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         highlightedConflict,
         imageFilters,
         activeObjectHidden,
+        enableSelectiveDisplay,
+        selectiveLabels,
+        selectiveAttributes,
     };
 }
 
@@ -387,6 +396,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             outlineColor,
             showGroundTruth,
             resetZoom,
+            enableSelectiveDisplay,
+            selectiveLabels,
+            selectiveAttributes,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -414,6 +426,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textPosition,
             textContent,
             resetZoom,
+            enableSelectiveDisplay,
+            selectiveLabels,
+            selectiveAttributes,
         });
 
         this.initialSetup();
@@ -457,6 +472,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showGroundTruth,
             highlightedConflict,
             imageFilters,
+            enableSelectiveDisplay,
+            selectiveLabels,
+            selectiveAttributes,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -477,7 +495,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.outlineColor !== outlineColor ||
             prevProps.outlined !== outlined ||
             prevProps.showGroundTruth !== showGroundTruth ||
-            prevProps.resetZoom !== resetZoom
+            prevProps.resetZoom !== resetZoom ||
+            prevProps.enableSelectiveDisplay !== enableSelectiveDisplay ||
+            prevProps.selectiveLabels !== selectiveLabels ||
+            prevProps.selectiveAttributes !== selectiveAttributes
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
@@ -497,6 +518,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 textContent,
                 showConflicts: showGroundTruth,
                 resetZoom,
+                enableSelectiveDisplay,
+                selectiveLabels,
+                selectiveAttributes,
             });
         }
 

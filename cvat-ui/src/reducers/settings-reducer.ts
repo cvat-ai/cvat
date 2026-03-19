@@ -47,6 +47,10 @@ const defaultState: SettingsState = {
             buttonVisible: false,
         },
         showTagsOnFrame: true,
+        // Selective display settings
+        selectiveLabels: [],
+        selectiveAttributes: {},
+        enableSelectiveDisplay: false,
     },
     player: {
         canvasBackgroundColor: '#ffffff',
@@ -501,6 +505,37 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
+        }
+        case SettingsActionTypes.SWITCH_SELECTIVE_DISPLAY: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    enableSelectiveDisplay: action.payload.enableSelectiveDisplay,
+                },
+            };
+        }
+        case SettingsActionTypes.SET_SELECTIVE_LABELS: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    selectiveLabels: action.payload.selectiveLabels,
+                },
+            };
+        }
+        case SettingsActionTypes.SET_SELECTIVE_ATTRIBUTES: {
+            const { labelId, attributeIds } = action.payload;
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    selectiveAttributes: {
+                        ...state.workspace.selectiveAttributes,
+                        [labelId]: attributeIds,
+                    },
+                },
+            };
         }
         default: {
             return state;

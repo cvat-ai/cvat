@@ -970,6 +970,10 @@ export interface WorkspaceSettingsState {
     textPosition: 'auto' | 'center';
     textContent: string;
     showTagsOnFrame: boolean;
+    // Selective display settings for object details
+    selectiveLabels: number[]; // Array of label IDs to show
+    selectiveAttributes: Record<number, number[]>; // labelId -> attributeIds mapping
+    enableSelectiveDisplay: boolean; // Whether to use selective display
 }
 
 export interface ShapesSettingsState {

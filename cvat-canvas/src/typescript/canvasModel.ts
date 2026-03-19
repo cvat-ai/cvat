@@ -98,6 +98,10 @@ export interface Configuration {
     outlinedBorders?: string | false;
     resetZoom?: boolean;
     hideEditedObject?: boolean;
+    // Selective display settings
+    enableSelectiveDisplay?: boolean;
+    selectiveLabels?: number[];
+    selectiveAttributes?: Record<number, number[]>;
 }
 
 export interface BrushTool {
@@ -978,6 +982,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (typeof configuration.undefinedAttrValue === 'string') {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
+        }
+
+        // Selective display settings
+        if (typeof configuration.enableSelectiveDisplay === 'boolean') {
+            this.data.configuration.enableSelectiveDisplay = configuration.enableSelectiveDisplay;
+        }
+
+        if (Array.isArray(configuration.selectiveLabels)) {
+            this.data.configuration.selectiveLabels = configuration.selectiveLabels;
+        }
+
+        if (configuration.selectiveAttributes && typeof configuration.selectiveAttributes === 'object') {
+            this.data.configuration.selectiveAttributes = configuration.selectiveAttributes;
         }
         if (typeof configuration.forceDisableEditing === 'boolean') {
             this.data.configuration.forceDisableEditing = configuration.forceDisableEditing;

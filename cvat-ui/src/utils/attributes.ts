@@ -85,3 +85,70 @@ export function orderAttributesByJobConfig(
     // Fallback to original order
     return values;
 }
+
+/**
+ * Interface for selective display settings
+ */
+export interface SelectiveDisplaySettings {
+    enableSelectiveDisplay: boolean;
+    selectiveLabels: number[];
+    selectiveAttributes: Record<number, number[]>;
+}
+
+/**
+ * Checks if a label should be displayed based on selective display settings
+ */
+export function shouldShowLabel(labelId: number, settings: SelectiveDisplaySettings): boolean {
+    if (!settings.enableSelectiveDisplay) {
+        return true; // Show all labels if selective display is disabled
+    }
+    
+    return settings.selectiveLabels.includes(labelId);
+}
+
+/**
+ * Filters attributes based on selective display settings for a specific label
+ */
+export function filterAttributesForDisplay(
+    attributes: any[], 
+    labelId: number, 
+    settings: SelectiveDisplaySettings
+): any[] {
+    if (!settings.enableSelectiveDisplay) {
+        return attributes; // Return all attributes if selective display is disabled
+    }
+    
+    const allowedAttributeIds = settings.selectiveAttributes[labelId];
+    if (!allowedAttributeIds || allowedAttributeIds.length === 0) {
+        return []; // No attributes allowed for this label
+    }
+    
+    return attributes.filter(attr => allowedAttributeIds.includes(attr.id));
+}
+
+/**
+ * Filters attribute values object based on selective display settings
+ */
+export function filterAttributeValuesForDisplay(
+    attributeValues: Record<string, any>,
+    labelId: number,
+    settings: SelectiveDisplaySettings
+): Record<string, any> {
+    if (!settings.enableSelectiveDisplay) {
+        return attributeValues; // Return all attributes if selective display is disabled
+    }
+    
+    const allowedAttributeIds = settings.selectiveAttributes[labelId];
+    if (!allowedAttributeIds || allowedAttributeIds.length === 0) {
+        return {}; // No attributes allowed for this label
+    }
+    
+    const filtered: Record<string, any> = {};
+    for (const [attrId, value] of Object.entries(attributeValues)) {
+        if (allowedAttributeIds.includes(Number(attrId))) {
+            filtered[attrId] = value;
+        }
+    }
+    
+    return filtered;
+}

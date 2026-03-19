@@ -20,6 +20,9 @@ import {
     switchTextContent,
     switchShowingTagsOnFrame,
     switchAdaptiveZoom,
+    switchSelectiveDisplay,
+    setSelectiveLabels,
+    setSelectiveAttributes,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers';
@@ -41,6 +44,11 @@ interface StateToProps {
     textPosition: 'auto' | 'center';
     textContent: string;
     showTagsOnFrame: boolean;
+    // Selective display props
+    enableSelectiveDisplay: boolean;
+    selectiveLabels: number[];
+    selectiveAttributes: Record<number, number[]>;
+    jobLabels: any[]; // Available labels from current job
 }
 
 interface DispatchToProps {
@@ -58,6 +66,10 @@ interface DispatchToProps {
     onChangeTextPosition(position: 'auto' | 'center'): void;
     onChangeTextContent(textContent: string[]): void;
     onSwitchShowingTagsOnFrame(enabled: boolean): void;
+    // Selective display functions
+    onSwitchSelectiveDisplay(enabled: boolean): void;
+    onSetSelectiveLabels(labelIds: number[]): void;
+    onSetSelectiveAttributes(labelId: number, attributeIds: number[]): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -77,7 +89,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textPosition,
         textContent,
         showTagsOnFrame,
+        enableSelectiveDisplay,
+        selectiveLabels,
+        selectiveAttributes,
     } = workspace;
+
+    // Get job labels if available (for annotation workspace)
+    const jobLabels = state.annotation?.job?.labels || [];
 
     return {
         autoSave,
@@ -94,6 +112,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textPosition,
         textContent,
         showTagsOnFrame,
+        enableSelectiveDisplay,
+        selectiveLabels,
+        selectiveAttributes,
+        jobLabels,
     };
 }
 
@@ -112,6 +134,10 @@ const mapDispatchToProps: DispatchToProps = {
     onChangeTextPosition: switchTextPosition,
     onChangeTextContent: switchTextContent,
     onSwitchShowingTagsOnFrame: switchShowingTagsOnFrame,
+    // Selective display actions
+    onSwitchSelectiveDisplay: switchSelectiveDisplay,
+    onSetSelectiveLabels: setSelectiveLabels,
+    onSetSelectiveAttributes: setSelectiveAttributes,
 };
 
 function WorkspaceSettingsContainer(props: StateToProps & DispatchToProps): JSX.Element {
