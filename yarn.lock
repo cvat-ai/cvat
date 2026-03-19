@@ -2999,15 +2999,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/lru-cache@npm:^7.10.10":
-  version: 7.10.10
-  resolution: "@types/lru-cache@npm:7.10.10"
-  dependencies:
-    lru-cache: "npm:*"
-  checksum: 10c0/ab85558867cb059bebd42074c1cd517eb41efb1db22b9d26dfdc58df01c83ff9c212a562b4ec3d5936418ffb03e626a0f30463026aa5fb5ced41e3b4b4af057f
-  languageName: node
-  linkType: hard
-
 "@types/mdast@npm:^3.0.0":
   version: 3.0.15
   resolution: "@types/mdast@npm:3.0.15"
@@ -5801,7 +5792,6 @@ __metadata:
     "@ant-design/icons": "npm:^5.5.2"
     "@react-awesome-query-builder/antd": "npm:^6.5.2"
     "@types/json-logic-js": "npm:^2.0.2"
-    "@types/lru-cache": "npm:^7.10.10"
     "@types/platform": "npm:^1.3.4"
     "@types/react": "npm:18.2.55"
     "@types/react-color": "npm:^3.0.5"
@@ -5823,7 +5813,6 @@ __metadata:
     dotenv-webpack: "npm:^8.0.1"
     error-stack-parser: "npm:^2.0.6"
     json-logic-js: "npm:^2.0.2"
-    lru-cache: "npm:^9.1.1"
     mousetrap: "npm:^1.6.5"
     onnxruntime-web: "npm:1.23.2"
     platform: "npm:^1.3.6"
@@ -5889,6 +5878,7 @@ __metadata:
     husky: "npm:^6.0.0"
     lint-staged: "npm:^13.0.3"
     lodash: "npm:^4.17.23"
+    lru-cache: "npm:^11.2.7"
     micromatch: "npm:^4.0.8"
     nodemon: "npm:^3.0.1"
     nyc: "npm:^15.1.0"
@@ -10175,10 +10165,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lru-cache@npm:*, lru-cache@npm:^10.0.1, lru-cache@npm:^10.2.0":
+"lru-cache@npm:^10.0.1, lru-cache@npm:^10.2.0":
   version: 10.4.3
   resolution: "lru-cache@npm:10.4.3"
   checksum: 10c0/ebd04fbca961e6c1d6c0af3799adcc966a1babe798f685bb84e6599266599cd95d94630b10262f5424539bc4640107e8a33aa28585374abf561d30d16f4b39fb
+  languageName: node
+  linkType: hard
+
+"lru-cache@npm:^11.2.7":
+  version: 11.2.7
+  resolution: "lru-cache@npm:11.2.7"
+  checksum: 10c0/549cdb59488baa617135fc12159cafb1a97f91079f35093bb3bcad72e849fc64ace636d244212c181dfdf1a99bbfa90757ff303f98561958ee4d0f885d9bd5f7
   languageName: node
   linkType: hard
 
@@ -10197,13 +10194,6 @@ __metadata:
   dependencies:
     yallist: "npm:^4.0.0"
   checksum: 10c0/cb53e582785c48187d7a188d3379c181b5ca2a9c78d2bce3e7dee36f32761d1c42983da3fe12b55cb74e1779fa94cdc2e5367c028a9b35317184ede0c07a30a9
-  languageName: node
-  linkType: hard
-
-"lru-cache@npm:^9.1.1":
-  version: 9.1.2
-  resolution: "lru-cache@npm:9.1.2"
-  checksum: 10c0/886811ab451332c899c230274e7e51507c15e5b3b18f0b39fb55f558978d58799a0b1a50e04d60a448d8c970ff4e6ee718bb119083ca88abb78930284f1e0900
   languageName: node
   linkType: hard
 
