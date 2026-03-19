@@ -100,7 +100,7 @@ export default class LabelForm extends React.Component<Props> {
             id: label ? label.id : idGenerator(),
             color: values.color,
             type: values.type || label?.type || LabelType.ANY,
-            attributes: currentAttributes.map((attribute: Store) => {
+            attributes: currentAttributes.map((attribute: Store, idx: number) => {
                 let attrValues: string | string[] = attribute.values;
                 if (!Array.isArray(attrValues)) {
                     if (attribute.type === AttributeType.NUMBER) {
@@ -117,6 +117,7 @@ export default class LabelForm extends React.Component<Props> {
                     default_value: attribute.default_value && attrValues.includes(attribute.default_value) ?
                         attribute.default_value : attrValues[0],
                     input_type: attribute.type.toLowerCase(),
+                    display_order: idx,
                 };
             }),
             ...(skeletonConfiguration || {}),

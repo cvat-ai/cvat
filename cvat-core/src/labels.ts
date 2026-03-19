@@ -17,6 +17,7 @@ export class Attribute {
     public mutable: boolean;
     public name: string;
     public values: string[];
+    public displayOrder: number;
 
     constructor(initialData: SerializedAttribute) {
         const data = {
@@ -26,6 +27,7 @@ export class Attribute {
             mutable: undefined,
             name: undefined,
             values: undefined,
+            display_order: 0,
         };
 
         for (const key in data) {
@@ -65,6 +67,9 @@ export class Attribute {
                 values: {
                     get: () => [...data.values],
                 },
+                displayOrder: {
+                    get: () => data.display_order,
+                },
             }),
         );
     }
@@ -76,6 +81,7 @@ export class Attribute {
             input_type: this.inputType,
             default_value: this.defaultValue,
             values: this.values,
+            display_order: this.displayOrder,
         };
 
         if (typeof this.id !== 'undefined') {

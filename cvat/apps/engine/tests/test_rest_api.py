@@ -37,7 +37,7 @@ from botocore.exceptions import ClientError, EndpointConnectionError
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import FileResponse, HttpResponse
-from django.test import SimpleTestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from pdf2image import convert_from_bytes
 from PIL import Image
 from pycocotools import coco as coco_loader
@@ -1344,6 +1344,91 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
     def test_api_v2_projects_delete_label(self):
         data = {"labels": [{"id": 2, "name": "Label for deletion", "deleted": True}]}
         self._check_api_v2_project(data)
+
+
+class AttributeDisplayOrderTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        project_data = {
+            "name": "Project for display_order test",
+            "labels": [
+                {
+                    "name": "car",
+                    "color": "#ff00ff",
+                    "attributes": [
+                        {
+                            "name": "color",
+                            "mutable": False,
+                            "input_type": AttributeType.SELECT,
+                            "default_value": "red",
+                            "values": "red\nblue\ngreen",
+                            "display_order": 2,
+                        },
+                        {
+                            "name": "size",
+                            "mutable": True,
+                            "input_type": AttributeType.RADIO,
+                            "default_value": "small",
+                            "values": "small\nmedium\nlarge",
+                            "display_order": 0,
+                        },
+                        {
+                            "name": "visible",
+                            "mutable": False,
+                            "input_type": AttributeType.CHECKBOX,
+                            "default_value": "true",
+                            "values": "true\nfalse",
+                            "display_order": 1,
+                        },
+                    ],
+                },
+            ],
+        }
+        cls.project = create_db_project(project_data)
+
+    def test_display_order_saved_on_creation(self):
+        label = self.project.label_set.get(name="car")
+        attrs = list(label.attributespec_set.all())
+
+        attr_by_name = {a.name: a for a in attrs}
+        self.assertEqual(attr_by_name["color"].display_order, 2)
+        self.assertEqual(attr_by_name["size"].display_order, 0)
+        self.assertEqual(attr_by_name["visible"].display_order, 1)
+
+    def test_display_order_default_is_zero(self):
+        label = Label(project=self.project, name="person", color="#00ff00")
+        label.save()
+        attr = AttributeSpec(
+            label=label,
+            name="age",
+            mutable=False,
+            input_type=AttributeType.NUMBER,
+            default_value="25",
+            values="1;100;1",
+        )
+        attr.save()
+
+        self.assertEqual(attr.display_order, 0)
+
+    def test_ordering_by_display_order(self):
+        label = self.project.label_set.get(name="car")
+        attrs = list(label.attributespec_set.all())
+
+        # Meta ordering = ['display_order'], so should come as: size(0), visible(1), color(2)
+        self.assertEqual(attrs[0].name, "size")
+        self.assertEqual(attrs[1].name, "visible")
+        self.assertEqual(attrs[2].name, "color")
+
+    def test_display_order_update(self):
+        label = self.project.label_set.get(name="car")
+        attr = label.attributespec_set.get(name="color")
+        self.assertEqual(attr.display_order, 2)
+
+        attr.display_order = 5
+        attr.save()
+        attr.refresh_from_db()
+
+        self.assertEqual(attr.display_order, 5)
 
 
 class ProjectListOfTasksAPITestCase(ApiTestBase):

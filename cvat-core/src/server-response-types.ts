@@ -177,6 +177,7 @@ export interface SerializedAttribute {
     default_value: string;
     values: string[];
     id?: number;
+    display_order?: number;
 }
 
 export interface SerializedLabel {
