@@ -381,11 +381,11 @@ class ShapeRequirementHandler(RequirementHandler):
         matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
 
         # Unpack results for all annotation types
-        all_ann_types_result = matching_results["all_ann_types"][0]
+        all_ann_types_result = matching_results["all_ann_types"]
         matches, mismatches, gt_unmatched, ds_unmatched, _ = all_ann_types_result
         
         # Unpack results for shape annotation types
-        all_shape_types_result = matching_results["all_shape_ann_types"][0]
+        all_shape_types_result = matching_results["all_shape_ann_types"]
         (
             shape_matches,
             shape_mismatches,
