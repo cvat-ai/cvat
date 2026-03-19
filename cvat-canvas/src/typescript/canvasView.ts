@@ -610,19 +610,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 );
             }
 
-            // Dispatch event for each resulting polygon
-            processedResults.forEach(({ points }) => {
-                this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
-                    bubbles: false,
-                    cancelable: true,
-                    detail: {
-                        duration,
-                        states: validObjects,
-                        points,
-                        shapeType: 'polygon',
-                    },
-                }));
-            });
+            const pointsArray = processedResults.map(({ points }) => points);
+
+            this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    duration,
+                    states: validObjects,
+                    points: pointsArray,
+                    shapeType: 'polygon',
+                },
+            }));
         } catch (error) {
             this.onError(error);
             this.dispatchCanceledEvent();
@@ -665,7 +664,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 detail: {
                     duration,
                     states: objects,
-                    points: rle,
+                    points: [rle],
                     shapeType: 'mask',
                 },
             }));

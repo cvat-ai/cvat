@@ -667,7 +667,7 @@ export default class Collection {
         return groupIdx;
     }
 
-    public join(objectStates: ObjectState[], points: number[]): void {
+    public join(objectStates: ObjectState[], points: number[][]): void {
         checkObjectType('shapes to join', objectStates, null, { cls: Array, name: 'Array' });
 
         if (objectStates.some((state, idx) => idx && state.frame !== objectStates[idx - 1].frame)) {
@@ -714,9 +714,10 @@ export default class Collection {
 
             const shapesToCreate = [];
 
-            if (isMaskJoin) {
-                // For masks, create a single joined mask
-                checkObjectType('joined rle mask', points, null, { cls: Array, name: 'Array' });
+            for (const shapePoints of points) {
+                checkObjectType('joined shape points', shapePoints, null, { cls: Array, name: 'Array' });
+                const shapeType = isMaskJoin ? ShapeType.MASK : ShapeType.POLYGON;
+
                 shapesToCreate.push({
                     attributes: attrValues,
                     frame: objectsToJoin[0].frame,
@@ -724,26 +725,9 @@ export default class Collection {
                     label_id: objectsToJoin[0].label.id,
                     outside: false,
                     occluded: objectsToJoin.some((object: any) => object.occluded),
-                    points,
+                    points: shapePoints,
                     rotation: 0,
-                    type: ShapeType.MASK,
-                    z_order: Math.max(...objectsToJoin.map((object: any) => object.zOrder)),
-                    source: Source.MANUAL,
-                    elements: [],
-                });
-            } else if (isPolygonJoin) {
-                // For polygons, create exactly one polygon (we validated this on canvas side)
-                checkObjectType('joined polygon points', points, null, { cls: Array, name: 'Array' });
-                shapesToCreate.push({
-                    attributes: attrValues,
-                    frame: objectsToJoin[0].frame,
-                    group: 0,
-                    label_id: objectsToJoin[0].label.id,
-                    outside: false,
-                    occluded: objectsToJoin.some((object: any) => object.occluded),
-                    points,
-                    rotation: 0,
-                    type: ShapeType.POLYGON,
+                    type: shapeType,
                     z_order: Math.max(...objectsToJoin.map((object: any) => object.zOrder)),
                     source: Source.MANUAL,
                     elements: [],

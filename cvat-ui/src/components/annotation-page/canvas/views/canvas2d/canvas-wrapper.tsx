@@ -135,7 +135,7 @@ interface DispatchToProps {
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
-    onJoinAnnotations(states: ObjectState[], points: number[]): void;
+    onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onExpandObject(objectState: ObjectState): void;
@@ -318,7 +318,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onGroupAnnotations(states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(states));
         },
-        onJoinAnnotations(states: ObjectState[], points: number[]): void {
+        onJoinAnnotations(states: ObjectState[], points: number[][]): void {
             dispatch(joinAnnotationsAsync(states, points));
         },
         onSliceAnnotations(state: ObjectState, results: number[][]): void {
@@ -757,7 +757,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             duration,
             count: states.length,
         });
-        onJoinAnnotations(states, points);
+
+        const pointsArray = points as number[][];
+        onJoinAnnotations(states, pointsArray);
     };
 
     private onCanvasTrackSplitted = (event: any): void => {
