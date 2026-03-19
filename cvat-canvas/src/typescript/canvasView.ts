@@ -34,9 +34,8 @@ import {
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, RLEToImageData, stringifyPoints, imageDataToRLE,
     composeShapeDimensions, getRoundedRotation,
-    clamp,
-    validateUnionResult,
-    processPolygonUnionResult,
+    clamp, validateUnionResult, processPolygonUnionResult,
+    applySnapToShapePoint,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -1136,7 +1135,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             'fill-opacity': 1,
                             'stroke-width': consts.POINTS_STROKE_WIDTH / getGeometry().scale,
                         });
-
                     circle.on('mouseenter', (e: MouseEvent): void => {
                         const activeElement = getActiveElement();
                         if (activeElement !== null && (e.altKey || e.ctrlKey)) {
@@ -1171,7 +1169,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         circle.off('contextmenu', contextMenuHandler);
                         circle.removeClass('cvat_canvas_selected_point');
                     });
-
                     return circle;
                 },
             });
@@ -1406,21 +1403,40 @@ export class CanvasViewImpl implements CanvasView, Listener {
             let resized = false;
             let aborted = false;
             let start = Date.now();
+            let draggedPointIndex: number | null = null; // Track which point is being dragged
 
             (resizableInstance as any)
                 .resize({
                     snapToGrid: 0.1,
                     snapToAngle: this.snapToAngleResize,
                 })
-                .on('resizestart', (): void => {
+                .on('resizestart', (e: CustomEvent): void => {
                     onResizeStart();
                     resized = false;
                     start = Date.now();
                     this.resizableShape = shape;
+                    const detail = (e.detail.event.detail as any);
+                    draggedPointIndex = detail?.i ?? null;
                 })
                 .on('resizing', (e: CustomEvent): void => {
                     resized = true;
                     onResizing();
+
+                    if (this.configuration.pointSnap &&
+                        ['polygon', 'polyline', 'points'].includes(state.shapeType) &&
+                        draggedPointIndex !== null &&
+                        draggedPointIndex >= 0) {
+                        const snapRadius = this.configuration.snapRadius / this.geometry.scale;
+
+                        applySnapToShapePoint(
+                            shape as SVG.Polygon | SVG.PolyLine,
+                            draggedPointIndex,
+                            this.drawnStates,
+                            this.geometry.offset,
+                            snapRadius,
+                            state.clientID,
+                        );
+                    }
 
                     if (state.shapeType === 'skeleton' && e.target) {
                         const { instance } = e.target as any;
@@ -1724,6 +1740,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.autoborderHandler,
             this.geometry,
             this.configuration,
+            () => this.drawnStates,
         );
         this.masksHandler = new MasksHandlerImpl(
             this.onDrawDone,
@@ -1963,7 +1980,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (typeof configuration.CSSImageFilter === 'string') {
                 this.background.style.filter = configuration.CSSImageFilter;
             }
-
             this.activate(activeElement);
             this.editHandler.configure(this.configuration);
             this.drawHandler.configure(this.configuration);
