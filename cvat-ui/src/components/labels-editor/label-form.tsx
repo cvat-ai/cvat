@@ -5,7 +5,8 @@
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { DeleteOutlined, PlusCircleOutlined, ExclamationCircleOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
+import Icon, { DeleteOutlined, PlusCircleOutlined, ExclamationCircleOutlined, HolderOutlined } from '@ant-design/icons';
+import { SortableContainer, SortableElement, SortableHandle } from 'react-sortable-hoc';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
@@ -35,7 +36,7 @@ export enum AttributeType {
 }
 
 // Safe utility function to move array elements
-const arrayMove = <T>(array: T[], from: number, to: number): T[] => {
+const arrayMove = <T,>(array: T[], from: number, to: number): T[] => {
     if (!Array.isArray(array) || from < 0 || to < 0 || from >= array.length || to >= array.length || from === to) {
         return array;
     }
@@ -44,6 +45,14 @@ const arrayMove = <T>(array: T[], from: number, to: number): T[] => {
     result.splice(to, 0, removed);
     return result;
 };
+
+const DragHandle = SortableHandle(() => (
+    <CVATTooltip title='Drag to reorder'>
+        <span className='cvat-attribute-drag-handle' style={{ cursor: 'grab' }}>
+            <HolderOutlined style={{ fontSize: '16px' }} />
+        </span>
+    </CVATTooltip>
+));
 
 
 
@@ -484,63 +493,17 @@ export default class LabelForm extends React.Component<Props> {
     }
 
     // Safe attribute reordering methods - simple approach
-    private moveAttributeUp = (index: number): void => {
-        if (this.formRef.current && index > 0) {
-            const attributes = this.formRef.current.getFieldValue('attributes');
-            if (Array.isArray(attributes) && index < attributes.length) {
-                const reorderedAttributes = arrayMove(attributes, index, index - 1);
-                this.formRef.current.setFieldsValue({
-                    attributes: reorderedAttributes,
-                });
-                // Force re-render
-                this.forceUpdate();
-            }
-        }
-    };
+    private handleSortEnd = ({ oldIndex, newIndex }: { oldIndex: number; newIndex: number }): void => {
+        if (oldIndex === newIndex || !this.formRef.current) return;
 
-    private moveAttributeDown = (index: number): void => {
-        if (this.formRef.current) {
-            const attributes = this.formRef.current.getFieldValue('attributes');
-            if (Array.isArray(attributes) && index >= 0 && index < attributes.length - 1) {
-                const reorderedAttributes = arrayMove(attributes, index, index + 1);
-                this.formRef.current.setFieldsValue({
-                    attributes: reorderedAttributes,
-                });
-                // Force re-render
-                this.forceUpdate();
-            }
+        const attributes = this.formRef.current.getFieldValue('attributes');
+        if (Array.isArray(attributes)) {
+            const reorderedAttributes = arrayMove(attributes, oldIndex, newIndex);
+            this.formRef.current.setFieldsValue({
+                attributes: reorderedAttributes,
+            });
+            this.forceUpdate();
         }
-    };
-
-    private renderReorderButtons = (index: number, totalCount: number): JSX.Element => {
-        return (
-            <div className='cvat-attribute-reorder-buttons' style={{ display: 'flex', flexDirection: 'column' }}>
-                <CVATTooltip title='Move attribute up'>
-                    <Button
-                        type='text'
-                        size='small'
-                        disabled={index === 0}
-                        onClick={() => this.moveAttributeUp(index)}
-                        className='cvat-move-attribute-up'
-                        style={{ padding: '2px', minWidth: '24px', height: '24px' }}
-                    >
-                        <UpOutlined />
-                    </Button>
-                </CVATTooltip>
-                <CVATTooltip title='Move attribute down'>
-                    <Button
-                        type='text'
-                        size='small'
-                        disabled={index === totalCount - 1}
-                        onClick={() => this.moveAttributeDown(index)}
-                        className='cvat-move-attribute-down'
-                        style={{ padding: '2px', minWidth: '24px', height: '24px' }}
-                    >
-                        <DownOutlined />
-                    </Button>
-                </CVATTooltip>
-            </div>
-        );
     };
 
     private renderLabelNameInput(): JSX.Element {
@@ -727,7 +690,7 @@ export default class LabelForm extends React.Component<Props> {
                             }}
                         >
                             <Col span={1}>
-                                {totalCount > 1 ? this.renderReorderButtons(index, totalCount) : null}
+                                {totalCount > 1 ? <DragHandle /> : null}
                             </Col>
                             <Col span={4}>{this.renderAttributeNameInput(fieldInstance, currentAttr)}</Col>
                             <Col span={4}>{this.renderAttributeTypeInput(fieldInstance, currentAttr)}</Col>
@@ -766,21 +729,44 @@ export default class LabelForm extends React.Component<Props> {
     };
 
     private renderAttributes() {
-        return (fieldInstances: any[]): (JSX.Element | null)[] => {
+        const self = this;
+
+        return (fieldInstances: any[]): React.ReactNode => {
             if (!fieldInstances || !Array.isArray(fieldInstances)) {
-                return [];
+                return null;
             }
 
             const totalCount = fieldInstances.length;
 
-            return fieldInstances.map((fieldInstance, index) => {
+            const SortableItem: any = SortableElement(((props: any) => {
+                const { fieldInstance, idx } = props;
                 try {
-                    return this.renderAttribute(fieldInstance, index, totalCount);
+                    return self.renderAttribute(fieldInstance, idx, totalCount) || <div />;
                 } catch (error) {
-                    // Error rendering attribute
-                    return null;
+                    return <div />;
                 }
-            });
+            }) as React.ComponentType<any>);
+
+            const SortableList: any = SortableContainer((() => (
+                <div className='cvat-sortable-attributes-container'>
+                    {fieldInstances.map((fieldInstance: any, index: number) => (
+                        <SortableItem
+                            key={`sortable-attr-${fieldInstance?.key ?? index}`}
+                            index={index}
+                            fieldInstance={fieldInstance}
+                            idx={index}
+                        />
+                    ))}
+                </div>
+            )) as React.ComponentType<any>);
+
+            return (
+                <SortableList
+                    onSortEnd={self.handleSortEnd}
+                    useDragHandle
+                    helperClass='cvat-sortable-attribute-helper'
+                />
+            );
         };
     }
 
