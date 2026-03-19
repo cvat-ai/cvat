@@ -21,7 +21,7 @@ export interface Props {
 }
 
 const CustomPopover = withVisibilityHandling(Popover, 'draw-mask');
-function DrawPointsControl(props: Props): JSX.Element {
+function DrawMaskControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
     const tooltip = 'Draw a mask';
     const dynamicPopoverProps = isDrawing ? {
@@ -55,4 +55,5 @@ function DrawPointsControl(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(DrawPointsControl);
+Object.assign(DrawMaskControl, { displayName: 'DrawMaskControl' });
+export default React.memo(DrawMaskControl);

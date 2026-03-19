@@ -40,10 +40,10 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        firstX: 430,
+        firstX: 445,
         firstY: 40,
-        secondX: 640,
-        secondY: 145,
+        secondX: 650,
+        secondY: 175,
         labelName,
     };
 
@@ -63,7 +63,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
     const width = 5000;
     const height = 5000;
-    const delta = 5;
+    const delta = 35;
     const step = 62.5;
     const maxTextWidth = undefined;
     const textHeightPx = 981.25;

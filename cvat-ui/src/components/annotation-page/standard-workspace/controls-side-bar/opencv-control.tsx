@@ -208,7 +208,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const { canvasInstance } = this.props;
 
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
-        openCVWrapper.removeProgressCallback();
     }
 
     private interactionListener = async (e: Event): Promise<void> => {

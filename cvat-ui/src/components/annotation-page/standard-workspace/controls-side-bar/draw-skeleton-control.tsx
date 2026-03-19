@@ -53,4 +53,5 @@ function DrawSkeletonControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(DrawSkeletonControl, { displayName: 'DrawSkeletonControl' });
 export default React.memo(DrawSkeletonControl);

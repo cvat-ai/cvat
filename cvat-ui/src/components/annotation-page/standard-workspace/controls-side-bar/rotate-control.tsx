@@ -51,4 +51,5 @@ function RotateControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(RotateControl, { displayName: 'RotateControl' });
 export default React.memo(RotateControl);

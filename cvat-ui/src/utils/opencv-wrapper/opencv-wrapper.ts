@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
-import waitFor from 'utils/wait-for';
 import config from 'config';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation from './tracker-mil';
@@ -66,69 +65,118 @@ export class OpenCVWrapper {
     }
 
     private async inject(): Promise<void> {
-        const response = await fetch(config.OPENCV_PATH);
-        if (response.status !== 200) {
-            throw new Error(`Response status ${response.status}. ${response.statusText}`);
+        let cacheStore: Cache | null = null;
+        try {
+            const CACHE_NAME = 'cached_assets';
+            cacheStore = 'caches' in window ? await caches?.open(CACHE_NAME) : null;
+        } catch (_) {
+            // cache not available, do nothing
         }
 
-        const contentLength = response.headers.get('Content-Length');
-        const { body } = response;
+        let response = await cacheStore?.match(config.OPENCV_PATH);
+        const fromCache = !!response;
 
-        if (body === null) {
-            throw new Error('Response body is null, but necessary');
-        }
+        if (!response) {
+            response = await fetch(config.OPENCV_PATH);
 
-        const decoder = new TextDecoder('utf-8');
-        const reader = (body as ReadableStream<Uint8Array>).getReader();
-        let received = false;
-        let receivedLength = 0;
-        let decodedScript = '';
-
-        while (!received) {
-            // await in the loop is necessary here
-            // eslint-disable-next-line
-            const { done, value } = await reader.read();
-            received = done;
-
-            if (value instanceof Uint8Array) {
-                decodedScript += decoder.decode(value);
-                receivedLength += value.length;
-                // Cypress workaround: content-length is always zero in cypress, it is done optional here
-                // Just progress bar will be disabled
-                const percentage = contentLength ? (receivedLength * 100) / +(contentLength as string) : 0;
-                if (this.onProgress) this.onProgress(+percentage.toFixed(0));
+            if (!response.ok) {
+                throw new Error(`Could not fetch data from the server: ${response.status} ${response.statusText}`);
             }
         }
 
-        let runtimeInitialized = false;
-        (window as any).Module = {
-            onRuntimeInitialized: () => {
-                runtimeInitialized = true;
+        let bytes: Uint8Array;
+        if (fromCache) {
+            bytes = new Uint8Array(await response.arrayBuffer());
+            this.onProgress?.(100);
+        } else {
+            const contentLengthHeader = response.headers.get('Content-Length');
+            const contentLength = contentLengthHeader ? Number(contentLengthHeader) : 0;
+            let received = false;
+            let receivedLength = 0;
+
+            if (response.body === null) {
+                throw new Error('Unexpected response body');
+            }
+
+            const reader = response.body.getReader();
+            const chunks: Uint8Array[] = [];
+            while (!received) {
+                const { done, value } = await reader.read();
+                received = done;
+
+                if (value instanceof Uint8Array) {
+                    chunks.push(value);
+                    receivedLength += value.length;
+
+                    // Cypress workaround: content-length is always zero in cypress, it is done optional here
+                    // Just progress bar will be disabled
+                    const percentage = contentLength ? (receivedLength * 100) / contentLength : 0;
+                    this.onProgress?.(+percentage.toFixed(0));
+                }
+            }
+
+            let offset = 0;
+            bytes = new Uint8Array(receivedLength);
+            for (const chunk of chunks) {
+                bytes.set(chunk, offset);
+                offset += chunk.length;
+            }
+
+            if (cacheStore) {
+                try {
+                    // content may be gzip-encoded, but we store decoded version
+                    // so, need to remove irrelevant headers
+                    const headers = new Headers(response.headers);
+                    headers.delete('Content-Encoding');
+                    headers.delete('Content-Length');
+                    headers.set('Content-Length', bytes.length.toString());
+                    const cachedResponse = new Response(bytes.slice(), { headers });
+                    await cacheStore.put(config.OPENCV_PATH, cachedResponse);
+                } catch (_) {
+                    // could not write to cache, but ok, do nothing
+                }
+            }
+        }
+
+        const decodedScript = new TextDecoder('utf-8').decode(bytes!);
+        await new Promise<void>((resolve, reject) => {
+            (window as any).Module = {
+                onRuntimeInitialized: () => {
+                    delete (window as any).Module;
+                    resolve();
+                },
+            };
+
+            try {
+                // Inject OpenCV to DOM
+                // eslint-disable-next-line @typescript-eslint/no-implied-eval
+                const OpenCVConstructor = new Function(decodedScript);
+                OpenCVConstructor();
+            } catch (error: unknown) {
                 delete (window as any).Module;
-            },
-        };
-        // Inject opencv to DOM
-        // eslint-disable-next-line @typescript-eslint/no-implied-eval
-        const OpenCVConstructor = new Function(decodedScript);
-        OpenCVConstructor();
+                reject(new Error(`Initialization error: ${error instanceof Error ? error.message : 'unknown'}`));
+            }
+        });
+
         this.cv = (window as any).cv;
-        await waitFor(2, () => runtimeInitialized);
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {
-        this.onProgress = onProgress;
-
-        if (!this.injectionProcess) {
-            this.injectionProcess = this.inject();
+        if (this.initialized) {
+            return;
         }
-        await this.injectionProcess;
 
-        this.injectionProcess = null;
+        this.onProgress = onProgress;
+        this.injectionProcess = this.injectionProcess ?? this.inject();
+
+        try {
+            await this.injectionProcess;
+        } finally {
+            this.onProgress = null;
+            this.injectionProcess = null;
+        }
+
         this.initialized = true;
-    }
-
-    public removeProgressCallback(): void {
-        this.onProgress = null;
     }
 
     public get isInitialized(): boolean {
