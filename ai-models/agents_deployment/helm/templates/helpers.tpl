@@ -99,11 +99,10 @@ Configure command arguments for cvat-cli
 Configure function name for agent
 */}}
 {{- define "agent.functionNameEnv" -}}
-{{- if .Values.agent.function_name }}
 - name: FUNCTION_NAME
+{{- if .Values.agent.function_name }}
   value: {{ .Values.agent.function_name | quote }}
 {{- else }}
-- name: FUNCTION_NAME
   value: "MyAgentFunction"
 {{- end }}
 {{- end }}
