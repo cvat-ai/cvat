@@ -93,6 +93,7 @@ def build_iam_context(
     return {
         "user_id": request.user.id,
         "group_name": request.iam_context["privilege"],
+        "org_specified": request.iam_context["organization_specified"],
         "org_id": getattr(organization, "id", None),
         "org_slug": getattr(organization, "slug", None),
         "org_owner_id": organization.owner_id if organization else None,
@@ -111,6 +112,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
     user_id: int
     group_name: str | None
+    org_specified: bool
     org_id: int | None
     org_owner_id: int | None
     org_role: str | None
@@ -203,6 +205,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                     if self.org_id is not None
                     else None
                 ),
+                "organization_specified": self.org_specified,
             },
         }
 
