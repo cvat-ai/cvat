@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
+import { LRUCache } from 'lru-cache';
 import consts from './consts';
 
 export interface ShapeSizeElement {
@@ -574,3 +575,117 @@ export function toReversed<T>(array: Array<T>): Array<T> {
 
 export type Segment = [[number, number], [number, number]];
 export type PropType<T, Prop extends keyof T> = T[Prop];
+
+interface SnapPoint {
+    x: number;
+    y: number;
+    clientID: number;
+}
+
+const snapPointsCache = new LRUCache<string, Readonly<number[]>>({
+    max: 2000,
+    updateAgeOnGet: true,
+    updateAgeOnHas: true,
+});
+
+function extractSnapPointsFromState(drawnState: DrawnState): Readonly<number[]> {
+    if (!drawnState.points) {
+        return [];
+    }
+
+    if (!['polygon', 'polyline', 'points', 'rectangle'].includes(drawnState.shapeType)) {
+        return [];
+    }
+
+    const cacheKey = `${drawnState.clientID}-${drawnState.updated}`;
+    const cached = snapPointsCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    let result: Readonly<number[]>;
+    if (drawnState.shapeType === 'polygon' || drawnState.shapeType === 'polyline' || drawnState.shapeType === 'points') {
+        result = drawnState.points;
+    } else if (drawnState.shapeType === 'rectangle') {
+        const [xtl, ytl, xbr, ybr] = drawnState.points;
+        result = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
+    } else {
+        result = [];
+    }
+
+    snapPointsCache.set(cacheKey, result);
+
+    return result;
+}
+
+function findNearestSnapPoint(
+    x: number,
+    y: number,
+    allStates: Record<number, DrawnState>,
+    offset: number,
+    snapRadius: number,
+    excludeClientID: number | null = null,
+): SnapPoint | null {
+    const imageX = x - offset;
+    const imageY = y - offset;
+
+    let nearestPoint: SnapPoint | null = null;
+    let minDistance = snapRadius;
+
+    for (const clientIDStr of Object.keys(allStates)) {
+        const clientID = +clientIDStr;
+
+        if (clientID === excludeClientID) {
+            continue;
+        }
+
+        const drawnState = allStates[clientID];
+        const points = extractSnapPointsFromState(drawnState);
+
+        for (let i = 0; i < points.length; i += 2) {
+            const px = points[i];
+            const py = points[i + 1];
+
+            const dx = imageX - px;
+            const dy = imageY - py;
+            const distance = Math.hypot(dx, dy);
+
+            if (distance <= minDistance) {
+                minDistance = distance;
+                nearestPoint = { x: px + offset, y: py + offset, clientID };
+            }
+        }
+    }
+
+    return nearestPoint;
+}
+
+export function applySnapToShapePoint(
+    shape: SVG.Polygon | SVG.PolyLine,
+    pointIndex: number,
+    allStates: Record<number, DrawnState>,
+    offset: number,
+    snapRadius: number,
+    excludeClientID: number | null = null,
+): void {
+    const pointsArray: number[][] = (shape as any).array().valueOf();
+    if (pointIndex < 0 || pointIndex >= pointsArray.length) {
+        return;
+    }
+
+    const [currentX, currentY] = pointsArray[pointIndex];
+
+    const snapTarget = findNearestSnapPoint(
+        currentX,
+        currentY,
+        allStates,
+        offset,
+        snapRadius,
+        excludeClientID,
+    );
+
+    if (snapTarget) {
+        pointsArray[pointIndex] = [snapTarget.x, snapTarget.y];
+        shape.plot(pointsArray);
+    }
+}

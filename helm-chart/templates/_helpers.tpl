@@ -170,6 +170,42 @@ The name of the service account to use for backend pods
 {{- end }}
 {{- end }}
 
+{{- define "cvat.backend.initContainers" -}}
+{{- $localValues := .Values.cvat.backend.server }}
+{{- if .Values.cvat.backend.permissionFix.enabled -}}
+- name: user-data-permission-fix
+  image: busybox
+  command: ["/bin/sh", "-c"]
+  args:
+  {{- if not .Values.cvat.backend.permissionFix.commandOverride -}}
+  {{- with join " " .Values.cvat.backend.permissionFix.paths }}
+    - "chmod -R 777 {{ . }}"
+  {{- end -}}
+  {{ else }}
+  {{- toYaml .Values.cvat.backend.permissionFix.commandOverride | nindent 3 }}
+  {{- end }}
+  {{- with merge $localValues.resources .Values.cvat.backend.resources }}
+  resources:
+  {{- toYaml . | nindent 3 }}
+  {{- end }}
+  volumeMounts:
+  {{- if .Values.cvat.backend.defaultStorage.enabled }}
+    - mountPath: /home/django/data
+      name: cvat-backend-data
+      subPath: data
+    - mountPath: /home/django/keys
+      name: cvat-backend-data
+      subPath: keys
+    - mountPath: /home/django/logs
+      name: cvat-backend-data
+      subPath: logs
+  {{- end }}
+  {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
 {{- define "cvat.backend.worker.livenessProbe" -}}
 {{- if .livenessProbe.enabled }}
 livenessProbe:
