@@ -53,6 +53,14 @@ resolve_model_params() {
     fi
 }
 
+resolve_function_name() {
+    if [ -z "$FUNCTION_NAME" ]; then
+        echo "Warning: FUNCTION_NAME environment variable not found. Default is YOLO"
+        FUNCTION_NAME="YOLO"
+    else
+        echo "Using FUNCTION_NAME: $FUNCTION_NAME"
+    fi
+}
 
 common_env() {
     validate_access_token

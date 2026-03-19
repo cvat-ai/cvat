@@ -6,10 +6,8 @@ source "$(dirname "$0")/check_env.sh"
 
 common_env
 resolve_model_params
+resolve_function_name
 
-# Hardcoded for YOLO
-
-FUNCTION_NAME="YOLO26"
 FUNCTION_FILE_PATH="func.py"
 
 
