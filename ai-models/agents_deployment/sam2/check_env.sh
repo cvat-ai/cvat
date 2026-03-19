@@ -53,8 +53,8 @@ resolve_cuda() {
 
 resolve_function_name() {
     if [ -z "$FUNCTION_NAME" ]; then
-        echo "Warning: FUNCTION_NAME environment variable not found. Default is TRANSFORMERS"
-        FUNCTION_NAME="TRANSFORMERS"
+        echo "Warning: FUNCTION_NAME environment variable not found. Default is SAM2"
+        FUNCTION_NAME="SAM2"
     else
         echo "Using FUNCTION_NAME: $FUNCTION_NAME"
     fi
