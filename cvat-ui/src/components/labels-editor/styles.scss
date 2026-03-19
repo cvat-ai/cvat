@@ -250,3 +250,68 @@ textarea.ant-input.cvat-raw-labels-viewer {
         }
     }
 }
+
+// Attribute drag-and-drop styles
+.cvat-sortable-attributes-container {
+    .cvat-attribute-inputs-wrapper {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    }
+}
+
+.cvat-sortable-attribute-helper {
+    transform: rotate(2deg) !important;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+    z-index: 1000 !important;
+    
+    .cvat-attribute-drag-handle {
+        cursor: grabbing !important;
+    }
+}
+
+.cvat-attribute-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8c8c8c;
+    
+    &:hover {
+        color: #595959;
+        background-color: #f0f0f0;
+    }
+    
+    &:active {
+        cursor: grabbing;
+    }
+}
+
+// Attribute reorder buttons styles
+.cvat-attribute-reorder-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    
+    .cvat-move-attribute-up,
+    .cvat-move-attribute-down {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d9d9d9;
+        
+        &:hover:not(:disabled) {
+            border-color: #40a9ff;
+            color: #40a9ff;
+        }
+        
+        &:disabled {
+            color: #bfbfbf;
+            border-color: #f5f5f5;
+        }
+    }
+}

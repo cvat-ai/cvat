@@ -1899,3 +1899,42 @@ Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
 
     cy.wait('@mergeJob').its('response.statusCode').should('eq', status);
 });
+
+// Attribute reordering commands
+Cypress.Commands.add('dragAttribute', (fromIndex, toIndex) => {
+    cy.get('.cvat-attribute-inputs-wrapper').eq(fromIndex).within(() => {
+        cy.get('.cvat-attribute-drag-handle')
+            .trigger('mousedown', { button: 0, which: 1 })
+            .wait(100);
+    });
+    
+    cy.get('.cvat-attribute-inputs-wrapper').eq(toIndex)
+        .trigger('mousemove')
+        .trigger('mouseup');
+});
+
+Cypress.Commands.add('verifyAttributeOrder', (expectedOrder) => {
+    cy.get('.cvat-attribute-name-input').then(($inputs) => {
+        const actualOrder = Array.from($inputs).map(input => input.value);
+        expect(actualOrder).to.deep.equal(expectedOrder);
+    });
+});
+
+Cypress.Commands.add('addTestAttribute', (name, type, values) => {
+    cy.get('.cvat-new-attribute-button').click();
+    cy.get('.cvat-attribute-name-input').last().type(name);
+    cy.get('.cvat-attribute-type-input').last().click();
+    cy.get(`.cvat-attribute-type-input-${type.toLowerCase()}`).click();
+    
+    if (type === 'Select' || type === 'Radio') {
+        const valueList = values.split(';');
+        valueList.forEach((value) => {
+            cy.get('.cvat-attribute-values-input').last().type(`${value}{enter}`);
+        });
+    } else if (type === 'Checkbox') {
+        cy.get('.cvat-attribute-values-input').last().click();
+        cy.get(`.ant-select-item-option[title="${values}"]`).click();
+    } else {
+        cy.get('.cvat-attribute-values-input').last().type(values);
+    }
+});
