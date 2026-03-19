@@ -1838,7 +1838,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            const recreateText = configuration.textContent !== this.configuration.textContent;
+            // Handle selective display changes
+            if (configuration.enableSelectiveDisplay !== this.configuration.enableSelectiveDisplay ||
+                JSON.stringify(configuration.selectiveLabels) !== JSON.stringify(this.configuration.selectiveLabels) ||
+                JSON.stringify(configuration.selectiveAttributes) !== JSON.stringify(this.configuration.selectiveAttributes)) {
+                
+                // If displayAllText is enabled, update all text elements based on selective display
+                if (configuration.displayAllText) {
+                    for (const clientID in this.drawnStates) {
+                        if (+clientID in this.svgTexts) {
+                            this.deleteText(+clientID);
+                        }
+                        // Re-add text with new selective display settings
+                        this.svgTexts[clientID] = this.addText(this.drawnStates[clientID]);
+                    }
+                }
+            }
+
+            const recreateText = configuration.textContent !== this.configuration.textContent ||
+                configuration.enableSelectiveDisplay !== this.configuration.enableSelectiveDisplay ||
+                JSON.stringify(configuration.selectiveLabels) !== JSON.stringify(this.configuration.selectiveLabels) ||
+                JSON.stringify(configuration.selectiveAttributes) !== JSON.stringify(this.configuration.selectiveAttributes);
             const updateTextPosition = configuration.displayAllText !== this.configuration.displayAllText ||
                 configuration.textFontSize !== this.configuration.textFontSize ||
                 configuration.textPosition !== this.configuration.textPosition ||
