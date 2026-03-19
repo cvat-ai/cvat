@@ -230,21 +230,16 @@ g.cvat_canvas_shape_occluded {
 }
 
 .cvat_canvas_autoborder_point {
-    opacity: 0.55;
+    transition: opacity 0.05s;
+    opacity: 1;
 }
 
 .cvat_canvas_autoborder_point:hover {
-    opacity: 1;
-    fill: red;
+    opacity: 0.5;
 }
 
 .cvat_canvas_autoborder_point:active {
-    opacity: 0.55;
-    fill: red;
-}
-
-.cvat_canvas_autoborder_point_direction {
-    fill: blueviolet;
+    opacity: 1;
 }
 
 .cvat_canvas_interact_intermediate_shape {

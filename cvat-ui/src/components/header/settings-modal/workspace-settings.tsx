@@ -211,12 +211,13 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                             onSwitchAutomaticBordering(event.target.checked);
                         }}
                     >
-                        Automatic bordering
+                        Snap to contours
                     </Checkbox>
                 </Col>
                 <Col span={24}>
                     <Text type='secondary'>
-                        Enable automatic bordering for polygons and polylines during drawing/editing
+                        Automatically snap polygon and polyline points to
+                        the contours of existing objects while drawing or editing
                     </Text>
                 </Col>
             </Row>
