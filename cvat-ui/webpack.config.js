@@ -226,6 +226,10 @@ module.exports = (env) => {
                         from: 'plugins/**/assets/*.(onnx|js)',
                         to  : 'assets/[name][ext]',
                     },
+                    {
+                        from: 'public/catalogue',
+                        to: 'catalogue',
+                    },
                 ],
             }),
             ...(!sourceMapsDisabled && sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({

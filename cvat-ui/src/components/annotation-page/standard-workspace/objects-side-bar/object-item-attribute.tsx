@@ -9,10 +9,14 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
+import Input from 'antd/lib/input';
+import Button from 'antd/lib/button';
+import { BookOutlined } from '@ant-design/icons';
 
 import config from 'config';
 import { clamp } from 'utils/math';
 import TextArea, { TextAreaRef } from 'antd/lib/input/TextArea';
+import CatalogueReferenceModal from './catalogue-reference-modal';
 
 interface Props {
     readonly: boolean;
@@ -47,6 +51,11 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     const ref = useRef<TextAreaRef>(null);
     const [selectionStart, setSelectionStart] = useState<number>(attrValue.length);
     const [localAttrValue, setAttributeValue] = useState(attrValue);
+    const [catalogueModalVisible, setCatalogueModalVisible] = useState(false);
+
+    // Check if this is a catalogue reference attribute
+    const isCatalogueRef = attrName.startsWith('catalogue_ref__');
+    const catalogueName = isCatalogueRef ? attrName.replace('catalogue_ref__', '') : '';
 
     useEffect(() => {
         // attribute value updated from inside the app (for example undo/redo)
@@ -171,6 +180,57 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         min={min}
                         max={max}
                         step={step}
+                    />
+                </Col>
+            </>
+        );
+    }
+
+    // Handle catalogue reference attributes
+    if (isCatalogueRef) {
+        return (
+            <>
+                <Col span={8} style={attrNameStyle}>
+                    <Text className='cvat-text'>{attrName}</Text>
+                </Col>
+                <Col span={16}>
+                    <Input
+                        size='small'
+                        value={localAttrValue}
+                        placeholder='Select from catalogue...'
+                        readOnly
+                        disabled={readonly}
+                        onClick={() => {
+                            if (!readonly) {
+                                setCatalogueModalVisible(true);
+                            }
+                        }}
+                        suffix={
+                            <Button
+                                type='text'
+                                size='small'
+                                icon={<BookOutlined />}
+                                disabled={readonly}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!readonly) {
+                                        setCatalogueModalVisible(true);
+                                    }
+                                }}
+                            />
+                        }
+                        className='cvat-object-item-catalogue-reference-attribute'
+                        style={{ cursor: readonly ? 'not-allowed' : 'pointer' }}
+                    />
+                    <CatalogueReferenceModal
+                        visible={catalogueModalVisible}
+                        catalogueName={catalogueName}
+                        currentValue={localAttrValue}
+                        onSelect={(reference: string) => {
+                            setAttributeValue(reference);
+                            setCatalogueModalVisible(false);
+                        }}
+                        onCancel={() => setCatalogueModalVisible(false)}
                     />
                 </Col>
             </>

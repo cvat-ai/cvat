@@ -1,0 +1,42 @@
+[
+  {
+    "reference": "RS-001",
+    "iconPath": "/catalogue/icons/stop_sign.png",
+    "description": "Stop Sign - Octagonal red sign requiring complete vehicle stop"
+  },
+  {
+    "reference": "RS-002",
+    "iconPath": "/catalogue/icons/yield_sign.png",
+    "description": "Yield Sign - Triangular sign indicating right of way"
+  },
+  {
+    "reference": "RS-003",
+    "iconPath": "/catalogue/icons/speed_limit_30.png",
+    "description": "Speed Limit 30 - Maximum speed 30 km/h"
+  },
+  {
+    "reference": "RS-004",
+    "iconPath": "/catalogue/icons/no_entry.png",
+    "description": "No Entry - Prohibits entry for all vehicles"
+  },
+  {
+    "reference": "RS-005",
+    "iconPath": "/catalogue/icons/pedestrian_crossing.png",
+    "description": "Pedestrian Crossing - Indicates pedestrian crossing area"
+  },
+  {
+    "reference": "RS-006",
+    "iconPath": "/catalogue/icons/speed_limit_50.png",
+    "description": "Speed Limit 50 - Maximum speed 50 km/h"
+  },
+  {
+    "reference": "RS-007",
+    "iconPath": "/catalogue/icons/no_parking.png",
+    "description": "No Parking - Parking prohibited in this area"
+  },
+  {
+    "reference": "RS-008",
+    "iconPath": "/catalogue/icons/one_way.png",
+    "description": "One Way - Traffic flows in one direction only"
+  }
+]
