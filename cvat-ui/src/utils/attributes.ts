@@ -13,7 +13,7 @@ type ObjAttrVal = { id?: number; name: string; value?: any };
  * @returns Ordered array of attribute values matching the label's attribute order
  */
 export function orderAttributesByLabel(label: Label, values: ObjAttrVal[]): ObjAttrVal[] {
-    // 1) id 우선 매핑
+    // 1) Map by ID first
     const byId = new Map<number, ObjAttrVal>();
     for (const v of values) {
         if (typeof v.id === 'number') {
@@ -21,7 +21,7 @@ export function orderAttributesByLabel(label: Label, values: ObjAttrVal[]): ObjA
         }
     }
 
-    // 2) name fallback 매핑
+    // 2) Map by name as fallback
     const byName = new Map<string, ObjAttrVal>();
     for (const v of values) {
         if (v.name) {
@@ -29,7 +29,7 @@ export function orderAttributesByLabel(label: Label, values: ObjAttrVal[]): ObjA
         }
     }
 
-    // 3) 라벨 정의 순서대로 재정렬
+    // 3) Reorder according to label definition order
     const ordered: ObjAttrVal[] = [];
     for (const a of label.attributes) {
         if (typeof a.id === 'number' && byId.has(a.id)) {
