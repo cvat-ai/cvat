@@ -28,6 +28,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

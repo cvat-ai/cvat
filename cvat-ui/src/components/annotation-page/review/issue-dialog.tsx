@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
+import dayjs from 'dayjs';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined } from '@ant-design/icons';
@@ -15,7 +16,6 @@ import { Comment } from '@ant-design/compatible';
 import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
-import moment from 'moment';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Issue, Comment as CommentModel } from 'cvat-core-wrapper';
 import { deleteIssueAsync } from 'actions/review-actions';
@@ -115,7 +115,7 @@ export default function IssueDialog(props: Props): JSX.Element {
 
     const lines = comments.map(
         (_comment: CommentModel): JSX.Element => {
-            const created = _comment.createdDate ? moment(_comment.createdDate) : moment(moment.now());
+            const created = dayjs(_comment.createdDate ?? undefined);
             const diff = created.fromNow();
 
             return (

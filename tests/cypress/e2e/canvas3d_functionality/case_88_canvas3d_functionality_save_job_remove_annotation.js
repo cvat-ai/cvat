@@ -22,6 +22,7 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
     const waitTime = 2000;
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display

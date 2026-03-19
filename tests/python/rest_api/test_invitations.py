@@ -156,7 +156,7 @@ class TestGetInvitations:
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_inv["owner"]["id"])
 
-            (_, response) = api_client.invitations_api.retrieve(source_inv["key"])
+            _, response = api_client.invitations_api.retrieve(source_inv["key"])
             fetched_inv = json.loads(response.data)
 
         source_inv["owner"] = None

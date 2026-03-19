@@ -1,0 +1,46 @@
+services:
+  cvat-function-register:
+    image: ${IMAGE_URL}
+    entrypoint: ["/app/function_registration.sh"]
+    volumes:
+      - shared-data:/shared
+    restart: "on-failure"
+    environment:
+      CVAT_BASE_URL:
+      CVAT_ACCESS_TOKEN:
+      MODEL_CONFIG_PARAMS:
+      ORG_SLUG:
+
+  cvat-agent:
+    image: ${IMAGE_URL}
+    volumes:
+      - shared-data:/shared:ro
+    depends_on:
+      cvat-function-register:
+        condition: service_completed_successfully
+    deploy:
+      replicas: ${AGENTS_COUNT:-1}
+    environment:
+      CVAT_BASE_URL:
+      CVAT_ACCESS_TOKEN:
+      MODEL_CONFIG_PARAMS:
+      ORG_SLUG:
+      USE_CUDA:
+
+  #NB! MANUAL RUN!
+  # docker compose run --rm cvat-function-deregister
+  # This command will run this service once and remove container after execution.
+  cvat-function-deregister:
+    image: ${IMAGE_URL}
+    entrypoint: ["/app/function_deregistration.sh"]
+    volumes:
+      - shared-data:/shared:ro
+    profiles:
+      - manual
+    environment:
+      CVAT_BASE_URL:
+      CVAT_ACCESS_TOKEN:
+      ORG_SLUG:
+
+volumes:
+  shared-data:

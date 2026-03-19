@@ -31,7 +31,7 @@ import {
     pointsToNumberArray, parsePoints, displayShapeSize, scalarProduct,
     vectorLength, ShapeSizeElement, DrawnState, rotate2DPoints,
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
-    imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
+    imageDataToDataURL, RLEToImageData, stringifyPoints, imageDataToRLE,
     composeShapeDimensions, getRoundedRotation,
     clamp,
 } from './shared';
@@ -298,26 +298,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onInteraction = (
         shapes: InteractionResult[] | null,
-        shapesUpdated = true,
-        isDone = false,
+        finished = false,
     ): void => {
-        const { zLayer } = this.controller;
-        if (Array.isArray(shapes)) {
+        // whenever prompts are updated, interactor sends corresponding event with prompts
+        // when finished, it also sends finish flag equals to "true"
+        // when cancelled or closed, shapes equals to "null"
+        if (Array.isArray(shapes) || finished) {
             const event: CustomEvent = new CustomEvent('canvas.interacted', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    shapesUpdated,
-                    isDone,
+                    finished,
                     shapes,
-                    zOrder: zLayer || 0,
                 },
             });
 
             this.canvas.dispatchEvent(event);
         }
 
-        if (shapes === null || isDone) {
+        if (shapes === null) {
             this.dispatchCanceledEvent();
         }
     };
@@ -522,7 +521,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 Promise.all(objects.map((state) => {
                     const [curLeft, , curRight] = state.points.slice(-4, -1);
-                    const image = new ImageData(expandChannels(255, 255, 255, state.points), curRight - curLeft + 1);
+                    const image = new ImageData(RLEToImageData(255, 255, 255, state.points), curRight - curLeft + 1);
                     return createImageBitmap(image);
                 })).then((results) => {
                     const canvas = new OffscreenCanvas(right - left + 1, bottom - top + 1);
@@ -534,7 +533,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                     const imageData = canvas.getContext('2d')
                         .getImageData(0, 0, right - left + 1, bottom - top + 1);
-                    const rle = zipChannels(imageData.data);
+                    const rle = imageDataToRLE(imageData.data);
                     rle.push(left, top, right, bottom);
                     this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
                         bubbles: false,
@@ -998,14 +997,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         const dblClickHandler = (e: MouseEvent): void => {
-            e.preventDefault();
-
             if (this.activeElement.clientID !== null) {
                 const [state] = this.controller.objects.filter(
                     (_state: any): boolean => _state.clientID === this.activeElement.clientID,
                 );
 
                 if (state.shapeType === 'cuboid') {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (e.shiftKey) {
                         const points = this.translateFromCanvas(
                             pointsToNumberArray((e.target as any).parentElement.parentElement.instance.attr('points')),
@@ -1693,6 +1692,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.zoomHandler = new ZoomHandlerImpl(this.onFocusRegion, this.adoptedContent, this.geometry);
         this.interactionHandler = new InteractionHandlerImpl(
             this.onInteraction,
+            this.onMessage,
             this.adoptedContent,
             this.geometry,
             this.configuration,
@@ -1700,7 +1700,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Setup event handlers
         this.canvas.addEventListener('dblclick', (e: MouseEvent): void => {
-            this.controller.fit();
+            if (this.activeElement.clientID !== null) {
+                // -1 means auto padding based on the shape size
+                this.controller.focus(this.activeElement.clientID, -1);
+            } else {
+                this.controller.fit();
+            }
             e.preventDefault();
         });
 
@@ -2003,7 +2008,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.gridPattern.setAttribute('width', `${size.width}`);
             this.gridPattern.setAttribute('height', `${size.height}`);
         } else if (reason === UpdateReasons.SHAPE_FOCUSED) {
-            const { padding, clientID } = this.controller.focusData;
+            const padding = this.configuration.focusedObjectPadding ?? 0;
+            const { clientID } = this.controller.focusData;
             const drawnState = this.drawnStates[clientID];
             const object = this.svgShapes[clientID];
             if (drawnState && object) {
@@ -2121,20 +2127,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.INTERACT) {
             const data: InteractionData = this.controller.interactionData;
-            if (data.enabled && (this.mode === Mode.IDLE || data.intermediateShape)) {
-                if (!data.intermediateShape) {
-                    this.canvas.style.cursor = 'crosshair';
-                    this.mode = Mode.INTERACT;
-                }
-                this.interactionHandler.interact(data);
-            } else {
-                if (!data.enabled) {
-                    this.canvas.style.cursor = '';
-                }
-                if (this.mode !== Mode.IDLE) {
-                    this.interactionHandler.interact(data);
-                }
+            if (data.enabled && this.mode === Mode.IDLE) {
+                this.canvas.style.cursor = 'crosshair';
+                this.mode = Mode.INTERACT;
             }
+
+            if (!data.enabled && this.mode === Mode.INTERACT) {
+                this.canvas.style.cursor = '';
+                this.mode = Mode.IDLE;
+            }
+            this.interactionHandler.interact(data);
         } else if (reason === UpdateReasons.MERGE) {
             const data: MergeData = this.controller.mergeData;
             if (data.enabled) {
@@ -2278,8 +2280,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const ctx = this.bitmap.getContext('2d');
         ctx.imageSmoothingEnabled = false;
         if (ctx) {
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, width, height);
+            ctx.clearRect(0, 0, width, height);
             for (const state of states) {
                 if (state.hidden || state.outside) continue;
                 ctx.fillStyle = 'white';
@@ -2333,19 +2334,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'mask') {
                     const { points } = state;
                     const [left, top, right, bottom] = points.slice(-4);
-                    const imageBitmap = expandChannels(255, 255, 255, points);
-                    imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1, (dataURL: string) => new
-                    Promise((resolve) => {
-                        if (bitmapUpdateReqId === this.bitmapUpdateReqId) {
-                            const img = document.createElement('img');
-                            img.addEventListener('load', () => {
-                                ctx.drawImage(img, left, top);
+                    const imageBitmap = RLEToImageData(255, 255, 255, points);
+                    imageDataToDataURL(
+                        imageBitmap,
+                        right - left + 1,
+                        bottom - top + 1,
+                        (dataURL: string) => {
+                            if (bitmapUpdateReqId === this.bitmapUpdateReqId) {
+                                const img = document.createElement('img');
+                                img.addEventListener('load', () => {
+                                    ctx.drawImage(img, left, top);
+                                    URL.revokeObjectURL(dataURL);
+                                }, { once: true });
+                                img.addEventListener('error', () => {
+                                    URL.revokeObjectURL(dataURL);
+                                }, { once: true });
+                                img.src = dataURL;
+                            } else {
                                 URL.revokeObjectURL(dataURL);
-                                resolve();
-                            });
-                            img.src = dataURL;
-                        }
-                    }));
+                            }
+                        },
+                    );
                 }
 
                 if (state.shapeType === 'cuboid') {
@@ -2618,10 +2627,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (state.clientID in this.svgShapes) {
-                this.svgShapes[state.clientID].fire('remove');
-                this.svgShapes[state.clientID].off('click');
-                this.svgShapes[state.clientID].off('remove');
-                this.svgShapes[state.clientID].remove();
+                const shape = this.svgShapes[state.clientID];
+                const { node } = shape;
+                shape.fire('remove');
+                shape.off('click');
+                shape.off('remove');
+                if (node instanceof SVGImageElement) {
+                    URL.revokeObjectURL(node.href.baseVal);
+                }
+                shape.remove();
                 delete this.svgShapes[state.clientID];
             }
 
@@ -2692,10 +2706,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             number,
         ] => [state, +state.getAttribute('data-z-order')]);
 
-        const crosshair = Array.from(this.content.getElementsByClassName('cvat_canvas_crosshair'));
-        crosshair.forEach((line: SVGLineElement): void => this.content.append(line));
-        const interaction = Array.from(this.content.getElementsByClassName('cvat_interaction_point'));
-        interaction.forEach((circle: SVGCircleElement): void => this.content.append(circle));
+        Array.from(this.content.getElementsByClassName('cvat_canvas_crosshair'))
+            .forEach((line: SVGLineElement): void => this.content.append(line));
+        Array.from(this.content.getElementsByClassName('cvat_interaction_point')).concat(
+            Array.from(this.content.getElementsByClassName('cvat_interaction_rectangle')),
+        ).forEach((interactionShape: SVGCircleElement): void => this.content.append(interactionShape));
 
         const needSort = states.some((pair): boolean => pair[1] !== states[0][1]);
         if (!states.length || !needSort) {
@@ -3143,7 +3158,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private addText(state: any, options: { textContent?: string } = {}): SVG.Text {
+    private addText(state: any, options: { textContent?: string, isSkeletonElement?: boolean } = {}): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
         const content = options.textContent || this.configuration.textContent;
         const withID = content.includes('id');
@@ -3152,10 +3167,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const withSource = content.includes('source');
         const withDescriptions = content.includes('descriptions');
         const withDimensions = content.includes('dimensions');
+
         const textFontSize = this.configuration.textFontSize || 12;
         const {
-            label, clientID, attributes, source, descriptions,
+            label, clientID, attributes, source, descriptions, score, votes,
         } = state;
+        const isConsensus = source === 'consensus';
+        const withScore = isConsensus && !options.isSkeletonElement;
+        const withVotes = isConsensus && !options.isSkeletonElement;
 
         const attrNames = Object.fromEntries(state.label.attributes.map((attr) => [attr.id, attr.name]));
         if (state.shapeType === 'skeleton') {
@@ -3165,7 +3184,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         textContent: [
                             ...(withLabel ? ['label'] : []),
                             ...(withAttr ? ['attributes'] : []),
+                            // Note: explicitly exclude 'score' and 'votes' for skeleton elements
                         ].join(',') || ' ',
+                        isSkeletonElement: true,
                     });
                 }
             });
@@ -3206,6 +3227,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             })
                             .addClass('cvat_canvas_text_description');
                     });
+                }
+                if (withScore || withVotes) {
+                    const parts = [];
+                    if (withScore) {
+                        parts.push(`Score: ${score.toFixed(2)}`);
+                    }
+                    if (withVotes) {
+                        parts.push(`Votes: ${votes}`);
+                    }
+                    block
+                        .tspan(parts.join(', '))
+                        .attr({ dy: '1.25em', x: 0 })
+                        .addClass('cvat_canvas_text_score');
                 }
                 if (withAttr) {
                     // Apply selective display filtering if enabled
@@ -3381,7 +3415,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const colorization = this.getShapeColorization(state);
         const color = fabric.Color.fromHex(colorization.fill).getSource();
         const [left, top, right, bottom] = points.slice(-4);
-        const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+        const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
 
         const image = this.adoptedContent.image().attr({
             clientID: state.clientID,
@@ -3399,15 +3433,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
             imageBitmap,
             right - left + 1,
             bottom - top + 1,
-            (dataURL: string) => new Promise((resolve, reject) => {
-                image.loaded(() => {
-                    resolve();
-                });
-                image.error(() => {
-                    reject();
-                });
-                image.load(dataURL);
-            }),
+            (dataURL: string): void => {
+                const destroy = (): void => URL.revokeObjectURL(dataURL);
+                if (image.parent() !== null) {
+                    image.loaded(destroy);
+                    image.error(destroy);
+                    image.load(dataURL);
+                } else {
+                    destroy();
+                }
+            },
         );
 
         if (state.occluded) {

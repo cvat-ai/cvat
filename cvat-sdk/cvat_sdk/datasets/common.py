@@ -4,10 +4,8 @@
 
 import abc
 from enum import Enum, auto
-from typing import Optional
 
 import attrs
-import attrs.validators
 import PIL.Image
 
 import cvat_sdk.core
@@ -54,7 +52,7 @@ class Sample:
     frame_name: str
     """File name of the frame in its task."""
 
-    annotations: Optional[FrameAnnotations]
+    annotations: FrameAnnotations | None
     """
     Annotations belonging to the frame.
 

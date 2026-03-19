@@ -20,18 +20,17 @@ class LambdaPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "lambda_function" or view.basename == "lambda_request":
-            scopes = cls.get_scopes(request, view, obj)
-            for scope in scopes:
-                self = cls.create_base_perm(request, view, scope, iam_context, obj)
-                permissions.append(self)
+        scopes = cls.get_scopes(request, view, obj)
+        for scope in scopes:
+            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            permissions.append(self)
 
-            if job_id := request.data.get("job"):
-                perm = JobPermission.create_scope_view_data(iam_context, job_id)
-                permissions.append(perm)
-            elif task_id := request.data.get("task"):
-                perm = TaskPermission.create_scope_view_data(iam_context, task_id)
-                permissions.append(perm)
+        if job_id := request.data.get("job"):
+            perm = JobPermission.create_scope_view_data(iam_context, job_id)
+            permissions.append(perm)
+        elif task_id := request.data.get("task"):
+            perm = TaskPermission.create_scope_view_data(iam_context, task_id)
+            permissions.append(perm)
 
         return permissions
 

@@ -48,13 +48,17 @@ This SDK layer can be divided into several parts:
 
 - The interface, containing the protocols that an AA function must implement,
   as well as helpers for use by such functions.
-  Consult "..."
+  Consult [Auto-annotation interface](#auto-annotation-interface).
 
 - The driver, containing functionality to annotate a CVAT dataset using an AA function.
-  Consult "..."
+  Consult [Auto-annotation driver](#auto-annotation-driver).
 
 - Predefined AA functions based on torchvision.
-  Consult "..."
+  Consult [Predefined AA functions](#predefined-aa-functions).
+
+While not part of the SDK,
+there are also additional predefined AA functions in the CVAT source repository.
+Consult [Additional AA functions](#additional-aa-functions).
 
 ## Example
 
@@ -129,7 +133,7 @@ class TorchvisionDetectionFunction:
         ]
 
 # log into the CVAT server
-with make_client(host="http://localhost", credentials=("user", "password")) as client:
+with make_client("http://localhost", credentials=("user", "password")) as client:
     # create a function that uses Faster R-CNN
     func = TorchvisionDetectionFunction("fasterrcnn_resnet50_fpn_v2", "DEFAULT", box_score_thresh=0.5)
 
@@ -472,12 +476,17 @@ This AA function uses torchvision's keypoint detection models.
 It produces skeleton annotations.
 Keypoints which the model marks as invisible will be marked as occluded in CVAT.
 
-### SAM2 Tracking Function
+## Additional AA functions
 
-For users who want to implement SAM2-based tracking, the CVAT repository includes
-a ready-to-use SAM2 tracking function at `ai-models/tracker/sam2/func.py`.
-This function implements the tracking function protocol described above
-and can be used with the CLI commands for creating native functions and running agents.
+The CVAT source repository contains additional predefined auto-annotation functions
+that are built on top of other computer vision libraries.
 
-For detailed setup and usage instructions, see the
-{{< ilink "/docs/enterprise/segment-anything-2-tracker" "SAM2 Tracker documentation" >}}.
+The following libraries and models are currently covered:
+
+- Hugging Face Transformers: all models that are usable with the image classification,
+  object detection and image segmentation pipelines.
+- Segment Anything Model 2 (SAM2).
+- Ultralytics: all numbered YOLO models (YOLOv3, YOLOv5, and so on).
+
+See the [`ai-models` directory](https://github.com/cvat-ai/cvat/tree/develop/ai-models)
+for usage information.

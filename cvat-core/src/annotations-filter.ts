@@ -73,6 +73,7 @@ type ConvertedAttributes = Record<string, string | number | boolean>;
 interface ConvertedObjectData {
     width: number | null;
     height: number | null;
+    rotation: number | null;
     attr: Record<string, ConvertedAttributes>;
     label: string;
     serverID: number;
@@ -80,6 +81,8 @@ interface ConvertedObjectData {
     type: ObjectType;
     shape: ShapeType;
     occluded: boolean;
+    score: number | null;
+    votes: number | null;
 }
 
 export default class AnnotationsFilter {
@@ -91,6 +94,7 @@ export default class AnnotationsFilter {
             }, {});
 
             let [width, height]: (number | null)[] = [null, null];
+            let rotation: number | null = null;
             if (state.objectType !== ObjectType.TAG) {
                 const points = state.shapeType === ShapeType.SKELETON ? state.elements.reduce((acc, val) => {
                     acc.push(val.points);
@@ -98,6 +102,10 @@ export default class AnnotationsFilter {
                 }, []).flat() : state.points;
 
                 ({ width, height } = getDimensions(points, state.shapeType as ShapeType));
+
+                if (state.shapeType === ShapeType.RECTANGLE || state.shapeType === ShapeType.ELLIPSE) {
+                    rotation = state.rotation ?? null;
+                }
             }
 
             const attributes = Object.keys(state.attributes).reduce((acc, key) => {
@@ -109,6 +117,7 @@ export default class AnnotationsFilter {
             return {
                 width,
                 height,
+                rotation,
                 attr: {
                     [adjustName(state.label.name)]: attributes,
                 },
@@ -118,6 +127,8 @@ export default class AnnotationsFilter {
                 type: state.objectType,
                 shape: state.shapeType,
                 occluded: state.occluded,
+                score: state.score ?? null,
+                votes: state.votes ?? null,
             };
         });
 
@@ -152,11 +163,17 @@ export default class AnnotationsFilter {
                 const points = shape.type === ShapeType.SKELETON ?
                     shape.elements.map((el) => el.points).flat() : shape.points;
                 let [width, height]: (number | null)[] = [null, null];
+                let rotation: number | null = null;
                 ({ width, height } = getDimensions(points, shape.type));
+
+                if (shape.type === ShapeType.RECTANGLE || shape.type === ShapeType.ELLIPSE) {
+                    rotation = shape.rotation ?? null;
+                }
 
                 return {
                     width,
                     height,
+                    rotation,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(shape.attributes),
                     },
@@ -166,6 +183,8 @@ export default class AnnotationsFilter {
                     shape: shape.type,
                     occluded: shape.occluded,
                     objectID: shape.clientID ?? null,
+                    score: shape.score ?? null,
+                    votes: null,
                 };
             }),
             tags: collection.tags.map((tag) => {
@@ -174,6 +193,7 @@ export default class AnnotationsFilter {
                 return {
                     width: null,
                     height: null,
+                    rotation: null,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(tag.attributes),
                     },
@@ -183,6 +203,8 @@ export default class AnnotationsFilter {
                     shape: null,
                     occluded: false,
                     objectID: tag.clientID ?? null,
+                    score: null,
+                    votes: null,
                 };
             }),
             tracks: collection.tracks.map((track) => {
@@ -191,6 +213,7 @@ export default class AnnotationsFilter {
                 return {
                     width: null,
                     height: null,
+                    rotation: null,
                     attr: {
                         [adjustName(label.name)]: convertAttributes(track.attributes),
                     },
@@ -200,6 +223,8 @@ export default class AnnotationsFilter {
                     shape: track.shapes[0]?.type ?? null,
                     occluded: null,
                     objectID: track.clientID ?? null,
+                    score: null,
+                    votes: null,
                 };
             }),
         };

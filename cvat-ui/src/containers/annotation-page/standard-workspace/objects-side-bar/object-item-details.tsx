@@ -24,6 +24,7 @@ interface StateToProps {
     jobLabels: any[];
     jobAttributes: Record<number, any[]>;
     selectiveDisplaySettings: SelectiveDisplaySettings;
+    textContent: string;
 }
 
 interface DispatchToProps {
@@ -59,6 +60,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 enableSelectiveDisplay,
                 selectiveLabels,
                 selectiveAttributes,
+                textContent,
             },
         },
     } = state;
@@ -78,6 +80,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         jobLabels,
         jobAttributes,
         selectiveDisplaySettings,
+        textContent,
     };
 }
 
@@ -142,7 +145,7 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         const {
-            readonly, collapsed, state, workspace,
+            readonly, collapsed, state, workspace, textContent,
         } = this.props;
 
         if (state) {
@@ -155,7 +158,6 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
                     length: parseFloat(state.points[8].toFixed(2)), // Z
                 };
             }
-
             return (
                 <ObjectItemDetails
                     readonly={readonly}
@@ -166,6 +168,10 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
                     attributes={this.getSortedAttributes(state.label.attributes, state.label.id)}
                     changeSize={this.changeSize}
                     sizeParams={sizeParams}
+                    source={state.source}
+                    score={state.score}
+                    votes={state.votes}
+                    textContent={textContent}
                 />
             );
         }

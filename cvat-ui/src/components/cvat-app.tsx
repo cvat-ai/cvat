@@ -86,6 +86,7 @@ import ConsensusManagementPage from './consensus-management-page/consensus-manag
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 import SelectOrganizationModal from './select-organization-modal/select-organization-modal';
 import BulkProgress from './bulk-progress';
+import ProfilePageComponent from './profile-page/profile-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -117,7 +118,6 @@ interface CVATAppProps {
     userAgreementsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
-    isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
@@ -308,7 +308,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
-            isModelPluginActive,
             invitationsInitialized,
             invitationsFetching,
             initInvitations,
@@ -372,7 +371,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             initRequests();
         }
 
-        if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
+        if (!modelsInitialized && !modelsFetching) {
             initModels();
         }
 
@@ -396,6 +395,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <CVATMarkdown history={history}>{notificationState?.description}</CVATMarkdown>
                 ),
                 duration: notificationState.duration ?? null,
+                className: notificationState.className,
             });
         }
 
@@ -485,7 +485,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginComponents,
             user,
             location,
-            isModelPluginActive,
             isPasswordResetEnabled,
             isRegistrationEnabled,
         } = this.props;
@@ -501,7 +500,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 pluginsInitialized &&
                 aboutInitialized &&
                 organizationInitialized &&
-                (!isModelPluginActive || modelsInitialized)
+                modelsInitialized
             )
         );
 
@@ -563,16 +562,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/invitations' component={InvitationsPage} />
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
+                                        <Route exact path='/profile' component={ProfilePageComponent} />
                                         { routesToRender }
-                                        {isModelPluginActive && (
-                                            <Route
-                                                path='/models'
-                                            >
-                                                <Switch>
-                                                    <Route exact path='/models' component={ModelsPageComponent} />
-                                                </Switch>
-                                            </Route>
-                                        )}
+                                        <Route
+                                            path='/models'
+                                        >
+                                            <Switch>
+                                                <Route exact path='/models' component={ModelsPageComponent} />
+                                            </Switch>
+                                        </Route>
                                         <Redirect
                                             push
                                             to={{

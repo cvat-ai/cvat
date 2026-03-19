@@ -6,7 +6,7 @@ import argparse
 import json
 import textwrap
 from collections.abc import Sequence
-from typing import Any, Union
+from typing import Any
 
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
@@ -25,11 +25,9 @@ COMMANDS = CommandGroup(description="Perform operations on CVAT lambda functions
 
 @COMMANDS.command_class("create-native")
 class FunctionCreateNative:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Create a CVAT function that can be powered by an agent running the given local function.
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
@@ -41,7 +39,7 @@ class FunctionCreateNative:
 
     @staticmethod
     def _dump_sublabel_spec(
-        sl_spec: Union[models.SublabelRequest, models.PatchedLabelRequest],
+        sl_spec: models.SublabelRequest | models.PatchedLabelRequest,
     ) -> dict:
         result = {
             "name": sl_spec.name,

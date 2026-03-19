@@ -25,6 +25,8 @@ x-backend-deps: &backend-deps
     condition: service_started
   cvat_db:
     condition: service_started
+  cvat_clickhouse:
+    condition: service_started
 
 x-clickhouse-env: &clickhouse-env
   CLICKHOUSE_HOST: clickhouse
@@ -49,7 +51,7 @@ services:
 
   cvat_redis_inmem:
     container_name: cvat_redis_inmem
-    image: redis:7.2.3-alpine
+    image: redis:7.2.11-alpine
     restart: always
     command: [
       "redis-server",
@@ -259,7 +261,7 @@ services:
       - cvat
 
   traefik:
-    image: traefik:v3.3
+    image: traefik:v3.6
     container_name: traefik
     restart: always
     ports:
@@ -310,7 +312,7 @@ services:
 
   cvat_opa:
     container_name: cvat_opa
-    image: openpolicyagent/opa:0.63.0
+    image: openpolicyagent/opa:1.12.2
     restart: always
     networks:
       cvat:
@@ -319,6 +321,7 @@ services:
     command:
       - run
       - --server
+      - --addr=:8181
       - --log-level=error
       - --set=services.cvat.url=http://cvat-server:8080
       - --set=bundles.cvat.service=cvat
@@ -329,7 +332,7 @@ services:
   cvat_clickhouse:
     container_name: cvat_clickhouse
     image: clickhouse/clickhouse-server:23.11-alpine
-    restart: always
+    restart: "always"
     environment:
       <<: *clickhouse-env
     networks:
@@ -337,7 +340,6 @@ services:
         aliases:
           - clickhouse
     volumes:
-      - ./components/analytics/clickhouse/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
       - cvat_events_db:/var/lib/clickhouse/
 
   cvat_vector:

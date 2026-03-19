@@ -20,6 +20,7 @@ context('Cancel "multiple paste". UI is not locked.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

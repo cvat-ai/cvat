@@ -69,7 +69,7 @@ function ExportBackupModal(): JSX.Element {
         const result = {
             allTasks: state.tasks.current,
             allProjects: state.projects.current,
-            selectedIds: [] as number[],
+            selectedIds: null as null | number[],
             instance: null as (Project | Task | null),
         };
 
@@ -86,7 +86,7 @@ function ExportBackupModal(): JSX.Element {
         return result;
     }, shallowEqual);
 
-    const isBulkMode = selectedIds.length > 1;
+    const isBulkMode = selectedIds && selectedIds.length > 1;
     const [selectedInstances, setSelectedInstances] = useState<Exclude<ProjectOrTaskOrJob, Job>[]>([]);
     useEffect(() => {
         if (isBulkMode) {

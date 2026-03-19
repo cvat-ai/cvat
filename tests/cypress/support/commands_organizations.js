@@ -5,6 +5,8 @@
 
 /// <reference types="cypress" />
 
+import { convertClasses } from './utils';
+
 function openOrganizationsMenu() {
     cy.get('.cvat-header-menu-user-dropdown')
         .should('exist').and('be.visible').click();
@@ -43,13 +45,10 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
     return cy.wrap(idWrapper);
 });
 
-Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelete) => {
-    const authKey = authResponse.body.key;
+Cypress.Commands.add('deleteOrganizations', (authHeaders, otrganizationsToDelete) => {
     cy.request({
         url: '/api/organizations?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
+        headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
         for (const organization of responseResult) {
@@ -59,9 +58,7 @@ Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelet
                     cy.request({
                         method: 'DELETE',
                         url: `/api/organizations/${id}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
+                        headers: authHeaders,
                     });
                 }
             }
@@ -175,13 +172,10 @@ Cypress.Commands.add('removeMemberFromOrganization', (username) => {
         .click();
 });
 
-Cypress.Commands.add('headlessCreateOrganization', (data = {}) => {
-    cy.window().then(async ($win) => {
-        const organization = new $win.cvat.classes.Organization({ ...data });
-        const result = await organization.save();
-        return cy.wrap(result);
-    });
-});
+Cypress.Commands.add('headlessCreateOrganization', (data = {}) => cy.window().then(($win) => {
+    const organization = new $win.cvat.classes.Organization(convertClasses(data, $win));
+    return cy.wrap(organization.save());
+}));
 
 Cypress.Commands.add('headlessDeleteOrganization', (orgId) => {
     cy.window().then(($win) => cy.wrap($win.cvat.organizations.get({

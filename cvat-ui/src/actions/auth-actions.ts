@@ -5,7 +5,13 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
-import { getCore, User } from 'cvat-core-wrapper';
+import { ensureError } from 'utils/error-handling';
+import { fetchAllPaginated } from 'utils/pagination';
+import {
+    getCore, User, ApiToken, ApiTokenModifiableFields,
+    ApiTokensFilter, SerializedApiToken,
+} from 'cvat-core-wrapper';
+import { ChangePasswordData } from 'reducers';
 
 const cvat = getCore();
 
@@ -25,13 +31,27 @@ export enum AuthActionTypes {
     CHANGE_PASSWORD = 'CHANGE_PASSWORD',
     CHANGE_PASSWORD_SUCCESS = 'CHANGE_PASSWORD_SUCCESS',
     CHANGE_PASSWORD_FAILED = 'CHANGE_PASSWORD_FAILED',
-    SWITCH_CHANGE_PASSWORD_DIALOG = 'SWITCH_CHANGE_PASSWORD_DIALOG',
     REQUEST_PASSWORD_RESET = 'REQUEST_PASSWORD_RESET',
     REQUEST_PASSWORD_RESET_SUCCESS = 'REQUEST_PASSWORD_RESET_SUCCESS',
     REQUEST_PASSWORD_RESET_FAILED = 'REQUEST_PASSWORD_RESET_FAILED',
     RESET_PASSWORD = 'RESET_PASSWORD_CONFIRM',
     RESET_PASSWORD_SUCCESS = 'RESET_PASSWORD_CONFIRM_SUCCESS',
     RESET_PASSWORD_FAILED = 'RESET_PASSWORD_CONFIRM_FAILED',
+    UPDATE_USER = 'UPDATE_USER',
+    UPDATE_USER_SUCCESS = 'UPDATE_USER_SUCCESS',
+    UPDATE_USER_FAILED = 'UPDATE_USER_FAILED',
+    GET_API_TOKENS = 'GET_API_TOKENS',
+    GET_API_TOKENS_SUCCESS = 'GET_API_TOKENS_SUCCESS',
+    GET_API_TOKENS_FAILED = 'GET_API_TOKENS_FAILED',
+    CREATE_API_TOKEN = 'CREATE_API_TOKEN',
+    CREATE_API_TOKEN_SUCCESS = 'CREATE_API_TOKEN_SUCCESS',
+    CREATE_API_TOKEN_FAILED = 'CREATE_API_TOKEN_FAILED',
+    UPDATE_API_TOKEN = 'UPDATE_API_TOKEN',
+    UPDATE_API_TOKEN_SUCCESS = 'UPDATE_API_TOKEN_SUCCESS',
+    UPDATE_API_TOKEN_FAILED = 'UPDATE_API_TOKEN_FAILED',
+    REVOKE_API_TOKEN = 'REVOKE_API_TOKEN',
+    REVOKE_API_TOKEN_SUCCESS = 'REVOKE_API_TOKEN_SUCCESS',
+    REVOKE_API_TOKEN_FAILED = 'REVOKE_API_TOKEN_FAILED',
 }
 
 export const authActions = {
@@ -52,15 +72,31 @@ export const authActions = {
     changePassword: () => createAction(AuthActionTypes.CHANGE_PASSWORD),
     changePasswordSuccess: () => createAction(AuthActionTypes.CHANGE_PASSWORD_SUCCESS),
     changePasswordFailed: (error: any) => createAction(AuthActionTypes.CHANGE_PASSWORD_FAILED, { error }),
-    switchChangePasswordModalVisible: (visible: boolean) => (
-        createAction(AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { visible })
-    ),
     requestPasswordReset: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET),
     requestPasswordResetSuccess: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET_SUCCESS),
     requestPasswordResetFailed: (error: any) => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET_FAILED, { error }),
     resetPassword: () => createAction(AuthActionTypes.RESET_PASSWORD),
     resetPasswordSuccess: () => createAction(AuthActionTypes.RESET_PASSWORD_SUCCESS),
     resetPasswordFailed: (error: any) => createAction(AuthActionTypes.RESET_PASSWORD_FAILED, { error }),
+    updateUser: () => createAction(AuthActionTypes.UPDATE_USER),
+    updateUserSuccess: (user: User) => createAction(AuthActionTypes.UPDATE_USER_SUCCESS, { user }),
+    updateUserFailed: (error: unknown) => createAction(AuthActionTypes.UPDATE_USER_FAILED, { error }),
+    getApiTokens: () => createAction(AuthActionTypes.GET_API_TOKENS),
+    getApiTokensSuccess: (tokens: ApiToken[], count: number) => (
+        createAction(AuthActionTypes.GET_API_TOKENS_SUCCESS, { tokens, count })
+    ),
+    getApiTokensFailed: (error: Error) => createAction(AuthActionTypes.GET_API_TOKENS_FAILED, { error }),
+    createApiToken: () => createAction(AuthActionTypes.CREATE_API_TOKEN),
+    createApiTokenSuccess: (token: ApiToken) => createAction(AuthActionTypes.CREATE_API_TOKEN_SUCCESS, { token }),
+    createApiTokenFailed: (error: Error) => createAction(AuthActionTypes.CREATE_API_TOKEN_FAILED, { error }),
+    updateApiToken: () => createAction(AuthActionTypes.UPDATE_API_TOKEN),
+    updateApiTokenSuccess: (token: ApiToken) => createAction(AuthActionTypes.UPDATE_API_TOKEN_SUCCESS, { token }),
+    updateApiTokenFailed: (error: Error) => createAction(AuthActionTypes.UPDATE_API_TOKEN_FAILED, { error }),
+    revokeApiToken: () => createAction(AuthActionTypes.REVOKE_API_TOKEN),
+    revokeApiTokenSuccess: (token: ApiToken) => (
+        createAction(AuthActionTypes.REVOKE_API_TOKEN_SUCCESS, { token })
+    ),
+    revokeApiTokenFailed: (error: Error) => createAction(AuthActionTypes.REVOKE_API_TOKEN_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -136,14 +172,18 @@ export const authenticatedAsync = (): ThunkAction => async (dispatch) => {
 };
 
 export const changePasswordAsync = (
-    oldPassword: string,
-    newPassword1: string,
-    newPassword2: string,
+    changePasswordData: ChangePasswordData,
+    onSuccess?: () => void,
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.changePassword());
 
+    const { oldPassword, newPassword1, newPassword2 } = changePasswordData;
     try {
         await cvat.server.changePassword(oldPassword, newPassword1, newPassword2);
+
+        if (onSuccess) {
+            onSuccess();
+        }
         dispatch(authActions.changePasswordSuccess());
     } catch (error) {
         dispatch(authActions.changePasswordFailed(error));
@@ -174,5 +214,92 @@ export const resetPasswordAsync = (
         dispatch(authActions.resetPasswordSuccess());
     } catch (error) {
         dispatch(authActions.resetPasswordFailed(error));
+    }
+};
+
+export const updateUserAsync = (
+    userInstance: User,
+    fields: Parameters<User['save']>[0],
+): ThunkAction => async (dispatch) => {
+    dispatch(authActions.updateUser());
+
+    try {
+        const updatedUser = await userInstance.save(fields);
+
+        dispatch(authActions.updateUserSuccess(updatedUser));
+    } catch (error) {
+        dispatch(authActions.updateUserFailed(error));
+        throw error;
+    }
+};
+
+export const getApiTokensAsync = (filter: ApiTokensFilter = {}): ThunkAction => async (dispatch) => {
+    dispatch(authActions.getApiTokens());
+
+    try {
+        const { items: tokens, count } = await fetchAllPaginated(
+            (paginationFilter) => cvat.apiTokens.get(paginationFilter),
+            filter,
+        );
+
+        dispatch(authActions.getApiTokensSuccess(tokens, count));
+    } catch (error: unknown) {
+        dispatch(authActions.getApiTokensFailed(ensureError(error)));
+    }
+};
+
+export const createApiTokenAsync = (
+    tokenData: ApiTokenModifiableFields,
+    onSuccess: (token: ApiToken) => void,
+): ThunkAction => async (dispatch) => {
+    dispatch(authActions.createApiToken());
+
+    try {
+        const data: Partial<SerializedApiToken> = {
+            name: tokenData.name,
+            expiry_date: tokenData.expiryDate,
+            read_only: tokenData.readOnly,
+        };
+
+        let token = new cvat.classes.ApiToken(data);
+        token = await token.save();
+
+        dispatch(authActions.createApiTokenSuccess(token));
+        onSuccess(token);
+    } catch (error: unknown) {
+        dispatch(authActions.createApiTokenFailed(ensureError(error)));
+    }
+};
+
+export const updateApiTokenAsync = (
+    token: ApiToken,
+    tokenData: ApiTokenModifiableFields,
+    onSuccess: (token: ApiToken) => void,
+): ThunkAction => async (dispatch) => {
+    dispatch(authActions.updateApiToken());
+
+    try {
+        await token.save(tokenData);
+
+        dispatch(authActions.updateApiTokenSuccess(token));
+        onSuccess(token);
+    } catch (error: unknown) {
+        dispatch(authActions.updateApiTokenFailed(ensureError(error)));
+    }
+};
+
+export const revokeApiTokenAsync = (
+    token: ApiToken,
+    onSuccess: () => void,
+): ThunkAction => async (dispatch) => {
+    dispatch(authActions.revokeApiToken());
+
+    try {
+        await token.revoke();
+
+        dispatch(authActions.revokeApiTokenSuccess(token));
+        onSuccess();
+    } catch (error: unknown) {
+        dispatch(authActions.revokeApiTokenFailed(ensureError(error)));
     }
 };

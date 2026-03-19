@@ -23,20 +23,8 @@
 #!docs/README.md
 
 # For safety
-/MANIFEST.in
 /cvat_sdk/__init__.py
-/config
 /gen
-/helpers.py
-/utils.py
-/types.py
 
 # Don't generate these files
-/README.md
-/git_push.sh
-/setup.cfg
-/test-requirements.txt
-/tox.ini
-/.gitlab-ci.yml
-/.travis.yml
-/.gitignore
+/cvat_sdk/api_client_README.md

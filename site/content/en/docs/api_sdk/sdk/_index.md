@@ -57,7 +57,7 @@ request the `pytorch` extra:
 pip install "cvat-sdk[pytorch]"
 ```
 
-We support Python versions 3.9 and higher.
+We support Python versions 3.10 and higher.
 
 ## Usage
 

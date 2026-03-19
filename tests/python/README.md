@@ -82,6 +82,7 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
+cd tests/python
 docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign \
     --exclude=admin --exclude=auth.permission --exclude=authtoken --exclude=contenttypes \
     --exclude=django_rq --exclude=sessions \
@@ -164,15 +165,6 @@ Assets directory has two parts:
    then better to choose `admin1` user for creating new resource.
 
 ## Troubleshooting
-
-1. If your test session was exit with message:
-   ```
-   _pytest.outcomes.Exit: Command failed: ... Add `-s` option to see more details.
-   ```
-   Rerun tests to see error messages:
-   ```
-   pytest ./tests/python/rest_api -s
-   ```
 
 1. If your tests was failed due to date field incompatibility and you have
    error message like this:

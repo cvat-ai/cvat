@@ -42,7 +42,6 @@ export interface Geometry {
 
 export interface FocusData {
     clientID: number;
-    padding: number;
 }
 
 export interface ActiveElement {
@@ -102,6 +101,7 @@ export interface Configuration {
     enableSelectiveDisplay?: boolean;
     selectiveLabels?: number[];
     selectiveAttributes?: Record<number, number[]>;
+    focusedObjectPadding?: number;
 }
 
 export interface BrushTool {
@@ -118,7 +118,7 @@ export interface DrawData {
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;
-    skeletonSVG?: string;
+    skeletonSVG?: SVGSVGElement;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
@@ -130,23 +130,25 @@ export interface DrawData {
 
 export interface InteractionData {
     enabled: boolean;
-    shapeType?: string;
-    crosshair?: boolean;
-    minPosVertices?: number;
-    minNegVertices?: number;
-    startWithBox?: boolean;
-    enableSliding?: boolean;
-    allowRemoveOnlyLast?: boolean;
-    intermediateShape?: {
-        shapeType: string;
-        points: number[];
+    command?: 'draw_points' | 'draw_box' | 'put_shapes' | 'refine';
+    payload?: {
+        shapes: {
+            shapeType: string;
+            points: ArrayLike<number>;
+        }[];
+    };
+    settings?: {
+        crosshair?: boolean; // default is false
+        points_type?: 'any' | 'positive' | 'negative'; // default is any
+        removalStrategy?: 'any' | 'last'; // default is any
+        appendCursorPositionAsPoint?: boolean; // default is false
     };
 }
 
 export interface InteractionResult {
     points: number[];
     shapeType: string;
-    button: number;
+    type: 'positive' | 'negative';
 }
 
 export interface PolyEditData {
@@ -181,7 +183,7 @@ export interface JoinData {
 export interface SliceData {
     enabled: boolean;
     clientID?: number;
-    getContour?: (state: any) => Promise<number[]>;
+    getContour?: (state: any) => Promise<[number, number][]>;
 }
 
 export enum FrameZoom {
@@ -424,6 +426,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 textContent: consts.DEFAULT_SHAPE_TEXT_CONTENT,
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
                 hideEditedObject: false,
+                focusedObjectPadding: 50,
             },
             imageBitmap: false,
             image: null,
@@ -436,7 +439,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             imageIsDeleted: false,
             focusData: {
                 clientID: 0,
-                padding: 0,
             },
             gridSize: {
                 height: 100,
@@ -459,7 +461,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public zoom(x: number, y: number, deltaY: number): void {
         const basicZoomCoef = 6 / 5; // historical value
         // less value of adjust coef, means zoomin/zoomout smoother
-        // we need a trade-off between speed and smoothness, value 1 / 8 is good enough
+        // we need a trade-off between speed and smoothness, value 1 / 10 is good enough
         const adjustCoef = 1 / 10;
         const oldScale: number = this.data.scale;
         let scaleFactor = basicZoomCoef ** (-deltaY * adjustCoef);
@@ -691,12 +693,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
     }
 
-    public focus(clientID: number, padding: number): void {
-        this.data.focusData = {
-            clientID,
-            padding,
-        };
-
+    public focus(clientID: number): void {
+        this.data.focusData = { clientID };
         this.notify(UpdateReasons.SHAPE_FOCUSED);
     }
 
@@ -846,16 +844,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
-        if (interactionData.enabled) {
-            if (!this.data.interactionData.enabled && !interactionData.shapeType) {
-                throw new Error('A shape type was not specified');
-            }
-        }
-        this.data.interactionData = interactionData;
-        if (typeof this.data.interactionData.crosshair !== 'boolean') {
-            this.data.interactionData.crosshair = true;
-        }
 
+        this.data.interactionData = interactionData;
         this.notify(UpdateReasons.INTERACT);
     }
 
@@ -1033,6 +1023,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.hideEditedObject = configuration.hideEditedObject;
         }
 
+        if (typeof configuration.focusedObjectPadding === 'number') {
+            this.data.configuration.focusedObjectPadding = Math.max(
+                configuration.focusedObjectPadding, 0,
+            );
+        }
+
         this.notify(UpdateReasons.CONFIG_UPDATED);
     }
 
@@ -1174,7 +1170,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public get mode(): Mode {
         return this.data.mode;
     }
-    public get exception(): Error {
+
+    public get exception(): Error | null {
         return this.data.exception;
     }
 }

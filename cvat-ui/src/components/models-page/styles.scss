@@ -98,8 +98,8 @@
         justify-content: center;
         align-items: center;
         height: 100%;
+        width: 100%;
         overflow: hidden;
-        min-height: $grid-unit-size * 18;
 
         &:hover {
             cursor: pointer;
@@ -108,14 +108,22 @@
 
     .ant-card-cover {
         flex-grow: 1;
+        height: 0;
+
+        > div {
+            display: flex;
+        }
+    }
+
+    .cvat-model-item-loading-preview,
+    .cvat-model-item-empty-preview {
+        max-height: $grid-unit-size * 18;
     }
 }
 
 .cvat-model-item-loading-preview,
 .cvat-model-item-empty-preview {
     @extend .cvat-base-preview;
-
-    height: $grid-unit-size * 18;
 
     &:hover {
         cursor: pointer;
@@ -172,6 +180,11 @@
 
     h3 {
         margin-top: $grid-unit-size * 2;
+    }
+
+    .cvat-model-item-loading-preview,
+    .cvat-model-item-empty-preview {
+        height: $grid-unit-size * 18;
     }
 }
 

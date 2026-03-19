@@ -62,13 +62,15 @@ elif settings.IAM_TYPE == "LDAP":
 
 
 def register_signals(app_config):
-    post_migrate.connect(register_groups, app_config)
+    post_migrate.connect(register_groups, app_config, dispatch_uid=__name__ + ".register_groups")
     if settings.IAM_TYPE == "BASIC":
         # Add default groups and add admin rights to super users.
-        post_save.connect(create_user, sender=User)
+        post_save.connect(create_user, sender=User, dispatch_uid=__name__ + ".create_user")
     elif settings.IAM_TYPE == "LDAP":
         import django_auth_ldap.backend
 
         # Map groups from LDAP to roles, convert a user to super user if he/she
         # has an admin group.
-        django_auth_ldap.backend.populate_user.connect(create_user)
+        django_auth_ldap.backend.populate_user.connect(
+            create_user, dispatch_uid=__name__ + ".create_user"
+        )

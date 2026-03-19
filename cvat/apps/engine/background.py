@@ -136,13 +136,8 @@ class DatasetExporter(AbstractExporter):
         )
         self.callback_args = (self.db_instance.pk, self.export_args.format)
 
-        try:
-            server_address = self.request.scheme + "://" + self.request.get_host()
-        except Exception:
-            server_address = None
-
         self.callback_kwargs = {
-            "server_url": server_address,
+            "server_url": self.request.build_absolute_uri("").rstrip("/"),
         }
 
     def finalize_request(self):

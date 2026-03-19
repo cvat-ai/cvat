@@ -82,7 +82,7 @@ export class Dumper {
     }
 }
 
-export class AnnotationFormats {
+export default class AnnotationFormats {
     public loaders: Loader[];
     public dumpers: Dumper[];
 

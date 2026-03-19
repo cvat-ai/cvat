@@ -7,7 +7,7 @@ import json
 from copy import deepcopy
 from http import HTTPStatus
 from types import SimpleNamespace
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from cvat_sdk import exceptions, models
@@ -69,7 +69,7 @@ class _TestLabelsPermissionsBase:
 
         return labels_by_source
 
-    def _get_source_info(self, source: str, *, org_id: Optional[int] = None):
+    def _get_source_info(self, source: str, *, org_id: int | None = None):
         if source == "task":
             sources = self.tasks_by_org
             is_source_staff = self.is_task_staff
@@ -343,7 +343,7 @@ class TestListLabels(_TestLabelsPermissionsBase):
 
     def _test_list_denied(self, user, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.list(
+            _, response = client.labels_api.list(
                 **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -498,7 +498,7 @@ class TestGetLabels(_TestLabelsPermissionsBase):
 
     def _test_get_ok(self, user, lid, data):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.retrieve(lid)
+            _, response = client.labels_api.retrieve(lid)
             assert response.status == HTTPStatus.OK
             assert (
                 DeepDiff(
@@ -512,7 +512,7 @@ class TestGetLabels(_TestLabelsPermissionsBase):
 
     def _test_get_denied(self, user, lid):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.retrieve(
+            _, response = client.labels_api.retrieve(
                 lid, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -556,7 +556,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
 
     def _test_update_ok(self, user, lid, data, *, expected_data=None, ignore_fields=None, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.partial_update(
+            _, response = client.labels_api.partial_update(
                 lid, patched_label_request=models.PatchedLabelRequest(**deepcopy(data)), **kwargs
             )
             assert response.status == HTTPStatus.OK
@@ -573,7 +573,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
 
     def _test_update_denied(self, user, lid, data, expected_status=HTTPStatus.FORBIDDEN, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.partial_update(
+            _, response = client.labels_api.partial_update(
                 lid,
                 patched_label_request=models.PatchedLabelRequest(**deepcopy(data)),
                 **kwargs,
@@ -715,7 +715,7 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         )
 
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.partial_update(
+            _, response = client.labels_api.partial_update(
                 label["id"],
                 patched_label_request=models.PatchedLabelRequest(**label),
                 _parse_response=False,
@@ -787,12 +787,12 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
 
     def _test_delete_ok(self, user, lid, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.destroy(lid, **kwargs)
+            _, response = client.labels_api.destroy(lid, **kwargs)
             assert response.status == HTTPStatus.NO_CONTENT
 
     def _test_delete_denied(self, user, lid, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.partial_update(
+            _, response = client.labels_api.partial_update(
                 lid,
                 **kwargs,
                 _check_status=False,
@@ -812,10 +812,10 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
         )[0]
 
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.destroy(label["id"])
+            _, response = client.labels_api.destroy(label["id"])
             assert response.status == HTTPStatus.NO_CONTENT
 
-            (_, response) = client.labels_api.retrieve(
+            _, response = client.labels_api.retrieve(
                 label["id"], _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.NOT_FOUND
@@ -833,7 +833,7 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
         )
 
         with make_api_client(user) as client:
-            (_, response) = client.labels_api.destroy(label["id"], _check_status=False)
+            _, response = client.labels_api.destroy(label["id"], _check_status=False)
 
         assert response.status == HTTPStatus.BAD_REQUEST
         assert "Sublabels cannot be deleted this way." in response.data.decode()

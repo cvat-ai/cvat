@@ -27,6 +27,7 @@ import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
+import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 
@@ -36,9 +37,8 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
-import {
-    mask2Rle, rle2Mask, propagateShapes, validateAttributeValue,
-} from './object-utils';
+import { propagateShapes, validateAttributeValue } from './object-utils';
+import { mask2Rle, rle2Mask } from './rle-utils';
 import User from './user';
 import config from './config';
 
@@ -125,10 +125,6 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data, requestConfig);
                 return result;
             },
-            async setAuthData(response) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.setAuthData, response);
-                return result;
-            },
             async installedApps() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
                 return result;
@@ -175,6 +171,12 @@ function build(): CVATCore {
         users: {
             async get(filter = {}) {
                 const result = await PluginRegistry.apiWrapper(cvat.users.get, filter);
+                return result;
+            },
+        },
+        apiTokens: {
+            async get(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.apiTokens.get, filter);
                 return result;
             },
         },
@@ -462,6 +464,7 @@ function build(): CVATCore {
             QualitySettings,
             QualityConflict,
             QualityReport,
+            ApiToken,
             Request,
             FramesMetaData,
             JobValidationLayout,

@@ -10,8 +10,8 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
-    ConsensusSettings, AboutData, ShapeType, ObjectType,
-    Membership,
+    ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken,
+    Membership, AnnotationFormats,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -24,6 +24,17 @@ export interface AuthState {
     user: User | null;
     showChangePasswordDialog: boolean;
     hasEmailVerificationBeenSent: boolean;
+    apiTokens: {
+        fetching: boolean;
+        current: ApiToken[];
+        count: number;
+    };
+}
+
+export interface ChangePasswordData {
+    oldPassword: string;
+    newPassword1: string;
+    newPassword2: string;
 }
 
 export interface ProjectsQuery {
@@ -204,7 +215,7 @@ export interface ConsensusState {
 }
 
 export interface FormatsState {
-    annotationFormats: any;
+    annotationFormats: AnnotationFormats | null;
     fetching: boolean;
     initialized: boolean;
 }
@@ -290,7 +301,6 @@ export interface BulkActionsState {
 
 export enum SupportedPlugins {
     ANALYTICS = 'ANALYTICS',
-    MODELS = 'MODELS',
 }
 
 export type PluginsList = {
@@ -381,6 +391,14 @@ export interface PluginsState {
         loginPage: {
             loginForm: PluginComponent[];
         };
+        annotationPage: {
+            player: {
+                slider: PluginComponent[];
+            };
+            menuActions: {
+                items: PluginComponent[];
+            };
+        }
         modelsPage: {
             topBar: {
                 items: PluginComponent[];
@@ -417,6 +435,11 @@ export interface PluginsState {
         about: {
             links: {
                 items: PluginComponent[];
+            };
+        };
+        aiTools: {
+            interactors: {
+                extras: PluginComponent[];
             };
         };
         router: PluginComponent[];
@@ -526,6 +549,7 @@ export interface NotificationState {
     message: string;
     description?: string;
     duration?: number;
+    className?: string;
 }
 
 export interface BulkOperationsErrorState extends ErrorState {
@@ -547,6 +571,11 @@ export interface NotificationsState {
             changePassword: null | ErrorState;
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
+            updateUser: null | ErrorState;
+            getApiTokens: null | ErrorState;
+            createApiToken: null | ErrorState;
+            updateApiToken: null | ErrorState;
+            revokeApiToken: null | ErrorState;
         };
         serverAPI: {
             fetching: null | ErrorState;
@@ -759,6 +788,7 @@ export enum StatesOrdering {
     ID_ASCENT = 'ID - ascent',
     UPDATED = 'Updated time',
     Z_ORDER = 'Z Order',
+    LABEL_NAME = 'Label name',
 }
 
 export enum ContextMenuType {
@@ -775,6 +805,7 @@ export enum NavigationType {
     REGULAR = 'regular',
     FILTERED = 'filtered',
     EMPTY = 'empty',
+    CHAPTER = 'chapter',
 }
 
 export interface EditingState {
@@ -845,10 +876,14 @@ export interface AnnotationState {
         navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
+        hoveredChapter: number | null;
     };
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
-        activeInteractorParameters?: MLModel['params']['canvas'];
+        activeInteractorParameters: Partial<{
+            command: Parameters<Canvas['interact']>[0]['command'];
+            settings: Parameters<Canvas['interact']>[0]['settings'];
+        }>;
         activeShapeType: ShapeType | null;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
@@ -957,7 +992,7 @@ export interface PlayerSettingsState {
 export interface WorkspaceSettingsState {
     autoSave: boolean;
     autoSaveInterval: number; // in ms
-    aamZoomMargin: number;
+    focusedObjectPadding: number;
     automaticBordering: boolean;
     adaptiveZoom: boolean;
     showObjectsTextAlways: boolean;

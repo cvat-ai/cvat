@@ -12,7 +12,6 @@ from cvat.apps.engine.models import Task
 
 class ConsensusSettings(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="consensus_settings")
-    quorum = models.FloatField(default=0.5)
     iou_threshold = models.FloatField(default=qc.DatasetComparator.DEFAULT_SETTINGS.iou_threshold)
 
     @property

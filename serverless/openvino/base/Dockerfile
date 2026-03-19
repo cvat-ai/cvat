@@ -1,4 +1,4 @@
-FROM openvino/ubuntu20_runtime:2022.3.0
+FROM openvino/ubuntu22_runtime:2023.3.0
 
 USER root
 

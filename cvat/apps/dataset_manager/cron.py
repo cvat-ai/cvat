@@ -9,7 +9,7 @@ import shutil
 from abc import ABCMeta, abstractmethod
 from datetime import timedelta
 from pathlib import Path
-from typing import ClassVar, Type
+from typing import ClassVar
 
 from django.utils import timezone
 
@@ -123,7 +123,7 @@ class ExportCacheDirectoryCleaner(BaseCleaner):
                 log_exception(logger)
 
 
-def cleanup(CleanerClass: Type[ExportCacheDirectoryCleaner | TmpDirectoryCleaner]) -> None:
+def cleanup(CleanerClass: type[ExportCacheDirectoryCleaner | TmpDirectoryCleaner]) -> None:
     assert issubclass(CleanerClass, BaseCleaner)
     started_at = timezone.now()
 

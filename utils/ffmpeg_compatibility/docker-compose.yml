@@ -1,0 +1,13 @@
+services:
+  generate_chunks_for_task:
+    image: cvat/server:v2.46.0
+    environment:
+      CVAT_POSTGRES_HOST: cvat_db
+    depends_on:
+      - cvat_db
+    volumes:
+      - cvat_data:/home/django/data
+      - ./utils/ffmpeg_compatibility/switch_task_to_static_cache.py:/home/django/switch_task_to_static_cache.py:ro
+    networks:
+      - cvat
+    entrypoint: ["python", "switch_task_to_static_cache.py"]

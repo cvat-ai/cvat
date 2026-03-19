@@ -50,6 +50,7 @@ export interface CanvasController {
     drag(x: number, y: number): void;
     disableDrag(): void;
     fit(): void;
+    focus(clientId: number, padding: number): void;
 }
 
 export class CanvasControllerImpl implements CanvasController {
@@ -99,6 +100,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public edit(editData: MasksEditData | PolyEditData): void {
         this.model.edit(editData);
+    }
+
+    public focus(clientID: number, padding: number): void {
+        this.model.focus(clientID, padding);
     }
 
     public get geometry(): Geometry {

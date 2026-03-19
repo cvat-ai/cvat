@@ -91,14 +91,18 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
 
     const withCount = LabelWithCountHOF(selectedIds, bulkKeys, actionsApplicable);
 
-    const handleRemoveMembership = (): void => {
-        const membershipsToRemove = actionsApplicable[MenuKeys.REMOVE_MEMBER];
+    const handleRemoveMembership = (
+        actionType: MenuKeys.REMOVE_MEMBER | MenuKeys.DELETE_INVITATION,
+    ): void => {
+        const membershipsToRemove = actionsApplicable[actionType];
+        const actionLabel = actionType === MenuKeys.DELETE_INVITATION ? 'Deleting invitation for' : 'Removing member';
+
         dispatch(makeBulkOperationAsync(
             membershipsToRemove,
             async (m) => {
                 await dispatch(removeOrganizationMemberAsync(organizationInstance, m));
             },
-            (m, idx, total) => `Removing member ${m.user.username} (${idx + 1}/${total})`,
+            (m, idx, total) => `${actionLabel} ${m.user.username} (${idx + 1}/${total})`,
             fetchMembers,
         ));
     };
@@ -167,7 +171,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
                     if (action.key === MenuKeys.RESEND_INVITATION) {
                         handleResendInvitation();
                     } else if (action.key === MenuKeys.DELETE_INVITATION) {
-                        handleRemoveMembership();
+                        handleRemoveMembership(MenuKeys.DELETE_INVITATION);
                     } else if (action.key === 'remove_member') {
                         Modal.confirm({
                             className: 'cvat-modal-organization-member-remove',
@@ -178,7 +182,7 @@ function MemberActionsMenu(props: Readonly<MemberActionsMenuProps>): JSX.Element
                                 danger: true,
                             },
                             onOk: () => {
-                                handleRemoveMembership();
+                                handleRemoveMembership(MenuKeys.REMOVE_MEMBER);
                             },
                         });
                     } else if (action.key === 'edit_role') {

@@ -264,6 +264,14 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
+                async contextImageData(frameId) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.frames.contextImageData,
+                        frameId,
+                    );
+                    return result;
+                },
                 async contextImage(frameId) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -422,10 +430,12 @@ export class Session {
         frameNumbers: () => Promise<number[]>;
         preview: () => Promise<string>;
         contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
+        contextImageData: (frame: number) => Promise<ArrayBuffer>;
         search: (
             filters: {
                 offset?: number,
                 notDeleted: boolean,
+                chapterMark?: boolean,
             },
             frameFrom: number,
             frameTo: number,
@@ -488,6 +498,7 @@ export class Session {
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
+            contextImageData: Object.getPrototypeOf(this).frames.contextImageData.bind(this),
             chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
         };
 
@@ -510,8 +521,10 @@ export class Job extends Session {
         stop_frame?: number;
         frame_count?: number;
         project_id: number | null;
+        project_name: string | null;
         guide_id: number | null;
-        task_id: number;
+        task_id: number | null;
+        task_name: string | null;
         labels: Label[];
         dimension?: DimensionType;
         data_compressed_chunk_type?: ChunkType;
@@ -523,7 +536,7 @@ export class Job extends Session {
         source_storage: Storage,
         target_storage: Storage,
         parent_job_id: number | null;
-        consensus_replicas: number;
+        replicas_count: number;
     };
 
     constructor(initialData: InitializerType) {
@@ -539,8 +552,10 @@ export class Job extends Session {
             stop_frame: undefined,
             frame_count: undefined,
             project_id: null,
+            project_name: null,
             guide_id: null,
             task_id: null,
+            task_name: null,
             labels: [],
             dimension: undefined,
             data_compressed_chunk_type: undefined,
@@ -552,7 +567,7 @@ export class Job extends Session {
             source_storage: undefined,
             target_storage: undefined,
             parent_job_id: null,
-            consensus_replicas: undefined,
+            replicas_count: undefined,
         };
 
         this.#data.id = initialData.id ?? this.#data.id;
@@ -561,6 +576,8 @@ export class Job extends Session {
         this.#data.stop_frame = initialData.stop_frame ?? this.#data.stop_frame;
         this.#data.frame_count = initialData.frame_count ?? this.#data.frame_count;
         this.#data.task_id = initialData.task_id ?? this.#data.task_id;
+        this.#data.task_name = initialData.task_name ?? this.#data.task_name;
+        this.#data.project_name = initialData.project_name ?? this.#data.project_name;
         this.#data.dimension = initialData.dimension ?? this.#data.dimension;
         this.#data.data_compressed_chunk_type =
             initialData.data_compressed_chunk_type ?? this.#data.data_compressed_chunk_type;
@@ -568,7 +585,7 @@ export class Job extends Session {
         this.#data.mode = initialData.mode ?? this.#data.mode;
         this.#data.created_date = initialData.created_date ?? this.#data.created_date;
         this.#data.parent_job_id = initialData.parent_job_id ?? this.#data.parent_job_id;
-        this.#data.consensus_replicas = initialData.consensus_replicas ?? this.#data.consensus_replicas;
+        this.#data.replicas_count = initialData.replicas_count ?? this.#data.replicas_count;
 
         if (Array.isArray(initialData.labels)) {
             this.#data.labels = initialData.labels.map((labelData) => {
@@ -664,8 +681,16 @@ export class Job extends Session {
         return this.#data.guide_id;
     }
 
-    public get taskId(): number {
+    public get taskId(): number | null {
         return this.#data.task_id;
+    }
+
+    public get taskName(): string | null {
+        return this.#data.task_name;
+    }
+
+    public get projectName(): string | null {
+        return this.#data.project_name;
     }
 
     public get dimension(): DimensionType {
@@ -676,8 +701,8 @@ export class Job extends Session {
         return this.#data.parent_job_id;
     }
 
-    public get consensusReplicas(): number {
-        return this.#data.consensus_replicas;
+    public get replicasCount(): number {
+        return this.#data.replicas_count;
     }
 
     public get dataChunkType(): ChunkType {
@@ -764,6 +789,7 @@ export class Job extends Session {
 export class Task extends Session {
     public name: string;
     public projectId: number | null;
+    public projectName: string | null;
     public organizationId: number | null;
     public assignee: User | null;
     public bugTracker: string;
@@ -824,6 +850,7 @@ export class Task extends Session {
             id: undefined,
             name: undefined,
             project_id: null,
+            project_name: null,
             guide_id: undefined,
             organization_id: undefined,
             status: undefined,
@@ -926,7 +953,9 @@ export class Task extends Session {
                     // following fields also returned when doing API request /jobs/<id>
                     // here we know them from task and append to constructor
                     task_id: data.id,
+                    task_name: data.name,
                     project_id: data.project_id,
+                    project_name: data.project_name,
                     labels: data.labels,
                     bug_tracker: data.bug_tracker,
                     mode: data.mode,
@@ -936,7 +965,7 @@ export class Task extends Session {
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
                     parent_job_id: job.parent_job_id,
-                    consensus_replicas: job.consensus_replicas,
+                    replicas_count: job.replicas_count,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -968,6 +997,9 @@ export class Task extends Session {
                         updateTrigger.update('projectId');
                         data.project_id = projectId;
                     },
+                },
+                projectName: {
+                    get: () => data.project_name,
                 },
                 guideId: {
                     get: () => data.guide_id,
@@ -1128,7 +1160,7 @@ export class Task extends Session {
                         for (const value of clientFiles) {
                             if (!(value instanceof File)) {
                                 throw new ArgumentError(
-                                    `Array values must be a File. But ${value.constructor.name} has been got.`,
+                                    'Array values must be a File.',
                                 );
                             }
                         }

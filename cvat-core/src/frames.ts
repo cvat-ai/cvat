@@ -9,7 +9,7 @@ import {
 } from 'cvat-data';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import { SerializedFramesMetaData } from './server-response-types';
+import { SerializedChapterMetaData, SerializedFramesMetaData } from './server-response-types';
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
 import config from './config';
@@ -80,11 +80,32 @@ enum DeletedFrameState {
 }
 
 interface FramesMetaDataUpdatedData {
-    deletedFrames: Record<number, DeletedFrameState>;
+    cloudStorageId?: boolean;
+    deletedFrames?: Record<number, DeletedFrameState>;
+}
+
+export class ChapterMetaData {
+    readonly #title: string;
+
+    constructor(initialData: SerializedChapterMetaData) {
+        this.#title = initialData.title;
+    }
+
+    get title(): string {
+        return this.#title;
+    }
+}
+
+export class Chapter {
+    public id: number;
+    public start: number;
+    public stop: number;
+    public metadata: ChapterMetaData;
 }
 
 export class FramesMetaData {
     public chunkSize: number;
+    public chapters: Chapter[] | null;
     public deletedFrames: Record<number, boolean>;
     public includedFrames: number[] | null;
     public frameFilter: string;
@@ -109,6 +130,7 @@ export class FramesMetaData {
     constructor(initialData: Omit<SerializedFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> }) {
         const data: typeof initialData = {
             chunk_size: undefined,
+            chapters: [],
             deleted_frames: {},
             included_frames: null,
             frame_filter: undefined,
@@ -173,6 +195,9 @@ export class FramesMetaData {
             Object.freeze({
                 chunkSize: {
                     get: () => data.chunk_size,
+                },
+                chapters: {
+                    get: () => data.chapters,
                 },
                 deletedFrames: {
                     get: () => data.deleted_frames,
@@ -255,16 +280,17 @@ export class FramesMetaData {
     }
 
     getUpdated(): FramesMetaDataUpdatedData {
-        const updatedFields = this.#updateTrigger.getUpdated(this);
-        const deletedFrames: FramesMetaDataUpdatedData['deletedFrames'] = {};
-        for (const key in updatedFields) {
-            if (Object.hasOwn(updatedFields, key) && key.startsWith('deletedFrames')) {
+        const updatedFields: FramesMetaDataUpdatedData = {};
+        for (const key of Object.keys(this.#updateTrigger.getUpdated(this))) {
+            if (key.startsWith('deletedFrames')) {
+                updatedFields.deletedFrames = updatedFields.deletedFrames ?? {};
                 const [, frame, state] = key.split(':');
-                deletedFrames[frame] = state;
+                updatedFields.deletedFrames[frame] = state;
+            } else if (key === 'cloudStorageId') {
+                updatedFields.cloudStorageId = true;
             }
         }
-
-        return { deletedFrames };
+        return updatedFields;
     }
 
     resetUpdated(): void {
@@ -639,13 +665,18 @@ function mergeMetaData(
     if (previousData instanceof Promise) {
         return previousData.then((prevMeta) => {
             const updatedFields = prevMeta.getUpdated();
-            const updatedDeletedFrames = updatedFields.deletedFrames;
-            for (const [frame, state] of Object.entries(updatedDeletedFrames)) {
-                if (state === DeletedFrameState.DELETED) {
-                    framesMetaData.deletedFrames[frame] = true;
-                } else if (state === DeletedFrameState.RESTORED) {
-                    delete framesMetaData.deletedFrames[frame];
+            if (updatedFields.deletedFrames) {
+                for (const [frame, state] of Object.entries(updatedFields.deletedFrames)) {
+                    if (state === DeletedFrameState.DELETED) {
+                        framesMetaData.deletedFrames[frame] = true;
+                    } else if (state === DeletedFrameState.RESTORED) {
+                        delete framesMetaData.deletedFrames[frame];
+                    }
                 }
+            }
+
+            if (updatedFields.cloudStorageId) {
+                framesMetaData.cloudStorageId = prevMeta.cloudStorageId;
             }
 
             return framesMetaData;
@@ -752,7 +783,17 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
     }
 }
 
-export async function getContextImage(jobID: number, frame: number): Promise<Record<string, ImageBitmap>> {
+export async function getContextImage(
+    jobID: number,
+    frame: number,
+    getImageContext: (frame: number) => Promise<ArrayBuffer>,
+): Promise<Record<string, ImageBitmap>> {
+    if (!(jobID in frameDataCache)) {
+        throw new Error(
+            'Frame data was not initialized for this job. Try first requesting any frame.',
+        );
+    }
+
     const frameData = frameDataCache[jobID];
     const meta = await frameData.getMeta();
     const requestId = frame;
@@ -761,12 +802,6 @@ export async function getContextImage(jobID: number, frame: number): Promise<Rec
     const frameIndex = meta.getFrameIndex(dataFrameNumber);
     const { related_files: relatedFiles } = meta.frames[frameIndex];
     return new Promise<Record<string, ImageBitmap>>((resolve, reject) => {
-        if (!(jobID in frameDataCache)) {
-            reject(new Error(
-                'Frame data was not initialized for this job. Try first requesting any frame.',
-            ));
-        }
-
         if (relatedFiles === 0) {
             resolve({});
         } else if (frame in frameData.contextCache) {
@@ -779,7 +814,7 @@ export async function getContextImage(jobID: number, frame: number): Promise<Rec
                 } else if (frame in frameData.contextCache) {
                     resolve(frameData.contextCache[frame].data);
                 } else {
-                    frameData.activeContextRequest = serverProxy.frames.getImageContext(jobID, frame)
+                    frameData.activeContextRequest = getImageContext(frame)
                         .then((encodedImages) => decodeContextImages(encodedImages, 0, relatedFiles));
                     frameData.activeContextRequest.then((images) => {
                         const size = Object.values(images)
@@ -962,18 +997,21 @@ export async function restoreFrame(jobID: number, frame: number): Promise<void> 
 export async function patchMeta(id: number, meta?: FramesMetaData, session: 'job' | 'task' = 'job'): Promise<FramesMetaData> {
     const oldMeta = (session === 'job' ? await frameMetaCache[id] : meta);
     const updatedFields = oldMeta.getUpdated();
-    let newMeta = null;
     if (Object.keys(updatedFields).length) {
-        newMeta = await saveMeta(oldMeta, session, id);
+        const newMeta = await saveMeta(oldMeta, session, id);
+        return session === 'job' ? frameMetaCache[id] : newMeta;
     }
-    newMeta = (session === 'job' ? await frameMetaCache[id] : newMeta);
-    return newMeta;
+    return oldMeta;
 }
 
 export async function findFrame(
-    jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean },
+    jobID: number,
+    frameFrom: number,
+    frameTo: number,
+    filters: { offset?: number, notDeleted: boolean, chapterMark?: boolean },
 ): Promise<number | null> {
     const offset = filters.offset || 1;
+    const chapterMark = filters.chapterMark || false;
     const meta = await getFramesMeta('job', jobID);
 
     const sign = Math.sign(frameTo - frameFrom);
@@ -993,6 +1031,11 @@ export async function findFrame(
         if (filters.notDeleted) {
             return !(frame in meta.deletedFrames);
         }
+
+        if (chapterMark) {
+            return meta.chapters.some((chapter) => chapter.start === frame);
+        }
+
         return true;
     };
     for (let frame = frameFrom; predicate(frame); frame = update(frame)) {

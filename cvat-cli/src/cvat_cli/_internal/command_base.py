@@ -7,8 +7,8 @@ import json
 import textwrap
 import types
 from abc import ABCMeta, abstractmethod
-from collections.abc import Mapping, Sequence
-from typing import Callable, Protocol
+from collections.abc import Callable, Mapping, Sequence
+from typing import Protocol
 
 from cvat_sdk import Client
 
@@ -65,12 +65,10 @@ class DeprecatedAlias:
 
     @property
     def description(self) -> str:
-        return textwrap.dedent(
-            f"""\
+        return textwrap.dedent(f"""\
             {self._command.description}
             (Deprecated; use "{self._replacement}" instead.)
-            """
-        )
+            """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         self._command.configure_parser(parser)

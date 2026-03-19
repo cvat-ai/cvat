@@ -16,8 +16,9 @@ import {
 } from './enums';
 import AnnotationHistory from './annotations-history';
 import { SerializedShape, SerializedTrack, SerializedTag } from './server-response-types';
+import { mask2Rle, rle2Mask } from './rle-utils';
 import {
-    checkNumberOfPoints, attrsAsAnObject, checkShapeArea, mask2Rle, rle2Mask,
+    checkNumberOfPoints, attrsAsAnObject, checkShapeArea,
     computeWrappingBox, findAngleDiff, rotatePoint, validateAttributeValue, cropMask,
 } from './object-utils';
 
@@ -55,6 +56,10 @@ function computeNewSource(currentSource: Source): Source {
         return Source.SEMI_AUTO;
     }
 
+    if (currentSource === Source.CONSENSUS) {
+        return Source.CONSENSUS;
+    }
+
     return Source.MANUAL;
 }
 
@@ -78,6 +83,7 @@ export interface BasicInjection {
     jobType: JobType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
+    replicasCount?: number;
 }
 
 type AnnotationInjection = BasicInjection & {
@@ -104,6 +110,8 @@ class Annotation {
     protected readOnlyFields: string[];
     protected color: string;
     protected source: Source;
+    public score: number;
+    public votes: number;
     public updated: number;
     public attributes: Record<number, string>;
     protected groupObject: {
@@ -127,6 +135,9 @@ class Annotation {
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
         this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
+        this.score = data.score;
+        this.votes = injection.replicasCount !== undefined ?
+            Math.round(this.score * injection.replicasCount) : 0;
         this.updated = Date.now();
         this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
             attributeAccumulator[attr.spec_id] = attr.value;
@@ -213,7 +224,11 @@ class Annotation {
         const undoLabel = this.label;
         const redoLabel = label;
         const undoAttributes = { ...this.attributes };
+        const undoSource = this.source;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+
         this.label = label;
+        this.source = redoSource;
         this.attributes = {};
         this.appendDefaultAttributes(label);
 
@@ -235,11 +250,13 @@ class Annotation {
             () => {
                 this.label = undoLabel;
                 this.attributes = undoAttributes;
+                this.source = undoSource;
                 this.updated = Date.now();
             },
             () => {
                 this.label = redoLabel;
                 this.attributes = redoAttributes;
+                this.source = redoSource;
                 this.updated = Date.now();
             },
             [this.clientID],
@@ -273,7 +290,7 @@ class Annotation {
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags']): void {
         if (updated.label) {
-            checkObjectType('label', data.label, null, Label);
+            checkObjectType('label', data.label, null, { cls: Label, name: 'Label' });
         }
 
         const labelAttributes = attrsAsAnObject(data.label.attributes);
@@ -303,38 +320,38 @@ class Annotation {
         }
 
         if (updated.occluded) {
-            checkObjectType('occluded', data.occluded, 'boolean', null);
+            checkObjectType('occluded', data.occluded, 'boolean');
         }
 
         if (updated.outside) {
-            checkObjectType('outside', data.outside, 'boolean', null);
+            checkObjectType('outside', data.outside, 'boolean');
         }
 
         if (updated.zOrder) {
-            checkObjectType('zOrder', data.zOrder, 'integer', null);
+            checkObjectType('zOrder', data.zOrder, 'integer');
         }
 
         if (updated.lock) {
-            checkObjectType('lock', data.lock, 'boolean', null);
+            checkObjectType('lock', data.lock, 'boolean');
         }
 
         if (updated.pinned) {
-            checkObjectType('pinned', data.pinned, 'boolean', null);
+            checkObjectType('pinned', data.pinned, 'boolean');
         }
 
         if (updated.color) {
-            checkObjectType('color', data.color, 'string', null);
+            checkObjectType('color', data.color, 'string');
             if (!/^#[0-9A-F]{6}$/i.test(data.color)) {
                 throw new ArgumentError(`Got invalid color value: "${data.color}"`);
             }
         }
 
         if (updated.hidden) {
-            checkObjectType('hidden', data.hidden, 'boolean', null);
+            checkObjectType('hidden', data.hidden, 'boolean');
         }
 
         if (updated.keyframe) {
-            checkObjectType('keyframe', data.keyframe, 'boolean', null);
+            checkObjectType('keyframe', data.keyframe, 'boolean');
             if (Object.keys(this.shapes).length === 1 && data.frame in this.shapes && !data.keyframe) {
                 throw new ArgumentError(
                     `Can not remove the latest keyframe of an object "${data.label.name}".` +
@@ -465,8 +482,8 @@ class Drawn extends Annotation {
 
     private fitPoints(points: number[], rotation: number, maxX: number, maxY: number): number[] {
         const { shapeType, parentID } = this;
-        checkObjectType('rotation', rotation, 'number', null);
-        points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
+        checkObjectType('rotation', rotation, 'number');
+        points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number'));
 
         if (parentID !== null || shapeType === ShapeType.CUBOID ||
             shapeType === ShapeType.ELLIPSE || !!rotation) {
@@ -492,7 +509,7 @@ class Drawn extends Annotation {
 
         let fittedPoints = [];
         if (updated.points && Number.isInteger(frame)) {
-            checkObjectType('points', data.points, null, Array);
+            checkObjectType('points', data.points, null, { cls: Array, name: 'Array' });
             checkNumberOfPoints(this.shapeType, data.points);
             // cut points
             const { width, height } = this.framesInfo[frame];
@@ -561,6 +578,7 @@ export class Shape extends Drawn {
             label_id: this.label.id,
             group: this.group,
             source: this.source,
+            score: this.score,
         };
 
         if (this.serverID !== null) {
@@ -600,6 +618,8 @@ export class Shape extends Drawn {
             pinned: this.pinned,
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
 
@@ -950,6 +970,8 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -1040,6 +1062,8 @@ export class Track extends Drawn {
     protected saveLabel(label: Label, frame: number): void {
         const undoLabel = this.label;
         const redoLabel = label;
+        const undoSource = this.source;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoAttributes = {
             unmutable: { ...this.attributes },
             mutable: Object.keys(this.shapes).map((key) => ({
@@ -1049,6 +1073,7 @@ export class Track extends Drawn {
         };
 
         this.label = label;
+        this.source = redoSource;
         this.attributes = {};
         for (const shape of Object.values(this.shapes)) {
             shape.attributes = {};
@@ -1068,6 +1093,7 @@ export class Track extends Drawn {
             () => {
                 this.label = undoLabel;
                 this.attributes = undoAttributes.unmutable;
+                this.source = undoSource;
                 for (const mutable of undoAttributes.mutable) {
                     this.shapes[mutable.frame].attributes = mutable.attributes;
                 }
@@ -1076,6 +1102,7 @@ export class Track extends Drawn {
             () => {
                 this.label = redoLabel;
                 this.attributes = redoAttributes.unmutable;
+                this.source = redoSource;
                 for (const mutable of redoAttributes.mutable) {
                     this.shapes[mutable.frame].attributes = mutable.attributes;
                 }
@@ -1478,6 +1505,8 @@ export class Tag extends Annotation {
             updated: this.updated,
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -2005,6 +2034,7 @@ export class SkeletonShape extends Shape {
             label_id: this.label.id,
             group: this.group,
             source: this.source,
+            score: this.score,
         };
 
         if (this.serverID !== null) {
@@ -2049,6 +2079,8 @@ export class SkeletonShape extends Shape {
             hidden: elements.every((el) => el.hidden),
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -3091,6 +3123,8 @@ export class SkeletonTrack extends Track {
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }

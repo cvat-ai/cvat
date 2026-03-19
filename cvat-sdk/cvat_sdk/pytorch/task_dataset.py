@@ -4,13 +4,11 @@
 
 import os
 import types
-from collections.abc import Mapping
-from typing import Callable, Optional
+from collections.abc import Callable, Mapping
 
 import torchvision.datasets
 
 import cvat_sdk.core
-import cvat_sdk.core.exceptions
 from cvat_sdk.datasets.caching import UpdatePolicy, make_cache_manager
 from cvat_sdk.datasets.task_dataset import TaskDataset
 from cvat_sdk.pytorch.common import Target
@@ -44,9 +42,9 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
         client: cvat_sdk.core.Client,
         task_id: int,
         *,
-        transforms: Optional[Callable] = None,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+        transforms: Callable | None = None,
+        transform: Callable | None = None,
+        target_transform: Callable | None = None,
         label_name_to_index: Mapping[str, int] = None,
         update_policy: UpdatePolicy = UpdatePolicy.IF_MISSING_OR_STALE,
     ) -> None:

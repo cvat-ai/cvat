@@ -6,10 +6,10 @@
 import io
 import itertools
 from collections import OrderedDict, defaultdict
+from collections.abc import Callable
 from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
-from typing import Callable, Optional, Union
 
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
@@ -485,11 +485,11 @@ class JobAnnotation:
         if not self._data_is_empty(self.data):
             self._set_updated_date()
 
-    def _validate_input_annotations(self, data: Union[AnnotationIR, dict]) -> AnnotationIR:
+    def _validate_input_annotations(self, data: AnnotationIR | dict) -> AnnotationIR:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_job.segment.task.dimension, data)
 
-        db_data = self.db_job.segment.task.data
+        db_data = self.db_job.segment.task.require_data()
 
         if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
             # Only tags and shapes can be used in tasks with GT pool
@@ -639,6 +639,7 @@ class JobAnnotation:
                 "frame",
                 "group",
                 "source",
+                "score",
                 "occluded",
                 "outside",
                 "z_order",
@@ -798,7 +799,7 @@ class JobAnnotation:
     def _init_version_from_db(self):
         self.ir_data.version = 0  # FIXME: should be removed in the future
 
-    def init_from_db(self, streaming: bool = False):
+    def init_from_db(self, *, streaming: bool = False):
         self._init_tags_from_db()
         self._init_shapes_from_db(streaming=streaming)
         self._init_tracks_from_db()
@@ -870,9 +871,11 @@ class TaskAnnotation:
         if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             requested_job_types.append(models.JobType.GROUND_TRUTH)
 
-        self.db_jobs = JobAnnotation.add_prefetch_info(
-            models.Job.objects, prefetch_images=False
-        ).filter(segment__task_id=pk, type__in=requested_job_types)
+        self.db_jobs = (
+            JobAnnotation.add_prefetch_info(models.Job.objects, prefetch_images=False)
+            .filter(segment__task_id=pk, type__in=requested_job_types)
+            .order_by("id")
+        )
 
         if not write_only:
             self.ir_data = AnnotationIR(self.db_task.dimension)
@@ -880,7 +883,7 @@ class TaskAnnotation:
     def reset(self):
         self.ir_data.reset()
 
-    def _patch_data(self, data: Union[AnnotationIR, dict], action: Optional[PatchAction]):
+    def _patch_data(self, data: AnnotationIR | dict, action: PatchAction | None):
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
 
@@ -920,7 +923,7 @@ class TaskAnnotation:
         self._patch_data(data, PatchAction.CREATE)
 
     def _preprocess_input_annotations_for_gt_pool_task(
-        self, data: Union[AnnotationIR, dict], *, action: Optional[PatchAction]
+        self, data: AnnotationIR | dict, *, action: PatchAction | None
     ) -> AnnotationIR:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
@@ -937,7 +940,7 @@ class TaskAnnotation:
         if gt_job is None:
             raise AssertionError(f"Can't find GT job in the task {self.db_task.id}")
 
-        db_data = self.db_task.data
+        db_data = self.db_task.require_data()
         frame_step = db_data.get_frame_step()
 
         def _to_rel_frame(abs_frame: int) -> int:
@@ -1012,17 +1015,21 @@ class TaskAnnotation:
             for db_job in self.db_jobs:
                 delete_job_data(db_job.id, db_job=db_job)
 
-    def init_from_db(self):
+    def init_from_db(self, *, streaming: bool = False):
         self.reset()
 
-        for db_job in self.db_jobs.select_for_update():
+        db_jobs = self.db_jobs
+        if not streaming:
+            db_jobs = db_jobs.select_for_update()
+
+        for db_job in db_jobs:
             if db_job.type == models.JobType.GROUND_TRUTH and (
                 self.db_task.data.validation_mode != models.ValidationMode.GT_POOL
             ):
                 continue
 
             annotation = JobAnnotation(db_job.id, db_job=db_job)
-            annotation.init_from_db()
+            annotation.init_from_db(streaming=streaming)
             if annotation.ir_data.version > self.ir_data.version:
                 self.ir_data.version = annotation.ir_data.version
 
@@ -1181,6 +1188,7 @@ def delete_task_data(pk):
     annotation.delete()
 
 
+@transaction_with_repeatable_read()
 def export_task(
     task_id: int,
     dst_file: str,
@@ -1190,14 +1198,8 @@ def export_task(
     save_images: bool = False,
     temp_dir: str | None = None,
 ):
-    # For big tasks dump function may run for a long time and
-    # we dont need to acquire lock after the task has been initialized from DB.
-    # But there is the bug with corrupted dump file in case 2 or
-    # more dump request received at the same time:
-    # https://github.com/cvat-ai/cvat/issues/217
-    with transaction.atomic():
-        task = TaskAnnotation(task_id)
-        task.init_from_db()
+    task = TaskAnnotation(task_id)
+    task.init_from_db(streaming=True)
 
     exporter = make_exporter(format_name)
     with open(dst_file, "wb") as f:

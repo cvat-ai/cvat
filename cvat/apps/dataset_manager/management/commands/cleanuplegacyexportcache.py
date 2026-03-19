@@ -4,7 +4,6 @@
 
 import shutil
 from contextlib import suppress
-from pathlib import Path
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -41,6 +40,6 @@ class Command(BaseCommand):
 
             for i, obj in enumerate(queryset.iterator()):
                 update_progress()
-                export_cache_dir = Path(obj.get_dirname()) / "export_cache"
+                export_cache_dir = obj.get_dirname() / "export_cache"
                 with suppress(FileNotFoundError):
                     shutil.rmtree(export_cache_dir)

@@ -5,6 +5,8 @@
 
 /// <reference types="cypress" />
 
+import { fullMatch } from './utils';
+
 Cypress.Commands.add('goToProjectsList', () => {
     cy.get('[value="projects"]').click();
     cy.url().should('include', '/projects');
@@ -47,13 +49,10 @@ Cypress.Commands.add(
     },
 );
 
-Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
-    const authKey = authResponse.body.key;
+Cypress.Commands.add('deleteProjects', (authHeaders, projectsToDelete) => {
     cy.request({
         url: '/api/projects?page_size=all',
-        headers: {
-            Authorization: `Token ${authKey}`,
-        },
+        headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
         for (const project of responseResult) {
@@ -63,9 +62,7 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
                     cy.request({
                         method: 'DELETE',
                         url: `/api/projects/${id}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
+                        headers: authHeaders,
                     });
                 }
             }
@@ -74,8 +71,10 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
 });
 
 Cypress.Commands.add('openProject', (projectName) => {
-    cy.contains(projectName).click({ force: true });
+    cy.intercept('GET', '/api/projects/**').as('getProject');
+    cy.contains(fullMatch(projectName)).click({ force: true });
     cy.get('.cvat-project-details').should('exist');
+    cy.wait('@getProject');
 });
 
 Cypress.Commands.add('openProjectById', (projectId) => {
@@ -85,7 +84,7 @@ Cypress.Commands.add('openProjectById', (projectId) => {
 });
 
 Cypress.Commands.add('openProjectActions', (projectName) => {
-    cy.contains('.cvat-projects-project-item-title', projectName)
+    cy.contains('.cvat-projects-project-item-title', fullMatch(projectName))
         .parents('.cvat-projects-project-item-card')
         .within(() => {
             cy.get('.cvat-projects-project-item-description').within(() => {
@@ -260,6 +259,8 @@ Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
 
 Cypress.Commands.add('assignProjectToUser', (user) => {
     cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
+    cy.intercept('GET', '/api/labels?**').as('getLabels');
+    cy.intercept('PATCH', '/api/projects/**').as('patchProject');
     cy.get('.cvat-project-details').within(() => {
         cy.get('.cvat-user-search-field').click();
         cy.get('.cvat-user-search-field').type(user);
@@ -270,6 +271,7 @@ Cypress.Commands.add('assignProjectToUser', (user) => {
         .within(() => {
             cy.get(`.ant-select-item-option[title="${user}"]`).click();
         });
+    cy.wait(['@patchProject', '@getLabels']);
 });
 
 Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTaskPage) => {

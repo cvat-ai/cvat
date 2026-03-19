@@ -15,6 +15,10 @@ wait_for_redis_inmem() {
     wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
 }
 
+wait_for_clickhouse() {
+    wait-for-it "${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT:-8123}" -t 0
+}
+
 cmd_bash() {
     exec bash "$@"
 }
@@ -26,6 +30,11 @@ cmd_init() {
     wait_for_redis_inmem
     ~/manage.py migrateredis
     ~/manage.py syncperiodicjobs
+
+    if [[ "${CVAT_ANALYTICS:-0}" == "1" ]]; then
+        wait_for_clickhouse
+        python components/analytics/clickhouse/init.py
+    fi
 }
 
 _get_includes() {

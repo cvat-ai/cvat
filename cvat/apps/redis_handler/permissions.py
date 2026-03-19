@@ -33,45 +33,40 @@ class RequestPermission(OpenPolicyAgentPermission):
         cls, request: ExtendedRequest, view: ViewSet, obj: CustomRQJob | None, iam_context: dict
     ) -> list[OpenPolicyAgentPermission]:
         permissions = []
-        if view.basename == "request":
-            for scope in cls.get_scopes(request, view, obj):
-                if scope == cls.Scopes.LIST:
-                    continue
-                elif scope == cls.Scopes.VIEW:
-                    parsed_request_id = obj.parsed_id
+        for scope in cls.get_scopes(request, view, obj):
+            if scope == cls.Scopes.LIST:
+                continue
+            elif scope == cls.Scopes.VIEW:
+                parsed_request_id = obj.parsed_id
 
-                    # In case when background job is unique for a user, status check should be available only for this user/admin
-                    # In other cases, status check should be available for all users that have target resource VIEW permission
-                    if parsed_request_id.user_id:
-                        job_owner = BaseRQMeta.for_job(obj).user
-                        assert job_owner and job_owner.id == parsed_request_id.user_id
+                # In case when background job is unique for a user, status check should be available only for this user/admin
+                # In other cases, status check should be available for all users that have target resource VIEW permission
+                if parsed_request_id.user_id:
+                    job_owner = BaseRQMeta.for_job(obj).user
+                    assert job_owner and job_owner.id == parsed_request_id.user_id
 
-                    elif parsed_request_id.target_id is not None:
-                        if parsed_request_id.target == RequestTarget.PROJECT.value:
-                            permissions.append(
-                                ProjectPermission.create_scope_view(
-                                    request, parsed_request_id.target_id
-                                )
+                elif parsed_request_id.target_id is not None:
+                    if parsed_request_id.target == RequestTarget.PROJECT.value:
+                        permissions.append(
+                            ProjectPermission.create_scope_view(
+                                request, parsed_request_id.target_id
                             )
-                            continue
-                        elif parsed_request_id.target == RequestTarget.TASK.value:
-                            permissions.append(
-                                TaskPermission.create_scope_view(
-                                    request, parsed_request_id.target_id
-                                )
-                            )
-                            continue
-                        elif parsed_request_id.target == RequestTarget.JOB.value:
-                            permissions.append(
-                                JobPermission.create_scope_view(
-                                    request, parsed_request_id.target_id
-                                )
-                            )
-                            continue
-                        assert False, "Unsupported operation on resource"
+                        )
+                        continue
+                    elif parsed_request_id.target == RequestTarget.TASK.value:
+                        permissions.append(
+                            TaskPermission.create_scope_view(request, parsed_request_id.target_id)
+                        )
+                        continue
+                    elif parsed_request_id.target == RequestTarget.JOB.value:
+                        permissions.append(
+                            JobPermission.create_scope_view(request, parsed_request_id.target_id)
+                        )
+                        continue
+                    assert False, "Unsupported operation on resource"
 
-                self = cls.create_base_perm(request, view, scope, iam_context, obj)
-                permissions.append(self)
+            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            permissions.append(self)
 
         return permissions
 

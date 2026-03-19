@@ -32,7 +32,7 @@ const CANVAS_WORKSPACE_MARGIN = 8;
 const CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT = 4;
 const CANVAS_WORKSPACE_PADDING = CANVAS_WORKSPACE_MARGIN / 2;
 const OUTSIDE_PIC_URL = 'https://docs.cvat.ai/images/image019.jpg';
-const DEFAULT_AWS_S3_REGIONS: string[][] = [
+const DEFAULT_AWS_REGIONS: string[][] = [
     ['us-east-1', 'US East (N. Virginia)'],
     ['us-east-2', 'US East (Ohio)'],
     ['us-west-1', 'US West (N. California)'],
@@ -175,7 +175,7 @@ export default {
     QUICK_ISSUE_INCORRECT_POSITION_TEXT,
     QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
     DEFAULT_PROJECT_SUBSETS,
-    DEFAULT_AWS_S3_REGIONS,
+    DEFAULT_AWS_REGIONS,
     DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS,
     OUTSIDE_PIC_URL,
     DATASET_MANIFEST_GUIDE_URL,

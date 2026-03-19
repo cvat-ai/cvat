@@ -19,6 +19,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         // Prepare screenshots to compare
         cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_all');

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
@@ -19,16 +19,18 @@ import { MenuProps } from 'antd/lib/menu';
 
 import { MainMenuIcon } from 'icons';
 import { Job, JobState } from 'cvat-core-wrapper';
+import { usePlugins } from 'utils/hooks';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { CombinedState } from 'reducers';
 import {
-    updateCurrentJobAsync, finishCurrentJobAsync,
+    finishCurrentJobAsync,
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 
 export enum Actions {
     LOAD_JOB_ANNO = 'load_job_anno',
@@ -44,7 +46,15 @@ function AnnotationMenuComponent(): JSX.Element {
     const history = useHistory();
     const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance as Job);
     const [jobState, setJobState] = useState(jobInstance.state);
+    const pluginActions = usePlugins(
+        (state: CombinedState) => state.plugins.components.annotationPage.menuActions.items,
+        { jobInstance },
+    );
     const { stopFrame } = jobInstance;
+
+    useEffect(() => {
+        setJobState(jobInstance.state);
+    }, [jobInstance.state]);
 
     const exportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(jobInstance));
@@ -70,9 +80,8 @@ function AnnotationMenuComponent(): JSX.Element {
     }, [jobInstance]);
 
     const changeState = useCallback((state: JobState) => {
-        dispatch(updateCurrentJobAsync({ state })).then(() => {
+        dispatch(updateJobAsync(jobInstance, { state })).then(() => {
             message.info('Job state updated', 2);
-            setJobState(jobInstance.state);
         });
     }, [jobInstance]);
 
@@ -92,21 +101,21 @@ function AnnotationMenuComponent(): JSX.Element {
         return '';
     };
 
-    const menuItems: NonNullable<MenuProps['items']> = [];
+    const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
 
-    menuItems.push({
+    menuItems.push([{
         key: Actions.LOAD_JOB_ANNO,
         label: 'Upload annotations',
         onClick: uploadAnnotations,
-    });
+    }, 10]);
 
-    menuItems.push({
+    menuItems.push([{
         key: Actions.EXPORT_JOB_DATASET,
         label: 'Export job dataset',
         onClick: exportDataset,
-    });
+    }, 20]);
 
-    menuItems.push({
+    menuItems.push([{
         key: Actions.REMOVE_ANNOTATIONS,
         label: 'Remove annotations',
         onClick: () => {
@@ -133,7 +142,7 @@ function AnnotationMenuComponent(): JSX.Element {
                                             min={0}
                                             max={stopFrame}
                                             onChange={(value) => {
-                                                removeFrom = value;
+                                                removeFrom = value ?? undefined;
                                             }}
                                         />
                                         <Text>  To: </Text>
@@ -141,7 +150,7 @@ function AnnotationMenuComponent(): JSX.Element {
                                             min={0}
                                             max={stopFrame}
                                             onChange={(value) => {
-                                                removeUpTo = value;
+                                                removeUpTo = value ?? undefined;
                                             }}
                                         />
                                         <CVATTooltip title='Applicable only for annotations in range'>
@@ -172,23 +181,23 @@ function AnnotationMenuComponent(): JSX.Element {
                 okText: 'Delete',
             });
         },
-    });
+    }, 30]);
 
-    menuItems.push({
+    menuItems.push([{
         key: Actions.RUN_ACTIONS,
         label: 'Run actions',
         onClick: () => {
             openAnnotationsActionModal();
         },
-    });
+    }, 40]);
 
-    menuItems.push({
+    menuItems.push([{
         key: Actions.OPEN_TASK,
         label: 'Open the task',
         onClick: openTask,
-    });
+    }, 50]);
 
-    menuItems.push({
+    menuItems.push([{
         key: 'job-state-submenu',
         popupClassName: 'cvat-annotation-menu-job-state-submenu',
         label: 'Change job state',
@@ -213,9 +222,9 @@ function AnnotationMenuComponent(): JSX.Element {
             className: computeClassName(JobState.COMPLETED),
             onClick: changeJobState(JobState.COMPLETED),
         }],
-    });
+    }, 60]);
 
-    menuItems.push({
+    menuItems.push([{
         key: Actions.FINISH_JOB,
         label: 'Finish the job',
         onClick: () => {
@@ -228,14 +237,24 @@ function AnnotationMenuComponent(): JSX.Element {
                 onOk: finishJob,
             });
         },
-    });
+    }, 70]);
+
+    menuItems.push(
+        ...pluginActions.map(({ component: Component, weight }, index) => {
+            const menuItem = Component({ key: index, targetProps: { jobInstance } });
+            return [menuItem, weight] as [NonNullable<MenuProps['items']>[0], number];
+        }),
+    );
+
+    const sortedMenuItems = menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
+    const finalMenuItems = sortedMenuItems.map((menuItem) => menuItem[0]);
 
     return (
         <Dropdown
             trigger={['click']}
             destroyPopupOnHide
             menu={{
-                items: menuItems,
+                items: finalMenuItems,
                 triggerSubMenuAction: 'click',
                 className: 'cvat-annotation-menu',
             }}

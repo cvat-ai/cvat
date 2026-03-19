@@ -23,7 +23,8 @@ import {
 } from './common';
 
 import User from './user';
-import { AnnotationFormats } from './annotation-formats';
+import AnnotationFormats from './annotation-formats';
+import ApiToken from './api-token';
 import { Task, Job } from './session';
 import Project from './project';
 import CloudStorage from './cloud-storage';
@@ -76,8 +77,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const result = await serverProxy.server.about();
         return new AboutData(result);
     });
-    implementationMixin(cvat.server.share, async (directory: string, searchPrefix?: string) => {
-        const result = await serverProxy.server.share(directory, searchPrefix);
+    implementationMixin(cvat.server.share, async (
+        ...args: Parameters<typeof serverProxy.server.share>
+    ) => {
+        const result = await serverProxy.server.share(...args);
         return result.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type }));
     });
     implementationMixin(cvat.server.formats, async () => {
@@ -89,58 +92,48 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return result;
     });
     implementationMixin(cvat.server.register, async (
-        username,
-        firstName,
-        lastName,
-        email,
-        password,
-        userConfirmations,
+        ...args: Parameters<typeof serverProxy.server.register>
     ) => {
-        const user = await serverProxy.server.register(
-            username,
-            firstName,
-            lastName,
-            email,
-            password,
-            userConfirmations,
-        );
-
+        const user = await serverProxy.server.register(...args);
         return new User(user);
     });
-    implementationMixin(cvat.server.login, async (username, password) => {
-        await serverProxy.server.login(username, password);
+    implementationMixin(cvat.server.login, async (
+        ...args: Parameters<typeof serverProxy.server.login>
+    ) => {
+        await serverProxy.server.login(...args);
     });
     implementationMixin(cvat.server.logout, async () => {
         await serverProxy.server.logout();
     });
-    implementationMixin(cvat.server.changePassword, async (oldPassword, newPassword1, newPassword2) => {
-        await serverProxy.server.changePassword(oldPassword, newPassword1, newPassword2);
+    implementationMixin(cvat.server.changePassword, async (
+        ...args: Parameters<typeof serverProxy.server.changePassword>
+    ) => {
+        await serverProxy.server.changePassword(...args);
     });
-    implementationMixin(cvat.server.requestPasswordReset, async (email) => {
-        await serverProxy.server.requestPasswordReset(email);
+    implementationMixin(cvat.server.requestPasswordReset, async (
+        ...args: Parameters<typeof serverProxy.server.requestPasswordReset>
+    ) => {
+        await serverProxy.server.requestPasswordReset(...args);
     });
-    implementationMixin(cvat.server.resetPassword, async (newPassword1, newPassword2, uid, token) => {
-        await serverProxy.server.resetPassword(newPassword1, newPassword2, uid, token);
+    implementationMixin(cvat.server.resetPassword, async (
+        ...args: Parameters<typeof serverProxy.server.resetPassword>
+    ) => {
+        await serverProxy.server.resetPassword(...args);
     });
     implementationMixin(cvat.server.authenticated, async () => {
         const result = await serverProxy.server.authenticated();
         return result;
     });
     implementationMixin(cvat.server.healthCheck, async (
-        maxRetries: number,
-        checkPeriod: number,
-        requestTimeout: number,
-        progressCallback?: (message: string) => void,
+        ...args: Parameters<typeof serverProxy.server.healthCheck>
     ) => {
-        const result = await serverProxy.server.healthCheck(maxRetries, checkPeriod, requestTimeout, progressCallback);
+        const result = await serverProxy.server.healthCheck(...args);
         return result;
     });
-    implementationMixin(cvat.server.request, async (url, data, requestConfig) => {
-        const result = await serverProxy.server.request(url, data, requestConfig);
-        return result;
-    });
-    implementationMixin(cvat.server.setAuthData, async (response) => {
-        const result = await serverProxy.server.setAuthData(response);
+    implementationMixin(cvat.server.request, async (
+        ...args: Parameters<typeof serverProxy.server.request>
+    ) => {
+        const result = await serverProxy.server.request(...args);
         return result;
     });
     implementationMixin(cvat.server.installedApps, async () => {
@@ -153,7 +146,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return result;
     });
 
-    implementationMixin(cvat.assets.create, async (file: File, guideId: number): Promise<SerializedAsset> => {
+    implementationMixin(cvat.assets.create, async (
+        ...args: Parameters<typeof serverProxy.assets.create>
+    ): Promise<SerializedAsset> => {
+        const [file, guideId] = args;
         if (!(file instanceof File)) {
             throw new ArgumentError('Assets expect a file');
         }
@@ -187,6 +183,29 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         users = users.map((user) => new User(user));
         return users;
+    });
+
+    implementationMixin(cvat.apiTokens.get, async (filter) => {
+        checkFilter(filter, {
+            id: isInteger,
+            page: isInteger,
+            page_size: isInteger,
+            filter: isString,
+            sort: isString,
+            search: isString,
+            name: isString,
+            owner: isInteger,
+            read_only: isBoolean,
+            created_date: isString,
+            updated_date: isString,
+            expiry_date: isString,
+            last_used_date: isString,
+        });
+
+        const result = await serverProxy.apiTokens.get(filter);
+        const tokens = result.map((tokenData) => new ApiToken(tokenData));
+        Object.assign(tokens, { count: result.count });
+        return tokens as PaginatedResource<ApiToken>;
     });
 
     implementationMixin(cvat.jobs.get, async (
@@ -347,7 +366,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return results as PaginatedResource<SerializedOrganization>;
     });
     implementationMixin(cvat.organizations.activate, (organization) => {
-        checkObjectType('organization', organization, null, Organization);
+        checkObjectType('organization', organization, null, { cls: Organization, name: 'Organization' });
         config.organization = {
             organizationID: organization.id,
             organizationSlug: organization.slug,

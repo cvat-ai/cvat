@@ -129,8 +129,8 @@ context('Create multi tasks.', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteTasks(authKey, videoFiles.videos);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteTasks(authHeaders, videoFiles.videos);
         });
     });
 });

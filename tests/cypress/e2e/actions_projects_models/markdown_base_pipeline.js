@@ -78,14 +78,14 @@ context('Basic markdown pipeline', () => {
     });
 
     after(() => {
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteUsers(authHeaders, [
                 additionalUsers.jobAssignee.username,
                 additionalUsers.taskAssignee.username,
                 additionalUsers.notAssignee.username,
             ]);
-            cy.deleteTasks(authKey, [taskName]);
-            cy.deleteProjects(authKey, [projectName]);
+            cy.deleteTasks(authHeaders, [taskName]);
+            cy.deleteProjects(authHeaders, [projectName]);
         });
     });
 

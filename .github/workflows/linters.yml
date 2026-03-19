@@ -172,7 +172,7 @@ jobs:
 
       - name: Run checks
         run: |
-          echo "ESLint version: "$(yarn run -s eslint --version)
+          echo "ESLint version: "$(yarn run eslint --version)
           yarn run eslint .
   remark:
     runs-on: ubuntu-latest
@@ -265,5 +265,5 @@ jobs:
 
       - name: Run checks
         run: |
-          echo "StyleLint version: "$(yarn run -s stylelint --version)
+          echo "StyleLint version: "$(yarn run stylelint --version)
           yarn run stylelint '**/*.css' '**/*.scss'

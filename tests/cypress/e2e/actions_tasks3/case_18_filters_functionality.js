@@ -93,6 +93,7 @@ context('Filters functionality.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.addNewLabel({ name: labelShape }, additionalAttrsLabelShape);
         cy.addNewLabel({ name: labelTrack }, additionalAttrsLabelTrack);

@@ -49,6 +49,7 @@ context('Canvas color settings feature', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.get('.cvat-canvas-image-setups-trigger').click();
     });

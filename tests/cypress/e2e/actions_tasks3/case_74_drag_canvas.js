@@ -13,6 +13,7 @@ context('Drag canvas.', () => {
     let leftBefore;
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

@@ -17,7 +17,7 @@ export function confirmTransferModal(
         return;
     }
 
-    const instanceType = first.constructor.name.toLowerCase();
+    const instanceType = first instanceof Task ? 'task' : 'project';
     const movingItems = instances.length > 1 ?
         `${instances.length} ${instanceType}s` : `the ${instanceType} #${first.id}`;
     let details = `You are going to move ${movingItems} ` +

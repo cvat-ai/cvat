@@ -97,6 +97,7 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
             stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
             labels: session.labels,
             dimension: session.dimension,
+            replicasCount: session instanceof Job ? session.replicasCount : undefined,
             framesInfo: {
                 isFrameDeleted: session instanceof Job ?
                     (frame: number) => !!getJobFramesMetaSync(session.id).deletedFrames[frame] :
@@ -160,7 +161,7 @@ export async function clearAnnotations(
 
     if (Object.hasOwn(options ?? {}, 'reload')) {
         const { reload } = options;
-        checkObjectType('reload', reload, 'boolean', null);
+        checkObjectType('reload', reload, 'boolean');
 
         if (reload) {
             cache.collection.delete(session);

@@ -4,7 +4,6 @@
 
 import datetime
 from contextlib import suppress
-from typing import Optional
 
 from django.db.models import Min
 
@@ -123,10 +122,10 @@ def compute_working_time_per_ids(data: dict) -> dict:
 
 
 def find_minimal_date_for_filter(
-    job_id: Optional[str | int] = None,
-    task_id: Optional[str | int] = None,
-    project_id: Optional[str | int] = None,
-    org_id: Optional[str | int] = None,
+    job_id: str | int | None = None,
+    task_id: str | int | None = None,
+    project_id: str | int | None = None,
+    org_id: str | int | None = None,
 ) -> datetime.datetime:
     from cvat.apps.engine.models import Job, Project, Task
     from cvat.apps.organizations.models import Organization

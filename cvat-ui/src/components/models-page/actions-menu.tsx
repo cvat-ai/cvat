@@ -5,7 +5,7 @@
 
 import React from 'react';
 import Dropdown from 'antd/lib/dropdown';
-import { MLModel, ModelProviders } from 'cvat-core-wrapper';
+import { MLModel } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { MenuProps } from 'antd/lib/menu';
@@ -13,9 +13,8 @@ import { shallowEqual, useSelector } from 'react-redux';
 
 interface ModelActionsProps {
     model: MLModel;
-    triggerElement: JSX.Element;
+    triggerElement: (menuItems: NonNullable<MenuProps['items']>) => JSX.Element | null;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
-    renderTriggerIfEmpty?: boolean;
 }
 
 function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element | null {
@@ -23,7 +22,6 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
         model,
         triggerElement,
         dropdownTrigger,
-        renderTriggerIfEmpty = true,
     } = props;
     const {
         interactors,
@@ -60,8 +58,10 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
 
     // Sort menu items by weight before passing to Dropdown
     const sortedMenuItems = [...menuItems].sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
+    const finalMenuItems = sortedMenuItems.map((menuItem) => menuItem[0]);
 
-    if (!renderTriggerIfEmpty && (menuItems.length === 0 || model.provider === ModelProviders.CVAT)) {
+    const renderedTrigger = triggerElement(finalMenuItems);
+    if (!renderedTrigger) {
         return null;
     }
 
@@ -70,11 +70,11 @@ function ModelActionsComponent(props: Readonly<ModelActionsProps>): JSX.Element 
             trigger={dropdownTrigger || ['click']}
             destroyPopupOnHide
             menu={{
-                items: sortedMenuItems.map((menuItem) => menuItem[0]),
+                items: finalMenuItems,
                 triggerSubMenuAction: 'click',
             }}
         >
-            {triggerElement}
+            {renderedTrigger}
         </Dropdown>
     );
 }

@@ -5,6 +5,7 @@
 
 import { ObjectState } from '.';
 import { MasterImpl } from './master';
+import consts from './consts';
 
 export interface Size {
     width: number;
@@ -72,12 +73,13 @@ export interface OrientationVisibility {
     z: boolean;
 }
 
-export interface ShapeProperties {
-    opacity: number;
-    outlined: boolean;
-    outlineColor: string;
-    selectedOpacity: number;
+export interface Configuration {
     colorBy: string;
+    shapeOpacity: number;
+    outlinedBorders: string | false;
+    selectedShapeOpacity: number;
+    controlPointsSize: number;
+    focusedObjectPadding: number;
     orientationVisibility: OrientationVisibility;
 }
 
@@ -93,7 +95,8 @@ export enum UpdateReasons {
     MERGE = 'merge',
     SPLIT = 'split',
     FITTED_CANVAS = 'fitted_canvas',
-    SHAPES_CONFIG_UPDATED = 'shapes_config_updated',
+    CONFIG_UPDATED = 'config_updated',
+    DATA_FAILED = 'data_failed',
 }
 
 export enum Mode {
@@ -117,7 +120,7 @@ export interface Canvas3dDataModel {
     drawData: DrawData;
     mode: Mode;
     objects: ObjectState[];
-    shapeProperties: ShapeProperties;
+    configuration: Configuration;
     groupData: GroupData;
     mergeData: MergeData;
     splitData: SplitData;
@@ -126,6 +129,7 @@ export interface Canvas3dDataModel {
         frameData: any;
         objectStates: ObjectState[];
     } | null;
+    exception: Error | null;
 }
 
 export interface Canvas3dModel {
@@ -135,13 +139,14 @@ export interface Canvas3dModel {
     readonly groupData: GroupData;
     readonly mergeData: MergeData;
     readonly objects: ObjectState[];
+    readonly exception: Error | null;
     setup(frameData: any, objectStates: ObjectState[]): void;
     isAbleToChangeFrame(): boolean;
     draw(drawData: DrawData): void;
     cancel(): void;
     dragCanvas(enable: boolean): void;
     activate(clientID: string | null, attributeID: number | null): void;
-    configureShapes(shapeProperties: ShapeProperties): void;
+    configure(configuration: Partial<Configuration>): void;
     fit(): void;
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
@@ -188,12 +193,13 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             splitData: {
                 enabled: false,
             },
-            shapeProperties: {
-                opacity: 40,
-                outlined: false,
-                outlineColor: '#000000',
-                selectedOpacity: 60,
+            configuration: {
                 colorBy: 'Label',
+                shapeOpacity: 40,
+                outlinedBorders: false,
+                selectedShapeOpacity: 60,
+                focusedObjectPadding: 50,
+                controlPointsSize: consts.BASE_POINT_SIZE,
                 orientationVisibility: {
                     x: false,
                     y: false,
@@ -202,6 +208,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             },
             isFrameUpdating: false,
             nextSetupRequest: null,
+            exception: null,
         };
     }
 
@@ -262,7 +269,12 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 this.data.isFrameUpdating = false;
                 // don't notify when the frame is no longer needed
                 if (typeof exception !== 'number' || exception === this.data.imageID) {
-                    throw exception;
+                    if (exception instanceof Error) {
+                        this.data.exception = exception;
+                    } else {
+                        this.data.exception = new Error('Unknown error occurred when fetching image data');
+                    }
+                    this.notify(UpdateReasons.DATA_FAILED);
                 }
             });
     }
@@ -389,35 +401,43 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
         this.notify(UpdateReasons.MERGE);
     }
 
-    public configureShapes(shapeProperties: ShapeProperties): void {
-        if (typeof shapeProperties.opacity === 'number') {
-            this.data.shapeProperties.opacity = Math.max(0, Math.min(shapeProperties.opacity, 100));
+    public configure(configuration: Partial<Configuration>): void {
+        if (typeof configuration.shapeOpacity === 'number') {
+            this.data.configuration.shapeOpacity = Math.max(0, Math.min(configuration.shapeOpacity, 100));
         }
 
-        if (typeof shapeProperties.selectedOpacity === 'number') {
-            this.data.shapeProperties.selectedOpacity = Math.max(0, Math.min(shapeProperties.selectedOpacity, 100));
+        if (typeof configuration.selectedShapeOpacity === 'number') {
+            this.data.configuration.selectedShapeOpacity = Math.max(
+                0, Math.min(configuration.selectedShapeOpacity, 100),
+            );
         }
 
-        if (['Label', 'Instance', 'Group'].includes(shapeProperties.colorBy)) {
-            this.data.shapeProperties.colorBy = shapeProperties.colorBy;
+        if (['Label', 'Instance', 'Group'].includes(configuration.colorBy)) {
+            this.data.configuration.colorBy = configuration.colorBy;
         }
 
-        if (typeof shapeProperties.outlined === 'boolean') {
-            this.data.shapeProperties.outlined = shapeProperties.outlined;
+        if (typeof configuration.outlinedBorders === 'string' || configuration.outlinedBorders === false) {
+            this.data.configuration.outlinedBorders = configuration.outlinedBorders;
         }
 
-        if (typeof shapeProperties.outlineColor === 'string') {
-            this.data.shapeProperties.outlineColor = shapeProperties.outlineColor;
+        if (typeof configuration.controlPointsSize === 'number') {
+            this.data.configuration.controlPointsSize = configuration.controlPointsSize;
         }
 
-        if (typeof shapeProperties.orientationVisibility === 'object') {
-            const current = this.data.shapeProperties.orientationVisibility;
-            current.x = !!(shapeProperties.orientationVisibility?.x ?? current.x);
-            current.y = !!(shapeProperties.orientationVisibility?.y ?? current.y);
-            current.z = !!(shapeProperties.orientationVisibility?.z ?? current.z);
+        if (typeof configuration.orientationVisibility === 'object') {
+            const current = this.data.configuration.orientationVisibility;
+            current.x = !!(configuration.orientationVisibility?.x ?? current.x);
+            current.y = !!(configuration.orientationVisibility?.y ?? current.y);
+            current.z = !!(configuration.orientationVisibility?.z ?? current.z);
         }
 
-        this.notify(UpdateReasons.SHAPES_CONFIG_UPDATED);
+        if (typeof configuration.focusedObjectPadding === 'number') {
+            this.data.configuration.focusedObjectPadding = Math.max(
+                configuration.focusedObjectPadding, 0,
+            );
+        }
+
+        this.notify(UpdateReasons.CONFIG_UPDATED);
     }
 
     public fit(): void {
@@ -434,6 +454,10 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public get imageIsDeleted(): boolean {
         return this.data.imageIsDeleted;
+    }
+
+    public get exception(): Error | null {
+        return this.data.exception;
     }
 
     public destroy(): void {}

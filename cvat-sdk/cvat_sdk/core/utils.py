@@ -8,7 +8,7 @@ import contextlib
 import itertools
 import os
 from collections.abc import Generator, Sequence
-from typing import IO, Any, BinaryIO, Literal, TextIO, Union, overload
+from typing import IO, Any, BinaryIO, Literal, TextIO, overload
 
 
 def filter_dict(
@@ -19,19 +19,19 @@ def filter_dict(
 
 @overload
 def atomic_writer(
-    path: Union[os.PathLike, str], mode: Literal["wb"]
+    path: os.PathLike | str, mode: Literal["wb"]
 ) -> contextlib.AbstractContextManager[BinaryIO]: ...
 
 
 @overload
 def atomic_writer(
-    path: Union[os.PathLike, str], mode: Literal["w"], encoding: str = "UTF-8"
+    path: os.PathLike | str, mode: Literal["w"], encoding: str = "UTF-8"
 ) -> contextlib.AbstractContextManager[TextIO]: ...
 
 
 @contextlib.contextmanager
 def atomic_writer(
-    path: Union[os.PathLike, str], mode: Literal["w", "wb"], encoding: str = "UTF-8"
+    path: os.PathLike | str, mode: Literal["w", "wb"], encoding: str = "UTF-8"
 ) -> Generator[IO, None, None]:
     """
     Returns a context manager that, when entered, returns a handle to a temporary

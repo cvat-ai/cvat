@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import io
+from collections.abc import Callable
 from contextlib import closing
-from typing import Callable, ClassVar
+from typing import ClassVar
 
 import attrs
 from PIL import Image
@@ -17,6 +18,7 @@ from shared.utils.helpers import read_video_file
 @attrs.define
 class VideoTaskSpec(TaskSpecBase):
     source_data_type: ClassVar[SourceDataType] = SourceDataType.video
+    chapters: list[dict]
 
     _get_video_file: Callable[[], io.IOBase] = attrs.field(kw_only=True)
 
@@ -33,6 +35,9 @@ class ImagesTaskSpec(TaskSpecBase):
     source_data_type: ClassVar[SourceDataType] = SourceDataType.images
 
     _get_frame: Callable[[int], bytes] = attrs.field(kw_only=True)
+    get_related_files: Callable[[int], dict[str, bytes]] | None = attrs.field(
+        kw_only=True, default=None
+    )
 
     def read_frame(self, i: int) -> Image.Image:
         return Image.open(io.BytesIO(self._get_frame(i)))
