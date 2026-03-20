@@ -7,7 +7,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import itertools
 from collections import Counter
-from typing import TYPE_CHECKING
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any
 
 import attrs
 import datumaro as dm
@@ -27,6 +28,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportSummary,
     ConfusionMatrix,
 )
+from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
 from cvat.apps.quality_control.utils import array_safe_divide
 from cvat.apps.quality_control import models
@@ -36,64 +38,138 @@ if TYPE_CHECKING:
 
 
 @attrs.define
+class RequirementFrameResult:
+    summary: ComparisonReportFrameSummary
+    matched_pairs: list[tuple[dm.Annotation, dm.Annotation]] = attrs.Factory(list)
+
+
+@attrs.define
 class MatchingContext:
     frame_id: int
     estimator: "DatasetQualityEstimator"
     categories: dm.Categories
     annotation_requirements: dict[int, set]  # ann_id -> set of requirement names
-    parent_results: dict[str, dict] | None = None  # for attribute requirements
+    parent_results: dict[str, RequirementFrameResult] | None = None  # for attribute requirements
 
 
 class RequirementHandler(ABC):
     def __init__(self, *, requirement: models.QualityRequirement, context: MatchingContext):
         self.requirement = requirement
         self.context = context
-        
+
         # Set up commonly used references from context
         self._ds_dataset = self.context.estimator._ds_dataset
         self._gt_dataset = self.context.estimator._gt_dataset
         self._ds_data_provider = self.context.estimator._ds_data_provider
         self._gt_data_provider = self.context.estimator._gt_data_provider
-        
+
         # Create comparison parameters from requirement
         self.settings = self._create_comparison_parameters()
-        
+
         # Create comparator with these settings
         self._comparator = Comparator(self.context.categories, settings=self.settings)
+        self._filter = RequirementJsonLogicFilter(
+            expression=getattr(self.requirement, "filter", "") or "",
+            categories=self.context.categories,
+            included_annotation_types=self.settings.included_annotation_types,
+        )
 
     def _create_comparison_parameters(self) -> ComparisonParameters:
         """Create ComparisonParameters from requirement settings"""
         # Start with default parameters
         params = ComparisonParameters()
-        
+
         # Map requirement fields to ComparisonParameters fields
         # TODO: Refactor it
 
         items = [
-            'iou_threshold',
-            'oks_sigma',
-            'line_thickness',
-            'low_overlap_threshold',
-            'point_size_base',
-            'compare_line_orientation',
-            'line_orientation_threshold',
-            'compare_attributes',
-            'compare_groups',
-            'group_match_threshold',
-            'check_covered_annotations',
-            'object_visibility_threshold',
-            'panoptic_comparison',
-            'empty_is_annotated',
+            "iou_threshold",
+            "oks_sigma",
+            "line_thickness",
+            "low_overlap_threshold",
+            "point_size_base",
+            "compare_line_orientation",
+            "line_orientation_threshold",
+            "compare_attributes",
+            "compare_groups",
+            "group_match_threshold",
+            "check_covered_annotations",
+            "object_visibility_threshold",
+            "panoptic_comparison",
+            "empty_is_annotated",
         ]
         field_mapping = {i: i for i in items}  # direct mapping for all fields
-        
+
         for req_field, param_field in field_mapping.items():
             if hasattr(self.requirement, req_field):
                 value = getattr(self.requirement, req_field)
                 if value is not None:
                     setattr(params, param_field, value)
-        
+
+        params.included_annotation_types = self._get_included_annotation_types()
         return params
+
+    def _get_included_annotation_types(self) -> list[dm.AnnotationType]:
+        mapping = {
+            models.QualityRequirementAnnotationType.TAG: [dm.AnnotationType.label],
+            models.QualityRequirementAnnotationType.RECTANGLE: [dm.AnnotationType.bbox],
+            models.QualityRequirementAnnotationType.SKELETON: [dm.AnnotationType.skeleton],
+            models.QualityRequirementAnnotationType.SKELETON_KEYPOINT: [dm.AnnotationType.points],
+            models.QualityRequirementAnnotationType.POINTS: [dm.AnnotationType.points],
+            models.QualityRequirementAnnotationType.POLYLINE: [dm.AnnotationType.polyline],
+            # Masks and polygons are compared together by the comparator.
+            models.QualityRequirementAnnotationType.MASK: [
+                dm.AnnotationType.mask,
+                dm.AnnotationType.polygon,
+            ],
+            models.QualityRequirementAnnotationType.POLYGON: [
+                dm.AnnotationType.polygon,
+                dm.AnnotationType.mask,
+            ],
+            models.QualityRequirementAnnotationType.ELLIPSE: [dm.AnnotationType.ellipse],
+            models.QualityRequirementAnnotationType.ATTRIBUTE: [],
+        }
+        return mapping.get(self.requirement.annotation_type, [])
+
+    def _make_empty_frame_summary(self) -> ComparisonReportFrameSummary:
+        return ComparisonReportFrameSummary(
+            annotations=ComparisonReportAnnotationsSummary(
+                valid_count=0,
+                missing_count=0,
+                extra_count=0,
+                total_count=0,
+                ds_count=0,
+                gt_count=0,
+                confusion_matrix=ConfusionMatrix(
+                    labels=[],
+                    rows=np.zeros((0, 0), dtype=int),
+                    precision=np.array([]),
+                    recall=np.array([]),
+                    accuracy=np.array([]),
+                    jaccard_index=np.array([]),
+                ),
+            ),
+            annotation_components=ComparisonReportAnnotationComponentsSummary(
+                shape=ComparisonReportAnnotationShapeSummary(
+                    valid_count=0,
+                    missing_count=0,
+                    extra_count=0,
+                    total_count=0,
+                    ds_count=0,
+                    gt_count=0,
+                    mean_iou=0,
+                ),
+                label=ComparisonReportAnnotationLabelSummary(
+                    valid_count=0,
+                    invalid_count=0,
+                    total_count=0,
+                ),
+            ),
+            conflicts=[],
+        )
+
+    def _empty_result(self) -> RequirementFrameResult:
+        return RequirementFrameResult(summary=self._make_empty_frame_summary())
 
     def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset) -> AnnotationId:
         """Convert Datumaro annotation to AnnotationId"""
@@ -104,12 +180,14 @@ class RequirementHandler(ABC):
         return self.context.estimator._dm_item_to_frame_id(item, dataset)
 
     @classmethod
-    def for_requirement(cls, requirement: models.QualityRequirement, *, context: MatchingContext) -> RequirementHandler:
+    def for_requirement(
+        cls, requirement: models.QualityRequirement, *, context: MatchingContext
+    ) -> RequirementHandler:
         """Factory method to create appropriate handler based on requirement type"""
         from cvat.apps.quality_control.models import QualityRequirementAnnotationType
-        
+
         ann_type = requirement.annotation_type
-        
+
         # Map annotation types to handlers
         if ann_type == QualityRequirementAnnotationType.TAG:
             return TagRequirementHandler(requirement=requirement, context=context)
@@ -120,7 +198,9 @@ class RequirementHandler(ABC):
             return ShapeRequirementHandler(requirement=requirement, context=context)
 
     @abstractmethod
-    def match_annotations(self, *, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem) -> dict:
+    def match_annotations(
+        self, *, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem
+    ) -> RequirementFrameResult:
         """Match annotations between dataset and ground truth items. Must be implemented in subclasses."""
         raise NotImplementedError("Subclasses must implement match_annotations()")
 
@@ -207,8 +287,6 @@ class RequirementHandler(ABC):
     def _generate_dataset_annotations_summary(
         self, frame_summaries: dict[int, ComparisonReportFrameSummary]
     ) -> tuple[ComparisonReportAnnotationsSummary, ComparisonReportAnnotationComponentsSummary]:
-        from copy import deepcopy
-        
         # accumulate stats
         annotation_components = ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
@@ -268,7 +346,7 @@ class RequirementHandler(ABC):
             annotation_summary.gt_count += len(empty_gt_frames)
 
         # Cannot be computed in accumulate()
-        annotation_components.shape.mean_iou = np.mean(mean_ious or [])
+        annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
 
         return annotation_summary, annotation_components
 
@@ -279,15 +357,17 @@ class TagRequirementHandler(RequirementHandler):
         *,
         gt_item: dm.DatasetItem,
         ds_item: dm.DatasetItem,
-    ):
+    ) -> RequirementFrameResult:
         conflicts = []
         frame_id = self.context.frame_id
+        gt_item = self._filter.filter_item(gt_item)
+        ds_item = self._filter.filter_item(ds_item)
 
         # Call comparator to match annotations
         matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
 
         # Unpack results for all annotation types (tags are in here)
-        all_ann_types_result = matching_results["all_ann_types"][0]
+        all_ann_types_result = matching_results["all_ann_types"]
         matches, mismatches, gt_unmatched, ds_unmatched, _ = all_ann_types_result
 
         # Generate conflicts for mismatches
@@ -343,27 +423,30 @@ class TagRequirementHandler(RequirementHandler):
         extra_count = len(ds_unmatched)
         total_count = valid_count + len(mismatches) + missing_count + extra_count
 
-        return ComparisonReportFrameSummary(
-            annotations=self._generate_frame_annotations_summary(
-                confusion_matrix, confusion_matrix_labels
-            ),
-            annotation_components=ComparisonReportAnnotationComponentsSummary(
-                shape=ComparisonReportAnnotationShapeSummary(
-                    valid_count=0,
-                    missing_count=0,
-                    extra_count=0,
-                    total_count=0,
-                    ds_count=0,
-                    gt_count=0,
-                    mean_iou=0,
+        return RequirementFrameResult(
+            summary=ComparisonReportFrameSummary(
+                annotations=self._generate_frame_annotations_summary(
+                    confusion_matrix, confusion_matrix_labels
                 ),
-                label=ComparisonReportAnnotationLabelSummary(
-                    valid_count=valid_count,
-                    invalid_count=len(mismatches),
-                    total_count=total_count,
+                annotation_components=ComparisonReportAnnotationComponentsSummary(
+                    shape=ComparisonReportAnnotationShapeSummary(
+                        valid_count=0,
+                        missing_count=0,
+                        extra_count=0,
+                        total_count=0,
+                        ds_count=0,
+                        gt_count=0,
+                        mean_iou=0,
+                    ),
+                    label=ComparisonReportAnnotationLabelSummary(
+                        valid_count=valid_count,
+                        invalid_count=len(mismatches),
+                        total_count=total_count,
+                    ),
                 ),
+                conflicts=conflicts,
             ),
-            conflicts=conflicts,
+            matched_pairs=list(itertools.chain(matches, mismatches)),
         )
 
 
@@ -373,9 +456,11 @@ class ShapeRequirementHandler(RequirementHandler):
         *,
         gt_item: dm.DatasetItem,
         ds_item: dm.DatasetItem,
-    ):
+    ) -> RequirementFrameResult:
         conflicts = []
         frame_id = self.context.frame_id
+        gt_item = self._filter.filter_item(gt_item)
+        ds_item = self._filter.filter_item(ds_item)
 
         # Call comparator to match annotations
         matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
@@ -620,27 +705,30 @@ class ShapeRequirementHandler(RequirementHandler):
             if not gt_item.annotations:
                 gt_shapes_count = 1
 
-        return ComparisonReportFrameSummary(
-            annotations=self._generate_frame_annotations_summary(
-                confusion_matrix, confusion_matrix_labels
-            ),
-            annotation_components=ComparisonReportAnnotationComponentsSummary(
-                shape=ComparisonReportAnnotationShapeSummary(
-                    valid_count=valid_shapes_count,
-                    missing_count=missing_shapes_count,
-                    extra_count=extra_shapes_count,
-                    total_count=total_shapes_count,
-                    ds_count=ds_shapes_count,
-                    gt_count=gt_shapes_count,
-                    mean_iou=mean_iou,
+        return RequirementFrameResult(
+            summary=ComparisonReportFrameSummary(
+                annotations=self._generate_frame_annotations_summary(
+                    confusion_matrix, confusion_matrix_labels
                 ),
-                label=ComparisonReportAnnotationLabelSummary(
-                    valid_count=valid_labels_count,
-                    invalid_count=invalid_labels_count,
-                    total_count=total_labels_count,
+                annotation_components=ComparisonReportAnnotationComponentsSummary(
+                    shape=ComparisonReportAnnotationShapeSummary(
+                        valid_count=valid_shapes_count,
+                        missing_count=missing_shapes_count,
+                        extra_count=extra_shapes_count,
+                        total_count=total_shapes_count,
+                        ds_count=ds_shapes_count,
+                        gt_count=gt_shapes_count,
+                        mean_iou=mean_iou,
+                    ),
+                    label=ComparisonReportAnnotationLabelSummary(
+                        valid_count=valid_labels_count,
+                        invalid_count=invalid_labels_count,
+                        total_count=total_labels_count,
+                    ),
                 ),
+                conflicts=conflicts,
             ),
-            conflicts=conflicts,
+            matched_pairs=list(itertools.chain(shape_matches, shape_mismatches)),
         )
 
 
@@ -650,70 +738,130 @@ class AttributeRequirementHandler(RequirementHandler):
         *,
         gt_item: dm.DatasetItem,
         ds_item: dm.DatasetItem,
-    ):
+    ) -> RequirementFrameResult:
         conflicts = []
         frame_id = self.context.frame_id
 
         # Attributes are only checked on matched shapes from parent requirement
         # Get parent requirement results if available
         if not self.context.parent_results or not self.requirement.parent:
-            # No parent requirement - cannot match attributes
-            return ComparisonReportFrameSummary(
-                annotations=ComparisonReportAnnotationsSummary(
-                    valid_count=0,
-                    missing_count=0,
-                    extra_count=0,
-                    total_count=0,
-                    ds_count=0,
-                    gt_count=0,
-                    confusion_matrix=ConfusionMatrix(
-                        labels=[],
-                        rows=np.zeros((0, 0), dtype=int),
-                        precision=np.array([]),
-                        recall=np.array([]),
-                        accuracy=np.array([]),
-                        jaccard_index=np.array([]),
-                    ),
-                ),
-                annotation_components=ComparisonReportAnnotationComponentsSummary(
-                    shape=ComparisonReportAnnotationShapeSummary(
-                        valid_count=0,
-                        missing_count=0,
-                        extra_count=0,
-                        total_count=0,
-                        ds_count=0,
-                        gt_count=0,
-                        mean_iou=0,
-                    ),
-                    label=ComparisonReportAnnotationLabelSummary(
-                        valid_count=0,
-                        invalid_count=0,
-                        total_count=0,
-                    ),
-                ),
-                conflicts=[],
-            )
+            return self._empty_result()
 
         # Get parent requirement name
         parent_req_name = self.requirement.parent.name if self.requirement.parent else None
 
         if not parent_req_name or parent_req_name not in self.context.parent_results:
-            # Parent results not available
-            return ComparisonReportFrameSummary(
+            return self._empty_result()
+
+        parent_result = self.context.parent_results[parent_req_name]
+        matched_pairs = parent_result.matched_pairs
+        if not matched_pairs:
+            return self._empty_result()
+
+        ignored_attrs = self._comparator.ignored_attrs
+        selected_attr_names = set()
+        matched_attribute_rows = []
+
+        for gt_ann, ds_ann in matched_pairs:
+            gt_attrs = {
+                name: value
+                for name, value in dict(getattr(gt_ann, "attributes", {}) or {}).items()
+                if name not in ignored_attrs
+                and self._filter.matches_attribute(gt_ann, name, value)
+            }
+            ds_attrs = {
+                name: value
+                for name, value in dict(getattr(ds_ann, "attributes", {}) or {}).items()
+                if name not in ignored_attrs
+                and self._filter.matches_attribute(ds_ann, name, value)
+            }
+
+            selected_attr_names.update(gt_attrs)
+            selected_attr_names.update(ds_attrs)
+            matched_attribute_rows.append((gt_ann, ds_ann, gt_attrs, ds_attrs))
+
+        if not selected_attr_names:
+            return self._empty_result()
+
+        include_attr_name = len(selected_attr_names) > 1
+
+        def _token(name: str, value: Any) -> str:
+            return f"{name}={value}" if include_attr_name else str(value)
+
+        attribute_tokens = sorted(
+            {
+                _token(attr_name, attr_value)
+                for _, _, gt_attrs, ds_attrs in matched_attribute_rows
+                for attr_name, attr_value in itertools.chain(gt_attrs.items(), ds_attrs.items())
+            }
+        )
+        attribute_tokens.append("unmatched")
+        token_to_idx = {token: idx for idx, token in enumerate(attribute_tokens)}
+        confusion_matrix = np.zeros((len(attribute_tokens), len(attribute_tokens)), dtype=int)
+
+        valid_attributes = 0
+        invalid_attributes = 0
+        missing_attributes = 0
+        extra_attributes = 0
+        ds_attributes_count = 0
+        gt_attributes_count = 0
+
+        for gt_ann, ds_ann, gt_attrs, ds_attrs in matched_attribute_rows:
+            attr_names = set(gt_attrs) | set(ds_attrs)
+            ds_attributes_count += len(ds_attrs)
+            gt_attributes_count += len(gt_attrs)
+
+            for attr_name in attr_names:
+                gt_value = gt_attrs.get(attr_name)
+                ds_value = ds_attrs.get(attr_name)
+                gt_idx = (
+                    token_to_idx[_token(attr_name, gt_value)]
+                    if gt_value is not None
+                    else self._UNMATCHED_IDX
+                )
+                ds_idx = (
+                    token_to_idx[_token(attr_name, ds_value)]
+                    if ds_value is not None
+                    else self._UNMATCHED_IDX
+                )
+                confusion_matrix[ds_idx, gt_idx] += 1
+
+                if gt_value is not None and ds_value is not None and gt_value == ds_value:
+                    valid_attributes += 1
+                    continue
+
+                if gt_value is None:
+                    extra_attributes += 1
+                elif ds_value is None:
+                    missing_attributes += 1
+                else:
+                    invalid_attributes += 1
+
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=frame_id,
+                        type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                        annotation_ids=[
+                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                        ],
+                    )
+                )
+
+        total_attributes = valid_attributes + invalid_attributes + missing_attributes + extra_attributes
+
+        return RequirementFrameResult(
+            summary=ComparisonReportFrameSummary(
                 annotations=ComparisonReportAnnotationsSummary(
-                    valid_count=0,
-                    missing_count=0,
-                    extra_count=0,
-                    total_count=0,
-                    ds_count=0,
-                    gt_count=0,
+                    valid_count=valid_attributes,
+                    missing_count=missing_attributes,
+                    extra_count=extra_attributes,
+                    total_count=total_attributes,
+                    ds_count=ds_attributes_count,
+                    gt_count=gt_attributes_count,
                     confusion_matrix=ConfusionMatrix(
-                        labels=[],
-                        rows=np.zeros((0, 0), dtype=int),
-                        precision=np.array([]),
-                        recall=np.array([]),
-                        accuracy=np.array([]),
-                        jaccard_index=np.array([]),
+                        labels=attribute_tokens,
+                        rows=confusion_matrix,
                     ),
                 ),
                 annotation_components=ComparisonReportAnnotationComponentsSummary(
@@ -727,83 +875,13 @@ class AttributeRequirementHandler(RequirementHandler):
                         mean_iou=0,
                     ),
                     label=ComparisonReportAnnotationLabelSummary(
-                        valid_count=0,
-                        invalid_count=0,
-                        total_count=0,
+                        valid_count=valid_attributes,
+                        invalid_count=invalid_attributes + missing_attributes + extra_attributes,
+                        total_count=total_attributes,
                     ),
                 ),
-                conflicts=[],
-            )
-
-        parent_matching_results = self.context.parent_results[parent_req_name]
-        
-        # Extract matched shapes from parent results
-        if "all_ann_types" in parent_matching_results:
-            matches, mismatches, _, _, _ = parent_matching_results["all_ann_types"][0]
-        else:
-            matches = []
-            mismatches = []
-        
-        # Check attributes on matched shapes only
-        valid_attributes = 0
-        invalid_attributes = 0
-        
-        for gt_ann, ds_ann in itertools.chain(matches, mismatches):
-            if gt_ann and ds_ann and self.settings.compare_attributes:
-                # Compare attributes
-                attribute_results = self._comparator.match_attrs(gt_ann, ds_ann)
-                if any(attribute_results[1:]):  # If there are any mismatches
-                    invalid_attributes += 1
-                    conflicts.append(
-                        AnnotationConflict(
-                            frame_id=frame_id,
-                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
-                            annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                            ],
-                        )
-                    )
-                else:
-                    valid_attributes += 1
-
-        total_attributes = valid_attributes + invalid_attributes
-
-        # Simple summary for attributes (no detailed confusion matrix yet)
-        return ComparisonReportFrameSummary(
-            annotations=ComparisonReportAnnotationsSummary(
-                valid_count=valid_attributes,
-                missing_count=0,
-                extra_count=0,
-                total_count=total_attributes,
-                ds_count=total_attributes,
-                gt_count=total_attributes,
-                confusion_matrix=ConfusionMatrix(
-                    labels=["matched", "mismatched"],
-                    rows=np.array([[valid_attributes, invalid_attributes]]),
-                    precision=np.array([1.0 if total_attributes > 0 else 0.0]),
-                    recall=np.array([1.0 if total_attributes > 0 else 0.0]),
-                    accuracy=np.array([valid_attributes / total_attributes if total_attributes > 0 else 0.0]),
-                    jaccard_index=np.array([valid_attributes / total_attributes if total_attributes > 0 else 0.0]),
-                ),
+                conflicts=conflicts,
             ),
-            annotation_components=ComparisonReportAnnotationComponentsSummary(
-                shape=ComparisonReportAnnotationShapeSummary(
-                    valid_count=0,
-                    missing_count=0,
-                    extra_count=0,
-                    total_count=0,
-                    ds_count=0,
-                    gt_count=0,
-                    mean_iou=0,
-                ),
-                label=ComparisonReportAnnotationLabelSummary(
-                    valid_count=valid_attributes,
-                    invalid_count=invalid_attributes,
-                    total_count=total_attributes,
-                ),
-            ),
-            conflicts=conflicts,
         )
 
 
@@ -825,6 +903,41 @@ class DatasetQualityEstimator:
         self._gt_dataset = self._gt_data_provider.dm_dataset
 
         self._results: dict[str, dict[int, ComparisonReportFrameSummary]] = {}
+
+    @staticmethod
+    def _merge_annotations_summary(
+        target: ComparisonReportAnnotationsSummary, other: ComparisonReportAnnotationsSummary
+    ) -> None:
+        for field in ("valid_count", "missing_count", "extra_count", "total_count", "ds_count", "gt_count"):
+            setattr(target, field, getattr(target, field) + getattr(other, field))
+
+        if target.confusion_matrix is None:
+            target.confusion_matrix = deepcopy(other.confusion_matrix) if other.confusion_matrix else None
+        elif (
+            other.confusion_matrix
+            and target.confusion_matrix.labels
+            and other.confusion_matrix.labels
+            and target.confusion_matrix.labels == other.confusion_matrix.labels
+        ):
+            target.confusion_matrix.accumulate(other.confusion_matrix)
+        elif other.confusion_matrix and other.confusion_matrix.labels:
+            target.confusion_matrix = None
+
+    @classmethod
+    def _merge_frame_summaries(
+        cls,
+        target: ComparisonReportFrameSummary,
+        other: ComparisonReportFrameSummary,
+        *,
+        current_count: int,
+    ) -> None:
+        target.conflicts += other.conflicts
+        cls._merge_annotations_summary(target.annotations, other.annotations)
+        target.annotation_components.accumulate(other.annotation_components)
+        target.annotation_components.shape.mean_iou = (
+            target.annotation_components.shape.mean_iou * current_count
+            + other.annotation_components.shape.mean_iou
+        ) / (current_count + 1)
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
         if dataset is self._ds_dataset:
@@ -913,12 +1026,12 @@ class DatasetQualityEstimator:
         shape_reqs = [
             req
             for req in self._requirements
-            if req.annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE
+            if req.annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE and req.enabled
         ]
         attribute_reqs = [
             req
             for req in self._requirements
-            if req.annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
+            if req.annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE and req.enabled
         ]
 
         per_requirement_results = {}
@@ -938,7 +1051,7 @@ class DatasetQualityEstimator:
 
             result = handler.match_annotations(ds_item=ds_item, gt_item=gt_item)
             per_requirement_results[requirement.name] = result
-            self._results.setdefault(requirement.name, {})[frame_id] = result
+            self._results.setdefault(requirement.name, {})[frame_id] = result.summary
 
         for requirement in attribute_reqs:
             handler = RequirementHandler.for_requirement(
@@ -954,7 +1067,7 @@ class DatasetQualityEstimator:
 
             result = handler.match_annotations(ds_item=ds_item, gt_item=gt_item)
             per_requirement_results[requirement.name] = result
-            self._results.setdefault(requirement.name, {})[frame_id] = result
+            self._results.setdefault(requirement.name, {})[frame_id] = result.summary
 
     def _aggregate_all_results(
         self,
@@ -965,79 +1078,36 @@ class DatasetQualityEstimator:
         ComparisonReportAnnotationsSummary,
         ComparisonReportAnnotationComponentsSummary,
     ]:
-        all_frame_results = {}
+        all_frame_results: dict[int, ComparisonReportFrameSummary] = {}
+        frame_result_counts: dict[int, int] = {}
         intersection_frames = []
-        conflicts = []
+        conflicts: list[AnnotationConflict] = []
 
-        confusion_matrix = None
-        confusion_matrix_labels = None
+        total_annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
+        total_annotation_components = ComparisonReportAnnotationComponentsSummary.create_empty()
         mean_ious = []
-        total_annotation_components = None
 
         for requirement_metrics in self._results.values():
             for frame_id, frame_result in requirement_metrics.items():
-                if frame_id in all_frame_results:
-                    continue
-
-                all_frame_results[frame_id] = frame_result
-                intersection_frames.append(frame_id)
-                conflicts += frame_result.conflicts
-
-                if confusion_matrix is None:
-                    confusion_matrix_labels = frame_result.annotations.confusion_matrix.labels
-                    confusion_matrix = frame_result.annotations.confusion_matrix.rows.copy()
+                if frame_id not in all_frame_results:
+                    all_frame_results[frame_id] = deepcopy(frame_result)
+                    frame_result_counts[frame_id] = 1
+                    intersection_frames.append(frame_id)
                 else:
-                    confusion_matrix += frame_result.annotations.confusion_matrix.rows
-
-                mean_ious.append(frame_result.annotation_components.shape.mean_iou)
-
-                if total_annotation_components is None:
-                    total_annotation_components = ComparisonReportAnnotationComponentsSummary(
-                        shape=ComparisonReportAnnotationShapeSummary(
-                            valid_count=frame_result.annotation_components.shape.valid_count,
-                            missing_count=frame_result.annotation_components.shape.missing_count,
-                            extra_count=frame_result.annotation_components.shape.extra_count,
-                            total_count=frame_result.annotation_components.shape.total_count,
-                            ds_count=frame_result.annotation_components.shape.ds_count,
-                            gt_count=frame_result.annotation_components.shape.gt_count,
-                            mean_iou=0,
-                        ),
-                        label=ComparisonReportAnnotationLabelSummary(
-                            valid_count=frame_result.annotation_components.label.valid_count,
-                            invalid_count=frame_result.annotation_components.label.invalid_count,
-                            total_count=frame_result.annotation_components.label.total_count,
-                        ),
+                    self._merge_frame_summaries(
+                        all_frame_results[frame_id],
+                        frame_result,
+                        current_count=frame_result_counts[frame_id],
                     )
-                else:
-                    total_annotation_components.accumulate(frame_result.annotation_components)
+                    frame_result_counts[frame_id] += 1
 
-        if total_annotation_components:
-            total_annotation_components.shape.mean_iou = np.mean(mean_ious or [])
+        for frame_result in all_frame_results.values():
+            conflicts += frame_result.conflicts
+            self._merge_annotations_summary(total_annotations_summary, frame_result.annotations)
+            total_annotation_components.accumulate(frame_result.annotation_components)
+            mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
-        if confusion_matrix is not None:
-            total_annotations_summary = self._compute_summary_from_confusion_matrix(
-                confusion_matrix, confusion_matrix_labels
-            )
-        else:
-            total_annotations_summary = ComparisonReportAnnotationsSummary(
-                valid_count=0,
-                missing_count=0,
-                extra_count=0,
-                total_count=0,
-                ds_count=0,
-                gt_count=0,
-                confusion_matrix=ConfusionMatrix(
-                    labels=[],
-                    rows=np.zeros((0, 0), dtype=int),
-                    precision=np.array([]),
-                    recall=np.array([]),
-                    accuracy=np.array([]),
-                    jaccard_index=np.array([]),
-                ),
-            )
-
-        if total_annotation_components is None:
-            total_annotation_components = ComparisonReportAnnotationComponentsSummary.create_empty()
+        total_annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
 
         return (
             all_frame_results,
@@ -1075,4 +1145,3 @@ class DatasetQualityEstimator:
             ),
             frame_results=all_frame_results,
         )
-

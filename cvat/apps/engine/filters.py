@@ -522,9 +522,8 @@ class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
     def _apply_filter(self, rules, lookup_fields, obj):
         op, args = next(iter(rules.items()))
         if op in ["or", "and"]:
-            return reduce(
-                {"or": any, "and": all}[op],
-                [self._apply_filter(arg, lookup_fields, obj) for arg in args],
+            return {"or": any, "and": all}[op](
+                self._apply_filter(arg, lookup_fields, obj) for arg in args
             )
         elif op == "!":
             return not self._apply_filter(args, lookup_fields, obj)
