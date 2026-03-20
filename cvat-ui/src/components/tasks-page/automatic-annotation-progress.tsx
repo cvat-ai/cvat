@@ -19,9 +19,11 @@ interface Props {
     cancelAutoAnnotation(): void;
 }
 
-export default function AutomaticAnnotationProgress(props: Props): JSX.Element | null {
+function AutomaticAnnotationProgress(props: Props): JSX.Element | null {
     const { activeInference, cancelAutoAnnotation } = props;
-    if (!activeInference) return null;
+    if (!activeInference) {
+        return null;
+    }
 
     let textType: 'success' | 'danger' = 'success';
     if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(activeInference.status)) {
@@ -101,3 +103,5 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
         </Row>
     );
 }
+
+export default React.memo(AutomaticAnnotationProgress);

@@ -16,6 +16,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.60.0'></a>
+## \[2.60.0\] - 2026-03-17
+
+### Added
+
+- Docker + compose for YOLO
+  (<https://github.com/cvat-ai/cvat/pull/10325>)
+
+- Interactors can now return multiple shapes instead of a single one
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Interactors can now return a confidence attribute. If present, interaction
+  results can be filtered in the UI (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Added UI controls to remove point and rectangle prompts when using Interactors or OpenCV tools
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Server may add text prompts to interactors as `text_prompts` field in `POST: /api/lambda/functions/<id>`
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+### Changed
+
+- Unified the expected interactor interface to align with the `/annotations` API and AI detector outputs
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Updated the IoG serverless function to support the new interactor interface
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+### Fixed
+
+- Reduced memory usage by replacing JavaScript arrays with typed arrays
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Fixed memory leaks related to unreleased object URLs in `cvat-canvas`
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- \[SDK\] Fixed a crash in `TasksRepo.create_from_backup`,
+  `ProjectsRepo.create_from_backup`, `Task.upload_data` that could occur
+  if a recoverable error occurred during chunk uploading
+  (<https://github.com/cvat-ai/cvat/pull/10375>)
+
+<a id='changelog-2.59.1'></a>
+## \[2.59.1\] - 2026-03-09
+
+### Fixed
+
+- Missing escaping for string fields in `.csv` export
+  (<https://github.com/cvat-ai/cvat/pull/10345>)
+
+<a id='changelog-2.59.0'></a>
+## \[2.59.0\] - 2026-03-06
+
+### Added
+
+- Docker compose to run SAM2 agent
+  (<https://github.com/cvat-ai/cvat/pull/10272>)
+
+- Added support for using cloud storage as backing storage for local tasks
+  (<https://github.com/cvat-ai/cvat/pull/10282>)
+
+- Feature to download Projects, Tasks, Jobs list as `.csv` table
+  (<https://github.com/cvat-ai/cvat/pull/10312>)
+
+### Changed
+
+- Changed the display of parent and replica jobs to a flat list.
+  For convenience, jobs are now marked with “parent” and “replica” tags.
+  By default, replica jobs are hidden using a filter, but they can be shown if needed.
+  (<https://github.com/cvat-ai/cvat/pull/10217>)
+
+- Consistent behaviour for Tab/Shift+Tab on 2D and 3D workspace
+  (<https://github.com/cvat-ai/cvat/pull/10299>)
+
+- Filters on a task page and on jobs page now create a new browser history entry,
+  enabling Back/Forward navigation between filter states.
+  (<https://github.com/cvat-ai/cvat/pull/10217>)
+
+- Models page is now always visible on UI, regardless of whether the serverless module is installed
+  (<https://github.com/cvat-ai/cvat/pull/10333>)
+
+### Deprecated
+
+- \[Server API\] `GET api/jobs` and `GET api/jobs/{id}/` responses:
+  - `consensus_replicas` - deprecated in favor of the new `replicas_count` field,
+  (<https://github.com/cvat-ai/cvat/pull/10217>)
+
+- Property `MODELS` from `/api/server/plugins` now unused on client and soon will be removed from the response
+  (<https://github.com/cvat-ai/cvat/pull/10333>)
+
+### Removed
+
+- Field `consensus_replicas`, used for consensus-based tasks, removed from task backups.
+  Backups created before this change can still be imported, but newer backups will require
+  a recent CVAT version.
+  (<https://github.com/cvat-ai/cvat/pull/10294>)
+
+- Deprecated properties `GIT_INTEGRATION` and `PREDICT` from `/api/server/plugins`
+  (<https://github.com/cvat-ai/cvat/pull/10333>)
+
+### Fixed
+
+- The `POST /api/task/<id>/data` endpoint now responds with a correct
+  `Location` header when invoked without a trailing slash
+  (<https://github.com/cvat-ai/cvat/pull/10266>)
+
+- Ground truth annotations are not locked in review mode of regular jobs
+  (<https://github.com/cvat-ai/cvat/pull/10273>)
+
 <a id='changelog-2.58.0'></a>
 ## \[2.58.0\] - 2026-02-23
 

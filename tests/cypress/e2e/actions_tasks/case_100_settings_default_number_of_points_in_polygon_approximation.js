@@ -48,9 +48,11 @@ context('Settings. Default number of points in polygon approximation.', () => {
                     cy.closeSettings();
                     cy.reload();
                     testCheckSliderAttrValuenow(sliderAttrValueNow);
-                    cy.contains('strong', 'less').click();
+                    // Set slider to minimum value
+                    cy.get('.cvat-workspace-settings-approx-poly-threshold').find('[role="slider"]').type('{home}');
                     testCheckSliderAttrValuenow(sliderAttrValuemin);
-                    cy.contains('strong', 'more').click();
+                    // Set slider to maximum value
+                    cy.get('.cvat-workspace-settings-approx-poly-threshold').find('[role="slider"]').type('{end}');
                     testCheckSliderAttrValuenow(sliderAttrValuemax);
                 });
         });
