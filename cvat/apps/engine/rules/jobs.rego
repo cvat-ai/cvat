@@ -125,11 +125,6 @@ allow if {
 }
 
 
-filter := utils.add_organization_filter(base_filter, [
-    "segment__task__organization",
-    "segment__task__project__organization",
-])
-
 base_filter := {} if { # Django Q object to filter list of entries
     utils.is_admin
 } else := qobject if {
@@ -157,6 +152,11 @@ base_filter := {} if { # Django Q object to filter list of entries
         {"segment__task__project__assignee_id": user.id},
     ]
 }
+
+filter := utils.add_organization_filter(base_filter, [
+    "segment__task__organization",
+    "segment__task__project__organization",
+])
 
 allow if {
     input.scope in {utils.CREATE, utils.DELETE}

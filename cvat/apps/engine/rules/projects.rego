@@ -86,8 +86,6 @@ allow if {
     organizations.is_member
 }
 
-filter := utils.add_organization_filter(base_filter, ["organization"])
-
 base_filter := {} if { # Django Q object to filter list of entries
     utils.is_admin
 } else := qobject if {
@@ -103,6 +101,8 @@ base_filter := {} if { # Django Q object to filter list of entries
     user := input.auth.user
     qobject := ["|", {"owner_id": user.id}, {"assignee_id": user.id}]
 }
+
+filter := utils.add_organization_filter(base_filter, ["organization"])
 
 allow if {
     input.scope == utils.VIEW

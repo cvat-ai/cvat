@@ -157,11 +157,6 @@ allow if {
     organizations.is_member
 }
 
-filter := utils.add_organization_filter(base_filter, [
-    "job__segment__task__organization",
-    "job__segment__task__project__organization",
-])
-
 base_filter := {} if { # Django Q object to filter list of entries
     utils.is_admin
 } else := qobject if {
@@ -193,6 +188,11 @@ base_filter := {} if { # Django Q object to filter list of entries
         {"job__segment__task__project__assignee": user.id},
     ]
 }
+
+filter := utils.add_organization_filter(base_filter, [
+    "job__segment__task__organization",
+    "job__segment__task__project__organization",
+])
 
 allow if {
     input.scope == utils.VIEW

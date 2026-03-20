@@ -55,8 +55,6 @@ allow if {
 }
 
 
-filter := utils.add_organization_filter(base_filter, ["org_id"])
-
 base_filter := {} if {
     utils.is_admin
 } else := qobject if {
@@ -72,3 +70,5 @@ base_filter := {} if {
     organizations.has_perm(organizations.WORKER)
     qobject := {"user_id": input.auth.user.id}
 }
+
+filter := utils.add_organization_filter(base_filter, ["org_id"])
