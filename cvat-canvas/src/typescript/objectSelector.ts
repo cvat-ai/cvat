@@ -11,6 +11,7 @@ export interface SelectionFilter {
     objectType?: string[];
     shapeType?: string[];
     maxCount?: number;
+    restrictToFirstSelectedType?: boolean;
 }
 
 export interface ObjectSelector {
@@ -76,10 +77,22 @@ export class ObjectSelectorImpl implements ObjectSelector {
         let count = Object.keys(this.selectedObjects).length;
         const maxCount = this.selectionFilter.maxCount || Number.MAX_SAFE_INTEGER;
         const filtered = [];
+
+        let effectiveShapeTypes = this.selectionFilter.shapeType;
+        if (
+            this.selectionFilter.restrictToFirstSelectedType &&
+            count > 0 &&
+            effectiveShapeTypes &&
+            effectiveShapeTypes.length > 1
+        ) {
+            const firstSelected = Object.values(this.selectedObjects)[0];
+            effectiveShapeTypes = [firstSelected.shapeType];
+        }
+
         for (const state of states) {
             const { objectType, shapeType } = state;
             const objectTypes = this.selectionFilter.objectType || [objectType];
-            const shapeTypes = this.selectionFilter.shapeType || [shapeType];
+            const shapeTypes = effectiveShapeTypes || [shapeType];
             if (objectTypes.includes(objectType) && shapeTypes.includes(shapeType)) {
                 if (count < maxCount) {
                     filtered.push(state);

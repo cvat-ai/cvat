@@ -6,6 +6,7 @@
 import polylabel from 'polylabel';
 import { fabric } from 'fabric';
 import * as SVG from 'svg.js';
+import * as martinez from 'martinez-polygon-clipping';
 
 import 'svg.draggable.js';
 import 'svg.resize.js';
@@ -33,7 +34,8 @@ import {
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, RLEToImageData, stringifyPoints, imageDataToRLE,
     composeShapeDimensions, getRoundedRotation,
-    clamp, applySnapToShapePoint,
+    clamp, validateUnionResult, processPolygonUnionResult,
+    applySnapToShapePoint, isPolygonSelfIntersecting,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -126,6 +128,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     domain,
                     exception: exception instanceof Error ?
                         exception : new Error(`Unknown exception: "${exception}"`),
+                },
+            }),
+        );
+    };
+
+    private onWarning = (message: string, domain?: string): void => {
+        this.canvas.dispatchEvent(
+            new CustomEvent('canvas.warning', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    domain,
+                    message,
                 },
             }),
         );
@@ -497,8 +512,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onMessage(null, 'join');
         }
 
-        if (objects && typeof duration !== 'undefined') {
-            if (this.mode === Mode.GROUP && objects.length > 1) {
+        if (objects && typeof duration !== 'undefined' && objects.length > 1) {
+            if (this.mode === Mode.GROUP) {
                 this.mode = Mode.IDLE;
                 this.canvas.dispatchEvent(new CustomEvent('canvas.grouped', {
                     bubbles: false,
@@ -508,48 +523,156 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         states: objects,
                     },
                 }));
-            } else if (this.mode === Mode.JOIN && objects.length > 1) {
+            } else if (this.mode === Mode.JOIN) {
                 this.mode = Mode.IDLE;
-                let [left, top, right, bottom] = objects[0].points.slice(-4);
-                objects.forEach((state) => {
-                    const [curLeft, curTop, curRight, curBottom] = state.points.slice(-4);
-                    left = Math.min(left, curLeft);
-                    top = Math.min(top, curTop);
-                    right = Math.max(right, curRight);
-                    bottom = Math.max(bottom, curBottom);
-                });
 
-                Promise.all(objects.map((state) => {
-                    const [curLeft, , curRight] = state.points.slice(-4, -1);
-                    const image = new ImageData(RLEToImageData(255, 255, 255, state.points), curRight - curLeft + 1);
-                    return createImageBitmap(image);
-                })).then((results) => {
-                    const canvas = new OffscreenCanvas(right - left + 1, bottom - top + 1);
-                    results.forEach((bitmap, idx) => {
-                        const [curLeft, curTop] = objects[idx].points.slice(-4, -2);
-                        canvas.getContext('2d').drawImage(bitmap, curLeft - left, curTop - top);
-                        bitmap.close();
-                    });
-
-                    const imageData = canvas.getContext('2d')
-                        .getImageData(0, 0, right - left + 1, bottom - top + 1);
-                    const rle = imageDataToRLE(imageData.data);
-                    rle.push(left, top, right, bottom);
-                    this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
-                        bubbles: false,
-                        cancelable: true,
-                        detail: {
-                            duration,
-                            states: objects,
-                            points: rle,
-                        },
-                    }));
-                }).catch(this.onError);
+                const { shapeType } = objects[0];
+                if (shapeType === 'polygon') {
+                    this.joinPolygons(objects, duration);
+                } else if (shapeType === 'mask') {
+                    this.joinMasks(objects, duration);
+                }
             }
         } else {
             this.dispatchCanceledEvent();
         }
     };
+
+    private joinPolygons(objects: any[], duration: number): void {
+        try {
+            const validObjects: any[] = [];
+            const selfIntersectingIndices: number[] = [];
+
+            objects.forEach((state, idx) => {
+                if (isPolygonSelfIntersecting(state.points)) {
+                    selfIntersectingIndices.push(idx);
+                } else {
+                    validObjects.push(state);
+                }
+            });
+
+            if (selfIntersectingIndices.length > 0) {
+                const excludedIds = selfIntersectingIndices.map((idx) => objects[idx].clientID).join(', ');
+                this.onWarning(
+                    `${selfIntersectingIndices.length} self-intersecting polygon${selfIntersectingIndices.length > 1 ? 's' : ''} excluded from merge ` +
+                    `(IDs: ${excludedIds}).`,
+                    'Join operation',
+                );
+            }
+
+            if (validObjects.length < 2) {
+                throw new Error('Cannot join: not enough valid polygons (need at least 2 non-self-intersecting polygons)');
+            }
+
+            // Convert CVAT polygon format to martinez format
+            // CVAT format: [x1, y1, x2, y2, ...] (flat array)
+            // martinez format: [[[x1, y1], [x2, y2], ...]] (GeoJSON Polygon)
+            const polygons: martinez.Polygon[] = validObjects.map((state) => {
+                const { points } = state;
+                const coords: martinez.Position[] = [];
+
+                for (let i = 0; i < points.length; i += 2) {
+                    coords.push([points[i], points[i + 1]]);
+                }
+
+                const firstPoint = coords[0];
+                const lastPoint = coords[coords.length - 1];
+                // Martinez library requires closed polygons (first point === last point)
+                // CVAT stores polygons in open format, so we need to close them
+                if (firstPoint[0] !== lastPoint[0] || firstPoint[1] !== lastPoint[1]) {
+                    coords.push([firstPoint[0], firstPoint[1]]);
+                }
+
+                return [coords];
+            });
+
+            let result: martinez.Geometry = polygons[0];
+            for (let i = 1; i < polygons.length; i += 1) {
+                result = martinez.union(result, polygons[i]);
+                if (!result) {
+                    throw new Error('Union operation failed - polygons may be invalid');
+                }
+            }
+
+            if (!result || result.length === 0) {
+                throw new Error('Union operation resulted in empty polygon');
+            }
+
+            validateUnionResult(result);
+
+            const processedResults = processPolygonUnionResult(result);
+
+            // Show warning if merge resulted in multiple disjoint polygons
+            if (processedResults.length > 1) {
+                this.onWarning(
+                    `Merge resulted in ${processedResults.length} separate polygons.`,
+                    'Join operation',
+                );
+            }
+
+            const pointsArray = processedResults.map(({ points }) => points);
+
+            this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    duration,
+                    states: validObjects,
+                    points: pointsArray,
+                    shapeType: 'polygon',
+                },
+            }));
+        } catch (error) {
+            this.onError(error);
+            this.dispatchCanceledEvent();
+        }
+    }
+
+    private joinMasks(objects: any[], duration: number): void {
+        let [left, top, right, bottom] = objects[0].points.slice(-4);
+        objects.forEach((state) => {
+            const [curLeft, curTop, curRight, curBottom] = state.points.slice(-4);
+            left = Math.min(left, curLeft);
+            top = Math.min(top, curTop);
+            right = Math.max(right, curRight);
+            bottom = Math.max(bottom, curBottom);
+        });
+
+        Promise.all(objects.map((state) => {
+            const [curLeft, , curRight] = state.points.slice(-4, -1);
+            const image = new ImageData(
+                RLEToImageData(255, 255, 255, state.points), curRight - curLeft + 1,
+            );
+            return createImageBitmap(image);
+        })).then((results) => {
+            const canvas = new OffscreenCanvas(right - left + 1, bottom - top + 1);
+            const ctx = canvas.getContext('2d');
+
+            results.forEach((bitmap, idx) => {
+                const [curLeft, curTop] = objects[idx].points.slice(-4, -2);
+                ctx.drawImage(bitmap, curLeft - left, curTop - top);
+                bitmap.close();
+            });
+
+            const imageData = ctx.getImageData(0, 0, right - left + 1, bottom - top + 1);
+            const rle = imageDataToRLE(imageData.data);
+            rle.push(left, top, right, bottom);
+
+            this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    duration,
+                    states: objects,
+                    points: [rle],
+                    shapeType: 'mask',
+                },
+            }));
+        }).catch((error) => {
+            this.onError(error);
+            this.dispatchCanceledEvent();
+        });
+    }
 
     private onSliceDone = (state?: any, results?: number[][], duration?: number): void => {
         if (state && results && typeof duration !== 'undefined') {
@@ -2161,12 +2284,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.onMessage([{
                     type: 'text',
                     icon: 'info',
-                    content: 'Click masks you would like to join together. To unselect click selected mask one more time',
+                    content: 'Click polygons or masks you would like to join together. To unselect click selected shape one more time',
                 }], 'join');
 
                 this.groupHandler.group(data, {
-                    shapeType: ['mask'],
+                    shapeType: ['mask', 'polygon'],
                     objectType: ['shape'],
+                    restrictToFirstSelectedType: true,
                 });
             }
         } else if (reason === UpdateReasons.SLICE) {
