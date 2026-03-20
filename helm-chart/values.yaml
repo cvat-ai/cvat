@@ -151,6 +151,9 @@ cvat:
     imagePullPolicy: Always
     permissionFix:
       enabled: true
+      image: busybox
+      tag: 1.36.1
+      imagePullPolicy: IfNotPresent
       # commandOverride: []
       paths:
         - /home/django
