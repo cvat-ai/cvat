@@ -85,10 +85,18 @@ context('Autoborder feature.', () => {
             cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
             cy.get('body').type('{Ctrl}a'); // Autoborder activation
             testAutoborderPointsCount(8); // 8 points at the rectangles
+
             cy.get('.cvat-canvas-container').click(400, 350);
-            cy.get('.cvat-canvas-container').click(450, 250);
-            cy.get('.cvat-canvas-container').click(500, 350);
-            cy.get('.cvat-canvas-container').click(500, 450);
+            cy.wait(500);
+
+            // top right
+            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 350);
+            cy.get('.cvat-canvas-container').trigger('mousedown', 500, 350, { button: 0 });
+
+            // bottom left
+            cy.get('.cvat-canvas-container').trigger('mousemove', 400, 450);
+            cy.get('.cvat-canvas-container').trigger('mousedown', 400, 450, { button: 0 });
+
             cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
@@ -101,11 +109,24 @@ context('Autoborder feature.', () => {
             cy.interactControlButton('draw-polyline');
             cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
             testAutoborderPointsCount(12); // 8 points at the rectangles + 4 at the polygon
-            cy.get('.cvat-canvas-container').click(600, 350);
-            cy.get('.cvat-canvas-container').click(400, 450);
-            cy.get('.cvat-canvas-container').click(550, 500);
-            cy.get('.cvat-canvas-container').click(600, 450);
-            cy.get('.cvat-canvas-container').click(600, 350);
+
+            cy.get('.cvat-canvas-container').click(700, 350);
+            cy.wait(500);
+
+            cy.get('.cvat-canvas-container').trigger('mousemove', 700, 450);
+            cy.get('.cvat-canvas-container').trigger('mousedown', 700, 450, { button: 0 });
+
+            cy.get('.cvat-canvas-container').trigger('mousemove', 600, 350);
+            cy.get('.cvat-canvas-container').trigger('mousedown', 600, 350, { button: 0 });
+
+            cy.get('.cvat-canvas-container').click(500, 350);
+
+            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 450);
+            cy.get('.cvat-canvas-container').trigger('mousedown', 500, 450, { button: 0 });
+
+            cy.get('.cvat-canvas-container').trigger('mousemove', 400, 350);
+            cy.get('.cvat-canvas-container').trigger('mousedown', 400, 350, { button: 0 });
+
             cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
@@ -118,12 +139,22 @@ context('Autoborder feature.', () => {
             // The 1st point of the rect and the 1st polygon point
             expect(polygonPoints[0]).to.be
                 .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
-            // The 2nd point of the rect and the 3rd polygon point
-            expect(polygonPoints[2]).to
-                .be.equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
+            expect(polygonPoints[1]).to.be
+                .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
+            expect(polygonPoints[2]).to.be
+                .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
+            expect(polygonPoints[3]).to.be
+                .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
+
             // The 2nd point of the polyline and the 4th point rect
-            expect(polylinePoints[1]).to
-                .be.equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
+            expect(polylinePoints[4]).to.be
+                .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
+            expect(polylinePoints[5]).to.be
+                .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
+            expect(polylinePoints[6]).to.be
+                .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
+            expect(polylinePoints[7]).to.be
+                .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
         });
     });
 });

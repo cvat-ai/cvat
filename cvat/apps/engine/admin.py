@@ -84,6 +84,7 @@ class DataAdmin(admin.ModelAdmin):
         "frame_filter",
         "compressed_chunk_type",
         "original_chunk_type",
+        "local_storage_backing_cs",
     )
     readonly_fields = fields
     autocomplete_fields = ("cloud_storage",)

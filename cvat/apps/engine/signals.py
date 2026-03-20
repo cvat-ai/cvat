@@ -9,7 +9,7 @@ import shutil
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models.signals import m2m_changed, post_delete, post_save, pre_save
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
 from django.dispatch import Signal, receiver
 from rest_framework.exceptions import ValidationError
 
@@ -126,11 +126,29 @@ def __delete_job_handler(instance, **kwargs):
     )
 
 
+@receiver(pre_delete, sender=Data)
+def __pre_delete_data_handler(instance: Data, **kwargs):
+    # Image/video objects are no longer available in the post_delete handler, so gather them here.
+    instance._saved_media_rel_paths = instance.get_all_media_rel_paths()
+
+
 @receiver(post_delete, sender=Data)
-def __delete_data_handler(instance, **kwargs):
+def __delete_data_handler(instance: Data, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_data_dirname(), ignore_errors=True)
     )
+
+    if instance.local_storage_backing_cs:
+        storage_instance = instance.get_cloud_storage_instance()
+        assert storage_instance
+
+        transaction.on_commit(
+            functools.partial(
+                storage_instance.bulk_delete,
+                [p.as_posix() for p in instance._saved_media_rel_paths],
+            ),
+            robust=True,
+        )
 
 
 @receiver(post_delete, sender=CloudStorage)

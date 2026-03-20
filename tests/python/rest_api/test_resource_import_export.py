@@ -655,7 +655,6 @@ class TestUploads:
                     url,
                     archive_path,
                     meta=params,
-                    logger=owner_client.logger.debug,
                     pbar=pbar,
                 )
 
