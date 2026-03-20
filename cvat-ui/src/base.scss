@@ -192,6 +192,12 @@ $annotation-view-control-transition: 0.1s transform;
         align-items: start;
     }
 
+    > .cvat-resource-top-bar-wrapper {
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+        min-height: fit-content;
+    }
+
     > .cvat-resource-pagination-wrapper {
         padding-top: $grid-unit-size;
         padding-bottom: $grid-unit-size;

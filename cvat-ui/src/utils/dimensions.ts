@@ -5,9 +5,9 @@
 const dimensions = {
     xs: 24,
     sm: 24,
-    md: 22,
-    lg: 18,
-    xl: 16,
+    md: 24,
+    lg: 22,
+    xl: 22,
     xxl: 16,
 };
 
