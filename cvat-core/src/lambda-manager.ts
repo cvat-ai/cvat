@@ -9,7 +9,7 @@ import MLModel from './ml-model';
 import {
     ModelKind, RQStatus, ShapeType, Source,
 } from './enums';
-import { SerializedCollection, SerializedShape } from './server-response-types';
+import { SerializedCollection, SerializedShape, SerializedFunctionRequest } from './server-response-types';
 import { mask2Rle } from './rle-utils';
 
 type InteractorShape = Pick<SerializedShape, 'group' | 'source' | 'attributes' | 'occluded' | 'rotation' | 'type'> & {
@@ -35,22 +35,19 @@ export interface TrackerResults {
 }
 
 class LambdaManager {
-    private cachedList: MLModel[];
     private listening: Record<number, {
         onUpdate: ((status: RQStatus, progress: number, message?: string) => void)[];
-        functionID: string;
         timeout: number | null;
     }>;
 
     constructor() {
         this.listening = {};
-        this.cachedList = [];
     }
 
     async list(): Promise<{ models: MLModel[], count: number }> {
         const lambdaFunctions = await serverProxy.lambda.list();
-
         const models = [];
+
         for (const model of lambdaFunctions) {
             models.push(
                 new MLModel({
@@ -59,11 +56,10 @@ class LambdaManager {
             );
         }
 
-        this.cachedList = models;
         return { models, count: lambdaFunctions.length };
     }
 
-    async run(taskID: number, model: MLModel, args: any): Promise<string> {
+    async run(taskID: number, model: MLModel, args: any): Promise<SerializedFunctionRequest> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -84,8 +80,7 @@ class LambdaManager {
             function: model.id,
         };
 
-        const result = await serverProxy.lambda.run(body);
-        return result.id;
+        return serverProxy.lambda.run(body);
     }
 
     async call(taskID, model, args): Promise<TrackerResults | InteractorResults | SerializedCollection> {
@@ -147,44 +142,34 @@ class LambdaManager {
         return result;
     }
 
-    async requests(): Promise<any[]> {
+    async requests(): Promise<SerializedFunctionRequest[]> {
         const lambdaRequests = await serverProxy.lambda.requests();
         return lambdaRequests
             .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
     }
 
-    async cancel(requestID, functionID): Promise<void> {
+    async cancel(requestID): Promise<void> {
         if (typeof requestID !== 'string') {
             throw new ArgumentError(`Request id argument is required to be a string. But got ${requestID}`);
         }
-        const model = this.cachedList.find((_model) => _model.id === functionID);
-        if (!model) {
-            throw new ArgumentError('Incorrect Function Id provided');
-        }
 
+        await serverProxy.lambda.cancel(requestID);
         if (this.listening[requestID]) {
             clearTimeout(this.listening[requestID].timeout);
             delete this.listening[requestID];
         }
-
-        await serverProxy.lambda.cancel(requestID);
     }
 
     async listen(
         requestID: string,
-        functionID: string | number,
         callback: (status: RQStatus, progress: number, message?: string) => void,
     ): Promise<void> {
-        const model = this.cachedList.find((_model) => _model.id === functionID);
-        if (!model) {
-            throw new ArgumentError('Incorrect function Id provided');
-        }
-
         if (requestID in this.listening) {
             this.listening[requestID].onUpdate.push(callback);
             // already listening, avoid sending extra requests
             return;
         }
+
         const timeoutCallback = (): void => {
             serverProxy.lambda.status(requestID).then((response) => {
                 const { status } = response;
@@ -199,10 +184,10 @@ class LambdaManager {
                         delete this.listening[requestID];
                         if (status === RQStatus.FINISHED) {
                             onUpdate
-                                .forEach((update) => update(status, response.progress || 100));
+                                .forEach((update) => update(status, response.progress ?? 100));
                         } else {
                             onUpdate
-                                .forEach((update) => update(status, response.progress || 0, response.exc_info || ''));
+                                .forEach((update) => update(status, response.progress ?? 0, response.exc_info ?? ''));
                         }
                     }
                 }
@@ -226,7 +211,6 @@ class LambdaManager {
 
         this.listening[requestID] = {
             onUpdate: [callback],
-            functionID,
             timeout: window.setTimeout(timeoutCallback),
         };
     }
