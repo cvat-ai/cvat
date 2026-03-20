@@ -476,6 +476,9 @@ class LambdaFunction:
                     "obj_bbox": data.get("obj_bbox", None),
                 }
             )
+            text_prompts = data.get("text_prompts", None)
+            if text_prompts:
+                payload["text_prompts"] = text_prompts
         elif self.kind == FunctionKind.REID:
             payload.update(
                 {

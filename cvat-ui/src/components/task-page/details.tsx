@@ -46,7 +46,7 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & OwnProps {
     return {
         ...own,
-        activeInference: state.models.inferences[own.task.id] || null,
+        activeInference: state.models.inferences[own.task.id] ?? null,
         project: state.projects.current.find((project) => project.id === own.task.projectId),
     };
 }

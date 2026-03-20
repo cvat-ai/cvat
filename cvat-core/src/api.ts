@@ -37,9 +37,8 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
-import {
-    mask2Rle, rle2Mask, propagateShapes, validateAttributeValue,
-} from './object-utils';
+import { propagateShapes, validateAttributeValue } from './object-utils';
+import { mask2Rle, rle2Mask } from './rle-utils';
 import User from './user';
 import config from './config';
 
@@ -124,10 +123,6 @@ function build(): CVATCore {
             },
             async request(url, data, requestConfig) {
                 const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data, requestConfig);
-                return result;
-            },
-            async setAuthData(response) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.setAuthData, response);
                 return result;
             },
             async installedApps() {
@@ -272,12 +267,12 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.call, task, model, args);
                 return result;
             },
-            async cancel(requestID, functionID) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID, functionID);
+            async cancel(requestID) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID);
                 return result;
             },
-            async listen(requestID, functionID, onChange) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.listen, requestID, functionID, onChange);
+            async listen(requestID, onChange) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.listen, requestID, onChange);
                 return result;
             },
             async requests() {

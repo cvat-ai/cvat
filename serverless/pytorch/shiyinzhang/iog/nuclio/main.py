@@ -35,9 +35,24 @@ def handler(context, event):
         obj_bbox = [np.min(x), np.min(y), np.max(x), np.max(y)]
         neg_points = []
 
-    mask = context.user_data.model.handle(image, obj_bbox, pos_points, neg_points, threshold)
     return context.Response(
-        body=json.dumps({"mask": mask.tolist()}),
+        body=json.dumps(
+            {
+                "shapes": [
+                    {
+                        "points": context.user_data.model.handle(
+                            image, obj_bbox, pos_points, neg_points, threshold
+                        ),
+                        "group": 0,
+                        "source": "semi-auto",
+                        "attributes": [],
+                        "occluded": False,
+                        "rotation": 0,
+                        "type": "mask",
+                    }
+                ]
+            }
+        ),
         headers={},
         content_type="application/json",
         status_code=200,
