@@ -174,7 +174,8 @@ The name of the service account to use for backend pods
 {{- $localValues := .Values.cvat.backend.server }}
 {{- if .Values.cvat.backend.permissionFix.enabled -}}
 - name: user-data-permission-fix
-  image: busybox
+  image: {{ .Values.cvat.backend.permissionFix.image }}:{{ .Values.cvat.backend.permissionFix.tag }}
+  imagePullPolicy: {{ .Values.cvat.backend.permissionFix.imagePullPolicy }}
   command: ["/bin/sh", "-c"]
   args:
   {{- if not .Values.cvat.backend.permissionFix.commandOverride -}}
