@@ -51,4 +51,5 @@ function DrawPolylineControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(DrawPolylineControl, { displayName: 'DrawPolylineControl' });
 export default React.memo(DrawPolylineControl);

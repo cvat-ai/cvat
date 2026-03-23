@@ -2999,15 +2999,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/lru-cache@npm:^7.10.10":
-  version: 7.10.10
-  resolution: "@types/lru-cache@npm:7.10.10"
-  dependencies:
-    lru-cache: "npm:*"
-  checksum: 10c0/ab85558867cb059bebd42074c1cd517eb41efb1db22b9d26dfdc58df01c83ff9c212a562b4ec3d5936418ffb03e626a0f30463026aa5fb5ced41e3b4b4af057f
-  languageName: node
-  linkType: hard
-
 "@types/mdast@npm:^3.0.0":
   version: 3.0.15
   resolution: "@types/mdast@npm:3.0.15"
@@ -5736,6 +5727,7 @@ __metadata:
   resolution: "cvat-canvas@workspace:cvat-canvas"
   dependencies:
     "@types/polylabel": "npm:^1.0.5"
+    martinez-polygon-clipping: "npm:^0.8.1"
     polylabel: "npm:^1.1.0"
     svg.draggable.js: "npm:2.2.2"
     svg.draw.js: "npm:^2.0.4"
@@ -5767,7 +5759,7 @@ __metadata:
     babel-plugin-transform-import-meta: "npm:^2.2.1"
     cvat-data: "link:./../cvat-data"
     detect-browser: "npm:^5.2.1"
-    dompurify: "npm:^3.3.1"
+    dompurify: "npm:^3.3.2"
     error-stack-parser: "npm:^2.0.2"
     form-data: "npm:^4.0.4"
     js-cookie: "npm:^3.0.1"
@@ -5801,7 +5793,6 @@ __metadata:
     "@ant-design/icons": "npm:^5.5.2"
     "@react-awesome-query-builder/antd": "npm:^6.5.2"
     "@types/json-logic-js": "npm:^2.0.2"
-    "@types/lru-cache": "npm:^7.10.10"
     "@types/platform": "npm:^1.3.4"
     "@types/react": "npm:18.2.55"
     "@types/react-color": "npm:^3.0.5"
@@ -5823,7 +5814,6 @@ __metadata:
     dotenv-webpack: "npm:^8.0.1"
     error-stack-parser: "npm:^2.0.6"
     json-logic-js: "npm:^2.0.2"
-    lru-cache: "npm:^9.1.1"
     mousetrap: "npm:^1.6.5"
     onnxruntime-web: "npm:1.23.2"
     platform: "npm:^1.3.6"
@@ -5889,6 +5879,7 @@ __metadata:
     husky: "npm:^6.0.0"
     lint-staged: "npm:^13.0.3"
     lodash: "npm:^4.17.23"
+    lru-cache: "npm:^11.2.7"
     micromatch: "npm:^4.0.8"
     nodemon: "npm:^3.0.1"
     nyc: "npm:^15.1.0"
@@ -6374,15 +6365,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dompurify@npm:^3.3.1":
-  version: 3.3.1
-  resolution: "dompurify@npm:3.3.1"
+"dompurify@npm:^3.3.2":
+  version: 3.3.2
+  resolution: "dompurify@npm:3.3.2"
   dependencies:
     "@types/trusted-types": "npm:^2.0.7"
   dependenciesMeta:
     "@types/trusted-types":
       optional: true
-  checksum: 10c0/fa0a8c55a436ba0d54389195e3d2337e311f56de709a2fc9efc98dbbc7746fa53bb4b74b6ac043b77a279a8f2ebd8685f0ebaa6e58c9e32e92051d529bc0baf8
+  checksum: 10c0/8989525f003dd062e829137982b5412143421342991b2732bd621a1efd98b2c3cdc4f37547601d0727d3bc20f1d0eb2a0ecca287d3688f168cdb54ced867ca8f
   languageName: node
   linkType: hard
 
@@ -8767,9 +8758,9 @@ __metadata:
   linkType: hard
 
 "immutable@npm:^4.0.0, immutable@npm:^4.3.6":
-  version: 4.3.6
-  resolution: "immutable@npm:4.3.6"
-  checksum: 10c0/7d0952a768b4fadcee47230ed86dc9505a4517095eceaf5a47e65288571c42400c6e4a2ae21eca4eda957cb7bc50720213135b62cf6a181639111f8acae128c3
+  version: 4.3.8
+  resolution: "immutable@npm:4.3.8"
+  checksum: 10c0/3de58996305a0faf6ef3fc0685f996c42653ad757760214f5aec7d4a6b59ea7abb882522c5f9a61776fae88c0b45e08eb77cbded5a4f57745ec7c63f9642e44b
   languageName: node
   linkType: hard
 
@@ -10175,10 +10166,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lru-cache@npm:*, lru-cache@npm:^10.0.1, lru-cache@npm:^10.2.0":
+"lru-cache@npm:^10.0.1, lru-cache@npm:^10.2.0":
   version: 10.4.3
   resolution: "lru-cache@npm:10.4.3"
   checksum: 10c0/ebd04fbca961e6c1d6c0af3799adcc966a1babe798f685bb84e6599266599cd95d94630b10262f5424539bc4640107e8a33aa28585374abf561d30d16f4b39fb
+  languageName: node
+  linkType: hard
+
+"lru-cache@npm:^11.2.7":
+  version: 11.2.7
+  resolution: "lru-cache@npm:11.2.7"
+  checksum: 10c0/549cdb59488baa617135fc12159cafb1a97f91079f35093bb3bcad72e849fc64ace636d244212c181dfdf1a99bbfa90757ff303f98561958ee4d0f885d9bd5f7
   languageName: node
   linkType: hard
 
@@ -10197,13 +10195,6 @@ __metadata:
   dependencies:
     yallist: "npm:^4.0.0"
   checksum: 10c0/cb53e582785c48187d7a188d3379c181b5ca2a9c78d2bce3e7dee36f32761d1c42983da3fe12b55cb74e1779fa94cdc2e5367c028a9b35317184ede0c07a30a9
-  languageName: node
-  linkType: hard
-
-"lru-cache@npm:^9.1.1":
-  version: 9.1.2
-  resolution: "lru-cache@npm:9.1.2"
-  checksum: 10c0/886811ab451332c899c230274e7e51507c15e5b3b18f0b39fb55f558978d58799a0b1a50e04d60a448d8c970ff4e6ee718bb119083ca88abb78930284f1e0900
   languageName: node
   linkType: hard
 
@@ -10279,6 +10270,17 @@ __metadata:
   version: 3.0.3
   resolution: "markdown-table@npm:3.0.3"
   checksum: 10c0/47433a3f31e4637a184e38e873ab1d2fadfb0106a683d466fec329e99a2d8dfa09f091fa42202c6f13ec94aef0199f449a684b28042c636f2edbc1b7e1811dcd
+  languageName: node
+  linkType: hard
+
+"martinez-polygon-clipping@npm:^0.8.1":
+  version: 0.8.1
+  resolution: "martinez-polygon-clipping@npm:0.8.1"
+  dependencies:
+    robust-predicates: "npm:^2.0.4"
+    splaytree: "npm:^0.1.4"
+    tinyqueue: "npm:3.0.0"
+  checksum: 10c0/f02420eebd37cfda170be30bc1aae28de15d4baeafa68fa41629f27439f913e01f347900cb976727efee994ff0abdba8628b2f6680860ecac2519c8d79789567
   languageName: node
   linkType: hard
 
@@ -15914,6 +15916,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"robust-predicates@npm:^2.0.4":
+  version: 2.0.4
+  resolution: "robust-predicates@npm:2.0.4"
+  checksum: 10c0/3c801ff1ea5ce842c1818da62e2be0cc427ab507dc7a21f3ff2e6278f1d32b5c2f2fc740f8e9c188b4e7a2946228c0173607534432314940e89eae15ded79b5f
+  languageName: node
+  linkType: hard
+
 "run-applescript@npm:^7.0.0":
   version: 7.0.0
   resolution: "run-applescript@npm:7.0.0"
@@ -16617,6 +16626,13 @@ __metadata:
   version: 0.2.8
   resolution: "spel2js@npm:0.2.8"
   checksum: 10c0/8f716e98d688a2300b23db0cf78f0ec4e428a265cce156ffc828945b82642cab7df4496e86bed6e7fbb4bdc1cc2b7580d049424e40be57d072c276d48261f1bf
+  languageName: node
+  linkType: hard
+
+"splaytree@npm:^0.1.4":
+  version: 0.1.4
+  resolution: "splaytree@npm:0.1.4"
+  checksum: 10c0/99c06883b832fd4725db790e736465eb1dafdc2dfa7faa238ebf45e718e0f66197e6aa6b229900496d5ab3529c8b151132e7956e34234956cbf63c7ae738faa7
   languageName: node
   linkType: hard
 
@@ -17364,6 +17380,13 @@ __metadata:
     fdir: "npm:^6.4.4"
     picomatch: "npm:^4.0.2"
   checksum: 10c0/f789ed6c924287a9b7d3612056ed0cda67306cd2c80c249fd280cf1504742b12583a2089b61f4abbd24605f390809017240e250241f09938054c9b363e51c0a6
+  languageName: node
+  linkType: hard
+
+"tinyqueue@npm:3.0.0":
+  version: 3.0.0
+  resolution: "tinyqueue@npm:3.0.0"
+  checksum: 10c0/edd6f1a6146aa3aa7bc85b44b3aacf44cddfa805b0901019272d7e9235894b4f28b2f9d09c1bce500ae48883b03708b6b871aa33920e895d2943720f7a9ad3ba
   languageName: node
   linkType: hard
 

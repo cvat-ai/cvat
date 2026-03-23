@@ -23,6 +23,7 @@ interface Props {
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
     automaticBordering: boolean;
+    pointSnap: boolean;
     adaptiveZoom: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
@@ -38,6 +39,7 @@ interface Props {
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchPointSnap(enabled: boolean): void;
     onSwitchAdaptiveZoom(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeTextFontSize(fontSize: number): void;
@@ -55,6 +57,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        pointSnap,
         adaptiveZoom,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
@@ -69,6 +72,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingInterpolatedTracks,
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
+        onSwitchPointSnap,
         onSwitchAdaptiveZoom,
         onSwitchIntelligentPolygonCrop,
         onChangeDefaultApproxPolyAccuracy,
@@ -211,12 +215,31 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                             onSwitchAutomaticBordering(event.target.checked);
                         }}
                     >
-                        Automatic bordering
+                        Snap to contours
                     </Checkbox>
                 </Col>
                 <Col span={24}>
                     <Text type='secondary'>
-                        Enable automatic bordering for polygons and polylines during drawing/editing
+                        Automatically snap polygon and polyline points to
+                        the contours of existing objects while drawing or editing
+                    </Text>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-point-snap cvat-player-setting'>
+                <Col span={24}>
+                    <Checkbox
+                        className='cvat-text-color'
+                        checked={pointSnap}
+                        onChange={(event: CheckboxChangeEvent): void => {
+                            onSwitchPointSnap(event.target.checked);
+                        }}
+                    >
+                        Snap to point
+                    </Checkbox>
+                </Col>
+                <Col span={24}>
+                    <Text type='secondary'>
+                        Automatically snap points to nearby points when editing shapes
                     </Text>
                 </Col>
             </Row>
