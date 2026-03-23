@@ -51,4 +51,5 @@ function DrawPolygonControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(DrawPolygonControl, { displayName: 'DrawPolygonControl' });
 export default React.memo(DrawPolygonControl);

@@ -51,4 +51,5 @@ function DrawRectangleControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(DrawRectangleControl, { displayName: 'DrawRectangleControl' });
 export default React.memo(DrawRectangleControl);
