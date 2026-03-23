@@ -65,5 +65,18 @@ def docker_cp(source, target, *, logger: logging.Logger | None = None) -> None:
     run_command(f"docker container cp {source} {target}", logger=logger)
 
 
-def kubectl_cp(source, target, *, logger: logging.Logger | None = None) -> None:
-    run_command(f"kubectl cp {source} {target}", logger=logger)
+def kubectl_cp(
+    source,
+    target,
+    *,
+    namespace: str | None = None,
+    container: str | None = None,
+    logger: logging.Logger | None = None,
+) -> None:
+    command: list[str] = ["kubectl"]
+    if namespace:
+        command += ["--namespace", namespace]
+    command += ["cp", str(source), str(target)]
+    if container:
+        command += ["-c", container]
+    run_command(command, logger=logger)

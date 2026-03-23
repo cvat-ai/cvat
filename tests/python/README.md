@@ -81,6 +81,27 @@ which are used by containers for the testing system.
   pytest ./tests/python --run-prefix p1 --parallel 4 down
   ```
 
+- Kubernetes lifecycle (`--platform kube`):
+
+  Prerequisites: `minikube`, `kubectl`, and `helm` installed on the host.
+
+  ```shell
+  # Start minikube (if needed), deploy CVAT via Helm, wait for readiness
+  pytest ./tests/python --platform kube --run-prefix k1 \
+    --kube-cpus 6 --kube-memory 10g up
+
+  # Run tests against the same kube release (runtime port-forwards are handled automatically)
+  pytest ./tests/python --platform kube --run-prefix k1
+
+  # Tear down Helm release and stop minikube
+  pytest ./tests/python --platform kube --run-prefix k1 down
+  ```
+
+  Notes:
+  - Kube mode does not build images automatically.
+  - Images are configured with `--kube-server-image`, `--kube-frontend-image`, `--kube-image-tag`.
+  - `--rebuild/--cleanup/--dumpdb` are local-only helpers and are not supported with `--platform kube`.
+
 - Lane profiles are selected automatically by the scheduler based on collected
   tests and `@pytest.mark.infra_profile("core|extended|full")`.
 

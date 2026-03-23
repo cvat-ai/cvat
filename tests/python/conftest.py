@@ -81,10 +81,8 @@ def pytest_sessionstart(session) -> None:
         raise pytest.UsageError(
             "--collect-only is not compatible with --rebuild/--cleanup/--dumpdb/--infra=up/down/restore-db"
         )
-    if platform == "kube" and any((rebuild, cleanup, dumpdb, infra_mode != InfraMode.AUTO)):
-        raise pytest.UsageError(
-            "--platform=kube is not compatible with --rebuild/--cleanup/--dumpdb/--infra"
-        )
+    if platform == "kube" and any((rebuild, cleanup, dumpdb)):
+        raise pytest.UsageError("--platform=kube does not support --rebuild/--cleanup/--dumpdb")
     if infra_mode == InfraMode.RESTORE_DB and parallel is not None:
         raise pytest.UsageError("--infra=restore-db is not supported with --parallel")
 
