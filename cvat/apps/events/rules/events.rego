@@ -55,24 +55,20 @@ allow if {
 }
 
 
-filter := [] if {
+base_filter := {} if {
     utils.is_admin
-    utils.is_sandbox
-} else := qobject if {
-    utils.is_admin
-    utils.is_organization
-    qobject := [ {"org_id": input.auth.organization.id} ]
 } else := qobject if {
     utils.is_sandbox
-    qobject := [ {"user_id": input.auth.user.id} ]
-} else := qobject if {
+    qobject := {"user_id": input.auth.user.id}
+} else := {} if {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
-    qobject := [ {"org_id": input.auth.organization.id} ]
 } else := qobject if {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.WORKER)
-    qobject := [ {"user_id": input.auth.user.id}, {"org_id": input.auth.organization.id} ]
+    qobject := {"user_id": input.auth.user.id}
 }
+
+filter := utils.add_organization_filter(base_filter, ["org_id"])

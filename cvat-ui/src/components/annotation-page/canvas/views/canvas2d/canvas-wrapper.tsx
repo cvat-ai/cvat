@@ -135,7 +135,7 @@ interface DispatchToProps {
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
-    onJoinAnnotations(states: ObjectState[], points: number[]): void;
+    onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onExpandObject(objectState: ObjectState): void;
@@ -318,7 +318,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onGroupAnnotations(states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(states));
         },
-        onJoinAnnotations(states: ObjectState[], points: number[]): void {
+        onJoinAnnotations(states: ObjectState[], points: number[][]): void {
             dispatch(joinAnnotationsAsync(states, points));
         },
         onSliceAnnotations(state: ObjectState, results: number[][]): void {
@@ -644,6 +644,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().removeEventListener('canvas.warning', this.onCanvasWarningOccurrence);
         canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
@@ -656,6 +657,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             const { onCanvasErrorOccurred } = this.props;
             onCanvasErrorOccurred(exception);
         }
+    };
+
+    private onCanvasWarningOccurrence = (event: any): void => {
+        const { message, domain } = event.detail;
+        notification.warning({
+            message: domain ? `${domain}` : 'Warning',
+            description: message,
+            duration: 5,
+            className: 'cvat-notification-warning-canvas',
+        });
     };
 
     private onCanvasMessage = (event: CustomEvent<{ messages: CanvasHint[] | null, topic: string }>): void => {
@@ -746,7 +757,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             duration,
             count: states.length,
         });
-        onJoinAnnotations(states, points);
+
+        const pointsArray = points as number[][];
+        onJoinAnnotations(states, pointsArray);
     };
 
     private onCanvasTrackSplitted = (event: any): void => {
@@ -1100,6 +1113,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().addEventListener('canvas.warning', this.onCanvasWarningOccurrence);
         canvasInstance.html().addEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
