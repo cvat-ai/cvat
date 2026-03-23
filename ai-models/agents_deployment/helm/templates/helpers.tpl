@@ -94,3 +94,15 @@ Configure command arguments for cvat-cli
 - name: MODEL_CONFIG_PARAMS
   value: {{ $val | trim | quote }}
 {{- end -}}
+
+{{/*
+Configure function name for agent
+*/}}
+{{- define "agent.functionNameEnv" -}}
+- name: FUNCTION_NAME
+{{- if .Values.agent.function_name }}
+  value: {{ .Values.agent.function_name | quote }}
+{{- else }}
+  value: "MyAgentFunction"
+{{- end }}
+{{- end }}
