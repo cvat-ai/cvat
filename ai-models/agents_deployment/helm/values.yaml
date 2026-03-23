@@ -8,6 +8,8 @@ image:
 
 agent:
   ### Common configuration
+  # Please specify a unique name for your agent's function. Uniqueness is username + function name.
+  function_name: "myfunction"
   # Please specify the number of agent replicas you want to deploy.
   replicaCount: 1
   # Please specify the organization slug in CVAT if you want to deploy agent under organization. Else leave empty.
@@ -35,12 +37,19 @@ agent:
       model_id:
         type: str
         value: "facebook/sam2.1-hiera-tiny"
+    transformers-detr:
+      model:
+        type: str
+        value: "facebook/detr-resnet-50"
+      task:
+        type: str
+        value: "object-detection"
     custom:
       # use modelParamsOverride to specify custom parameters for your model.
 
   # Please pick a preset for your agent's model configuration. The preset will automatically fill in the necessary parameters for the chosen model type. If you choose a preset, you can still override specific parameters in the `modelParamsOverride` section below.
   # Keys with empty 'value' will be ignored.
-  preset: sam2
+  preset: transformers-detr
   modelParamsOverride: { }
 #  modelParamsOverride:
 #      model:
