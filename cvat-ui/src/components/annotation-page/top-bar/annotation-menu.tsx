@@ -180,7 +180,7 @@ function AnnotationMenuComponent(): JSX.Element {
                     type: 'primary',
                     danger: true,
                 },
-                okText: 'Delete',
+                okText: 'Remove',
             });
         },
     }, 30]);
