@@ -1003,7 +1003,7 @@ Cypress.Commands.add('removeAnnotations', () => {
         cy.contains('Remove annotations').click();
     });
     cy.get('.cvat-modal-confirm-remove-annotation').within(() => {
-        cy.contains('button', 'Remove').click();
+        cy.contains('button', 'Delete').click();
     });
 });
 
