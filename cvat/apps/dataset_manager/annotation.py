@@ -833,7 +833,7 @@ class TrackManager(ObjectManager):
                         angle1 = angles[i + 3]
                         angle0 = (angle0 if angle0 >= 0 else angle0 + math.pi * 2) * 180 / math.pi
                         angle1 = (angle1 if angle1 >= 0 else angle1 + math.pi * 2) * 180 / math.pi
-                        angle = angle0 + find_angle_diff(angle1, angle0) * offset * math.pi / 180
+                        angle = (angle0 + find_angle_diff(angle1, angle0) * offset) * math.pi / 180
                         shape["points"][i + 3] = angle if angle <= math.pi else angle - math.pi * 2
 
                 yield shape
