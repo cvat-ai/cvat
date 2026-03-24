@@ -23,11 +23,29 @@ const componentShortcuts: Record<string, KeyMapItem> = {};
 
 const makeKey = (index: number) => `SWITCH_LABEL_${index}`;
 
-for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
-    componentShortcuts[makeKey(index)] = {
+const shortcutSlots: Array<{ slot: number; sequence: string; displayedSequence?: string }> = [
+    { slot: 1, sequence: 'ctrl+1' },
+    { slot: 2, sequence: 'ctrl+2' },
+    { slot: 3, sequence: 'ctrl+3' },
+    { slot: 4, sequence: 'ctrl+4' },
+    { slot: 5, sequence: 'ctrl+5' },
+    { slot: 6, sequence: 'ctrl+6' },
+    { slot: 7, sequence: 'ctrl+7' },
+    { slot: 8, sequence: 'ctrl+8' },
+    { slot: 9, sequence: 'ctrl+9' },
+    { slot: 0, sequence: 'ctrl+0' },
+    { slot: 10, sequence: 'alt+q' },
+    { slot: 11, sequence: 'alt+w' },
+    // On most layouts "~" is Shift+Backquote
+    { slot: 12, sequence: 'ctrl+shift+`', displayedSequence: 'ctrl+~' },
+];
+
+for (const { slot, sequence, displayedSequence } of shortcutSlots) {
+    componentShortcuts[makeKey(slot)] = {
         name: 'Switch label',
         description: 'Change label of a selected object or default label of the next created object if no one object is activated',
-        sequences: [`ctrl+${index}`],
+        sequences: [sequence],
+        ...(displayedSequence ? { displayedSequences: [displayedSequence] } : {}),
         nonActive: true,
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     };
@@ -48,8 +66,8 @@ function LabelsListComponent(): JSX.Element {
     useResetShortcutsOnUnmount(componentShortcuts);
 
     const keyToLabelMapping = Object.fromEntries(
-        labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID]),
-    );
+        labelIDs.slice(0, shortcutSlots.length).map((labelID: number, idx: number) => [shortcutSlots[idx].slot, labelID]),
+    ) as Record<number, number>;
 
     useEffect(() => {
         const updatedComponentShortcuts = JSON.parse(JSON.stringify(componentShortcuts));
@@ -113,11 +131,11 @@ function LabelsListComponent(): JSX.Element {
         }
     };
 
-    const handlers: Record<keyof typeof componentShortcuts, (event: KeyboardEvent, shortcut: string) => void> = {};
+    const handlers: Record<string, (event: KeyboardEvent, shortcut: string) => void> = {};
 
-    for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
-        handlers[makeKey(index)] = (event: KeyboardEvent) => {
-            handleHelper(event, index);
+    for (const { slot } of shortcutSlots) {
+        handlers[makeKey(slot)] = (event: KeyboardEvent) => {
+            handleHelper(event, slot);
         };
     }
 

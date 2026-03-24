@@ -85,6 +85,7 @@
     "webpack-dev-server": "5.2.1"
   },
   "scripts": {
+    "start": "yarn workspace cvat-ui run start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "coverage": "yarn run instrument && yarn run cp && yarn run rm",
     "instrument": "nyc instrument cvat-ui cvat-ui_cov && nyc instrument cvat-canvas cvat-canvas_cov && nyc instrument cvat-canvas3d cvat-canvas3d_cov && nyc instrument cvat-data cvat-data_cov && nyc instrument cvat-core cvat-core_cov",

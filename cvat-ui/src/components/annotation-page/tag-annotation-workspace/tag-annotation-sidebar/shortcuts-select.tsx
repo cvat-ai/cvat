@@ -9,7 +9,6 @@ import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import { Label } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
-import { shift } from 'utils/math';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
@@ -28,11 +27,31 @@ type Props = {
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
-for (const idx of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
-    componentShortcuts[`SETUP_${idx}_TAG`] = {
+const makeKey = (slot: number): string => `SETUP_${slot}_TAG`;
+
+const shortcutSlots: Array<{ slot: number; sequence: string; displayedSequence?: string }> = [
+    { slot: 1, sequence: '1' },
+    { slot: 2, sequence: '2' },
+    { slot: 3, sequence: '3' },
+    { slot: 4, sequence: '4' },
+    { slot: 5, sequence: '5' },
+    { slot: 6, sequence: '6' },
+    { slot: 7, sequence: '7' },
+    { slot: 8, sequence: '8' },
+    { slot: 9, sequence: '9' },
+    { slot: 0, sequence: '0' },
+    { slot: 10, sequence: 'alt+q' },
+    { slot: 11, sequence: 'alt+w' },
+    // On most layouts "~" is Shift+Backquote
+    { slot: 12, sequence: 'ctrl+shift+`', displayedSequence: 'ctrl+~' },
+];
+
+for (const { slot, sequence, displayedSequence } of shortcutSlots) {
+    componentShortcuts[makeKey(slot)] = {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: [`${idx}`],
+        sequences: [sequence],
+        ...(displayedSequence ? { displayedSequences: [displayedSequence] } : {}),
         nonActive: true,
         scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
     };
@@ -51,6 +70,9 @@ const defaultShortcutLabelMap = {
     8: '',
     9: '',
     0: '',
+    10: '',
+    11: '',
+    12: '',
 } as ShortcutLabelMap;
 
 function ShortcutsSelect(props: Props): JSX.Element {
@@ -64,8 +86,8 @@ function ShortcutsSelect(props: Props): JSX.Element {
 
     useEffect(() => {
         const newShortcutLabelMap = { ...shortcutLabelMap };
-        (labels as any[]).slice(0, 10).forEach((label, index) => {
-            newShortcutLabelMap[(index + 1) % 10] = label.id;
+        (labels as any[]).slice(0, shortcutSlots.length).forEach((label, index) => {
+            newShortcutLabelMap[shortcutSlots[index].slot] = label.id;
         });
         setShortcutLabelMap(newShortcutLabelMap);
     }, []);
@@ -84,7 +106,7 @@ function ShortcutsSelect(props: Props): JSX.Element {
         for (const [id, labelID] of Object.entries(shortcutLabelMap)) {
             if (labelID) {
                 const [label] = labels.filter((_label) => _label.id === labelID);
-                const key = `SETUP_${id}_TAG`;
+                const key = makeKey(Number.parseInt(id, 10));
                 updatedComponentShortcuts[key] = {
                     ...updatedComponentShortcuts[key],
                     nonActive: false,
@@ -102,7 +124,7 @@ function ShortcutsSelect(props: Props): JSX.Element {
         .filter((idx: number) => shortcutLabelMap[idx])
         .forEach((idx: number): void => {
             const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[idx]);
-            const key = `SETUP_${idx}_TAG`;
+            const key = makeKey(idx);
             handlers[key] = (event: KeyboardEvent | undefined) => {
                 if (event) {
                     event.preventDefault();
@@ -117,6 +139,17 @@ function ShortcutsSelect(props: Props): JSX.Element {
         setShortcutLabelMap(newShortcutLabelMap);
     };
 
+    const getDisplayedShortcuts = (id: number): string => {
+        const key = makeKey(id);
+        const fromComponent = (componentShortcuts[key] as KeyMapItem & { displayedSequences?: string[] })
+            .displayedSequences;
+        return (fromComponent || keyMap[key].sequences).join(', ');
+    };
+
+    const visibleSlots = shortcutSlots
+        .map(({ slot }) => slot)
+        .slice(0, Math.min(labels.length, shortcutSlots.length));
+
     return (
         <div className='cvat-tag-annotation-label-selects'>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
@@ -125,36 +158,34 @@ function ShortcutsSelect(props: Props): JSX.Element {
                     <Text strong>Shortcuts for labels:</Text>
                 </Col>
             </Row>
-            {shift(Object.keys(shortcutLabelMap), 1)
-                .slice(0, Math.min(labels.length, 10))
-                .map((id) => (
-                    <Row key={id}>
-                        <Col span={24}>
-                            <Text code>
-                                {`Shortcut: ${keyMap[`SETUP_${id}_TAG`].sequences.join(', ')}`}
-                            </Text>
-                        </Col>
-                        <Col>
-                            <Select
-                                value={`${shortcutLabelMap[Number.parseInt(id, 10)]}`}
-                                onChange={(value: string) => {
-                                    onChangeShortcutLabel(value, Number.parseInt(id, 10));
-                                }}
-                                style={{ width: 200 }}
-                                className='cvat-tag-annotation-label-select'
-                            >
-                                <Select.Option value=''>
-                                    <Text type='secondary'>None</Text>
+            {visibleSlots.map((id) => (
+                <Row key={id}>
+                    <Col span={24}>
+                        <Text code>
+                            {`Shortcut: ${getDisplayedShortcuts(id)}`}
+                        </Text>
+                    </Col>
+                    <Col>
+                        <Select
+                            value={`${shortcutLabelMap[id]}`}
+                            onChange={(value: string) => {
+                                onChangeShortcutLabel(value, id);
+                            }}
+                            style={{ width: 200 }}
+                            className='cvat-tag-annotation-label-select'
+                        >
+                            <Select.Option value=''>
+                                <Text type='secondary'>None</Text>
+                            </Select.Option>
+                            {(labels as any[]).map((label: any) => (
+                                <Select.Option key={label.id} value={`${label.id}`}>
+                                    {label.name}
                                 </Select.Option>
-                                {(labels as any[]).map((label: any) => (
-                                    <Select.Option key={label.id} value={`${label.id}`}>
-                                        {label.name}
-                                    </Select.Option>
-                                ))}
-                            </Select>
-                        </Col>
-                    </Row>
-                ))}
+                            ))}
+                        </Select>
+                    </Col>
+                </Row>
+            ))}
         </div>
     );
 }

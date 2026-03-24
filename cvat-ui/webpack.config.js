@@ -11,7 +11,25 @@ const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const ExecScriptsPlugin = require('./exec-scripts-webpack-plugin.cjs');
 
+function normalizeEnv(env) {
+    if (!env) return {};
+    if (Array.isArray(env)) {
+        return env.reduce((acc, item) => ({ ...acc, ...normalizeEnv(item) }), {});
+    }
+    if (typeof env === 'string') {
+        const [key, ...rest] = env.split('=');
+        if (!key) return {};
+        const value = rest.join('=');
+        return value ? { [key]: value } : { [key]: true };
+    }
+    if (typeof env === 'object') {
+        return env;
+    }
+    return {};
+}
+
 module.exports = (env) => {
+    const cliEnv = normalizeEnv(env);
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
     const sourceMapsDisabled = (process.env.DISABLE_SOURCE_MAPS || 'false').toLocaleLowerCase() === 'true';
@@ -45,6 +63,8 @@ module.exports = (env) => {
 
     const host = process.env.CVAT_UI_HOST ?? 'localhost';
     const port = process.env.CVAT_UI_PORT ?? 3000;
+    const apiURL = process.env.API_URL || cliEnv.API_URL;
+    const apiHost = process.env.API_HOST || cliEnv.API_HOST;
     return {
         target: 'web',
         mode: 'production',
@@ -90,10 +110,15 @@ module.exports = (env) => {
                     param.match(
                         /\/api\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
                     ),
-                target: env && env.API_URL,
+                target: apiURL,
                 secure: false,
                 changeOrigin: true,
                 onProxyReq: (proxyReq) => {
+                    // Useful when the upstream is behind a reverse proxy with Host-based routing
+                    // Example: `API_HOST=localhost`
+                    if (apiHost) {
+                        proxyReq.setHeader('Host', apiHost);
+                    }
                     proxyReq.setHeader('X-FORWARDED-HOST', `${host}:${port}`);
                 },
             }],
