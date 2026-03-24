@@ -1,4 +1,5 @@
 files.extend-exclude = [
+    "ai-models/agents_deployment/transformers/supported_models",
     "cvat-ui/src/assets/opencv_4.8.0.js",
     "cvat-data/src/ts/3rdparty/*.js",
     "site/themes/docsy/",
