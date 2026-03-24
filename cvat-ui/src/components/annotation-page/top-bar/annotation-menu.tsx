@@ -126,8 +126,10 @@ function AnnotationMenuComponent(): JSX.Element {
                 title: 'Remove Annotations',
                 content: (
                     <div>
-                        <Text>You are about to remove the annotations. </Text>
-                        <Text>Changes take effect only when you save the job. Continue?</Text>
+                        <Text>You are about to remove all annotations from every frame. </Text>
+                        <Text>If you want to remove them from certain frames only, select a range below.</Text>
+                        <Text>Changes take effect only when you save the job.</Text>
+                        <br />
                         <br />
                         <br />
                         <Collapse
