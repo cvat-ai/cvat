@@ -5,6 +5,7 @@
 import pytest
 from infra import options as infra_options
 from infra.config import (
+    InfraProfile,
     InfraMode,
     RuntimeInfraConfig,
 )
@@ -22,6 +23,12 @@ pytest_plugins = [
 
 def pytest_configure(config) -> None:
     RuntimeInfraConfig.initialize(config)
+    for profile in RuntimeInfraConfig.get_infra_profiles():
+        marker_name = RuntimeInfraConfig.get_required_marker_name(profile)
+        config.addinivalue_line(
+            "markers",
+            f"{marker_name}: Auto-assigned marker for tests requiring {profile} profile.",
+        )
 
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.configure(config)
@@ -123,9 +130,20 @@ def pytest_sessionfinish(session, exitstatus: int) -> None:
         instance.finish()
 
 
+@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items) -> None:
+    _assign_required_infra_markers(items)
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.collection_modifyitems(config, items)
+
+
+def _assign_required_infra_markers(items) -> None:
+    for item in items:
+        marker = item.get_closest_marker("infra_profile")
+        required = marker.args[0] if marker and marker.args else str(InfraProfile.CORE)
+        required = str(RuntimeInfraConfig.parse_infra_profile(required))
+        item.add_marker(pytest.mark.infra_profile(required))
+        item.add_marker(getattr(pytest.mark, RuntimeInfraConfig.get_required_marker_name(required)))
 
 
 def _selected_runtime_class(config):

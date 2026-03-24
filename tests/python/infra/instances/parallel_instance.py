@@ -18,12 +18,11 @@ from time import sleep
 import pytest
 from _pytest.reports import TestReport
 
-from infra.config import InfraMode, RuntimeInfraConfig
+from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.parsing import parse_debug_services
 from infra.system_utils import pick_free_port
 
-PROFILE_ORDER = {"core": 0, "extended": 1, "full": 2}
 _MIN_BATCH_SIZE = 100
 _MAX_BATCH_SIZE = 200
 logger = logging.getLogger(__name__)
@@ -54,7 +53,12 @@ def add_parallel_pytest_options(group) -> None:
     group._addoption(
         "--parallel-batch-file", action="store", default="", help=argparse.SUPPRESS
     )
-    group._addoption("--parallel-lane-profile", action="store", default="full", help=argparse.SUPPRESS)
+    group._addoption(
+        "--parallel-lane-profile",
+        action="store",
+        default=str(InfraProfile.FULL),
+        help=argparse.SUPPRESS,
+    )
     group._addoption("--parallel-events-file", action="store", default="", help=argparse.SUPPRESS)
 
 
@@ -67,7 +71,7 @@ def parse_parallel_count(value: int | None) -> int:
 
 
 def lane_supports(required: str, lane_profile: str) -> bool:
-    return PROFILE_ORDER[lane_profile] >= PROFILE_ORDER[required]
+    return RuntimeInfraConfig.profile_supports(required, lane_profile)
 
 
 class ParallelInstance(InfraInstance):
@@ -211,13 +215,9 @@ def _required_infra_profile(item) -> str:
     explicit_marker = item.get_closest_marker("infra_profile")
     if explicit_marker:
         if explicit_marker.args:
-            return explicit_marker.args[0]
-        return "core"
-    return "core"
-
-
-def _lane_supports(required: str, lane_profile: str) -> bool:
-    return PROFILE_ORDER[lane_profile] >= PROFILE_ORDER[required]
+            return str(RuntimeInfraConfig.parse_infra_profile(explicit_marker.args[0]))
+        return str(InfraProfile.CORE)
+    return str(InfraProfile.CORE)
 
 
 def _default_lane_profiles_for_count(parallel_count: int) -> list[str]:
@@ -226,8 +226,8 @@ def _default_lane_profiles_for_count(parallel_count: int) -> list[str]:
     if parallel_count <= 0:
         return []
     if parallel_count == 1:
-        return ["full"]
-    return ["full"] + ["core"] * (parallel_count - 1)
+        return [str(InfraProfile.FULL)]
+    return [str(InfraProfile.FULL)] + [str(InfraProfile.CORE)] * (parallel_count - 1)
 
 
 def _lane_artifacts_dir(base_dir: Path, lane_idx: int, profile: str) -> Path:
@@ -274,18 +274,14 @@ def _planned_lane_profiles(items, parallel_count: int) -> list[str]:
     if parallel_count <= 0:
         return []
 
-    required_counts = {"core": 0, "extended": 0, "full": 0}
+    required_counts = {profile: 0 for profile in RuntimeInfraConfig.get_infra_profiles()}
     for item in items:
         required = _required_infra_profile(item)
-        if required not in required_counts:
-            raise pytest.UsageError(
-                f"Unknown infra profile '{required}' in marker for test '{item.nodeid}'"
-            )
         required_counts[required] += 1
 
-    core_count = required_counts["core"]
-    extended_count = required_counts["extended"]
-    full_count = required_counts["full"]
+    core_count = required_counts[str(InfraProfile.CORE)]
+    extended_count = required_counts[str(InfraProfile.EXTENDED)]
+    full_count = required_counts[str(InfraProfile.FULL)]
     total_count = core_count + extended_count + full_count
 
     best: tuple[float, int, int, int] | None = None
@@ -328,7 +324,11 @@ def _planned_lane_profiles(items, parallel_count: int) -> list[str]:
         return _default_lane_profiles_for_count(parallel_count)
 
     _, full_lanes, extended_lanes, core_lanes = best
-    return ["full"] * full_lanes + ["extended"] * extended_lanes + ["core"] * core_lanes
+    return (
+        [str(InfraProfile.FULL)] * full_lanes
+        + [str(InfraProfile.EXTENDED)] * extended_lanes
+        + [str(InfraProfile.CORE)] * core_lanes
+    )
 
 
 def _parallel_group_key(item) -> str:
@@ -378,12 +378,16 @@ def _build_dynamic_groups(
         group_key = _parallel_group_key(item)
         grouped_items[(group_key, required)].append(item.nodeid)
 
-    grouped_by_required: dict[str, list[tuple[str, str]]] = {k: [] for k in PROFILE_ORDER}
+    grouped_by_required: dict[str, list[tuple[str, str]]] = {
+        profile: [] for profile in RuntimeInfraConfig.get_infra_profiles()
+    }
     for grouped_key in grouped_items:
         grouped_by_required[grouped_key[1]].append(grouped_key)
 
-    result: dict[str, deque[list[str]]] = {k: deque() for k in PROFILE_ORDER}
-    required_order = ("full", "extended", "core")
+    result: dict[str, deque[list[str]]] = {
+        profile: deque() for profile in RuntimeInfraConfig.get_infra_profiles()
+    }
+    required_order = RuntimeInfraConfig.get_infra_profiles_desc()
     for required in required_order:
         ordered_groups = sorted(
             grouped_by_required[required],
@@ -450,10 +454,6 @@ def modify_collection_for_parallel(config, items) -> None:
 
     for item in items:
         required = _required_infra_profile(item)
-        if required not in PROFILE_ORDER:
-            raise pytest.UsageError(
-                f"Unknown infra profile '{required}' in marker for test '{item.nodeid}'"
-            )
         required_by_nodeid[item.nodeid] = required
 
     if is_parallel_child and batch_file:
@@ -469,7 +469,6 @@ def modify_collection_for_parallel(config, items) -> None:
         for item in items:
             required = required_by_nodeid[item.nodeid]
             item.add_marker(pytest.mark.infra_profile(required))
-            item.add_marker(getattr(pytest.mark, f"infra_required_{required}"))
             if item.nodeid in allowed_nodeids:
                 selected.append(item)
             else:
@@ -495,7 +494,6 @@ def modify_collection_for_parallel(config, items) -> None:
     for item in items:
         required = required_by_nodeid[item.nodeid]
         item.add_marker(pytest.mark.infra_profile(required))
-        item.add_marker(getattr(pytest.mark, f"infra_required_{required}"))
         selected.append(item)
 
     if deselected:
@@ -686,21 +684,25 @@ def run_parallel_lanes(
         lane_idx: set() for lane_idx in lane_event_paths
     }
     required_remaining = {
-        required: sum(len(group) for group in grouped_queues[required]) for required in PROFILE_ORDER
+        required: sum(len(group) for group in grouped_queues[required])
+        for required in RuntimeInfraConfig.get_infra_profiles()
     }
     required_total = dict(required_remaining)
     eligible_lanes_total = {
         required: sum(1 for lane_profile in profiles if lane_supports(required, lane_profile))
-        for required in PROFILE_ORDER
+        for required in RuntimeInfraConfig.get_infra_profiles()
     }
     core_only_uniform_mode = (
-        required_total["core"] > 0
-        and required_total["extended"] == 0
-        and required_total["full"] == 0
-        and all(profile == "core" for profile in profiles)
+        required_total[str(InfraProfile.CORE)] > 0
+        and required_total[str(InfraProfile.EXTENDED)] == 0
+        and required_total[str(InfraProfile.FULL)] == 0
+        and all(profile == str(InfraProfile.CORE) for profile in profiles)
     )
     core_uniform_target = (
-        math.ceil(required_total["core"] / max(1, eligible_lanes_total["core"]))
+        math.ceil(
+            required_total[str(InfraProfile.CORE)]
+            / max(1, eligible_lanes_total[str(InfraProfile.CORE)])
+        )
         if core_only_uniform_mode
         else 0
     )
@@ -760,11 +762,15 @@ def run_parallel_lanes(
                 config.hook.pytest_runtest_logfinish(nodeid=event["nodeid"], location=location)
 
     def next_required_order(lane_profile: str) -> tuple[str, ...]:
-        if lane_profile == "full":
-            return ("full", "extended", "core")
-        if lane_profile == "extended":
-            return ("extended", "core")
-        return ("core",)
+        if lane_profile == str(InfraProfile.FULL):
+            return (
+                str(InfraProfile.FULL),
+                str(InfraProfile.EXTENDED),
+                str(InfraProfile.CORE),
+            )
+        if lane_profile == str(InfraProfile.EXTENDED):
+            return (str(InfraProfile.EXTENDED), str(InfraProfile.CORE))
+        return (str(InfraProfile.CORE),)
 
     def _active_eligible_lanes(required: str) -> int:
         return max(
@@ -781,7 +787,7 @@ def run_parallel_lanes(
         if remaining <= 0:
             return 0
 
-        if core_only_uniform_mode and required == "core":
+        if core_only_uniform_mode and required == str(InfraProfile.CORE):
             return max(1, core_uniform_target)
 
         total_eligible = eligible_lanes_total[required]
@@ -813,12 +819,12 @@ def run_parallel_lanes(
         return {
             required: sum(
                 1
-                for idx, lane_profile in enumerate(profiles, start=1)
-                if active_procs[idx] is None
-                and lane_done_at[idx] is None
-                and lane_supports(required, lane_profile)
-            )
-            for required in PROFILE_ORDER
+            for idx, lane_profile in enumerate(profiles, start=1)
+            if active_procs[idx] is None
+            and lane_done_at[idx] is None
+            and lane_supports(required, lane_profile)
+        )
+            for required in RuntimeInfraConfig.get_infra_profiles()
         }
 
     def claim_chunk(
@@ -907,7 +913,9 @@ def run_parallel_lanes(
                         lane_active_mode[lane_idx] = None
                         active_procs[lane_idx] = None
 
-            has_pending_chunks = any(grouped_queues[required] for required in PROFILE_ORDER)
+            has_pending_chunks = any(
+                grouped_queues[required] for required in RuntimeInfraConfig.get_infra_profiles()
+            )
             dispatch_slots = _dispatch_slots()
             for (
                 project_name,

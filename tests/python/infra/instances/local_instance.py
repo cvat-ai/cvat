@@ -12,6 +12,7 @@ import yaml
 
 import pytest
 from infra.config import (
+    InfraProfile,
     InfraMode,
     RuntimeInfraConfig,
 )
@@ -265,25 +266,8 @@ def local_exec(container, command, capture_output=True):
     )[0]
 
 
-def local_exec_cvat(command: list[str] | str):
-    base = f"docker exec {RuntimeInfraConfig.get_prefixed_container_name('cvat_server')}"
-    _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
-    return run_command(_command, logger=logger)[0]
-
-
-def local_exec_redis_inmem(command):
-    return run_command(
-        ["docker", "exec", RuntimeInfraConfig.get_prefixed_container_name("cvat_redis_inmem")]
-        + command,
-        logger=logger,
-    )[0]
-
-
-def _run_local_command(command, capture=True):
-    return run_command(command, capture_output=capture, logger=logger)
-
 def running_containers() -> list[str]:
-    stdout, _ = _run_local_command("docker ps --format {{.Names}}")
+    stdout, _ = run_command("docker ps --format {{.Names}}", logger=logger)
     return [cn for cn in stdout.split("\n") if cn]
 
 
@@ -298,12 +282,16 @@ def project_containers_running(project_name: str) -> bool:
 
 
 def _profile_required_services(profile: str) -> set[str]:
-    # Containers that distinguish core vs extended/full capabilities.
-    if profile == "core":
+    try:
+        normalized = str(RuntimeInfraConfig.parse_infra_profile(profile))
+    except pytest.UsageError:
         return set()
-    if profile == "extended":
+    # Containers that distinguish core vs extended/full capabilities.
+    if normalized == str(InfraProfile.CORE):
+        return set()
+    if normalized == str(InfraProfile.EXTENDED):
         return {"cvat_clickhouse", "minio", "webhook_receiver"}
-    if profile == "full":
+    if normalized == str(InfraProfile.FULL):
         return {"cvat_clickhouse", "minio", "webhook_receiver", "cvat_ui", "cvat_grafana", "cvat_vector"}
     return set()
 
@@ -354,7 +342,7 @@ def dump_db(*, prefixed_container_name, cvat_db_dir: Path) -> None:
 
 def project_host_ports(project_name: str) -> set[int]:
     ports: set[int] = set()
-    output, _ = _run_local_command(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"])
+    output, _ = run_command(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"], logger=logger)
     for line in output.splitlines():
         if not line.startswith(f"{project_name}_"):
             continue
@@ -365,7 +353,7 @@ def project_host_ports(project_name: str) -> set[int]:
 
 def project_service_port_map(project_name: str) -> dict[str, dict[int, int]]:
     service_ports: dict[str, dict[int, int]] = {}
-    output, _ = _run_local_command(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"])
+    output, _ = run_command(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"], logger=logger)
     for line in output.splitlines():
         if not line.startswith(f"{project_name}_"):
             continue
@@ -474,9 +462,10 @@ def start_services(
             f"List of running containers: {', '.join(running_containers())}"
         )
 
-    _run_local_command(
+    run_command(
         docker_compose(project_name, dc_files, project_directory) + ["up", "-d", *["--build"] * rebuild],
-        False,
+        capture_output=False,
+        logger=logger,
     )
 
 
@@ -486,9 +475,10 @@ def rebuild_services(
     dc_files: list[Path],
     project_directory: Path,
 ) -> None:
-    _run_local_command(
+    run_command(
         docker_compose(project_name, dc_files, project_directory) + ["build"],
-        False,
+        capture_output=False,
+        logger=logger,
     )
 
 
@@ -498,22 +488,24 @@ def stop_services(
     dc_files: list[Path],
     project_directory: Path,
 ) -> None:
-    _run_local_command(
+    run_command(
         docker_compose(project_name, dc_files, project_directory) + ["down", "-v", "--remove-orphans"],
-        False,
+        capture_output=False,
+        logger=logger,
     )
-    container_ids, _ = _run_local_command(
+    container_ids, _ = run_command(
         [
             "docker",
             "ps",
             "-aq",
             "--filter",
             f"label=com.docker.compose.project={project_name}",
-        ]
+        ],
+        logger=logger,
     )
     stale_ids = [container_id for container_id in container_ids.splitlines() if container_id]
     if stale_ids:
-        _run_local_command(["docker", "rm", "-f", *stale_ids], False)
+        run_command(["docker", "rm", "-f", *stale_ids], capture_output=False, logger=logger)
 
 
 def _create_compose_files(
@@ -692,8 +684,6 @@ def cleanup_after_session(
 
 class LocalInstance(InfraInstance):
     plugin_class: type[InfraPlugin]
-    exec_cvat = staticmethod(local_exec_cvat)
-    exec_redis_inmem = staticmethod(local_exec_redis_inmem)
 
     def __init__(self, session, deps):
         super().__init__(session, deps)
@@ -703,6 +693,19 @@ class LocalInstance(InfraInstance):
     @classmethod
     def can_handle_config(cls, config) -> bool:
         return config.getoption("--platform") == "local"
+
+    def exec_cvat(self, command: list[str] | str):
+        base = f"docker exec {RuntimeInfraConfig.get_prefixed_container_name('cvat_server')}"
+        docker_command = f"{base} {command}" if isinstance(command, str) else base.split() + command
+        return run_command(docker_command, logger=logger)[0]
+
+    def exec_redis_inmem(self, command: list[str] | str):
+        redis_command = ["sh", "-c", command] if isinstance(command, str) else command
+        return run_command(
+            ["docker", "exec", RuntimeInfraConfig.get_prefixed_container_name("cvat_redis_inmem")]
+            + redis_command,
+            logger=logger,
+        )[0]
 
     def _close_db_restorer(self) -> None:
         if self._db_restorer is None:

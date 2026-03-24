@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import hashlib
+import json
 import logging
 import os
 import re
@@ -19,12 +21,13 @@ from infra.system_utils import kubectl_cp, pick_free_port, run_command
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_KUBE_PROFILE = "minikube"
+_DEFAULT_KUBE_PROFILE = "kind"
 _DEFAULT_KUBE_NAMESPACE = "default"
 _DEFAULT_KUBE_SERVER_IMAGE = "cvat/server"
 _DEFAULT_KUBE_FRONTEND_IMAGE = "cvat/ui"
 _DEFAULT_KUBE_IMAGE_TAG = os.environ.get("CVAT_VERSION", "dev")
 _KUBE_SERVER_CONTAINER = "cvat-backend"
+_KUBE_FINGERPRINT_VERSION = 1
 
 
 def _normalize_release_name(value: str) -> str:
@@ -48,6 +51,10 @@ def _kube_profile() -> str:
     return os.environ.get("CVAT_TEST_KUBE_PROFILE", _DEFAULT_KUBE_PROFILE)
 
 
+def _kube_context() -> str:
+    return f"kind-{_kube_profile()}"
+
+
 def _kube_namespace() -> str:
     return os.environ.get("CVAT_TEST_KUBE_NAMESPACE", _DEFAULT_KUBE_NAMESPACE)
 
@@ -66,6 +73,64 @@ def _kube_frontend_image() -> str:
 
 def _kube_image_tag() -> str:
     return os.environ.get("CVAT_TEST_KUBE_IMAGE_TAG", _DEFAULT_KUBE_IMAGE_TAG)
+
+
+def _sha256_file(path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _docker_image_id(image_ref: str) -> str:
+    try:
+        return run_command(
+            ["docker", "image", "inspect", "--format", "{{.Id}}", image_ref],
+            logger=logger,
+        )[0].strip()
+    except Exception:
+        # If image metadata is unavailable, keep fingerprint stable but force reconcile
+        # once any other meaningful field changes.
+        return ""
+
+
+def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
+    chart_dir = cvat_root_dir / "helm-chart"
+    cvat_values = chart_dir / "cvat.values.yaml"
+    test_values = chart_dir / "test.values.yaml"
+    chart_yaml = chart_dir / "Chart.yaml"
+    chart_lock = chart_dir / "Chart.lock"
+    server_image_ref = f"{_kube_server_image()}:{_kube_image_tag()}"
+    frontend_image_ref = f"{_kube_frontend_image()}:{_kube_image_tag()}"
+    return {
+        "version": _KUBE_FINGERPRINT_VERSION,
+        "profile": _kube_profile(),
+        "namespace": _kube_namespace(),
+        "release": _kube_release(),
+        "server_image": _kube_server_image(),
+        "frontend_image": _kube_frontend_image(),
+        "image_tag": _kube_image_tag(),
+        "server_image_id": _docker_image_id(server_image_ref),
+        "frontend_image_id": _docker_image_id(frontend_image_ref),
+        "cpus": cpus,
+        "memory": memory,
+        "chart": {
+            "cvat.values.yaml": _sha256_file(cvat_values) if cvat_values.exists() else "",
+            "test.values.yaml": _sha256_file(test_values) if test_values.exists() else "",
+            "Chart.yaml": _sha256_file(chart_yaml) if chart_yaml.exists() else "",
+            "Chart.lock": _sha256_file(chart_lock) if chart_lock.exists() else "",
+        },
+    }
+
+
+def _fingerprints_equal(lhs: dict | None, rhs: dict) -> bool:
+    if not lhs:
+        return False
+    return json.dumps(lhs, sort_keys=True) == json.dumps(rhs, sort_keys=True)
 
 
 def _configure_kube_runtime_env(*, project_name: str, base_url: str, minio_endpoint_url: str) -> None:
@@ -118,12 +183,12 @@ def preconfigure_kube_runtime_env(config) -> None:
 
 
 def _kubectl(command: list[str], *, capture_output: bool = True) -> tuple[str, str]:
-    cmd = ["kubectl", "--namespace", _kube_namespace(), *command]
+    cmd = ["kubectl", "--context", _kube_context(), "--namespace", _kube_namespace(), *command]
     return run_command(cmd, capture_output=capture_output, logger=logger)
 
 
 def _kubectl_root(command: list[str], *, capture_output: bool = True) -> tuple[str, str]:
-    cmd = ["kubectl", *command]
+    cmd = ["kubectl", "--context", _kube_context(), *command]
     return run_command(cmd, capture_output=capture_output, logger=logger)
 
 
@@ -169,68 +234,67 @@ def kube_get_redis_ondisk_pod_name() -> str:
     return kube_get_pod_name(_label_selector("app.kubernetes.io/name=cvat,tier=kvrocks"))
 
 
-def kube_exec_cvat(command: list[str] | str):
-    pod_name = kube_get_server_pod_name()
-    base = [
-        "kubectl",
-        "--namespace",
-        _kube_namespace(),
-        "exec",
-        pod_name,
-        "-c",
-        _KUBE_SERVER_CONTAINER,
-        "--",
-    ]
-    cmd = base + ["sh", "-c", command] if isinstance(command, str) else base + command
-    return run_command(cmd, logger=logger)[0]
+def _kind_cluster_exists(profile: str) -> bool:
+    names = run_command(["kind", "get", "clusters"], logger=logger)[0].splitlines()
+    return profile in {name.strip() for name in names if name.strip()}
 
 
-def kube_exec_redis_inmem(command: list[str] | str):
-    pod_name = kube_get_redis_inmem_pod_name()
-    redis_command = ["sh", "-c", command] if isinstance(command, str) else command
-    return run_command(
-        ["kubectl", "--namespace", _kube_namespace(), "exec", pod_name, "--", *redis_command],
-        logger=logger,
-    )[0]
+def _kind_cluster_nodes(profile: str) -> list[str]:
+    nodes = run_command(["kind", "get", "nodes", "--name", profile], logger=logger)[0].splitlines()
+    return [node.strip() for node in nodes if node.strip()]
 
 
-def _minikube_running(profile: str) -> bool:
-    try:
-        host_status = run_command(
-            ["minikube", "-p", profile, "status", "--format", "{{.Host}}"],
+def _use_kind_context(profile: str) -> None:
+    run_command(["kubectl", "config", "use-context", f"kind-{profile}"], capture_output=False, logger=logger)
+
+
+def _apply_kind_resource_limits(*, profile: str, cpus: str, memory: str) -> None:
+    if not cpus and not memory:
+        return
+
+    for node in _kind_cluster_nodes(profile):
+        cmd = ["docker", "update"]
+        if cpus:
+            cmd += ["--cpus", cpus]
+        if memory:
+            cmd += ["--memory", memory, "--memory-swap", memory]
+        cmd += [node]
+        run_command(cmd, capture_output=False, logger=logger)
+
+
+def _start_kind(*, profile: str, cpus: str, memory: str) -> bool:
+    created = False
+    if not _kind_cluster_exists(profile):
+        created = True
+        run_command(
+            ["kind", "create", "cluster", "--name", profile, "--wait", "120s"],
+            capture_output=False,
             logger=logger,
-        )[0].strip()
-    except Exception:
-        return False
-    return host_status.lower() == "running"
+        )
+    _use_kind_context(profile)
+    _apply_kind_resource_limits(profile=profile, cpus=cpus, memory=memory)
+    return created
 
 
-def _start_minikube(*, profile: str, cpus: str, memory: str, driver: str) -> None:
-    if _minikube_running(profile):
+def _stop_kind(profile: str) -> None:
+    if not _kind_cluster_exists(profile):
         return
-
-    cmd = ["minikube", "start", "-p", profile]
-    if cpus:
-        cmd += ["--cpus", cpus]
-    if memory:
-        cmd += ["--memory", memory]
-    if driver:
-        cmd += ["--driver", driver]
-
-    run_command(cmd, capture_output=False, logger=logger)
+    run_command(["kind", "delete", "cluster", "--name", profile], capture_output=False, logger=logger)
 
 
-def _stop_minikube(profile: str) -> None:
-    if not _minikube_running(profile):
-        return
-    run_command(["minikube", "stop", "-p", profile], capture_output=False, logger=logger)
-
-
-def _load_images_into_minikube(profile: str) -> None:
+def _load_images_into_kind(profile: str) -> None:
     backend_ref = f"{_kube_server_image()}:{_kube_image_tag()}"
     frontend_ref = f"{_kube_frontend_image()}:{_kube_image_tag()}"
-    run_command(["minikube", "image", "load", backend_ref, "-p", profile], capture_output=False, logger=logger)
-    run_command(["minikube", "image", "load", frontend_ref, "-p", profile], capture_output=False, logger=logger)
+    run_command(
+        ["kind", "load", "docker-image", backend_ref, "--name", profile],
+        capture_output=False,
+        logger=logger,
+    )
+    run_command(
+        ["kind", "load", "docker-image", frontend_ref, "--name", profile],
+        capture_output=False,
+        logger=logger,
+    )
 
 
 def _helm_release_exists(*, release: str, namespace: str) -> bool:
@@ -356,36 +420,8 @@ def _kube_service_exists(service_name: str) -> bool:
         return False
 
 
-def _copy_file_share() -> None:
-    mounted_dir = RuntimeInfraConfig.get_cvat_root_dir() / "tests/mounted_file_share"
-    if not mounted_dir.exists():
-        return
-
-    server_pod = kube_get_server_pod_name()
-    kubectl_cp(
-        mounted_dir,
-        f"{server_pod}:/home/django/share/",
-        namespace=_kube_namespace(),
-        container=_KUBE_SERVER_CONTAINER,
-        logger=logger,
-    )
-    kube_exec_cvat(
-        [
-            "bash",
-            "-lc",
-            "if [ -d /home/django/share/mounted_file_share ]; then "
-            "find /home/django/share/mounted_file_share -mindepth 1 -maxdepth 1 "
-            "-exec mv {} /home/django/share/ \\; ; "
-            "rm -rf /home/django/share/mounted_file_share; "
-            "fi",
-        ]
-    )
-
-
 class KubeInstance(InfraInstance):
     plugin_class: type[InfraPlugin]
-    exec_cvat = staticmethod(kube_exec_cvat)
-    exec_redis_inmem = staticmethod(kube_exec_redis_inmem)
 
     def __init__(self, session, deps):
         super().__init__(session, deps)
@@ -410,7 +446,49 @@ class KubeInstance(InfraInstance):
     def can_handle(cls, session, deps) -> bool:
         return cls.can_handle_config(session.config)
 
-    def _persist_runtime_state(self, *, project_name: str, base_url: str, minio_endpoint_url: str) -> None:
+    def exec_cvat(self, command: list[str] | str):
+        pod_name = kube_get_server_pod_name()
+        base = [
+            "kubectl",
+            "--context",
+            _kube_context(),
+            "--namespace",
+            _kube_namespace(),
+            "exec",
+            pod_name,
+            "-c",
+            _KUBE_SERVER_CONTAINER,
+            "--",
+        ]
+        cmd = base + ["sh", "-c", command] if isinstance(command, str) else base + command
+        return run_command(cmd, logger=logger)[0]
+
+    def exec_redis_inmem(self, command: list[str] | str):
+        pod_name = kube_get_redis_inmem_pod_name()
+        redis_command = ["sh", "-c", command] if isinstance(command, str) else command
+        return run_command(
+            [
+                "kubectl",
+                "--context",
+                _kube_context(),
+                "--namespace",
+                _kube_namespace(),
+                "exec",
+                pod_name,
+                "--",
+                *redis_command,
+            ],
+            logger=logger,
+        )[0]
+
+    def _persist_runtime_state(
+        self,
+        *,
+        project_name: str,
+        base_url: str,
+        minio_endpoint_url: str,
+        kube_fingerprint: dict | None = None,
+    ) -> None:
         project_cfg = RuntimeInfraConfig.get_project_config(project_name)
         state = project_cfg.load_state() or {}
         state.update(
@@ -423,24 +501,96 @@ class KubeInstance(InfraInstance):
                 "minio_endpoint_url": minio_endpoint_url,
             }
         )
+        if kube_fingerprint is not None:
+            state["kube_fingerprint"] = kube_fingerprint
         project_cfg.save_state(state)
 
-    def _ensure_kube_stack(self) -> None:
+    def _is_kube_stack_ready(self) -> bool:
+        try:
+            _wait_for_kube_ready(timeout_s=min(self.deps.waiting_time, 45))
+            return True
+        except Exception:
+            return False
+
+    def _ensure_kube_stack(self, *, run_prefix: str) -> dict:
         profile = _kube_profile()
-        _start_minikube(
+        cpus = str(self.config.getoption("--kube-cpus") or "").strip()
+        memory = str(self.config.getoption("--kube-memory") or "").strip()
+        created = _start_kind(
             profile=profile,
-            cpus=str(self.config.getoption("--kube-cpus") or "").strip(),
-            memory=str(self.config.getoption("--kube-memory") or "").strip(),
-            driver=str(self.config.getoption("--kube-driver") or "").strip(),
+            cpus=cpus,
+            memory=memory,
         )
-        _load_images_into_minikube(profile)
+
+        project_cfg = RuntimeInfraConfig.get_project_config(run_prefix)
+        state = project_cfg.load_state() or {}
+        current_fingerprint = _build_kube_fingerprint(
+            cvat_root_dir=self.deps.cvat_root_dir,
+            cpus=cpus,
+            memory=memory,
+        )
+        saved_fingerprint = state.get("kube_fingerprint")
+
+        release_exists = _helm_release_exists(
+            release=_kube_release(), namespace=_kube_namespace()
+        )
+        fingerprint_matches = _fingerprints_equal(saved_fingerprint, current_fingerprint)
+        if (
+            not created
+            and release_exists
+            and fingerprint_matches
+            and self._is_kube_stack_ready()
+        ):
+            logger.info(
+                "Reusing healthy kind/helm stack for run-prefix '%s' (fingerprint matched)",
+                run_prefix,
+            )
+            self._copy_file_share()
+            return current_fingerprint
+
+        logger.info(
+            "Reconciling kind/helm stack for run-prefix '%s' "
+            "(created=%s, release_exists=%s, fingerprint_match=%s)",
+            run_prefix,
+            created,
+            release_exists,
+            fingerprint_matches,
+        )
+        _load_images_into_kind(profile)
         _helm_upgrade_install(
             cvat_root_dir=self.deps.cvat_root_dir,
             release=_kube_release(),
             namespace=_kube_namespace(),
         )
         _wait_for_kube_ready(timeout_s=self.deps.waiting_time)
-        _copy_file_share()
+        self._copy_file_share()
+        return current_fingerprint
+
+    def _copy_file_share(self) -> None:
+        mounted_dir = RuntimeInfraConfig.get_cvat_root_dir() / "tests/mounted_file_share"
+        if not mounted_dir.exists():
+            return
+
+        server_pod = kube_get_server_pod_name()
+        kubectl_cp(
+            mounted_dir,
+            f"{server_pod}:/home/django/share/",
+            context=_kube_context(),
+            namespace=_kube_namespace(),
+            container=_KUBE_SERVER_CONTAINER,
+            logger=logger,
+        )
+        self.exec_cvat(
+            [
+                "bash",
+                "-lc",
+                "if [ -d /home/django/share/mounted_file_share ]; then "
+                "find /home/django/share/mounted_file_share -mindepth 1 -maxdepth 1 "
+                "-exec mv {} /home/django/share/ \\; ; "
+                "rm -rf /home/django/share/mounted_file_share; "
+                "fi",
+            ]
+        )
 
     def _start_service_port_forward(
         self,
@@ -461,6 +611,8 @@ class KubeInstance(InfraInstance):
         process = Popen(  # nosec
             [
                 "kubectl",
+                "--context",
+                _kube_context(),
                 "--namespace",
                 _kube_namespace(),
                 "port-forward",
@@ -489,14 +641,16 @@ class KubeInstance(InfraInstance):
         setattr(self, port_attr, local_port)
         return local_port
 
-    def _start_runtime_port_forwards(self, *, project_name: str) -> None:
+    def _start_runtime_port_forwards(
+        self, *, project_name: str, kube_fingerprint: dict | None = None
+    ) -> None:
         api_service = f"{_kube_release()}-backend-service"
         if not _kube_service_exists(api_service):
             raise RuntimeError(
                 f"Expected service '{api_service}' was not found in namespace '{_kube_namespace()}'"
             )
 
-        # On local minikube + docker driver, nodePort/IP is often unreachable from host.
+        # On local Docker-backed clusters, nodePort/IP is often unreachable from host.
         # Prefer port-forward for deterministic connectivity across environments.
         api_port = self._start_service_port_forward(
             service_name=api_service,
@@ -535,6 +689,7 @@ class KubeInstance(InfraInstance):
             project_name=project_name,
             base_url=base_url,
             minio_endpoint_url=minio_url,
+            kube_fingerprint=kube_fingerprint,
         )
 
     def _restore_from_assets(self) -> None:
@@ -545,6 +700,7 @@ class KubeInstance(InfraInstance):
         kubectl_cp(
             self.deps.cvat_db_dir / "data.json",
             f"{server_pod_name}:/tmp/data.json",
+            context=_kube_context(),
             namespace=_kube_namespace(),
             container=_KUBE_SERVER_CONTAINER,
             logger=logger,
@@ -569,21 +725,24 @@ class KubeInstance(InfraInstance):
             self._close_redis_restorer()
             self._close_runtime_port_forwards()
             _helm_uninstall(release=_kube_release(), namespace=_kube_namespace())
-            _stop_minikube(_kube_profile())
+            _stop_kind(_kube_profile())
             RuntimeInfraConfig.get_project_config(run_prefix).delete_state()
             pytest.exit("Kubernetes test infrastructure has been stopped", returncode=0)
 
-        self._ensure_kube_stack()
+        kube_fingerprint = self._ensure_kube_stack(run_prefix=run_prefix)
 
         if infra_mode == InfraMode.UP:
             self._persist_runtime_state(
                 project_name=run_prefix,
                 base_url="http://localhost:8080",
                 minio_endpoint_url="http://localhost:9000",
+                kube_fingerprint=kube_fingerprint,
             )
             pytest.exit("Kubernetes test infrastructure is ready", returncode=0)
 
-        self._start_runtime_port_forwards(project_name=run_prefix)
+        self._start_runtime_port_forwards(
+            project_name=run_prefix, kube_fingerprint=kube_fingerprint
+        )
 
         if infra_mode in {InfraMode.AUTO, InfraMode.RESTORE_DB}:
             self._restore_from_assets()
@@ -606,6 +765,7 @@ class KubeInstance(InfraInstance):
         kubectl_cp(
             self.deps.cvat_db_dir / "cvat_data.tar.bz2",
             f"{pod_name}:/tmp/cvat_data.tar.bz2",
+            context=_kube_context(),
             namespace=_kube_namespace(),
             container=_KUBE_SERVER_CONTAINER,
             logger=logger,
@@ -667,6 +827,8 @@ class KubeInstance(InfraInstance):
         self._db_port_forward_proc = Popen(  # nosec
             [
                 "kubectl",
+                "--context",
+                _kube_context(),
                 "--namespace",
                 _kube_namespace(),
                 "port-forward",
@@ -692,6 +854,8 @@ class KubeInstance(InfraInstance):
         self._redis_inmem_port_forward_proc = Popen(  # nosec
             [
                 "kubectl",
+                "--context",
+                _kube_context(),
                 "--namespace",
                 _kube_namespace(),
                 "port-forward",
@@ -716,6 +880,8 @@ class KubeInstance(InfraInstance):
         self._redis_ondisk_port_forward_proc = Popen(  # nosec
             [
                 "kubectl",
+                "--context",
+                _kube_context(),
                 "--namespace",
                 _kube_namespace(),
                 "port-forward",
@@ -730,7 +896,7 @@ class KubeInstance(InfraInstance):
         return local_port
 
     def _read_server_env(self, variable_name: str) -> str:
-        value = kube_exec_cvat(["sh", "-c", f'printf "%s" "${{{variable_name}:-}}"'])
+        value = self.exec_cvat(["sh", "-c", f'printf "%s" "${{{variable_name}:-}}"'])
         return value.strip()
 
     def _get_db_restorer(self) -> PsycopgDatabaseRestorer:
@@ -810,25 +976,19 @@ class KubePlugin(InfraPlugin):
             "--kube-profile",
             action="store",
             default=_DEFAULT_KUBE_PROFILE,
-            help="Minikube profile name for --platform=kube. (default: %(default)s)",
+            help="Kind cluster name for --platform=kube. (default: %(default)s)",
         )
         group._addoption(
             "--kube-cpus",
             action="store",
             default="",
-            help="CPU count passed to `minikube start` for kube up/auto.",
+            help="Optional CPU limit applied to kind node containers via `docker update`.",
         )
         group._addoption(
             "--kube-memory",
             action="store",
             default="",
-            help="Memory passed to `minikube start` (e.g. 8g) for kube up/auto.",
-        )
-        group._addoption(
-            "--kube-driver",
-            action="store",
-            default="",
-            help="Optional minikube driver override for kube up/auto.",
+            help="Optional memory limit (e.g. 16g) applied to kind node containers via `docker update`.",
         )
         group._addoption(
             "--kube-namespace",

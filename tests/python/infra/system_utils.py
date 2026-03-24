@@ -69,11 +69,14 @@ def kubectl_cp(
     source,
     target,
     *,
+    context: str | None = None,
     namespace: str | None = None,
     container: str | None = None,
     logger: logging.Logger | None = None,
 ) -> None:
     command: list[str] = ["kubectl"]
+    if context:
+        command += ["--context", context]
     if namespace:
         command += ["--namespace", namespace]
     command += ["cp", str(source), str(target)]

@@ -93,23 +93,30 @@ pytest ./tests/python --run-prefix p1 restore-db
 
 Kubernetes lifecycle (`--platform kube`):
 
-Prerequisites on host: `minikube`, `kubectl`, `helm`.
+Prerequisites on host: `kind`, `kubectl`, `helm`, Docker.
+On macOS, for example:
 
 ```bash
-# Start minikube (if needed), deploy CVAT with Helm, wait for readiness
+brew install kind kubectl helm
+```
+
+```bash
+# Start kind cluster (if needed), load images, deploy CVAT with Helm, wait for readiness
 pytest ./tests/python --platform kube --run-prefix k1 \
-  --kube-cpus 6 --kube-memory 10g up
+  --kube-cpus 8 --kube-memory 16g up
 
 # Run tests against the same release (runtime port-forwards are handled by pytest)
 pytest ./tests/python --platform kube --run-prefix k1
 
-# Stop and cleanup
+# Stop and cleanup (Helm release + kind cluster)
 pytest ./tests/python --platform kube --run-prefix k1 down
 ```
 
 Notes:
 - Kube mode does not build images automatically.
 - Use `--kube-server-image`, `--kube-frontend-image`, `--kube-image-tag` to point Helm to desired images.
+- `--kube-cpus` and `--kube-memory` set resource limits on kind node containers via `docker update`.
+- The first run is slower because Kind node images/charts and service images are pulled/loaded.
 - `--rebuild`, `--cleanup`, `--dumpdb` are local-only and not supported with `--platform kube`.
 
 Profile-based runs:

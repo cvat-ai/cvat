@@ -83,23 +83,30 @@ which are used by containers for the testing system.
 
 - Kubernetes lifecycle (`--platform kube`):
 
-  Prerequisites: `minikube`, `kubectl`, and `helm` installed on the host.
+  Prerequisites: `kind`, `kubectl`, `helm`, and Docker installed on the host.
+  On macOS, for example:
 
   ```shell
-  # Start minikube (if needed), deploy CVAT via Helm, wait for readiness
+  brew install kind kubectl helm
+  ```
+
+  ```shell
+  # Start kind cluster (if needed), load images, deploy CVAT via Helm, wait for readiness
   pytest ./tests/python --platform kube --run-prefix k1 \
-    --kube-cpus 6 --kube-memory 10g up
+    --kube-cpus 8 --kube-memory 16g up
 
   # Run tests against the same kube release (runtime port-forwards are handled automatically)
   pytest ./tests/python --platform kube --run-prefix k1
 
-  # Tear down Helm release and stop minikube
+  # Tear down Helm release and delete the kind cluster
   pytest ./tests/python --platform kube --run-prefix k1 down
   ```
 
   Notes:
   - Kube mode does not build images automatically.
   - Images are configured with `--kube-server-image`, `--kube-frontend-image`, `--kube-image-tag`.
+  - `--kube-cpus` and `--kube-memory` apply limits to kind node containers via `docker update`.
+  - The first run is slower because Kind node images/charts and service images are pulled/loaded.
   - `--rebuild/--cleanup/--dumpdb` are local-only helpers and are not supported with `--platform kube`.
 
 - Lane profiles are selected automatically by the scheduler based on collected

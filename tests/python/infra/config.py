@@ -35,8 +35,17 @@ class InfraMode(str, Enum):
         return self.value
 
 
+class InfraProfile(str, Enum):
+    CORE = "core"
+    EXTENDED = "extended"
+    FULL = "full"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 _DEFAULT_INFRA_MODE = str(InfraMode.AUTO)
-_DEFAULT_INFRA_PROFILE = "full"
+_DEFAULT_INFRA_PROFILE = str(InfraProfile.FULL)
 _BASE_DC_FILES = [
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
@@ -44,33 +53,23 @@ _BASE_DC_FILES = [
     "tests/docker-compose.test_servers.yml",
 ]
 _PROFILE_DC_FILES = {
-    "core": ["tests/docker-compose.core.profile.yml"],
-    "extended": ["tests/docker-compose.extended.profile.yml"],
-    "full": [],
+    str(InfraProfile.CORE): ["tests/docker-compose.core.profile.yml"],
+    str(InfraProfile.EXTENDED): ["tests/docker-compose.extended.profile.yml"],
+    str(InfraProfile.FULL): [],
 }
 _RUNTIME_ROOT_DIR = Path(tempfile.gettempdir()) / "cvat_pytest_infra"
 _RUNS_ROOT_DIR = _RUNTIME_ROOT_DIR / "runs"
 _RUN_CONTEXT_FILE_NAME = "run-context.json"
 _INFRA_MODES = tuple(str(mode) for mode in InfraMode)
 _INFRA_PROFILES = tuple(_PROFILE_DC_FILES.keys())
-
-
-def _base_url() -> str:
-    return os.environ.get("CVAT_BASE_URL", "http://localhost:8080")
-
-
-def _get_server_url(endpoint: str, **kwargs) -> str:
-    query = urlencode(kwargs)
-    return f"{_base_url()}/{endpoint}" + (f"?{query}" if query else "")
-
-
-def _infra_profile() -> str:
-    return os.environ.get("CVAT_TEST_INFRA_PROFILE", _DEFAULT_INFRA_PROFILE)
-
-
-def _project_name() -> str:
-    return os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_PROJECT_NAME)
-
+_INFRA_PROFILE_RANK = {
+    str(InfraProfile.CORE): 0,
+    str(InfraProfile.EXTENDED): 1,
+    str(InfraProfile.FULL): 2,
+}
+_INFRA_REQUIRED_MARKERS = {
+    profile: f"infra_required_{profile}" for profile in _INFRA_PROFILES
+}
 
 def _validate_project_name(name: str) -> str:
     if not _PROJECT_NAME_PATTERN.match(name):
@@ -79,19 +78,6 @@ def _validate_project_name(name: str) -> str:
         )
 
     return name
-
-
-def _run_prefix_from_config(config) -> str:
-    return _validate_project_name(config.getoption("--run-prefix"))
-
-
-def _parse_infra_mode(value: str) -> InfraMode:
-    try:
-        return InfraMode(value)
-    except ValueError as ex:
-        raise pytest.UsageError(
-            f"Unknown infra mode {value!r}. Allowed: {', '.join(_INFRA_MODES)}"
-        ) from ex
 
 
 @dataclass(frozen=True)
@@ -169,20 +155,17 @@ class ProjectInfraConfig:
 
     @classmethod
     def from_config(cls, config, *, cvat_root_dir: Path = _CVAT_ROOT_DIR) -> "ProjectInfraConfig":
-        return cls(project_name=_run_prefix_from_config(config), cvat_root_dir=cvat_root_dir)
+        return cls(
+            project_name=_validate_project_name(config.getoption("--run-prefix")),
+            cvat_root_dir=cvat_root_dir,
+        )
 
     @classmethod
     def from_env(cls, *, cvat_root_dir: Path = _CVAT_ROOT_DIR) -> "ProjectInfraConfig":
-        return cls(project_name=_project_name(), cvat_root_dir=cvat_root_dir)
-
-
-def _project_config(
-    project_name_arg: str | None = None, *, cvat_root_dir: Path = _CVAT_ROOT_DIR
-) -> ProjectInfraConfig:
-    return ProjectInfraConfig(
-        project_name=project_name_arg or _project_name(),
-        cvat_root_dir=cvat_root_dir,
-    )
+        return cls(
+            project_name=os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_PROJECT_NAME),
+            cvat_root_dir=cvat_root_dir,
+        )
 
 
 class RuntimeInfraConfig:
@@ -197,7 +180,7 @@ class RuntimeInfraConfig:
         runs_root_dir = _RUNS_ROOT_DIR
         runs_root_dir.mkdir(parents=True, exist_ok=True)
 
-        run_prefix = _run_prefix_from_config(config)
+        run_prefix = cls.get_run_prefix_from_config(config)
         run_id = ""
         run_dir: Path | None = None
 
@@ -267,6 +250,29 @@ class RuntimeInfraConfig:
         return _INFRA_PROFILES
 
     @classmethod
+    def get_infra_profile_rank(cls, profile: str) -> int:
+        return _INFRA_PROFILE_RANK[str(cls.parse_infra_profile(profile))]
+
+    @classmethod
+    def get_infra_profiles_desc(cls) -> tuple[str, ...]:
+        return tuple(
+            sorted(_INFRA_PROFILES, key=lambda profile: _INFRA_PROFILE_RANK[profile], reverse=True)
+        )
+
+    @classmethod
+    def profile_supports(cls, required: str, lane_profile: str) -> bool:
+        return cls.get_infra_profile_rank(lane_profile) >= cls.get_infra_profile_rank(required)
+
+    @classmethod
+    def get_required_marker_name(cls, profile: str) -> str:
+        normalized = str(cls.parse_infra_profile(profile))
+        return _INFRA_REQUIRED_MARKERS[normalized]
+
+    @classmethod
+    def get_required_marker_names(cls) -> tuple[str, ...]:
+        return tuple(_INFRA_REQUIRED_MARKERS[profile] for profile in _INFRA_PROFILES)
+
+    @classmethod
     def get_profile_dc_files(cls) -> dict[str, list[str]]:
         return {profile: list(files) for profile, files in _PROFILE_DC_FILES.items()}
 
@@ -276,29 +282,49 @@ class RuntimeInfraConfig:
 
     @classmethod
     def parse_infra_mode(cls, value: str) -> InfraMode:
-        return _parse_infra_mode(value)
+        try:
+            return InfraMode(value)
+        except ValueError as ex:
+            raise pytest.UsageError(
+                f"Unknown infra mode {value!r}. Allowed: {', '.join(_INFRA_MODES)}"
+            ) from ex
+
+    @classmethod
+    def parse_infra_profile(cls, value: str) -> InfraProfile:
+        try:
+            return InfraProfile(value)
+        except ValueError as ex:
+            raise pytest.UsageError(
+                f"Unknown infra profile {value!r}. Allowed: {', '.join(_INFRA_PROFILES)}"
+            ) from ex
 
     @classmethod
     def get_infra_profile(cls) -> str:
-        return _infra_profile()
+        profile = os.environ.get("CVAT_TEST_INFRA_PROFILE", _DEFAULT_INFRA_PROFILE)
+        return str(cls.parse_infra_profile(profile))
 
     @classmethod
     def get_server_url(cls, endpoint: str, **kwargs) -> str:
-        return _get_server_url(endpoint, **kwargs)
+        query = urlencode(kwargs)
+        return f"{cls.get_base_url()}/{endpoint}" + (f"?{query}" if query else "")
 
     @classmethod
     def get_base_url(cls) -> str:
-        return _base_url()
+        return os.environ.get("CVAT_BASE_URL", "http://localhost:8080")
 
     @classmethod
     def get_run_prefix_from_config(cls, config) -> str:
-        return _run_prefix_from_config(config)
+        return _validate_project_name(config.getoption("--run-prefix"))
 
     @classmethod
     def get_project_config(
         cls, project_name_arg: str | None = None, *, cvat_root_dir: Path = _CVAT_ROOT_DIR
     ) -> ProjectInfraConfig:
-        return _project_config(project_name_arg, cvat_root_dir=cvat_root_dir)
+        return ProjectInfraConfig(
+            project_name=project_name_arg
+            or os.environ.get("CVAT_TEST_RUN_PREFIX", _DEFAULT_PROJECT_NAME),
+            cvat_root_dir=cvat_root_dir,
+        )
 
     @classmethod
     def get_prefixed_container_name(
@@ -322,7 +348,7 @@ class RuntimeInfraConfig:
 
     @classmethod
     def context_file_for_project(cls, project_name_arg: str) -> Path:
-        return _project_config(project_name_arg).runtime_dir / _RUN_CONTEXT_FILE_NAME
+        return cls.get_project_config(project_name_arg).runtime_dir / _RUN_CONTEXT_FILE_NAME
 
     @classmethod
     def _load_run_context_for_project(cls, project_name_arg: str) -> tuple[str, Path | None]:
