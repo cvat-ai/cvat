@@ -126,8 +126,8 @@ function AnnotationMenuComponent(): JSX.Element {
                 title: 'Remove Annotations',
                 content: (
                     <div>
-                        <Text>You are going to remove the annotations from the client. </Text>
-                        <Text>It will stay on the server till you save the job. Continue?</Text>
+                        <Text>You are about to remove the annotations. </Text>
+                        <Text>Changes take effect only when you save the job. Continue?</Text>
                         <br />
                         <br />
                         <Collapse
