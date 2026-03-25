@@ -2411,6 +2411,12 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                 has_gap = prev_shape.frame + instance_data.frame_step < shape.frame
 
             if has_gap:
+                prev_shape = prev_shape._replace(keyframe=True)
+                if new_shapes and new_shapes[-1].frame == prev_shape.frame:
+                    new_shapes[-1] = prev_shape
+                else:
+                    new_shapes.append(prev_shape)
+
                 prev_shape = prev_shape._replace(outside=True, keyframe=True,
                     frame=prev_shape.frame + instance_data.frame_step)
                 new_shapes.append(prev_shape)
@@ -2425,9 +2431,19 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
             prev_shape.frame + instance_data.frame_step <= stop_frame
             # has a gap before the current instance segment end
         ):
-            prev_shape = prev_shape._replace(outside=True, keyframe=True,
+            # Make the last visible frame a keyframe for correct interpolation.
+            # Otherwise, the keyframe used for the interpolation will be the outside frame,
+            # so the interpolation distance will be bigger by 1 frame,
+            # while keeping the coordinates of the last visible frame.
+            prev_shape = prev_shape._replace(keyframe=True)
+            if new_shapes and new_shapes[-1].frame == prev_shape.frame:
+                new_shapes[-1] = prev_shape
+            else:
+                new_shapes.append(prev_shape)
+
+            shape = prev_shape._replace(outside=True, keyframe=True,
                 frame=prev_shape.frame + instance_data.frame_step)
-            new_shapes.append(prev_shape)
+            new_shapes.append(shape)
 
         return new_shapes
 
