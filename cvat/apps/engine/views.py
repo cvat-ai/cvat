@@ -2445,6 +2445,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     queryset = User.objects.prefetch_related('groups').all()
     iam_organization_field = 'memberships__organization'
     iam_permission_class = UserPermission
+    iam_infer_organization_context = False
 
     search_fields = ('username', 'first_name', 'last_name')
     filter_fields = list(search_fields) + ['id', 'is_active']

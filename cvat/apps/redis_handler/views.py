@@ -52,6 +52,8 @@ class RequestViewSet(viewsets.GenericViewSet):
     serializer_class = RequestSerializer
     iam_organization_field = None
     iam_permission_class = RequestPermission
+    iam_infer_organization_context = False
+
     filter_backends = [
         NonModelSimpleFilter,
         NonModelJsonLogicFilter,

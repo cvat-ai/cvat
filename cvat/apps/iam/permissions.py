@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
 from attrs import define, field
 from django.apps import AppConfig
-from django.conf import settings
 from django.db.models import Model, Q
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
@@ -48,29 +47,28 @@ def get_organization(request, obj):
         return obj
 
     if obj:
-        try:
+        view = request.parser_context.get("view")
+
+        infer_organization_context = getattr(view, "iam_infer_organization_context", True)
+        if callable(infer_organization_context):
+            infer_organization_context = infer_organization_context(obj)
+
+        if infer_organization_context:
             org_id = obj.organization_id
-        except AttributeError as exc:
-            # Skip initialization of organization for those objects that don't related with organization
-            view = request.parser_context.get("view")
-            if view and view.basename in settings.OBJECTS_NOT_RELATED_WITH_ORG:
-                return request.iam_context["organization"]
 
-            raise exc
+            if not org_id:
+                return None
 
-        if not org_id:
-            return None
-
-        try:
-            # If the object belongs to an organization transitively via the parent object
-            # there might be no organization field, because it has to be defined and implemented
-            # manually
             try:
-                return obj.organization
-            except AttributeError:
-                return Organization.objects.get(id=org_id)
-        except Organization.DoesNotExist:
-            return None
+                # If the object belongs to an organization transitively via the parent object
+                # there might be no organization field, because it has to be defined and implemented
+                # manually
+                try:
+                    return obj.organization
+                except AttributeError:
+                    return Organization.objects.get(id=org_id)
+            except Organization.DoesNotExist:
+                return None
 
     return request.iam_context["organization"]
 

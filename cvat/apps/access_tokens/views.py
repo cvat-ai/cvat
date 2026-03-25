@@ -69,6 +69,7 @@ class AccessTokensViewSet(
 
     iam_organization_field = None
     iam_permission_class = AccessTokenPermission
+    iam_infer_organization_context = False
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
