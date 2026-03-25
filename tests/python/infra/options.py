@@ -8,12 +8,6 @@ from infra.config import RuntimeInfraConfig
 def add_infra_options(parser):
     group = parser.getgroup("CVAT REST API testing options")
     group._addoption(
-        "--rebuild",
-        action="store_true",
-        help="Rebuild CVAT images and exit without running tests. (default: %(default)s)",
-    )
-
-    group._addoption(
         "--cleanup",
         action="store_true",
         help="Delete files that was create by tests without running tests. (default: %(default)s)",
@@ -49,7 +43,8 @@ def add_infra_options(parser):
         choices=RuntimeInfraConfig.get_infra_modes(),
         help=(
             "Infrastructure mode: auto (default behavior), up (start services and exit), "
-            "down (stop services and exit), restore-db (restore DB from test assets and exit)."
+            "down (stop services and exit), restore-db (restore DB from test assets and exit), "
+            "build-images (rebuild cvat/server:dev and cvat/ui:dev and exit)."
         ),
     )
     group._addoption(

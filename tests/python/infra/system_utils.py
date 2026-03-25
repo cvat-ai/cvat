@@ -4,6 +4,7 @@
 
 import errno
 import logging
+import random
 import socket
 from subprocess import run
 
@@ -59,6 +60,23 @@ def pick_free_port(start: int, used_ports: set[int], *, logger: logging.Logger |
             return port
 
     raise pytest.UsageError(f"Could not find a free TCP port starting from {start}")
+
+
+def pick_random_free_port(
+    *,
+    min_port: int = 20000,
+    max_port: int = 55000,
+    attempts: int = 64,
+    logger: logging.Logger | None = None,
+) -> int:
+    used_ports: set[int] = set()
+    for _ in range(attempts):
+        start_port = random.randint(min_port, max_port)
+        try:
+            return pick_free_port(start_port, used_ports, logger=logger)
+        except pytest.UsageError:
+            continue
+    return pick_free_port(min_port, used_ports, logger=logger)
 
 
 def docker_cp(source, target, *, logger: logging.Logger | None = None) -> None:

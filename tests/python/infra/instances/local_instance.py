@@ -451,7 +451,6 @@ def start_services(
     project_name: str,
     default_project_name: str,
     dc_files: list[Path],
-    rebuild: bool,
     project_directory: Path,
 ) -> None:
     if project_name == default_project_name and any(
@@ -463,20 +462,7 @@ def start_services(
         )
 
     run_command(
-        docker_compose(project_name, dc_files, project_directory) + ["up", "-d", *["--build"] * rebuild],
-        capture_output=False,
-        logger=logger,
-    )
-
-
-def rebuild_services(
-    *,
-    project_name: str,
-    dc_files: list[Path],
-    project_directory: Path,
-) -> None:
-    run_command(
-        docker_compose(project_name, dc_files, project_directory) + ["build"],
+        docker_compose(project_name, dc_files, project_directory) + ["up", "-d"],
         capture_output=False,
         logger=logger,
     )
@@ -776,9 +762,7 @@ class LocalInstance(InfraInstance):
             dc_files += self.deps.extra_dc_files
         return dc_files
 
-    def _run_local_lifecycle(
-        self, *, infra_mode: InfraMode, dumpdb: bool, cleanup: bool, rebuild: bool
-    ) -> None:
+    def _run_local_lifecycle(self, *, infra_mode: InfraMode, dumpdb: bool, cleanup: bool) -> None:
         from infra import health as infra_health
 
         project_cfg = RuntimeInfraConfig.get_project_config(cvat_root_dir=self.deps.cvat_root_dir)
@@ -832,14 +816,6 @@ class LocalInstance(InfraInstance):
             self.deps.cvat_root_dir,
             project_cfg,
         )
-
-        if infra_mode == InfraMode.AUTO and rebuild:
-            rebuild_services(
-                project_name=project_name,
-                dc_files=dc_files,
-                project_directory=self.deps.cvat_root_dir,
-            )
-            pytest.exit("CVAT images have been rebuilt", returncode=0)
 
         if infra_mode == InfraMode.DOWN:
             self._close_db_restorer()
@@ -915,7 +891,6 @@ class LocalInstance(InfraInstance):
                     project_name=project_name,
                     default_project_name=RuntimeInfraConfig.get_default_project_name(),
                     dc_files=dc_files,
-                    rebuild=bool(rebuild),
                     project_directory=self.deps.cvat_root_dir,
                 )
             infra_health.wait_for_services(self.deps.waiting_time)
@@ -928,7 +903,6 @@ class LocalInstance(InfraInstance):
                     project_name=project_name,
                     default_project_name=RuntimeInfraConfig.get_default_project_name(),
                     dc_files=dc_files,
-                    rebuild=bool(rebuild),
                     project_directory=self.deps.cvat_root_dir,
                 )
             restore_databases_from_assets()
@@ -943,7 +917,6 @@ class LocalInstance(InfraInstance):
                 project_name=project_name,
                 default_project_name=RuntimeInfraConfig.get_default_project_name(),
                 dc_files=dc_files,
-                rebuild=bool(rebuild),
                 project_directory=self.deps.cvat_root_dir,
             )
 
@@ -966,7 +939,6 @@ class LocalInstance(InfraInstance):
             infra_mode=infra_mode,
             dumpdb=config.getoption("--dumpdb"),
             cleanup=config.getoption("--cleanup"),
-            rebuild=config.getoption("--rebuild"),
         )
 
         if infra_mode == InfraMode.AUTO:

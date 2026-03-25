@@ -93,31 +93,32 @@ pytest ./tests/python --run-prefix p1 restore-db
 
 Kubernetes lifecycle (`--platform kube`):
 
-Prerequisites on host: `kind`, `kubectl`, `helm`, Docker.
+Prerequisites on host: `minikube`, `kubectl`, `helm`, Docker.
 On macOS, for example:
 
 ```bash
-brew install kind kubectl helm
+brew install minikube kubectl helm
 ```
 
 ```bash
-# Start kind cluster (if needed), load images, deploy CVAT with Helm, wait for readiness
+# Start minikube cluster (if needed), load images, deploy CVAT with Helm, wait for readiness
 pytest ./tests/python --platform kube --run-prefix k1 \
   --kube-cpus 8 --kube-memory 16g up
 
 # Run tests against the same release (runtime port-forwards are handled by pytest)
 pytest ./tests/python --platform kube --run-prefix k1
 
-# Stop and cleanup (Helm release + kind cluster)
+# Stop and cleanup (Helm release + minikube cluster)
 pytest ./tests/python --platform kube --run-prefix k1 down
 ```
 
 Notes:
-- Kube mode does not build images automatically.
+- Test runs do not build images automatically (local and kube).
+  Build explicitly with `pytest ./tests/python --infra build-images`.
 - Use `--kube-server-image`, `--kube-frontend-image`, `--kube-image-tag` to point Helm to desired images.
-- `--kube-cpus` and `--kube-memory` set resource limits on kind node containers via `docker update`.
-- The first run is slower because Kind node images/charts and service images are pulled/loaded.
-- `--rebuild`, `--cleanup`, `--dumpdb` are local-only and not supported with `--platform kube`.
+- `--kube-cpus` and `--kube-memory` are passed to `minikube start`.
+- The first run is slower because minikube base images/charts and service images are pulled/loaded.
+- `--cleanup`, `--dumpdb` are local-only and not supported with `--platform kube`.
 
 Profile-based runs:
 
@@ -160,12 +161,7 @@ Profile routing is automatic:
 
 If you need to rebuild CVAT images without running tests:
 ```bash
-pytest ./tests/python --rebuild
-```
-
-If you want to rebuild and then start containers:
-```bash
-pytest ./tests/python --infra up --rebuild
+pytest ./tests/python --infra build-images
 ```
 
 If you want to get a code coverage report:

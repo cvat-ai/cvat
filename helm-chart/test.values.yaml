@@ -1,5 +1,14 @@
 cvat:
   backend:
+    additionalVolumes:
+    - name: allow-minio
+      configMap:
+        name: allow-minio
+        defaultMode: 493 # 0755
+    additionalVolumeMounts:
+    - mountPath: /etc/cvat/init.d/allow_minio.sh
+      name: allow-minio
+      subPath: allow_minio.sh
     defaultStorage:
       accessModes:
       - ReadWriteOnce
@@ -68,3 +77,7 @@ traefik:
       level: DEBUG
     access:
       enabled: true
+
+testing:
+  minio:
+    enabled: true

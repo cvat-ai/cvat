@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-import os
 from http import HTTPStatus
 from time import sleep
 
 from infra.config import RuntimeInfraConfig
+from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,7 @@ def wait_for_auth_login_ready(num_secs: int = 180) -> None:
     import requests
 
     login_url = RuntimeInfraConfig.get_server_url("api/auth/login")
-    payload = {
-        "username": "admin2",
-        "password": os.environ.get("CVAT_TEST_USER_PASS", "!Q@W#E$R"),
-    }
+    payload = {"username": ADMIN_USER, "password": ADMIN_PASS}
     for i in range(num_secs):
         logger.debug("waiting for login endpoint to become ready ... (%s)", i)
         try:

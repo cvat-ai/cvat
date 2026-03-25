@@ -107,13 +107,12 @@ class ParallelInstance(InfraInstance):
             )
 
         debug_services = parse_debug_services(config.getoption("--container-debug"))
-        rebuild = config.getoption("--rebuild")
         cleanup = config.getoption("--cleanup")
         dumpdb = config.getoption("--dumpdb")
         vscode = config.getoption("--vscode")
-        if any((rebuild, cleanup, dumpdb, vscode, bool(debug_services))):
+        if any((cleanup, dumpdb, vscode, bool(debug_services))):
             raise pytest.UsageError(
-                "--parallel does not support --rebuild/--cleanup/--dumpdb/--vscode/--container-debug in parent mode"
+                "--parallel does not support --cleanup/--dumpdb/--vscode/--container-debug in parent mode"
             )
         if infra_mode == InfraMode.RESTORE_DB:
             raise pytest.UsageError("--infra=restore-db is not supported with --parallel")

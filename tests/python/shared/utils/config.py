@@ -15,6 +15,8 @@ ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "uti
 ASSETS_DIR = (ROOT_DIR / "assets").resolve()
 # Suppress the warning from Bandit about hardcoded passwords
 USER_PASS = "!Q@W#E$R"  # nosec
+ADMIN_USER = "admin1"
+ADMIN_PASS = USER_PASS
 BASE_URL = os.environ.get("CVAT_BASE_URL", "http://localhost:8080")
 API_URL = BASE_URL + "/api/"
 LEGACY_BASE_URL = "http://localhost:8080"

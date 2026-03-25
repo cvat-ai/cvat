@@ -1,0 +1,75 @@
+{{- if .Values.testing.minio.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: backend
+    component: minio
+    {{- include "cvat.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cvat-app
+      tier: backend
+      component: minio
+      {{- include "cvat.labels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: backend
+        component: minio
+        {{- include "cvat.labels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: minio
+        image: {{ .Values.testing.minio.image }}:{{ .Values.testing.minio.tag }}
+        imagePullPolicy: {{ .Values.testing.minio.imagePullPolicy }}
+        args:
+        - server
+        - /data
+        - --console-address
+        - :9001
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: accessKey
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: minio
+              key: secretKey
+        ports:
+        - name: api
+          containerPort: 9000
+        - name: console
+          containerPort: 9001
+        readinessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 20
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 6
+        volumeMounts:
+        - mountPath: /data
+          name: data
+      volumes:
+      - name: data
+        emptyDir: {}
+{{- end }}

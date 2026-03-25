@@ -23,7 +23,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
-from config import ASSETS_DIR, get_method
+from config import ADMIN_USER, ASSETS_DIR, get_method
 from dateutil.parser import ParserError, parse
 
 
@@ -83,7 +83,7 @@ def main():
         if asset_name in ("annotations", "access_tokens"):
             continue  # this will be handled at the end
 
-        response = get_method("admin1", endpoint, page_size="all")
+        response = get_method(ADMIN_USER, endpoint, page_size="all")
 
         with open(dump_path, "w") as f:
             json.dump(clean_list_response(response.json()), f, indent=2, sort_keys=True)
@@ -94,7 +94,7 @@ def main():
             for obj in response.json()["results"]:
                 oid = obj["id"]
 
-                response = get_method("admin1", f"{endpoint}/{oid}/annotations")
+                response = get_method(ADMIN_USER, f"{endpoint}/{oid}/annotations")
                 if response.status_code == HTTPStatus.OK:
                     annotations[obj_type][oid] = response.json()
 

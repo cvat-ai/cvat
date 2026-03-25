@@ -498,13 +498,18 @@ jobs:
           kubectl get pods
           kubectl logs $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}')
 
+      - name: Kube MinIO smoke check
+        run: |
+          pytest --timeout 30 --platform=kube \
+            'tests/python/rest_api/test_cloud_storages.py::TestGetCloudStorageContent::test_can_get_storage_content_with_manually_created_dirs[2]' \
+            --log-cli-level DEBUG
+
       - name: REST API and SDK tests
-        # We don't have external services in Helm tests, so we ignore corresponding cases
-        # They are still tested without Helm
+        # Full-profile tests are enabled in Helm lane.
         run: |
           kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
           kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
-          pytest --timeout 30 --platform=kube -m "not infra_required_full" tests/python --log-cli-level DEBUG
+          pytest --timeout 30 --platform=kube tests/python --log-cli-level DEBUG
 
       - name: Creating a log file from "cvat" container logs
         if: failure()

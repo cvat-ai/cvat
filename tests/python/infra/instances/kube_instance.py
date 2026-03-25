@@ -7,9 +7,11 @@ import json
 import logging
 import os
 import re
+from json import JSONDecodeError
 from subprocess import PIPE, STDOUT, Popen
 from time import monotonic, sleep
 
+import boto3
 import pytest
 
 from infra.config import InfraMode, RuntimeInfraConfig
@@ -18,16 +20,22 @@ from infra.debug.host_debug import maybe_wait_for_vscode_attach
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.redis_restore import RedisStateRestorer
 from infra.system_utils import kubectl_cp, pick_free_port, run_command
+from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_KUBE_PROFILE = "kind"
+_DEFAULT_KUBE_PROFILE = "cvat-pytest"
 _DEFAULT_KUBE_NAMESPACE = "default"
 _DEFAULT_KUBE_SERVER_IMAGE = "cvat/server"
 _DEFAULT_KUBE_FRONTEND_IMAGE = "cvat/ui"
 _DEFAULT_KUBE_IMAGE_TAG = os.environ.get("CVAT_VERSION", "dev")
 _KUBE_SERVER_CONTAINER = "cvat-backend"
 _KUBE_FINGERPRINT_VERSION = 1
+_MINIO_SERVICE_NAME = "minio"
+_MINIO_ACCESS_KEY = "minio_access_key"
+_MINIO_SECRET_KEY = "minio_secret_key"  # nosec
+_MINIO_BUCKETS = ("private", "public", "test", "importexportbucket", "backingcs")
+_MINIO_CONTENT_BUCKETS = ("private", "public", "test", "importexportbucket")
 
 
 def _normalize_release_name(value: str) -> str:
@@ -52,7 +60,7 @@ def _kube_profile() -> str:
 
 
 def _kube_context() -> str:
-    return f"kind-{_kube_profile()}"
+    return _kube_profile()
 
 
 def _kube_namespace() -> str:
@@ -61,6 +69,10 @@ def _kube_namespace() -> str:
 
 def _kube_release() -> str:
     return os.environ.get("CVAT_TEST_KUBE_RELEASE", "cvat")
+
+
+def _kube_traefik_service() -> str:
+    return f"{_kube_release()}-traefik"
 
 
 def _kube_server_image() -> str:
@@ -234,64 +246,82 @@ def kube_get_redis_ondisk_pod_name() -> str:
     return kube_get_pod_name(_label_selector("app.kubernetes.io/name=cvat,tier=kvrocks"))
 
 
-def _kind_cluster_exists(profile: str) -> bool:
-    names = run_command(["kind", "get", "clusters"], logger=logger)[0].splitlines()
-    return profile in {name.strip() for name in names if name.strip()}
+def _minikube_profile_exists(profile: str) -> bool:
+    try:
+        output = run_command(["minikube", "profile", "list", "-o", "json"], logger=logger)[0]
+    except Exception:
+        return False
+
+    try:
+        data = json.loads(output) if output else {}
+    except JSONDecodeError:
+        return False
+
+    valid = {"Running", "Stopped", "Paused", "Configured", "Starting", "OK"}
+    for item in data.get("valid", []):
+        if item.get("Name") == profile and item.get("Status") in valid:
+            return True
+    return False
 
 
-def _kind_cluster_nodes(profile: str) -> list[str]:
-    nodes = run_command(["kind", "get", "nodes", "--name", profile], logger=logger)[0].splitlines()
-    return [node.strip() for node in nodes if node.strip()]
+def _kube_api_reachable(context: str) -> bool:
+    try:
+        run_command(["kubectl", "--context", context, "get", "--raw=/readyz"], logger=logger)
+        return True
+    except Exception:
+        return False
 
 
-def _use_kind_context(profile: str) -> None:
-    run_command(["kubectl", "config", "use-context", f"kind-{profile}"], capture_output=False, logger=logger)
+def _use_minikube_context(profile: str) -> None:
+    run_command(["minikube", "-p", profile, "update-context"], capture_output=False, logger=logger)
 
 
-def _apply_kind_resource_limits(*, profile: str, cpus: str, memory: str) -> None:
-    if not cpus and not memory:
-        return
-
-    for node in _kind_cluster_nodes(profile):
-        cmd = ["docker", "update"]
-        if cpus:
-            cmd += ["--cpus", cpus]
-        if memory:
-            cmd += ["--memory", memory, "--memory-swap", memory]
-        cmd += [node]
-        run_command(cmd, capture_output=False, logger=logger)
-
-
-def _start_kind(*, profile: str, cpus: str, memory: str) -> bool:
+def _start_minikube(*, profile: str, cpus: str, memory: str) -> bool:
     created = False
-    if not _kind_cluster_exists(profile):
+    if not _minikube_profile_exists(profile):
         created = True
-        run_command(
-            ["kind", "create", "cluster", "--name", profile, "--wait", "120s"],
-            capture_output=False,
-            logger=logger,
-        )
-    _use_kind_context(profile)
-    _apply_kind_resource_limits(profile=profile, cpus=cpus, memory=memory)
+
+    if not created:
+        _use_minikube_context(profile)
+        if _kube_api_reachable(_kube_context()):
+            return False
+
+    command = [
+        "minikube",
+        "start",
+        "-p",
+        profile,
+        "--driver=docker",
+        "--wait=apiserver,system_pods,default_sa",
+        "--wait-timeout=10m",
+        "--auto-pause-interval=24h",
+    ]
+    if cpus:
+        command.append(f"--cpus={cpus}")
+    if memory:
+        command.append(f"--memory={memory}")
+
+    _run_with_retries(command, attempts=2, delay_s=10.0)
+    _use_minikube_context(profile)
     return created
 
 
-def _stop_kind(profile: str) -> None:
-    if not _kind_cluster_exists(profile):
+def _stop_minikube(profile: str) -> None:
+    if not _minikube_profile_exists(profile):
         return
-    run_command(["kind", "delete", "cluster", "--name", profile], capture_output=False, logger=logger)
+    run_command(["minikube", "delete", "-p", profile], capture_output=False, logger=logger)
 
 
-def _load_images_into_kind(profile: str) -> None:
+def _load_images_into_minikube(profile: str) -> None:
     backend_ref = f"{_kube_server_image()}:{_kube_image_tag()}"
     frontend_ref = f"{_kube_frontend_image()}:{_kube_image_tag()}"
     run_command(
-        ["kind", "load", "docker-image", backend_ref, "--name", profile],
+        ["minikube", "image", "load", backend_ref, "-p", profile],
         capture_output=False,
         logger=logger,
     )
     run_command(
-        ["kind", "load", "docker-image", frontend_ref, "--name", profile],
+        ["minikube", "image", "load", frontend_ref, "-p", profile],
         capture_output=False,
         logger=logger,
     )
@@ -355,6 +385,12 @@ def _helm_upgrade_install(*, cvat_root_dir, release: str, namespace: str) -> Non
             f"cvat.frontend.image={_kube_frontend_image()}",
             "--set",
             f"cvat.frontend.tag={_kube_image_tag()}",
+            "--set",
+            "ingress.hostname=localhost",
+            "--set",
+            "ingress.additionalHosts[0]=127.0.0.1",
+            "--set",
+            "traefik.service.type=NodePort",
         ],
         capture_output=False,
         logger=logger,
@@ -410,6 +446,8 @@ def _wait_for_kube_ready(timeout_s: int = 300) -> None:
 
     wait_selector(_label_selector("component=server"))
     wait_selector(_label_selector("app.kubernetes.io/name=postgresql"))
+    if _kube_service_exists(_MINIO_SERVICE_NAME):
+        wait_selector(_label_selector("component=minio"))
 
 
 def _kube_service_exists(service_name: str) -> bool:
@@ -505,9 +543,54 @@ class KubeInstance(InfraInstance):
             state["kube_fingerprint"] = kube_fingerprint
         project_cfg.save_state(state)
 
-    def _is_kube_stack_ready(self) -> bool:
+    def _resolve_traefik_nodeport_url(self) -> str:
+        ingress_service = _kube_traefik_service()
+        if not _kube_service_exists(ingress_service):
+            raise RuntimeError(
+                f"Expected ingress service '{ingress_service}' was not found "
+                f"in namespace '{_kube_namespace()}'"
+            )
+
+        service_json = _kubectl(["get", "service", ingress_service, "-o", "json"])[0]
+        service = json.loads(service_json)
+        node_port = None
+        for port in service.get("spec", {}).get("ports", []):
+            if int(port.get("port", 0)) == 80:
+                node_port = port.get("nodePort")
+                break
+        if not node_port:
+            raise RuntimeError(
+                f"Service '{ingress_service}' has no NodePort mapped for port 80"
+            )
+
+        minikube_ip = run_command(
+            ["minikube", "-p", _kube_profile(), "ip"],
+            logger=logger,
+        )[0].strip()
+        if not minikube_ip:
+            raise RuntimeError("Could not resolve minikube IP")
+
+        return f"http://{minikube_ip}:{int(node_port)}"
+
+    def _print_up_instructions(self, *, base_url: str) -> None:
+        print("Kubernetes test infrastructure is ready.")
+        print(f"CVAT URL: {base_url}")
+        print(f"Admin login: {ADMIN_USER} / {ADMIN_PASS}")
+        print("If this URL is not reachable from your host (common on macOS + docker driver):")
+        print(
+            "  minikube -p "
+            + _kube_profile()
+            + " service -n "
+            + _kube_namespace()
+            + " "
+            + _kube_traefik_service()
+            + " --url"
+        )
+        print("If command returns 127.0.0.1 URL, open it as localhost in browser.")
+
+    def _is_kube_stack_ready(self, *, timeout_s: int | None = None) -> bool:
         try:
-            _wait_for_kube_ready(timeout_s=min(self.deps.waiting_time, 45))
+            _wait_for_kube_ready(timeout_s=timeout_s or self.deps.waiting_time)
             return True
         except Exception:
             return False
@@ -516,7 +599,7 @@ class KubeInstance(InfraInstance):
         profile = _kube_profile()
         cpus = str(self.config.getoption("--kube-cpus") or "").strip()
         memory = str(self.config.getoption("--kube-memory") or "").strip()
-        created = _start_kind(
+        created = _start_minikube(
             profile=profile,
             cpus=cpus,
             memory=memory,
@@ -535,28 +618,35 @@ class KubeInstance(InfraInstance):
             release=_kube_release(), namespace=_kube_namespace()
         )
         fingerprint_matches = _fingerprints_equal(saved_fingerprint, current_fingerprint)
-        if (
-            not created
-            and release_exists
-            and fingerprint_matches
-            and self._is_kube_stack_ready()
-        ):
+        if not created and release_exists and fingerprint_matches:
+            # When the minikube profile already exists, the API server can come
+            # back before CVAT pods finish becoming Ready. Wait for the saved
+            # release before declaring the stack stale and forcing a reconcile.
+            if self._is_kube_stack_ready(timeout_s=self.deps.waiting_time):
+                logger.info(
+                    "Reusing healthy minikube/helm stack for run-prefix '%s' (fingerprint matched)",
+                    run_prefix,
+                )
+                self._copy_file_share()
+                self._seed_minio_test_data()
+                return current_fingerprint
+
             logger.info(
-                "Reusing healthy kind/helm stack for run-prefix '%s' (fingerprint matched)",
+                "Existing minikube/helm stack for run-prefix '%s' did not become ready "
+                "within %ss; falling back to reconcile",
                 run_prefix,
+                self.deps.waiting_time,
             )
-            self._copy_file_share()
-            return current_fingerprint
 
         logger.info(
-            "Reconciling kind/helm stack for run-prefix '%s' "
+            "Reconciling minikube/helm stack for run-prefix '%s' "
             "(created=%s, release_exists=%s, fingerprint_match=%s)",
             run_prefix,
             created,
             release_exists,
             fingerprint_matches,
         )
-        _load_images_into_kind(profile)
+        _load_images_into_minikube(profile)
         _helm_upgrade_install(
             cvat_root_dir=self.deps.cvat_root_dir,
             release=_kube_release(),
@@ -564,6 +654,7 @@ class KubeInstance(InfraInstance):
         )
         _wait_for_kube_ready(timeout_s=self.deps.waiting_time)
         self._copy_file_share()
+        self._seed_minio_test_data()
         return current_fingerprint
 
     def _copy_file_share(self) -> None:
@@ -591,6 +682,175 @@ class KubeInstance(InfraInstance):
                 "fi",
             ]
         )
+
+    @staticmethod
+    def _clear_s3_bucket(client, bucket: str) -> None:
+        token = None
+        while True:
+            kwargs = {"Bucket": bucket, "MaxKeys": 1000}
+            if token:
+                kwargs["ContinuationToken"] = token
+            response = client.list_objects_v2(**kwargs)
+            objects = response.get("Contents", [])
+            if objects:
+                client.delete_objects(
+                    Bucket=bucket,
+                    Delete={"Objects": [{"Key": item["Key"]} for item in objects], "Quiet": True},
+                )
+            if not response.get("IsTruncated"):
+                break
+            token = response.get("NextContinuationToken")
+
+    @staticmethod
+    def _upload_dir_to_s3(client, *, source_dir, bucket: str, prefix: str = "") -> None:
+        prefix = prefix.strip("/")
+        base_prefix = f"{prefix}/" if prefix else ""
+        for path in sorted(source_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            relative_path = path.relative_to(source_dir).as_posix()
+            key = f"{base_prefix}{relative_path}"
+            client.upload_file(str(path), bucket, key)
+
+    @staticmethod
+    def _set_public_bucket_policy(client) -> None:
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AllowPublicList",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": ["s3:GetBucketLocation", "s3:ListBucket"],
+                    "Resource": ["arn:aws:s3:::public"],
+                },
+                {
+                    "Sid": "AllowPublicRead",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": ["s3:GetObject"],
+                    "Resource": ["arn:aws:s3:::public/*"],
+                },
+            ],
+        }
+        client.put_bucket_policy(Bucket="public", Policy=json.dumps(policy))
+
+    def _seed_minio_test_data(self) -> None:
+        if not _kube_service_exists(_MINIO_SERVICE_NAME):
+            logger.info(
+                "MinIO service '%s' is not present in namespace '%s'; skipping seed",
+                _MINIO_SERVICE_NAME,
+                _kube_namespace(),
+            )
+            return
+
+        local_port = pick_free_port(19000, set(), logger=logger)
+        process = Popen(  # nosec
+            [
+                "kubectl",
+                "--context",
+                _kube_context(),
+                "--namespace",
+                _kube_namespace(),
+                "port-forward",
+                f"service/{_MINIO_SERVICE_NAME}",
+                f"{local_port}:9000",
+            ],
+            stdout=PIPE,
+            stderr=STDOUT,
+            text=True,
+        )
+
+        endpoint_url = f"http://127.0.0.1:{local_port}"
+        try:
+            deadline = monotonic() + 30
+            s3_client = None
+            last_error = ""
+            while monotonic() < deadline:
+                rc = process.poll()
+                if rc is not None:
+                    output = process.stdout.read() if process.stdout else ""
+                    raise RuntimeError(
+                        "kubectl port-forward for MinIO exited unexpectedly "
+                        f"with code {rc}. Output:\n{output}"
+                    )
+
+                try:
+                    s3 = boto3.resource(
+                        "s3",
+                        aws_access_key_id=_MINIO_ACCESS_KEY,
+                        aws_secret_access_key=_MINIO_SECRET_KEY,
+                        endpoint_url=endpoint_url,
+                    )
+                    s3_client = s3.meta.client
+                    s3_client.list_buckets()
+                    break
+                except BaseException as ex:
+                    last_error = str(ex)
+                    sleep(0.5)
+
+            if s3_client is None:
+                raise RuntimeError(
+                    "Failed to connect to test MinIO in kubernetes within timeout. "
+                    f"Last error: {last_error}"
+                )
+
+            existing_buckets = {
+                bucket["Name"] for bucket in s3_client.list_buckets().get("Buckets", [])
+            }
+            for bucket_name in _MINIO_BUCKETS:
+                if bucket_name not in existing_buckets:
+                    s3_client.create_bucket(Bucket=bucket_name)
+                self._clear_s3_bucket(s3_client, bucket_name)
+
+            mounted_file_share_dir = self.deps.cvat_root_dir / "tests/mounted_file_share"
+            manifest_dir = (
+                self.deps.cvat_root_dir
+                / "tests/cypress/e2e/actions_tasks/assets/case_65_manifest"
+            )
+            manifest_file = manifest_dir / "manifest.jsonl"
+            if not mounted_file_share_dir.exists():
+                raise RuntimeError(f"Expected test asset directory is missing: {mounted_file_share_dir}")
+            if not manifest_dir.exists():
+                raise RuntimeError(f"Expected test asset directory is missing: {manifest_dir}")
+            if not manifest_file.exists():
+                raise RuntimeError(f"Expected test asset file is missing: {manifest_file}")
+
+            for bucket_name in _MINIO_CONTENT_BUCKETS:
+                bucket_prefix = "sub" if bucket_name == "private" else ""
+                self._upload_dir_to_s3(
+                    s3_client,
+                    source_dir=mounted_file_share_dir,
+                    bucket=bucket_name,
+                    prefix=bucket_prefix,
+                )
+                images_prefix = (
+                    "images_with_manifest"
+                    if not bucket_prefix
+                    else f"{bucket_prefix}/images_with_manifest"
+                )
+                self._upload_dir_to_s3(
+                    s3_client,
+                    source_dir=manifest_dir,
+                    bucket=bucket_name,
+                    prefix=images_prefix,
+                )
+                for index in (1, 2):
+                    s3_client.upload_file(
+                        str(manifest_file),
+                        bucket_name,
+                        f"{images_prefix}/manifest_{index}.jsonl",
+                    )
+
+            self._set_public_bucket_policy(s3_client)
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except BaseException:
+                    process.kill()
+                    process.wait(timeout=5)
 
     def _start_service_port_forward(
         self,
@@ -644,25 +904,25 @@ class KubeInstance(InfraInstance):
     def _start_runtime_port_forwards(
         self, *, project_name: str, kube_fingerprint: dict | None = None
     ) -> None:
-        api_service = f"{_kube_release()}-backend-service"
-        if not _kube_service_exists(api_service):
+        ingress_service = _kube_traefik_service()
+        if not _kube_service_exists(ingress_service):
             raise RuntimeError(
-                f"Expected service '{api_service}' was not found in namespace '{_kube_namespace()}'"
+                f"Expected ingress service '{ingress_service}' was not found "
+                f"in namespace '{_kube_namespace()}'"
             )
 
-        # On local Docker-backed clusters, nodePort/IP is often unreachable from host.
-        # Prefer port-forward for deterministic connectivity across environments.
+        # Route API/UI via ingress through Traefik to match real Kubernetes path.
         api_port = self._start_service_port_forward(
-            service_name=api_service,
-            remote_port=8080,
+            service_name=ingress_service,
+            remote_port=80,
             start_port=18080,
             proc_attr="_api_port_forward_proc",
             port_attr="_api_forward_port",
         )
-        base_url = f"http://127.0.0.1:{api_port}"
+        base_url = f"http://localhost:{api_port}"
 
         minio_url = "http://127.0.0.1:9000"
-        minio_service = f"{_kube_release()}-minio"
+        minio_service = _MINIO_SERVICE_NAME
         if _kube_service_exists(minio_service):
             minio_port = self._start_service_port_forward(
                 service_name=minio_service,
@@ -725,20 +985,27 @@ class KubeInstance(InfraInstance):
             self._close_redis_restorer()
             self._close_runtime_port_forwards()
             _helm_uninstall(release=_kube_release(), namespace=_kube_namespace())
-            _stop_kind(_kube_profile())
+            _stop_minikube(_kube_profile())
             RuntimeInfraConfig.get_project_config(run_prefix).delete_state()
             pytest.exit("Kubernetes test infrastructure has been stopped", returncode=0)
 
         kube_fingerprint = self._ensure_kube_stack(run_prefix=run_prefix)
 
         if infra_mode == InfraMode.UP:
+            base_url = self._resolve_traefik_nodeport_url()
+            _configure_kube_runtime_env(
+                project_name=run_prefix,
+                base_url=base_url,
+                minio_endpoint_url="http://127.0.0.1:9000",
+            )
             self._persist_runtime_state(
                 project_name=run_prefix,
-                base_url="http://localhost:8080",
-                minio_endpoint_url="http://localhost:9000",
+                base_url=base_url,
+                minio_endpoint_url="http://127.0.0.1:9000",
                 kube_fingerprint=kube_fingerprint,
             )
-            pytest.exit("Kubernetes test infrastructure is ready", returncode=0)
+            self._print_up_instructions(base_url=base_url)
+            pytest.exit("Kubernetes test infrastructure is ready.", returncode=0)
 
         self._start_runtime_port_forwards(
             project_name=run_prefix, kube_fingerprint=kube_fingerprint
@@ -976,19 +1243,19 @@ class KubePlugin(InfraPlugin):
             "--kube-profile",
             action="store",
             default=_DEFAULT_KUBE_PROFILE,
-            help="Kind cluster name for --platform=kube. (default: %(default)s)",
+            help="Minikube profile name for --platform=kube. (default: %(default)s)",
         )
         group._addoption(
             "--kube-cpus",
             action="store",
             default="",
-            help="Optional CPU limit applied to kind node containers via `docker update`.",
+            help="Optional CPU count passed to `minikube start --cpus`.",
         )
         group._addoption(
             "--kube-memory",
             action="store",
             default="",
-            help="Optional memory limit (e.g. 16g) applied to kind node containers via `docker update`.",
+            help="Optional memory amount passed to `minikube start --memory` (e.g. 16g).",
         )
         group._addoption(
             "--kube-namespace",

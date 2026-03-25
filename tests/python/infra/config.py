@@ -29,6 +29,7 @@ class InfraMode(str, Enum):
     UP = "up"
     DOWN = "down"
     RESTORE_DB = "restore-db"
+    BUILD_IMAGES = "build-images"
     REUSE = "reuse"
 
     def __str__(self) -> str:

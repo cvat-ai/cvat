@@ -11,6 +11,7 @@ from infra.config import (
 )
 from infra.instances import InfraInstance, InstanceConfig
 from infra.profiler import RuntimeProfilerPlugin
+from infra.system_utils import run_command
 from infra.version_check import run_sanity_version_check
 
 # Register fixture modules explicitly.
@@ -67,7 +68,12 @@ def pytest_sessionstart(session) -> None:
     infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
     if infra_mode == InfraMode.AUTO:
         args = list(config.args)
-        for candidate in (str(InfraMode.UP), str(InfraMode.DOWN), str(InfraMode.RESTORE_DB)):
+        for candidate in (
+            str(InfraMode.UP),
+            str(InfraMode.DOWN),
+            str(InfraMode.RESTORE_DB),
+            str(InfraMode.BUILD_IMAGES),
+        ):
             if candidate in args:
                 args.remove(candidate)
                 config.args[:] = args
@@ -76,30 +82,52 @@ def pytest_sessionstart(session) -> None:
 
     setattr(config, "_cvat_infra_mode", infra_mode)
 
-    rebuild = bool(config.getoption("--rebuild"))
     cleanup = bool(config.getoption("--cleanup"))
     dumpdb = bool(config.getoption("--dumpdb"))
     collect_only = bool(config.getoption("--collect-only"))
     platform = str(config.getoption("--platform"))
     parallel = config.getoption("--parallel")
     if collect_only and any(
-        (rebuild, cleanup, dumpdb, infra_mode in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB})
+        (
+            cleanup,
+            dumpdb,
+            infra_mode in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES},
+        )
     ):
         raise pytest.UsageError(
-            "--collect-only is not compatible with --rebuild/--cleanup/--dumpdb/--infra=up/down/restore-db"
+            "--collect-only is not compatible with --cleanup/--dumpdb/"
+            "--infra=up/down/restore-db/build-images"
         )
-    if platform == "kube" and any((rebuild, cleanup, dumpdb)):
-        raise pytest.UsageError("--platform=kube does not support --rebuild/--cleanup/--dumpdb")
+    if platform == "kube" and any((cleanup, dumpdb)):
+        raise pytest.UsageError("--platform=kube does not support --cleanup/--dumpdb")
     if infra_mode == InfraMode.RESTORE_DB and parallel is not None:
         raise pytest.UsageError("--infra=restore-db is not supported with --parallel")
+
+    if infra_mode == InfraMode.BUILD_IMAGES:
+        cvat_root_dir = RuntimeInfraConfig.get_cvat_root_dir()
+        run_command(
+            [
+                "docker",
+                "compose",
+                "-f",
+                str(cvat_root_dir / "docker-compose.yml"),
+                "-f",
+                str(cvat_root_dir / "docker-compose.dev.yml"),
+                "build",
+                "cvat_server",
+                "cvat_ui",
+            ],
+            capture_output=False,
+        )
+        pytest.exit("CVAT images have been rebuilt (cvat/server:dev, cvat/ui:dev)", returncode=0)
 
     if config.getoption("--container-debug-wait") and not config.getoption("--container-debug"):
         raise pytest.UsageError("--container-debug-wait requires --container-debug with at least one service")
 
     should_run_version_check = (
         not collect_only
-        and infra_mode not in {InfraMode.DOWN, InfraMode.RESTORE_DB}
-        and not any((rebuild, cleanup, dumpdb))
+        and infra_mode not in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES}
+        and not any((cleanup, dumpdb))
         and not bool(config.getoption("--parallel-child"))
         and not bool(config.getoption("--skip-version-check"))
     )

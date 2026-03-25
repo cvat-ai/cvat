@@ -1,0 +1,27 @@
+{{- if .Values.testing.minio.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: backend
+    component: minio
+    {{- include "cvat.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: cvat-app
+    tier: backend
+    component: minio
+    {{- include "cvat.labels" . | nindent 4 }}
+  ports:
+  - name: api
+    port: 9000
+    targetPort: 9000
+    protocol: TCP
+  - name: console
+    port: 9001
+    targetPort: 9001
+    protocol: TCP
+{{- end }}
