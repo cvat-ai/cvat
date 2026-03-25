@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cvat-ui
+  namespace: cvat
+  labels:
+    app: cvat-ui
+    app.kubernetes.io/name: cvat-ui
+    app.kubernetes.io/part-of: cvat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cvat-ui
+  template:
+    metadata:
+      labels:
+        app: cvat-ui
+        app.kubernetes.io/name: cvat-ui
+        app.kubernetes.io/part-of: cvat
+    spec:
+      imagePullSecrets:
+        - name: ghcr-creds
+      containers:
+        - name: cvat-ui
+          image: ghcr.io/multiagentvision/cvat-ui:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 5
