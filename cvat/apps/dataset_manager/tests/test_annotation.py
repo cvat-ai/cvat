@@ -1,9 +1,13 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 
-from enum import Enum
+import math
+from collections.abc import Sequence
+from functools import partial
+from typing import Any
 from unittest import mock
 
 from django.test import TestCase
@@ -11,18 +15,12 @@ from django.test import TestCase
 from cvat.apps.dataset_manager import task as task_module
 from cvat.apps.dataset_manager.annotation import AnnotationIR, TrackManager
 from cvat.apps.engine import models
+from cvat.apps.engine.models import DimensionType, ShapeType
+from cvat.apps.engine.tests.utils import compare_objects
 
 
 # --- SHAPE/TRACK GENERATION HELPERS ---
-class ShapeType(Enum):
-    RECTANGLE = "rectangle"
-    POLYGON = "polygon"
-    POLYLINE = "polyline"
-    POINTS = "points"
-    CUBOID = "cuboid"
-
-
-def make_2d_points(base=0.0, shape_type=ShapeType.RECTANGLE):
+def make_2d_points(base: float = 0.0, shape_type: ShapeType = ShapeType.RECTANGLE) -> list[float]:
     if shape_type == ShapeType.RECTANGLE:
         return [1.0 + base, 2.0 + base, 3.0 + base, 4.0 + base]
     elif shape_type == ShapeType.POLYGON:
@@ -31,17 +29,18 @@ def make_2d_points(base=0.0, shape_type=ShapeType.RECTANGLE):
         return [1.0 + base, 2.0 + base, 3.0 + base, 4.0 + base, 5.0 + base, 6.0 + base]
     elif shape_type == ShapeType.POINTS:
         return [1.0 + base, 2.0 + base]
-    return []
+    else:
+        assert False, f"Unknown shape type '{shape_type}'"
 
 
-def make_3d_points(base=0.0):
+def make_3d_points(base: float = 0.0, rotation: float = 0.0) -> list[float]:
     return [
         1.0 + base,
         2.0 + base,
         3.0 + base,
-        0.0,
-        0.0,
-        0.0,
+        rotation,
+        rotation,
+        rotation,
         4.0 + base,
         4.0 + base,
         4.0 + base,
@@ -56,15 +55,16 @@ def make_3d_points(base=0.0):
 
 
 def make_shape(
-    frame,
-    base=0.0,
-    outside=False,
-    rotation=0,
-    attributes=None,
-    dimension="2d",
-    shape_type=None,
-    occluded=False,
-):
+    frame: int,
+    *,
+    base: float = 0.0,
+    outside: bool = False,
+    rotation: float = 0,
+    attributes: dict | None = None,
+    dimension: str | DimensionType = "2d",
+    shape_type: ShapeType | None = None,
+    occluded: bool = False,
+) -> dict[str, Any]:
     if dimension == "2d":
         if shape_type is None:
             shape_type = ShapeType.RECTANGLE
@@ -82,11 +82,11 @@ def make_shape(
         elif shape_type == ShapeType.POINTS:
             shape["rotation"] = 0
     else:
-        points = make_3d_points(base)
+        points = make_3d_points(base, rotation=rotation)
         shape = {
             "frame": frame,
             "points": points,
-            "rotation": rotation,
+            "rotation": 0,
             "type": ShapeType.CUBOID.value,
             "occluded": occluded,
             "outside": outside,
@@ -106,16 +106,18 @@ def make_track(shapes, frame=0, label_id=0, source="manual", attributes=None):
     }
 
 
-def get_dimension_type(dimension):
-    if dimension == models.DimensionType.DIM_3D or dimension == "3d":
-        return models.DimensionType.DIM_3D
-    elif dimension == models.DimensionType.DIM_2D or dimension == "2d":
-        return models.DimensionType.DIM_2D
-    raise ValueError(f"Unknown dimension: {dimension}")
+def get_dimension_type(dimension: str | DimensionType) -> DimensionType:
+    if not isinstance(dimension, DimensionType):
+        dimension = DimensionType[dimension]
+
+    return dimension
 
 
 class TrackManagerTest(TestCase):
-    def _check_interpolation(self, track, dimension=models.DimensionType.DIM_2D):
+    def assertTracksEqual(self, a: Sequence[dict], b: Sequence[dict]):
+        compare_objects(self, a, b, fp_tolerance=0.001)
+
+    def _check_keyframe_interpolation(self, track, dimension=models.DimensionType.DIM_2D):
         interpolated = TrackManager.get_interpolated_shapes(
             track, 0, 7, get_dimension_type(dimension)
         )
@@ -157,7 +159,7 @@ class TrackManagerTest(TestCase):
                     ),
                 ]
                 track = make_track(shapes)
-                self._check_interpolation(track, dimension)
+                self._check_keyframe_interpolation(track, dimension)
 
     def test_outside_shape_interpolation(self):
         for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
@@ -186,51 +188,70 @@ class TrackManagerTest(TestCase):
                 got = [shape["frame"] for shape in interpolated]
                 self.assertEqual(expected, got)
 
-    def test_outside_bbox_interpolation(self):
+    def test_bbox_interpolation(self):
+        make_rect = partial(make_shape, shape_type=ShapeType.RECTANGLE)
+
         shapes = [
-            make_shape(0, base=0.0, outside=False, shape_type=ShapeType.RECTANGLE),
-            make_shape(2, base=2.0, outside=True, shape_type=ShapeType.RECTANGLE),
-            make_shape(4, base=4.0, outside=True, shape_type=ShapeType.RECTANGLE),
+            make_rect(0, base=0, rotation=4 / 8 * 180, outside=False),
+            make_rect(4, base=4, rotation=0 / 8 * 180, outside=True),
         ]
         track = make_track(shapes)
+        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 6, "2d")
+
         expected_shapes = [
             dict(
-                make_shape(0, base=0.0, outside=False, shape_type=ShapeType.RECTANGLE),
+                make_rect(0, base=0, rotation=4 / 8 * 180, outside=False),
                 keyframe=True,
             ),
             dict(
-                make_shape(1, base=1.0, outside=False, shape_type=ShapeType.RECTANGLE),
+                make_rect(1, base=1, rotation=3 / 8 * 180, outside=False),
                 keyframe=False,
             ),
-            dict(
-                make_shape(2, base=2.0, outside=True, shape_type=ShapeType.RECTANGLE), keyframe=True
-            ),
-            dict(
-                make_shape(4, base=4.0, outside=True, shape_type=ShapeType.RECTANGLE), keyframe=True
-            ),
+            dict(make_rect(2, base=2, rotation=2 / 8 * 180, outside=False), keyframe=False),
+            dict(make_rect(3, base=3, rotation=1 / 8 * 180, outside=False), keyframe=False),
+            dict(make_rect(4, base=4, rotation=0 / 8 * 180, outside=True), keyframe=True),
         ]
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 5, "2d")
-        self.assertEqual(expected_shapes, interpolated_shapes)
+        self.assertTracksEqual(expected_shapes, interpolated_shapes)
 
-    def test_outside_polygon_interpolation(self):
+    def test_polygon_interpolation(self):
+        make_polygon = partial(make_shape, shape_type=ShapeType.POLYGON)
+
         shapes = [
-            make_shape(0, base=0.0, outside=False, shape_type=ShapeType.POLYGON),
-            make_shape(2, base=2.0, outside=True, shape_type=ShapeType.POLYGON),
+            make_polygon(0, base=0, rotation=0 / 8 * 180, outside=False),
+            make_polygon(4, base=4, rotation=4 / 8 * 180, outside=True),
         ]
         track = make_track(shapes)
+        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 6, "2d")
+
         expected_shapes = [
-            dict(
-                make_shape(0, base=0.0, outside=False, shape_type=ShapeType.POLYGON), keyframe=True
-            ),
-            dict(
-                make_shape(1, base=1.0, outside=False, shape_type=ShapeType.POLYGON), keyframe=False
-            ),
-            dict(
-                make_shape(2, base=2.0, outside=True, shape_type=ShapeType.POLYGON), keyframe=True
-            ),
+            dict(make_polygon(0, base=0, rotation=0 / 8 * 180, outside=False), keyframe=True),
+            dict(make_polygon(1, base=1, rotation=1 / 8 * 180, outside=False), keyframe=False),
+            dict(make_polygon(2, base=2, rotation=2 / 8 * 180, outside=False), keyframe=False),
+            dict(make_polygon(3, base=3, rotation=3 / 8 * 180, outside=False), keyframe=False),
+            dict(make_polygon(4, base=4, rotation=4 / 8 * 180, outside=True), keyframe=True),
         ]
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 3, "2d")
-        self.assertEqual(expected_shapes, interpolated_shapes)
+        self.assertTracksEqual(expected_shapes, interpolated_shapes)
+
+    def test_cuboid_3d_interpolation(self):
+        make_cuboid = partial(
+            make_shape, shape_type=ShapeType.CUBOID, dimension=DimensionType.DIM_3D
+        )
+
+        shapes = [
+            make_cuboid(0, base=0, rotation=-2 / 8 * math.pi, outside=False),
+            make_cuboid(4, base=4, rotation=2 / 8 * math.pi, outside=True),
+        ]
+        track = make_track(shapes)
+        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 6, "3d")
+
+        expected_shapes = [
+            dict(make_cuboid(0, base=0, rotation=-2 / 8 * math.pi, outside=False), keyframe=True),
+            dict(make_cuboid(1, base=1, rotation=-1 / 8 * math.pi, outside=False), keyframe=False),
+            dict(make_cuboid(2, base=2, rotation=0, outside=False), keyframe=False),
+            dict(make_cuboid(3, base=3, rotation=1 / 8 * math.pi, outside=False), keyframe=False),
+            dict(make_cuboid(4, base=4, rotation=2 / 8 * math.pi, outside=True), keyframe=True),
+        ]
+        self.assertTracksEqual(expected_shapes, interpolated_shapes)
 
     def test_duplicated_shape_interpolation(self):
         for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
