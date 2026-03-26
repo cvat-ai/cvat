@@ -101,3 +101,16 @@ is_sandbox if {
 is_organization if {
     input.auth.organization != null
 }
+
+add_organization_filter(base_filter, organization_fields) := base_filter if is_sandbox
+
+add_organization_filter(base_filter, organization_fields) := qobject if {
+    is_organization
+    qobject := ["&", base_filter, make_organization_filter(organization_fields)]
+}
+
+make_organization_filter(organization_fields) := qobject if {
+    is_array(organization_fields)
+    count(organization_fields) > 0
+    qobject := array.concat(["|"], [{f: input.auth.organization.id} | some f in organization_fields])
+}
