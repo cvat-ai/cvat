@@ -1,0 +1,62 @@
+name: Build and Push Agent Images
+
+on:
+  push
+
+#  release:
+#    types: [released]
+
+jobs:
+  yolo-cpu:
+    uses: ./.github/workflows/build-push-agent-images.yml
+    with:
+      repo_name: yolo_agent
+      dockerfile: ai-models/agents_deployment/yolo/Dockerfile
+      platforms: linux/amd64,linux/arm64
+    secrets: inherit
+
+  yolo-gpu:
+    uses: ./.github/workflows/build-push-agent-images.yml
+    with:
+      repo_name: yolo_agent
+      dockerfile: ai-models/agents_deployment/yolo/Dockerfile
+      platforms: linux/amd64
+      build_args: USE_GPU=true
+      tag_suffix: _GPU
+    secrets: inherit
+
+  sam2-cpu:
+    uses: ./.github/workflows/build-push-agent-images.yml
+    with:
+      repo_name: sam2_agent
+      dockerfile: ai-models/agents_deployment/sam2/Dockerfile
+      platforms: linux/amd64,linux/arm64
+    secrets: inherit
+
+  sam2-gpu:
+    uses: ./.github/workflows/build-push-agent-images.yml
+    with:
+      repo_name: sam2_agent
+      dockerfile: ai-models/agents_deployment/sam2/Dockerfile
+      platforms: linux/amd64
+      build_args: USE_GPU=true
+      tag_suffix: _GPU
+    secrets: inherit
+
+  transformers-cpu:
+    uses: ./.github/workflows/build-push-agent-images.yml
+    with:
+      repo_name: transformers_agent
+      dockerfile: ai-models/agents_deployment/transformers/Dockerfile
+      platforms: linux/amd64,linux/arm64
+    secrets: inherit
+
+  transformers-gpu:
+    uses: ./.github/workflows/build-push-agent-images.yml
+    with:
+      repo_name: transformers_agent
+      dockerfile: ai-models/agents_deployment/transformers/Dockerfile
+      platforms: linux/amd64
+      build_args: USE_GPU=true
+      tag_suffix: _GPU
+    secrets: inherit
