@@ -8,7 +8,7 @@ on:
 
 jobs:
   yolo-cpu:
-    uses: ./.github/workflows/build-push-agent-images.yml
+    uses: ./.github/workflows/build-push-agent-images-reusable.yml
     with:
       repo_name: yolo_agent
       dockerfile: ai-models/agents_deployment/yolo/Dockerfile
@@ -16,7 +16,7 @@ jobs:
     secrets: inherit
 
   yolo-gpu:
-    uses: ./.github/workflows/build-push-agent-images.yml
+    uses: ./.github/workflows/build-push-agent-images-reusable.yml
     with:
       repo_name: yolo_agent
       dockerfile: ai-models/agents_deployment/yolo/Dockerfile
@@ -26,7 +26,7 @@ jobs:
     secrets: inherit
 
   sam2-cpu:
-    uses: ./.github/workflows/build-push-agent-images.yml
+    uses: ./.github/workflows/build-push-agent-images-reusable.yml
     with:
       repo_name: sam2_agent
       dockerfile: ai-models/agents_deployment/sam2/Dockerfile
@@ -34,7 +34,7 @@ jobs:
     secrets: inherit
 
   sam2-gpu:
-    uses: ./.github/workflows/build-push-agent-images.yml
+    uses: ./.github/workflows/build-push-agent-images-reusable.yml
     with:
       repo_name: sam2_agent
       dockerfile: ai-models/agents_deployment/sam2/Dockerfile
@@ -44,7 +44,7 @@ jobs:
     secrets: inherit
 
   transformers-cpu:
-    uses: ./.github/workflows/build-push-agent-images.yml
+    uses: ./.github/workflows/build-push-agent-images-reusable.yml
     with:
       repo_name: transformers_agent
       dockerfile: ai-models/agents_deployment/transformers/Dockerfile
@@ -52,7 +52,7 @@ jobs:
     secrets: inherit
 
   transformers-gpu:
-    uses: ./.github/workflows/build-push-agent-images.yml
+    uses: ./.github/workflows/build-push-agent-images-reusable.yml
     with:
       repo_name: transformers_agent
       dockerfile: ai-models/agents_deployment/transformers/Dockerfile
