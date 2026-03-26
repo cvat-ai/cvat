@@ -652,28 +652,37 @@ def _match_lists(
     return matches, a_unmatched, b_unmatched
 
 
-def _format_key(key: list[str]) -> str:
-    return ".".join([] + key) or ""
+def _format_key(key: list[Any]) -> str:
+    return ".".join([] + list(map(str, key))) or ""
 
 
 def compare_objects(
     self: TestCase,
     obj1: Any,
     obj2: Any,
-    ignore_keys: Collection[str],
     *,
+    ignore_keys: Collection[str] | None = None,
     defaults: dict[str, Any] | Callable[[list[str]], dict | None] | None = None,
     fp_tolerance: float = 0.001,
     current_key: list[str] | str | None = None,
+    full_current_key: list[str | int] | str | None = None,
     check_order: bool | OrderStrategy = True,
-) -> bool | NoReturn:
+) -> None | NoReturn:
     if isinstance(current_key, str):
         current_key = [current_key]
     elif not current_key:
         current_key = []
 
-    key_info = f"{_format_key(current_key)}: "
-    error_msg = "{}{} != {}"
+    if isinstance(full_current_key, str):
+        full_current_key = [full_current_key]
+    elif not full_current_key:
+        full_current_key = [""]
+
+    if ignore_keys is None:
+        ignore_keys = tuple()
+
+    key_info = f"{_format_key(full_current_key)}"
+    error_msg = "{}: {} != {}"
 
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), error_msg.format(key_info, obj1, obj2))
@@ -688,11 +697,12 @@ def compare_objects(
         for k in keys_to_check:
             compare_objects(
                 self,
-                obj1[k] if not k in current_key_defaults else obj1.get(k, current_key_defaults[k]),
-                obj2[k] if not k in current_key_defaults else obj2.get(k, current_key_defaults[k]),
-                ignore_keys,
+                obj1[k] if k not in current_key_defaults else obj1.get(k, current_key_defaults[k]),
+                obj2[k] if k not in current_key_defaults else obj2.get(k, current_key_defaults[k]),
+                ignore_keys=ignore_keys,
                 defaults=defaults,
                 current_key=current_key + [k],
+                full_current_key=full_current_key + [k],
                 fp_tolerance=fp_tolerance,
                 check_order=check_order,
             )
@@ -705,14 +715,15 @@ def compare_objects(
         )
 
         if check_order is True or check_order(current_key):
-            for v1, v2 in zip(obj1, obj2):
+            for i, (v1, v2) in enumerate(zip(obj1, obj2)):
                 compare_objects(
                     self,
                     v1,
                     v2,
-                    ignore_keys,
+                    ignore_keys=ignore_keys,
                     defaults=defaults,
                     current_key=current_key,
+                    full_current_key=full_current_key + [i],
                     fp_tolerance=fp_tolerance,
                     check_order=check_order,
                 )
@@ -724,9 +735,10 @@ def compare_objects(
                         self,
                         a,
                         b,
-                        ignore_keys,
+                        ignore_keys=ignore_keys,
                         defaults=defaults,
                         current_key=current_key,
+                        full_current_key=full_current_key,
                         fp_tolerance=fp_tolerance,
                         check_order=check_order,
                     )
@@ -745,9 +757,9 @@ def compare_objects(
                 )
 
     elif isinstance(obj1, float) or isinstance(obj2, float):
-        self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=current_key)
+        self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance, msg=key_info)
     else:
-        self.assertEqual(obj1, obj2, msg=current_key)
+        self.assertEqual(obj1, obj2, msg=key_info)
 
 
 def check_annotation_response(
