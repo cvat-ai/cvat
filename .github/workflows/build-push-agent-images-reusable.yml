@@ -62,3 +62,4 @@ jobs:
             ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ inputs.repo_name }}:${{ inputs.tag }}${{ inputs.tag_suffix }}
             ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ inputs.repo_name }}:latest${{ inputs.tag_suffix }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_WORKSPACE }}/${{ inputs.repo_name }}:latest${{ inputs.tag_suffix }}
+          cache-to: type=inline
