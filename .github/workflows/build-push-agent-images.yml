@@ -7,9 +7,7 @@ on:
 #  release:
 #    types: [released]
 
-env:
-  tag: "1.0.0"
-#  tag: "${{ github.event.release.tag_name }}"
+## change tag: "1.0.0" to tag: ${{ github.event.release.tag_name }}
 
 
 jobs:
@@ -19,7 +17,7 @@ jobs:
       repo_name: yolo_agent
       dockerfile: ai-models/agents_deployment/yolo/Dockerfile
       platforms: linux/amd64,linux/arm64
-      tag: ${{ env.tag }}
+      tag: "1.0.0"
     secrets: inherit
 
   yolo-gpu:
@@ -29,7 +27,7 @@ jobs:
       dockerfile: ai-models/agents_deployment/yolo/Dockerfile
       platforms: linux/amd64
       build_args: USE_GPU=true
-      tag: ${{ env.tag }}
+      tag: "1.0.0"
       tag_suffix: _GPU
     secrets: inherit
 
@@ -39,7 +37,7 @@ jobs:
       repo_name: sam2_agent
       dockerfile: ai-models/agents_deployment/sam2/Dockerfile
       platforms: linux/amd64,linux/arm64
-      tag: ${{ env.tag }}
+      tag: "1.0.0"
     secrets: inherit
 
   sam2-gpu:
@@ -49,7 +47,7 @@ jobs:
       dockerfile: ai-models/agents_deployment/sam2/Dockerfile
       platforms: linux/amd64
       build_args: USE_GPU=true
-      tag: ${{ env.tag }}
+      tag: "1.0.0"
       tag_suffix: _GPU
     secrets: inherit
 
@@ -59,7 +57,7 @@ jobs:
       repo_name: transformers_agent
       dockerfile: ai-models/agents_deployment/transformers/Dockerfile
       platforms: linux/amd64,linux/arm64
-      tag: ${{ env.tag }}
+      tag: "1.0.0"
     secrets: inherit
 
   transformers-gpu:
@@ -69,6 +67,6 @@ jobs:
       dockerfile: ai-models/agents_deployment/transformers/Dockerfile
       platforms: linux/amd64
       build_args: USE_GPU=true
-      tag: ${{ env.tag }}
+      tag: "1.0.0"
       tag_suffix: _GPU
     secrets: inherit
