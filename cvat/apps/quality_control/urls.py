@@ -10,6 +10,7 @@ from cvat.apps.quality_control import views
 router = routers.DefaultRouter(trailing_slash=False)
 router.register("reports", views.QualityReportViewSet, basename="quality_reports")
 router.register("conflicts", views.QualityConflictsViewSet, basename="annotation_conflicts")
+router.register("settings/requirements", views.QualityRequirementViewSet, basename="quality_requirements")
 router.register("settings", views.QualitySettingsViewSet, basename="quality_settings")
 
 urlpatterns = [

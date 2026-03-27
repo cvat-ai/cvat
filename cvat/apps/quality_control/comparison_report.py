@@ -659,6 +659,25 @@ class ComparisonReportJobStats(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
+class ComparisonReportTargetsSummary(ReportNode):
+    total: int
+    enabled: int
+    completed: int
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportTargetsSummary:
+        return cls(
+            total=d.get("total", 0),
+            enabled=d.get("enabled", 0),
+            completed=d.get("completed", 0),
+        )
+
+    @classmethod
+    def create_empty(cls) -> ComparisonReportTargetsSummary:
+        return cls(total=0, enabled=0, completed=0)
+
+
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportSummary(ReportNode):
     frames: list[str] | None
     total_frames: int
@@ -673,6 +692,7 @@ class ComparisonReportSummary(ReportNode):
 
     tasks: ComparisonReportTaskStats | None
     jobs: ComparisonReportJobStats | None
+    targets: ComparisonReportTargetsSummary | None = None
 
     @property
     def frame_share(self) -> float:
@@ -728,6 +748,11 @@ class ComparisonReportSummary(ReportNode):
             ),
             tasks=ComparisonReportTaskStats.from_dict(d["tasks"]) if d.get("tasks") else None,
             jobs=ComparisonReportJobStats.from_dict(d["jobs"]) if d.get("jobs") else None,
+            targets=(
+                ComparisonReportTargetsSummary.from_dict(d["targets"])
+                if d.get("targets") is not None
+                else None
+            ),
         )
 
 
@@ -785,10 +810,40 @@ class ComparisonReportFrameSummary(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
+class ComparisonReportRequirementSummary(ReportNode):
+    parameters: dict[str, Any]
+    comparison_summary: ComparisonReportSummary
+    frame_results: dict[int, ComparisonReportFrameSummary] | None
+
+    @property
+    def conflicts(self) -> list[AnnotationConflict]:
+        if not self.frame_results:
+            return []
+
+        return list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementSummary:
+        return cls(
+            parameters=d.get("parameters", {}),
+            comparison_summary=ComparisonReportSummary.from_dict(d["comparison_summary"]),
+            frame_results=(
+                {
+                    int(k): ComparisonReportFrameSummary.from_dict(v)
+                    for k, v in d["frame_results"].items()
+                }
+                if d.get("frame_results") is not None
+                else None
+            ),
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReport(ReportNode):
     parameters: ComparisonParameters
     comparison_summary: ComparisonReportSummary
     frame_results: dict[int, ComparisonReportFrameSummary] | None
+    groups: dict[str, ComparisonReportRequirementSummary] | None = None
 
     @property
     def conflicts(self) -> list[AnnotationConflict]:
@@ -810,6 +865,14 @@ class ComparisonReport(ReportNode):
                 if d.get("frame_results") is not None
                 else None
             ),
+            groups=(
+                {
+                    k: ComparisonReportRequirementSummary.from_dict(v)
+                    for k, v in d["groups"].items()
+                }
+                if d.get("groups") is not None
+                else None
+            ),
         )
 
     def to_json(self) -> str:
@@ -818,6 +881,13 @@ class ComparisonReport(ReportNode):
         # String keys are needed for json dumping
         if d.get("frame_results") is not None:
             d["frame_results"] = {str(k): v for k, v in d["frame_results"].items()}
+
+        if d.get("groups") is not None:
+            for group in d["groups"].values():
+                if group.get("frame_results") is not None:
+                    group["frame_results"] = {
+                        str(k): v for k, v in group["frame_results"].items()
+                    }
 
         return dump_json(d).decode()
 

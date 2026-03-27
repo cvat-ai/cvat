@@ -32,11 +32,13 @@ from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
     QualityReportTarget,
+    QualityRequirement,
     QualitySettings,
 )
 from cvat.apps.quality_control.permissions import (
     AnnotationConflictPermission,
     QualityReportPermission,
+    QualityRequirementPermission,
     QualitySettingPermission,
     get_iam_context,
 )
@@ -45,6 +47,7 @@ from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
     QualityReportCreateSerializer,
     QualityReportSerializer,
+    QualityRequirementSerializer,
     QualitySettingsParentType,
     QualitySettingsSerializer,
 )
@@ -506,14 +509,30 @@ SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
             "200": QualitySettingsSerializer,
         },
     ),
+    update=extend_schema(
+        summary="Replace a quality settings instance",
+        parameters=[
+            OpenApiParameter(
+                "id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="An id of a quality settings instance",
+            )
+        ],
+        request=QualitySettingsSerializer,
+        responses={
+            "200": QualitySettingsSerializer,
+        },
+    ),
 )
 class QualitySettingsViewSet(
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = QualitySettings.objects
+    queryset = QualitySettings.objects.prefetch_related("requirements", "requirements__parent")
 
     iam_organization_field = ["task__organization", "project__organization"]
     iam_permission_class = QualitySettingPermission
@@ -568,3 +587,118 @@ class QualitySettingsViewSet(
             queryset = permissions.filter(queryset)
 
         return queryset
+
+
+@extend_schema(tags=["quality"])
+@extend_schema_view(
+    list=extend_schema(
+        summary="List quality requirements",
+        parameters=[
+            OpenApiParameter("task_id", type=OpenApiTypes.INT, description="Task id filter"),
+            OpenApiParameter("project_id", type=OpenApiTypes.INT, description="Project id filter"),
+            OpenApiParameter("settings_id", type=OpenApiTypes.INT, description="Settings id filter"),
+        ],
+        responses={"200": QualityRequirementSerializer(many=True)},
+    ),
+    create=extend_schema(
+        summary="Create a quality requirement",
+        request=QualityRequirementSerializer,
+        responses={"201": QualityRequirementSerializer},
+    ),
+    retrieve=extend_schema(
+        summary="Get quality requirement details",
+        responses={"200": QualityRequirementSerializer},
+    ),
+    partial_update=extend_schema(
+        summary="Update a quality requirement",
+        request=QualityRequirementSerializer(partial=True),
+        responses={"200": QualityRequirementSerializer},
+    ),
+    update=extend_schema(
+        summary="Replace a quality requirement",
+        request=QualityRequirementSerializer,
+        responses={"200": QualityRequirementSerializer},
+    ),
+    destroy=extend_schema(
+        summary="Delete a quality requirement",
+        responses={"204": OpenApiResponse(description="Requirement deleted")},
+    ),
+)
+class QualityRequirementViewSet(
+    viewsets.GenericViewSet,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    PartialUpdateModelMixin,
+    mixins.DestroyModelMixin,
+):
+    queryset = QualityRequirement.objects.select_related(
+        "settings",
+        "settings__task",
+        "settings__task__project",
+        "settings__project",
+        "parent",
+    )
+
+    iam_organization_field = ["settings__task__organization", "settings__project__organization"]
+    iam_permission_class = QualityRequirementPermission
+
+    search_fields = []
+    filter_fields = [
+        "id",
+        "settings_id",
+        "task_id",
+        "project_id",
+        "annotation_type",
+        "enabled",
+        "created_date",
+        "updated_date",
+    ]
+    simple_filters = ["settings_id", "annotation_type", "enabled"]
+    ordering_fields = filter_fields + ["name"]
+    ordering = "id"
+
+    serializer_class = QualityRequirementSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        if self.action == "list":
+            iam_context = None
+            settings_queryset = QualitySettings.objects.all()
+
+            if settings_id := self.request.query_params.get("settings_id", None):
+                settings = get_or_404(QualitySettings, settings_id)
+                self.check_object_permissions(self.request, settings)
+                iam_context = get_iam_context(self.request, settings)
+                settings_queryset = settings_queryset.filter(id=settings_id)
+            elif task_id := self.request.query_params.get("task_id", None):
+                task = get_or_404(Task, task_id)
+                self.check_object_permissions(self.request, task)
+                iam_context = get_iam_context(self.request, task)
+                settings_queryset = settings_queryset.filter(task_id=task_id)
+            elif project_id := self.request.query_params.get("project_id", None):
+                project = get_or_404(Project, project_id)
+                self.check_object_permissions(self.request, project)
+                iam_context = get_iam_context(self.request, project)
+                settings_queryset = settings_queryset.filter(
+                    Q(project__id=project_id) | Q(task__project__id=project_id)
+                )
+
+            permissions = QualitySettingPermission.create_scope_list(
+                self.request, iam_context=iam_context
+            )
+            allowed_settings = permissions.filter(settings_queryset).values_list("id", flat=True)
+            queryset = queryset.filter(settings_id__in=allowed_settings)
+
+        return queryset
+
+    def perform_destroy(self, instance):
+        if instance.settings.requirements.count() <= 1:
+            raise ValidationError("The last quality requirement cannot be deleted.")
+
+        settings = instance.settings
+        result = super().perform_destroy(instance)
+        settings.save()
+        return result

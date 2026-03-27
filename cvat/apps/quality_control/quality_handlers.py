@@ -22,10 +22,12 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonParameters,
     ComparisonReportAnnotationComponentsSummary,
     ComparisonReportAnnotationLabelSummary,
+    ComparisonReportRequirementSummary,
     ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
     ComparisonReportSummary,
+    ComparisonReportTargetsSummary,
     ConfusionMatrix,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
@@ -50,6 +52,153 @@ class MatchingContext:
     categories: dm.Categories
     annotation_requirements: dict[int, set]  # ann_id -> set of requirement names
     parent_results: dict[str, RequirementFrameResult] | None = None  # for attribute requirements
+
+
+def _get_requirement_field(requirement: Any, *names: str, default=None):
+    if isinstance(requirement, dict):
+        for name in names:
+            if name in requirement:
+                return requirement[name]
+    else:
+        for name in names:
+            if hasattr(requirement, name):
+                return getattr(requirement, name)
+
+    return default
+
+
+def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
+    if hasattr(requirement, "to_dict") and callable(requirement.to_dict):
+        params = dict(requirement.to_dict())
+    elif isinstance(requirement, dict):
+        params = dict(requirement)
+    else:
+        params = {
+            name: value
+            for name, value in vars(requirement).items()
+            if not name.startswith("_")
+        }
+
+    parent = params.pop("parent", None)
+    if "parent_requirement" not in params:
+        params["parent_requirement"] = getattr(parent, "id", parent)
+
+    if "target_metric" in params and "metric" not in params:
+        params["metric"] = params.pop("target_metric")
+
+    if "target_metric_threshold" in params and "required_score" not in params:
+        params["required_score"] = params.pop("target_metric_threshold")
+
+    for field in ("id", "settings", "settings_id", "created_date", "updated_date"):
+        params.pop(field, None)
+
+    return params
+
+
+def merge_annotations_summary(
+    target: ComparisonReportAnnotationsSummary, other: ComparisonReportAnnotationsSummary
+) -> None:
+    for field in ("valid_count", "missing_count", "extra_count", "total_count", "ds_count", "gt_count"):
+        setattr(target, field, getattr(target, field) + getattr(other, field))
+
+    if target.confusion_matrix is None:
+        target.confusion_matrix = deepcopy(other.confusion_matrix) if other.confusion_matrix else None
+    elif (
+        other.confusion_matrix
+        and target.confusion_matrix.labels
+        and other.confusion_matrix.labels
+        and target.confusion_matrix.labels == other.confusion_matrix.labels
+    ):
+        target.confusion_matrix.accumulate(other.confusion_matrix)
+    elif other.confusion_matrix and other.confusion_matrix.labels:
+        target.confusion_matrix = None
+
+
+def merge_frame_summaries(
+    target: ComparisonReportFrameSummary,
+    other: ComparisonReportFrameSummary,
+    *,
+    current_count: int,
+) -> None:
+    target.conflicts += other.conflicts
+    merge_annotations_summary(target.annotations, other.annotations)
+    target.annotation_components.accumulate(other.annotation_components)
+    target.annotation_components.shape.mean_iou = (
+        target.annotation_components.shape.mean_iou * current_count
+        + other.annotation_components.shape.mean_iou
+    ) / (current_count + 1)
+
+
+def build_requirement_report(
+    *,
+    requirement: Any,
+    frame_results: dict[int, ComparisonReportFrameSummary],
+    total_frames: int,
+    include_frame_results: bool = True,
+) -> ComparisonReportRequirementSummary:
+    conflicts: list[AnnotationConflict] = []
+    annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
+    annotation_components = ComparisonReportAnnotationComponentsSummary.create_empty()
+    mean_ious = []
+
+    for frame_result in frame_results.values():
+        conflicts += frame_result.conflicts
+        merge_annotations_summary(annotations_summary, frame_result.annotations)
+        annotation_components.accumulate(frame_result.annotation_components)
+        mean_ious.append(frame_result.annotation_components.shape.mean_iou)
+
+    annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
+
+    conflicts_by_severity = Counter(c.severity for c in conflicts)
+    return ComparisonReportRequirementSummary(
+        parameters=serialize_requirement_parameters(requirement),
+        comparison_summary=ComparisonReportSummary(
+            frames=sorted(frame_results),
+            total_frames=total_frames,
+            conflict_count=len(conflicts),
+            warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
+            error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR, 0),
+            conflicts_by_type=Counter(c.type for c in conflicts),
+            annotations=annotations_summary,
+            annotation_components=annotation_components,
+            tasks=None,
+            jobs=None,
+            targets=None,
+        ),
+        frame_results=deepcopy(frame_results) if include_frame_results else None,
+    )
+
+
+def build_targets_summary(
+    requirements: list[Any],
+    group_reports: dict[str, ComparisonReportRequirementSummary],
+) -> ComparisonReportTargetsSummary:
+    enabled_requirements = [
+        requirement
+        for requirement in requirements
+        if _get_requirement_field(requirement, "enabled", default=True)
+    ]
+    completed_count = 0
+
+    for requirement in enabled_requirements:
+        group_name = _get_requirement_field(requirement, "name")
+        group_report = group_reports.get(group_name)
+        if not group_report:
+            continue
+
+        metric = _get_requirement_field(requirement, "target_metric", "metric")
+        required_score = _get_requirement_field(
+            requirement, "target_metric_threshold", "required_score", default=0
+        )
+        actual_score = getattr(group_report.comparison_summary.annotations, metric, None)
+        if actual_score is not None and required_score <= actual_score:
+            completed_count += 1
+
+    return ComparisonReportTargetsSummary(
+        total=len(requirements),
+        enabled=len(enabled_requirements),
+        completed=completed_count,
+    )
 
 
 class RequirementHandler(ABC):
@@ -908,20 +1057,7 @@ class DatasetQualityEstimator:
     def _merge_annotations_summary(
         target: ComparisonReportAnnotationsSummary, other: ComparisonReportAnnotationsSummary
     ) -> None:
-        for field in ("valid_count", "missing_count", "extra_count", "total_count", "ds_count", "gt_count"):
-            setattr(target, field, getattr(target, field) + getattr(other, field))
-
-        if target.confusion_matrix is None:
-            target.confusion_matrix = deepcopy(other.confusion_matrix) if other.confusion_matrix else None
-        elif (
-            other.confusion_matrix
-            and target.confusion_matrix.labels
-            and other.confusion_matrix.labels
-            and target.confusion_matrix.labels == other.confusion_matrix.labels
-        ):
-            target.confusion_matrix.accumulate(other.confusion_matrix)
-        elif other.confusion_matrix and other.confusion_matrix.labels:
-            target.confusion_matrix = None
+        merge_annotations_summary(target, other)
 
     @classmethod
     def _merge_frame_summaries(
@@ -931,13 +1067,7 @@ class DatasetQualityEstimator:
         *,
         current_count: int,
     ) -> None:
-        target.conflicts += other.conflicts
-        cls._merge_annotations_summary(target.annotations, other.annotations)
-        target.annotation_components.accumulate(other.annotation_components)
-        target.annotation_components.shape.mean_iou = (
-            target.annotation_components.shape.mean_iou * current_count
-            + other.annotation_components.shape.mean_iou
-        ) / (current_count + 1)
+        merge_frame_summaries(target, other, current_count=current_count)
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
         if dataset is self._ds_dataset:
@@ -1128,6 +1258,19 @@ class DatasetQualityEstimator:
             total_annotation_components,
         ) = self._aggregate_all_results()
 
+        group_reports = {
+            requirement.name: build_requirement_report(
+                requirement=requirement,
+                frame_results=(
+                    self._results.get(requirement.name, {})
+                    if getattr(requirement, "enabled", True)
+                    else {}
+                ),
+                total_frames=self._get_total_frames(),
+            )
+            for requirement in self._requirements
+        }
+        target_stats = build_targets_summary(self._requirements, group_reports)
         conflicts_by_severity = Counter(c.severity for c in conflicts)
         return ComparisonReport(
             parameters=self.DEFAULT_SETTINGS,
@@ -1142,6 +1285,8 @@ class DatasetQualityEstimator:
                 annotation_components=total_annotation_components,
                 tasks=None,
                 jobs=None,
+                targets=target_stats,
             ),
             frame_results=all_frame_results,
+            groups=group_reports,
         )

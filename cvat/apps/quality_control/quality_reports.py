@@ -208,12 +208,8 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     comparison_report = ComparisonReport.from_json(db_report.get_report_data())
     serialized_data.update(comparison_report.to_dict())
 
-    if db_report.project:
-        # project reports should not have per-frame statistics, it's too detailed for this level
-        serialized_data["comparison_summary"].pop("frames")
-        serialized_data.pop("frame_results")
-    else:
-        for frame_result in serialized_data["frame_results"].values():
+    def _decorate_frame_results(frame_results: dict) -> None:
+        for frame_result in frame_results.values():
             for conflict in frame_result["conflicts"]:
                 for ann_id in conflict["annotation_ids"]:
                     task_id = jobs_to_tasks[ann_id["job_id"]]
@@ -224,10 +220,23 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
                         f"&serverID={ann_id['obj_id']}"
                     )
 
-        # String keys are needed for json dumping
-        serialized_data["frame_results"] = {
-            str(k): v for k, v in serialized_data["frame_results"].items()
-        }
+    def _stringify_frame_results(frame_results: dict) -> dict[str, dict]:
+        return {str(k): v for k, v in frame_results.items()}
+
+    if db_report.project:
+        # project reports should not have per-frame statistics, it's too detailed for this level
+        serialized_data["comparison_summary"].pop("frames")
+        serialized_data.pop("frame_results")
+    else:
+        _decorate_frame_results(serialized_data["frame_results"])
+        serialized_data["frame_results"] = _stringify_frame_results(serialized_data["frame_results"])
+
+    for group in serialized_data.get("groups", {}).values():
+        if group.get("frame_results") is None:
+            continue
+
+        _decorate_frame_results(group["frame_results"])
+        group["frame_results"] = _stringify_frame_results(group["frame_results"])
 
     if task_stats := serialized_data["comparison_summary"].get("tasks", {}):
         for k in ("all", "custom", "not_configured", "excluded"):

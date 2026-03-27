@@ -378,6 +378,10 @@ class QualityRequirement(TimestampedModel):
 
     empty_is_annotated = models.BooleanField(default=False)
 
+    @property
+    def organization_id(self) -> int | None:
+        return self.settings.organization_id
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         defaults = deepcopy(self.get_defaults())
         for field in self._meta.fields:

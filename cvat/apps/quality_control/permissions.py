@@ -12,8 +12,69 @@ from cvat.apps.engine.permissions import JobPermission, ProjectPermission, TaskP
 from cvat.apps.engine.view_utils import get_or_404
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
-from .models import AnnotationConflict, QualityReport, QualitySettings
+from .models import AnnotationConflict, QualityReport, QualityRequirement, QualitySettings
 from .serializers import QualityReportCreateSerializer
+
+
+def _build_quality_resource(
+    obj: QualitySettings | QualityRequirement,
+    *,
+    resource_id: int | None = None,
+) -> dict:
+    settings_obj = obj.settings if isinstance(obj, QualityRequirement) else obj
+    task = settings_obj.task
+    project = settings_obj.project or (task.project if task else None)
+    organization_id = project.organization_id if project else task.organization_id
+
+    return {
+        "id": resource_id if resource_id is not None else obj.id,
+        "organization": {"id": organization_id},
+        "task": (
+            {
+                "owner": {"id": task.owner_id},
+                "assignee": {"id": task.assignee_id},
+            }
+            if task
+            else None
+        ),
+        "project": (
+            {
+                "owner": {"id": project.owner_id},
+                "assignee": {"id": project.assignee_id},
+            }
+            if project
+            else None
+        ),
+    }
+
+
+def _create_owning_quality_settings_permission(
+    request,
+    view,
+    settings_obj: QualitySettings,
+    *,
+    scope: str,
+    iam_context,
+):
+    if project := settings_obj.project:
+        return ProjectPermission.create_base_perm(
+            request,
+            view,
+            iam_context=iam_context,
+            scope=scope,
+            obj=project,
+        )
+
+    if task := settings_obj.task:
+        return TaskPermission.create_base_perm(
+            request,
+            view,
+            iam_context=iam_context,
+            scope=scope,
+            obj=task,
+        )
+
+    raise AssertionError("Quality settings must belong to either a task or a project")
 
 
 class QualityReportPermission(OpenPolicyAgentPermission):
@@ -228,6 +289,38 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         UPDATE = "update"
 
     @classmethod
+    def create_scope_view(cls, request, settings: int | QualitySettings, iam_context=None):
+        if isinstance(settings, int):
+            settings = get_or_404(QualitySettings, settings)
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, settings)
+
+        return _create_owning_quality_settings_permission(
+            request,
+            None,
+            settings,
+            scope=TaskPermission.Scopes.VIEW,
+            iam_context=iam_context,
+        )
+
+    @classmethod
+    def create_scope_update(cls, request, settings: int | QualitySettings, iam_context=None):
+        if isinstance(settings, int):
+            settings = get_or_404(QualitySettings, settings)
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, settings)
+
+        return _create_owning_quality_settings_permission(
+            request,
+            None,
+            settings,
+            scope=TaskPermission.Scopes.UPDATE_DESC,
+            iam_context=iam_context,
+        )
+
+    @classmethod
     def create(cls, request, view, obj, iam_context):
         Scopes = cls.Scopes
 
@@ -235,41 +328,19 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         for scope in cls.get_scopes(request, view, obj):
             if scope in [Scopes.VIEW, Scopes.UPDATE]:
                 obj = cast(QualitySettings, obj)
-
-                if project := obj.project:
-                    if scope == Scopes.VIEW:
-                        task_scope = TaskPermission.Scopes.VIEW
-                    elif scope == Scopes.UPDATE:
-                        task_scope = TaskPermission.Scopes.UPDATE_DESC
-                    else:
-                        assert False
-
-                    # Access rights are the same as in the owning project
-                    # This component doesn't define its own rules in this case
-                    permissions.append(
-                        ProjectPermission.create_base_perm(
-                            request,
-                            view,
-                            iam_context=iam_context,
-                            scope=task_scope,
-                            obj=project,
-                        )
+                permissions.append(
+                    _create_owning_quality_settings_permission(
+                        request,
+                        view,
+                        obj,
+                        scope=(
+                            TaskPermission.Scopes.VIEW
+                            if scope == Scopes.VIEW
+                            else TaskPermission.Scopes.UPDATE_DESC
+                        ),
+                        iam_context=iam_context,
                     )
-                elif task := obj.task:
-                    if scope == Scopes.VIEW:
-                        task_scope = TaskPermission.Scopes.VIEW
-                    elif scope == Scopes.UPDATE:
-                        task_scope = TaskPermission.Scopes.UPDATE_DESC
-                    else:
-                        assert False
-
-                    # Access rights are the same as in the owning task
-                    # This component doesn't define its own rules in this case
-                    permissions.append(
-                        TaskPermission.create_base_perm(
-                            request, view, iam_context=iam_context, scope=task_scope, obj=task
-                        )
-                    )
+                )
             elif scope == cls.Scopes.LIST:
                 if task_id := request.query_params.get("task_id", None):
                     permissions.append(
@@ -305,39 +376,120 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
             {
                 "list": Scopes.LIST,
                 "retrieve": Scopes.VIEW,
+                "update": Scopes.UPDATE,
                 "partial_update": Scopes.UPDATE,
             }[view.action]
         ]
 
     def get_resource(self):
-        data = None
-
         if self.obj:
-            task = self.obj.task
-            if task.project:
-                organization_id = task.project.organization_id
+            return _build_quality_resource(self.obj)
+
+        return None
+
+
+class QualityRequirementPermission(OpenPolicyAgentPermission):
+    obj: QualityRequirement | None
+    settings: QualitySettings | None
+
+    class Scopes(StrEnum):
+        LIST = "list"
+        VIEW = "view"
+        CREATE = "create"
+        UPDATE = "update"
+        DELETE = "delete"
+
+    @classmethod
+    def create(cls, request, view, obj, iam_context):
+        permissions = []
+
+        for scope in cls.get_scopes(request, view, obj):
+            if scope == cls.Scopes.LIST:
+                if settings_id := request.query_params.get("settings_id", None):
+                    permissions.append(
+                        QualitySettingPermission.create_scope_view(
+                            request,
+                            int(settings_id),
+                            iam_context=iam_context,
+                        )
+                    )
+                elif task_id := request.query_params.get("task_id", None):
+                    permissions.append(
+                        TaskPermission.create_scope_view(
+                            request,
+                            int(task_id),
+                            iam_context=iam_context,
+                        )
+                    )
+                elif project_id := request.query_params.get("project_id", None):
+                    permissions.append(
+                        ProjectPermission.create_scope_view(
+                            request,
+                            int(project_id),
+                            iam_context=iam_context,
+                        )
+                    )
+
+                permissions.append(cls.create_scope_list(request, iam_context))
+            elif scope == cls.Scopes.VIEW:
+                requirement = cast(QualityRequirement, obj)
+                permissions.append(
+                    _create_owning_quality_settings_permission(
+                        request,
+                        view,
+                        requirement.settings,
+                        scope=TaskPermission.Scopes.VIEW,
+                        iam_context=iam_context,
+                    )
+                )
+            elif scope in [cls.Scopes.CREATE, cls.Scopes.UPDATE, cls.Scopes.DELETE]:
+                if scope == cls.Scopes.CREATE:
+                    settings_id = request.data.get("settings_id")
+                    if settings_id is None:
+                        permissions.append(cls.create_scope_list(request, iam_context))
+                        continue
+
+                    settings_obj = get_or_404(QualitySettings, int(settings_id))
+                else:
+                    settings_obj = cast(QualityRequirement, obj).settings
+
+                permissions.append(
+                    _create_owning_quality_settings_permission(
+                        request,
+                        view,
+                        settings_obj,
+                        scope=TaskPermission.Scopes.UPDATE_DESC,
+                        iam_context=None if scope == cls.Scopes.CREATE else iam_context,
+                    )
+                )
             else:
-                organization_id = task.organization_id
+                permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
-            data = {
-                "id": self.obj.id,
-                "organization": {"id": organization_id},
-                "task": (
-                    {
-                        "owner": {"id": task.owner_id},
-                        "assignee": {"id": task.assignee_id},
-                    }
-                    if task
-                    else None
-                ),
-                "project": (
-                    {
-                        "owner": {"id": task.project.owner_id},
-                        "assignee": {"id": task.project.assignee_id},
-                    }
-                    if task.project
-                    else None
-                ),
-            }
+        return permissions
 
-        return data
+    def __init__(self, **kwargs):
+        self.settings = kwargs.pop("settings", None)
+
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + "/quality_settings/allow"
+
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        return [
+            {
+                "list": cls.Scopes.LIST,
+                "create": cls.Scopes.CREATE,
+                "retrieve": cls.Scopes.VIEW,
+                "update": cls.Scopes.UPDATE,
+                "partial_update": cls.Scopes.UPDATE,
+                "destroy": cls.Scopes.DELETE,
+            }[view.action]
+        ]
+
+    def get_resource(self):
+        if self.obj:
+            return _build_quality_resource(self.obj)
+        if self.settings:
+            return _build_quality_resource(self.settings)
+
+        return None

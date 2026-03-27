@@ -35,12 +35,18 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationComponentsSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
+    ComparisonReportRequirementSummary,
     ComparisonReportJobStats,
     ComparisonReportSummary,
     ComparisonReportTaskStats,
 )
 from cvat.apps.quality_control.models import AnnotationConflictSeverity
-from cvat.apps.quality_control.quality_handlers import DatasetQualityEstimator
+from cvat.apps.quality_control.quality_handlers import (
+    DatasetQualityEstimator,
+    build_requirement_report,
+    build_targets_summary,
+    merge_frame_summaries,
+)
 from cvat.apps.quality_control.quality_reports import JobDataProvider, QualitySettingsManager
 
 
@@ -175,6 +181,7 @@ class TaskQualityCalculator:
         task_comparison_report = self._compute_task_report(
             job_comparison_reports,
             settings=quality_settings,
+            requirements=quality_requirements,
             all_job_ids=all_job_ids,
         )
 
@@ -232,6 +239,7 @@ class TaskQualityCalculator:
         self,
         job_reports: dict[int, ComparisonReport],
         settings: models.QualitySettings,
+        requirements: list[models.QualityRequirement],
         *,
         all_job_ids: set[int],
     ) -> ComparisonReport:
@@ -258,6 +266,9 @@ class TaskQualityCalculator:
         task_mean_shape_ious = []
         task_frame_results: dict[int, ComparisonReportFrameSummary] = {}
         task_frame_results_counts = {}
+        task_group_frame_results: dict[str, dict[int, ComparisonReportFrameSummary]] = {}
+        task_group_frame_counts: dict[str, dict[int, int]] = {}
+        task_group_parameters: dict[str, dict] = {}
         for r in job_reports.values():
             task_validated_frames.update(r.comparison_summary.frames)
             task_validation_frames_count += r.comparison_summary.frame_count
@@ -290,14 +301,55 @@ class TaskQualityCalculator:
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
 
+            for group_name, group_report in (r.groups or {}).items():
+                task_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
+                group_frame_results = task_group_frame_results.setdefault(group_name, {})
+                group_frame_counts = task_group_frame_counts.setdefault(group_name, {})
+
+                for frame_id, group_frame_result in (group_report.frame_results or {}).items():
+                    merged_group_frame_result = group_frame_results.get(frame_id)
+                    group_frame_count = group_frame_counts.get(frame_id, 0)
+
+                    if merged_group_frame_result is None:
+                        merged_group_frame_result = deepcopy(group_frame_result)
+                    else:
+                        merge_frame_summaries(
+                            merged_group_frame_result,
+                            group_frame_result,
+                            current_count=group_frame_count,
+                        )
+
+                    group_frame_counts[frame_id] = group_frame_count + 1
+                    group_frame_results[frame_id] = merged_group_frame_result
+
         task_ann_components_summary.shape.mean_iou = np.mean(
             task_mean_shape_ious or []
         )  # TODO: maybe remove
 
+        requirement_groups = {
+            group_name: build_requirement_report(
+                requirement=task_group_parameters[group_name],
+                frame_results=group_frame_results,
+                total_frames=task_total_frames,
+            )
+            for group_name, group_frame_results in task_group_frame_results.items()
+        }
+        for requirement in requirements:
+            requirement_groups.setdefault(
+                requirement.name,
+                build_requirement_report(
+                    requirement=requirement,
+                    frame_results={},
+                    total_frames=task_total_frames,
+                ),
+            )
+
+        target_requirements: list = requirements or [
+            group_report.parameters for group_report in requirement_groups.values()
+        ]
         conflicts_by_severity = Counter(c.severity for c in task_conflicts)
         task_report_data = ComparisonReport(
             parameters=ComparisonParameters(),  # TODO: return settings
-            # TODO: add requirements
             comparison_summary=ComparisonReportSummary(
                 frame_count=task_validation_frames_count,
                 total_frames=task_total_frames,
@@ -310,8 +362,10 @@ class TaskQualityCalculator:
                 annotation_components=task_ann_components_summary,
                 tasks=None,
                 jobs=job_stats,
+                targets=build_targets_summary(target_requirements, requirement_groups),
             ),
             frame_results=task_frame_results,
+            groups=requirement_groups,
         )
 
         return task_report_data
@@ -405,6 +459,7 @@ class ProjectQualityCalculator:
                 project = Project.objects.get(id=project)
 
             project_quality_params = self.get_quality_params(project)
+            project_requirements = list(QualitySettingsManager().get_project_settings(project).requirements.all())
 
             # Tasks could be added or removed in the project after initial report fetching
             # Fix working the set of tasks by requesting ids first.
@@ -501,6 +556,7 @@ class ProjectQualityCalculator:
         project_comparison_report = self._compute_project_report(
             task_reports=task_comparison_reports,
             quality_params=project_quality_params,
+            requirements=project_requirements,
             all_task_ids=all_task_ids,
         )
 
@@ -525,6 +581,7 @@ class ProjectQualityCalculator:
         task_reports: dict[int, ComparisonReport],
         *,
         quality_params: ComparisonParameters,
+        requirements: list[models.QualityRequirement],
         all_task_ids: set[int],
     ) -> ComparisonReport:
         # Aggregate nested reports. It's possible that there are no child reports,
@@ -575,6 +632,12 @@ class ProjectQualityCalculator:
         project_annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
         project_ann_components_summary = ComparisonReportAnnotationComponentsSummary.create_empty()
         project_conflicts: list[AnnotationConflict] = []
+        project_group_parameters: dict[str, dict] = {}
+        project_group_annotations: dict[str, ComparisonReportAnnotationsSummary] = {}
+        project_group_components: dict[str, ComparisonReportAnnotationComponentsSummary] = {}
+        project_group_conflicts: dict[str, list[AnnotationConflict]] = {}
+        project_group_total_frames: Counter[str] = Counter()
+        project_group_validated_frames: Counter[str] = Counter()
         for task_id, r in task_reports.items():
             if task_id not in included_tasks:
                 continue
@@ -592,6 +655,61 @@ class ProjectQualityCalculator:
             )
             project_conflicts.extend(r.conflicts)
 
+            for group_name, group_report in (r.groups or {}).items():
+                project_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
+                project_group_total_frames[group_name] += group_report.comparison_summary.total_frames
+                project_group_validated_frames[group_name] += group_report.comparison_summary.frame_count
+
+                group_weight = 1 / (group_report.comparison_summary.frame_share or 1)
+                project_group_annotations.setdefault(
+                    group_name, ComparisonReportAnnotationsSummary.create_empty()
+                ).accumulate(group_report.comparison_summary.annotations, weight=group_weight)
+                project_group_components.setdefault(
+                    group_name, ComparisonReportAnnotationComponentsSummary.create_empty()
+                ).accumulate(group_report.comparison_summary.annotation_components, weight=group_weight)
+                project_group_conflicts.setdefault(group_name, []).extend(group_report.conflicts)
+
+        requirement_groups = {}
+        for group_name, parameters in project_group_parameters.items():
+            group_conflicts = project_group_conflicts.get(group_name, [])
+            group_conflicts_by_severity = Counter(c.severity for c in group_conflicts)
+            requirement_groups[group_name] = ComparisonReportRequirementSummary(
+                parameters=parameters,
+                comparison_summary=ComparisonReportSummary(
+                    total_frames=project_group_total_frames[group_name],
+                    frame_count=project_group_validated_frames[group_name],
+                    frames=None,
+                    conflict_count=len(group_conflicts),
+                    warning_count=group_conflicts_by_severity.get(
+                        AnnotationConflictSeverity.WARNING, 0
+                    ),
+                    error_count=group_conflicts_by_severity.get(
+                        AnnotationConflictSeverity.ERROR, 0
+                    ),
+                    conflicts_by_type=Counter(c.type for c in group_conflicts),
+                    annotations=project_group_annotations[group_name],
+                    annotation_components=project_group_components[group_name],
+                    tasks=None,
+                    jobs=None,
+                    targets=None,
+                ),
+                frame_results=None,
+            )
+
+        for requirement in requirements:
+            requirement_groups.setdefault(
+                requirement.name,
+                build_requirement_report(
+                    requirement=requirement,
+                    frame_results={},
+                    total_frames=total_frames,
+                    include_frame_results=False,
+                ),
+            )
+
+        target_requirements: list = requirements or [
+            group_report.parameters for group_report in requirement_groups.values()
+        ]
         conflicts_by_severity = Counter(c.severity for c in project_conflicts)
         project_report_data = ComparisonReport(
             parameters=quality_params,
@@ -607,8 +725,10 @@ class ProjectQualityCalculator:
                 annotation_components=project_ann_components_summary,
                 tasks=task_stats,
                 jobs=job_stats,
+                targets=build_targets_summary(target_requirements, requirement_groups),
             ),
             frame_results=None,  # this is too detailed for a project report
+            groups=requirement_groups,
         )
 
         return project_report_data
