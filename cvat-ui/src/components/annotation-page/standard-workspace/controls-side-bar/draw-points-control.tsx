@@ -51,4 +51,5 @@ function DrawPointsControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(DrawPointsControl, { displayName: 'DrawPointsControl' });
 export default React.memo(DrawPointsControl);

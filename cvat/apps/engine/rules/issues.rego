@@ -157,52 +157,42 @@ allow if {
     organizations.is_member
 }
 
-filter := [] if { # Django Q object to filter list of entries
+base_filter := {} if { # Django Q object to filter list of entries
     utils.is_admin
-    utils.is_sandbox
-} else := qobject if {
-    utils.is_admin
-    utils.is_organization
-    org := input.auth.organization
-    qobject := [
-        {"job__segment__task__organization": org.id},
-        {"job__segment__task__project__organization": org.id}, "|"
-    ]
 } else := qobject if {
     utils.is_sandbox
     user := input.auth.user
-    qobject := [
-        {"owner": user.id}, {"assignee": user.id}, "|",
-        {"job__assignee": user.id}, "|",
-        {"job__segment__task__owner": user.id}, "|",
-        {"job__segment__task__assignee": user.id}, "|",
-        {"job__segment__task__project__owner": user.id}, "|",
-        {"job__segment__task__project__assignee": user.id}, "|"
+    qobject := ["|",
+        {"owner": user.id},
+        {"assignee": user.id},
+        {"job__assignee": user.id},
+        {"job__segment__task__owner": user.id},
+        {"job__segment__task__assignee": user.id},
+        {"job__segment__task__project__owner": user.id},
+        {"job__segment__task__project__assignee": user.id},
     ]
-} else := qobject if {
+} else := {} if {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
-    org := input.auth.organization
-    qobject := [
-        {"job__segment__task__organization": org.id},
-        {"job__segment__task__project__organization": org.id}, "|"
-    ]
 } else := qobject if {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
-    org := input.auth.organization
-    qobject := [
-        {"owner": user.id}, {"assignee": user.id}, "|",
-        {"job__assignee": user.id}, "|",
-        {"job__segment__task__owner": user.id}, "|",
-        {"job__segment__task__assignee": user.id}, "|",
-        {"job__segment__task__project__owner": user.id}, "|",
-        {"job__segment__task__project__assignee": user.id}, "|",
-        {"job__segment__task__organization": org.id},
-        {"job__segment__task__project__organization": org.id}, "|", "&"
+    qobject := ["|",
+        {"owner": user.id},
+        {"assignee": user.id},
+        {"job__assignee": user.id},
+        {"job__segment__task__owner": user.id},
+        {"job__segment__task__assignee": user.id},
+        {"job__segment__task__project__owner": user.id},
+        {"job__segment__task__project__assignee": user.id},
     ]
 }
+
+filter := utils.add_organization_filter(base_filter, [
+    "job__segment__task__organization",
+    "job__segment__task__project__organization",
+])
 
 allow if {
     input.scope == utils.VIEW

@@ -16,6 +16,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.61.0'></a>
+## \[2.61.0\] - 2026-03-20
+
+### Added
+
+- "Snap to point" feature for polygon and polyline editing. While enabled,
+  points being moved or drawn will automatically snap to nearby points from other shapes
+  (<https://github.com/cvat-ai/cvat/pull/10353>)
+
+- Join tool now supports polygon shapes, allowing to merge multiple
+  polygons into a single unified polygon.
+  (<https://github.com/cvat-ai/cvat/pull/10362>)
+
+### Changed
+
+- Minor visual improvements on the controls sidebar
+  (<https://github.com/cvat-ai/cvat/pull/10374>)
+
+### Fixed
+
+- Helm modifiable permissionFix paths and command
+  (<https://github.com/cvat-ai/cvat/pull/7932>)
+
+<a id='changelog-2.60.0'></a>
+## \[2.60.0\] - 2026-03-17
+
+### Added
+
+- Docker + compose for YOLO
+  (<https://github.com/cvat-ai/cvat/pull/10325>)
+
+- Interactors can now return multiple shapes instead of a single one
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Interactors can now return a confidence attribute. If present, interaction
+  results can be filtered in the UI (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Added UI controls to remove point and rectangle prompts when using Interactors or OpenCV tools
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Server may add text prompts to interactors as `text_prompts` field in `POST: /api/lambda/functions/<id>`
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+### Changed
+
+- Unified the expected interactor interface to align with the `/annotations` API and AI detector outputs
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Updated the IoG serverless function to support the new interactor interface
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+### Fixed
+
+- Reduced memory usage by replacing JavaScript arrays with typed arrays
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Fixed memory leaks related to unreleased object URLs in `cvat-canvas`
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- \[SDK\] Fixed a crash in `TasksRepo.create_from_backup`,
+  `ProjectsRepo.create_from_backup`, `Task.upload_data` that could occur
+  if a recoverable error occurred during chunk uploading
+  (<https://github.com/cvat-ai/cvat/pull/10375>)
+
+<a id='changelog-2.59.1'></a>
+## \[2.59.1\] - 2026-03-09
+
+### Fixed
+
+- Missing escaping for string fields in `.csv` export
+  (<https://github.com/cvat-ai/cvat/pull/10345>)
+
 <a id='changelog-2.59.0'></a>
 ## \[2.59.0\] - 2026-03-06
 
