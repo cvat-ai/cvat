@@ -118,6 +118,13 @@
         width: 32px;
         height: 32px;
     }
+
+    &.cvat-snap-tools-active {
+        svg rect {
+            fill: #40a9ff;
+            stroke: #40a9ff;
+        }
+    }
 }
 
 .cvat-active-canvas-control {
@@ -351,7 +358,7 @@
 
         .ant-checkbox-wrapper {
             align-items: center;
-            
+
             .ant-checkbox {
                 top: 0;
             }

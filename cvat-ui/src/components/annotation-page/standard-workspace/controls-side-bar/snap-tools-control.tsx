@@ -59,6 +59,8 @@ function SnapToolsControlComponent(props: Props): JSX.Element {
         onSwitchPointSnap,
     } = props;
 
+    const isAnySnapEnabled = automaticBordering || pointSnap;
+
     const popoverContent = (
         <div className='cvat-snap-tools-control-popover-content'>
             <Row justify='start'>
@@ -112,7 +114,10 @@ function SnapToolsControlComponent(props: Props): JSX.Element {
             content={popoverContent}
         >
             <CVATTooltip title='Snap tools' placement='right'>
-                <Icon className='cvat-snap-tools-control' component={SnapToolsIcon} />
+                <Icon
+                    className={`cvat-snap-tools-control ${isAnySnapEnabled ? 'cvat-snap-tools-active' : ''}`}
+                    component={SnapToolsIcon}
+                />
             </CVATTooltip>
         </CustomPopover>
     );
