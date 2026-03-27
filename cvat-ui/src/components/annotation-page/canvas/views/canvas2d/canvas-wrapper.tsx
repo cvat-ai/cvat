@@ -57,6 +57,7 @@ import {
     changeContrastLevel,
     changeSaturationLevel,
     switchAutomaticBordering,
+    switchPointSnap,
 } from 'actions/settings-actions';
 import { reviewActions } from 'actions/review-actions';
 
@@ -148,6 +149,7 @@ interface DispatchToProps {
     onChangeGridColor(color: GridColor): void;
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchPointSnap(enabled: boolean): void;
     onFetchAnnotation(): void;
     onGetDataFailed(error: Error): void;
     onCanvasErrorOccurred(error: Error): void;
@@ -279,6 +281,12 @@ const componentShortcuts = {
         sequences: ['ctrl+a'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
+    SWITCH_POINT_SNAP: {
+        name: 'Toggle snap to point',
+        description: 'Enable/disable automatic snapping to nearby points',
+        sequences: ['ctrl+p'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
     NEXT_OBJECT: {
         name: 'Next object',
         description: 'Go to the next object and center it on the canvas',
@@ -363,6 +371,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchAutomaticBordering(enabled: boolean): void {
             dispatch(switchAutomaticBordering(enabled));
+        },
+        onSwitchPointSnap(enabled: boolean): void {
+            dispatch(switchPointSnap(enabled));
         },
         onFetchAnnotation(): void {
             dispatch(fetchAnnotationsAsync());
@@ -1125,12 +1136,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             keyMap,
             switchableAutomaticBordering,
             automaticBordering,
+            pointSnap,
             showTagsOnFrame,
             canvasIsReady,
             annotations,
             activatedStateID,
             focusedObjectPadding,
             onSwitchAutomaticBordering,
+            onSwitchPointSnap,
             onSwitchZLayer,
             onAddZLayer,
             onActivateObject,
@@ -1172,6 +1185,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 if (switchableAutomaticBordering) {
                     preventDefault(event);
                     onSwitchAutomaticBordering(!automaticBordering);
+                }
+            },
+            SWITCH_POINT_SNAP: (event: KeyboardEvent | undefined) => {
+                if (switchableAutomaticBordering) {
+                    preventDefault(event);
+                    onSwitchPointSnap(!pointSnap);
                 }
             },
             NEXT_OBJECT: (event: KeyboardEvent | undefined) => {
