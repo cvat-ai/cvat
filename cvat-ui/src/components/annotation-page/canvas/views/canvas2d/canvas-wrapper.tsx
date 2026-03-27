@@ -277,13 +277,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
 const componentShortcuts = {
     SWITCH_AUTOMATIC_BORDERING: {
         name: 'Switch automatic bordering',
-        description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
+        description: 'Toggle automatic snapping to contours/edges',
         sequences: ['ctrl+a'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
     SWITCH_POINT_SNAP: {
         name: 'Toggle snap to point',
-        description: 'Enable/disable automatic snapping to nearby points',
+        description: 'Toggle automatic snapping to nearby points',
         sequences: ['ctrl+p'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
@@ -1134,7 +1134,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             curZLayer,
             minZLayer,
             keyMap,
-            switchableAutomaticBordering,
             automaticBordering,
             pointSnap,
             showTagsOnFrame,
@@ -1182,16 +1181,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_AUTOMATIC_BORDERING: (event: KeyboardEvent | undefined) => {
-                if (switchableAutomaticBordering) {
-                    preventDefault(event);
-                    onSwitchAutomaticBordering(!automaticBordering);
-                }
+                preventDefault(event);
+                onSwitchAutomaticBordering(!automaticBordering);
             },
             SWITCH_POINT_SNAP: (event: KeyboardEvent | undefined) => {
-                if (switchableAutomaticBordering) {
-                    preventDefault(event);
-                    onSwitchPointSnap(!pointSnap);
-                }
+                preventDefault(event);
+                onSwitchPointSnap(!pointSnap);
             },
             NEXT_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
