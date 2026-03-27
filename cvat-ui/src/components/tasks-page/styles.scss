@@ -10,8 +10,6 @@
     @include cvat-resource-page;
 
     .cvat-tasks-page-top-bar {
-        margin-right: $grid-unit-size;
-
         > div {
             display: flex;
             justify-content: space-between;
@@ -33,7 +31,6 @@
 
                 .cvat-tasks-page-search-bar {
                     width: $grid-unit-size * 32;
-                    padding-left: $grid-unit-size;
                 }
             }
         }
@@ -58,7 +55,7 @@
     overflow-y: auto;
 
     .ant-ribbon-wrapper {
-        margin: $grid-unit-size;
+        margin: $grid-unit-size * 0.5;
     }
 }
 
