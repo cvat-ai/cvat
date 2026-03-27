@@ -7,25 +7,25 @@ on:
 
 
 jobs:
-  yolo-cpu:
-    uses: ./.github/workflows/build-push-agent-images-reusable.yml
-    with:
-      repo_name: yolo_agent
-      dockerfile: ai-models/agents_deployment/yolo/Dockerfile
-      platforms: linux/amd64,linux/arm64
-      tag: ${{ github.event.release.tag_name }}
-    secrets: inherit
-
-  yolo-gpu:
-    uses: ./.github/workflows/build-push-agent-images-reusable.yml
-    with:
-      repo_name: yolo_agent
-      dockerfile: ai-models/agents_deployment/yolo/Dockerfile
-      platforms: linux/amd64
-      build_args: USE_GPU=true
-      tag: ${{ github.event.release.tag_name }}
-      tag_suffix: _GPU
-    secrets: inherit
+#  yolo-cpu:
+#    uses: ./.github/workflows/build-push-agent-images-reusable.yml
+#    with:
+#      repo_name: yolo_agent
+#      dockerfile: ai-models/agents_deployment/yolo/Dockerfile
+#      platforms: linux/amd64,linux/arm64
+#      tag: ${{ github.event.release.tag_name }}
+#    secrets: inherit
+#
+#  yolo-gpu:
+#    uses: ./.github/workflows/build-push-agent-images-reusable.yml
+#    with:
+#      repo_name: yolo_agent
+#      dockerfile: ai-models/agents_deployment/yolo/Dockerfile
+#      platforms: linux/amd64
+#      build_args: USE_GPU=true
+#      tag: ${{ github.event.release.tag_name }}
+#      tag_suffix: _GPU
+#    secrets: inherit
 
   sam2-cpu:
     uses: ./.github/workflows/build-push-agent-images-reusable.yml
