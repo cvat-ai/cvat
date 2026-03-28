@@ -8,6 +8,7 @@ import logging
 import os
 import re
 from json import JSONDecodeError
+from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
 from time import monotonic, sleep
 
@@ -519,6 +520,19 @@ class KubeInstance(InfraInstance):
             logger=logger,
         )[0]
 
+    def exec_cvat_cp(self, source: Path, target: str, *, cvat_host: str) -> None:
+        kubectl_cp(
+            source,
+            f"{cvat_host}:{target}",
+            context=_kube_context(),
+            namespace=_kube_namespace(),
+            container=_KUBE_SERVER_CONTAINER,
+            logger=logger,
+        )
+
+    def _get_cvat_host(self) -> str:
+        return kube_get_server_pod_name()
+
     def _persist_runtime_state(
         self,
         *,
@@ -1026,18 +1040,6 @@ class KubeInstance(InfraInstance):
 
     def restore_db(self) -> None:
         self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")
-
-    def restore_cvat_data(self) -> None:
-        pod_name = kube_get_server_pod_name()
-        kubectl_cp(
-            self.deps.cvat_db_dir / "cvat_data.tar.bz2",
-            f"{pod_name}:/tmp/cvat_data.tar.bz2",
-            context=_kube_context(),
-            namespace=_kube_namespace(),
-            container=_KUBE_SERVER_CONTAINER,
-            logger=logger,
-        )
-        self.exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
     def restore_clickhouse_db(self) -> None:
         self.exec_cvat(["/bin/sh", "-c", f'python "{RuntimeInfraConfig.get_clickhouse_init_script()}" --clear'])

@@ -24,7 +24,7 @@ from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
-from botocore.exceptions import ClientError, EndpointConnectionError
+from botocore.exceptions import ClientError, EndpointConnectionError, ReadTimeoutError
 from botocore.handlers import disable_signing
 from django.conf import settings
 from google.api_core.exceptions import RetryError
@@ -609,6 +609,21 @@ class S3CloudStorage(AbstractCloudStorage):
                 kwargs[key] = arg_v
 
         session = boto3.Session(**kwargs)
+        # Status checks are part of the control plane, not the data-transfer path, so
+        # they must fail fast when the endpoint is unreachable or misconfigured. Some
+        # network setups return a transport timeout instead of an immediate connection
+        # refusal for a wrong host/port, which can make a simple bucket health probe
+        # hang long enough to block API requests and propagate failures to unrelated
+        # operations. Use a dedicated low-timeout client for head_bucket/head_object,
+        # while the regular resource/client keep the default pool and retry behavior
+        # for real uploads/downloads. Tests with intentionally broken endpoints confirm
+        # that this distinction is required in practice.
+        status_config = Config(
+            proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
+            connect_timeout=2,
+            read_timeout=5,
+            retries={"max_attempts": 1, "mode": "standard"},
+        )
         self._s3 = session.resource(
             "s3",
             endpoint_url=endpoint_url,
@@ -623,10 +638,12 @@ class S3CloudStorage(AbstractCloudStorage):
                 ),
             ),
         )
+        self._status_client = session.client("s3", endpoint_url=endpoint_url, config=status_config)
 
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
             self._s3.meta.client.meta.events.register("choose-signer.s3.*", disable_signing)
+            self._status_client.meta.events.register("choose-signer.s3.*", disable_signing)
 
         self._client = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
@@ -641,10 +658,14 @@ class S3CloudStorage(AbstractCloudStorage):
         return self._bucket.name
 
     def _head(self):
-        return self._client.head_bucket(Bucket=self.name)
+        # Bucket status belongs to the fast-fail health path. Do not route it through
+        # the main transfer client, otherwise a bad endpoint can delay normal API work.
+        return self._status_client.head_bucket(Bucket=self.name)
 
     def _head_file(self, key: str, /):
-        return self._client.head_object(Bucket=self.name, Key=key)
+        # Same rationale as _head(): object existence checks should surface endpoint
+        # problems quickly and must not inherit transfer-oriented retry behavior.
+        return self._status_client.head_object(Bucket=self.name, Key=key)
 
     def get_status(self):
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.head_object
@@ -658,7 +679,7 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
-        except EndpointConnectionError:
+        except (EndpointConnectionError, ReadTimeoutError):
             slogger.glob.warning(
                 f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available",
                 exc_info=True,
@@ -675,6 +696,12 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        except (EndpointConnectionError, ReadTimeoutError):
+            slogger.glob.warning(
+                f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name}/{key} not available",
+                exc_info=True,
+            )
+            return Status.NOT_FOUND
 
     @validate_file_status
     @validate_bucket_status

@@ -693,6 +693,13 @@ class LocalInstance(InfraInstance):
             logger=logger,
         )[0]
 
+    def exec_cvat_cp(self, source: Path, target: str, *, cvat_host: str) -> None:
+        docker_cp(source, f"{cvat_host}:{target}")
+
+    def _get_cvat_host(self) -> str:
+        project_cfg = RuntimeInfraConfig.get_project_config()
+        return project_cfg.prefixed_container_name("cvat_server")
+
     def _close_db_restorer(self) -> None:
         if self._db_restorer is None:
             return
@@ -977,14 +984,6 @@ class LocalInstance(InfraInstance):
 
     def restore_db(self) -> None:
         self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")
-
-    def restore_cvat_data(self) -> None:
-        project_cfg = RuntimeInfraConfig.get_project_config()
-        docker_cp(
-            self.deps.cvat_db_dir / "cvat_data.tar.bz2",
-            f"{project_cfg.prefixed_container_name('cvat_server')}:/tmp/cvat_data.tar.bz2",
-        )
-        self.exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
     def restore_clickhouse_db(self) -> None:
         self.exec_cvat(

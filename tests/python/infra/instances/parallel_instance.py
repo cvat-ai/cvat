@@ -136,6 +136,18 @@ class ParallelInstance(InfraInstance):
         # Parent process does not manage a separate infra stack in parallel mode.
         return
 
+    def exec_cvat(self, command: list[str] | str):
+        raise RuntimeError("Parallel parent instance does not execute commands inside CVAT containers")
+
+    def exec_redis_inmem(self, command: list[str] | str):
+        raise RuntimeError("Parallel parent instance does not execute commands inside Redis containers")
+
+    def exec_cvat_cp(self, source: Path, target: str, *, cvat_host: str) -> None:
+        raise RuntimeError("Parallel parent instance does not copy files into CVAT containers")
+
+    def _get_cvat_host(self) -> str:
+        raise RuntimeError("Parallel parent instance does not have a CVAT runtime host")
+
 
 class ParallelPlugin(InfraPlugin):
     @classmethod
@@ -466,8 +478,6 @@ def modify_collection_for_parallel(config, items) -> None:
         allowed_nodeids = set(batch_nodeids)
 
         for item in items:
-            required = required_by_nodeid[item.nodeid]
-            item.add_marker(pytest.mark.infra_profile(required))
             if item.nodeid in allowed_nodeids:
                 selected.append(item)
             else:
@@ -491,8 +501,6 @@ def modify_collection_for_parallel(config, items) -> None:
         raise pytest.UsageError("--parallel-child test execution requires internal --parallel-batch-file")
 
     for item in items:
-        required = required_by_nodeid[item.nodeid]
-        item.add_marker(pytest.mark.infra_profile(required))
         selected.append(item)
 
     if deselected:

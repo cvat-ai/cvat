@@ -1,11 +1,11 @@
 allure-pytest==2.14.2
 av==16.0.1
-pytest==6.2.5
-pytest-cases==3.8.6
-pytest-timeout==2.1.0
+pytest==8.4.2
+pytest-cases==3.10.1
+pytest-timeout==2.4.0
 pytest-cov==4.1.0
-pytest-xdist==3.5.0
 requests==2.33.0
+pytest-xdist==3.8.0
 deepdiff==8.6.2
 boto3==1.35.95
 Pillow==12.1.1
@@ -14,5 +14,3 @@ pyyaml==6.0.2
 numpy==2.0.0
 psycopg[binary]==3.3.3
 redis==6.4.0
-
-# TODO: update pytest to 7.0.0 and pytest-timeout to 2.3.1 (better debug in vscode)

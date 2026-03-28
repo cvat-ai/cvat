@@ -131,11 +131,6 @@ def pytest_sessionstart(session) -> None:
         and not bool(config.getoption("--parallel-child"))
         and not bool(config.getoption("--skip-version-check"))
     )
-    if should_run_version_check:
-        run_sanity_version_check(
-            cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=platform
-        )
-
     instance_config = InstanceConfig(
         cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(),
         cvat_db_dir=RuntimeInfraConfig.get_cvat_db_dir(),
@@ -147,6 +142,11 @@ def pytest_sessionstart(session) -> None:
     instance = InfraInstance.create(session, instance_config)
     setattr(config, "_cvat_infra_instance", instance)
     instance.start()
+
+    if should_run_version_check:
+        run_sanity_version_check(
+            cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=platform
+        )
 
 
 def pytest_sessionfinish(session, exitstatus: int) -> None:
@@ -170,7 +170,6 @@ def _assign_required_infra_markers(items) -> None:
         marker = item.get_closest_marker("infra_profile")
         required = marker.args[0] if marker and marker.args else str(InfraProfile.CORE)
         required = str(RuntimeInfraConfig.parse_infra_profile(required))
-        item.add_marker(pytest.mark.infra_profile(required))
         item.add_marker(getattr(pytest.mark, RuntimeInfraConfig.get_required_marker_name(required)))
 
 

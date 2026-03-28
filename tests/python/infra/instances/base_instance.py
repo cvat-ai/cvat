@@ -43,11 +43,26 @@ class InfraPlugin(ABC):
 
 class InfraInstance(ABC):
     plugin_class: type[InfraPlugin]
+    _CVAT_DATA_ARCHIVE_PATH = "/tmp/cvat_data.tar.bz2"
+    _CVAT_DATA_TEMPLATE_DIR = "/tmp/cvat_data_template"
+    _CVAT_DATA_DIR = "/home/django/data"
+    _CVAT_RUNTIME_DIRS = (
+        "/home/django/data/cache",
+        "/home/django/data/cache/export",
+        "/home/django/data/jobs",
+        "/home/django/data/tasks",
+        "/home/django/data/projects",
+        "/home/django/data/assets",
+        "/home/django/data/storages",
+        "/home/django/data/tmp",
+    )
 
     def __init__(self, session, deps: InstanceConfig):
         self.session = session
         self.config = session.config
         self.deps = deps
+        self._cvat_data_archive_host: str | None = None
+        self._cvat_data_template_host: str | None = None
 
     @classmethod
     @abstractmethod
@@ -71,7 +86,35 @@ class InfraInstance(ABC):
         raise NotImplementedError
 
     def restore_cvat_data(self) -> None:
-        raise NotImplementedError
+        cvat_host = self._get_cvat_host()
+        if self._cvat_data_template_host != cvat_host:
+            if self._cvat_data_archive_host != cvat_host:
+                self.exec_cvat_cp(
+                    self.deps.cvat_db_dir / "cvat_data.tar.bz2",
+                    self._CVAT_DATA_ARCHIVE_PATH,
+                    cvat_host=cvat_host,
+                )
+                self._cvat_data_archive_host = cvat_host
+
+            self.exec_cvat(
+                [
+                    "sh",
+                    "-c",
+                    f"rm -rf {self._CVAT_DATA_TEMPLATE_DIR} && mkdir -p {self._CVAT_DATA_TEMPLATE_DIR} "
+                    f"&& tar --strip 3 -xjf {self._CVAT_DATA_ARCHIVE_PATH} -C {self._CVAT_DATA_TEMPLATE_DIR}",
+                ]
+            )
+            self._cvat_data_template_host = cvat_host
+
+        self.exec_cvat(
+            [
+                "sh",
+                "-c",
+                f"find {self._CVAT_DATA_DIR} -mindepth 1 -delete "
+                f"&& cp -r {self._CVAT_DATA_TEMPLATE_DIR}/. {self._CVAT_DATA_DIR}/ "
+                f"&& mkdir -p {' '.join(self._CVAT_RUNTIME_DIRS)}",
+            ]
+        )
 
     def restore_clickhouse_db(self) -> None:
         raise NotImplementedError
@@ -86,6 +129,14 @@ class InfraInstance(ABC):
         raise NotImplementedError
 
     def exec_redis_inmem(self, command: list[str] | str):
+        raise NotImplementedError
+
+    @abstractmethod
+    def exec_cvat_cp(self, source: Path, target: str, *, cvat_host: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_cvat_host(self) -> str:
         raise NotImplementedError
 
     @classmethod
