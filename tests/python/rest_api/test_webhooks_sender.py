@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os
 from http import HTTPStatus
 from time import sleep, time
 
@@ -25,6 +26,9 @@ pytestmark = [pytest.mark.infra_profile("full")]
 
 
 def target_url():
+    if webhook_receiver_url := os.environ.get("CVAT_TEST_WEBHOOK_RECEIVER_URL"):
+        return webhook_receiver_url
+
     env_data = {}
     with open(RuntimeInfraConfig.get_cvat_root_dir() / "tests/python/webhook_receiver/.env", "r") as f:
         for line in f:

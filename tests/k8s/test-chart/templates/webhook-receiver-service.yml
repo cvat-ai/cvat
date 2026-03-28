@@ -1,0 +1,25 @@
+{{- if .Values.webhookReceiver.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.webhookReceiver.serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: test-chart
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app: cvat-app
+    tier: backend
+    component: webhook-receiver
+spec:
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app: cvat-app
+    tier: backend
+    component: webhook-receiver
+  ports:
+  - name: http
+    port: {{ .Values.webhookReceiver.port }}
+    targetPort: http
+    protocol: TCP
+{{- end }}

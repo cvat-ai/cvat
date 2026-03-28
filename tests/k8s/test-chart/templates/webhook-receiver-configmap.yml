@@ -1,0 +1,33 @@
+{{- if .Values.webhookReceiver.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webhook-receiver
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: test-chart
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  server.py: |
+    import os
+    import re
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+    class RequestHandler(BaseHTTPRequestHandler):
+        _target_pattern = re.compile(r"/" + os.getenv("PAYLOAD_ENDPOINT", "payload"))
+
+        def do_POST(self):
+            length = int(self.headers["Content-Length"])
+            body = self.rfile.read(length)
+
+            self.send_response(200)
+            self.end_headers()
+
+            if self._target_pattern.match(self.path):
+                self.wfile.write(body)
+
+
+    HTTPServer(("", int(os.getenv("SERVER_PORT", "2020"))), RequestHandler).serve_forever()
+{{- end }}

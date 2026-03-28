@@ -1,0 +1,18 @@
+smokescreen:
+  allowMinio: true
+  allowWebhookReceiver: true
+
+minio:
+  enabled: true
+  serviceName: minio
+  image: quay.io/minio/minio
+  tag: RELEASE.2022-09-17T00-09-45Z
+  imagePullPolicy: IfNotPresent
+  accessKey: minio_access_key
+  secretKey: minio_secret_key
+
+webhookReceiver:
+  enabled: true
+  serviceName: cvat-webhook-receiver
+  port: 2020
+  payloadEndpoint: payload

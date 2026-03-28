@@ -47,7 +47,6 @@ from .utils import (
     import_project_backup,
 )
 
-
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetProjects:
     def _find_project_by_user_org(self, user, projects, is_project_staff_flag, is_project_staff):
@@ -400,6 +399,7 @@ class TestGetProjectBackupMutable(_ProjectBackupBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostProjects:
     def _test_create_project_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:

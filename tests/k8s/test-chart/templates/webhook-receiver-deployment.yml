@@ -1,0 +1,69 @@
+{{- if .Values.webhookReceiver.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.webhookReceiver.serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: test-chart
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app: cvat-app
+    tier: backend
+    component: webhook-receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app: cvat-app
+      tier: backend
+      component: webhook-receiver
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: test-chart
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app: cvat-app
+        tier: backend
+        component: webhook-receiver
+    spec:
+      containers:
+      - name: webhook-receiver
+        image: python:3.10-slim
+        imagePullPolicy: IfNotPresent
+        command:
+        - python
+        - /tmp/webhook_receiver/server.py
+        env:
+        - name: SERVER_PORT
+          value: {{ .Values.webhookReceiver.port | quote }}
+        - name: PAYLOAD_ENDPOINT
+          value: {{ .Values.webhookReceiver.payloadEndpoint | quote }}
+        ports:
+        - containerPort: {{ .Values.webhookReceiver.port }}
+          name: http
+        readinessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 2
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 20
+        livenessProbe:
+          tcpSocket:
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 6
+        volumeMounts:
+        - mountPath: /tmp/webhook_receiver
+          name: webhook-receiver
+      volumes:
+      - name: webhook-receiver
+        configMap:
+          name: webhook-receiver
+          defaultMode: 493
+{{- end }}

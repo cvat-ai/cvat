@@ -1,20 +1,22 @@
-{{- if .Values.testing.minio.enabled }}
+{{- if .Values.minio.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: minio
+  name: {{ .Values.minio.serviceName }}
   namespace: {{ .Release.Namespace }}
   labels:
+    app.kubernetes.io/name: test-chart
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
     app: cvat-app
     tier: backend
     component: minio
-    {{- include "cvat.labels" . | nindent 4 }}
 spec:
   selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app: cvat-app
     tier: backend
     component: minio
-    {{- include "cvat.labels" . | nindent 4 }}
   ports:
   - name: api
     port: 9000
