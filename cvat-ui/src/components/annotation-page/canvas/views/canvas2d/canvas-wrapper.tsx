@@ -276,8 +276,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 const componentShortcuts = {
     SWITCH_AUTOMATIC_BORDERING: {
-        name: 'Switch automatic bordering',
-        description: 'Toggle automatic snapping to contours/edges',
+        name: 'Switch snap to contour',
+        description: 'Switch automatic snap to contour for polygons and polylines during drawing/editing',
         sequences: ['ctrl+a'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
