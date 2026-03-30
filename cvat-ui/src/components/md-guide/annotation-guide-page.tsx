@@ -63,6 +63,7 @@ function AnnotationGuidePage(): JSX.Element {
             guide.save().then((result: AnnotationGuide) => {
                 setValue(result.markdown);
                 setGuide(result);
+                notification.info({ message: 'Annotation guide was saved successfully' });
             }).catch((error: unknown) => {
                 notification.error({
                     message: 'Could not save guide on the server',
