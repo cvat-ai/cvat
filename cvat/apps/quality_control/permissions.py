@@ -183,6 +183,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 "create": Scopes.CREATE,
                 "retrieve": Scopes.VIEW,
                 "data": Scopes.VIEW,
+                "confusion": Scopes.VIEW,
             }[view.action]
         ]
 

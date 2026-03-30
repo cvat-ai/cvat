@@ -3,8 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from io import BytesIO
 from http import HTTPStatus
 from typing import Any
+from zipfile import ZipFile
 
 import pytest
 from deepdiff import DeepDiff
@@ -289,3 +291,60 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             ]
             == 0
         )
+
+    def test_task_report_confusion_endpoint_returns_zip_archive(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        enabled_requirement_name = f"confusion-enabled-{task['id']}"
+        disabled_requirement_name = f"confusion-disabled-{task['id']}"
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    self._build_requirement_payload(
+                        enabled_requirement_name,
+                        enabled=True,
+                        required_score=0.0,
+                    ),
+                    self._build_requirement_payload(
+                        disabled_requirement_name,
+                        enabled=False,
+                        required_score=1.0,
+                    ),
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        self.create_gt_job(admin_user, task["id"])
+        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+
+        response = get_method(admin_user, f"quality/reports/{report['id']}/confusion")
+        assert response.status_code == HTTPStatus.OK
+        assert response.headers["Content-Type"].startswith("application/zip")
+
+        with ZipFile(BytesIO(response.content)) as archive:
+            archive_entries = set(archive.namelist())
+            assert "manifest.json" in archive_entries
+            assert "overall.csv" in archive_entries
+
+            manifest = json.loads(archive.read("manifest.json"))
+            assert manifest["report_id"] == report["id"]
+
+            group_matrices = {
+                matrix["name"]: matrix["path"]
+                for matrix in manifest["matrices"]
+                if matrix["scope"] == "group"
+            }
+            assert enabled_requirement_name in group_matrices
+            assert disabled_requirement_name not in group_matrices
+
+            overall_csv = archive.read("overall.csv").decode()
+            enabled_group_csv = archive.read(group_matrices[enabled_requirement_name]).decode()
+            assert "ds \\ gt" in overall_csv
+            assert "ds \\ gt" in enabled_group_csv

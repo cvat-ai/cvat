@@ -4,14 +4,18 @@
 
 from __future__ import annotations
 
+import csv
 from collections.abc import Hashable
 from contextlib import suppress
 from functools import cached_property
+from io import BytesIO, StringIO
+from zipfile import ZIP_DEFLATED, ZipFile
 
 import datumaro as dm
 from datumaro.util import dump_json
 from django.db import transaction
 from django.db.models import OuterRef, Subquery, prefetch_related_objects
+from django.utils.text import slugify
 
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
@@ -148,6 +152,95 @@ class QualitySettingsManager:
 
         return quality_settings
 
+
+
+def _serialize_confusion_matrix_csv(confusion_matrix) -> str:
+    assert confusion_matrix.labels is not None
+    assert confusion_matrix.rows is not None
+
+    output = StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow(["ds \\ gt", *confusion_matrix.labels])
+
+    for row_label, row in zip(confusion_matrix.labels, confusion_matrix.rows.tolist()):
+        writer.writerow([row_label, *row])
+
+    return output.getvalue()
+
+
+def _make_unique_group_archive_path(group_name: str, used_paths: set[str]) -> str:
+    base_name = slugify(group_name) or "group"
+    archive_path = f"groups/{base_name}.csv"
+    suffix = 2
+
+    while archive_path in used_paths:
+        archive_path = f"groups/{base_name}-{suffix}.csv"
+        suffix += 1
+
+    used_paths.add(archive_path)
+    return archive_path
+
+
+def prepare_confusion_matrices_archive_for_downloading(db_report: models.QualityReport) -> bytes:
+    comparison_report = ComparisonReport.from_json(db_report.get_report_data())
+    archive_buffer = BytesIO()
+    used_paths = {"overall.csv", "manifest.json"}
+    manifest = {
+        "report_id": db_report.id,
+        "target": str(db_report.target),
+        "matrices": [],
+    }
+
+    def _add_matrix_to_archive(
+        archive: ZipFile,
+        *,
+        archive_path: str,
+        scope: str,
+        name: str,
+        confusion_matrix,
+    ) -> None:
+        if (
+            confusion_matrix is None
+            or confusion_matrix.labels is None
+            or confusion_matrix.rows is None
+            or not confusion_matrix.labels
+        ):
+            return
+
+        archive.writestr(archive_path, _serialize_confusion_matrix_csv(confusion_matrix))
+        manifest["matrices"].append(
+            {
+                "scope": scope,
+                "name": name,
+                "path": archive_path,
+                "labels": confusion_matrix.labels,
+            }
+        )
+
+    with ZipFile(archive_buffer, mode="w", compression=ZIP_DEFLATED) as archive:
+        _add_matrix_to_archive(
+            archive,
+            archive_path="overall.csv",
+            scope="overall",
+            name="overall",
+            confusion_matrix=comparison_report.comparison_summary.annotations.confusion_matrix,
+        )
+
+        for group_name, group_report in sorted((comparison_report.groups or {}).items()):
+            _add_matrix_to_archive(
+                archive,
+                archive_path=_make_unique_group_archive_path(group_name, used_paths),
+                scope="group",
+                name=group_name,
+                confusion_matrix=group_report.comparison_summary.annotations.confusion_matrix,
+            )
+
+        archive.writestr(
+            "manifest.json",
+            dump_json(manifest, indent=True, append_newline=True).decode(),
+        )
+
+    return archive_buffer.getvalue()
 
 
 def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str) -> str:

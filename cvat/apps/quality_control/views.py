@@ -447,6 +447,26 @@ class QualityReportViewSet(
         json_report = qc.prepare_report_for_downloading(report, host=get_server_url(request))
         return HttpResponse(json_report.encode(), content_type="application/json")
 
+    @extend_schema(
+        operation_id="quality_retrieve_report_confusion",
+        summary="Download quality report confusion matrices",
+        responses={
+            "200": OpenApiResponse(
+                response=OpenApiTypes.BINARY,
+                description="ZIP archive with the overall and per-requirement confusion matrices",
+            )
+        },
+    )
+    @action(detail=True, methods=["GET"], url_path="confusion", serializer_class=None)
+    def confusion(self, request, pk):
+        report = self.get_object()  # check permissions
+        archive = qc.prepare_confusion_matrices_archive_for_downloading(report)
+        response = HttpResponse(archive, content_type="application/zip")
+        response["Content-Disposition"] = (
+            f'attachment; filename="quality-report-{report.id}-confusion.zip"'
+        )
+        return response
+
 
 SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
 
