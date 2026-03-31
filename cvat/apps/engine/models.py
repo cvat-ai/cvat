@@ -760,12 +760,14 @@ def clear_annotations_in_jobs(job_ids: Iterable[int]):
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImageAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledIntervalAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledInterval.objects.filter(job_id__in=job_ids_chunk).delete()
 
 
 @transaction.atomic(savepoint=False)
 def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence[int]):
     if db_task.data.validation_mode != ValidationMode.GT_POOL:
-        # Tracks are prohibited in honeypot tasks
+        # Tracks and intervals are prohibited in honeypot tasks
         raise AssertionError
 
     for frames_batch in take_by(frames, chunk_size=1000):
