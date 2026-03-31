@@ -256,7 +256,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         this.state = {
             convertMasksToPolygons: false,
-            startInteractingWithBox: false,
+            startInteractingWithBox: true,
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: supportedTrackers.length ? supportedTrackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id as number : null,
