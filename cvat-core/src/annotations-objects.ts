@@ -16,8 +16,9 @@ import {
 } from './enums';
 import AnnotationHistory from './annotations-history';
 import { SerializedShape, SerializedTrack, SerializedTag } from './server-response-types';
+import { mask2Rle, rle2Mask } from './rle-utils';
 import {
-    checkNumberOfPoints, attrsAsAnObject, checkShapeArea, mask2Rle, rle2Mask,
+    checkNumberOfPoints, attrsAsAnObject, checkShapeArea,
     computeWrappingBox, findAngleDiff, rotatePoint, validateAttributeValue, cropMask,
 } from './object-utils';
 

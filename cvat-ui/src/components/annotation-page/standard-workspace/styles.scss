@@ -70,6 +70,10 @@
     background: $background-color-2;
     border-right: 1px solid $border-color-1;
     overflow: hidden;
+
+    div:has(span[role="img"]) {
+        text-align: center;
+    }
 }
 
 .cvat-cursor-control,
@@ -96,6 +100,7 @@
 .cvat-extra-controls-control,
 .cvat-opencv-control {
     border-radius: $border-radius-base;
+    transition: $annotation-view-control-transition;
     transform: scale(0.65);
     padding: 2px;
 
@@ -109,16 +114,8 @@
     }
 
     > svg {
-        transform: scale(0.8);
-        width: 40px;
-        height: 40px;
-    }
-}
-
-.cvat-antd-icon-control {
-    > svg {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
     }
 }
 
@@ -133,6 +130,13 @@
 
 .cvat-rotate-canvas-controls-left,
 .cvat-rotate-canvas-controls-right {
+    transition: $annotation-view-control-transition;
+
+    > svg {
+        width: 32px;
+        height: 32px;
+    }
+
     transform: scale(0.65);
 
     &:hover {

@@ -209,12 +209,12 @@ context('Actions on Cuboid', () => {
             cy.get('.cvat-canvas-container').trigger('mouseup', 400, 250);
 
             cy.get('.cvat-canvas-container') // if (this.cuboidModel.orientation === Orientation.LEFT)
-                .trigger('mouseenter', 600, 180);
+                .trigger('mouseenter', 595, 180);
             cy.get('.cvat_canvas_selected_point').should('exist');
-            cy.get('.cvat-canvas-container').trigger('mousedown', 600, 180, { button: 0, shiftKey: true });
-            cy.get('.cvat-canvas-container').trigger('mousemove', 600, 150, { shiftKey: true });
-            cy.get('.cvat-canvas-container').trigger('mouseup', 600, 150);
-            cy.get('.cvat-canvas-container').dblclick(600, 150, { shiftKey: true });
+            cy.get('.cvat-canvas-container').trigger('mousedown', 595, 180, { button: 0, shiftKey: true });
+            cy.get('.cvat-canvas-container').trigger('mousemove', 595, 150, { shiftKey: true });
+            cy.get('.cvat-canvas-container').trigger('mouseup', 595, 150);
+            cy.get('.cvat-canvas-container').dblclick(595, 150, { shiftKey: true });
 
             cy.get('.cvat-canvas-container').trigger('mouseenter', 400, 130); // this.left
             cy.get('.cvat-canvas-container').trigger('mousedown', 400, 130, { which: 1 });

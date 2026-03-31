@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import FormData from 'form-data';
-import store from 'store';
 import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
@@ -14,7 +13,7 @@ import { axiosTusHttpStack } from './axios-tus';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
-    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, SerializedFunctionRequest,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
@@ -347,11 +346,6 @@ Axios.interceptors.response.use((response) => {
 
     return response;
 });
-
-// Previously, we used to store an additional authentication token in local storage.
-// Now we don't, and if the user still has one stored, we'll remove it to prevent
-// unnecessary credential exposure.
-store.remove('token');
 
 function setAuthData(response: AxiosResponse): void {
     if (response.headers['set-cookie']) {
@@ -1849,7 +1843,7 @@ async function getLambdaFunctions(): Promise<SerializedModel[]> {
     }
 }
 
-async function runLambdaRequest(body) {
+async function runLambdaRequest(body): Promise<SerializedFunctionRequest> {
     const { backendAPI } = config;
 
     try {
@@ -1873,7 +1867,7 @@ async function callLambdaFunction(funId, body) {
     }
 }
 
-async function getLambdaRequests() {
+async function getLambdaRequests(): Promise<SerializedFunctionRequest[]> {
     const { backendAPI } = config;
 
     try {
@@ -2473,7 +2467,6 @@ async function getQualityReports(
 
 export default Object.freeze({
     server: Object.freeze({
-        setAuthData,
         about,
         share,
         formats,

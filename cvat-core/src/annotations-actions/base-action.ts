@@ -47,7 +47,7 @@ export function prepareActionParameters(declared: ActionParameters, defined: obj
     }, {} as Record<string, string | number>);
 }
 
-export function validateClientIDs(collection: Partial<SerializedCollection>) {
+export function validateClientIDs(collection: Partial<SerializedCollection>): void {
     [].concat(
         collection.shapes ?? [],
         collection.tracks ?? [],

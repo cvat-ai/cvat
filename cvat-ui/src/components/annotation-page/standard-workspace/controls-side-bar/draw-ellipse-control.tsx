@@ -51,4 +51,5 @@ function DrawEllipseControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(DrawEllipseControl, { displayName: 'DrawEllipseControl' });
 export default React.memo(DrawEllipseControl);
