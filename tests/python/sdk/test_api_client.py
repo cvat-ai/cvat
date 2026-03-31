@@ -2,11 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
 
 import json
 
 from shared.utils import config as shared_config
 from shared.utils.config import make_api_client
+
 
 
 def test_can_make_custom_request_with_call_api_method(admin_user):

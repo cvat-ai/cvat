@@ -179,7 +179,12 @@ def preconfigure_local_runtime_env(config) -> None:
     infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
     requested_debug_services = parse_debug_services(config.getoption("--container-debug"))
     debug_port_base = int(config.getoption("--container-debug-port-base"))
-    os.environ["CVAT_TEST_INFRA_PROFILE"] = config.getoption("--parallel-lane-profile")
+    if config.getoption("--parallel-child"):
+        os.environ["CVAT_TEST_INFRA_PROFILE"] = config.getoption("--parallel-lane-profile")
+    else:
+        os.environ.setdefault(
+            "CVAT_TEST_INFRA_PROFILE", RuntimeInfraConfig.get_default_infra_profile()
+        )
 
     if config.getoption("--platform") != "local":
         return
@@ -286,13 +291,24 @@ def _profile_required_services(profile: str) -> set[str]:
         normalized = str(RuntimeInfraConfig.parse_infra_profile(profile))
     except pytest.UsageError:
         return set()
-    # Containers that distinguish core vs extended/full capabilities.
-    if normalized == str(InfraProfile.CORE):
+    if normalized == str(InfraProfile.SIMPLE):
         return set()
-    if normalized == str(InfraProfile.EXTENDED):
-        return {"cvat_clickhouse", "minio", "webhook_receiver"}
+    if normalized == str(InfraProfile.STANDARD):
+        return {"minio"}
     if normalized == str(InfraProfile.FULL):
-        return {"cvat_clickhouse", "minio", "webhook_receiver", "cvat_ui", "cvat_grafana", "cvat_vector"}
+        return {
+            "cvat_clickhouse",
+            "minio",
+            "webhook_receiver",
+            "cvat_ui",
+            "cvat_grafana",
+            "cvat_vector",
+            "cvat_worker_annotation",
+            "cvat_worker_consensus",
+            "cvat_worker_quality_reports",
+            "cvat_worker_webhooks",
+            "cvat_worker_utils",
+        }
     return set()
 
 
@@ -759,10 +775,11 @@ class LocalInstance(InfraInstance):
         return cls.can_handle_config(session.config)
 
     def _build_local_dc_files(self, project_cfg) -> list[Path]:
-        dc_files = project_cfg.dc_files
-        active_profile_files = self.deps.profile_dc_files.get(
-            RuntimeInfraConfig.get_infra_profile(), []
-        )
+        active_profile = RuntimeInfraConfig.get_infra_profile()
+        dc_files = project_cfg.generated_compose_files + [
+            project_cfg.cvat_root_dir / f for f in RuntimeInfraConfig.get_base_dc_files(active_profile)
+        ]
+        active_profile_files = self.deps.profile_dc_files.get(active_profile, [])
         if active_profile_files:
             dc_files += [project_cfg.cvat_root_dir / f for f in active_profile_files]
         if self.deps.extra_dc_files is not None:
@@ -901,6 +918,7 @@ class LocalInstance(InfraInstance):
                     project_directory=self.deps.cvat_root_dir,
                 )
             infra_health.wait_for_services(self.deps.waiting_time)
+            restore_databases_from_assets()
             infra_health.wait_for_auth_login_ready()
             pytest.exit("All necessary containers have been created and started.", returncode=0)
 

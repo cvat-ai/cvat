@@ -18,6 +18,7 @@ from shared.utils import config as shared_config
 from shared.utils.config import USER_PASS
 
 
+
 class TestClientUsecases:
     @pytest.fixture(autouse=True)
     def _restore_redis_inmem(self, restore_redis_inmem_per_function):
@@ -295,6 +296,7 @@ def test_organization_contexts(admin_user: str):
 
 
 @pytest.mark.usefixtures("restore_db_per_function", "restore_redis_inmem_per_function")
+@pytest.mark.infra_profile("standard")
 def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
     with Client(shared_config.BASE_URL, check_server_version=False) as client:
         client.login((regular_lonely_user, USER_PASS))

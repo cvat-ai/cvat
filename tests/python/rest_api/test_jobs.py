@@ -39,6 +39,7 @@ from .utils import (
 )
 
 
+
 def get_job_staff(job, tasks, projects):
     job_staff = []
     job_staff.append(job["assignee"])
@@ -825,6 +826,7 @@ class TestGetGtJobData:
         else:
             assert False
 
+    @pytest.mark.infra_profile("standard")
     def test_can_get_gt_job_meta_with_complex_frame_setup(self, admin_user, request):
         image_count = 50
         start_frame = 3
@@ -880,6 +882,7 @@ class TestGetGtJobData:
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
     @pytest.mark.parametrize("indexing", ["absolute", "relative"])
+    @pytest.mark.infra_profile("standard")
     def test_can_get_gt_job_chunk(
         self, admin_user, tasks, jobs, task_mode, quality, request, indexing
     ):
@@ -965,6 +968,7 @@ class TestGetGtJobData:
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
+    @pytest.mark.infra_profile("standard")
     def test_can_get_gt_job_frame(self, admin_user, tasks, jobs, task_mode, quality, request):
         user = admin_user
         job_frame_count = 4
@@ -1526,6 +1530,7 @@ def _check_cvat_for_video_job_annotations(content, values_to_be_checked):
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.infra_profile("standard")
 class TestJobDataset:
 
     @pytest.fixture(autouse=True)
@@ -1679,6 +1684,7 @@ class TestJobDataset:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.infra_profile("standard")
 class TestGetJobPreview:
     def _test_get_job_preview_200(self, username, jid, **kwargs):
         with make_api_client(username) as client:

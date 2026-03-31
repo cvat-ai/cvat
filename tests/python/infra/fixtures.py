@@ -4,6 +4,8 @@
 
 import pytest
 
+from infra.config import InfraProfile, RuntimeInfraConfig
+
 
 def _infra_instance(request):
     instance = getattr(request.config, "_cvat_infra_instance", None)
@@ -13,6 +15,12 @@ def _infra_instance(request):
             "must be used during test execution, not collection."
         )
     return instance
+
+
+def _required_infra_profile(request) -> str:
+    marker = request.node.get_closest_marker("infra_profile")
+    required = marker.args[0] if marker and marker.args else str(InfraProfile.SIMPLE)
+    return str(RuntimeInfraConfig.parse_infra_profile(required))
 
 
 def container_exec_cvat(request, command: list[str] | str):
@@ -28,11 +36,17 @@ def restore_db_per_function(request):
     # Note that autouse fixtures are executed first within their scope, so be aware of the order
     # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
     # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
+    required = _required_infra_profile(request)
+    if RuntimeInfraConfig.profile_uses_background_jobs(required):
+        _infra_instance(request).drain_background_jobs(required)
     _infra_instance(request).restore_db()
 
 
 @pytest.fixture(scope="class")
 def restore_db_per_class(request):
+    required = _required_infra_profile(request)
+    if RuntimeInfraConfig.profile_uses_background_jobs(required):
+        _infra_instance(request).drain_background_jobs(required)
     _infra_instance(request).restore_db()
 
 

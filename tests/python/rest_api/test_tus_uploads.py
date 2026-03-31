@@ -12,6 +12,9 @@ from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_file
 
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
+
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")

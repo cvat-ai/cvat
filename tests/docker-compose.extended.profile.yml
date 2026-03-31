@@ -5,6 +5,11 @@ services:
       DJANGO_LOG_SERVER_HOST: 127.0.0.1
       NUMPROCS: 1
 
+  cvat_worker_annotation:
+    depends_on: !reset []
+    environment:
+      NUMPROCS: 1
+
   cvat_worker_chunks:
     depends_on: !reset []
     environment:
@@ -20,6 +25,16 @@ services:
     environment:
       NUMPROCS: 1
 
+  cvat_worker_consensus:
+    depends_on: !reset []
+    environment:
+      NUMPROCS: 1
+
+  cvat_worker_quality_reports:
+    depends_on: !reset []
+    environment:
+      NUMPROCS: 1
+
   cvat_ui:
     profiles:
       - full
@@ -29,5 +44,14 @@ services:
       - full
 
   cvat_vector:
+    profiles:
+      - full
+
+  cvat_worker_webhooks:
+    profiles:
+      - full
+
+  mc:
+  webhook_receiver:
     profiles:
       - full

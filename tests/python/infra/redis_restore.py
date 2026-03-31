@@ -98,8 +98,11 @@ class RedisStateRestorer:
     def restore_ondisk(self) -> None:
         self._ondisk.flushall()
 
+    @property
+    def inmem_db0(self) -> Redis:
+        return self._inmem_db0
+
     def close(self) -> None:
         self._inmem_db0.close()
         self._inmem_db1.close()
         self._ondisk.close()
-

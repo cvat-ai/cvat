@@ -265,7 +265,6 @@ class TestGetAuditEventsReadOnly(_AuditEventsBase):
             assert request_id
             uuid.UUID(request_id)
 
-    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("api_version, allowed", [(1, False), (2, True)])
     @pytest.mark.parametrize("cloud_storage_id", [3])  # import/export bucket
     def test_export_to_cloud(

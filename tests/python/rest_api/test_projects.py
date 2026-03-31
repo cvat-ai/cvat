@@ -47,6 +47,7 @@ from .utils import (
     import_project_backup,
 )
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetProjects:
     def _find_project_by_user_org(self, user, projects, is_project_staff_flag, is_project_staff):
@@ -223,6 +224,7 @@ class _ProjectBackupBase:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.infra_profile("standard")
 class TestGetProjectBackupReadOnly(_ProjectBackupBase):
     def test_admin_can_get_project_backup(self):
         project = list(self.projects)[0]
@@ -349,6 +351,7 @@ class TestGetProjectBackupReadOnly(_ProjectBackupBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.infra_profile("standard")
 class TestGetProjectBackupMutable(_ProjectBackupBase):
 
     def test_can_get_backup_project_when_some_tasks_have_no_data(self):
@@ -525,6 +528,7 @@ class TestPostProjects:
         ],
     )
     @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
+    @pytest.mark.infra_profile("standard")
     def test_user_cannot_create_project_with_cloud_storage_without_access(
         self, storage_id, field, regular_lonely_user
     ):
@@ -591,6 +595,7 @@ def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.infra_profile("standard")
 class TestImportExportDatasetProject:
 
     @pytest.fixture(autouse=True)
@@ -1339,6 +1344,7 @@ class TestPatchProjectLabel:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.infra_profile("standard")
 class TestGetProjectPreview:
     def _test_response_200(self, username, project_id, **kwargs):
         with make_api_client(username) as api_client:
@@ -1488,6 +1494,7 @@ class TestPatchProject:
 
     @pytest.mark.parametrize("has_old_assignee", [False, True])
     @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
+    @pytest.mark.infra_profile("simple")
     def test_can_update_assignee_updated_date_on_assignee_updates(
         self, admin_user, projects, users, has_old_assignee, new_assignee
     ):
@@ -1523,6 +1530,7 @@ class TestPatchProject:
             else:
                 assert updated_project.assignee is None
 
+    @pytest.mark.infra_profile("simple")
     def test_malefactor_cannot_obtain_project_details_via_empty_partial_update_request(
         self, regular_lonely_user, projects
     ):
@@ -1563,6 +1571,7 @@ class TestPatchProject:
             ("worker", False),
         ],
     )
+    @pytest.mark.infra_profile("standard")
     def test_org_update_project_associated_storage(
         self,
         is_project_assignee: bool,
@@ -1608,6 +1617,7 @@ class TestPatchProject:
             (False, False, False),
         ],
     )
+    @pytest.mark.infra_profile("standard")
     def test_sandbox_update_project_associated_storage(
         self,
         is_owner: bool,
@@ -1656,6 +1666,7 @@ class TestPatchProject:
             (False, True),
         ],
     )
+    @pytest.mark.infra_profile("simple")
     def test_project_can_be_transferred_to_different_workspace(
         self,
         from_org: bool,

@@ -1,8 +1,7 @@
-{{- if and .Values.webhookReceiver.enabled .Values.smokescreen.allowWebhookReceiver }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: allow-webhook-receiver
+  name: {{ include "test-chart.allowWebhookReceiverConfigMapName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: test-chart
@@ -10,8 +9,11 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
   allow_webhook_receiver.sh: |
-    webhook_receiver_ip_addr="$(getent hosts {{ .Values.webhookReceiver.serviceName }} | head -1 | awk '{ print $1 }')"
+{{- if and .Values.webhookReceiver.enabled .Values.smokescreen.allowWebhookReceiver }}
+    webhook_receiver_ip_addr="$(getent hosts {{ include "test-chart.webhookReceiverServiceName" . }} | head -1 | awk '{ print $1 }')"
     if [ -n "${webhook_receiver_ip_addr}" ]; then
       export SMOKESCREEN_OPTS="$SMOKESCREEN_OPTS --allow-address=\"${webhook_receiver_ip_addr}\""
     fi
+{{- else }}
+    :
 {{- end }}

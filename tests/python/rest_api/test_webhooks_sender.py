@@ -695,6 +695,7 @@ class TestWebhookPing:
             == {}
         )
 
+    @pytest.mark.infra_profile("simple")
     def test_not_project_staff_cannot_ping(self, projects, users):
         user, project = next(
             (user, project)

@@ -37,8 +37,8 @@ class InfraMode(str, Enum):
 
 
 class InfraProfile(str, Enum):
-    CORE = "core"
-    EXTENDED = "extended"
+    SIMPLE = "simple"
+    STANDARD = "standard"
     FULL = "full"
 
     def __str__(self) -> str:
@@ -46,16 +46,27 @@ class InfraProfile(str, Enum):
 
 
 _DEFAULT_INFRA_MODE = str(InfraMode.AUTO)
-_DEFAULT_INFRA_PROFILE = str(InfraProfile.FULL)
-_BASE_DC_FILES = [
-    "tests/docker-compose.file_share.yml",
-    "tests/docker-compose.minio.yml",
-    "tests/docker-compose.pat_settings.yml",
-    "tests/docker-compose.test_servers.yml",
-]
+_DEFAULT_INFRA_PROFILE = str(InfraProfile.SIMPLE)
+_PROFILE_BASE_DC_FILES = {
+    str(InfraProfile.SIMPLE): [
+        "tests/docker-compose.file_share.yml",
+        "tests/docker-compose.pat_settings.yml",
+    ],
+    str(InfraProfile.STANDARD): [
+        "tests/docker-compose.file_share.yml",
+        "tests/docker-compose.minio.yml",
+        "tests/docker-compose.pat_settings.yml",
+    ],
+    str(InfraProfile.FULL): [
+        "tests/docker-compose.file_share.yml",
+        "tests/docker-compose.minio.yml",
+        "tests/docker-compose.pat_settings.yml",
+        "tests/docker-compose.test_servers.yml",
+    ],
+}
 _PROFILE_DC_FILES = {
-    str(InfraProfile.CORE): ["tests/docker-compose.core.profile.yml"],
-    str(InfraProfile.EXTENDED): ["tests/docker-compose.extended.profile.yml"],
+    str(InfraProfile.SIMPLE): ["tests/docker-compose.simple.profile.yml"],
+    str(InfraProfile.STANDARD): ["tests/docker-compose.standard.profile.yml"],
     str(InfraProfile.FULL): [],
 }
 _RUNTIME_ROOT_DIR = Path(tempfile.gettempdir()) / "cvat_pytest_infra"
@@ -64,12 +75,23 @@ _RUN_CONTEXT_FILE_NAME = "run-context.json"
 _INFRA_MODES = tuple(str(mode) for mode in InfraMode)
 _INFRA_PROFILES = tuple(_PROFILE_DC_FILES.keys())
 _INFRA_PROFILE_RANK = {
-    str(InfraProfile.CORE): 0,
-    str(InfraProfile.EXTENDED): 1,
+    str(InfraProfile.SIMPLE): 0,
+    str(InfraProfile.STANDARD): 1,
     str(InfraProfile.FULL): 2,
 }
 _INFRA_REQUIRED_MARKERS = {
     profile: f"infra_required_{profile}" for profile in _INFRA_PROFILES
+}
+_BACKGROUND_QUEUE_FAMILIES = {
+    "media_io": ("import", "export", "chunks"),
+    "annotation_async": ("annotation",),
+    "webhook_async": ("webhooks",),
+    "quality_async": ("quality_reports", "consensus"),
+}
+_PROFILE_BACKGROUND_QUEUE_FAMILIES = {
+    str(InfraProfile.SIMPLE): (),
+    str(InfraProfile.STANDARD): ("media_io",),
+    str(InfraProfile.FULL): ("media_io", "annotation_async", "webhook_async", "quality_async"),
 }
 
 def _validate_project_name(name: str) -> str:
@@ -104,7 +126,7 @@ class ProjectInfraConfig:
 
     @property
     def dc_files(self) -> list[Path]:
-        return self.generated_compose_files + [self.cvat_root_dir / f for f in _BASE_DC_FILES]
+        return self.generated_compose_files
 
     @property
     def host_http_port(self) -> int:
@@ -276,6 +298,28 @@ class RuntimeInfraConfig:
     @classmethod
     def get_profile_dc_files(cls) -> dict[str, list[str]]:
         return {profile: list(files) for profile, files in _PROFILE_DC_FILES.items()}
+
+    @classmethod
+    def get_base_dc_files(cls, profile: str) -> list[str]:
+        normalized = str(cls.parse_infra_profile(profile))
+        return list(_PROFILE_BASE_DC_FILES[normalized])
+
+    @classmethod
+    def get_background_queue_families(cls, profile: str) -> tuple[str, ...]:
+        normalized = str(cls.parse_infra_profile(profile))
+        return tuple(_PROFILE_BACKGROUND_QUEUE_FAMILIES[normalized])
+
+    @classmethod
+    def get_background_queue_names(cls, profile: str) -> tuple[str, ...]:
+        normalized = str(cls.parse_infra_profile(profile))
+        queue_names: list[str] = []
+        for family in _PROFILE_BACKGROUND_QUEUE_FAMILIES[normalized]:
+            queue_names.extend(_BACKGROUND_QUEUE_FAMILIES[family])
+        return tuple(dict.fromkeys(queue_names))
+
+    @classmethod
+    def profile_uses_background_jobs(cls, profile: str) -> bool:
+        return bool(cls.get_background_queue_names(profile))
 
     @classmethod
     def get_clickhouse_init_script(cls) -> str:

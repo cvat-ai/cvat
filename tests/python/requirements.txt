@@ -14,3 +14,4 @@ pyyaml==6.0.2
 numpy==2.0.0
 psycopg[binary]==3.3.3
 redis==6.4.0
+rq==1.16.0

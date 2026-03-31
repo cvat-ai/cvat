@@ -76,6 +76,7 @@ def count_frame_uses(data: Sequence[int], *, included_frames: Sequence[int]) -> 
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.infra_profile("simple")
 class TestGetTasks:
     def _compute_expected_project_name(
         self, user_id, task, projects, users, is_project_staff, org_staff
@@ -336,6 +337,7 @@ class TestGetTasks:
         assert server_task.status == "completed"
 
 
+@pytest.mark.infra_profile("simple")
 class TestListTasksFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
         "owner": ["owner", "username"],
@@ -371,6 +373,7 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.infra_profile("simple")
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
@@ -535,6 +538,7 @@ class TestPostTasks:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.infra_profile("standard")
 class TestGetData:
     _USERNAME = "user1"
 
@@ -556,6 +560,7 @@ class TestGetData:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.infra_profile("simple")
 class TestPatchTaskAnnotations:
     def _test_check_response(self, is_allow, response, data=None):
         if is_allow:
@@ -813,6 +818,7 @@ class TestPatchTaskAnnotations:
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.infra_profile("standard")
 class TestGetTaskDataset:
 
     @staticmethod
@@ -1115,6 +1121,7 @@ class TestGetTaskDataset:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.infra_profile("simple")
 class TestPatchTaskLabel:
     def _get_task_labels(self, pid, user, **kwargs) -> list[models.Label]:
         kwargs.setdefault("return_json", True)
@@ -1322,7 +1329,7 @@ class TestPatchTaskLabel:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
-    @pytest.mark.infra_profile("full")
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
@@ -1370,6 +1377,7 @@ class TestWorkWithTask:
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.infra_profile("standard")
 class TestTaskBackups:
     @pytest.fixture(autouse=True)
     def setup(
@@ -1421,7 +1429,6 @@ class TestTaskBackups:
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
-    @pytest.mark.infra_profile("full")
     def test_can_export_and_import_backup_task_with_mounted_share(self):
         task_spec = {
             "name": "Task with files from mounted share",
@@ -1450,7 +1457,6 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
-    @pytest.mark.infra_profile("full")
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
         task_spec = {
@@ -1567,7 +1573,6 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
-    @pytest.mark.infra_profile("full")
     def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
         cloud_storage_id = next(cs["id"] for cs in cloud_storages if cs["resource"] == "backingcs")
 
@@ -1737,6 +1742,7 @@ class TestTaskBackups:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.infra_profile("standard")
 class TestWorkWithSimpleGtJobTasks:
     @fixture
     def fxt_task_with_gt_job(
@@ -1993,6 +1999,7 @@ class TestWorkWithSimpleGtJobTasks:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.infra_profile("standard")
 class TestWorkWithHoneypotTasks:
     @fixture
     def fxt_task_with_honeypots(
@@ -2564,6 +2571,7 @@ class TestWorkWithHoneypotTasks:
                 assert new_job_meta.chunks_updated_date > old_job_meta.chunks_updated_date
 
 
+@pytest.mark.infra_profile("simple")
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWorkWithConsensusTasks:
     @pytest.mark.parametrize("task_id", [30])
@@ -2603,6 +2611,7 @@ class TestWorkWithConsensusTasks:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.infra_profile("standard")
 class TestGetTaskPreview:
     def _test_task_preview_200(self, username, task_id, **kwargs):
         with make_api_client(username) as api_client:
@@ -2668,6 +2677,7 @@ class TestGetTaskPreview:
 
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.infra_profile("standard")
 class TestUnequalJobs:
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
@@ -2753,6 +2763,7 @@ class TestUnequalJobs:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.infra_profile("simple")
 class TestPatchTask:
     @pytest.mark.parametrize("task_id, project_id, user", [(19, 12, "admin1")])
     def test_move_task_to_project_with_attributes(self, task_id, project_id, user):
@@ -2799,7 +2810,7 @@ class TestPatchTask:
         assert response.status_code == HTTPStatus.OK
         assert compare_annotations(annotations, response.json(), ignore_spec_ids=True) == {}
 
-    @pytest.mark.infra_profile("full")
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.parametrize(
         "storage_id",
         [
@@ -3031,6 +3042,7 @@ class TestPatchTask:
             (False, True),
         ],
     )
+    @pytest.mark.infra_profile("standard")
     def test_task_can_be_transferred_to_different_workspace(
         self,
         from_org: bool,
@@ -3134,8 +3146,8 @@ def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user
         task, _ = api_client.tasks_api.retrieve(task["id"])
         assert task.jobs.completed == 1
 
-@pytest.mark.infra_profile("full")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.infra_profile("standard")
 class TestImportTaskAnnotations:
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
@@ -3213,6 +3225,7 @@ class TestImportTaskAnnotations:
 
     @pytest.mark.skip("Fails sometimes, needs to be fixed")
     @pytest.mark.timeout(70)
+    @pytest.mark.infra_profile("full")
     def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
         task_id = tasks_with_shapes[0]["id"]
         with NamedTemporaryFile() as f:
@@ -4380,6 +4393,7 @@ class TestTrackImportExport:
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 # Keep this class atomic in parallel runs to avoid re-running heavy class-scoped setup per batch.
 @pytest.mark.parallel_group("class")
+@pytest.mark.infra_profile("standard")
 class TestImportWithComplexFilenames:
     @pytest.fixture(
         autouse=True,
@@ -4531,6 +4545,7 @@ class TestImportWithComplexFilenames:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.infra_profile("standard")
 class TestPatchExportFrames(TestTasksBase):
     @fixture(scope="class")
     @parametrize("media_type", [SourceDataType.images, SourceDataType.video])

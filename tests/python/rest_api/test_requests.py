@@ -50,6 +50,7 @@ class _TestRequestsListFiltersBase(CollectionSimpleFilterTestBase):
         return api_client.requests_api.list_endpoint
 
 
+@pytest.mark.infra_profile("standard")
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
@@ -280,6 +281,7 @@ class TestRequestsListSimpleFilters(_TestRequestsListFiltersBase):
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.timeout(30)
 @pytest.mark.parallel_group("case")
+@pytest.mark.infra_profile("standard")
 class TestRequestsListFilters:
 
     def test_list_requests_when_there_is_job_with_non_regular_or_corrupted_meta(
@@ -319,6 +321,7 @@ class TestRequestsListFilters:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.infra_profile("standard")
 class TestGetRequests:
 
     def _test_get_request_200(

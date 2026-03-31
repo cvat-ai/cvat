@@ -31,6 +31,9 @@ from shared.utils.helpers import generate_image_files
 from .util import restrict_api_requests
 
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
+
 @pytest.fixture(autouse=True)
 def _common_setup(
     tmp_path: Path,

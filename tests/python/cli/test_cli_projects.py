@@ -12,6 +12,7 @@ from cvat_sdk.core.proxies.projects import Project
 from .util import TestCliBase
 
 
+
 class TestCliProjects(TestCliBase):
     @pytest.fixture
     def fxt_new_project(self):
@@ -41,6 +42,7 @@ class TestCliProjects(TestCliBase):
         assert created_project.bug_tracker == "https://bugs.example/"
         assert {label.name for label in created_project.get_labels()} == {"car", "person"}
 
+    @pytest.mark.infra_profile("standard")
     def test_can_create_project_from_dataset(self, fxt_coco_dataset):
         stdout = self.run_cli(
             "project",

@@ -111,7 +111,7 @@ which are used by containers for the testing system.
   - `--cleanup/--dumpdb` are local-only helpers and are not supported with `--platform kube`.
 
 - Lane profiles are selected automatically by the scheduler based on collected
-  tests and `@pytest.mark.infra_profile("core|extended|full")`.
+  tests and `@pytest.mark.infra_profile("simple|standard|full")`.
 
 - macOS benchmark runs:
 

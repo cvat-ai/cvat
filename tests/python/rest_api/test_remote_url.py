@@ -57,13 +57,14 @@ class TestCreateFromRemote:
         response_json = _wait_until_task_is_created(user, rq_id)
         assert response_json["status"] == "failed"
 
+    @pytest.mark.infra_profile("standard")
     def test_cannot_create(self, find_users):
         user = find_users(privilege="admin")[0]["username"]
         remote_resources = ["http://localhost/favicon.ico"]
 
         self._test_cannot_create(user, self.task_id, remote_resources)
 
-    @pytest.mark.infra_profile("extended")
+    @pytest.mark.infra_profile("standard")
     def test_can_create(self, find_users):
         user = find_users(privilege="admin")[0]["username"]
         remote_resources = ["https://docs.cvat.ai/favicons/favicon-32x32.png"]

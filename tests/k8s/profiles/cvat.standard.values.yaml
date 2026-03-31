@@ -1,0 +1,19 @@
+analytics:
+  enabled: false
+
+clickhouse:
+  replicaCount: 0
+
+cvat:
+  frontend:
+    replicas: 0
+  backend:
+    worker:
+      webhooks:
+        replicas: 0
+      qualityreports:
+        replicas: 0
+      consensus:
+        replicas: 0
+      utils:
+        replicas: 0

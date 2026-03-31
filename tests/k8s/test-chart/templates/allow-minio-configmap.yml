@@ -1,8 +1,7 @@
-{{- if and .Values.minio.enabled .Values.smokescreen.allowMinio }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: allow-minio
+  name: {{ include "test-chart.allowMinioConfigMapName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: test-chart
@@ -10,8 +9,11 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
   allow_minio.sh: |
-    minio_ip_addr="$(getent hosts {{ .Values.minio.serviceName }} | head -1 | awk '{ print $1 }')"
+{{- if and .Values.minio.enabled .Values.smokescreen.allowMinio }}
+    minio_ip_addr="$(getent hosts {{ include "test-chart.minioServiceName" . }} | head -1 | awk '{ print $1 }')"
     if [ -n "${minio_ip_addr}" ]; then
       export SMOKESCREEN_OPTS="$SMOKESCREEN_OPTS --allow-address=\"${minio_ip_addr}\""
     fi
+{{- else }}
+    :
 {{- end }}

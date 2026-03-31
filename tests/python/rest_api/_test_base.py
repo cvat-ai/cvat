@@ -34,6 +34,14 @@ def read_share_file(path: str) -> io.BytesIO:
 class TestTasksBase:
     _USERNAME = "admin1"
 
+    @staticmethod
+    def _mark_cases_by_fixture(
+        cases: Sequence, fixture_names: set[str], mark: pytest.MarkDecorator
+    ) -> list:
+        return [
+            pytest.param(case, marks=mark) if case.fixture in fixture_names else case for case in cases
+        ]
+
     def _image_task_fxt_base(
         self,
         request: pytest.FixtureRequest,
@@ -888,4 +896,20 @@ class TestTasksBase:
             excludes=set(v.fixture for v in _3d_task_cases),
             key=lambda v: v.fixture,
         )
+    )
+
+    _all_task_cases_mark_consensus_full = _mark_cases_by_fixture.__func__(  # type: ignore[attr-defined]
+        _all_task_cases,
+        set(v.fixture for v in _tasks_with_consensus_cases),
+        pytest.mark.infra_profile("full"),
+    )
+    _2d_task_cases_mark_consensus_full = _mark_cases_by_fixture.__func__(  # type: ignore[attr-defined]
+        _2d_task_cases,
+        set(v.fixture for v in _tasks_with_consensus_cases),
+        pytest.mark.infra_profile("full"),
+    )
+    _simple_gt_job_cases_mark_consensus_full = _mark_cases_by_fixture.__func__(  # type: ignore[attr-defined]
+        _tasks_with_simple_gt_job_cases,
+        set(v.fixture for v in _tasks_with_consensus_cases),
+        pytest.mark.infra_profile("full"),
     )

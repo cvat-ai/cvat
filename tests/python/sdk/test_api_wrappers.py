@@ -2,11 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
 import pickle
 from copy import deepcopy
 
 from cvat_sdk import models
 from deepdiff import DeepDiff
+
 
 
 def test_models_do_not_change_input_values():

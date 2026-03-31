@@ -18,6 +18,7 @@ from .utils import CollectionSimpleFilterTestBase, export_backup, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostAccessToken:
     @pytest.mark.parametrize("user_group", ["admin", "user", "worker"])
     def test_can_create_token(self, users, user_group):
@@ -134,7 +135,7 @@ class TestGetAccessToken:
             == {}
         )
 
-    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.usefixtures("restore_db_per_function", "restore_redis_inmem_per_function")
     @pytest.mark.parametrize("token_eol_reason", ["expired", "stale", "revoked"])
     def test_can_only_see_alive_tokens(self, token_eol_reason: str, admin_user):
         with make_api_client(admin_user) as api_client:
@@ -187,6 +188,7 @@ class TestAccessTokenListFilters(CollectionSimpleFilterTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPatchAccessToken:
     def test_can_modify_token(self, access_tokens_by_username):
         user, user_tokens = next(iter(access_tokens_by_username.items()))
@@ -258,6 +260,7 @@ class TestPatchAccessToken:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestDeleteAccessToken:
     def test_can_revoke_own_token(self, access_tokens_by_username):
         user, user_tokens = next(iter(access_tokens_by_username.items()))
@@ -352,6 +355,7 @@ class TestTokenAuthPermissions:
                 user["id"], patched_user_request=models.PatchedUserRequest(first_name="new name")
             )
 
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("is_readonly", [True, False])
     @parametrize("export_type", ["annotations", "dataset", "backup"])
@@ -372,6 +376,7 @@ class TestTokenAuthPermissions:
             elif export_type == "backup":
                 export_backup(api_client.projects_api, id=project_id)
 
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("is_readonly", [True, False])
     @parametrize("export_type", ["annotations", "dataset", "backup"])
@@ -392,6 +397,7 @@ class TestTokenAuthPermissions:
             elif export_type == "backup":
                 export_backup(api_client.tasks_api, id=task_id)
 
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("is_readonly", [True, False])
     @parametrize("export_type", ["annotations", "dataset"])

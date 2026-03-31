@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: webhook-receiver
+  name: {{ include "test-chart.webhookReceiverConfigMapName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: test-chart

@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: minio
+  name: {{ include "test-chart.minioServiceName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: test-chart
@@ -42,12 +42,12 @@ spec:
         - name: MINIO_ROOT_USER
           valueFrom:
             secretKeyRef:
-              name: minio
+              name: {{ include "test-chart.minioSecretName" . }}
               key: accessKey
         - name: MINIO_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: minio
+              name: {{ include "test-chart.minioSecretName" . }}
               key: secretKey
         ports:
         - name: api

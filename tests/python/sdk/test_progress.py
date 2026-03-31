@@ -5,9 +5,11 @@
 import io
 import warnings
 
+import pytest
 import tqdm
 from cvat_sdk.core.helpers import DeferredTqdmProgressReporter, TqdmProgressReporter
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
+
 
 
 def _exercise_reporter(r: ProgressReporter) -> None:

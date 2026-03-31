@@ -20,6 +20,7 @@ else:
     numpy_installed = True
 
 
+
 @pytest.mark.skipif(not numpy_installed, reason="NumPy is not installed")
 class TestMasks:
     def _bitmap_from_string(self, string: str) -> np.ndarray:

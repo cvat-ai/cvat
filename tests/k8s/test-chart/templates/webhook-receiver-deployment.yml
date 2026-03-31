@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.webhookReceiver.serviceName }}
+  name: {{ include "test-chart.webhookReceiverServiceName" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: test-chart
@@ -64,6 +64,6 @@ spec:
       volumes:
       - name: webhook-receiver
         configMap:
-          name: webhook-receiver
+          name: {{ include "test-chart.webhookReceiverConfigMapName" . }}
           defaultMode: 493
 {{- end }}

@@ -168,7 +168,7 @@ def pytest_collection_modifyitems(config, items) -> None:
 def _assign_required_infra_markers(items) -> None:
     for item in items:
         marker = item.get_closest_marker("infra_profile")
-        required = marker.args[0] if marker and marker.args else str(InfraProfile.CORE)
+        required = marker.args[0] if marker and marker.args else str(InfraProfile.SIMPLE)
         required = str(RuntimeInfraConfig.parse_infra_profile(required))
         item.add_marker(getattr(pytest.mark, RuntimeInfraConfig.get_required_marker_name(required)))
 

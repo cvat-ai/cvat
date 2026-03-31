@@ -20,7 +20,7 @@ from infra.db_restore import PsycopgDatabaseRestorer
 from infra.debug.host_debug import maybe_wait_for_vscode_attach
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.redis_restore import RedisStateRestorer
-from infra.system_utils import kubectl_cp, pick_free_port, run_command
+from infra.system_utils import is_port_free, kubectl_cp, pick_free_port, run_command
 from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,10 @@ _DEFAULT_KUBE_IMAGE_TAG = os.environ.get("CVAT_VERSION", "dev")
 _KUBE_SERVER_CONTAINER = "cvat-backend"
 _KUBE_FINGERPRINT_VERSION = 1
 _KUBE_TEST_RELEASE_SUFFIX = "-test"
-_MINIO_SERVICE_NAME = "minio"
+_MINIO_SERVICE_SUFFIX = "minio"
+_WEBHOOK_RECEIVER_SERVICE_SUFFIX = "webhook-receiver"
+_ALLOW_MINIO_CONFIGMAP_SUFFIX = "allow-minio"
+_ALLOW_WEBHOOK_RECEIVER_CONFIGMAP_SUFFIX = "allow-webhook-receiver"
 _MINIO_ACCESS_KEY = "minio_access_key"
 _MINIO_SECRET_KEY = "minio_secret_key"  # nosec
 _MINIO_BUCKETS = ("private", "public", "test", "importexportbucket", "backingcs")
@@ -77,8 +80,28 @@ def _kube_test_release() -> str:
     return _normalize_release_name(f"{_kube_release()}{_KUBE_TEST_RELEASE_SUFFIX}")
 
 
+def _kube_minio_service() -> str:
+    return _MINIO_SERVICE_SUFFIX
+
+
+def _kube_webhook_receiver_service() -> str:
+    return "cvat-webhook-receiver"
+
+
+def _kube_allow_minio_configmap() -> str:
+    return f"{_kube_test_release()}-{_ALLOW_MINIO_CONFIGMAP_SUFFIX}"
+
+
+def _kube_allow_webhook_receiver_configmap() -> str:
+    return f"{_kube_test_release()}-{_ALLOW_WEBHOOK_RECEIVER_CONFIGMAP_SUFFIX}"
+
+
 def _kube_traefik_service() -> str:
     return f"{_kube_release()}-traefik"
+
+
+def _kube_backend_service() -> str:
+    return f"{_kube_release()}-backend-service"
 
 
 def _kube_server_image() -> str:
@@ -91,6 +114,14 @@ def _kube_frontend_image() -> str:
 
 def _kube_image_tag() -> str:
     return os.environ.get("CVAT_TEST_KUBE_IMAGE_TAG", _DEFAULT_KUBE_IMAGE_TAG)
+
+
+def _kube_infra_profile() -> str:
+    return RuntimeInfraConfig.get_infra_profile()
+
+
+def _kube_profile_values_file(*, cvat_root_dir: Path, chart_name: str) -> Path:
+    return cvat_root_dir / "tests/k8s/profiles" / f"{chart_name}.{_kube_infra_profile()}.values.yaml"
 
 
 def _sha256_file(path) -> str:
@@ -121,14 +152,20 @@ def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
     test_chart_dir = cvat_root_dir / "tests/k8s/test-chart"
     cvat_values = chart_dir / "cvat.values.yaml"
     test_values = cvat_root_dir / "tests/k8s/cvat.test.values.yaml"
+    cvat_profile_values = _kube_profile_values_file(cvat_root_dir=cvat_root_dir, chart_name="cvat")
     chart_yaml = chart_dir / "Chart.yaml"
     chart_lock = chart_dir / "Chart.lock"
     test_chart_yaml = test_chart_dir / "Chart.yaml"
     test_chart_values = test_chart_dir / "values.yaml"
+    test_chart_profile_values = _kube_profile_values_file(
+        cvat_root_dir=cvat_root_dir,
+        chart_name="test-chart",
+    )
     server_image_ref = f"{_kube_server_image()}:{_kube_image_tag()}"
     frontend_image_ref = f"{_kube_frontend_image()}:{_kube_image_tag()}"
     return {
         "version": _KUBE_FINGERPRINT_VERSION,
+        "infra_profile": _kube_infra_profile(),
         "profile": _kube_profile(),
         "namespace": _kube_namespace(),
         "release": _kube_release(),
@@ -142,10 +179,16 @@ def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
         "chart": {
             "cvat.values.yaml": _sha256_file(cvat_values) if cvat_values.exists() else "",
             "tests/k8s/cvat.test.values.yaml": _sha256_file(test_values) if test_values.exists() else "",
+            f"tests/k8s/profiles/cvat.{_kube_infra_profile()}.values.yaml": (
+                _sha256_file(cvat_profile_values) if cvat_profile_values.exists() else ""
+            ),
             "Chart.yaml": _sha256_file(chart_yaml) if chart_yaml.exists() else "",
             "Chart.lock": _sha256_file(chart_lock) if chart_lock.exists() else "",
             "tests/k8s/test-chart/Chart.yaml": _sha256_file(test_chart_yaml) if test_chart_yaml.exists() else "",
             "tests/k8s/test-chart/values.yaml": _sha256_file(test_chart_values) if test_chart_values.exists() else "",
+            f"tests/k8s/profiles/test-chart.{_kube_infra_profile()}.values.yaml": (
+                _sha256_file(test_chart_profile_values) if test_chart_profile_values.exists() else ""
+            ),
         },
     }
 
@@ -162,7 +205,10 @@ def _configure_kube_runtime_env(*, project_name: str, base_url: str, minio_endpo
     os.environ["CVAT_MINIO_ENDPOINT_URL"] = minio_endpoint_url
     os.environ[
         "CVAT_TEST_WEBHOOK_RECEIVER_URL"
-    ] = f"http://{_kube_release()}-webhook-receiver.{_kube_namespace()}.svc.cluster.local:2020/payload"
+    ] = (
+        f"http://{_kube_webhook_receiver_service()}."
+        f"{_kube_namespace()}.svc.cluster.local:2020/payload"
+    )
 
     # shared.utils.config can be imported before session start, refresh constants.
     try:
@@ -192,6 +238,7 @@ def preconfigure_kube_runtime_env(config) -> None:
     os.environ["CVAT_TEST_KUBE_SERVER_IMAGE"] = str(config.getoption("--kube-server-image"))
     os.environ["CVAT_TEST_KUBE_FRONTEND_IMAGE"] = str(config.getoption("--kube-frontend-image"))
     os.environ["CVAT_TEST_KUBE_IMAGE_TAG"] = str(config.getoption("--kube-image-tag"))
+    os.environ["CVAT_TEST_INFRA_PROFILE"] = str(config.getoption("--parallel-lane-profile"))
 
     if infra_mode == InfraMode.DOWN:
         os.environ["CVAT_TEST_RUN_PREFIX"] = run_prefix
@@ -379,6 +426,7 @@ def _run_with_retries(command: list[str], *, attempts: int = 4, delay_s: float =
 
 def _helm_upgrade_install_test_chart(*, cvat_root_dir, release: str, namespace: str) -> None:
     chart_dir = cvat_root_dir / "tests/k8s/test-chart"
+    profile_values = _kube_profile_values_file(cvat_root_dir=cvat_root_dir, chart_name="test-chart")
     run_command(
         [
             "helm",
@@ -388,6 +436,8 @@ def _helm_upgrade_install_test_chart(*, cvat_root_dir, release: str, namespace: 
             str(chart_dir),
             "-f",
             str(chart_dir / "values.yaml"),
+            "-f",
+            str(profile_values),
             "--namespace",
             namespace,
             "--create-namespace",
@@ -399,6 +449,7 @@ def _helm_upgrade_install_test_chart(*, cvat_root_dir, release: str, namespace: 
 
 def _helm_upgrade_install_main_chart(*, cvat_root_dir, release: str, namespace: str) -> None:
     chart_dir = cvat_root_dir / "helm-chart"
+    profile_values = _kube_profile_values_file(cvat_root_dir=cvat_root_dir, chart_name="cvat")
     _run_with_retries(["helm", "dependency", "update", str(chart_dir)])
 
     run_command(
@@ -412,6 +463,8 @@ def _helm_upgrade_install_main_chart(*, cvat_root_dir, release: str, namespace: 
             str(chart_dir / "cvat.values.yaml"),
             "-f",
             str(cvat_root_dir / "tests/k8s/cvat.test.values.yaml"),
+            "-f",
+            str(profile_values),
             "--namespace",
             namespace,
             "--create-namespace",
@@ -429,6 +482,10 @@ def _helm_upgrade_install_main_chart(*, cvat_root_dir, release: str, namespace: 
             "ingress.additionalHosts[0]=127.0.0.1",
             "--set",
             "traefik.service.type=NodePort",
+            "--set",
+            f"cvat.backend.additionalVolumes[0].configMap.name={_kube_allow_minio_configmap()}",
+            "--set",
+            f"cvat.backend.additionalVolumes[1].configMap.name={_kube_allow_webhook_receiver_configmap()}",
         ],
         capture_output=False,
         logger=logger,
@@ -484,7 +541,7 @@ def _wait_for_kube_ready(timeout_s: int = 300) -> None:
 
     wait_selector(_label_selector("component=server"))
     wait_selector(_label_selector("app.kubernetes.io/name=postgresql"))
-    if _kube_service_exists(_MINIO_SERVICE_NAME):
+    if _kube_service_exists(_kube_minio_service()):
         wait_selector(_test_label_selector("component=minio"))
 
 
@@ -518,6 +575,33 @@ class KubeInstance(InfraInstance):
         self._redis_ondisk_port_forward_log = None
         self._api_port_forward_log = None
         self._minio_port_forward_log = None
+
+    def _runtime_project_name(self) -> str:
+        return RuntimeInfraConfig.get_run_prefix_from_config(self.config)
+
+    def _preferred_forward_port(self, *, state_key: str, start_port: int) -> int:
+        state = RuntimeInfraConfig.get_project_config(self._runtime_project_name()).load_state() or {}
+        preferred = state.get(state_key)
+        if isinstance(preferred, int) and is_port_free(preferred, logger=logger):
+            return preferred
+        return pick_free_port(start_port, set(), logger=logger)
+
+    def _choose_forward_port(
+        self,
+        *,
+        state_key: str,
+        start_port: int,
+        attempted_ports: set[int],
+    ) -> int:
+        state = RuntimeInfraConfig.get_project_config(self._runtime_project_name()).load_state() or {}
+        preferred = state.get(state_key)
+        if (
+            isinstance(preferred, int)
+            and preferred not in attempted_ports
+            and is_port_free(preferred, logger=logger)
+        ):
+            return preferred
+        return pick_free_port(start_port, attempted_ports, logger=logger)
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
@@ -720,6 +804,47 @@ class KubeInstance(InfraInstance):
         self._seed_minio_test_data()
         return current_fingerprint
 
+    def _reuse_kube_stack(self, *, run_prefix: str) -> dict | None:
+        profile = _kube_profile()
+        cpus = str(self.config.getoption("--kube-cpus") or "").strip()
+        memory = str(self.config.getoption("--kube-memory") or "").strip()
+
+        _use_minikube_context(profile)
+        if not _kube_api_reachable(_kube_context()):
+            _start_minikube(profile=profile, cpus=cpus, memory=memory)
+
+        if not (
+            _helm_release_exists(release=_kube_release(), namespace=_kube_namespace())
+            and _helm_release_exists(release=_kube_test_release(), namespace=_kube_namespace())
+        ):
+            raise pytest.UsageError(
+                f"--infra={InfraMode.REUSE} requires existing helm releases "
+                f"'{_kube_release()}' and '{_kube_test_release()}' in namespace '{_kube_namespace()}'"
+            )
+
+        if not self._is_kube_stack_ready(timeout_s=self.deps.waiting_time):
+            raise pytest.UsageError(
+                f"--infra={InfraMode.REUSE} requires a healthy kube stack for run-prefix '{run_prefix}'"
+            )
+
+        project_cfg = RuntimeInfraConfig.get_project_config(run_prefix)
+        state = project_cfg.load_state() or {}
+        saved_fingerprint = state.get("kube_fingerprint")
+        if saved_fingerprint:
+            current_fingerprint = _build_kube_fingerprint(
+                cvat_root_dir=self.deps.cvat_root_dir,
+                cpus=cpus,
+                memory=memory,
+            )
+            if not _fingerprints_equal(saved_fingerprint, current_fingerprint):
+                raise pytest.UsageError(
+                    f"--infra={InfraMode.REUSE} fingerprint mismatch for run-prefix '{run_prefix}'. "
+                    f"Run '--infra=up' again."
+                )
+            return current_fingerprint
+
+        return None
+
     def _copy_file_share(self) -> None:
         mounted_dir = RuntimeInfraConfig.get_cvat_root_dir() / "tests/mounted_file_share"
         if not mounted_dir.exists():
@@ -799,10 +924,11 @@ class KubeInstance(InfraInstance):
         client.put_bucket_policy(Bucket="public", Policy=json.dumps(policy))
 
     def _seed_minio_test_data(self) -> None:
-        if not _kube_service_exists(_MINIO_SERVICE_NAME):
+        minio_service = _kube_minio_service()
+        if not _kube_service_exists(minio_service):
             logger.info(
                 "MinIO service '%s' is not present in namespace '%s'; skipping seed",
-                _MINIO_SERVICE_NAME,
+                minio_service,
                 _kube_namespace(),
             )
             return
@@ -816,7 +942,7 @@ class KubeInstance(InfraInstance):
                 "--namespace",
                 _kube_namespace(),
                 "port-forward",
-                f"service/{_MINIO_SERVICE_NAME}",
+                f"service/{minio_service}",
                 f"{local_port}:9000",
             ],
             stdout=PIPE,
@@ -933,67 +1059,91 @@ class KubeInstance(InfraInstance):
         if proc is not None:
             self._close_port_forward(proc_attr=proc_attr, port_attr=port_attr, log_attr=log_attr)
 
-        used_ports: set[int] = set()
-        local_port = pick_free_port(start_port, used_ports, logger=logger)
-        log_handle, log_path = self._open_port_forward_log(log_name)
-        process = Popen(  # nosec
-            [
-                "kubectl",
-                "--context",
-                _kube_context(),
-                "--namespace",
-                _kube_namespace(),
-                "port-forward",
-                f"service/{service_name}",
-                f"{local_port}:{remote_port}",
-            ],
-            stdout=log_handle,
-            stderr=STDOUT,
-            text=True,
-        )
+        attempted_ports: set[int] = set()
+        state_key = {
+            "_api_forward_port": "http_port",
+            "_minio_forward_port": "minio_port",
+        }[port_attr]
+        last_error: str | None = None
 
-        deadline = monotonic() + 3
-        while monotonic() < deadline:
-            rc = process.poll()
-            if rc is not None:
-                self._close_log_handle(log_handle)
-                raise RuntimeError(
-                    "kubectl port-forward exited unexpectedly "
-                    f"for service/{service_name} with code {rc}. See log: {log_path}"
-                )
-            sleep(0.2)
-            if process.poll() is None:
-                break
+        for _ in range(5):
+            local_port = self._choose_forward_port(
+                state_key=state_key,
+                start_port=start_port,
+                attempted_ports=attempted_ports,
+            )
+            attempted_ports.add(local_port)
+            log_handle, log_path = self._open_port_forward_log(log_name)
+            process = Popen(  # nosec
+                [
+                    "kubectl",
+                    "--context",
+                    _kube_context(),
+                    "--namespace",
+                    _kube_namespace(),
+                    "port-forward",
+                    f"service/{service_name}",
+                    f"{local_port}:{remote_port}",
+                ],
+                stdout=log_handle,
+                stderr=STDOUT,
+                text=True,
+            )
 
-        setattr(self, proc_attr, process)
-        setattr(self, port_attr, local_port)
-        setattr(self, log_attr, log_handle)
-        return local_port
+            deadline = monotonic() + 3
+            while monotonic() < deadline:
+                rc = process.poll()
+                if rc is not None:
+                    self._close_log_handle(log_handle)
+                    last_error = (
+                        "kubectl port-forward exited unexpectedly "
+                        f"for service/{service_name} with code {rc}. See log: {log_path}"
+                    )
+                    break
+                sleep(0.2)
+                if process.poll() is None:
+                    setattr(self, proc_attr, process)
+                    setattr(self, port_attr, local_port)
+                    setattr(self, log_attr, log_handle)
+                    return local_port
+            else:
+                setattr(self, proc_attr, process)
+                setattr(self, port_attr, local_port)
+                setattr(self, log_attr, log_handle)
+                return local_port
+        raise RuntimeError(last_error or f"Failed to start kubectl port-forward for service/{service_name}")
 
     def _start_runtime_port_forwards(
         self, *, project_name: str, kube_fingerprint: dict | None = None
     ) -> None:
-        ingress_service = _kube_traefik_service()
-        if not _kube_service_exists(ingress_service):
+        is_parallel_child = bool(self.config.getoption("--parallel-child"))
+        api_service = _kube_backend_service() if is_parallel_child else _kube_traefik_service()
+        api_remote_port = 8080 if is_parallel_child else 80
+        api_log_name = "backend-18080" if is_parallel_child else "traefik-18080"
+
+        if not _kube_service_exists(api_service):
             raise RuntimeError(
-                f"Expected ingress service '{ingress_service}' was not found "
+                f"Expected API service '{api_service}' was not found "
                 f"in namespace '{_kube_namespace()}'"
             )
 
-        # Route API/UI via ingress through Traefik to match real Kubernetes path.
+        # Parallel child lanes talk to the backend service directly so shaped
+        # kube profiles can disable ingress-facing components. The stable
+        # non-parallel kube path keeps using Traefik to preserve the normal
+        # request path exercised by the main suite.
         api_port = self._start_service_port_forward(
-            service_name=ingress_service,
-            remote_port=80,
+            service_name=api_service,
+            remote_port=api_remote_port,
             start_port=18080,
             proc_attr="_api_port_forward_proc",
             port_attr="_api_forward_port",
             log_attr="_api_port_forward_log",
-            log_name="traefik-18080",
+            log_name=api_log_name,
         )
         base_url = f"http://localhost:{api_port}"
 
         minio_url = "http://127.0.0.1:9000"
-        minio_service = _MINIO_SERVICE_NAME
+        minio_service = _kube_minio_service()
         if _kube_service_exists(minio_service):
             minio_port = self._start_service_port_forward(
                 service_name=minio_service,
@@ -1048,6 +1198,7 @@ class KubeInstance(InfraInstance):
         config = self.config
         if config.getoption("--collect-only"):
             return
+        from infra import health as infra_health
 
         infra_mode = getattr(config, "_cvat_infra_mode", InfraMode.AUTO)
         run_prefix = RuntimeInfraConfig.get_run_prefix_from_config(config)
@@ -1059,31 +1210,34 @@ class KubeInstance(InfraInstance):
             self._close_runtime_port_forwards()
             _helm_uninstall(release=_kube_release(), namespace=_kube_namespace())
             _helm_uninstall(release=_kube_test_release(), namespace=_kube_namespace())
-            _stop_minikube(_kube_profile())
+            if not config.getoption("--parallel-child"):
+                _stop_minikube(_kube_profile())
             RuntimeInfraConfig.get_project_config(run_prefix).delete_state()
             pytest.exit("Kubernetes test infrastructure has been stopped", returncode=0)
 
-        kube_fingerprint = self._ensure_kube_stack(run_prefix=run_prefix)
+        if infra_mode == InfraMode.REUSE:
+            kube_fingerprint = self._reuse_kube_stack(run_prefix=run_prefix)
+        else:
+            kube_fingerprint = self._ensure_kube_stack(run_prefix=run_prefix)
 
         if infra_mode == InfraMode.UP:
-            base_url = self._resolve_traefik_nodeport_url()
-            _configure_kube_runtime_env(
-                project_name=run_prefix,
-                base_url=base_url,
-                minio_endpoint_url="http://127.0.0.1:9000",
+            self._start_runtime_port_forwards(
+                project_name=run_prefix, kube_fingerprint=kube_fingerprint
             )
-            self._persist_runtime_state(
-                project_name=run_prefix,
-                base_url=base_url,
-                minio_endpoint_url="http://127.0.0.1:9000",
-                kube_fingerprint=kube_fingerprint,
-            )
+            self._restore_from_assets()
+            base_url = RuntimeInfraConfig.get_base_url()
             self._print_up_instructions(base_url=base_url)
             pytest.exit("Kubernetes test infrastructure is ready.", returncode=0)
 
         self._start_runtime_port_forwards(
             project_name=run_prefix, kube_fingerprint=kube_fingerprint
         )
+
+        if infra_mode == InfraMode.REUSE:
+            infra_health.wait_for_services(self.deps.waiting_time)
+            infra_health.wait_for_auth_login_ready()
+            maybe_wait_for_vscode_attach(self.session, cvat_root_dir=self.deps.cvat_root_dir)
+            return
 
         if infra_mode in {InfraMode.AUTO, InfraMode.RESTORE_DB}:
             self._restore_from_assets()
@@ -1186,27 +1340,43 @@ class KubeInstance(InfraInstance):
                 return self._db_forward_port
             self._close_db_restorer()
 
-        local_port = pick_free_port(15432, set(), logger=logger)
         db_pod_name = kube_get_db_pod_name()
-        self._db_port_forward_log, _ = self._open_port_forward_log("postgres-15432")
-        self._db_port_forward_proc = Popen(  # nosec
-            [
-                "kubectl",
-                "--context",
-                _kube_context(),
-                "--namespace",
-                _kube_namespace(),
-                "port-forward",
-                f"pod/{db_pod_name}",
-                f"{local_port}:5432",
-            ],
-            stdout=self._db_port_forward_log,
-            stderr=STDOUT,
-            text=True,
-        )
-        self._db_forward_port = local_port
-        os.environ["CVAT_TEST_DB_PORT"] = str(local_port)
-        return local_port
+        attempted_ports: set[int] = set()
+        last_error: str | None = None
+        for _ in range(5):
+            local_port = self._choose_forward_port(
+                state_key="db_port",
+                start_port=15432,
+                attempted_ports=attempted_ports,
+            )
+            attempted_ports.add(local_port)
+            self._db_port_forward_log, log_path = self._open_port_forward_log("postgres-15432")
+            self._db_port_forward_proc = Popen(  # nosec
+                [
+                    "kubectl",
+                    "--context",
+                    _kube_context(),
+                    "--namespace",
+                    _kube_namespace(),
+                    "port-forward",
+                    f"pod/{db_pod_name}",
+                    f"{local_port}:5432",
+                ],
+                stdout=self._db_port_forward_log,
+                stderr=STDOUT,
+                text=True,
+            )
+            sleep(0.2)
+            if self._db_port_forward_proc.poll() is None:
+                self._db_forward_port = local_port
+                os.environ["CVAT_TEST_DB_PORT"] = str(local_port)
+                return local_port
+            last_error = (
+                "kubectl port-forward for PostgreSQL exited unexpectedly "
+                f"with code {self._db_port_forward_proc.returncode}. See log: {log_path}"
+            )
+            self._close_db_restorer()
+        raise RuntimeError(last_error or "Failed to start kubectl port-forward for PostgreSQL")
 
     def _start_redis_inmem_port_forward(self) -> int:
         if self._redis_inmem_port_forward_proc is not None and self._redis_inmem_forward_port is not None:
@@ -1214,26 +1384,44 @@ class KubeInstance(InfraInstance):
                 return self._redis_inmem_forward_port
             self._close_redis_restorer()
 
-        local_port = pick_free_port(16379, set(), logger=logger)
         redis_pod_name = kube_get_redis_inmem_pod_name()
-        self._redis_inmem_port_forward_log, _ = self._open_port_forward_log("redis-inmem-16379")
-        self._redis_inmem_port_forward_proc = Popen(  # nosec
-            [
-                "kubectl",
-                "--context",
-                _kube_context(),
-                "--namespace",
-                _kube_namespace(),
-                "port-forward",
-                f"pod/{redis_pod_name}",
-                f"{local_port}:6379",
-            ],
-            stdout=self._redis_inmem_port_forward_log,
-            stderr=STDOUT,
-            text=True,
-        )
-        self._redis_inmem_forward_port = local_port
-        return local_port
+        attempted_ports: set[int] = set()
+        last_error: str | None = None
+        for _ in range(5):
+            local_port = self._choose_forward_port(
+                state_key="redis_inmem_port",
+                start_port=16379,
+                attempted_ports=attempted_ports,
+            )
+            attempted_ports.add(local_port)
+            self._redis_inmem_port_forward_log, log_path = self._open_port_forward_log(
+                "redis-inmem-16379"
+            )
+            self._redis_inmem_port_forward_proc = Popen(  # nosec
+                [
+                    "kubectl",
+                    "--context",
+                    _kube_context(),
+                    "--namespace",
+                    _kube_namespace(),
+                    "port-forward",
+                    f"pod/{redis_pod_name}",
+                    f"{local_port}:6379",
+                ],
+                stdout=self._redis_inmem_port_forward_log,
+                stderr=STDOUT,
+                text=True,
+            )
+            sleep(0.2)
+            if self._redis_inmem_port_forward_proc.poll() is None:
+                self._redis_inmem_forward_port = local_port
+                return local_port
+            last_error = (
+                "kubectl port-forward for Redis in-memory exited unexpectedly "
+                f"with code {self._redis_inmem_port_forward_proc.returncode}. See log: {log_path}"
+            )
+            self._close_redis_restorer()
+        raise RuntimeError(last_error or "Failed to start kubectl port-forward for Redis in-memory")
 
     def _start_redis_ondisk_port_forward(self) -> int:
         if self._redis_ondisk_port_forward_proc is not None and self._redis_ondisk_forward_port is not None:
@@ -1241,26 +1429,44 @@ class KubeInstance(InfraInstance):
                 return self._redis_ondisk_forward_port
             self._close_redis_restorer()
 
-        local_port = pick_free_port(16666, set(), logger=logger)
         redis_pod_name = kube_get_redis_ondisk_pod_name()
-        self._redis_ondisk_port_forward_log, _ = self._open_port_forward_log("redis-ondisk-16666")
-        self._redis_ondisk_port_forward_proc = Popen(  # nosec
-            [
-                "kubectl",
-                "--context",
-                _kube_context(),
-                "--namespace",
-                _kube_namespace(),
-                "port-forward",
-                f"pod/{redis_pod_name}",
-                f"{local_port}:6666",
-            ],
-            stdout=self._redis_ondisk_port_forward_log,
-            stderr=STDOUT,
-            text=True,
-        )
-        self._redis_ondisk_forward_port = local_port
-        return local_port
+        attempted_ports: set[int] = set()
+        last_error: str | None = None
+        for _ in range(5):
+            local_port = self._choose_forward_port(
+                state_key="redis_ondisk_port",
+                start_port=16666,
+                attempted_ports=attempted_ports,
+            )
+            attempted_ports.add(local_port)
+            self._redis_ondisk_port_forward_log, log_path = self._open_port_forward_log(
+                "redis-ondisk-16666"
+            )
+            self._redis_ondisk_port_forward_proc = Popen(  # nosec
+                [
+                    "kubectl",
+                    "--context",
+                    _kube_context(),
+                    "--namespace",
+                    _kube_namespace(),
+                    "port-forward",
+                    f"pod/{redis_pod_name}",
+                    f"{local_port}:6666",
+                ],
+                stdout=self._redis_ondisk_port_forward_log,
+                stderr=STDOUT,
+                text=True,
+            )
+            sleep(0.2)
+            if self._redis_ondisk_port_forward_proc.poll() is None:
+                self._redis_ondisk_forward_port = local_port
+                return local_port
+            last_error = (
+                "kubectl port-forward for Redis on-disk exited unexpectedly "
+                f"with code {self._redis_ondisk_port_forward_proc.returncode}. See log: {log_path}"
+            )
+            self._close_redis_restorer()
+        raise RuntimeError(last_error or "Failed to start kubectl port-forward for Redis on-disk")
 
     def _read_server_env(self, variable_name: str) -> str:
         value = self.exec_cvat(["sh", "-c", f'printf "%s" "${{{variable_name}:-}}"'])

@@ -22,7 +22,7 @@ from shared.utils.s3 import make_client as make_s3_client
 from .utils import CollectionSimpleFilterTestBase
 
 # https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
-pytestmark = [pytest.mark.infra_profile("full")]
+pytestmark = [pytest.mark.infra_profile("standard")]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

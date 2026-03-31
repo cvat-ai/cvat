@@ -17,6 +17,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
 
 
+
 class TestCliMisc(TestCliBase):
     def test_can_warn_on_mismatching_server_version(self, monkeypatch, caplog):
         def mocked_version(_):
@@ -52,6 +53,7 @@ class TestCliMisc(TestCliBase):
             for line in stdout.splitlines():
                 int(line)
 
+    @pytest.mark.infra_profile("standard")
     def test_can_control_organization_context(self):
         org = "cli-test-org"
         self.client.organizations.create(models.OrganizationWriteRequest(org))
