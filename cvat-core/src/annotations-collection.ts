@@ -667,9 +667,8 @@ export default class Collection {
         return groupIdx;
     }
 
-    public join(objectStates: ObjectState[], points: number[]): void {
+    public join(objectStates: ObjectState[], points: number[][]): void {
         checkObjectType('shapes to join', objectStates, null, { cls: Array, name: 'Array' });
-        checkObjectType('joined rle mask', points, null, { cls: Array, name: 'Array' });
 
         if (objectStates.some((state, idx) => idx && state.frame !== objectStates[idx - 1].frame)) {
             throw new ArgumentError('All joined objects must be placed on the same frame');
@@ -686,15 +685,25 @@ export default class Collection {
                 throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
             }
 
-            if (!(object instanceof MaskShape)) {
-                throw new ArgumentError('Only shape masks can be joined');
-            }
-
             return object;
         });
 
+        const isPolygonJoin = objectsToJoin[0] instanceof PolygonShape;
+        const isMaskJoin = objectsToJoin[0] instanceof MaskShape;
+
+        if (!isPolygonJoin && !isMaskJoin) {
+            throw new ArgumentError('Only polygons and masks can be joined');
+        }
+
+        if (isPolygonJoin && objectsToJoin.some((obj) => !(obj instanceof PolygonShape))) {
+            throw new ArgumentError('Cannot join polygons with other shape types');
+        }
+
+        if (isMaskJoin && objectsToJoin.some((obj) => !(obj instanceof MaskShape))) {
+            throw new ArgumentError('Cannot join masks with other shape types');
+        }
+
         if (objectsToJoin.length > 1) {
-            const rle = points;
             const labelAttributes = labelAttributesAsDict(objectsToJoin[0].label);
             const attrValues = validateAttributesList(objectAttributesAsList(objectStates[0]));
             for (const attr of attrValues) {
@@ -703,22 +712,31 @@ export default class Collection {
                 }
             }
 
-            // Append newly created object to the collection
-            const imported = this.import({
-                shapes: [{
+            const shapesToCreate = [];
+
+            for (const shapePoints of points) {
+                checkObjectType('joined shape points', shapePoints, null, { cls: Array, name: 'Array' });
+                const shapeType = isMaskJoin ? ShapeType.MASK : ShapeType.POLYGON;
+
+                shapesToCreate.push({
                     attributes: attrValues,
                     frame: objectsToJoin[0].frame,
                     group: 0,
                     label_id: objectsToJoin[0].label.id,
                     outside: false,
-                    occluded: objectsToJoin.some((object: MaskShape) => object.occluded),
-                    points: rle,
+                    occluded: objectsToJoin.some((object: any) => object.occluded),
+                    points: shapePoints,
                     rotation: 0,
-                    type: ShapeType.MASK,
-                    z_order: Math.max(...objectsToJoin.map((object: MaskShape) => object.zOrder)),
+                    type: shapeType,
+                    z_order: Math.max(...objectsToJoin.map((object: any) => object.zOrder)),
                     source: Source.MANUAL,
                     elements: [],
-                }],
+                });
+            }
+
+            // Append newly created object(s) to the collection
+            const imported = this.import({
+                shapes: shapesToCreate,
                 tracks: [],
                 tags: [],
             });
@@ -729,22 +747,29 @@ export default class Collection {
             }
 
             // handle history actions
-            const [importedShape] = imported.shapes;
+            const importedShapes = imported.shapes;
             this.history.do(
                 HistoryActions.JOINED_OBJECTS,
                 () => {
-                    importedShape.removed = true;
+                    for (const importedShape of importedShapes) {
+                        importedShape.removed = true;
+                    }
                     for (const object of objectsToJoin) {
                         object.removed = false;
                     }
                 },
                 () => {
-                    importedShape.removed = false;
+                    for (const importedShape of importedShapes) {
+                        importedShape.removed = false;
+                    }
                     for (const object of objectsToJoin) {
                         object.removed = true;
                     }
                 },
-                [...objectsToJoin.map((object) => object.clientID), importedShape.clientID],
+                [
+                    ...objectsToJoin.map((object) => object.clientID),
+                    ...importedShapes.map((shape) => shape.clientID),
+                ],
                 objectsToJoin[0].frame,
             );
         }

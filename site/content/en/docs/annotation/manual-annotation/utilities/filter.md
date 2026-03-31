@@ -169,3 +169,34 @@ To select the time, you can select the hours and minutes using the scrolling lis
 Or you can select the current date and time by clicking the `Now` button.
 To apply, click `Ok`.
 
+---
+
+## Export filtered data
+
+After applying filters and sorting to your lists, you can export the filtered data
+to CSV format for further analysis or reporting.
+
+### Export to CSV
+
+To export filtered data click `Export as CSV` download button on the filtering header. The CSV file will be
+downloaded with the current filtered and sorted data
+![Export as CSV button](/images/csv_export_button.png)
+
+{{% alert title="Note" %}}
+The process might take a while as we export resources from all pages
+{{% /alert %}}
+
+### CSV file contents
+
+The exported CSV file includes the following parameters:
+- Projects list: ID, name, project URL, owner, assignee, status, dimension, task subsets,
+created date, updated date, bug tracker.
+- Tasks list or tasks list on project page: ID, name, task URL, project ID, project name,
+project URL, owner, assignee, status, mode, size, subset, created date, updated date, bug tracker.
+- Jobs list: ID, job URL, task ID, task name, task URL, project ID, project name, project URL,
+assignee, stage, state, type, start frame, stop frame, frame count, created date, updated date.
+
+{{% alert title="Note" %}}
+Some fields may be exported as empty values if you don't have sufficient permissions
+to view the related resources (e.g., project name, task name).
+{{% /alert %}}

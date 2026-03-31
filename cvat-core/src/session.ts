@@ -359,7 +359,7 @@ export class Session {
         merge: (objectStates: ObjectState[]) => Promise<void>;
         split: (objectState: ObjectState, frame: number) => Promise<void>;
         group: (objectStates: ObjectState[], reset: boolean) => Promise<number>;
-        join: (objectStates: ObjectState[], points: number[]) => Promise<void>;
+        join: (objectStates: ObjectState[], points: number[][]) => Promise<void>;
         slice: (state: ObjectState, results: number[][]) => Promise<void>;
         clear: (options?: {
             reload?: boolean;

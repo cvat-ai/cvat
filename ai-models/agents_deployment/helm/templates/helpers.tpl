@@ -54,8 +54,6 @@ Common environment variables
       key: {{ .secretKey }}
 {{- end }}
 {{- end }}
-- name: MODEL_ID
-  value: {{ .Values.agent.model_id | quote }}
 - name: NAMESPACE
   value: {{ .Release.Namespace }}
 - name: CONFIGMAP_NAME
@@ -77,4 +75,34 @@ imagePullPolicy: {{ .Values.image.pullPolicy }}
 runAsNonRoot: true
 runAsUser: 1000
 runAsGroup: 1000
+{{- end }}
+
+
+{{/*
+Configure command arguments for cvat-cli
+*/}}
+{{/*I have to use extra var here $val because i need to trim leading space that is generated in range loop and i cannot just pass range output into trim */}}
+{{- define "agent.modelParamsOverride" -}}
+{{- $preset := index .Values.agent.modelPresets .Values.agent.preset | default dict -}}
+{{- $merged := merge .Values.agent.modelParamsOverride $preset -}}
+{{- $val := "" -}}
+{{- range $key, $v := $merged -}}
+{{- if $v.value -}}
+{{- $val = printf "%s -p %s=%s:%s" $val $key $v.type $v.value -}}
+{{- end -}}
+{{- end -}}
+- name: MODEL_CONFIG_PARAMS
+  value: {{ $val | trim | quote }}
+{{- end -}}
+
+{{/*
+Configure function name for agent
+*/}}
+{{- define "agent.functionNameEnv" -}}
+- name: FUNCTION_NAME
+{{- if .Values.agent.function_name }}
+  value: {{ .Values.agent.function_name | quote }}
+{{- else }}
+  value: "MyAgentFunction"
+{{- end }}
 {{- end }}

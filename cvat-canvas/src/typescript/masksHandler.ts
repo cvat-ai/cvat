@@ -11,7 +11,7 @@ import {
 import consts from './consts';
 import { DrawHandler } from './drawHandler';
 import {
-    PropType, computeWrappingBox, zipChannels, expandChannels, imageDataToDataURL,
+    PropType, computeWrappingBox, imageDataToRLE, RLEToImageData, imageDataToDataURL,
 } from './shared';
 
 interface WrappingBBox {
@@ -226,7 +226,7 @@ export class MasksHandlerImpl implements MasksHandler {
         return imageData;
     }
 
-    private updateHidden(value: boolean) {
+    private updateHidden(value: boolean): void {
         this.isHidden = value;
 
         // Need to update style of upper canvas explicitly because update of default cursor is not applied immediately
@@ -330,7 +330,7 @@ export class MasksHandlerImpl implements MasksHandler {
         if (this.brushMarker) {
             this.canvas.add(this.brushMarker);
         }
-        const rle = zipChannels(imageData);
+        const rle = imageDataToRLE(imageData);
         const emptyMask = rle.length < 2;
         this.tool.onBlockUpdated({
             eraser: emptyMask,
@@ -400,7 +400,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 const continueInserting = options.e.ctrlKey;
                 const wrappingBbox = this.getDrawnObjectsWrappingBox();
                 const imageData = this.imageDataFromCanvas(wrappingBbox);
-                const rle = zipChannels(imageData);
+                const rle = imageDataToRLE(imageData);
                 rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
 
                 this.onDrawDone({
@@ -589,33 +589,31 @@ export class MasksHandlerImpl implements MasksHandler {
                 const { points } = drawData.initialState;
                 const color = fabric.Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
-                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+                const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
                 imageDataToDataURL(
                     imageBitmap,
                     right - left + 1,
                     bottom - top + 1,
-                    (dataURL: string) => new Promise((resolve) => {
+                    (dataURL: string) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
-                            try {
-                                image.selectable = false;
-                                image.evented = false;
-                                image.globalCompositeOperation = 'xor';
-                                image.opacity = 0.5;
-                                this.canvas.add(image);
-                                /*
-                                    when we paste a mask, we do not need additional logic implemented
-                                    in MasksHandlerImpl::createDrawnObjectsArray.push using JS Proxy
-                                    because we will not work with any drawing tools here, and it will cause the issue
-                                    because this.tools may be undefined here
-                                    when it is used inside the push custom implementation
-                                */
-                                this.drawnObjects = [image];
-                                this.canvas.renderAll();
-                            } finally {
-                                resolve();
-                            }
+                            URL.revokeObjectURL(dataURL);
+                            image.selectable = false;
+                            image.evented = false;
+                            image.globalCompositeOperation = 'xor';
+                            image.opacity = 0.5;
+                            this.canvas.add(image);
+                            /*
+                                when we paste a mask, we do not need additional logic implemented
+                                in MasksHandlerImpl::createDrawnObjectsArray.push using JS Proxy
+                                because we will not work with any drawing tools here, and it will cause the issue
+                                because this.tools may be undefined here
+                                when it is used inside the push custom implementation
+                            */
+                            this.drawnObjects = [image];
+                            this.canvas.renderAll();
                         }, { left, top });
-                    }));
+                    },
+                );
 
                 this.isInsertion = true;
             } else {
@@ -637,7 +635,7 @@ export class MasksHandlerImpl implements MasksHandler {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
                     this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
-                    const rle = zipChannels(imageData);
+                    const rle = imageDataToRLE(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
 
                     const isEmptyMask = rle.length < 6;
@@ -683,26 +681,24 @@ export class MasksHandlerImpl implements MasksHandler {
                 const { points } = editData.state;
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
-                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
+                const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
                 imageDataToDataURL(
                     imageBitmap,
                     right - left + 1,
                     bottom - top + 1,
-                    (dataURL: string) => new Promise((resolve) => {
+                    (dataURL: string) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
-                            try {
-                                image.selectable = false;
-                                image.evented = false;
-                                image.globalCompositeOperation = 'xor';
-                                image.opacity = 0.5;
-                                this.canvas.add(image);
-                                this.drawnObjects.push(image);
-                                this.canvas.renderAll();
-                            } finally {
-                                resolve();
-                            }
+                            URL.revokeObjectURL(dataURL);
+                            image.selectable = false;
+                            image.evented = false;
+                            image.globalCompositeOperation = 'xor';
+                            image.opacity = 0.5;
+                            this.canvas.add(image);
+                            this.drawnObjects.push(image);
+                            this.canvas.renderAll();
                         }, { left, top });
-                    }));
+                    },
+                );
 
                 this.isEditing = true;
                 this.startTimestamp = Date.now();
@@ -721,7 +717,7 @@ export class MasksHandlerImpl implements MasksHandler {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
                     this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
-                    const rle = zipChannels(imageData);
+                    const rle = imageDataToRLE(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
                     const isEmptyMask = rle.length < 6;
                     if (isEmptyMask) {
