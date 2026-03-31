@@ -8,6 +8,7 @@ import math
 from collections.abc import Callable, Container, Generator, Iterable, Iterator, Sequence
 from copy import copy, deepcopy
 from itertools import chain
+from typing import Any
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -29,6 +30,7 @@ class AnnotationIR:
             self.tags = getattr(data, "tags", []) or data["tags"]
             self.shapes: list | Iterable = getattr(data, "shapes", []) or data["shapes"]
             self.tracks = getattr(data, "tracks", []) or data["tracks"]
+            self.intervals = getattr(data, "intervals", []) or data["intervals"]
 
     def add_tag(self, tag):
         assert not self.is_stream, "Not allowed to add annotations when streaming"
@@ -42,14 +44,9 @@ class AnnotationIR:
         assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.tracks.append(track)
 
-    @property
-    def data(self):
-        return {
-            "version": self.version,
-            "tags": self.tags,
-            "shapes": self.shapes,
-            "tracks": self.tracks,
-        }
+    def add_interval(self, interval):
+        assert not self.is_stream, "Not allowed to add annotations when streaming"
+        self.intervals.append(interval)
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -57,12 +54,23 @@ class AnnotationIR:
     def __setitem__(self, key, value):
         return setattr(self, key, value)
 
+    @property
+    def data(self):
+        return {
+            "version": self.version,
+            "tags": self.tags,
+            "shapes": self.shapes,
+            "tracks": self.tracks,
+            "intervals": self.intervals,
+        }
+
     @data.setter
     def data(self, data):
         self.version = data["version"]
         self.tags = data["tags"]
         self.shapes = data["shapes"]
         self.tracks = data["tracks"]
+        self.intervals = data["intervals"]
 
     def serialize(self):
         assert not self.is_stream, "Not implemented for streaming"
@@ -164,6 +172,10 @@ class AnnotationIR:
             track["frame"] = track["shapes"][0]["frame"]
         return track
 
+    @staticmethod
+    def _is_interval_inside(interval: dict[str, Any], start: int, stop: int) -> bool:
+        return interval.start >= start and interval.stop <= stop
+
     def slice(self, start, stop):
         assert not self.is_stream, "Not allowed to slice when streaming"
         # makes a data copy from specified frame interval
@@ -182,6 +194,13 @@ class AnnotationIR:
                     splitted_tracks.append(track)
         splitted_data.tracks = splitted_tracks
 
+        if self.intervals:
+            for interval in self.intervals:
+                if not self._is_interval_inside(interval, start, stop):
+                    raise Exception(
+                        f"Interval {interval.id} cannot be sliced to the [{start}, {stop}] range"
+                    )
+
         return splitted_data
 
     def reset(self):
@@ -189,6 +208,7 @@ class AnnotationIR:
         self.tags = []
         self.shapes = []
         self.tracks = []
+        self.intervals = []
 
     @property
     def is_stream(self) -> bool:
@@ -215,6 +235,8 @@ class AnnotationManager:
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
         tracks.merge(data.tracks, start_frame, overlap)
 
+        self.data.intervals += data.intervals
+
     def clear_frames(self, frames: Container[int]):
         if not isinstance(frames, set):
             frames = set(frames)
@@ -228,6 +250,9 @@ class AnnotationManager:
         if self.data.tracks:
             # Tracks are not expected in the cases this function is supposed to be used
             raise AssertionError("Partial annotation cleanup is not supported for tracks")
+
+        if self.data.intervals:
+            raise AssertionError("Not available for intervals")
 
     def to_shapes(
         self,
@@ -259,6 +284,9 @@ class AnnotationManager:
             use_server_track_ids=use_server_track_ids,
         )
 
+        if self.data.intervals:
+            raise AssertionError("Not available for intervals")
+
         if not self.data.is_stream:
             shapes = sorted(shapes, key=lambda shape: shape["frame"])
 
@@ -267,6 +295,9 @@ class AnnotationManager:
     def to_tracks(self):
         tracks = self.data.tracks
         shapes = ShapeManager(self.data.shapes, dimension=self.dimension)
+
+        if self.data.intervals:
+            raise AssertionError("Not available for intervals")
 
         return tracks + shapes.to_tracks()
 
