@@ -17,6 +17,7 @@ import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 import Tooltip from 'antd/lib/tooltip';
 
+import config from 'config';
 import { Workspace, CombinedState } from 'reducers';
 import { RestoreIcon } from 'icons';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -250,7 +251,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                         <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
-                        { deleteFrameIcon }
+                        { config.FEATURE_FLAGS.DELETE_FRAME_ALLOWED && deleteFrameIcon }
                     </Col>
                 </Row>
             </Col>

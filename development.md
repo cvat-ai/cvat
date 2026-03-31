@@ -250,6 +250,95 @@ yarn run build
 yarn run start
 ```
 
+## UI Feature Flags Configuration
+
+CVAT UI supports feature flags to control UI element visibility and behavior. This allows you to customize the interface without modifying component code.
+
+### Available Feature Flags
+
+Feature flags are defined in `cvat-ui/src/config.tsx`:
+
+```typescript
+const FEATURE_FLAGS = {
+    DELETE_FRAME_ALLOWED: true, // Set to false to hide delete/restore frame buttons
+};
+```
+
+### How to Customize
+
+#### Method 1: Edit config.tsx directly
+
+```bash
+# Edit the config file
+vim cvat-ui/src/config.tsx
+
+# Find FEATURE_FLAGS and modify values:
+const FEATURE_FLAGS = {
+    DELETE_FRAME_ALLOWED: false, // Hides delete/restore frame buttons
+};
+
+# Rebuild the UI
+cd cvat-ui
+yarn run build
+```
+
+#### Method 2: Create a custom config file
+
+For more complex customizations or to maintain your own config:
+
+```bash
+# Copy the default config
+cp cvat-ui/src/config.tsx cvat-ui/src/config.custom.tsx
+
+# Edit your custom config
+vim cvat-ui/src/config.custom.tsx
+
+# Build with custom config
+UI_APP_CONFIG=./src/config.custom.tsx yarn run build
+```
+
+### Example Use Cases
+
+**Hide delete frame functionality:**
+```typescript
+FEATURE_FLAGS: {
+    DELETE_FRAME_ALLOWED: false,
+}
+```
+
+**Read-only annotation mode:**
+```typescript
+FEATURE_FLAGS: {
+    DELETE_FRAME_ALLOWED: false,
+    // Add more flags as they become available
+}
+```
+
+### Adding New Feature Flags
+
+To add new feature flags:
+
+1. Add the flag to `FEATURE_FLAGS` in `cvat-ui/src/config.tsx`
+2. Use the flag in components: `config.FEATURE_FLAGS.YOUR_FLAG_NAME`
+3. Document the flag in this section
+4. Rebuild the UI
+
+Example:
+```typescript
+// In config.tsx
+const FEATURE_FLAGS = {
+    DELETE_FRAME_ALLOWED: true,
+    YOUR_NEW_FLAG: true,
+};
+
+// In your component
+import config from 'config';
+
+{config.FEATURE_FLAGS.YOUR_NEW_FLAG && <YourComponent />}
+```
+
+---
+
 ## Troubleshooting
 
 ### Port already in use

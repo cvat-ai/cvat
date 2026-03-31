@@ -156,6 +156,12 @@ const PAID_PLACEHOLDER_CONFIG = {
     },
 };
 
+// UI Feature Flags - Configure UI element visibility and behavior
+const FEATURE_FLAGS = {
+    // Frame management features
+    DELETE_FRAME_ALLOWED: false, // Set to false to hide delete/restore frame buttons
+};
+
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
     NO_BREAK_SPACE,
@@ -200,4 +206,5 @@ export default {
     BLACKLISTED_GO_BACK_PATHS,
     PAID_PLACEHOLDER_CONFIG,
     MAXIMUM_NOTIFICATION_MESSAGE_LENGTH,
+    FEATURE_FLAGS,
 };
