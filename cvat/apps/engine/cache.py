@@ -673,7 +673,6 @@ class MediaCache:
                     yield media_item
 
         else:
-
             raw_data_dir = db_data.get_raw_data_dirname()
             media = []
             for frame_path in requested_db_images():
