@@ -256,7 +256,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         this.state = {
             convertMasksToPolygons: false,
-            startInteractingWithBox: true,
+            startInteractingWithBox: (localStorage.getItem('startInteractingWithBox') ?? 'true') === 'true',
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: supportedTrackers.length ? supportedTrackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id as number : null,
@@ -1230,7 +1230,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         <div>
                             <Switch
                                 checked={startInteractingWithBox}
-                                onChange={(value: boolean) => this.setState({ startInteractingWithBox: value })}
+                                onChange={(value: boolean) => {
+                                    localStorage.setItem('startInteractingWithBox', value.toString());
+                                    this.setState({ startInteractingWithBox: value });
+                                }}
                             />
                             <Text>Start with a bounding box</Text>
                         </div>
