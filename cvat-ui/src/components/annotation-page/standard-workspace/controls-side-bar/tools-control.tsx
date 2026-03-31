@@ -84,6 +84,7 @@ interface DispatchToProps {
 const MIN_SUPPORTED_INTERACTOR_VERSION = 2;
 const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
+const startWithBoxStorageItem = 'startInteractingWithBox';
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -256,7 +257,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         this.state = {
             convertMasksToPolygons: false,
-            startInteractingWithBox: (localStorage.getItem('startInteractingWithBox') ?? 'true') === 'true',
+            startInteractingWithBox: (localStorage.getItem(startWithBoxStorageItem) ?? 'true') === 'true',
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: supportedTrackers.length ? supportedTrackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id as number : null,
@@ -1231,7 +1232,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             <Switch
                                 checked={startInteractingWithBox}
                                 onChange={(value: boolean) => {
-                                    localStorage.setItem('startInteractingWithBox', value.toString());
+                                    localStorage.setItem(startWithBoxStorageItem, value.toString());
                                     this.setState({ startInteractingWithBox: value });
                                 }}
                             />
