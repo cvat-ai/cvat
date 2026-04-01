@@ -20,7 +20,9 @@ from cvat.apps.engine.tests.utils import compare_objects
 
 
 # --- SHAPE/TRACK GENERATION HELPERS ---
-def make_2d_points(base: float = 0.0, shape_type: ShapeType = ShapeType.RECTANGLE) -> list[float]:
+def make_2d_points(
+    base: float = 0.0, *, shape_type: ShapeType = ShapeType.RECTANGLE
+) -> list[float]:
     if shape_type == ShapeType.RECTANGLE:
         return [1.0 + base, 2.0 + base, 3.0 + base, 4.0 + base]
     elif shape_type == ShapeType.POLYGON:
@@ -57,9 +59,9 @@ def make_3d_points(base: float = 0.0, rotation: float = 0.0) -> list[float]:
 def make_shape(
     frame: int,
     *,
-    base: float = 0.0,
+    base: float = 0,
     outside: bool = False,
-    rotation: float = 0,
+    rotation: float | None = None,
     attributes: dict | None = None,
     dimension: str | DimensionType = DimensionType.DIM_2D,
     shape_type: ShapeType | None = None,
@@ -68,22 +70,47 @@ def make_shape(
     if dimension == DimensionType.DIM_2D:
         if shape_type is None:
             shape_type = ShapeType.RECTANGLE
-        points = make_2d_points(base, shape_type)
+
+        points = make_2d_points(base, shape_type=shape_type)
+
         shape = {
             "frame": frame,
             "points": points,
             "type": shape_type.value,
             "occluded": occluded,
+            "rotation": 0,
             "outside": outside,
             "attributes": attributes or [],
         }
-        if shape_type in [ShapeType.RECTANGLE, ShapeType.POLYLINE]:
-            shape["rotation"] = rotation
-        elif shape_type == ShapeType.POINTS:
-            shape["rotation"] = 0
+
+        if rotation is not None:
+            assert 0 <= rotation <= 360, "2d shape rotation must be within the [0; 360] range"
+
+            match shape_type:
+                case ShapeType.RECTANGLE | ShapeType.ELLIPSE:
+                    shape["rotation"] = rotation
+                case (
+                    ShapeType.CUBOID
+                    | ShapeType.MASK
+                    | ShapeType.POLYLINE
+                    | ShapeType.POINTS
+                    | ShapeType.POLYGON
+                ):
+                    # The UI doesn't allow rotated cuboids.
+                    # Masks, polygons, point groups and lines could potentially be rotated,
+                    # but it's not the natural way of representing them.
+                    raise ValueError(f"rotation is not supported for the '{shape_type}' shape type")
+                case _:
+                    assert False, f"Unknown shape type '{shape_type}'"
+
     elif dimension == DimensionType.DIM_3D:
-        assert -180 <= rotation < 180, "3d cuboid rotation must be within the (-180; 180) range"
+        if rotation is None:
+            rotation = 0
+
+        assert -180 <= rotation <= 180, "3d cuboid rotation must be within the [-180; 180] range"
+
         points = make_3d_points(base, rotation=math.radians(rotation))
+
         shape = {
             "frame": frame,
             "points": points,
@@ -212,8 +239,8 @@ class TrackManagerTest(TestCase):
         make_polygon = partial(make_shape, shape_type=ShapeType.POLYGON)
 
         shapes = [
-            make_polygon(0, base=0, rotation=0 / 8 * 180, outside=False),
-            make_polygon(4, base=4, rotation=4 / 8 * 180, outside=True),
+            make_polygon(0, base=0, outside=False),
+            make_polygon(4, base=4, outside=True),
         ]
         track = make_track(shapes)
         interpolated_shapes = TrackManager.get_interpolated_shapes(
@@ -221,11 +248,11 @@ class TrackManagerTest(TestCase):
         )
 
         expected_shapes = [
-            dict(make_polygon(0, base=0, rotation=0 / 8 * 180, outside=False), keyframe=True),
-            dict(make_polygon(1, base=1, rotation=1 / 8 * 180, outside=False), keyframe=False),
-            dict(make_polygon(2, base=2, rotation=2 / 8 * 180, outside=False), keyframe=False),
-            dict(make_polygon(3, base=3, rotation=3 / 8 * 180, outside=False), keyframe=False),
-            dict(make_polygon(4, base=4, rotation=4 / 8 * 180, outside=True), keyframe=True),
+            dict(make_polygon(0, base=0, outside=False), keyframe=True),
+            dict(make_polygon(1, base=1, outside=False), keyframe=False),
+            dict(make_polygon(2, base=2, outside=False), keyframe=False),
+            dict(make_polygon(3, base=3, outside=False), keyframe=False),
+            dict(make_polygon(4, base=4, outside=True), keyframe=True),
         ]
         self.assertTracksEqual(expected_shapes, interpolated_shapes)
 
