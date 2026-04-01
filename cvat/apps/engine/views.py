@@ -23,7 +23,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
-from django.db.models.query import Prefetch
+from django.db.models.query import Prefetch, prefetch_related_objects
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
@@ -879,16 +879,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
 ):
     queryset = Task.objects.select_related(
-        'data',
+        # prefetch for permission checks
         'assignee',
         'owner',
-        'target_storage',
-        'source_storage',
-        'annotation_guide',
-    ).prefetch_related(
-        # avoid loading heavy data in select related
-        # this reduces performance of the COUNT request in the list endpoint
-        'data__validation_layout',
     )
 
     lookup_fields = {
@@ -932,8 +925,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = Task.objects.select_related('data')
         elif self.action == 'validation_layout':
             queryset = Task.objects.select_related('data', 'data__validation_layout')
-        else:
-            queryset = queryset.with_job_summary()
+        elif self.action not in ('metadata', 'annotations'):
+            queryset = queryset.select_related(
+                'data',
+            )
+
+            if self.action in ('retrieve', 'update', 'partial_update'):
+                queryset = queryset.select_related(
+                    'target_storage',
+                    'source_storage',
+                    'annotation_guide',
+                )
+                queryset = queryset.with_job_summary()
 
         return queryset
 
@@ -1507,13 +1510,37 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request: ExtendedRequest, pk: int):
-        self.get_object() #force to call check_object_permissions
-        db_task = models.Task.objects.prefetch_related(
-            'segment_set',
-            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
-        ).get(pk=pk)
+        db_task = self.get_object() #force to call check_object_permissions
+
+        def prefetch():
+            data_queryset = models.Data.objects.select_related("validation_layout")
+
+            match db_task.media_type:
+                case models.MediaType.AUDIO:
+                    data_queryset = data_queryset.select_related("audio")
+                case models.MediaType.VIDEO:
+                    data_queryset = data_queryset.select_related("video")
+                case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+                    data_queryset = data_queryset.prefetch_related(
+                        Prefetch(
+                            'images',
+                            queryset=(
+                                models.Image.objects
+                                .prefetch_related('related_files')
+                                .order_by('frame')
+                            )
+                        )
+                    )
+                case _ as media_type:
+                    assert False, f"Unknown media type '{media_type}'"
+
+            prefetch_related_objects(
+                [db_task],
+                "segment_set",
+                Prefetch("data", queryset=data_queryset)
+            )
+
+        prefetch()
 
         if request.method == 'PATCH':
             if db_task.media_type == models.MediaType.AUDIO:
@@ -1727,11 +1754,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     UploadMixin, DatasetMixin
 ):
     queryset = Job.objects.select_related(
+        # prefetch data for permission checks
         'assignee',
-        'segment__task__data',
         'segment__task__project',
-        'segment__task__annotation_guide',
-        'segment__task__project__annotation_guide',
     )
 
     iam_organization_field = 'segment__task__organization'
@@ -1760,10 +1785,21 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             queryset = perm.filter(queryset)
 
             queryset = queryset.prefetch_related(
-                "segment__task__source_storage", "segment__task__target_storage"
+                "segment__task__source_storage",
+                "segment__task__target_storage",
             )
-        else:
-            queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
+            # with_issue_counts() is optimized in the serializer
+        elif self.action not in ('annotations', 'metadata'):
+            queryset = queryset.select_related(
+                'segment__task__data',
+            )
+
+            if self.action in ('retrieve', 'update', 'partial_update'):
+                queryset = queryset.select_related(
+                    'segment__task__annotation_guide',
+                    'segment__task__project__annotation_guide',
+                )
+                queryset = queryset.with_issue_counts()
 
         return queryset
 
@@ -2014,29 +2050,36 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request: ExtendedRequest, pk: int):
-        self.get_object() # force call of check_object_permissions()
+        db_job = self.get_object() # force call of check_object_permissions()
 
-        db_job = models.Job.objects.select_related(
-            'segment',
-            'segment__task',
-        ).prefetch_related(
-            Prefetch(
-                'segment__task__data',
-                queryset=models.Data.objects.select_related(
-                    'video',
-                    'validation_layout',
-                ).prefetch_related(
-                    Prefetch(
-                        'images',
-                        queryset=(
-                            models.Image.objects
-                            .prefetch_related('related_files')
-                            .order_by('frame')
+        def prefetch():
+            data_queryset = models.Data.objects.select_related("validation_layout")
+
+            match db_job.segment.task.media_type:
+                case models.MediaType.AUDIO:
+                    data_queryset = data_queryset.select_related("audio")
+                case models.MediaType.VIDEO:
+                    data_queryset = data_queryset.select_related("video")
+                case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+                    data_queryset = data_queryset.prefetch_related(
+                        Prefetch(
+                            'images',
+                            queryset=(
+                                models.Image.objects
+                                .prefetch_related('related_files')
+                                .order_by('frame')
+                            )
                         )
                     )
-                )
+                case _ as media_type:
+                    assert False, f"Unknown media type '{media_type}'"
+
+            prefetch_related_objects(
+                [db_job],
+                Prefetch("segment__task__data", queryset=data_queryset)
             )
-        ).get(pk=pk)
+
+        prefetch()
 
         if request.method == 'PATCH':
             if db_job.segment.task.media_type is models.MediaType.AUDIO:
