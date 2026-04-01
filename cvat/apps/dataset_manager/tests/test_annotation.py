@@ -221,14 +221,8 @@ class TrackManagerTest(TestCase):
         )
 
         expected_shapes = [
-            dict(
-                make_rect(0, base=0, rotation=4 / 8 * 180, outside=False),
-                keyframe=True,
-            ),
-            dict(
-                make_rect(1, base=1, rotation=3 / 8 * 180, outside=False),
-                keyframe=False,
-            ),
+            dict(make_rect(0, base=0, rotation=4 / 8 * 180, outside=False), keyframe=True),
+            dict(make_rect(1, base=1, rotation=3 / 8 * 180, outside=False), keyframe=False),
             dict(make_rect(2, base=2, rotation=2 / 8 * 180, outside=False), keyframe=False),
             dict(make_rect(3, base=3, rotation=1 / 8 * 180, outside=False), keyframe=False),
             dict(make_rect(4, base=4, rotation=0 / 8 * 180, outside=True), keyframe=True),
