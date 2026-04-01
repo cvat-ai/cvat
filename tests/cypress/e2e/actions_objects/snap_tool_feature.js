@@ -5,40 +5,10 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
 import { taskName, labelName } from '../../support/const';
 
-context('Autoborder feature.', () => {
-    const caseId = '60';
-    const createRectangleShape2Points = {
-        points: 'By 2 Points',
-        type: 'Shape',
-        labelName,
-        firstX: 400,
-        firstY: 350,
-        secondX: 500,
-        secondY: 450,
-    };
-
-    const createRectangleShape2PointsSec = {
-        points: 'By 2 Points',
-        type: 'Shape',
-        labelName,
-        firstX: 600,
-        firstY: 350,
-        secondX: 700,
-        secondY: 450,
-    };
-
-    const createRectangleShape2PointsHidden = {
-        points: 'By 2 Points',
-        type: 'Shape',
-        labelName,
-        firstX: 200,
-        firstY: 350,
-        secondX: 300,
-        secondY: 450,
-    };
-
+context('Snap tool feature.', () => {
     const keyCodeN = 78;
     const rectanglePoints = [];
     const polygonPoints = [];
@@ -67,16 +37,38 @@ context('Autoborder feature.', () => {
     before(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
-        cy.createRectangle(createRectangleShape2Points);
-        cy.createRectangle(createRectangleShape2PointsSec);
-
-        // Check PR 3931 "Fixed issue: autoborder points are visible for invisible shapes"
-        cy.createRectangle(createRectangleShape2PointsHidden);
-        cy.get('#cvat-objects-sidebar-state-item-3').find('[data-icon="eye"]').click();
-        cy.get('#cvat_canvas_shape_3').should('be.hidden');
     });
 
-    describe(`Testing case "${caseId}"`, () => {
+    context('Testing "Snap to Contour"', () => {
+        const createRectangleShape2Points = {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
+            firstX: 400,
+            firstY: 350,
+            secondX: 500,
+            secondY: 450,
+        };
+
+        const createRectangleShape2PointsSec = {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
+            firstX: 600,
+            firstY: 350,
+            secondX: 700,
+            secondY: 450,
+        };
+
+        before(() => {
+            cy.createRectangle(createRectangleShape2Points);
+            cy.createRectangle(createRectangleShape2PointsSec);
+        });
+
+        after(() => {
+            cy.removeAnnotations();
+        });
+
         it('Drawing a polygon with autoborder.', () => {
             // Collect the rectagle points coordinates
             testCollectCoord('rect', '#cvat_canvas_shape_1', rectanglePoints);
@@ -106,7 +98,7 @@ context('Autoborder feature.', () => {
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
-            testCollectCoord('polygon', '#cvat_canvas_shape_4', polygonPoints);
+            testCollectCoord('polygon', '#cvat_canvas_shape_3', polygonPoints);
         });
 
         it('Start drawing a polyline with autobordering between the two shapes.', () => {
@@ -136,7 +128,7 @@ context('Autoborder feature.', () => {
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
-            testCollectCoord('polyline', '#cvat_canvas_shape_5', polylinePoints);
+            testCollectCoord('polyline', '#cvat_canvas_shape_4', polylinePoints);
         });
 
         it('Checking whether the coordinates of the contact points of the shapes match.', () => {
@@ -159,6 +151,30 @@ context('Autoborder feature.', () => {
                 .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
             expect(polylinePoints[7]).to.be
                 .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
+        });
+    });
+
+    context('Regression tests', () => {
+        const createRectangleShape2PointsHidden = {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
+            firstX: 200,
+            firstY: 350,
+            secondX: 300,
+            secondY: 450,
+        };
+        before(() => {
+            cy.createRectangle(createRectangleShape2PointsHidden);
+        });
+        after(() => {
+            cy.removeAnnotations();
+        });
+        it('Issue 3931: Autoborder points are not visible for invisible shapes', () => {
+            allure.issue('https://github.com/cvat-ai/cvat/pull/3931');
+
+            cy.get('.cvat-objects-sidebar-state-item').find('[data-icon="eye"]').click();
+            cy.get('.cvat_canvas_shape').should('be.hidden');
         });
     });
 });
