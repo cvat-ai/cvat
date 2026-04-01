@@ -1468,7 +1468,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     resized = true;
                     onResizing();
 
-                    if (this.configuration.pointSnap &&
+                    if (this.configuration.snapToPoint &&
                         !this.ctrlPressed &&
                         ['polygon', 'polyline', 'points'].includes(state.shapeType) &&
                         draggedPointIndex !== null &&

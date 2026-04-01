@@ -12,10 +12,7 @@ import Text from 'antd/lib/typography/Text';
 
 import { SnapToolsIcon, SnapToContourIcon, SnapToPointIcon } from 'icons';
 import { CombinedState } from 'reducers';
-import {
-    switchAutomaticBordering,
-    switchPointSnap,
-} from 'actions/settings-actions';
+import { switchAutomaticBordering, switchSnapToPoint } from 'actions/settings-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import withVisibilityHandling from './handle-popover-visibility';
 
@@ -23,13 +20,13 @@ const CustomPopover = withVisibilityHandling(Popover, 'snap-tools-control');
 
 function SnapToolsControlComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const { automaticBordering, pointSnap, normalizedKeyMap } = useSelector((state: CombinedState) => ({
+    const { automaticBordering, snapToPoint, normalizedKeyMap } = useSelector((state: CombinedState) => ({
         automaticBordering: state.settings.workspace.automaticBordering,
-        pointSnap: state.settings.workspace.pointSnap,
+        snapToPoint: state.settings.workspace.snapToPoint,
         normalizedKeyMap: state.shortcuts.normalizedKeyMap,
     }));
 
-    const isAnySnapEnabled = automaticBordering || pointSnap;
+    const isAnySnapEnabled = automaticBordering || snapToPoint;
 
     const popoverContent = (
         <div className='cvat-snap-tools-control-popover-content'>
@@ -58,15 +55,15 @@ function SnapToolsControlComponent(): JSX.Element {
                     </CVATTooltip>
                 </Col>
                 <Col>
-                    <CVATTooltip title={`Snap to point ${normalizedKeyMap.SWITCH_POINT_SNAP}`}>
+                    <CVATTooltip title={`Snap to point ${normalizedKeyMap.SWITCH_SNAP_TO_POINT}`}>
                         <Button
                             className={
-                                pointSnap ?
+                                snapToPoint ?
                                     'cvat-snap-to-point-button cvat-snap-tool-active' :
                                     'cvat-snap-to-point-button'
                             }
                             onClick={() => {
-                                dispatch(switchPointSnap(!pointSnap));
+                                dispatch(switchSnapToPoint(!snapToPoint));
                             }}
                         >
                             <Icon component={SnapToPointIcon} />

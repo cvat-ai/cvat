@@ -594,7 +594,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('drawupdate', (): void => {
             this.transform(this.geometry);
 
-            if (this.configuration.pointSnap &&
+            if (this.configuration.snapToPoint &&
                 !this.isCtrlKeyDown() &&
                 ['polygon', 'polyline'].includes(this.drawData.shapeType) &&
                 this.getDrawnStates) {
