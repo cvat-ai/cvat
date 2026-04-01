@@ -377,8 +377,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 <ObservedResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
                 <hr />
-                <ObservedSnapToolsControl />
-                <hr />
 
                 <ObservedToolsControl />
                 <ObservedOpenCVControl />
@@ -462,6 +460,9 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                         />
                     )
                 }
+
+                <ObservedSnapToolsControl />
+
                 <hr />
 
                 <ObservedMergeControl
