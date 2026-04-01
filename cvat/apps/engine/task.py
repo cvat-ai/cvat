@@ -1756,6 +1756,13 @@ def create_thread(
             sorting_method=data["sorting_method"],
         )
 
+    if isinstance(extractor, MEDIA_TYPES["audio"]["extractor"]):
+        if job_file_mapping:
+            raise ValidationError("The 'job_file_mapping' parameter cannot be used in audio tasks")
+
+        if db_task.segment_size or data.get("segment_size"):
+            raise ValidationError("The 'segment_size' parameter cannot be used in audio tasks")
+
     # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
     if manifest_file and not os.path.exists(db_data.get_manifest_path()):
         shutil.copyfile(os.path.join(manifest_root, manifest_file), db_data.get_manifest_path())
