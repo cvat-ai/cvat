@@ -11,7 +11,9 @@ from zipfile import ZipFile
 import pytest
 from deepdiff import DeepDiff
 
+from rest_api.utils import create_task
 from shared.utils.config import delete_method, get_method, make_api_client, patch_method, post_method
+from shared.utils.helpers import generate_image_files
 
 from .test_quality_control import _PermissionTestBase
 
@@ -232,6 +234,79 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
 
         _, response = self._create_requirement(user["username"], payload)
         assert response.status_code == (HTTPStatus.CREATED if allow else HTTPStatus.FORBIDDEN)
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
+    def test_new_task_gets_disabled_default_requirements_from_task_labels(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "task-default-quality-requirements",
+                "labels": [
+                    {"name": "car", "type": "rectangle"},
+                    {"name": "truck", "type": "rectangle"},
+                    {"name": "scene", "type": "tag"},
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(2),
+            },
+        )
+
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        requirements = settings["requirements"]
+
+        assert {requirement["annotation_type"] for requirement in requirements} == {
+            "rectangle",
+            "tag",
+        }
+        assert {requirement["name"] for requirement in requirements} == {
+            "default:rectangle",
+            "default:tag",
+        }
+        assert all(requirement["enabled"] is False for requirement in requirements)
+
+    def test_new_project_task_gets_disabled_default_requirements_from_project_labels(
+        self, admin_user
+    ):
+        with make_api_client(admin_user) as api_client:
+            project, response = api_client.projects_api.create(
+                {
+                    "name": "project-default-quality-requirements",
+                    "labels": [
+                        {"name": "car", "type": "rectangle"},
+                        {"name": "pose", "type": "skeleton"},
+                    ],
+                }
+            )
+            assert response.status == HTTPStatus.CREATED
+
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "project-task-default-quality-requirements",
+                "project_id": project.id,
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(2),
+            },
+        )
+
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        requirements = settings["requirements"]
+
+        assert {requirement["annotation_type"] for requirement in requirements} == {
+            "rectangle",
+            "skeleton",
+        }
+        assert {requirement["name"] for requirement in requirements} == {
+            "default:rectangle",
+            "default:skeleton",
+        }
+        assert all(requirement["enabled"] is False for requirement in requirements)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
