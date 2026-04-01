@@ -15,7 +15,7 @@ from django.test import TestCase
 from cvat.apps.dataset_manager import task as task_module
 from cvat.apps.dataset_manager.annotation import AnnotationIR, TrackManager
 from cvat.apps.engine import models
-from cvat.apps.engine.models import DimensionType, ShapeType
+from cvat.apps.engine.models import DimensionType, JobType, ShapeType
 from cvat.apps.engine.tests.utils import compare_objects
 
 
@@ -61,11 +61,11 @@ def make_shape(
     outside: bool = False,
     rotation: float = 0,
     attributes: dict | None = None,
-    dimension: str | DimensionType = "2d",
+    dimension: str | DimensionType = DimensionType.DIM_2D,
     shape_type: ShapeType | None = None,
     occluded: bool = False,
 ) -> dict[str, Any]:
-    if dimension == "2d":
+    if dimension == DimensionType.DIM_2D:
         if shape_type is None:
             shape_type = ShapeType.RECTANGLE
         points = make_2d_points(base, shape_type)
@@ -81,7 +81,7 @@ def make_shape(
             shape["rotation"] = rotation
         elif shape_type == ShapeType.POINTS:
             shape["rotation"] = 0
-    else:
+    elif dimension == DimensionType.DIM_3D:
         points = make_3d_points(base, rotation=rotation)
         shape = {
             "frame": frame,
@@ -92,6 +92,9 @@ def make_shape(
             "outside": outside,
             "attributes": attributes or [],
         }
+    else:
+        assert False, f"Unknown dimension '{dimension}'"
+
     return shape
 
 
@@ -106,21 +109,12 @@ def make_track(shapes, frame=0, label_id=0, source="manual", attributes=None):
     }
 
 
-def get_dimension_type(dimension: str | DimensionType) -> DimensionType:
-    if not isinstance(dimension, DimensionType):
-        dimension = DimensionType[dimension]
-
-    return dimension
-
-
 class TrackManagerTest(TestCase):
     def assertTracksEqual(self, a: Sequence[dict], b: Sequence[dict]):
         compare_objects(self, a, b, fp_tolerance=0.001)
 
-    def _check_keyframe_interpolation(self, track, dimension=models.DimensionType.DIM_2D):
-        interpolated = TrackManager.get_interpolated_shapes(
-            track, 0, 7, get_dimension_type(dimension)
-        )
+    def _check_keyframe_interpolation(self, track, dimension=DimensionType.DIM_2D):
+        interpolated = TrackManager.get_interpolated_shapes(track, 0, 7, dimension=dimension)
         self.assertEqual(
             [
                 {"frame": 0, "keyframe": True, "outside": False},
@@ -139,11 +133,11 @@ class TrackManagerTest(TestCase):
 
     def test_shape_interpolation(self):
         test_cases = [
-            (models.DimensionType.DIM_2D, ShapeType.RECTANGLE),
-            (models.DimensionType.DIM_2D, ShapeType.POLYGON),
-            (models.DimensionType.DIM_2D, ShapeType.POLYLINE),
-            (models.DimensionType.DIM_2D, ShapeType.POINTS),
-            (models.DimensionType.DIM_3D, ShapeType.CUBOID),
+            (DimensionType.DIM_2D, ShapeType.RECTANGLE),
+            (DimensionType.DIM_2D, ShapeType.POLYGON),
+            (DimensionType.DIM_2D, ShapeType.POLYLINE),
+            (DimensionType.DIM_2D, ShapeType.POINTS),
+            (DimensionType.DIM_3D, ShapeType.CUBOID),
         ]
         for dimension, shape_type in test_cases:
             with self.subTest(dimension=dimension, shape_type=shape_type):
@@ -162,12 +156,10 @@ class TrackManagerTest(TestCase):
                 self._check_keyframe_interpolation(track, dimension)
 
     def test_outside_shape_interpolation(self):
-        for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
+        for dimension in [DimensionType.DIM_2D, DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
                 shape_type = (
-                    ShapeType.CUBOID
-                    if dimension == models.DimensionType.DIM_3D
-                    else ShapeType.RECTANGLE
+                    ShapeType.CUBOID if dimension == DimensionType.DIM_3D else ShapeType.RECTANGLE
                 )
                 shapes = [
                     make_shape(
@@ -182,7 +174,7 @@ class TrackManagerTest(TestCase):
                 ]
                 track = make_track(shapes)
                 interpolated = TrackManager.get_interpolated_shapes(
-                    track, 0, 5, get_dimension_type(dimension)
+                    track, 0, 5, dimension=dimension
                 )
                 expected = [0, 1, 2, 4]
                 got = [shape["frame"] for shape in interpolated]
@@ -196,7 +188,9 @@ class TrackManagerTest(TestCase):
             make_rect(4, base=4, rotation=0 / 8 * 180, outside=True),
         ]
         track = make_track(shapes)
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 6, "2d")
+        interpolated_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, 6, dimension=DimensionType.DIM_2D
+        )
 
         expected_shapes = [
             dict(
@@ -221,7 +215,9 @@ class TrackManagerTest(TestCase):
             make_polygon(4, base=4, rotation=4 / 8 * 180, outside=True),
         ]
         track = make_track(shapes)
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 6, "2d")
+        interpolated_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, 6, dimension=DimensionType.DIM_2D
+        )
 
         expected_shapes = [
             dict(make_polygon(0, base=0, rotation=0 / 8 * 180, outside=False), keyframe=True),
@@ -242,7 +238,9 @@ class TrackManagerTest(TestCase):
             make_cuboid(4, base=4, rotation=2 / 8 * math.pi, outside=True),
         ]
         track = make_track(shapes)
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 6, "3d")
+        interpolated_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, 6, dimension=DimensionType.DIM_3D
+        )
 
         expected_shapes = [
             dict(make_cuboid(0, base=0, rotation=-2 / 8 * math.pi, outside=False), keyframe=True),
@@ -254,12 +252,10 @@ class TrackManagerTest(TestCase):
         self.assertTracksEqual(expected_shapes, interpolated_shapes)
 
     def test_duplicated_shape_interpolation(self):
-        for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
+        for dimension in [DimensionType.DIM_2D, DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
                 shape_type = (
-                    ShapeType.CUBOID
-                    if dimension == models.DimensionType.DIM_3D
-                    else ShapeType.RECTANGLE
+                    ShapeType.CUBOID if dimension == DimensionType.DIM_3D else ShapeType.RECTANGLE
                 )
                 label = "car"
                 track_id = 777
@@ -281,19 +277,17 @@ class TrackManagerTest(TestCase):
                     "shapes": shapes,
                 }
                 interpolated_shapes = TrackManager.get_interpolated_shapes(
-                    track, 0, 2, get_dimension_type(dimension)
+                    track, 0, 2, dimension=dimension
                 )
                 self.assertEqual(2, len(interpolated_shapes))
 
     def test_deleted_frames_with_keyframes_are_ignored(self):
-        for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
+        for dimension in [DimensionType.DIM_2D, DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
                 deleted_frames = [2]
                 end_frame = 5
                 shape_type = (
-                    ShapeType.CUBOID
-                    if dimension == models.DimensionType.DIM_3D
-                    else ShapeType.RECTANGLE
+                    ShapeType.CUBOID if dimension == DimensionType.DIM_3D else ShapeType.RECTANGLE
                 )
                 shapes = [
                     make_shape(
@@ -311,7 +305,7 @@ class TrackManagerTest(TestCase):
                     track,
                     0,
                     end_frame,
-                    get_dimension_type(dimension),
+                    dimension=dimension,
                     deleted_frames=deleted_frames,
                 )
                 expected_frames = [0, 1, 3, 4]
@@ -349,7 +343,7 @@ class TrackManagerTest(TestCase):
         ]
         for included_frames in [None, [1, 3]]:
             interpolated_shapes = TrackManager.get_interpolated_shapes(
-                track, 0, end_frame, models.DimensionType.DIM_2D, included_frames=included_frames
+                track, 0, end_frame, DimensionType.DIM_2D, included_frames=included_frames
             )
             expected_shapes = [
                 shape
@@ -394,7 +388,7 @@ class TrackManagerTest(TestCase):
             track,
             0,
             end_frame,
-            models.DimensionType.DIM_2D,
+            dimension=DimensionType.DIM_2D,
             included_frames=included_frames,
             deleted_frames=deleted_frames,
         )
@@ -403,14 +397,12 @@ class TrackManagerTest(TestCase):
 
 class AnnotationIRTest(TestCase):
     def test_slice_track_does_not_duplicate_outside_frame_on_the_end(self):
-        for dimension in [models.DimensionType.DIM_2D, models.DimensionType.DIM_3D]:
+        for dimension in [DimensionType.DIM_2D, DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
                 label = "car"
                 track_id = 666
                 shape_type = (
-                    ShapeType.CUBOID
-                    if dimension == models.DimensionType.DIM_3D
-                    else ShapeType.RECTANGLE
+                    ShapeType.CUBOID if dimension == DimensionType.DIM_3D else ShapeType.RECTANGLE
                 )
                 shapes = [
                     make_shape(
@@ -438,16 +430,15 @@ class AnnotationIRTest(TestCase):
                     "shapes": [],
                     "tracks": [track],
                 }
-                dimension_type = get_dimension_type(dimension)
-                annotation = AnnotationIR(dimension=dimension_type, data=data)
+                annotation = AnnotationIR(dimension=dimension, data=data)
                 sliced_annotation = annotation.slice(0, 1)
                 self.assertEqual(sliced_annotation.data["tracks"][0]["shapes"], shapes[0:2])
 
 
 class TestTaskAnnotation(TestCase):
     def test_reads_ordered_jobs(self):
-        user = models.User.objects.create_superuser(username=f"admin", email="", password="")
-        for dimension in ["2d", "3d"]:
+        user = models.User.objects.create_superuser(username="admin", email="", password="")
+        for dimension in [DimensionType.DIM_2D, DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
                 db_data = models.Data.objects.create(size=31, stop_frame=30, image_quality=50)
 
@@ -466,27 +457,27 @@ class TestTaskAnnotation(TestCase):
                 # This test tries to reproduce this by specifying job ids.
                 # https://github.com/cvat-ai/cvat/issues/9860
 
-                id_offset = 0 if dimension == "2d" else 1000000
+                id_offset = 0 if dimension == DimensionType.DIM_2D else 1000000
 
                 models.Job.objects.create(
                     segment=models.Segment.objects.create(
                         task=db_task, start_frame=0, stop_frame=10
                     ),
-                    type=models.JobType.ANNOTATION,
+                    type=JobType.ANNOTATION,
                     id=456789 + id_offset,
                 )
                 models.Job.objects.create(
                     segment=models.Segment.objects.create(
                         task=db_task, start_frame=10, stop_frame=20
                     ),
-                    type=models.JobType.ANNOTATION,
+                    type=JobType.ANNOTATION,
                     id=123456 + id_offset,
                 )
                 models.Job.objects.create(
                     segment=models.Segment.objects.create(
                         task=db_task, start_frame=20, stop_frame=30
                     ),
-                    type=models.JobType.ANNOTATION,
+                    type=JobType.ANNOTATION,
                     id=345678 + id_offset,
                 )
 
@@ -500,18 +491,12 @@ class TestTaskAnnotation(TestCase):
                 )
                 assert sorted(unordered_ids) != unordered_ids
 
-                dimension_type = (
-                    models.DimensionType.DIM_3D
-                    if dimension == "3d"
-                    else models.DimensionType.DIM_2D
-                )
-
                 class DummyJobAnnotation(task_module.JobAnnotation):
                     called_ids = []
 
                     def __init__(self, job_id, db_job=None):
                         self.called_ids.append(job_id)
-                        self.ir_data = AnnotationIR(dimension_type)
+                        self.ir_data = AnnotationIR(dimension=dimension)
 
                     def init_from_db(self, *, streaming: bool = False):
                         pass
