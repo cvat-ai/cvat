@@ -67,6 +67,13 @@ context('Snap tool feature.', () => {
 
         after(() => {
             cy.removeAnnotations();
+
+            // Deactivate snap to contour. Ensure snap tools magnet is inactive
+            cy.get('.cvat-snap-tools-control').click();
+            cy.get('.cvat-snap-to-contour-button').click();
+            cy.get('.cvat-snap-to-contour-button').should('not.have.class', 'cvat-snap-tool-active');
+            cy.get('.cvat-snap-tools-control').should('not.have.class', 'cvat-snap-tools-active').click();
+            cy.get('.cvat-snap-tools-control-popover').should('not.be.visible');
         });
 
         it('Drawing a polygon with autoborder.', () => {
@@ -152,6 +159,10 @@ context('Snap tool feature.', () => {
             expect(polylinePoints[7]).to.be
                 .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
         });
+    });
+
+    context('Testing "Snap to Point', () => {
+
     });
 
     context('Regression tests', () => {
