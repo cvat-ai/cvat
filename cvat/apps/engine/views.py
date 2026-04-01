@@ -2352,6 +2352,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # )
                 self.check_object_permissions(self.request, instance)
                 queryset = instance.get_labels(prefetch=True)
+                queryset = LabelPermission.add_org_filter_proof(queryset)
             else:
                 # In other cases permissions are checked already
                 queryset = super().get_queryset()

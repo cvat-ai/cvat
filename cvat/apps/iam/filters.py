@@ -32,10 +32,13 @@ ORGANIZATION_OPEN_API_PARAMETERS = [
 
 class OrganizationFilterBackend(BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
-        # This filter only exists to add the organization parameters to the schemas
-        # of all endpoints that supports them. The actual filtering logic must be implemented
-        # in the Rego policy files for each endpoint using the add_organization_filter function.
-        return queryset
+        if view.detail or not view.iam_supports_organization_params:
+            return queryset
+
+        # The actual filtering logic must be implemented in the Rego policy files for each endpoint
+        # using the add_organization_filter function. Here we just verify that this was done
+        # by adding a no-op filter that will crash if add_organization_filter wasn't used.
+        return queryset.filter(org_filter_proof=True)
 
     def get_schema_operation_parameters(self, view):
         if not view.iam_supports_organization_params or view.detail:

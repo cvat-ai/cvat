@@ -122,6 +122,8 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                     queryset = queryset.filter(report__parents__parents=report)
                 else:
                     assert False
+
+                queryset = AnnotationConflictPermission.add_org_filter_proof(queryset)
             else:
                 perm = AnnotationConflictPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
