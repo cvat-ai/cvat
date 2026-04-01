@@ -2941,8 +2941,8 @@ class AboutSerializer(serializers.Serializer):
     subtitle = serializers.CharField(max_length=1024)
 
 class FrameMetaSerializer(serializers.Serializer):
-    width = serializers.IntegerField()
-    height = serializers.IntegerField()
+    width = serializers.IntegerField(required=False)
+    height = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
     related_files = serializers.IntegerField()
 
@@ -2971,7 +2971,7 @@ class PluginsSerializer(serializers.Serializer):
 class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
     chapters = ChapterSerializer(many=True, allow_null=True, required=False)
-    image_quality = serializers.IntegerField(min_value=0, max_value=100)
+    image_quality = serializers.IntegerField(min_value=0, max_value=100, required=False)
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
     included_frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0), allow_null=True, required=False,
@@ -3011,6 +3011,14 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
                 """)
             },
         }
+
+    def to_representation(self, instance):
+        serialized = super().to_representation(instance)
+
+        if hasattr(instance, 'audio'):
+            serialized.pop('image_quality', None) # not relevant for audio
+
+        return serialized
 
 class DataMetaWriteSerializer(serializers.ModelSerializer):
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False)
