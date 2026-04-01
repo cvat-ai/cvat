@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { connect } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
 import Button from 'antd/lib/button';
@@ -19,49 +19,15 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import withVisibilityHandling from './handle-popover-visibility';
 
-interface StateToProps {
-    automaticBordering: boolean;
-    pointSnap: boolean;
-    normalizedKeyMap: Record<string, any>;
-}
-
-interface DispatchToProps {
-    onSwitchAutomaticBordering: (enabled: boolean) => void;
-    onSwitchPointSnap: (enabled: boolean) => void;
-}
-
 const CustomPopover = withVisibilityHandling(Popover, 'snap-tools-control');
 
-function mapStateToProps(state: CombinedState): StateToProps {
-    const {
-        settings: {
-            workspace: { automaticBordering, pointSnap },
-        },
-        shortcuts: { normalizedKeyMap },
-    } = state;
-
-    return {
-        automaticBordering,
-        pointSnap,
-        normalizedKeyMap,
-    };
-}
-
-const mapDispatchToProps = {
-    onSwitchAutomaticBordering: switchAutomaticBordering,
-    onSwitchPointSnap: switchPointSnap,
-};
-
-type Props = StateToProps & DispatchToProps;
-
-function SnapToolsControlComponent(props: Props): JSX.Element {
-    const {
-        automaticBordering,
-        pointSnap,
-        normalizedKeyMap,
-        onSwitchAutomaticBordering,
-        onSwitchPointSnap,
-    } = props;
+function SnapToolsControlComponent(): JSX.Element {
+    const dispatch = useDispatch();
+    const { automaticBordering, pointSnap, normalizedKeyMap } = useSelector((state: CombinedState) => ({
+        automaticBordering: state.settings.workspace.automaticBordering,
+        pointSnap: state.settings.workspace.pointSnap,
+        normalizedKeyMap: state.shortcuts.normalizedKeyMap,
+    }));
 
     const isAnySnapEnabled = automaticBordering || pointSnap;
 
@@ -84,7 +50,7 @@ function SnapToolsControlComponent(props: Props): JSX.Element {
                                     'cvat-snap-to-contour-button'
                             }
                             onClick={() => {
-                                onSwitchAutomaticBordering(!automaticBordering);
+                                dispatch(switchAutomaticBordering(!automaticBordering));
                             }}
                         >
                             <Icon component={SnapToContourIcon} />
@@ -100,7 +66,7 @@ function SnapToolsControlComponent(props: Props): JSX.Element {
                                     'cvat-snap-to-point-button'
                             }
                             onClick={() => {
-                                onSwitchPointSnap(!pointSnap);
+                                dispatch(switchPointSnap(!pointSnap));
                             }}
                         >
                             <Icon component={SnapToPointIcon} />
@@ -127,4 +93,4 @@ function SnapToolsControlComponent(props: Props): JSX.Element {
     );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(SnapToolsControlComponent);
+export default SnapToolsControlComponent;
