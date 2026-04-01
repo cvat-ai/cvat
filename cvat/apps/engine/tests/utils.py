@@ -39,10 +39,6 @@ T = TypeVar("T")
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 
-class OrderStrategy(Protocol):
-    def __call__(self, key_path: list[str]) -> bool: ...
-
-
 @contextmanager
 def logging_disabled():
     old_level = logging.getLogger().manager.disable
@@ -652,8 +648,36 @@ def _match_lists(
     return matches, a_unmatched, b_unmatched
 
 
-def _format_key(key: list[Any]) -> str:
-    return ".".join([] + list(map(str, key))) or ""
+ObjectKey = Sequence[str | int]
+"""
+A path to the object in the JSON-like document.
+
+Dictionary (object) keys are included as strings. List (array) elements are represented as numbers.
+
+Example:
+
+The path ['foo', 2, 'bar'] can be the item key in the document like this:
+
+{
+    'foo': [
+        {'bar': 0},
+        {'bar': 1},
+        {'bar': 2}, <--
+        {'bar': 3},
+    ]
+}
+"""
+
+class OrderStrategy(Protocol):
+    def __call__(self, key_path: ObjectKey) -> bool: ...
+
+def format_key(key: ObjectKey, *, index_placeholder: str | None = None) -> str:
+    def _convert_item(item: str | int) -> str:
+        if index_placeholder is not None and isinstance(item, int):
+            item = index_placeholder
+        return str(item)
+
+    return ".".join([''] + list(map(_convert_item, key))) or ""
 
 
 def compare_objects(
@@ -662,10 +686,9 @@ def compare_objects(
     obj2: Any,
     *,
     ignore_keys: Collection[str] | None = None,
-    defaults: dict[str, Any] | Callable[[list[str]], dict | None] | None = None,
+    defaults: dict[str, Any] | Callable[[ObjectKey], dict[str, Any] | None] | None = None,
     fp_tolerance: float = 0.001,
-    current_key: list[str] | str | None = None,
-    full_current_key: list[str | int] | str | None = None,
+    current_key: ObjectKey | str | None = None,
     check_order: bool | OrderStrategy = True,
 ) -> None | NoReturn:
     if isinstance(current_key, str):
@@ -673,15 +696,10 @@ def compare_objects(
     elif not current_key:
         current_key = []
 
-    if isinstance(full_current_key, str):
-        full_current_key = [full_current_key]
-    elif not full_current_key:
-        full_current_key = [""]
-
     if ignore_keys is None:
         ignore_keys = tuple()
 
-    key_info = f"{_format_key(full_current_key)}"
+    key_info = format_key(current_key)
     error_msg = "{}: {} != {}"
 
     if isinstance(obj1, dict):
@@ -702,7 +720,6 @@ def compare_objects(
                 ignore_keys=ignore_keys,
                 defaults=defaults,
                 current_key=current_key + [k],
-                full_current_key=full_current_key + [k],
                 fp_tolerance=fp_tolerance,
                 check_order=check_order,
             )
@@ -722,8 +739,7 @@ def compare_objects(
                     v2,
                     ignore_keys=ignore_keys,
                     defaults=defaults,
-                    current_key=current_key,
-                    full_current_key=full_current_key + [i],
+                    current_key=current_key + [i],
                     fp_tolerance=fp_tolerance,
                     check_order=check_order,
                 )
@@ -738,7 +754,6 @@ def compare_objects(
                         ignore_keys=ignore_keys,
                         defaults=defaults,
                         current_key=current_key,
-                        full_current_key=full_current_key,
                         fp_tolerance=fp_tolerance,
                         check_order=check_order,
                     )
@@ -801,10 +816,10 @@ def check_annotation_response(
 
         data = put_expected_values(deepcopy(data))
 
-    def _check_order_in_annotations(key_path: list[str]) -> bool:
+    def _check_order_in_annotations(key_path: ObjectKey) -> bool:
         return "points" in key_path
 
-    def _key_defaults(key_path: list[str]) -> dict | None:
+    def _key_defaults(key_path: ObjectKey) -> dict[str, Any] | None:
         if key_path and key_path[-1] == "tags":
             return filter_dict(optional_fields, keep=["source", "attributes"])
         if key_path and key_path[-1] == "shapes":
@@ -823,13 +838,13 @@ def check_annotation_response(
             )
         if key_path and key_path[-1] == "tracks":
             return filter_dict(optional_fields, keep=["source", "attributes", "elements"])
-        if key_path and _format_key(key_path).endswith("tracks.elements"):
+        if format_key(key_path, index_placeholder="*").endswith("tracks.*.elements"):
             return filter_dict(optional_fields, keep=["source", "attributes"])
-        if key_path and _format_key(key_path).endswith("tracks.elements.shapes"):
+        if format_key(key_path, index_placeholder="*").endswith("tracks.*.elements.*.shapes"):
             return filter_dict(
                 optional_fields, keep=["occluded", "outside", "z_order", "rotation", "attributes"]
             )
-        if key_path and _format_key(key_path).endswith("shapes.elements"):
+        if format_key(key_path, index_placeholder="*").endswith("shapes.*.elements"):
             return filter_dict(
                 optional_fields,
                 keep=[
