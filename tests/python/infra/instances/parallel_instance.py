@@ -252,16 +252,7 @@ def _default_lane_profiles_for_count(parallel_count: int) -> list[str]:
         return []
     if parallel_count == 1:
         return [str(InfraProfile.FULL)]
-    if parallel_count == 2:
-        return [str(InfraProfile.FULL), str(InfraProfile.STANDARD)]
-    profiles = [
-        str(InfraProfile.FULL),
-        str(InfraProfile.STANDARD),
-        str(InfraProfile.SIMPLE),
-    ]
-    if parallel_count == 3:
-        return profiles
-    return profiles + [str(InfraProfile.SIMPLE)] * (parallel_count - 3)
+    return [str(InfraProfile.FULL)] + [str(InfraProfile.STANDARD)] * (parallel_count - 1)
 
 
 def _parallel_state_file(run_prefix: str) -> Path:
@@ -422,59 +413,15 @@ def _planned_lane_profiles(items, parallel_count: int) -> list[str]:
     full_count = required_counts[str(InfraProfile.FULL)]
     total_count = simple_count + standard_count + full_count
 
-    if parallel_count >= 3:
-        profiles: list[str] = []
-        if full_count > 0:
-            profiles.append(str(InfraProfile.FULL))
-        if standard_count > 0:
-            profiles.append(str(InfraProfile.STANDARD))
-        if simple_count > 0:
-            profiles.append(str(InfraProfile.SIMPLE))
+    if total_count > 0 and standard_count == 0 and full_count == 0:
+        return [str(InfraProfile.SIMPLE)] * parallel_count
+    if full_count == 0:
+        return [str(InfraProfile.STANDARD)] * parallel_count
 
-        fill_order = [
-            str(InfraProfile.STANDARD),
-            str(InfraProfile.SIMPLE),
-            str(InfraProfile.FULL),
-        ]
-        for profile in fill_order:
-            while len(profiles) < parallel_count and profile not in profiles:
-                profiles.append(profile)
+    if standard_count == 0 and simple_count == 0:
+        return [str(InfraProfile.FULL)] * parallel_count
 
-        while len(profiles) < parallel_count:
-            profiles.append(str(InfraProfile.SIMPLE))
-
-        return profiles[:parallel_count]
-
-    best: tuple[float, int, int, int] | None = None
-    for full_lanes in range(0, parallel_count + 1):
-        standard_lanes = parallel_count - full_lanes
-
-        if full_count > 0 and full_lanes == 0:
-            continue
-
-        full_eligible = full_lanes if full_lanes > 0 else 1
-
-        estimated_makespan = (
-            standard_count / parallel_count
-            + (full_count / full_eligible if full_count > 0 else 0.0)
-        )
-
-        lane_unit = max(1.0, total_count / parallel_count if parallel_count else 1.0)
-        profile_penalty = lane_unit * (0.35 * full_lanes)
-        score = estimated_makespan + profile_penalty
-
-        candidate = (score, full_lanes, standard_lanes, 0)
-        if best is None or candidate < best:
-            best = candidate
-
-    if best is None:
-        return _default_lane_profiles_for_count(parallel_count)
-
-    _, full_lanes, standard_lanes, _ = best
-    return (
-        [str(InfraProfile.FULL)] * full_lanes
-        + [str(InfraProfile.STANDARD)] * standard_lanes
-    )
+    return [str(InfraProfile.FULL)] + [str(InfraProfile.STANDARD)] * (parallel_count - 1)
 
 
 def _parallel_group_key(item) -> str:

@@ -107,11 +107,86 @@ which are used by containers for the testing system.
     Build explicitly with `pytest ./tests/python --infra build-images`.
   - Images are configured with `--kube-server-image`, `--kube-frontend-image`, `--kube-image-tag`.
   - `--kube-cpus` and `--kube-memory` are passed to `minikube start`.
+    Current local-development defaults are `8` CPUs and `16g` memory.
   - The first run is slower because minikube base images/charts and service images are pulled/loaded.
+  - Runtime profiles now include extra startup phase timings for local and kube infra,
+    for example compose/minikube start, image load, Helm install, readiness wait,
+    asset restore, and runtime port-forward setup.
   - `--cleanup/--dumpdb` are local-only helpers and are not supported with `--platform kube`.
 
 - Lane profiles are selected automatically by the scheduler based on collected
   tests and `@pytest.mark.infra_profile("simple|standard|full")`.
+
+## Profiles
+
+The Python test infra has three active profiles:
+
+- `simple`
+- `standard`
+- `full`
+
+The profile is selected by `@pytest.mark.infra_profile(...)` with normal pytest
+precedence:
+
+- function overrides class
+- class overrides file
+- file overrides the implicit fallback
+
+Unmarked tests use `simple` by default.
+
+### Profile intent
+
+- `simple`
+  - pure CRUD, permissions, filters, read-only API/SDK behavior
+  - should not require async media processing, MinIO, analytics, webhook delivery, or UI
+- `standard`
+  - media and data path
+  - task/project/job import, export, chunks, previews, backups, cloud storage via MinIO
+- `full`
+  - heavy feature stack
+  - consensus, quality reports, analytics, webhook delivery, UI, audit/event pipeline
+
+### Services by profile
+
+The logical service sets are:
+
+- `simple`
+  - `cvat_server`
+  - `cvat_db`
+  - `traefik`
+  - `cvat_redis_inmem`
+  - `cvat_redis_ondisk`
+  - `cvat_opa`
+- `standard`
+  - everything in `simple`
+  - `cvat_worker_import`
+  - `cvat_worker_export`
+  - `cvat_worker_chunks`
+  - `minio`
+  - `mc` (one-shot MinIO seeding helper)
+- `full`
+  - everything in `standard`
+  - `cvat_worker_annotation`
+  - `cvat_worker_consensus`
+  - `cvat_worker_quality_reports`
+  - `cvat_worker_webhooks`
+  - `cvat_worker_utils`
+  - `cvat_clickhouse`
+  - `cvat_vector`
+  - `cvat_grafana`
+  - `cvat_ui`
+  - `webhook_receiver`
+
+### Notes
+
+- Local and kube are expected to expose the same logical profile capabilities.
+  Platform-specific implementation details can differ, but classification should not.
+- `full` includes `grafana` for stack completeness even though tests currently depend
+  mainly on `clickhouse`, `vector`, `ui`, webhook delivery, and background workers.
+- `full` tests should pass only on `full`.
+- `standard` tests should pass on `standard` and fail on `simple` when they truly
+  require media/MinIO/background data-path services.
+- `simple` tests should pass on `simple`.
 
 - macOS benchmark runs:
 

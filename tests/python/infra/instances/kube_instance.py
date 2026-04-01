@@ -19,6 +19,7 @@ from infra.config import InfraMode, RuntimeInfraConfig
 from infra.db_restore import PsycopgDatabaseRestorer
 from infra.debug.host_debug import maybe_wait_for_vscode_attach
 from infra.instances.base_instance import InfraInstance, InfraPlugin
+from infra.profiler import profile_external_phase
 from infra.redis_restore import RedisStateRestorer
 from infra.system_utils import is_port_free, kubectl_cp, pick_free_port, run_command
 from shared.utils.config import ADMIN_PASS, ADMIN_USER
@@ -30,8 +31,10 @@ _DEFAULT_KUBE_NAMESPACE = "default"
 _DEFAULT_KUBE_SERVER_IMAGE = "cvat/server"
 _DEFAULT_KUBE_FRONTEND_IMAGE = "cvat/ui"
 _DEFAULT_KUBE_IMAGE_TAG = os.environ.get("CVAT_VERSION", "dev")
+_DEFAULT_KUBE_CPUS = "8"
+_DEFAULT_KUBE_MEMORY = "16g"
 _KUBE_SERVER_CONTAINER = "cvat-backend"
-_KUBE_FINGERPRINT_VERSION = 1
+_KUBE_FINGERPRINT_VERSION = 2
 _KUBE_TEST_RELEASE_SUFFIX = "-test"
 _MINIO_SERVICE_SUFFIX = "minio"
 _WEBHOOK_RECEIVER_SERVICE_SUFFIX = "webhook-receiver"
@@ -41,6 +44,50 @@ _MINIO_ACCESS_KEY = "minio_access_key"
 _MINIO_SECRET_KEY = "minio_secret_key"  # nosec
 _MINIO_BUCKETS = ("private", "public", "test", "importexportbucket", "backingcs")
 _MINIO_CONTENT_BUCKETS = ("private", "public", "test", "importexportbucket")
+_KUBE_STATIC_INFRA_IMAGES = (
+    "quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z",
+    "public.ecr.aws/docker/library/redis:7.2.11",
+    "public.ecr.aws/b8u7h5e8/postgresql:15.2.0-debian-11-r0",
+    "public.ecr.aws/b8u7h5e8/clickhouse:23.12.2-debian-11-r0",
+    "docker.io/timberio/vector:0.26.0-alpine",
+    "docker.io/openpolicyagent/opa:1.12.2",
+    "docker.io/library/traefik:v3.6.0",
+    "docker.io/grafana/grafana:10.1.5",
+    "docker.io/apache/kvrocks:2.12.1",
+)
+
+_KUBE_RUNTIME_PROBE_SHARE_FILE = "images/image_0.jpg"
+
+
+def _kube_cache_dir() -> Path:
+    path = RuntimeInfraConfig.get_runtime_root_dir() / "kube-cache"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _kube_profile_cache_file(profile: str) -> Path:
+    normalized = re.sub(r"[^a-zA-Z0-9_.-]", "-", profile)
+    return _kube_cache_dir() / f"{normalized}.json"
+
+
+def _load_kube_profile_cache(profile: str) -> dict:
+    path = _kube_profile_cache_file(profile)
+    if not path.exists():
+        return {}
+    try:
+        with open(path) as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except (OSError, JSONDecodeError, TypeError, ValueError):
+        return {}
+
+
+def _save_kube_profile_cache(profile: str, payload: dict) -> None:
+    path = _kube_profile_cache_file(profile)
+    tmp_path = path.with_suffix(".tmp")
+    with open(tmp_path, "w") as f:
+        json.dump(payload, f, indent=2, sort_keys=True)
+    tmp_path.replace(path)
 
 
 def _normalize_release_name(value: str) -> str:
@@ -81,11 +128,11 @@ def _kube_test_release() -> str:
 
 
 def _kube_minio_service() -> str:
-    return _MINIO_SERVICE_SUFFIX
+    return f"{_kube_test_release()}-{_MINIO_SERVICE_SUFFIX}"
 
 
 def _kube_webhook_receiver_service() -> str:
-    return "cvat-webhook-receiver"
+    return f"{_kube_test_release()}-{_WEBHOOK_RECEIVER_SERVICE_SUFFIX}"
 
 
 def _kube_allow_minio_configmap() -> str:
@@ -102,6 +149,16 @@ def _kube_traefik_service() -> str:
 
 def _kube_backend_service() -> str:
     return f"{_kube_release()}-backend-service"
+
+
+def _append_kube_trace(message: str) -> None:
+    try:
+        trace_path = RuntimeInfraConfig.get_run_dir() / "kube-up-trace.log"
+        trace_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(trace_path, "a") as f:
+            f.write(message.rstrip() + "\n")
+    except Exception:
+        logger.debug("Failed to append kube trace", exc_info=True)
 
 
 def _kube_server_image() -> str:
@@ -147,6 +204,63 @@ def _docker_image_id(image_ref: str) -> str:
         return ""
 
 
+def _image_ref_candidates(image_ref: str) -> set[str]:
+    candidates = {image_ref}
+
+    if "/" not in image_ref.split(":", 1)[0]:
+        candidates.add(f"docker.io/library/{image_ref}")
+        candidates.add(f"docker.io/{image_ref}")
+    else:
+        candidates.add(f"docker.io/{image_ref}")
+
+    return candidates
+
+
+def _minikube_cache_images() -> set[str]:
+    try:
+        stdout, _ = run_command(["minikube", "cache", "list"], logger=logger)
+        return {line.strip() for line in stdout.splitlines() if line.strip()}
+    except Exception:
+        return set()
+
+
+def _ensure_static_images_cached(profile: str) -> None:
+    cache = _load_kube_profile_cache(profile)
+    cache_key = "static_infra_images_cached"
+    cached_images = set(cache.get(cache_key, []))
+    actual_cached_images = _minikube_cache_images()
+    target_images = set(_KUBE_STATIC_INFRA_IMAGES) | {
+        f"{_kube_server_image()}:{_kube_image_tag()}",
+        f"{_kube_frontend_image()}:{_kube_image_tag()}",
+    }
+    missing = sorted(target_images - actual_cached_images)
+
+    newly_cached: set[str] = set()
+    for image in missing:
+        logger.info("Caching static kube infra image for minikube: %s", image)
+        try:
+            run_command(["minikube", "cache", "add", image], capture_output=False, logger=logger)
+            newly_cached.add(image)
+        except Exception:
+            logger.warning("Failed to cache static kube infra image: %s", image, exc_info=True)
+
+    updated_cached_images = actual_cached_images | newly_cached
+    if updated_cached_images != cached_images:
+        cache[cache_key] = sorted(updated_cached_images)
+        _save_kube_profile_cache(profile, cache)
+
+
+def _helm_dependency_fingerprint(chart_dir: Path) -> str:
+    digest = hashlib.sha256()
+    for relative_path in ("Chart.yaml", "Chart.lock"):
+        path = chart_dir / relative_path
+        digest.update(relative_path.encode())
+        digest.update(b":")
+        digest.update((_sha256_file(path) if path.exists() else "").encode())
+        digest.update(b"\n")
+    return digest.hexdigest()
+
+
 def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
     chart_dir = cvat_root_dir / "helm-chart"
     test_chart_dir = cvat_root_dir / "tests/k8s/test-chart"
@@ -174,6 +288,7 @@ def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
         "image_tag": _kube_image_tag(),
         "server_image_id": _docker_image_id(server_image_ref),
         "frontend_image_id": _docker_image_id(frontend_image_ref),
+        "helm_dependency_fingerprint": _helm_dependency_fingerprint(chart_dir),
         "cpus": cpus,
         "memory": memory,
         "chart": {
@@ -238,7 +353,12 @@ def preconfigure_kube_runtime_env(config) -> None:
     os.environ["CVAT_TEST_KUBE_SERVER_IMAGE"] = str(config.getoption("--kube-server-image"))
     os.environ["CVAT_TEST_KUBE_FRONTEND_IMAGE"] = str(config.getoption("--kube-frontend-image"))
     os.environ["CVAT_TEST_KUBE_IMAGE_TAG"] = str(config.getoption("--kube-image-tag"))
-    os.environ["CVAT_TEST_INFRA_PROFILE"] = str(config.getoption("--parallel-lane-profile"))
+    if config.getoption("--parallel-child"):
+        os.environ["CVAT_TEST_INFRA_PROFILE"] = str(config.getoption("--parallel-lane-profile"))
+    else:
+        os.environ.setdefault(
+            "CVAT_TEST_INFRA_PROFILE", RuntimeInfraConfig.get_default_infra_profile()
+        )
 
     if infra_mode == InfraMode.DOWN:
         os.environ["CVAT_TEST_RUN_PREFIX"] = run_prefix
@@ -341,12 +461,33 @@ def _use_minikube_context(profile: str) -> None:
     run_command(["minikube", "-p", profile, "update-context"], capture_output=False, logger=logger)
 
 
+def _minikube_profile_running(profile: str) -> bool:
+    try:
+        output, _ = run_command(
+            ["minikube", "-p", profile, "status", "-o", "json"],
+            logger=logger,
+        )
+    except Exception:
+        return False
+
+    try:
+        data = json.loads(output) if output else {}
+    except JSONDecodeError:
+        return False
+
+    return (
+        str(data.get("Host", "")).lower() == "running"
+        and str(data.get("APIServer", "")).lower() == "running"
+        and str(data.get("Kubelet", "")).lower() == "running"
+    )
+
+
 def _start_minikube(*, profile: str, cpus: str, memory: str) -> bool:
     created = False
     if not _minikube_profile_exists(profile):
         created = True
 
-    if not created:
+    if not created and _minikube_profile_running(profile):
         _use_minikube_context(profile)
         if _kube_api_reachable(_kube_context()):
             return False
@@ -366,7 +507,8 @@ def _start_minikube(*, profile: str, cpus: str, memory: str) -> bool:
     if memory:
         command.append(f"--memory={memory}")
 
-    _run_with_retries(command, attempts=2, delay_s=10.0)
+    with profile_external_phase("kube.minikube_start"):
+        _run_with_retries(command, attempts=2, delay_s=10.0)
     _use_minikube_context(profile)
     return created
 
@@ -380,13 +522,52 @@ def _stop_minikube(profile: str) -> None:
 def _load_images_into_minikube(profile: str) -> None:
     backend_ref = f"{_kube_server_image()}:{_kube_image_tag()}"
     frontend_ref = f"{_kube_frontend_image()}:{_kube_image_tag()}"
+    current_images = {
+        "server": {"ref": backend_ref, "id": _docker_image_id(backend_ref)},
+        "frontend": {"ref": frontend_ref, "id": _docker_image_id(frontend_ref)},
+    }
+    cache = _load_kube_profile_cache(profile)
+    cached_images = cache.get("loaded_images", {})
+    try:
+        minikube_images_stdout, _ = run_command(
+            ["minikube", "-p", profile, "image", "ls"],
+            logger=logger,
+        )
+        minikube_images = {line.strip() for line in minikube_images_stdout.splitlines() if line.strip()}
+    except Exception:
+        minikube_images = set()
+
+    for key, image in current_images.items():
+        cached = cached_images.get(key, {})
+        image_ref_candidates = _image_ref_candidates(image["ref"])
+        if (
+            cached.get("ref") == image["ref"]
+            and cached.get("id") == image["id"]
+            and image["id"]
+            and bool(image_ref_candidates & minikube_images)
+        ):
+            logger.info(
+                "Skipping minikube image load for %s (profile=%s, image=%s, id matched cache and image exists in node)",
+                key,
+                profile,
+                image["ref"],
+            )
+            continue
+
+        with profile_external_phase(f"kube.image_load.{key}"):
+            run_command(
+                ["minikube", "image", "load", image["ref"], "-p", profile],
+                capture_output=False,
+                logger=logger,
+            )
+
+    cache["loaded_images"] = current_images
+    _save_kube_profile_cache(profile, cache)
+
+
+def _reload_cached_images_into_minikube(profile: str) -> None:
     run_command(
-        ["minikube", "image", "load", backend_ref, "-p", profile],
-        capture_output=False,
-        logger=logger,
-    )
-    run_command(
-        ["minikube", "image", "load", frontend_ref, "-p", profile],
+        ["minikube", "-p", profile, "cache", "reload"],
         capture_output=False,
         logger=logger,
     )
@@ -427,69 +608,83 @@ def _run_with_retries(command: list[str], *, attempts: int = 4, delay_s: float =
 def _helm_upgrade_install_test_chart(*, cvat_root_dir, release: str, namespace: str) -> None:
     chart_dir = cvat_root_dir / "tests/k8s/test-chart"
     profile_values = _kube_profile_values_file(cvat_root_dir=cvat_root_dir, chart_name="test-chart")
-    run_command(
-        [
-            "helm",
-            "upgrade",
-            "--install",
-            release,
-            str(chart_dir),
-            "-f",
-            str(chart_dir / "values.yaml"),
-            "-f",
-            str(profile_values),
-            "--namespace",
-            namespace,
-            "--create-namespace",
-        ],
-        capture_output=False,
-        logger=logger,
-    )
+    with profile_external_phase("kube.helm_test_chart"):
+        run_command(
+            [
+                "helm",
+                "upgrade",
+                "--install",
+                release,
+                str(chart_dir),
+                "-f",
+                str(chart_dir / "values.yaml"),
+                "-f",
+                str(profile_values),
+                "--namespace",
+                namespace,
+                "--create-namespace",
+            ],
+            capture_output=False,
+            logger=logger,
+        )
 
 
 def _helm_upgrade_install_main_chart(*, cvat_root_dir, release: str, namespace: str) -> None:
     chart_dir = cvat_root_dir / "helm-chart"
     profile_values = _kube_profile_values_file(cvat_root_dir=cvat_root_dir, chart_name="cvat")
-    _run_with_retries(["helm", "dependency", "update", str(chart_dir)])
+    profile = _kube_profile()
+    deps_fingerprint = _helm_dependency_fingerprint(chart_dir)
+    cache = _load_kube_profile_cache(profile)
+    if cache.get("helm_dependency_fingerprint") != deps_fingerprint:
+        with profile_external_phase("kube.helm_dependency_update"):
+            _run_with_retries(["helm", "dependency", "update", str(chart_dir)])
+        cache["helm_dependency_fingerprint"] = deps_fingerprint
+        _save_kube_profile_cache(profile, cache)
+    else:
+        logger.info(
+            "Skipping helm dependency update for profile '%s' (dependency fingerprint matched)",
+            profile,
+        )
 
-    run_command(
-        [
-            "helm",
-            "upgrade",
-            "--install",
-            release,
-            str(chart_dir),
-            "-f",
-            str(chart_dir / "cvat.values.yaml"),
-            "-f",
-            str(cvat_root_dir / "tests/k8s/cvat.test.values.yaml"),
-            "-f",
-            str(profile_values),
-            "--namespace",
-            namespace,
-            "--create-namespace",
-            "--set",
-            f"cvat.backend.image={_kube_server_image()}",
-            "--set",
-            f"cvat.backend.tag={_kube_image_tag()}",
-            "--set",
-            f"cvat.frontend.image={_kube_frontend_image()}",
-            "--set",
-            f"cvat.frontend.tag={_kube_image_tag()}",
-            "--set",
-            "ingress.hostname=localhost",
-            "--set",
-            "ingress.additionalHosts[0]=127.0.0.1",
-            "--set",
-            "traefik.service.type=NodePort",
-            "--set",
-            f"cvat.backend.additionalVolumes[0].configMap.name={_kube_allow_minio_configmap()}",
-            "--set",
-            f"cvat.backend.additionalVolumes[1].configMap.name={_kube_allow_webhook_receiver_configmap()}",
-        ],
-        capture_output=False,
-        logger=logger,
-    )
+    with profile_external_phase("kube.helm_main_chart"):
+        run_command(
+            [
+                "helm",
+                "upgrade",
+                "--install",
+                release,
+                str(chart_dir),
+                "-f",
+                str(chart_dir / "cvat.values.yaml"),
+                "-f",
+                str(cvat_root_dir / "tests/k8s/cvat.test.values.yaml"),
+                "-f",
+                str(profile_values),
+                "--namespace",
+                namespace,
+                "--create-namespace",
+                "--set",
+                f"cvat.backend.image={_kube_server_image()}",
+                "--set",
+                f"cvat.backend.tag={_kube_image_tag()}",
+                "--set",
+                f"cvat.frontend.image={_kube_frontend_image()}",
+                "--set",
+                f"cvat.frontend.tag={_kube_image_tag()}",
+                "--set",
+                "ingress.hostname=localhost",
+                "--set",
+                "ingress.additionalHosts[0]=127.0.0.1",
+                "--set",
+                "traefik.service.type=NodePort",
+                "--set",
+                f"cvat.backend.additionalVolumes[0].configMap.name={_kube_allow_minio_configmap()}",
+                "--set",
+                f"cvat.backend.additionalVolumes[1].configMap.name={_kube_allow_webhook_receiver_configmap()}",
+            ],
+            capture_output=False,
+            logger=logger,
+        )
 
 
 def _helm_uninstall(*, release: str, namespace: str) -> None:
@@ -503,9 +698,15 @@ def _helm_uninstall(*, release: str, namespace: str) -> None:
 
 
 def _wait_for_kube_ready(timeout_s: int = 300) -> None:
+    with profile_external_phase("kube.wait_ready"):
+        _wait_for_kube_ready_inner(timeout_s=timeout_s)
+
+
+def _wait_for_kube_ready_inner(timeout_s: int = 300) -> None:
     def wait_selector(selector: str) -> None:
         deadline = monotonic() + timeout_s
         last_error = ""
+        selector_timeout_s = max(30, min(timeout_s, 180))
         while monotonic() < deadline:
             names = _kubectl(
                 ["get", "pods", "-l", selector, "-o", "jsonpath={.items[*].metadata.name}"]
@@ -525,13 +726,28 @@ def _wait_for_kube_ready(timeout_s: int = 300) -> None:
                         "-l",
                         selector,
                         "--timeout",
-                        "30s",
+                        f"{selector_timeout_s}s",
                     ],
-                    capture_output=False,
+                    capture_output=True,
                 )
                 return
             except Exception as ex:
                 last_error = str(ex)
+                try:
+                    ready_states = _kubectl(
+                        [
+                            "get",
+                            "pods",
+                            "-l",
+                            selector,
+                            "-o",
+                            "jsonpath={range .items[*]}{.metadata.name}={range .status.conditions[*]}{.type}:{.status},{end}{' '}{end}",
+                        ]
+                    )[0].strip()
+                    if ready_states and all("Ready:True" in item for item in ready_states.split()):
+                        return
+                except Exception:
+                    pass
                 sleep(2)
 
         raise RuntimeError(
@@ -744,6 +960,13 @@ class KubeInstance(InfraInstance):
             cpus=cpus,
             memory=memory,
         )
+        _ensure_static_images_cached(profile)
+        if created:
+            run_command(
+                ["minikube", "-p", profile, "cache", "reload"],
+                capture_output=False,
+                logger=logger,
+            )
 
         project_cfg = RuntimeInfraConfig.get_project_config(run_prefix)
         state = project_cfg.load_state() or {}
@@ -846,6 +1069,10 @@ class KubeInstance(InfraInstance):
         return None
 
     def _copy_file_share(self) -> None:
+        with profile_external_phase("kube.copy_file_share"):
+            self._copy_file_share_inner()
+
+    def _copy_file_share_inner(self) -> None:
         mounted_dir = RuntimeInfraConfig.get_cvat_root_dir() / "tests/mounted_file_share"
         if not mounted_dir.exists():
             return
@@ -924,6 +1151,10 @@ class KubeInstance(InfraInstance):
         client.put_bucket_policy(Bucket="public", Policy=json.dumps(policy))
 
     def _seed_minio_test_data(self) -> None:
+        with profile_external_phase("kube.seed_minio"):
+            self._seed_minio_test_data_inner()
+
+    def _seed_minio_test_data_inner(self) -> None:
         minio_service = _kube_minio_service()
         if not _kube_service_exists(minio_service):
             logger.info(
@@ -1116,10 +1347,21 @@ class KubeInstance(InfraInstance):
     def _start_runtime_port_forwards(
         self, *, project_name: str, kube_fingerprint: dict | None = None
     ) -> None:
+        with profile_external_phase("kube.start_port_forwards"):
+            self._start_runtime_port_forwards_inner(
+                project_name=project_name,
+                kube_fingerprint=kube_fingerprint,
+            )
+
+    def _start_runtime_port_forwards_inner(
+        self, *, project_name: str, kube_fingerprint: dict | None = None
+    ) -> None:
         is_parallel_child = bool(self.config.getoption("--parallel-child"))
-        api_service = _kube_backend_service() if is_parallel_child else _kube_traefik_service()
-        api_remote_port = 8080 if is_parallel_child else 80
-        api_log_name = "backend-18080" if is_parallel_child else "traefik-18080"
+        infra_mode = getattr(self.config, "_cvat_infra_mode", InfraMode.AUTO)
+        use_backend_direct = is_parallel_child or infra_mode in {InfraMode.UP, InfraMode.RESTORE_DB}
+        api_service = _kube_backend_service() if use_backend_direct else _kube_traefik_service()
+        api_remote_port = 8080 if use_backend_direct else 80
+        api_log_name = "backend-18080" if use_backend_direct else "traefik-18080"
 
         if not _kube_service_exists(api_service):
             raise RuntimeError(
@@ -1128,9 +1370,10 @@ class KubeInstance(InfraInstance):
             )
 
         # Parallel child lanes talk to the backend service directly so shaped
-        # kube profiles can disable ingress-facing components. The stable
-        # non-parallel kube path keeps using Traefik to preserve the normal
-        # request path exercised by the main suite.
+        # kube profiles can disable ingress-facing components. For infra-only
+        # bootstrap modes we also talk to the backend service directly to keep
+        # Traefik out of the cold-start critical path. Normal non-parallel test
+        # execution continues to use Traefik to preserve the standard request path.
         api_port = self._start_service_port_forward(
             service_name=api_service,
             remote_port=api_remote_port,
@@ -1176,23 +1419,92 @@ class KubeInstance(InfraInstance):
         )
 
     def _restore_from_assets(self) -> None:
+        with profile_external_phase("kube.restore_assets_db"):
+            self._restore_from_assets_inner()
+
+    def _restore_from_assets_inner(self) -> None:
         from infra import health as infra_health
 
-        self.restore_cvat_data()
+        _append_kube_trace("TRACE kube restore: start restore_cvat_data")
+        with profile_external_phase("kube.restore.restore_cvat_data"):
+            self.restore_cvat_data()
+        _append_kube_trace("TRACE kube restore: finished restore_cvat_data")
         server_pod_name = kube_get_server_pod_name()
-        kubectl_cp(
-            self.deps.cvat_db_dir / "data.json",
-            f"{server_pod_name}:/tmp/data.json",
-            context=_kube_context(),
-            namespace=_kube_namespace(),
-            container=_KUBE_SERVER_CONTAINER,
-            logger=logger,
-        )
+        _append_kube_trace(f"TRACE kube restore: start copy data.json to {server_pod_name}")
+        with profile_external_phase("kube.restore.copy_data_json"):
+            kubectl_cp(
+                self.deps.cvat_db_dir / "data.json",
+                f"{server_pod_name}:/tmp/data.json",
+                context=_kube_context(),
+                namespace=_kube_namespace(),
+                container=_KUBE_SERVER_CONTAINER,
+                logger=logger,
+            )
+        _append_kube_trace("TRACE kube restore: finished copy data.json")
 
-        infra_health.wait_for_services(self.deps.waiting_time)
-        self.exec_cvat(["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"])
-        self._get_db_restorer().restore_from_template(source_db="cvat", target_db="test_db")
-        infra_health.wait_for_auth_login_ready()
+        _append_kube_trace("TRACE kube restore: start wait_for_services")
+        with profile_external_phase("kube.restore.wait_for_services"):
+            infra_health.wait_for_services(self.deps.waiting_time)
+        _append_kube_trace("TRACE kube restore: finished wait_for_services")
+        _append_kube_trace("TRACE kube restore: start loaddata")
+        with profile_external_phase("kube.restore.loaddata"):
+            self.exec_cvat(["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"])
+        _append_kube_trace("TRACE kube restore: finished loaddata")
+        _append_kube_trace("TRACE kube restore: start restore_template")
+        with profile_external_phase("kube.restore.restore_template"):
+            self._get_db_restorer().restore_from_template(source_db="cvat", target_db="test_db")
+        _append_kube_trace("TRACE kube restore: finished restore_template")
+        _append_kube_trace("TRACE kube restore: start wait_for_auth_login")
+        with profile_external_phase("kube.restore.wait_for_auth_login"):
+            infra_health.wait_for_auth_login_ready()
+        _append_kube_trace("TRACE kube restore: finished wait_for_auth_login")
+
+    def _probe_runtime_task_data_path(self) -> None:
+        profile = RuntimeInfraConfig.get_infra_profile()
+        if profile == "simple":
+            return
+
+        from rest_api.utils import create_task
+        from shared.utils.helpers import generate_image_files
+
+        def _create_client_task() -> None:
+            create_task(
+                ADMIN_USER,
+                spec={"name": "kube runtime probe client", "labels": [{"name": "probe"}]},
+                data={
+                    "image_quality": 70,
+                    "sorting_method": "natural",
+                    "chunk_size": 1,
+                    "client_files": generate_image_files(1),
+                },
+            )
+
+        def _create_share_task() -> None:
+            create_task(
+                ADMIN_USER,
+                spec={"name": "kube runtime probe share", "labels": [{"name": "probe"}]},
+                data={
+                    "image_quality": 70,
+                    "sorting_method": "natural",
+                    "chunk_size": 1,
+                    "server_files": [_KUBE_RUNTIME_PROBE_SHARE_FILE],
+                },
+            )
+
+        with profile_external_phase("kube.runtime_probe"):
+            _create_client_task()
+            _create_share_task()
+
+    def _prime_runtime_for_tests(self) -> None:
+        profile = RuntimeInfraConfig.get_infra_profile()
+        if profile == "simple":
+            return
+
+        _append_kube_trace(f"TRACE kube runtime probe: start profile={profile}")
+        self._probe_runtime_task_data_path()
+        _append_kube_trace("TRACE kube runtime probe: restore assets after probe")
+        self._restore_from_assets()
+        _append_kube_trace("TRACE kube runtime probe: finished")
 
     def start(self) -> None:
         config = self.config
@@ -1210,7 +1522,10 @@ class KubeInstance(InfraInstance):
             self._close_runtime_port_forwards()
             _helm_uninstall(release=_kube_release(), namespace=_kube_namespace())
             _helm_uninstall(release=_kube_test_release(), namespace=_kube_namespace())
-            if not config.getoption("--parallel-child"):
+            if (
+                not config.getoption("--parallel-child")
+                and config.getoption("--kube-delete-profile")
+            ):
                 _stop_minikube(_kube_profile())
             RuntimeInfraConfig.get_project_config(run_prefix).delete_state()
             pytest.exit("Kubernetes test infrastructure has been stopped", returncode=0)
@@ -1221,12 +1536,17 @@ class KubeInstance(InfraInstance):
             kube_fingerprint = self._ensure_kube_stack(run_prefix=run_prefix)
 
         if infra_mode == InfraMode.UP:
+            _append_kube_trace("TRACE kube infra=up: start runtime port-forwards")
             self._start_runtime_port_forwards(
                 project_name=run_prefix, kube_fingerprint=kube_fingerprint
             )
+            _append_kube_trace("TRACE kube infra=up: start restore_from_assets")
             self._restore_from_assets()
+            _append_kube_trace("TRACE kube infra=up: restore_from_assets finished")
+            self._prime_runtime_for_tests()
             base_url = RuntimeInfraConfig.get_base_url()
             self._print_up_instructions(base_url=base_url)
+            _append_kube_trace("TRACE kube infra=up: exiting successfully")
             pytest.exit("Kubernetes test infrastructure is ready.", returncode=0)
 
         self._start_runtime_port_forwards(
@@ -1254,6 +1574,10 @@ class KubeInstance(InfraInstance):
 
     def restore_db(self) -> None:
         self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")
+
+    def restore_cvat_data(self) -> None:
+        super().restore_cvat_data()
+        self._copy_file_share_inner()
 
     def restore_clickhouse_db(self) -> None:
         self.exec_cvat(["/bin/sh", "-c", f'python "{RuntimeInfraConfig.get_clickhouse_init_script()}" --clear'])
@@ -1553,14 +1877,14 @@ class KubePlugin(InfraPlugin):
         group._addoption(
             "--kube-cpus",
             action="store",
-            default="",
-            help="Optional CPU count passed to `minikube start --cpus`.",
+            default=_DEFAULT_KUBE_CPUS,
+            help="CPU count passed to `minikube start --cpus`. (default: %(default)s)",
         )
         group._addoption(
             "--kube-memory",
             action="store",
-            default="",
-            help="Optional memory amount passed to `minikube start --memory` (e.g. 16g).",
+            default=_DEFAULT_KUBE_MEMORY,
+            help="Memory amount passed to `minikube start --memory` (e.g. 16g). (default: %(default)s)",
         )
         group._addoption(
             "--kube-namespace",
@@ -1575,6 +1899,15 @@ class KubePlugin(InfraPlugin):
             help=(
                 "Helm release name for --platform=kube. "
                 "If empty, it is derived from --run-prefix."
+            ),
+        )
+        group._addoption(
+            "--kube-delete-profile",
+            action="store_true",
+            default=False,
+            help=(
+                "Delete the Minikube profile on --platform=kube --infra=down. "
+                "By default, down only removes Helm releases and keeps the cluster warm."
             ),
         )
         group._addoption(

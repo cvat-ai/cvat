@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 from collections import defaultdict
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
@@ -14,6 +15,21 @@ from typing import Any
 
 import pytest
 from infra.config import RuntimeInfraConfig
+
+_EXTERNAL_PHASE_SECONDS: defaultdict[str, float] = defaultdict(float)
+
+
+def record_external_phase(name: str, duration_s: float) -> None:
+    _EXTERNAL_PHASE_SECONDS[str(name)] += float(duration_s)
+
+
+@contextmanager
+def profile_external_phase(name: str):
+    start = perf_counter()
+    try:
+        yield
+    finally:
+        record_external_phase(name, perf_counter() - start)
 
 
 @dataclass
@@ -42,6 +58,7 @@ class RuntimeProfilerPlugin:
         self._outcomes = defaultdict(int)
 
         self._fixtures: dict[tuple[str, str, str], _FixtureStat] = {}
+        self._written = False
 
     def pytest_collection(self):
         self._collection_start = perf_counter()
@@ -77,7 +94,17 @@ class RuntimeProfilerPlugin:
             self._outcomes[report.outcome] += 1
 
     def pytest_sessionfinish(self, session, exitstatus):
-        _ = exitstatus
+        _ = session, exitstatus
+        self._write_profile()
+
+    def pytest_unconfigure(self, config):
+        _ = config
+        self._write_profile()
+
+    def _write_profile(self) -> None:
+        if self._written:
+            return
+
         run_id = RuntimeInfraConfig.get_run_id()
         run_dir = RuntimeInfraConfig.get_run_dir()
         out_dir = Path(run_dir) / "profiles"
@@ -139,6 +166,7 @@ class RuntimeProfilerPlugin:
                 "pytest_teardown_other": self._reports["teardown"] - fixture_teardown_total,
                 "session_total": total_duration,
             },
+            "external_phase_seconds": dict(sorted(_EXTERNAL_PHASE_SECONDS.items())),
             "report_counts": self._report_counts,
             "outcomes": dict(self._outcomes),
             "fixtures": fixture_rows,
@@ -146,6 +174,7 @@ class RuntimeProfilerPlugin:
 
         with open(out_path, "w") as f:
             json.dump(payload, f, indent=2)
+        self._written = True
 
     @staticmethod
     def _fixture_key(fixturedef) -> tuple[str, str, str]:

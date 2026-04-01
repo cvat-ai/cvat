@@ -3,7 +3,7 @@
 {{- end -}}
 
 {{- define "test-chart.minioServiceName" -}}
-{{ .Values.minio.serviceName }}
+{{ tpl (.Values.minio.serviceName) . }}
 {{- end -}}
 
 {{- define "test-chart.allowMinioConfigMapName" -}}
@@ -15,7 +15,7 @@
 {{- end -}}
 
 {{- define "test-chart.webhookReceiverServiceName" -}}
-{{ .Values.webhookReceiver.serviceName }}
+{{ tpl (.Values.webhookReceiver.serviceName) . }}
 {{- end -}}
 
 {{- define "test-chart.allowWebhookReceiverConfigMapName" -}}

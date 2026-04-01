@@ -28,6 +28,7 @@ from infra.parsing import parse_debug_services
 from infra.system_utils import docker_cp, is_port_free, pick_free_port, run_command
 
 from infra.instances.base_instance import InfraInstance, InfraPlugin
+from infra.profiler import profile_external_phase
 
 logger = logging.getLogger(__name__)
 
@@ -663,6 +664,9 @@ def cleanup_after_session(
     if infra_mode != InfraMode.AUTO:
         return
 
+    if is_parallel_child:
+        return
+
     def should_stop_project(project_name: str) -> bool:
         state = RuntimeInfraConfig.get_project_config(project_name).load_state() or {}
         return bool(state.get("auto_started", False))
@@ -796,17 +800,18 @@ class LocalInstance(InfraInstance):
         container_name_files = project_cfg.generated_compose_files
 
         def restore_databases_from_assets() -> None:
-            self.restore_cvat_data()
-            docker_cp(
-                self.deps.cvat_db_dir / "data.json",
-                f"{prefixed_name('cvat_server')}:/tmp/data.json",
-            )
-            infra_health.wait_for_services(self.deps.waiting_time)
-            self.exec_cvat(
-                ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
-            )
-            self._get_db_restorer().restore_from_template(source_db="cvat", target_db="test_db")
-            infra_health.wait_for_auth_login_ready()
+            with profile_external_phase("local.restore_assets_db"):
+                self.restore_cvat_data()
+                docker_cp(
+                    self.deps.cvat_db_dir / "data.json",
+                    f"{prefixed_name('cvat_server')}:/tmp/data.json",
+                )
+                infra_health.wait_for_services(self.deps.waiting_time)
+                self.exec_cvat(
+                    ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+                )
+                self._get_db_restorer().restore_from_template(source_db="cvat", target_db="test_db")
+                infra_health.wait_for_auth_login_ready()
 
         def set_auto_started(value: bool) -> None:
             state = project_cfg.load_state() or {}
@@ -911,12 +916,13 @@ class LocalInstance(InfraInstance):
 
         if infra_mode == InfraMode.UP:
             if not project_running:
-                start_services(
-                    project_name=project_name,
-                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
-                    dc_files=dc_files,
-                    project_directory=self.deps.cvat_root_dir,
-                )
+                with profile_external_phase("local.compose_up"):
+                    start_services(
+                        project_name=project_name,
+                        default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                        dc_files=dc_files,
+                        project_directory=self.deps.cvat_root_dir,
+                    )
             infra_health.wait_for_services(self.deps.waiting_time)
             restore_databases_from_assets()
             infra_health.wait_for_auth_login_ready()
@@ -924,12 +930,13 @@ class LocalInstance(InfraInstance):
 
         if infra_mode == InfraMode.RESTORE_DB:
             if not project_running:
-                start_services(
-                    project_name=project_name,
-                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
-                    dc_files=dc_files,
-                    project_directory=self.deps.cvat_root_dir,
-                )
+                with profile_external_phase("local.compose_up"):
+                    start_services(
+                        project_name=project_name,
+                        default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                        dc_files=dc_files,
+                        project_directory=self.deps.cvat_root_dir,
+                    )
             restore_databases_from_assets()
             pytest.exit("CVAT database has been restored from test assets.", returncode=0)
 
@@ -938,12 +945,13 @@ class LocalInstance(InfraInstance):
             set_auto_started(not project_running)
 
         if not project_running:
-            start_services(
-                project_name=project_name,
-                default_project_name=RuntimeInfraConfig.get_default_project_name(),
-                dc_files=dc_files,
-                project_directory=self.deps.cvat_root_dir,
-            )
+            with profile_external_phase("local.compose_up"):
+                start_services(
+                    project_name=project_name,
+                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                    dc_files=dc_files,
+                    project_directory=self.deps.cvat_root_dir,
+                )
 
         restore_databases_from_assets()
 
