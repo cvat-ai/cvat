@@ -278,13 +278,13 @@ const componentShortcuts = {
     SWITCH_AUTOMATIC_BORDERING: {
         name: 'Switch snap to contour',
         description: 'Switch automatic snap to contour for polygons and polylines during drawing/editing',
-        sequences: ['ctrl+a'],
+        sequences: [],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
     SWITCH_POINT_SNAP: {
         name: 'Toggle snap to point',
         description: 'Toggle automatic snapping to nearby points',
-        sequences: ['ctrl+p'],
+        sequences: [],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
     NEXT_OBJECT: {

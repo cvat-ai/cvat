@@ -22,6 +22,7 @@ import withVisibilityHandling from './handle-popover-visibility';
 interface StateToProps {
     automaticBordering: boolean;
     pointSnap: boolean;
+    normalizedKeyMap: Record<string, any>;
 }
 
 interface DispatchToProps {
@@ -36,11 +37,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
         settings: {
             workspace: { automaticBordering, pointSnap },
         },
+        shortcuts: { normalizedKeyMap },
     } = state;
 
     return {
         automaticBordering,
         pointSnap,
+        normalizedKeyMap,
     };
 }
 
@@ -55,6 +58,7 @@ function SnapToolsControlComponent(props: Props): JSX.Element {
     const {
         automaticBordering,
         pointSnap,
+        normalizedKeyMap,
         onSwitchAutomaticBordering,
         onSwitchPointSnap,
     } = props;
@@ -72,7 +76,7 @@ function SnapToolsControlComponent(props: Props): JSX.Element {
             </Row>
             <Row justify='start' className='cvat-snap-tools-row'>
                 <Col>
-                    <CVATTooltip title='Snap to contour (Ctrl+A)'>
+                    <CVATTooltip title={`Snap to contour ${normalizedKeyMap.SWITCH_AUTOMATIC_BORDERING}`}>
                         <Button
                             className={
                                 automaticBordering ?
@@ -88,7 +92,7 @@ function SnapToolsControlComponent(props: Props): JSX.Element {
                     </CVATTooltip>
                 </Col>
                 <Col>
-                    <CVATTooltip title='Snap to point (Ctrl+P)'>
+                    <CVATTooltip title={`Snap to point ${normalizedKeyMap.SWITCH_POINT_SNAP}`}>
                         <Button
                             className={
                                 pointSnap ?
