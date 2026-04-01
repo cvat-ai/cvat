@@ -1469,6 +1469,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     onResizing();
 
                     if (this.configuration.pointSnap &&
+                        !this.ctrlPressed &&
                         ['polygon', 'polyline', 'points'].includes(state.shapeType) &&
                         draggedPointIndex !== null &&
                         draggedPointIndex >= 0) {
@@ -1778,7 +1779,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.appendChild(this.attachmentBoard);
 
         // Setup API handlers
-        this.autoborderHandler = new AutoborderHandlerImpl(this.content);
+        this.autoborderHandler = new AutoborderHandlerImpl(this.content, () => this.ctrlPressed);
         this.drawHandler = new DrawHandlerImpl(
             this.onDrawDone,
             this.adoptedContent,
@@ -1787,6 +1788,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.geometry,
             this.configuration,
             () => this.drawnStates,
+            () => this.ctrlPressed,
         );
         this.masksHandler = new MasksHandlerImpl(
             this.onDrawDone,
