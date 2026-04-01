@@ -668,8 +668,10 @@ The path ['foo', 2, 'bar'] can be the item key in the document like this:
 }
 """
 
+
 class OrderStrategy(Protocol):
     def __call__(self, key_path: ObjectKey) -> bool: ...
+
 
 def format_key(key: ObjectKey, *, index_placeholder: str | None = None) -> str:
     def _convert_item(item: str | int) -> str:
@@ -677,7 +679,7 @@ def format_key(key: ObjectKey, *, index_placeholder: str | None = None) -> str:
             item = index_placeholder
         return str(item)
 
-    return ".".join([''] + list(map(_convert_item, key))) or ""
+    return ".".join([""] + list(map(_convert_item, key))) or ""
 
 
 def compare_objects(
