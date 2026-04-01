@@ -82,7 +82,8 @@ def make_shape(
         elif shape_type == ShapeType.POINTS:
             shape["rotation"] = 0
     elif dimension == DimensionType.DIM_3D:
-        points = make_3d_points(base, rotation=rotation)
+        assert -180 <= rotation < 180, "3d cuboid rotation must be within the (-180; 180) range"
+        points = make_3d_points(base, rotation=math.radians(rotation))
         shape = {
             "frame": frame,
             "points": points,
@@ -234,8 +235,8 @@ class TrackManagerTest(TestCase):
         )
 
         shapes = [
-            make_cuboid(0, base=0, rotation=-2 / 8 * math.pi, outside=False),
-            make_cuboid(4, base=4, rotation=2 / 8 * math.pi, outside=True),
+            make_cuboid(0, base=0, rotation=-2 / 8 * 180, outside=False),
+            make_cuboid(4, base=4, rotation=2 / 8 * 180, outside=True),
         ]
         track = make_track(shapes)
         interpolated_shapes = TrackManager.get_interpolated_shapes(
@@ -243,11 +244,11 @@ class TrackManagerTest(TestCase):
         )
 
         expected_shapes = [
-            dict(make_cuboid(0, base=0, rotation=-2 / 8 * math.pi, outside=False), keyframe=True),
-            dict(make_cuboid(1, base=1, rotation=-1 / 8 * math.pi, outside=False), keyframe=False),
-            dict(make_cuboid(2, base=2, rotation=0, outside=False), keyframe=False),
-            dict(make_cuboid(3, base=3, rotation=1 / 8 * math.pi, outside=False), keyframe=False),
-            dict(make_cuboid(4, base=4, rotation=2 / 8 * math.pi, outside=True), keyframe=True),
+            dict(make_cuboid(0, base=0, rotation=-2 / 8 * 180, outside=False), keyframe=True),
+            dict(make_cuboid(1, base=1, rotation=-1 / 8 * 180, outside=False), keyframe=False),
+            dict(make_cuboid(2, base=2, rotation=0 / 8 * 180, outside=False), keyframe=False),
+            dict(make_cuboid(3, base=3, rotation=1 / 8 * 180, outside=False), keyframe=False),
+            dict(make_cuboid(4, base=4, rotation=2 / 8 * 180, outside=True), keyframe=True),
         ]
         self.assertTracksEqual(expected_shapes, interpolated_shapes)
 
