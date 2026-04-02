@@ -78,7 +78,7 @@ export enum ColorBy {
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
-    pointSnap?: boolean;
+    snapToPoint?: boolean;
     adaptiveZoom?: boolean;
     displayAllText?: boolean;
     textFontSize?: number;
@@ -405,7 +405,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             configuration: {
                 smoothImage: true,
                 autoborders: false,
-                pointSnap: false,
+                snapToPoint: false,
                 snapRadius: 10,
                 adaptiveZoom: true,
                 displayAllText: false,
@@ -964,8 +964,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (typeof configuration.autoborders === 'boolean') {
             this.data.configuration.autoborders = configuration.autoborders;
         }
-        if (typeof configuration.pointSnap === 'boolean') {
-            this.data.configuration.pointSnap = configuration.pointSnap;
+        if (typeof configuration.snapToPoint === 'boolean') {
+            this.data.configuration.snapToPoint = configuration.snapToPoint;
         }
         if (typeof configuration.snapRadius === 'number' && configuration.snapRadius > 0) {
             this.data.configuration.snapRadius = configuration.snapRadius;
