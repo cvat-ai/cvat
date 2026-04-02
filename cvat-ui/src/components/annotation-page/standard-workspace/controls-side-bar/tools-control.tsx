@@ -994,6 +994,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 ));
         } else {
             objects = objectsToConstruct
+                .filter(({ rle }) => rle.length >= 6) // minimal RLE length for a valid shape
                 .map(({ rle }) => (
                     new core.classes.ObjectState({
                         shapeType: ShapeType.MASK,
