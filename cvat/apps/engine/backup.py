@@ -286,6 +286,7 @@ class _TaskBackupBase(_BackupBase):
             "attributes",
             "shapes",
             "elements",
+            "score",
         }
 
         def _update_attribute(attribute, label):
