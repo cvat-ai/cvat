@@ -19,7 +19,7 @@ from enum import Enum
 from logging import Logger
 from pathlib import Path, PurePath
 from typing import Any, ClassVar
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 
 import rapidjson
 from django.conf import settings
@@ -786,7 +786,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME)
-        with zip_object.open(target_annotations_file, "w") as f:
+        with zip_object.open(
+            # without this, the file will have the default timestamp (1980-01-01)
+            ZipInfo(target_annotations_file, date_time=timezone.now().timetuple()),
+            "w"
+        ) as f:
             rapidjson.dump(annotations, f)
 
     def _export_task(self, zip_obj: ZipFile, target_dir: str) -> None:
