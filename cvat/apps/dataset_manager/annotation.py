@@ -174,7 +174,7 @@ class AnnotationIR:
 
     @staticmethod
     def _is_interval_inside(interval: dict[str, Any], start: int, stop: int) -> bool:
-        return interval.start >= start and interval.stop <= stop
+        return interval["start"] >= start and interval["stop"] <= stop
 
     def slice(self, start, stop):
         assert not self.is_stream, "Not allowed to slice when streaming"
@@ -200,6 +200,7 @@ class AnnotationIR:
                     raise Exception(
                         f"Interval {interval.id} cannot be sliced to the [{start}, {stop}] range"
                     )
+            splitted_data.intervals = deepcopy(self.intervals)
 
         return splitted_data
 
