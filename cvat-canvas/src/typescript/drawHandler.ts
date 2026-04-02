@@ -23,6 +23,8 @@ import {
     makeSVGFromTemplate,
     setupSkeletonEdges,
     translateFromCanvas,
+    DrawnState,
+    applySnapToShapePoint,
 } from './shared';
 import Crosshair from './crosshair';
 import consts from './consts';
@@ -105,12 +107,14 @@ export class DrawHandlerImpl implements DrawHandler {
     private crosshair: Crosshair;
     private drawData: DrawData | null;
     private geometry: Geometry;
+    private configuration: Configuration;
     private autoborderHandler: AutoborderHandler;
     private autobordersEnabled: boolean;
     private controlPointsSize: number;
     private selectedShapeOpacity: number;
     private outlinedBorders: string;
     private isHidden: boolean;
+    private getDrawnStates: (() => Record<number, DrawnState>) | null;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -586,7 +590,30 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.drawInstance.on('drawstart', sizeDecrement);
         this.drawInstance.on('drawpoint', sizeDecrement);
-        this.drawInstance.on('drawupdate', (): void => this.transform(this.geometry));
+        this.drawInstance.on('drawupdate', (): void => {
+            this.transform(this.geometry);
+
+            if (this.configuration.pointSnap &&
+                ['polygon', 'polyline'].includes(this.drawData.shapeType) &&
+                this.getDrawnStates) {
+                const pointsArray = (this.drawInstance as any).array().valueOf();
+
+                if (pointsArray.length > 0) {
+                    const lastIndex = pointsArray.length - 1;
+                    const snapRadius = this.configuration.snapRadius / this.geometry.scale;
+                    const drawnStates = this.getDrawnStates();
+
+                    applySnapToShapePoint(
+                        this.drawInstance,
+                        lastIndex,
+                        drawnStates,
+                        this.geometry.offset,
+                        snapRadius,
+                        this.drawData.redraw,
+                    );
+                }
+            }
+        });
         this.drawInstance.on('undopoint', (): number => size++);
 
         // Add ability to cancel the latest drawn point
@@ -1276,8 +1303,10 @@ export class DrawHandlerImpl implements DrawHandler {
         autoborderHandler: AutoborderHandler,
         geometry: Geometry,
         configuration: Configuration,
+        getDrawnStates: () => Record<number, DrawnState>,
     ) {
         this.autoborderHandler = autoborderHandler;
+        this.configuration = configuration;
         this.controlPointsSize = configuration.controlPointsSize;
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
         this.outlinedBorders = configuration.outlinedBorders || 'black';
@@ -1294,6 +1323,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.crosshair = new Crosshair();
         this.drawInstance = null;
         this.pointsGroup = null;
+        this.getDrawnStates = getDrawnStates;
         this.cursorPosition = {
             x: 0,
             y: 0,
@@ -1324,6 +1354,7 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     public configure(configuration: Configuration): void {
+        this.configuration = configuration;
         this.controlPointsSize = configuration.controlPointsSize;
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
         this.outlinedBorders = configuration.outlinedBorders || 'black';

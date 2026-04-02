@@ -1740,7 +1740,7 @@ Cypress.Commands.add('joinShapes', (
     interactWithTool();
 
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains('Click masks you would like to join').should('exist');
+        cy.contains(/Click .* you would like to join/).should('exist');
     });
 
     for (const [index, object] of objects.entries()) {

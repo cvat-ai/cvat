@@ -116,29 +116,39 @@ export function getModelsAsync(query?: ModelsQuery): ThunkAction {
     };
 }
 
-interface InferenceMeta {
-    taskID: number;
-    requestID: string;
-    functionID: string | number;
-}
+function listen(
+    functionRequest: Awaited<ReturnType<typeof core.lambda.requests>>[number],
+    dispatch: (action: ModelsActions) => void,
+): void {
+    const {
+        id, function: func, status, progress, exc_info: error,
+    } = functionRequest;
+    const { task: taskID, id: functionID } = func;
 
-function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) => void): void {
-    const { taskID, requestID, functionID } = inferenceMeta;
+    dispatch(
+        modelsActions.getInferenceStatusSuccess(taskID, {
+            status,
+            progress: progress ?? (status === RQStatus.FINISHED ? 100 : 0),
+            functionID,
+            error,
+            id,
+        }),
+    );
 
     core.lambda
-        .listen(requestID, functionID, (status: RQStatus, progress: number, message?: string) => {
-            if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
+        .listen(id, (_status: RQStatus, _progress: number, message?: string) => {
+            if (_status === RQStatus.FAILED || _status === RQStatus.UNKNOWN) {
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
                         taskID,
                         {
-                            status,
-                            progress,
+                            status: _status,
+                            progress: _progress,
                             functionID,
                             error: message as string,
-                            id: requestID,
+                            id,
                         },
-                        new Error(`Inference status for the task ${taskID} is ${status}. ${message}`),
+                        new Error(`Inference status for the task ${taskID} is ${_status}. ${message}`),
                     ),
                 );
 
@@ -147,23 +157,24 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
 
             dispatch(
                 modelsActions.getInferenceStatusSuccess(taskID, {
-                    status,
-                    progress,
+                    status: _status,
+                    progress: _progress,
                     functionID,
                     error: message as string,
-                    id: requestID,
+                    id,
                 }),
             );
         })
-        .catch((error: Error) => {
+        .catch((e: unknown) => {
+            const msg = e instanceof Error ? e.message : String(e);
             dispatch(
                 modelsActions.getInferenceStatusFailed(taskID, {
                     status: RQStatus.UNKNOWN,
                     progress: 0,
-                    error: error.toString(),
-                    id: requestID,
+                    error: msg,
+                    id,
                     functionID,
-                }, error),
+                }, e instanceof Error ? e : new Error(msg)),
             );
         });
 }
@@ -180,15 +191,10 @@ export function getInferenceStatusAsync(): ThunkAction {
             const requests = await core.lambda.requests();
             const newListenedIDs: Record<string, boolean> = {};
             requests
-                .map((request: any): object => ({
-                    taskID: +request.function.task,
-                    requestID: request.id,
-                    functionID: request.function.id,
-                }))
-                .forEach((inferenceMeta: InferenceMeta): void => {
-                    if (!(inferenceMeta.requestID in requestedInferenceIDs)) {
-                        listen(inferenceMeta, dispatchCallback);
-                        newListenedIDs[inferenceMeta.requestID] = true;
+                .forEach((functionRequest): void => {
+                    if (!(functionRequest.id in requestedInferenceIDs)) {
+                        listen(functionRequest, dispatchCallback);
+                        newListenedIDs[functionRequest.id] = true;
                     }
                 });
             dispatch(modelsActions.getInferencesSuccess(newListenedIDs));
@@ -201,20 +207,13 @@ export function getInferenceStatusAsync(): ThunkAction {
 export function startInferenceAsync(taskId: number, model: MLModel, body: object): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
-            const requestID: string = await core.lambda.run(taskId, model, body);
+            const functionRequest = await core.lambda.run(taskId, model, body);
             const dispatchCallback = (action: ModelsActions): void => {
                 dispatch(action);
             };
 
-            listen(
-                {
-                    taskID: taskId,
-                    functionID: model.id,
-                    requestID,
-                },
-                dispatchCallback,
-            );
-            dispatch(modelsActions.getInferencesSuccess({ [requestID]: true }));
+            listen(functionRequest, dispatchCallback);
+            dispatch(modelsActions.getInferencesSuccess({ [functionRequest.id]: true }));
         } catch (error) {
             dispatch(modelsActions.startInferenceFailed(taskId, error));
         }
@@ -225,7 +224,7 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
         try {
             const inference = getState().models.inferences[taskID];
-            await core.lambda.cancel(inference.id, inference.functionID);
+            await core.lambda.cancel(inference.id);
             dispatch(modelsActions.cancelInferenceSuccess(taskID, inference));
         } catch (error) {
             dispatch(modelsActions.cancelInferenceFailed(taskID, error));

@@ -1312,7 +1312,7 @@ export function groupAnnotationsAsync(statesToGroup: any[]): ThunkAction {
 
 export function joinAnnotationsAsync(
     statesToJoin: CombinedState['annotation']['annotations']['states'],
-    points: number[],
+    points: number[][],
 ): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         try {

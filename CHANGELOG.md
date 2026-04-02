@@ -16,6 +16,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.61.0'></a>
+## \[2.61.0\] - 2026-03-20
+
+### Added
+
+- "Snap to point" feature for polygon and polyline editing. While enabled,
+  points being moved or drawn will automatically snap to nearby points from other shapes
+  (<https://github.com/cvat-ai/cvat/pull/10353>)
+
+- Join tool now supports polygon shapes, allowing to merge multiple
+  polygons into a single unified polygon.
+  (<https://github.com/cvat-ai/cvat/pull/10362>)
+
+### Changed
+
+- Minor visual improvements on the controls sidebar
+  (<https://github.com/cvat-ai/cvat/pull/10374>)
+
+### Fixed
+
+- Helm modifiable permissionFix paths and command
+  (<https://github.com/cvat-ai/cvat/pull/7932>)
+
 <a id='changelog-2.60.0'></a>
 ## \[2.60.0\] - 2026-03-17
 

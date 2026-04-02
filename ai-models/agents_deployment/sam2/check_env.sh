@@ -51,6 +51,15 @@ resolve_cuda() {
     fi
 }
 
+resolve_function_name() {
+    if [ -z "$FUNCTION_NAME" ]; then
+        echo "Warning: FUNCTION_NAME environment variable not found. Default is SAM2"
+        FUNCTION_NAME="SAM2"
+    else
+        echo "Using FUNCTION_NAME: $FUNCTION_NAME"
+    fi
+}
+
 common_env() {
     validate_access_token
     resolve_base_url
