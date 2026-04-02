@@ -23,7 +23,6 @@ export interface Props {
 const CustomPopover = withVisibilityHandling(Popover, 'draw-polyline');
 function DrawPolylineControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
-    const tooltip = isDrawing ? 'Draw a polyline' : 'Draw a polyline (shape or track)';
     const dynamicPopoverProps = isDrawing ? {
         overlayStyle: {
             display: 'none',
@@ -48,7 +47,7 @@ function DrawPolylineControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.POLYLINE} />}
         >
-            <CVATTooltip title={tooltip} placement='right'>
+            <CVATTooltip title='Draw a polyline' placement='right'>
                 <Icon {...dynamicIconProps} component={PolylineIcon} />
             </CVATTooltip>
         </CustomPopover>

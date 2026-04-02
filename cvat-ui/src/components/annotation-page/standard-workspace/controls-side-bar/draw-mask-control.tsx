@@ -23,7 +23,6 @@ export interface Props {
 const CustomPopover = withVisibilityHandling(Popover, 'draw-mask');
 function DrawMaskControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
-    const tooltip = 'Draw a mask';
     const dynamicPopoverProps = isDrawing ? {
         overlayStyle: {
             display: 'none',
@@ -48,7 +47,7 @@ function DrawMaskControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.MASK} />}
         >
-            <CVATTooltip title={tooltip} placement='right'>
+            <CVATTooltip title='Draw a mask' placement='right'>
                 <Icon {...dynamicIconProps} component={BrushIcon} />
             </CVATTooltip>
         </CustomPopover>

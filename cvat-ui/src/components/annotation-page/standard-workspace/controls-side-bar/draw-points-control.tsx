@@ -23,7 +23,6 @@ export interface Props {
 const CustomPopover = withVisibilityHandling(Popover, 'draw-points');
 function DrawPointsControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
-    const tooltip = isDrawing ? 'Draw points' : 'Draw points (shape or track)';
     const dynamicPopoverProps = isDrawing ? {
         overlayStyle: {
             display: 'none',
@@ -48,7 +47,7 @@ function DrawPointsControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.POINTS} />}
         >
-            <CVATTooltip title={tooltip} placement='right'>
+            <CVATTooltip title='Draw points' placement='right'>
                 <Icon {...dynamicIconProps} component={PointIcon} />
             </CVATTooltip>
         </CustomPopover>

@@ -23,7 +23,6 @@ export interface Props {
 const CustomPopover = withVisibilityHandling(Popover, 'draw-rectangle');
 function DrawRectangleControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
-    const tooltip = isDrawing ? 'Draw a rectangle' : 'Draw a rectangle (shape or track)';
     const dynamicPopoverProps = isDrawing ? {
         overlayStyle: {
             display: 'none',
@@ -48,7 +47,7 @@ function DrawRectangleControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.RECTANGLE} />}
         >
-            <CVATTooltip title={tooltip} placement='right'>
+            <CVATTooltip title='Draw a rectangle' placement='right'>
                 <Icon {...dynamicIconProps} component={RectangleIcon} />
             </CVATTooltip>
         </CustomPopover>
