@@ -756,7 +756,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         with zip_object.open(
             # without this, the file will have the default timestamp (1980-01-01)
             ZipInfo(target_annotations_file, date_time=timezone.now().timetuple()),
-            "w"
+            "w",
         ) as f:
             rapidjson.dump(annotations, f)
 
