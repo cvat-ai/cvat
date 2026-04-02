@@ -772,9 +772,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
 
 class _ImporterBase:
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     @staticmethod
     def _read_version(manifest):
         version = manifest.pop("version")
