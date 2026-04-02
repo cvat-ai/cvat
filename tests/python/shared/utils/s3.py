@@ -70,10 +70,24 @@ class S3Client:
 
         self._call_with_retry(_put_object)
 
-    def remove_file(self, filename: str, *, bucket: str | None = None):
+    def remove_file(
+        self,
+        filename: str,
+        *,
+        bucket: str | None = None,
+        ignore_clock_skew: bool = False,
+    ):
         bucket = bucket or self.bucket
         assert bucket
-        self._call_with_retry(lambda: self.client.delete_object(Bucket=bucket, Key=filename))
+        try:
+            self._call_with_retry(lambda: self.client.delete_object(Bucket=bucket, Key=filename))
+        except ClientError as e:
+            # Some long-running test sessions hit transient host/container clock skew during
+            # finalizer cleanup. Allow cleanup-only callers to ignore that noise without
+            # masking normal S3 operation failures.
+            if ignore_clock_skew and self._is_clock_skew_error(e):
+                return
+            raise
 
     def file_exists(self, filename: str, *, bucket: str | None = None) -> bool:
         bucket = bucket or self.bucket

@@ -11,11 +11,12 @@ from json import JSONDecodeError
 from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
 from time import monotonic, sleep
+from urllib.parse import urlsplit
 
 import boto3
 import pytest
 
-from infra.config import InfraMode, RuntimeInfraConfig
+from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.db_restore import PsycopgDatabaseRestorer
 from infra.debug.host_debug import maybe_wait_for_vscode_attach
 from infra.instances.base_instance import InfraInstance, InfraPlugin
@@ -55,9 +56,6 @@ _KUBE_STATIC_INFRA_IMAGES = (
     "docker.io/grafana/grafana:10.1.5",
     "docker.io/apache/kvrocks:2.12.1",
 )
-
-_KUBE_RUNTIME_PROBE_SHARE_FILE = "images/image_0.jpg"
-
 
 def _kube_cache_dir() -> Path:
     path = RuntimeInfraConfig.get_runtime_root_dir() / "kube-cache"
@@ -128,11 +126,11 @@ def _kube_test_release() -> str:
 
 
 def _kube_minio_service() -> str:
-    return f"{_kube_test_release()}-{_MINIO_SERVICE_SUFFIX}"
+    return _MINIO_SERVICE_SUFFIX
 
 
 def _kube_webhook_receiver_service() -> str:
-    return f"{_kube_test_release()}-{_WEBHOOK_RECEIVER_SERVICE_SUFFIX}"
+    return _WEBHOOK_RECEIVER_SERVICE_SUFFIX
 
 
 def _kube_allow_minio_configmap() -> str:
@@ -336,6 +334,24 @@ def _configure_kube_runtime_env(*, project_name: str, base_url: str, minio_endpo
         logger.debug("Failed to refresh shared.utils.config runtime values", exc_info=True)
 
 
+def _can_reuse_localhost_url(value: str) -> bool:
+    # Saved kube runtime state may point at an old localhost port-forward from a previous
+    # run. Reusing a dead localhost URL poisons config before the new stack is started.
+    try:
+        parsed = urlsplit(value)
+    except Exception:
+        return False
+
+    if parsed.scheme != "http" or parsed.hostname not in {"localhost", "127.0.0.1"}:
+        return False
+
+    port = parsed.port
+    if not port:
+        return False
+
+    return not is_port_free(port, logger=logger)
+
+
 def preconfigure_kube_runtime_env(config) -> None:
     if config.getoption("--platform") != "kube":
         return
@@ -353,12 +369,7 @@ def preconfigure_kube_runtime_env(config) -> None:
     os.environ["CVAT_TEST_KUBE_SERVER_IMAGE"] = str(config.getoption("--kube-server-image"))
     os.environ["CVAT_TEST_KUBE_FRONTEND_IMAGE"] = str(config.getoption("--kube-frontend-image"))
     os.environ["CVAT_TEST_KUBE_IMAGE_TAG"] = str(config.getoption("--kube-image-tag"))
-    if config.getoption("--parallel-child"):
-        os.environ["CVAT_TEST_INFRA_PROFILE"] = str(config.getoption("--parallel-lane-profile"))
-    else:
-        os.environ.setdefault(
-            "CVAT_TEST_INFRA_PROFILE", RuntimeInfraConfig.get_default_infra_profile()
-        )
+    os.environ.setdefault("CVAT_TEST_INFRA_PROFILE", str(InfraProfile.FULL))
 
     if infra_mode == InfraMode.DOWN:
         os.environ["CVAT_TEST_RUN_PREFIX"] = run_prefix
@@ -366,8 +377,12 @@ def preconfigure_kube_runtime_env(config) -> None:
 
     project_cfg = RuntimeInfraConfig.get_project_config(run_prefix)
     state = project_cfg.load_state() or {}
-    base_url = str(state.get("base_url") or "http://localhost:8080")
-    minio_endpoint_url = str(state.get("minio_endpoint_url") or "http://localhost:9000")
+    base_url = str(state.get("base_url") or "")
+    minio_endpoint_url = str(state.get("minio_endpoint_url") or "")
+    if not _can_reuse_localhost_url(base_url):
+        base_url = "http://localhost:8080"
+    if not _can_reuse_localhost_url(minio_endpoint_url):
+        minio_endpoint_url = "http://localhost:9000"
     _configure_kube_runtime_env(
         project_name=run_prefix,
         base_url=base_url,
@@ -1356,9 +1371,8 @@ class KubeInstance(InfraInstance):
     def _start_runtime_port_forwards_inner(
         self, *, project_name: str, kube_fingerprint: dict | None = None
     ) -> None:
-        is_parallel_child = bool(self.config.getoption("--parallel-child"))
         infra_mode = getattr(self.config, "_cvat_infra_mode", InfraMode.AUTO)
-        use_backend_direct = is_parallel_child or infra_mode in {InfraMode.UP, InfraMode.RESTORE_DB}
+        use_backend_direct = infra_mode in {InfraMode.UP, InfraMode.RESTORE_DB}
         api_service = _kube_backend_service() if use_backend_direct else _kube_traefik_service()
         api_remote_port = 8080 if use_backend_direct else 80
         api_log_name = "backend-18080" if use_backend_direct else "traefik-18080"
@@ -1369,11 +1383,10 @@ class KubeInstance(InfraInstance):
                 f"in namespace '{_kube_namespace()}'"
             )
 
-        # Parallel child lanes talk to the backend service directly so shaped
-        # kube profiles can disable ingress-facing components. For infra-only
-        # bootstrap modes we also talk to the backend service directly to keep
-        # Traefik out of the cold-start critical path. Normal non-parallel test
-        # execution continues to use Traefik to preserve the standard request path.
+        # For infra-only bootstrap modes we talk to the backend service directly
+        # to keep Traefik out of the cold-start critical path. Normal
+        # non-parallel test execution continues to use Traefik to preserve the
+        # standard request path.
         api_port = self._start_service_port_forward(
             service_name=api_service,
             remote_port=api_remote_port,
@@ -1459,53 +1472,6 @@ class KubeInstance(InfraInstance):
             infra_health.wait_for_auth_login_ready()
         _append_kube_trace("TRACE kube restore: finished wait_for_auth_login")
 
-    def _probe_runtime_task_data_path(self) -> None:
-        profile = RuntimeInfraConfig.get_infra_profile()
-        if profile == "simple":
-            return
-
-        from rest_api.utils import create_task
-        from shared.utils.helpers import generate_image_files
-
-        def _create_client_task() -> None:
-            create_task(
-                ADMIN_USER,
-                spec={"name": "kube runtime probe client", "labels": [{"name": "probe"}]},
-                data={
-                    "image_quality": 70,
-                    "sorting_method": "natural",
-                    "chunk_size": 1,
-                    "client_files": generate_image_files(1),
-                },
-            )
-
-        def _create_share_task() -> None:
-            create_task(
-                ADMIN_USER,
-                spec={"name": "kube runtime probe share", "labels": [{"name": "probe"}]},
-                data={
-                    "image_quality": 70,
-                    "sorting_method": "natural",
-                    "chunk_size": 1,
-                    "server_files": [_KUBE_RUNTIME_PROBE_SHARE_FILE],
-                },
-            )
-
-        with profile_external_phase("kube.runtime_probe"):
-            _create_client_task()
-            _create_share_task()
-
-    def _prime_runtime_for_tests(self) -> None:
-        profile = RuntimeInfraConfig.get_infra_profile()
-        if profile == "simple":
-            return
-
-        _append_kube_trace(f"TRACE kube runtime probe: start profile={profile}")
-        self._probe_runtime_task_data_path()
-        _append_kube_trace("TRACE kube runtime probe: restore assets after probe")
-        self._restore_from_assets()
-        _append_kube_trace("TRACE kube runtime probe: finished")
-
     def start(self) -> None:
         config = self.config
         if config.getoption("--collect-only"):
@@ -1522,10 +1488,7 @@ class KubeInstance(InfraInstance):
             self._close_runtime_port_forwards()
             _helm_uninstall(release=_kube_release(), namespace=_kube_namespace())
             _helm_uninstall(release=_kube_test_release(), namespace=_kube_namespace())
-            if (
-                not config.getoption("--parallel-child")
-                and config.getoption("--kube-delete-profile")
-            ):
+            if config.getoption("--kube-delete-profile"):
                 _stop_minikube(_kube_profile())
             RuntimeInfraConfig.get_project_config(run_prefix).delete_state()
             pytest.exit("Kubernetes test infrastructure has been stopped", returncode=0)
@@ -1543,7 +1506,6 @@ class KubeInstance(InfraInstance):
             _append_kube_trace("TRACE kube infra=up: start restore_from_assets")
             self._restore_from_assets()
             _append_kube_trace("TRACE kube infra=up: restore_from_assets finished")
-            self._prime_runtime_for_tests()
             base_url = RuntimeInfraConfig.get_base_url()
             self._print_up_instructions(base_url=base_url)
             _append_kube_trace("TRACE kube infra=up: exiting successfully")

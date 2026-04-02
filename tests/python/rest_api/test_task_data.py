@@ -579,6 +579,7 @@ class TestPostTaskData:
                 partial(
                     s3_client.remove_file,
                     filename=f"test/video/{video.name}",
+                    ignore_clock_skew=True,
                 )
             )
         else:
@@ -599,6 +600,7 @@ class TestPostTaskData:
                         partial(
                             s3_client.remove_file,
                             filename=f"test/sub_{i}/{image.name}",
+                            ignore_clock_skew=True,
                         )
                     )
 
@@ -623,6 +625,7 @@ class TestPostTaskData:
                         partial(
                             s3_client.remove_file,
                             filename="test/manifest.jsonl",
+                            ignore_clock_skew=True,
                         )
                     )
         task_spec = {
@@ -844,6 +847,7 @@ class TestPostTaskData:
                     s3_client.remove_file,
                     bucket=cloud_storage["resource"],
                     filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
+                    ignore_clock_skew=True,
                 )
             )
 
@@ -866,6 +870,7 @@ class TestPostTaskData:
                             s3_client.remove_file,
                             bucket=cloud_storage["resource"],
                             filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                            ignore_clock_skew=True,
                         )
                     )
 

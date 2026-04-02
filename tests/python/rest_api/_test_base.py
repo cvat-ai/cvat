@@ -320,7 +320,9 @@ class TestTasksBase:
             image.seek(0)
 
             s3_client.create_file(data=image, filename=image.name)
-            request.addfinalizer(partial(s3_client.remove_file, filename=image.name))
+            request.addfinalizer(
+                partial(s3_client.remove_file, filename=image.name, ignore_clock_skew=True)
+            )
 
         server_files = [f.name for f in image_files]
 
@@ -423,7 +425,9 @@ class TestTasksBase:
 
         def _upload_file(file: io.RawIOBase):
             s3_client.create_file(data=file, filename=file.name)
-            request.addfinalizer(partial(s3_client.remove_file, filename=file.name))
+            request.addfinalizer(
+                partial(s3_client.remove_file, filename=file.name, ignore_clock_skew=True)
+            )
 
         related_files = []
 

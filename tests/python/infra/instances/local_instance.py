@@ -5,6 +5,7 @@
 import logging
 import os
 import re
+import json
 from pathlib import Path
 from subprocess import CalledProcessError, run
 from time import sleep
@@ -183,9 +184,7 @@ def preconfigure_local_runtime_env(config) -> None:
     if config.getoption("--parallel-child"):
         os.environ["CVAT_TEST_INFRA_PROFILE"] = config.getoption("--parallel-lane-profile")
     else:
-        os.environ.setdefault(
-            "CVAT_TEST_INFRA_PROFILE", RuntimeInfraConfig.get_default_infra_profile()
-        )
+        os.environ.setdefault("CVAT_TEST_INFRA_PROFILE", str(InfraProfile.FULL))
 
     if config.getoption("--platform") != "local":
         return
@@ -272,9 +271,37 @@ def local_exec(container, command, capture_output=True):
     )[0]
 
 
+def _docker_socket_path() -> str:
+    # `docker ps` can become a bottleneck or hang under heavy test churn. Querying the
+    # engine API over the local socket keeps local stack discovery cheap and reliable.
+    for path in ("/var/run/docker.sock", os.path.expanduser("~/.docker/run/docker.sock")):
+        if os.path.exists(path):
+            return path
+    raise FileNotFoundError("Docker socket not found")
+
+
+def _docker_api_list_containers() -> list[dict]:
+    stdout, _ = run_command(
+        [
+            "curl",
+            "--silent",
+            "--show-error",
+            "--unix-socket",
+            _docker_socket_path(),
+            "http://localhost/containers/json",
+        ],
+        logger=logger,
+    )
+    return json.loads(stdout)
+
+
 def running_containers() -> list[str]:
-    stdout, _ = run_command("docker ps --format {{.Names}}", logger=logger)
-    return [cn for cn in stdout.split("\n") if cn]
+    containers = []
+    for container in _docker_api_list_containers():
+        names = container.get("Names") or []
+        for name in names:
+            containers.append(name.lstrip("/"))
+    return containers
 
 
 def project_containers_running(project_name: str) -> bool:
@@ -359,34 +386,35 @@ def dump_db(*, prefixed_container_name, cvat_db_dir: Path) -> None:
 
 def project_host_ports(project_name: str) -> set[int]:
     ports: set[int] = set()
-    output, _ = run_command(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"], logger=logger)
-    for line in output.splitlines():
-        if not line.startswith(f"{project_name}_"):
+    for container in _docker_api_list_containers():
+        names = [name.lstrip("/") for name in container.get("Names") or []]
+        if not any(name.startswith(f"{project_name}_") for name in names):
             continue
-        for match in re.finditer(r":(\d+)->", line):
-            ports.add(int(match.group(1)))
+        for port in container.get("Ports") or []:
+            public_port = port.get("PublicPort")
+            if public_port is not None:
+                ports.add(int(public_port))
     return ports
 
 
 def project_service_port_map(project_name: str) -> dict[str, dict[int, int]]:
     service_ports: dict[str, dict[int, int]] = {}
-    output, _ = run_command(["docker", "ps", "--format", "{{.Names}} {{.Ports}}"], logger=logger)
-    for line in output.splitlines():
-        if not line.startswith(f"{project_name}_"):
+    for container in _docker_api_list_containers():
+        names = [name.lstrip("/") for name in container.get("Names") or []]
+        container_name = next((name for name in names if name.startswith(f"{project_name}_")), None)
+        if not container_name:
             continue
-        parts = line.split(maxsplit=1)
-        if not parts:
-            continue
-        container_name = parts[0]
-        ports_part = parts[1] if len(parts) > 1 else ""
         prefix = f"{project_name}_"
         suffix = "_1"
         if not (container_name.startswith(prefix) and container_name.endswith(suffix)):
             continue
         service = container_name[len(prefix) : -len(suffix)]
         port_map = service_ports.setdefault(service, {})
-        for match in re.finditer(r":(\d+)->(\d+)/tcp", ports_part):
-            port_map[int(match.group(2))] = int(match.group(1))
+        for port in container.get("Ports") or []:
+            public_port = port.get("PublicPort")
+            private_port = port.get("PrivatePort")
+            if public_port is not None and private_port is not None and port.get("Type") == "tcp":
+                port_map[int(private_port)] = int(public_port)
     return service_ports
 
 
@@ -923,7 +951,7 @@ class LocalInstance(InfraInstance):
                         dc_files=dc_files,
                         project_directory=self.deps.cvat_root_dir,
                     )
-            infra_health.wait_for_services(self.deps.waiting_time)
+                    infra_health.wait_for_services(self.deps.waiting_time)
             restore_databases_from_assets()
             infra_health.wait_for_auth_login_ready()
             pytest.exit("All necessary containers have been created and started.", returncode=0)

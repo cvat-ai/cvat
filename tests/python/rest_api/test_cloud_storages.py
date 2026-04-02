@@ -716,6 +716,7 @@ class TestGetCloudStorageContent:
             partial(
                 s3_client.remove_file,
                 filename=new_directory,
+                ignore_clock_skew=True,
             )
         )
 

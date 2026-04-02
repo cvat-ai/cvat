@@ -86,7 +86,11 @@ class TestDatasetExport:
                 "resource"
             ]
             s3_client = make_s3_client(bucket=bucket)
-            request.addfinalizer(lambda: s3_client.remove_file(filename=str(file_path)))
+            request.addfinalizer(
+                lambda: s3_client.remove_file(
+                    filename=str(file_path), ignore_clock_skew=True
+                )
+            )
             self._test_export_to_cloud_storage(
                 resource,
                 format_name=format_name,
