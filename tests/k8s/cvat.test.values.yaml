@@ -100,10 +100,10 @@ cvat:
     # Parallel kube lanes should isolate releases by namespace instead.
     composeCompatibleServiceName: true
     # In test environments, avoid tying OPA pod health to successful bundle fetches
-    # from CVAT backend during startup. `/health?bundles` returns 500 until backend
-    # is ready enough to serve auth rules, which causes false-negative restarts under
-    # parallel bootstrap. Plain `/health` keeps OPA process health separate from
-    # backend warm-up while preserving the stricter default in the main chart.
+    # from the CVAT backend during startup. `/health?bundles` returns 500 until the
+    # backend is ready enough to serve auth rules, which causes false-negative
+    # restarts. Plain `/health` keeps OPA process health separate from backend
+    # warm-up while preserving the stricter default in the main chart.
     probePath: /health
     readinessProbe:
       initialDelaySeconds: 5
