@@ -4,19 +4,19 @@
 
 from __future__ import annotations
 
+from attrs import fields_dict
 from django.db import models
 
-import cvat.apps.quality_control.quality_reports as qc
 from cvat.apps.engine.models import Task
+from cvat.apps.quality_control.comparison_report import ComparisonParameters
+
+DEFAULT_CONSENSUS_IOU_THRESHOLD = fields_dict(ComparisonParameters)["iou_threshold"].default
 
 
 class ConsensusSettings(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="consensus_settings")
     quorum = models.FloatField(default=0.5)
-    from cvat.apps.quality_control.comparison_report import ComparisonParameters
-    iou_threshold = models.FloatField(
-        default=lambda: ComparisonParameters().iou_threshold
-    )
+    iou_threshold = models.FloatField(default=DEFAULT_CONSENSUS_IOU_THRESHOLD)
 
     @property
     def organization_id(self):
