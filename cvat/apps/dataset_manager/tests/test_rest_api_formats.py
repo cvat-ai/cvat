@@ -2527,4 +2527,4 @@ class ProjectDumpUpload(_DbTestBase):
 
             new_task = self._get_tasks(project["id"])[0]
             data_from_task_after_upload = self._get_data_from_task(new_task["id"], True)
-            compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
+            compare_datasets(expected_dataset, data_from_task_after_upload)
