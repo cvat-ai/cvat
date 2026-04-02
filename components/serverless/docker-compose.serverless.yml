@@ -5,6 +5,7 @@ services:
     restart: always
     networks:
       - cvat
+      - worker-safety-net
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -14,7 +15,7 @@ services:
       NUCLIO_CHECK_FUNCTION_CONTAINERS_HEALTHINESS: 'true'
       NUCLIO_DASHBOARD_DEFAULT_FUNCTION_MOUNT_MODE: 'volume'
     ports:
-      - '8070:8070'
+      - '${UI_BIND_IP:-127.0.0.1}:8070:8070'
     logging:
       driver: "json-file"
       options:
