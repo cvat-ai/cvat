@@ -906,8 +906,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     def _create_annotations(self, db_job, annotations):
         self._prepare_annotations(annotations, self._labels_mapping)
-        assert not isinstance(annotations["shapes"], list)
-        annotations["shapes"] = list(annotations["shapes"])
+
+        for annotation_type in ("tags", "shapes", "tracks", "intervals"):
+            assert not isinstance(annotations[annotation_type], list)
+            annotations[annotation_type] = list(annotations[annotation_type])
 
         serializer = LabeledDataSerializer(data=annotations)
         serializer.is_valid(raise_exception=True)
@@ -1016,7 +1018,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                     "filename_pattern",
                 ]:
                     d.pop(k, None)
-        else:
+        elif len(jobs) > 1:
             self._manifest["segment_size"], self._manifest["overlap"] = (
                 self._calculate_segment_size(jobs)
             )
