@@ -3374,10 +3374,10 @@ class TestTrackImportExport:
         with make_sdk_client(self.user) as client:
             self.client = client
 
-    def _import_annotations(
-        self, task_id: int, annotations: dict, format_name: str, dataset_file: Path
-    ) -> tuple[dict, dict]:
-        task = self.client.tasks.retrieve(task_id)
+    def _save_annotations(self, task: int | Task, annotations: dict) -> dict:
+        if not isinstance(task, Task):
+            task = self.client.tasks.retrieve(task)
+
         labels = task.get_labels()
         sublabels = labels[0].sublabels
 
@@ -3395,24 +3395,43 @@ class TestTrackImportExport:
                     element["label_id"] = sublabels[element_idx].id
 
         response = put_method(
-            "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
+            "admin1", f"tasks/{task.id}/annotations", annotations, action="create"
         )
         assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
 
-        task.export_dataset(format_name, dataset_file, include_images=False)
-
-        # get the original annotations
         response = get_method("admin1", f"tasks/{task.id}/annotations")
         assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
         saved_annotations = response.json()
+        return saved_annotations
 
-        # import the annotations
+    def _export_annotations(self, task: int | Task, *, format_name: str, dataset_file: Path):
+        if not isinstance(task, Task):
+            task = self.client.tasks.retrieve(task)
+
+        task.export_dataset(format_name, dataset_file, include_images=False)
+
+    def _import_annotations(
+        self, task: int | Task, *, format_name: str, dataset_file: Path
+    ) -> dict[str, Any]:
+        if not isinstance(task, Task):
+            task = self.client.tasks.retrieve(task)
+
         task.import_annotations(format_name, dataset_file)
 
         response = get_method("admin1", f"tasks/{task.id}/annotations")
         assert response.status_code == 200, f"Cannot get task's annotations: {response.content}"
         imported_annotations = response.json()
+        return imported_annotations
 
+    def _save_and_reimport_annotations(
+        self, task: int | Task, *, annotations: dict, format_name: str, dataset_file: Path
+    ) -> tuple[dict, dict]:
+        saved_annotations = self._save_annotations(task, annotations=annotations)
+
+        self._export_annotations(task, format_name=format_name, dataset_file=dataset_file)
+        imported_annotations = self._import_annotations(
+            task, format_name=format_name, dataset_file=dataset_file
+        )
         return saved_annotations, imported_annotations
 
     def _compare_annotations(self, a: dict, b: dict):
@@ -3448,8 +3467,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         expected_annotations = deepcopy(saved_annotations)
@@ -3502,8 +3524,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         self._compare_annotations(saved_annotations, imported_annotations)
@@ -3531,8 +3556,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         self._compare_annotations(saved_annotations, imported_annotations)
@@ -3561,8 +3589,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         self._compare_annotations(saved_annotations, imported_annotations)
@@ -3616,8 +3647,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         expected_annotations = deepcopy(saved_annotations)
@@ -3658,6 +3692,51 @@ class TestTrackImportExport:
             (5, True),
             (6, False),
         ]
+
+    def test_can_check_for_repeated_track_keyframes_in_import(self):
+        task_id = 14
+        format_name = "Datumaro 1.0"
+        dataset_file = self.tmp_dir / (format_name + "_repeated_keyframe_source_data.zip")
+        annotations = {
+            "tracks": [
+                {
+                    "frame": 0,
+                    "group": 0,
+                    "shapes": [
+                        {
+                            "type": "rectangle",
+                            "frame": 0,
+                            "points": [1.0, 2.0, 3.0, 2.0],
+                        },
+                        {
+                            "type": "rectangle",
+                            "frame": 3,
+                            "points": [4.0, 5.0, 6.0, 5.0],
+                            "outside": True,
+                        },
+                    ],
+                    "elements": [],
+                }
+            ],
+        }
+
+        self._save_annotations(task_id, annotations)
+        self._export_annotations(task_id, format_name=format_name, dataset_file=dataset_file)
+
+        dataset_dir = self.tmp_dir / "dataset"
+        with zipfile.ZipFile(dataset_file, "r") as f:
+            f.extractall(dataset_dir)
+
+        parsed_dataset = json.loads((dataset_dir / "annotations" / "default.json").read_text())
+        parsed_dataset["items"][0]["annotations"].append(
+            parsed_dataset["items"][0]["annotations"][0]
+        )
+        dataset_file.write_text(json.dumps(parsed_dataset))
+
+        with pytest.raises(
+            BackgroundRequestException, match="several track shapes on the same frame '0'"
+        ):
+            self._import_annotations(task_id, format_name=format_name, dataset_file=dataset_file)
 
     def test_export_and_import_coco_keypoints_with_closed_track(self):
         task_id = 14
@@ -3700,8 +3779,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         expected_annotations = deepcopy(saved_annotations)
@@ -3770,8 +3852,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         self._compare_annotations(saved_annotations, imported_annotations)
@@ -3811,8 +3896,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         self._compare_annotations(saved_annotations, imported_annotations)
@@ -3852,8 +3940,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         self._compare_annotations(saved_annotations, imported_annotations)
@@ -3916,8 +4007,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         expected_annotations = deepcopy(saved_annotations)
@@ -4194,8 +4288,11 @@ class TestTrackImportExport:
             ],
         }
 
-        saved_annotations, imported_annotations = self._import_annotations(
-            task_id, annotations, format_name, dataset_file
+        saved_annotations, imported_annotations = self._save_and_reimport_annotations(
+            task_id,
+            annotations=annotations,
+            format_name=format_name,
+            dataset_file=dataset_file,
         )
 
         self._compare_annotations(saved_annotations, imported_annotations)

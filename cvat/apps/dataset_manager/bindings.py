@@ -2422,6 +2422,12 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
         new_shapes = []
         prev_shape = None
         for shape in shapes:
+            if prev_shape and prev_shape.frame == shape.frame:
+                raise ValueError(
+                    f"Found several track shapes on the same frame '{shape.frame}'. "
+                    "Track shape frames must be strictly ascending."
+                )
+
             prev_is_visible = prev_shape and not prev_shape.outside
             cur_is_visible = shape and not shape.outside
 
