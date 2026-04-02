@@ -287,6 +287,7 @@ class _TaskBackupBase(_BackupBase):
             "attributes",
             "shapes",
             "elements",
+            "score",
             "start",
             "stop",
         }
