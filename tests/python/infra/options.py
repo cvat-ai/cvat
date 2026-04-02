@@ -49,6 +49,17 @@ def add_infra_options(parser):
         ),
     )
     group._addoption(
+        "--infra-profile",
+        action="store",
+        default=RuntimeInfraConfig.get_default_infra_profile(),
+        choices=RuntimeInfraConfig.get_infra_profiles(),
+        help=(
+            "Single-lane infrastructure profile. "
+            "Sets the runtime profile for non-parallel local/kube runs "
+            "(default: %(default)s)."
+        ),
+    )
+    group._addoption(
         "--skip-version-check",
         action="store_true",
         default=False,

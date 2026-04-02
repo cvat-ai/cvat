@@ -123,41 +123,27 @@ Notes:
 Profile-based runs:
 
 ```bash
-# core: base services + key workers (annotation, chunks, import, export)
-pytest ./tests/python --run-prefix p1 --infra-profile core --infra up
+# simple: base services only
+pytest ./tests/python --run-prefix p1 --infra-profile simple --infra up
 
-# extended: core + worker services
-pytest ./tests/python --run-prefix p2 --infra-profile extended --infra up
+# standard: simple + import/export/chunks + MinIO
+pytest ./tests/python --run-prefix p2 --infra-profile standard --infra up
+
+# full: standard + analytics/frontend/full worker set
+pytest ./tests/python --run-prefix p3 --infra-profile full --infra up
 ```
 
 Parallel lanes:
 
 ```bash
-pytest ./tests/python --parallel core,extended,full
-pytest ./tests/python --parallel core*4
-pytest ./tests/python --parallel core*3,full
-```
-
-For shells that expand `*` (e.g. `zsh`), quote the argument:
-```bash
-pytest ./tests/python --parallel 'core*4'
-```
-
-Profile mismatch handling for `up`:
-```bash
-# default: fail fast if a lane profile differs from saved state
-pytest ./tests/python --run-prefix p1 --parallel core,core,full,core up
-
-# recreate only mismatched lanes
-pytest ./tests/python --run-prefix p1 --parallel core,core,full,core up \
-  --parallel-profile-mismatch=replace
+pytest ./tests/python --parallel 4
 ```
 
 Profile routing is automatic:
 - `infra_profile("full")` tests run in `full`
-- worker-dependent modules (task data/import/export/upload paths) run in `extended`
-- the rest run in `core`
-- you can override with `@pytest.mark.infra_profile("core|extended|full")`
+- worker-dependent modules (task data/import/export/upload paths) run in `standard`
+- the rest run in `simple`
+- you can override with `@pytest.mark.infra_profile("simple|standard|full")`
 
 If you need to rebuild CVAT images without running tests:
 ```bash
@@ -314,11 +300,11 @@ How to use them for Python tests:
    ```
 1. If needed, force profile explicitly:
    ```json
-   "--infra-profile", "core"
+   "--infra-profile", "simple"
    ```
    or
    ```json
-   "--infra-profile", "extended"
+   "--infra-profile", "standard"
    ```
    or
    ```json

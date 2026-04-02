@@ -96,7 +96,7 @@ cvat:
     # Keep the Compose-compatible OPA service name in tests. The current backend
     # images still effectively expect a stable `opa` host during Django settings
     # initialization, so using release-scoped OPA service names breaks
-    # `IAM_OPA_HOST`/`IAM_OPA_DATA_URL` overrides inside the container process.
+    # `CVAT_OPA_HOST`/`IAM_OPA_DATA_URL` overrides inside the container process.
     # Parallel kube lanes should isolate releases by namespace instead.
     composeCompatibleServiceName: true
     # In test environments, avoid tying OPA pod health to successful bundle fetches

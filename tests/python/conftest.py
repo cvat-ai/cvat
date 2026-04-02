@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
+
 import pytest
 from infra import options as infra_options
 from infra.config import (
@@ -23,6 +25,11 @@ pytest_plugins = [
 
 
 def pytest_configure(config) -> None:
+    if not config.getoption("--parallel-child"):
+        os_profile = str(config.getoption("--infra-profile") or "").strip()
+        if os_profile:
+            os.environ["CVAT_TEST_INFRA_PROFILE"] = os_profile
+
     RuntimeInfraConfig.initialize(config)
     for profile in RuntimeInfraConfig.get_infra_profiles():
         marker_name = RuntimeInfraConfig.get_required_marker_name(profile)
@@ -131,6 +138,9 @@ def pytest_sessionstart(session) -> None:
         and not bool(config.getoption("--parallel-child"))
         and not bool(config.getoption("--skip-version-check"))
     )
+    if collect_only:
+        return
+
     instance_config = InstanceConfig(
         cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(),
         cvat_db_dir=RuntimeInfraConfig.get_cvat_db_dir(),
