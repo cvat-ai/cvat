@@ -7,6 +7,9 @@ name: cvat
 
 x-backend-env: &backend-env
   CVAT_POSTGRES_HOST: cvat_db
+  CVAT_POSTGRES_USER: ${CVAT_POSTGRES_USER:-root}
+  CVAT_POSTGRES_PASSWORD: ${CVAT_POSTGRES_PASSWORD:-change-me}
+  CVAT_POSTGRES_DB: ${CVAT_POSTGRES_DB:-cvat}
   CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
   CVAT_REDIS_INMEM_PORT: 6379
   CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
@@ -41,13 +44,16 @@ services:
     image: postgres:15-alpine
     restart: always
     environment:
-      POSTGRES_USER: root
-      POSTGRES_DB: cvat
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: ${CVAT_POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${CVAT_POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${CVAT_POSTGRES_DB:-cvat}
     volumes:
       - cvat_db:/var/lib/postgresql/data
     networks:
-      - cvat
+      cvat:
+      worker-safety-net:
+        aliases:
+          - cvat_db
 
   cvat_redis_inmem:
     container_name: cvat_redis_inmem
@@ -116,6 +122,9 @@ services:
       cvat:
         aliases:
           - cvat-server
+      worker-safety-net:
+        aliases:
+          - cvat_server
 
   cvat_worker_utils:
     container_name: cvat_worker_utils
@@ -265,8 +274,8 @@ services:
     container_name: traefik
     restart: always
     ports:
-      - 8080:8080
-      - 8090:8090
+      - "${UI_BIND_IP:-127.0.0.1}:8080:8080"
+      - "${UI_BIND_IP:-127.0.0.1}:8090:8090"
     environment:
       CVAT_HOST: ${CVAT_HOST:-localhost}
       DJANGO_LOG_VIEWER_HOST: grafana
@@ -301,7 +310,7 @@ services:
     #   traefik.http.routers.dashboard.rule: Host(`${CVAT_HOST:-localhost}`)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
+      - ${CVAT_ROOT_DIR:-.}/components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
     networks:
       - cvat
     logging:
@@ -357,7 +366,7 @@ services:
           - vector
     volumes:
       - type: bind
-        source: ./components/analytics/vector/vector.toml
+        source: ${CVAT_ROOT_DIR:-.}/components/analytics/vector/vector.toml
         target: /etc/vector/vector.toml
         read_only: true
       - type: tmpfs
@@ -378,7 +387,7 @@ services:
       GF_INSTALL_PLUGINS: 'grafana-clickhouse-datasource 4.8.2'
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/all_events.json
     volumes:
-      - ./components/analytics/grafana/dashboards/:/var/lib/grafana/dashboards/:ro
+      - ${CVAT_ROOT_DIR:-.}/components/analytics/grafana/dashboards/:/var/lib/grafana/dashboards/:ro
     entrypoint:
       - sh
       - -euc
@@ -429,3 +438,5 @@ volumes:
 
 networks:
   cvat:
+  worker-safety-net:
+    name: worker-safety-net
