@@ -169,6 +169,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     private pointsToRevertPreview: number[][] | null;
     private listeners: Map<SVGCircleElement, { mousedown: (event: MouseEvent) => void; }>;
     private isCtrlKeyDown: (() => boolean) | null;
+
     public constructor(container: SVGSVGElement, isCtrlKeyDown: () => boolean) {
         this.currentShape = null;
         this.excludedClientId = undefined;
