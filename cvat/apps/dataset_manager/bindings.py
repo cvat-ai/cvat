@@ -2400,23 +2400,23 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
     def _validate_track_shapes(shapes):
         shapes = sorted(shapes, key=lambda t: t.frame)
 
-        def _close_last_interval(prev_shape):
+        def _close_last_interval(closing_shape):
             # Make the last visible frame a keyframe for correct interpolation.
             # Otherwise, the keyframe used for the interpolation will be the outside frame,
             # so the interpolation distance will be bigger by 1 frame,
             # while keeping the coordinates of the last visible frame.
-            prev_shape = prev_shape._replace(keyframe=True)
-            if new_shapes and new_shapes[-1].frame == prev_shape.frame:
-                new_shapes[-1] = prev_shape
+            closing_shape = closing_shape._replace(keyframe=True)
+            if new_shapes and new_shapes[-1].frame == closing_shape.frame:
+                new_shapes[-1] = closing_shape
             else:
-                new_shapes.append(prev_shape)
+                new_shapes.append(closing_shape)
 
             # Add an outside shape
-            prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                frame=prev_shape.frame + instance_data.frame_step)
-            new_shapes.append(prev_shape)
+            closing_shape = closing_shape._replace(outside=True, keyframe=True,
+                frame=closing_shape.frame + instance_data.frame_step)
+            new_shapes.append(closing_shape)
 
-            return prev_shape
+            return closing_shape
 
         # Infer the keyframe shapes and keep only them
         new_shapes = []
