@@ -807,6 +807,13 @@ class JobReadListSerializer(serializers.ListSerializer):
                 job.issue__count = issue_counts.get(job.id, 0)
                 job.child_jobs__count = children_counts.get(job.id, 0)
 
+            prefetch_related_objects(
+                page,
+                "segment__task__data",
+                'segment__task__annotation_guide',
+                'segment__task__project__annotation_guide',
+            )
+
         return super().to_representation(data)
 
 
@@ -2483,6 +2490,15 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 .only("id", "name")
             }
 
+            page_storage_ids = set(
+                v
+                for task in page
+                for v in (task.source_storage_id, task.target_storage_id)
+            )
+            storages = {
+                s.id: s for s in models.Storage.objects.filter(id__in=page_storage_ids)
+            }
+
             for task in page:
                 if task.project_id:
                     task.user_can_view_project = task.project_id in visible_projects
@@ -2492,6 +2508,22 @@ class TaskReadListSerializer(serializers.ListSerializer):
                 task_job_summary = job_counts.get(task.id)
                 for k in job_summary_fields:
                     setattr(task, k, task_job_summary[k])
+
+                if task.source_storage_id in storages:
+                    task.source_storage = storages[task.source_storage_id]
+
+                if task.target_storage_id in storages:
+                    task.target_storage = storages[task.target_storage_id]
+
+            prefetch_related_objects(
+                page,
+                "data",
+                Prefetch(
+                    "data__validation_layout",
+                    queryset=models.ValidationLayout.objects.only("id", "task_data_id", "mode")
+                ),
+                "annotation_guide",
+            )
 
         return super().to_representation(data)
 
