@@ -2405,21 +2405,19 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
             # Otherwise, the keyframe used for the interpolation will be the outside frame,
             # so the interpolation distance will be longer by 1 frame,
             # while keeping the coordinates of the last visible frame.
-            closing_shape = closing_shape._replace(keyframe=True)
-            if new_shapes and new_shapes[-1].frame == closing_shape.frame:
-                new_shapes[-1] = closing_shape
-            else:
-                new_shapes.append(closing_shape)
+            if not keyframe_shapes or keyframe_shapes[-1].frame != closing_shape.frame:
+                closing_shape = closing_shape._replace(keyframe=True)
+                keyframe_shapes.append(closing_shape)
 
             # Add an outside shape
             closing_shape = closing_shape._replace(outside=True, keyframe=True,
                 frame=closing_shape.frame + instance_data.frame_step)
-            new_shapes.append(closing_shape)
+            keyframe_shapes.append(closing_shape)
 
             return closing_shape
 
         # Infer the keyframe shapes and keep only them
-        new_shapes = []
+        keyframe_shapes = []
         prev_shape = None
         for shape in shapes:
             if prev_shape and prev_shape.frame == shape.frame:
@@ -2440,7 +2438,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
 
             if prev_is_visible != cur_is_visible or cur_is_visible and (has_gap or shape.keyframe):
                 shape = shape._replace(keyframe=True)
-                new_shapes.append(shape)
+                keyframe_shapes.append(shape)
 
             prev_shape = shape
 
@@ -2450,7 +2448,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
         ):
             prev_shape = _close_last_interval(prev_shape)
 
-        return new_shapes
+        return keyframe_shapes
 
     stop_frame = int(instance_data.meta[instance_data.META_FIELD]['stop_frame'])
     for track_id, track in tracks.items():
