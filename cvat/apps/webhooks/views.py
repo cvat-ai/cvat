@@ -70,7 +70,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     simple_filters = list(set(search_fields) - {"description"} | {"project_id"})
     ordering_fields = list(filter_fields)
     lookup_fields = {"owner": "owner__username"}
-    iam_organization_field = "organization"
+    iam_supports_organization_params = True
     iam_permission_class = WebhookPermission
 
     def get_serializer_class(self):
