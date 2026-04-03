@@ -9,3 +9,9 @@
 3. Commit only staged files. Before committing, confirm that unstaged and
    untracked files are intentionally excluded and are not required for the
    current commit.
+4. Before committing, run the relevant formatting and lint tools for the changed
+   files. Use the same tool set enforced in `.github/workflows/linters.yml`:
+   `black`, `isort`, `pylint`, `bandit`, `typos`, `remark`, `eslint`,
+   `stylelint`, and `regal` when applicable to the changed files. If a required
+   tool is not installed locally, install it first and then run it before
+   creating the commit.
