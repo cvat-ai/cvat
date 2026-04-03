@@ -34,9 +34,6 @@ COPY --chmod=755 ai-models/agents_deployment/yolo/check_env.sh .
 COPY --chmod=755 ai-models/agents_deployment/yolo/entrypoint.sh .
 COPY --chmod=755 ai-models/agents_deployment/yolo/keypoints.txt .
 
-# CVE-2025-69720
-RUN rm -f /usr/bin/infocmp
-
 #v1.34.5 fixes CVE-2025-68121
 ADD --chmod=+x https://dl.k8s.io/release/v1.34.6/bin/linux/${TARGETARCH}/kubectl /usr/local/bin/
 
