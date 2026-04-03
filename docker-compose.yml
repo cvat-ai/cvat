@@ -100,6 +100,11 @@ services:
       <<: [*backend-env, *clickhouse-env]
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
+      # Override these with CVAT_CSRF_TRUSTED_ORIGINS / CVAT_CORS_ALLOWED_ORIGINS
+      # when you need custom ports or HTTPS origins.
+      CSRF_TRUSTED_ORIGINS: ${CVAT_CSRF_TRUSTED_ORIGINS:-http://${CVAT_HOST:-localhost}:8080,http://localhost:8080,http://127.0.0.1:8080}
+      CORS_ALLOWED_ORIGINS: ${CVAT_CORS_ALLOWED_ORIGINS:-http://${CVAT_HOST:-localhost}:8080,http://localhost:8080,http://127.0.0.1:8080}
+      CORS_ALLOW_CREDENTIALS: 'true'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
       NUMPROCS: 2
       CVAT_ANALYTICS: 1
