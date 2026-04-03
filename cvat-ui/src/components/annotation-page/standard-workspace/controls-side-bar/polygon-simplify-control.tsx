@@ -10,6 +10,7 @@ import Text from 'antd/lib/typography/Text';
 import Slider from 'antd/lib/slider';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { thresholdFromAccuracy, MAX_ACCURACY } from './approximation-accuracy';
@@ -120,8 +121,10 @@ function PolygonSimplifyControl(props: Props): React.ReactPortal | null {
     return target ? ReactDOM.createPortal(
         <div className='cvat-approx-poly-threshold-wrapper'>
             <Row align='middle' gutter={8}>
-                <Col span={5}>
-                    <Text>Points: </Text>
+                <Col offset={1}>
+                    <CVATTooltip title='Lower values create simpler shapes with fewer points. Higher values preserve more detail and points.'>
+                        <Text>Threshold: </Text>
+                    </CVATTooltip>
                 </Col>
                 <Col span={12}>
                     <Slider
@@ -137,7 +140,7 @@ function PolygonSimplifyControl(props: Props): React.ReactPortal | null {
                         marks={sliderMarks}
                     />
                 </Col>
-                <Col span={5} style={{ textAlign: 'right' }} offset={1}>
+                <Col style={{ textAlign: 'right' }} offset={1}>
                     <Button
                         type='primary'
                         size='small'
