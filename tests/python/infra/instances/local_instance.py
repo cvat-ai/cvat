@@ -590,7 +590,7 @@ def _create_compose_files(
 
             updated_labels[new_key] = value
 
-        for old_name, new_name in replacement.items():
+        for new_name in replacement.values():
             rule_key = f"traefik.http.routers.{new_name}.rule"
             service_key = f"traefik.http.routers.{new_name}.service"
             if rule_key in updated_labels and service_key not in updated_labels:
