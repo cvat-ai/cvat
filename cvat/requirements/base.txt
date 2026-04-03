@@ -53,7 +53,7 @@ cryptography==46.0.5
     #   pyjwt
 cycler==0.12.1
     # via matplotlib
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@ce1e8117f5457136928ea9b12e6f6a2f58bdfa88
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@f2e321c9e70b72bb1f93db0f80d4679929fd429a
     # via -r cvat/requirements/base.in
 defusedxml==0.7.1
     # via
@@ -193,7 +193,7 @@ nltk==3.9.3
     # via datumaro
 oauthlib==3.3.1
     # via requests-oauthlib
-orjson==3.10.12
+orjson==3.11.7
     # via datumaro
 packaging==25.0
     # via
@@ -227,7 +227,7 @@ psycopg2-binary==2.9.5
     # via -r cvat/requirements/base.in
 pyarrow==20.0.0
     # via datumaro
-pyasn1==0.6.2
+pyasn1==0.6.3
     # via
     #   pyasn1-modules
     #   python-ldap

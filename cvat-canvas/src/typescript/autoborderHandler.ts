@@ -168,8 +168,9 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     private currentPreview: { pointIdx: number; shapePoints: number[][]; } | null;
     private pointsToRevertPreview: number[][] | null;
     private listeners: Map<SVGCircleElement, { mousedown: (event: MouseEvent) => void; }>;
+    private isCtrlKeyDown: (() => boolean) | null;
 
-    public constructor(container: SVGSVGElement) {
+    public constructor(container: SVGSVGElement, isCtrlKeyDown: () => boolean) {
         this.currentShape = null;
         this.excludedClientId = undefined;
         this.container = container;
@@ -182,6 +183,7 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
         this.currentPreview = null;
         this.pointsToRevertPreview = null;
         this.listeners = new Map();
+        this.isCtrlKeyDown = isCtrlKeyDown;
     }
 
     private removeMarkers(): void {
@@ -255,6 +257,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                                 return;
                             }
 
+                            if (this.isCtrlKeyDown && this.isCtrlKeyDown()) {
+                                return;
+                            }
+
                             event.stopPropagation();
                             if (this.currentClick?.groupIdx !== groupIdx) {
                                 // first click on this group of points
@@ -315,6 +321,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     }
 
     private onContainerMouseMove = (e: MouseEvent): void => {
+        if (this.isCtrlKeyDown && this.isCtrlKeyDown()) {
+            return;
+        }
+
         const closestPointIdx = this.findClosestPointInClickedGroup(e);
 
         if (this.pointsToRevertPreview) {
@@ -347,6 +357,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     };
 
     private onContainerMouseDown = (e: MouseEvent): void => {
+        if (this.isCtrlKeyDown && this.isCtrlKeyDown()) {
+            return;
+        }
+
         if (e.button !== 0 || this.currentPreview === null) {
             return;
         }
