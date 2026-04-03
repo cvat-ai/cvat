@@ -8,7 +8,7 @@ import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
-    FunctionOutlined,
+    FunctionOutlined, CompressOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -54,6 +54,7 @@ interface Props {
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
+    simplify(): void;
     runAnnotationAction(): void;
     jobInstance: Job;
 }
@@ -124,6 +125,23 @@ function SliceItem(props: ItemProps): JSX.Element {
                 className='cvat-object-item-menu-slice-object'
             >
                 Slice
+            </Button>
+        </CVATTooltip>
+    );
+}
+
+function SimplifyItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { simplify } = toolProps;
+    return (
+        <CVATTooltip title='Reduce the number of polygon points'>
+            <Button
+                type='link'
+                icon={<CompressOutlined />}
+                onClick={simplify}
+                className='cvat-object-item-menu-simplify-object'
+            >
+                Simplify
             </Button>
         </CVATTooltip>
     );
@@ -311,6 +329,7 @@ export default function ItemMenu(props: Props): MenuProps {
         REMOVE_ITEM = 'remove_item',
         EDIT_MASK = 'edit_mask',
         SLICE_ITEM = 'slice_item',
+        SIMPLIFY_ITEM = 'simplify_item',
         RUN_ANNOTATION_ACTION = 'run_annotation_action',
     }
 
@@ -342,6 +361,16 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.SLICE_ITEM,
             label: <SliceItem key={MenuKeys.SLICE_ITEM} toolProps={props} />,
+        });
+    }
+
+    if (
+        !locked && objectType === ObjectType.SHAPE &&
+        [ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType)
+    ) {
+        items.push({
+            key: MenuKeys.SIMPLIFY_ITEM,
+            label: <SimplifyItem key={MenuKeys.SIMPLIFY_ITEM} toolProps={props} />,
         });
     }
 

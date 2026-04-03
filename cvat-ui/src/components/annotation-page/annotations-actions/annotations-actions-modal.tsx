@@ -20,6 +20,7 @@ import Modal from 'antd/lib/modal';
 import Alert from 'antd/lib/alert';
 import InputNumber from 'antd/lib/input-number';
 import Switch from 'antd/lib/switch';
+import Slider from 'antd/lib/slider';
 
 import config from 'config';
 import { createAction, ActionUnion } from 'utils/redux';
@@ -30,6 +31,7 @@ import {
 } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
+import { changeDefaultApproxPolyAccuracy } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
 
 const core = getCore();
@@ -242,17 +244,38 @@ const componentStorage = createStore(reducer, {
     targetObjectState: null,
 });
 
-function ActionParameterComponent(props: ActionParameterProps & { onChange: (value: string) => void }): JSX.Element {
+function ActionParameterComponent(props: ActionParameterProps & {
+    onChange: (value: string) => void;
+    parameterName?: string;
+}): JSX.Element {
     const {
-        defaultValue, type, values, onChange,
+        defaultValue, type, values, onChange, parameterName,
     } = props;
     const store = getCVATStore();
 
     const job = store.getState().annotation.job.instance as Job;
-    const computedDefaultValue = typeof defaultValue === 'function' ? defaultValue({ instance: job }) : defaultValue;
+    let computedDefaultValue = typeof defaultValue === 'function' ? defaultValue({ instance: job }) : defaultValue;
+
+    // Special handling for polygon simplification Points parameter
+    // Use the saved setting value if available
+    if (parameterName === 'Points') {
+        const savedAccuracy = store.getState().settings.workspace.defaultApproxPolyAccuracy;
+        if (savedAccuracy !== undefined) {
+            computedDefaultValue = String(savedAccuracy);
+        }
+    }
+
     const [value, setValue] = useState(computedDefaultValue);
     useEffect(() => {
         onChange(value);
+        
+        // Save Points parameter to settings for persistence
+        if (parameterName === 'Points') {
+            const numericValue = Number(value);
+            if (!Number.isNaN(numericValue)) {
+                store.dispatch(changeDefaultApproxPolyAccuracy(numericValue));
+            }
+        }
     }, [value]);
 
     const computedValues = typeof values === 'function' ? values({ instance: job }) : values;
@@ -274,6 +297,41 @@ function ActionParameterComponent(props: ActionParameterProps & { onChange: (val
                 onChange={(val: boolean) => {
                     setValue(String(val));
                 }}
+            />
+        );
+    }
+
+    if (type === ActionParameterType.SLIDER) {
+        const [min, max, step] = computedValues.map((val) => +val);
+        const sliderMarks: Record<number, { style: React.CSSProperties; label: JSX.Element }> = {};
+        sliderMarks[min] = {
+            style: {
+                color: '#1890ff',
+            },
+            label: <strong>less</strong>,
+        };
+        sliderMarks[max] = {
+            style: {
+                color: '#61c200',
+            },
+            label: <strong>more</strong>,
+        };
+
+        return (
+            <Slider
+                value={+value}
+                min={min}
+                max={max}
+                step={step}
+                dots
+                tooltip={{
+                    open: false,
+                }}
+                onChange={(_value: number) => {
+                    setValue(`${_value}`);
+                }}
+                marks={sliderMarks}
+                style={{ width: '35%' }}
             />
         );
     }
@@ -533,6 +591,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                             defaultValue={actionParameters[activeAction.name]?.[name] ?? defaultValue}
                                             type={type}
                                             values={values}
+                                            parameterName={name}
                                         />
                                     </Col>
                                 ))}

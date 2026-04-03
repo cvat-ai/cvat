@@ -24,6 +24,7 @@ import {
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getObjectStateColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
+import PolygonSimplifyControl from 'components/annotation-page/standard-workspace/controls-side-bar/polygon-simplify-control';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
@@ -147,6 +148,9 @@ type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     labels: Label[];
     elements: number[];
+    simplifyMode: boolean;
+    approxPolyAccuracy: number;
+    originalPoints: number[] | null;
 }
 
 class ObjectItemContainer extends React.PureComponent<Props, State> {
@@ -155,6 +159,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         this.state = {
             labels: props.labels,
             elements: props.objectState.elements.map((el: ObjectState) => el.clientID as number),
+            simplifyMode: false,
+            approxPolyAccuracy: 7, // Default value (midpoint)
+            originalPoints: null,
         };
     }
 
@@ -218,6 +225,77 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 clientID: objectState.clientID as number,
             });
         }
+    };
+
+    private simplify = (): void => {
+        const { objectState, canvasInstance, activateObject } = this.props;
+
+        if ([ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
+            // Store original points for restoration if cancelled
+            const originalPoints = objectState.points ? [...objectState.points] : [];
+
+            // Ensure this object is activated and focused
+            activateObject(objectState.clientID as number, null);
+
+            // Lock canvas interactions (similar to edit/slice mode)
+            if (canvasInstance instanceof Canvas && canvasInstance.mode() !== CanvasMode.IDLE) {
+                canvasInstance.cancel();
+            }
+
+            // Enter simplify mode
+            this.setState({
+                simplifyMode: true,
+                originalPoints,
+            });
+        }
+    };
+
+    private applySimplification = async (): Promise<void> => {
+        const { objectState, updateState } = this.props;
+
+        try {
+            // Initialize OpenCV if needed
+            if (!openCVWrapper.isInitialized) {
+                await openCVWrapper.initialize(() => {});
+            }
+
+            // The control component has already updated objectState.points with preview
+            // Just save it
+            await updateState(objectState);
+
+            // Exit simplify mode
+            this.setState({ simplifyMode: false, approxPolyAccuracy: 7 });
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to apply simplification:', error);
+            this.setState({ simplifyMode: false });
+        }
+    };
+
+    private cancelSimplification = (): void => {
+        const { objectState, updateState } = this.props;
+        const { originalPoints } = this.state;
+
+        // Restore original points
+        if (originalPoints) {
+            objectState.points = originalPoints;
+            updateState(objectState);
+        }
+
+        // Exit simplify mode without saving
+        this.setState({ simplifyMode: false, approxPolyAccuracy: 7, originalPoints: null });
+    };
+
+    private updateSimplificationPreview = (points: number[]): void => {
+        const { objectState, updateState } = this.props;
+
+        // Update points temporarily for preview
+        objectState.points = points;
+        updateState(objectState);
+    };
+
+    private onChangeAccuracy = (value: number): void => {
+        this.setState({ approxPolyAccuracy: value });
     };
 
     private remove = (): void => {
@@ -402,7 +480,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { labels, elements } = this.state;
+        const {
+            labels, elements, simplifyMode, approxPolyAccuracy,
+        } = this.state;
         const {
             objectState,
             attributes,
@@ -413,40 +493,53 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         } = this.props;
 
         return (
-            <ObjectStateItemComponent
-                jobInstance={jobInstance}
-                activated={activated}
-                objectType={objectState.objectType}
-                shapeType={objectState.shapeType}
-                clientID={objectState.clientID as number}
-                serverID={objectState.serverID}
-                locked={objectState.lock}
-                labelID={objectState.label.id as number}
-                isGroundTruth={objectState.isGroundTruth}
-                color={getObjectStateColor(objectState, colorBy).rgbComponents()}
-                attributes={attributes}
-                elements={elements}
-                normalizedKeyMap={normalizedKeyMap}
-                labels={labels}
-                colorBy={colorBy}
-                activate={this.activate}
-                focusAndExpand={this.focusAndExpand}
-                remove={this.remove}
-                copy={this.copy}
-                createURL={this.createURL}
-                propagate={this.propagate}
-                switchOrientation={this.switchOrientation}
-                toBackground={this.toBackground}
-                toForeground={this.toForeground}
-                toOneLayerBackward={this.toOneLayerBackward}
-                toOneLayerForward={this.toOneLayerForward}
-                changeColor={this.changeColor}
-                changeLabel={this.changeLabel}
-                edit={this.edit}
-                slice={this.slice}
-                resetCuboidPerspective={this.resetCuboidPerspective}
-                runAnnotationAction={this.runAnnotationAction}
-            />
+            <>
+                <ObjectStateItemComponent
+                    jobInstance={jobInstance}
+                    activated={activated}
+                    objectType={objectState.objectType}
+                    shapeType={objectState.shapeType}
+                    clientID={objectState.clientID as number}
+                    serverID={objectState.serverID}
+                    locked={objectState.lock}
+                    labelID={objectState.label.id as number}
+                    isGroundTruth={objectState.isGroundTruth}
+                    color={getObjectStateColor(objectState, colorBy).rgbComponents()}
+                    attributes={attributes}
+                    elements={elements}
+                    normalizedKeyMap={normalizedKeyMap}
+                    labels={labels}
+                    colorBy={colorBy}
+                    activate={this.activate}
+                    focusAndExpand={this.focusAndExpand}
+                    remove={this.remove}
+                    copy={this.copy}
+                    createURL={this.createURL}
+                    propagate={this.propagate}
+                    switchOrientation={this.switchOrientation}
+                    toBackground={this.toBackground}
+                    toForeground={this.toForeground}
+                    toOneLayerBackward={this.toOneLayerBackward}
+                    toOneLayerForward={this.toOneLayerForward}
+                    changeColor={this.changeColor}
+                    changeLabel={this.changeLabel}
+                    edit={this.edit}
+                    slice={this.slice}
+                    simplify={this.simplify}
+                    resetCuboidPerspective={this.resetCuboidPerspective}
+                    runAnnotationAction={this.runAnnotationAction}
+                />
+                {simplifyMode && (
+                    <PolygonSimplifyControl
+                        objectState={objectState}
+                        approxPolyAccuracy={approxPolyAccuracy}
+                        onChangeAccuracy={this.onChangeAccuracy}
+                        onApply={this.applySimplification}
+                        onCancel={this.cancelSimplification}
+                        onUpdatePreview={this.updateSimplificationPreview}
+                    />
+                )}
+            </>
         );
     }
 }

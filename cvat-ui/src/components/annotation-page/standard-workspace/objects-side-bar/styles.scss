@@ -440,7 +440,7 @@
 .cvat-approx-poly-threshold-wrapper {
     @extend .cvat-workspace-settings-approx-poly-threshold;
 
-    width: $grid-unit-size * 32;
+    width: $grid-unit-size *38;
     position: absolute;
     background: $background-color-2;
     top: $grid-unit-size;
