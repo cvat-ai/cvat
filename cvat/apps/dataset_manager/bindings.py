@@ -2403,7 +2403,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
         def _close_last_interval(closing_shape):
             # Make the last visible frame a keyframe for correct interpolation.
             # Otherwise, the keyframe used for the interpolation will be the outside frame,
-            # so the interpolation distance will be bigger by 1 frame,
+            # so the interpolation distance will be longer by 1 frame,
             # while keeping the coordinates of the last visible frame.
             closing_shape = closing_shape._replace(keyframe=True)
             if new_shapes and new_shapes[-1].frame == closing_shape.frame:
