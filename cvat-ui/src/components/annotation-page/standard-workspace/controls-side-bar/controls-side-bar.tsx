@@ -26,6 +26,7 @@ import FitControl, { Props as FitControlProps } from './fit-control';
 import ResizeControl, { Props as ResizeControlProps } from './resize-control';
 import ToolsControl from './tools-control';
 import OpenCVControl from './opencv-control';
+import SnapToolsControl from './snap-tools-control';
 import DrawRectangleControl, { Props as DrawRectangleControlProps } from './draw-rectangle-control';
 import DrawPolygonControl, { Props as DrawPolygonControlProps } from './draw-polygon-control';
 import DrawPolylineControl, { Props as DrawPolylineControlProps } from './draw-polyline-control';
@@ -128,6 +129,7 @@ const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl
 const ObservedResizeControl = ControlVisibilityObserver<ResizeControlProps>(ResizeControl, 'ResizeControl');
 const ObservedToolsControl = ControlVisibilityObserver(ToolsControl, 'ToolsControl');
 const ObservedOpenCVControl = ControlVisibilityObserver(OpenCVControl, 'OpenCVControl');
+const ObservedSnapToolsControl = ControlVisibilityObserver(SnapToolsControl, 'SnapToolsControl');
 const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleControlProps>(DrawRectangleControl, 'DrawRectangleControl');
 const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl, 'DrawPolygonControl');
 const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl, 'DrawPolylineControl');
@@ -375,6 +377,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 <ObservedResizeControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
                 <hr />
+
                 <ObservedToolsControl />
                 <ObservedOpenCVControl />
                 {
@@ -457,6 +460,9 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                         />
                     )
                 }
+
+                <ObservedSnapToolsControl />
+
                 <hr />
 
                 <ObservedMergeControl
