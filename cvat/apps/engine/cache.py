@@ -592,23 +592,56 @@ class MediaCache:
         db_data = db_task.require_data()
         manifest_path = db_data.get_manifest_path()
 
+        def requested_db_images():
+            # TODO: find a way to use prefetched results, if provided
+            db_images = (
+                db_data.images.order_by("frame")
+                .filter(frame__gte=frame_ids[0], frame__lte=frame_ids[-1])
+                .values_list("frame", "path")
+            )
+
+            requested_frame_iter = iter(frame_ids)
+            next_requested_frame_id = next(requested_frame_iter, None)
+            if next_requested_frame_id is None:
+                return
+
+            for frame_id, frame_path in db_images:
+                if frame_id == next_requested_frame_id:
+                    yield frame_path
+                    next_requested_frame_id = next(requested_frame_iter, None)
+
+                    if next_requested_frame_id is None:
+                        return
+
+            assert False, f"frame #{next_requested_frame_id} is missing from DB"
+
         if storage_client := db_data.get_cloud_storage_instance():
-            assert manifest_path.is_file()
-            reader = ImageReaderWithManifest(manifest_path)
             with ExitStack() as es:
                 tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
                 # (storage filename, output filename)
                 files_to_download: list[tuple[str, PurePath]] = []
                 checksums = []
                 media = []
-                for item in reader.iterate_frames(frame_ids):
-                    task_filename = f"{item['name']}{item['extension']}"
-                    storage_filename = item.get("meta", {}).get("original_name", task_filename)
-                    fs_filename = tmp_dir / task_filename
-                    files_to_download.append((storage_filename, fs_filename))
+                if db_data.local_storage_backing_cs_id:
+                    for frame_path in requested_db_images():
+                        storage_filename = frame_path
+                        fs_filename = tmp_dir / storage_filename
 
-                    checksums.append(item.get("checksum", None))
-                    media.append((fs_filename, os.fspath(fs_filename)))
+                        files_to_download.append((storage_filename, fs_filename))
+                        checksums.append(None)
+                        media.append((fs_filename, os.fspath(fs_filename)))
+
+                else:
+                    assert manifest_path.is_file()
+                    reader = ImageReaderWithManifest(manifest_path)
+                    for item in reader.iterate_frames(frame_ids):
+                        task_filename = f"{item['name']}{item['extension']}"
+                        storage_filename = item.get("meta", {}).get("original_name", task_filename)
+                        fs_filename = tmp_dir / task_filename
+
+                        files_to_download.append((storage_filename, fs_filename))
+                        checksums.append(item.get("checksum", None))
+                        media.append((fs_filename, os.fspath(fs_filename)))
 
                 storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
@@ -640,32 +673,11 @@ class MediaCache:
                     yield media_item
 
         else:
-            requested_frame_iter = iter(frame_ids)
-            next_requested_frame_id = next(requested_frame_iter, None)
-            if next_requested_frame_id is None:
-                return
-
-            # TODO: find a way to use prefetched results, if provided
-            db_images = (
-                db_data.images.order_by("frame")
-                .filter(frame__gte=frame_ids[0], frame__lte=frame_ids[-1])
-                .values_list("frame", "path")
-                .all()
-            )
-
             raw_data_dir = db_data.get_raw_data_dirname()
             media = []
-            for frame_id, frame_path in db_images:
-                if frame_id == next_requested_frame_id:
-                    source_path = os.path.join(raw_data_dir, frame_path)
-                    media.append((source_path, source_path))
-
-                    next_requested_frame_id = next(requested_frame_iter, None)
-
-                if next_requested_frame_id is None:
-                    break
-
-            assert next_requested_frame_id is None
+            for frame_path in requested_db_images():
+                source_path = os.path.join(raw_data_dir, frame_path)
+                media.append((source_path, source_path))
 
             if db_task.dimension == models.DimensionType.DIM_2D and decode:
                 media = map(load_image, media)

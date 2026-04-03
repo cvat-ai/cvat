@@ -1516,6 +1516,32 @@ class TestTaskBackups:
         backup_file = ASSETS_DIR / "backups" / "task_30_backup_pre_consensus_replica_removal.zip"
         self._test_can_restore_task_from_backup(original_task_id, backup_file=backup_file)
 
+    def test_can_import_backup_with_annotation_scores(self, tasks, jobs, labels, annotations):
+        task_id = next(
+            t
+            for t in tasks
+            if t.get("size", 0) > 0
+            if t.get("project_id", None) is None
+            if any(v for v in annotations["task"].get(str(t["id"]), {}).values())
+        )["id"]
+        label = next(l for l in labels if l.get("task_id") == task_id)
+        job = next(j for j in jobs if j["task_id"] == task_id if j["type"] == "annotation")
+
+        annotation = {
+            "shapes": [
+                {
+                    "type": "rectangle",
+                    "frame": job["start_frame"],
+                    "points": [0, 0, 1, 1],
+                    "score": 0.2,
+                    "label_id": label["id"],
+                }
+            ]
+        }
+        self.client.jobs.retrieve(job["id"]).set_annotations(annotation)
+
+        self._test_can_restore_task_from_backup(task_id)
+
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
         # Reproduces the problem with empty 'mode' in a restored task,
