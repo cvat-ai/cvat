@@ -8,12 +8,12 @@ import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
-    FunctionOutlined, CompressOutlined,
+    FunctionOutlined,
 } from '@ant-design/icons';
 
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
-    OneLayerBackwardIcon, OneLayerForwardIcon,
+    OneLayerBackwardIcon, OneLayerForwardIcon, SimplifyIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ColorBy } from 'reducers';
@@ -137,7 +137,7 @@ function SimplifyItem(props: ItemProps): JSX.Element {
         <CVATTooltip title='Reduce the number of polygon points'>
             <Button
                 type='link'
-                icon={<CompressOutlined />}
+                icon={<Icon component={SimplifyIcon} />}
                 onClick={simplify}
                 className='cvat-object-item-menu-simplify-object'
             >
