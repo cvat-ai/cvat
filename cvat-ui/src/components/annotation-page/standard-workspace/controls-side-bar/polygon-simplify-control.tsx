@@ -70,9 +70,11 @@ function PolygonSimplifyControl(props: Props): React.ReactPortal | null {
     const handleKeyDown = (event: KeyboardEvent): void => {
         if (event.key === 'Enter') {
             event.preventDefault();
+            event.stopImmediatePropagation();
             handleApply();
         } else if (event.key === 'Escape') {
             event.preventDefault();
+            event.stopImmediatePropagation();
             onCancel();
         }
     };
@@ -89,14 +91,16 @@ function PolygonSimplifyControl(props: Props): React.ReactPortal | null {
         };
 
         initializeAndPreview();
+    }, []);
 
-        // Add keyboard listeners
-        window.addEventListener('keydown', handleKeyDown);
+    useEffect(() => {
+        // Add keyboard listeners with capture phase to intercept before other handlers
+        window.addEventListener('keydown', handleKeyDown, true);
 
         return () => {
-            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keydown', handleKeyDown, true);
         };
-    }, []);
+    }, [onApply, onCancel]);
 
     useEffect(() => {
         updatePreview();

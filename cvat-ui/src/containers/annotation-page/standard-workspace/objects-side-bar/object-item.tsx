@@ -56,6 +56,7 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas | Canvas3d;
     focusedObjectPadding: number;
+    defaultApproxPolyAccuracy: number;
     simplifyState: {
         objectState: any;
         originalPoints: number[] | null;
@@ -91,7 +92,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         },
         settings: {
             shapes: { colorBy },
-            workspace: { focusedObjectPadding },
+            workspace: { focusedObjectPadding, defaultApproxPolyAccuracy },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -115,6 +116,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         normalizedKeyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
         focusedObjectPadding,
+        defaultApproxPolyAccuracy,
         simplifyState,
     };
 }
@@ -171,7 +173,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             labels: props.labels,
             elements: props.objectState.elements.map((el: ObjectState) => el.clientID as number),
             simplifyMode: false,
-            approxPolyAccuracy: 7, // Default value (midpoint)
+            approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             originalPoints: null,
         };
     }
@@ -191,7 +193,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Readonly<Props>): void {
-        const { objectState, simplifyState } = this.props;
+        const { objectState, simplifyState, defaultApproxPolyAccuracy } = this.props;
         const { simplifyMode } = this.state;
 
         // Check if simplify was triggered for this object
@@ -206,6 +208,13 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             this.setState({
                 simplifyMode: true,
                 originalPoints: simplifyState.originalPoints,
+            });
+        }
+
+        // Update approxPolyAccuracy when default setting changes (but not during active simplification)
+        if (!simplifyMode && prevProps.defaultApproxPolyAccuracy !== defaultApproxPolyAccuracy) {
+            this.setState({
+                approxPolyAccuracy: defaultApproxPolyAccuracy,
             });
         }
     }
@@ -282,7 +291,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private applySimplification = async (): Promise<void> => {
-        const { objectState, updateState, switchSimplifyVisibility } = this.props;
+        const {
+            objectState, updateState, switchSimplifyVisibility,
+        } = this.props;
 
         try {
             // Initialize OpenCV if needed
@@ -297,8 +308,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             // Clear Redux simplify state
             switchSimplifyVisibility(null, null);
 
-            // Exit simplify mode
-            this.setState({ simplifyMode: false, approxPolyAccuracy: 7 });
+            // Exit simplify mode (keep approxPolyAccuracy for next time)
+            this.setState({ simplifyMode: false });
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to apply simplification:', error);
@@ -308,7 +319,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private cancelSimplification = (): void => {
-        const { objectState, updateState, switchSimplifyVisibility } = this.props;
+        const {
+            objectState, updateState, switchSimplifyVisibility,
+        } = this.props;
         const { originalPoints } = this.state;
 
         // Restore original points
@@ -320,8 +333,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         // Clear Redux simplify state
         switchSimplifyVisibility(null, null);
 
-        // Exit simplify mode without saving
-        this.setState({ simplifyMode: false, approxPolyAccuracy: 7, originalPoints: null });
+        // Exit simplify mode without saving (keep approxPolyAccuracy for next time)
+        this.setState({
+            simplifyMode: false,
+            originalPoints: null,
+        });
     };
 
     private updateSimplificationPreview = (points: number[]): void => {

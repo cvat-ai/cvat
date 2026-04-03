@@ -287,7 +287,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-workspace-settings-approx-poly-threshold cvat-player-setting'>
                 <Col>
-                    <Text className='cvat-text-color'>Default number of points in polygon approximation</Text>
+                    <Text className='cvat-text-color'>Default polygon simplification threshold</Text>
                 </Col>
                 <Col span={7} offset={1}>
                     <Slider
@@ -300,7 +300,10 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     />
                 </Col>
                 <Col>
-                    <Text type='secondary'>Works for serverless interactors and OpenCV scissors</Text>
+                    <Text type='secondary'>
+                        Higher values preserve more polygon detail. Used for serverless interactors,
+                        OpenCV scissors, and polygon simplification
+                    </Text>
                 </Col>
             </Row>
         </div>
