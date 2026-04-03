@@ -17,7 +17,7 @@ export class PolygonSimplifyAction extends BaseShapesAction {
     ): Promise<void> {
         // Convert accuracy (0-13 scale) to epsilon threshold
         // This matches the thresholdFromAccuracy function from the UI
-        const accuracy = parameters.accuracy as number;
+        const accuracy = parameters.Points as number;
         const approxPolyMaxDistance = 13 - accuracy;
 
         if (approxPolyMaxDistance > 0) {
@@ -55,13 +55,15 @@ export class PolygonSimplifyAction extends BaseShapesAction {
                     shape.type === ShapeType.POLYGON,
                 );
 
-                // Only update if simplification actually reduced points
-                if (simplified.length < shape.points.length) {
+                // Validate that simplification results in at least 3 points (6 values in flat array)
+                // and only update if simplification actually reduced points
+                if (simplified.length >= 6 && simplified.length < shape.points.length) {
                     simplifiedShapes.push({
                         ...shape,
                         points: simplified,
                     });
                 } else {
+                    // Keep original if too few points or no reduction
                     simplifiedShapes.push(shape);
                 }
             } catch (error) {
@@ -97,7 +99,16 @@ export class PolygonSimplifyAction extends BaseShapesAction {
 
         try {
             cv.approxPolyDP(contour, approx, this.threshold, closed);
-            return Array.from(approx.data32F);
+
+            // Extract points from the Mat structure
+            // Use floatAt to access individual matrix elements
+            // approx has shape [n, 2] where n is the number of simplified points
+            const result: number[] = [];
+            for (let row = 0; row < approx.rows; row++) {
+                result.push(approx.floatAt(row, 0)); // x coordinate
+                result.push(approx.floatAt(row, 1)); // y coordinate
+            }
+            return result;
         } finally {
             approx.delete();
             contour.delete();

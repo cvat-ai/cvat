@@ -933,6 +933,10 @@ export interface AnnotationState {
     propagate: {
         visible: boolean;
     };
+    simplify: {
+        objectState: ObjectState | null;
+        originalPoints: number[] | null;
+    };
     colors: any[];
     filtersPanelVisible: boolean;
     sidebarCollapsed: boolean;

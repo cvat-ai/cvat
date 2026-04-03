@@ -15,6 +15,7 @@ import {
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
+    switchSimplifyVisibility as switchSimplifyVisibilityAction,
     removeObject as removeObjectAction,
     collapseObjectItems,
 } from 'actions/annotation-actions';
@@ -55,6 +56,10 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas | Canvas3d;
     focusedObjectPadding: number;
+    simplifyState: {
+        objectState: any;
+        originalPoints: number[] | null;
+    };
 }
 
 interface DispatchToProps {
@@ -64,6 +69,7 @@ interface DispatchToProps {
     removeObject: (objectState: ObjectState) => void;
     copyShape: (objectState: ObjectState) => void;
     switchPropagateVisibility: (visible: boolean) => void;
+    switchSimplifyVisibility: (objectState: any, originalPoints: number[] | null) => void;
     changeGroupColor(group: number, color: string): void;
     updateActiveControl(activeControl: ActiveControl): void;
     expandObject(objectState: ObjectState): void;
@@ -81,6 +87,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 frame: { number: frameNumber },
             },
             canvas: { instance: canvasInstance, ready, activeControl },
+            simplify: simplifyState,
         },
         settings: {
             shapes: { colorBy },
@@ -108,6 +115,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         normalizedKeyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
         focusedObjectPadding,
+        simplifyState,
     };
 }
 
@@ -131,6 +139,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         switchPropagateVisibility(visible: boolean): void {
             dispatch(switchPropagateVisibilityAction(visible));
+        },
+        switchSimplifyVisibility(objectState: any, originalPoints: number[] | null): void {
+            dispatch(switchSimplifyVisibilityAction(objectState, originalPoints));
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
@@ -177,6 +188,26 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
 
         return null;
+    }
+
+    public componentDidUpdate(prevProps: Readonly<Props>): void {
+        const { objectState, simplifyState } = this.props;
+        const { simplifyMode } = this.state;
+
+        // Check if simplify was triggered for this object
+        if (
+            !simplifyMode &&
+            simplifyState.objectState &&
+            simplifyState.objectState.clientID === objectState.clientID &&
+            (!prevProps.simplifyState.objectState ||
+                prevProps.simplifyState.objectState.clientID !== objectState.clientID)
+        ) {
+            // Enter simplify mode
+            this.setState({
+                simplifyMode: true,
+                originalPoints: simplifyState.originalPoints,
+            });
+        }
     }
 
     private copy = (): void => {
@@ -251,7 +282,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private applySimplification = async (): Promise<void> => {
-        const { objectState, updateState } = this.props;
+        const { objectState, updateState, switchSimplifyVisibility } = this.props;
 
         try {
             // Initialize OpenCV if needed
@@ -263,17 +294,21 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             // Just save it
             await updateState(objectState);
 
+            // Clear Redux simplify state
+            switchSimplifyVisibility(null, null);
+
             // Exit simplify mode
             this.setState({ simplifyMode: false, approxPolyAccuracy: 7 });
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to apply simplification:', error);
+            switchSimplifyVisibility(null, null);
             this.setState({ simplifyMode: false });
         }
     };
 
     private cancelSimplification = (): void => {
-        const { objectState, updateState } = this.props;
+        const { objectState, updateState, switchSimplifyVisibility } = this.props;
         const { originalPoints } = this.state;
 
         // Restore original points
@@ -281,6 +316,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             objectState.points = originalPoints;
             updateState(objectState);
         }
+
+        // Clear Redux simplify state
+        switchSimplifyVisibility(null, null);
 
         // Exit simplify mode without saving
         this.setState({ simplifyMode: false, approxPolyAccuracy: 7, originalPoints: null });

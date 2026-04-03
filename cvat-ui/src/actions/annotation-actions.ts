@@ -137,6 +137,7 @@ export enum AnnotationActionTypes {
     PROPAGATE_OBJECT_SUCCESS = 'PROPAGATE_OBJECT_SUCCESS',
     PROPAGATE_OBJECT_FAILED = 'PROPAGATE_OBJECT_FAILED',
     SWITCH_PROPAGATE_VISIBILITY = 'SWITCH_PROPAGATE_VISIBILITY',
+    SWITCH_SIMPLIFY_VISIBILITY = 'SWITCH_SIMPLIFY_VISIBILITY',
     SWITCH_SHOWING_STATISTICS = 'SWITCH_SHOWING_STATISTICS',
     SWITCH_SHOWING_FILTERS = 'SWITCH_SHOWING_FILTERS',
     COLLECT_STATISTICS = 'COLLECT_STATISTICS',
@@ -502,6 +503,13 @@ export function switchPropagateVisibility(visible: boolean): AnyAction {
     return {
         type: AnnotationActionTypes.SWITCH_PROPAGATE_VISIBILITY,
         payload: { visible },
+    };
+}
+
+export function switchSimplifyVisibility(objectState: any, originalPoints: number[] | null = null): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_SIMPLIFY_VISIBILITY,
+        payload: { objectState, originalPoints },
     };
 }
 
