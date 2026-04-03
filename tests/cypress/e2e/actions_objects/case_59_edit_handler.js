@@ -121,6 +121,11 @@ context('Edit handler.', () => {
         it('Edit handler for the polyline.', () => {
             cy.createPolyline(createPolylinesShape);
             cy.get('.cvat-canvas-container').trigger('mousemove', 800, 400);
+
+            cy.get('.cvat-snap-tools-control').click();
+            cy.get('.cvat-snap-to-contour-button').click();
+            cy.get('.cvat-snap-to-contour-button').should('have.class', 'cvat-snap-tool-active');
+
             cy.get('#cvat_canvas_shape_2')
                 .should('have.class', 'cvat_canvas_shape_activated')
                 .invoke('attr', 'points')
@@ -131,7 +136,7 @@ context('Edit handler.', () => {
                         cy.get('.cvat_canvas_shape_drawing')
                             .should('exist')
                             .and('have.attr', 'data-origin-client-id', '2');
-                        cy.get('body').type('{Ctrl}a');
+
                         cy.get('.cvat_canvas_autoborder_point')
                             .should('exist')
                             .and('be.visible')
