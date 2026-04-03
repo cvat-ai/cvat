@@ -95,6 +95,8 @@ jobs:
   rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      PYTEST_ADDOPTS: --platform=local --infra-profile=full
     steps:
       - uses: actions/checkout@v4
         with:

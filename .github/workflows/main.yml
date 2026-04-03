@@ -134,6 +134,8 @@ jobs:
   rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      PYTEST_ADDOPTS: --platform=local --infra-profile=full
     strategy:
       fail-fast: false
       matrix:
@@ -189,7 +191,8 @@ jobs:
           COVERAGE_PROCESS_START: ".coveragerc"
           CVAT_ALLOW_STATIC_CACHE: ${{ matrix.allow_cache }}
         run: |
-          pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ \
+            -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
       - name: Uploading code coverage results as an artifact
@@ -427,8 +430,19 @@ jobs:
   helm_rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      PYTEST_ADDOPTS: >-
+        --platform=kube
+        --infra-profile=full
+        --run-prefix=gha-kube-${{ github.run_id }}-${{ github.run_attempt }}
+        --kube-cpus=4
+        --kube-memory=8g
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
       - name: Start minikube
         uses: medyagh/setup-minikube@latest
@@ -460,56 +474,31 @@ jobs:
 
       - uses: azure/setup-helm@v4
 
-      - name: Update Helm chart dependencies
-        working-directory: helm-chart
-        run: |
-          helm dependency update
-
-      - name: Deploy to minikube
-        run: |
-          printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> helm-chart/test.values.yaml
-          helm upgrade release-${{ github.run_id }}-${{ github.run_attempt }} --install helm-chart \
-            -f helm-chart/cvat.values.yaml \
-            -f helm-chart/test.values.yaml \
-            --set cvat.backend.tag=${{ env.CVAT_VERSION }} \
-            --set cvat.frontend.tag=${{ env.CVAT_VERSION }}
-
-      - name: Update test config
-        run: |
-          sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
-          find tests/python/shared/assets/ -type f -name '*.json' | xargs sed -i -e 's$http://localhost:8080$http://cvat.local$g'
-          echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
-
       - name: Generate SDK
         run: |
-          pip3 install --user -r cvat-sdk/gen/requirements.txt
+          pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-      - name: Install test requirements
+      - name: Install SDK
         run: |
-          pip3 install --user cvat-sdk/ cvat-cli/ -r tests/python/requirements.txt
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
+            --extra-index-url https://download.pytorch.org/whl/cpu
 
-      - name: Wait for CVAT to be ready
+      - name: Start kube test infrastructure
         run: |
-          max_tries=60
-          while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for CVAT pod" && (( max_tries-- )) && sleep 5; done
-          while [[ $(kubectl get pods -l app.kubernetes.io/name=postgresql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for DB pod" && (( max_tries-- )) && sleep 5; done
-          while [[ $(curl -s -o /tmp/server_response -w "%{http_code}" cvat.local/api/server/about) != "200" && max_tries -gt 0 ]]; do echo "waiting for CVAT" && (( max_tries-- )) && sleep 5; done
-          kubectl get pods
-          kubectl logs $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}')
+          pytest tests/python --infra=up
 
       - name: Kube MinIO smoke check
         run: |
-          pytest --timeout 30 --platform=kube \
+          pytest --timeout 30 --infra=reuse \
             'tests/python/rest_api/test_cloud_storages.py::TestGetCloudStorageContent::test_can_get_storage_content_with_manually_created_dirs[2]' \
             --log-cli-level DEBUG
 
       - name: REST API and SDK tests
-        # Full-profile tests are enabled in Helm lane.
         run: |
-          kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
-          kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
-          pytest --timeout 30 --platform=kube tests/python --log-cli-level DEBUG
+          pytest --timeout 30 --infra=reuse \
+            tests/python --log-cli-level DEBUG
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
@@ -528,6 +517,11 @@ jobs:
         with:
           name: helm_rest_api_container_logs
           path: "${{ github.workspace }}/rest_api_testing"
+
+      - name: Stop kube test infrastructure
+        if: always()
+        run: |
+          pytest tests/python --infra=down
 
   publish_dev_images:
     if: github.ref == 'refs/heads/develop'
