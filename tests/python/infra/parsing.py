@@ -29,9 +29,7 @@ def parse_debug_services(value: str | None) -> list[str]:
     if invalid:
         raise pytest.UsageError(
             f"Unknown debug service(s): {', '.join(invalid)}. "
-            "Allowed: "
-            + ", ".join(DEBUG_SERVICE_TO_CONTAINER.keys())
-            + ", workers, all"
+            "Allowed: " + ", ".join(DEBUG_SERVICE_TO_CONTAINER.keys()) + ", workers, all"
         )
 
     return list(dict.fromkeys(services))

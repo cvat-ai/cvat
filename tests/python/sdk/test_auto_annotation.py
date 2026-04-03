@@ -20,7 +20,6 @@ from shared.utils.helpers import generate_image_file
 
 from .util import make_pbar
 
-
 try:
     import torchvision.models as torchvision_models
 except ModuleNotFoundError:

@@ -17,7 +17,6 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
 
 
-
 class TestCliMisc(TestCliBase):
     def test_can_warn_on_mismatching_server_version(self, monkeypatch, caplog):
         def mocked_version(_):

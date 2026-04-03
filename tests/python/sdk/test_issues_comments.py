@@ -11,7 +11,6 @@ from cvat_sdk import Client
 from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
-
 pytestmark = [pytest.mark.infra_profile("standard")]
 
 

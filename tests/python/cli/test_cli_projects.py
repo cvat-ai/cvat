@@ -12,7 +12,6 @@ from cvat_sdk.core.proxies.projects import Project
 from .util import TestCliBase
 
 
-
 class TestCliProjects(TestCliBase):
     @pytest.fixture
     def fxt_new_project(self):

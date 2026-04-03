@@ -11,7 +11,6 @@ from shared.utils import config as shared_config
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_file
 
-
 pytestmark = [pytest.mark.infra_profile("standard")]
 
 

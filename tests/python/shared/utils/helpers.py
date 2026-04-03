@@ -12,6 +12,7 @@ import av
 import av.video.reformatter
 from PIL import Image
 
+
 def generate_image_file(filename="image.png", size=(100, 50), color=(0, 0, 0)):
     f = BytesIO()
     f.name = filename
@@ -93,6 +94,8 @@ def read_video_file(file: BytesIO) -> Generator[Image.Image, None, None]:
 
         for frame in container.decode(video_stream):
             yield frame.to_image()
+
+
 def generate_manifest(path: str) -> None:
     command = [
         "docker",

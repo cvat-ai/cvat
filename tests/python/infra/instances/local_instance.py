@@ -98,7 +98,9 @@ def resolve_debug_port_config(
             continue
 
         stored_host_port = stored_ports.get(service_name)
-        if isinstance(stored_host_port, int) and (project_running or is_port_free(stored_host_port, logger=logger)):
+        if isinstance(stored_host_port, int) and (
+            project_running or is_port_free(stored_host_port, logger=logger)
+        ):
             debug_ports[service_name] = stored_host_port
             used_ports.add(stored_host_port)
             continue
@@ -109,7 +111,9 @@ def resolve_debug_port_config(
     return debug_ports
 
 
-def apply_compose_debug(service_name: str, service_config: dict, *, is_dev: bool, debug_state: dict) -> None:
+def apply_compose_debug(
+    service_name: str, service_config: dict, *, is_dev: bool, debug_state: dict
+) -> None:
     if is_dev:
         return
 
@@ -450,11 +454,19 @@ def resolve_port_config(
         return {
             "http_port": int(traefik_ports.get(8080, state.get("http_port", 18080))),
             "logs_port": int(traefik_ports.get(8090, state.get("logs_port", 18090))),
-            "db_port": int(running_service_ports.get("cvat_db", {}).get(5432, state.get("db_port", 15432))),
-            "redis_inmem_port": int(redis_inmem_ports.get(6379, state.get("redis_inmem_port", 16379))),
-            "redis_ondisk_port": int(redis_ondisk_ports.get(6666, state.get("redis_ondisk_port", 16666))),
+            "db_port": int(
+                running_service_ports.get("cvat_db", {}).get(5432, state.get("db_port", 15432))
+            ),
+            "redis_inmem_port": int(
+                redis_inmem_ports.get(6379, state.get("redis_inmem_port", 16379))
+            ),
+            "redis_ondisk_port": int(
+                redis_ondisk_ports.get(6666, state.get("redis_ondisk_port", 16666))
+            ),
             "minio_port": int(minio_ports.get(9000, state.get("minio_port", 19000))),
-            "minio_console_port": int(minio_ports.get(9001, state.get("minio_console_port", 19001))),
+            "minio_console_port": int(
+                minio_ports.get(9001, state.get("minio_console_port", 19001))
+            ),
         }
 
     def _state_port(name: str, default_start: int, used_ports: set[int]) -> int:
@@ -520,7 +532,8 @@ def stop_services(
     project_directory: Path,
 ) -> None:
     run_command(
-        docker_compose(project_name, dc_files, project_directory) + ["down", "-v", "--remove-orphans"],
+        docker_compose(project_name, dc_files, project_directory)
+        + ["down", "-v", "--remove-orphans"],
         capture_output=False,
         logger=logger,
     )
@@ -621,7 +634,9 @@ def _create_compose_files(
                         f"{project_cfg.host_logs_port}:8090",
                     ]
                     service_env = service_config["environment"]
-                    service_env["TRAEFIK_PROVIDERS_DOCKER_NETWORK"] = f"{project_cfg.project_name}_cvat"
+                    service_env["TRAEFIK_PROVIDERS_DOCKER_NETWORK"] = (
+                        f"{project_cfg.project_name}_cvat"
+                    )
                     service_env["TRAEFIK_PROVIDERS_DOCKER_CONSTRAINTS"] = (
                         f"Label(`com.docker.compose.project`,`{project_cfg.project_name}`)"
                     )
@@ -809,7 +824,8 @@ class LocalInstance(InfraInstance):
     def _build_local_dc_files(self, project_cfg) -> list[Path]:
         active_profile = RuntimeInfraConfig.get_infra_profile()
         dc_files = project_cfg.generated_compose_files + [
-            project_cfg.cvat_root_dir / f for f in RuntimeInfraConfig.get_base_dc_files(active_profile)
+            project_cfg.cvat_root_dir / f
+            for f in RuntimeInfraConfig.get_base_dc_files(active_profile)
         ]
         active_profile_files = self.deps.profile_dc_files.get(active_profile, [])
         if active_profile_files:
@@ -836,7 +852,11 @@ class LocalInstance(InfraInstance):
                 )
                 infra_health.wait_for_services(self.deps.waiting_time)
                 self.exec_cvat(
-                    ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+                    [
+                        "sh",
+                        "-c",
+                        "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json",
+                    ]
                 )
                 self._get_db_restorer().restore_from_template(source_db="cvat", target_db="test_db")
                 infra_health.wait_for_auth_login_ready()
@@ -888,9 +908,7 @@ class LocalInstance(InfraInstance):
         if (
             infra_mode == InfraMode.AUTO
             and project_running
-            and not profile_services_ready(
-                project_name, RuntimeInfraConfig.get_infra_profile()
-            )
+            and not profile_services_ready(project_name, RuntimeInfraConfig.get_infra_profile())
         ):
             logger.warning(
                 "Project '%s' is running but missing required services for profile '%s'; recreating stack",
@@ -905,10 +923,7 @@ class LocalInstance(InfraInstance):
                 project_directory=self.deps.cvat_root_dir,
             )
             project_running = False
-        elif (
-            project_running
-            and not project_db_port_ready(project_name, project_cfg.host_db_port)
-        ):
+        elif project_running and not project_db_port_ready(project_name, project_cfg.host_db_port):
             logger.warning(
                 "Project '%s' is running but PostgreSQL host port mapping is missing/outdated; recreating stack",
                 project_name,
@@ -921,13 +936,10 @@ class LocalInstance(InfraInstance):
                 project_directory=self.deps.cvat_root_dir,
             )
             project_running = False
-        elif (
-            project_running
-            and not project_redis_ports_ready(
-                project_name,
-                expected_inmem_host_port=project_cfg.host_redis_inmem_port,
-                expected_ondisk_host_port=project_cfg.host_redis_ondisk_port,
-            )
+        elif project_running and not project_redis_ports_ready(
+            project_name,
+            expected_inmem_host_port=project_cfg.host_redis_inmem_port,
+            expected_ondisk_host_port=project_cfg.host_redis_ondisk_port,
         ):
             logger.warning(
                 "Project '%s' is running but Redis host port mapping is missing/outdated; recreating stack",

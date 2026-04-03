@@ -106,7 +106,14 @@ class ParallelPlatformAdapter(ABC):
         return list(base_args)
 
     @abstractmethod
-    def build_lanes(self, *, run_prefix: str, profiles: list[str], run_artifacts_dir: Path, infra_mode: InfraMode) -> tuple[list[ParallelLane], list[tuple[int, str, str, str]]]:
+    def build_lanes(
+        self,
+        *,
+        run_prefix: str,
+        profiles: list[str],
+        run_artifacts_dir: Path,
+        infra_mode: InfraMode,
+    ) -> tuple[list[ParallelLane], list[tuple[int, str, str, str]]]:
         raise NotImplementedError
 
     @abstractmethod
@@ -114,16 +121,33 @@ class ParallelPlatformAdapter(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def build_infra_command(self, *, base_args: list[str], lane: ParallelLane, infra_mode: InfraMode) -> list[str]:
+    def build_infra_command(
+        self, *, base_args: list[str], lane: ParallelLane, infra_mode: InfraMode
+    ) -> list[str]:
         raise NotImplementedError
 
     @abstractmethod
-    def build_batch_command(self, *, base_args: list[str], tests_root_arg: str, lane: ParallelLane, batch_file: Path, lane_infra_mode: InfraMode) -> list[str]:
+    def build_batch_command(
+        self,
+        *,
+        base_args: list[str],
+        tests_root_arg: str,
+        lane: ParallelLane,
+        batch_file: Path,
+        lane_infra_mode: InfraMode,
+    ) -> list[str]:
         raise NotImplementedError
 
 
 class LocalParallelAdapter(ParallelPlatformAdapter):
-    def build_lanes(self, *, run_prefix: str, profiles: list[str], run_artifacts_dir: Path, infra_mode: InfraMode) -> tuple[list[ParallelLane], list[tuple[int, str, str, str]]]:
+    def build_lanes(
+        self,
+        *,
+        run_prefix: str,
+        profiles: list[str],
+        run_artifacts_dir: Path,
+        infra_mode: InfraMode,
+    ) -> tuple[list[ParallelLane], list[tuple[int, str, str, str]]]:
         used_ports: set[int] = set()
         mismatch_lanes: list[tuple[int, str, str, str]] = []
         lanes: list[ParallelLane] = []
@@ -164,7 +188,9 @@ class LocalParallelAdapter(ParallelPlatformAdapter):
             },
         )
 
-    def build_infra_command(self, *, base_args: list[str], lane: ParallelLane, infra_mode: InfraMode) -> list[str]:
+    def build_infra_command(
+        self, *, base_args: list[str], lane: ParallelLane, infra_mode: InfraMode
+    ) -> list[str]:
         return [
             sys.executable,
             "-m",
@@ -177,7 +203,15 @@ class LocalParallelAdapter(ParallelPlatformAdapter):
             f"--infra={infra_mode}",
         ]
 
-    def build_batch_command(self, *, base_args: list[str], tests_root_arg: str, lane: ParallelLane, batch_file: Path, lane_infra_mode: InfraMode) -> list[str]:
+    def build_batch_command(
+        self,
+        *,
+        base_args: list[str],
+        tests_root_arg: str,
+        lane: ParallelLane,
+        batch_file: Path,
+        lane_infra_mode: InfraMode,
+    ) -> list[str]:
         return [
             sys.executable,
             "-m",

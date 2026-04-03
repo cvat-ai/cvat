@@ -98,7 +98,8 @@ def pytest_sessionstart(session) -> None:
         (
             cleanup,
             dumpdb,
-            infra_mode in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES},
+            infra_mode
+            in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES},
         )
     ):
         raise pytest.UsageError(
@@ -129,11 +130,14 @@ def pytest_sessionstart(session) -> None:
         pytest.exit("CVAT images have been rebuilt (cvat/server:dev, cvat/ui:dev)", returncode=0)
 
     if config.getoption("--container-debug-wait") and not config.getoption("--container-debug"):
-        raise pytest.UsageError("--container-debug-wait requires --container-debug with at least one service")
+        raise pytest.UsageError(
+            "--container-debug-wait requires --container-debug with at least one service"
+        )
 
     should_run_version_check = (
         not collect_only
-        and infra_mode not in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES}
+        and infra_mode
+        not in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES}
         and not any((cleanup, dumpdb))
         and not bool(config.getoption("--parallel-child"))
         and not bool(config.getoption("--skip-version-check"))

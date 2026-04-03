@@ -10,7 +10,6 @@ from cvat_sdk import models
 from deepdiff import DeepDiff
 
 
-
 def test_models_do_not_change_input_values():
     # Nested containers may be modified during the model input data parsing.
     # This can lead to subtle memory errors, which are very hard to find.

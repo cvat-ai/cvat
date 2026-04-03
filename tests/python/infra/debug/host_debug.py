@@ -133,7 +133,9 @@ def maybe_wait_for_vscode_attach(session, *, cvat_root_dir: Path) -> None:
 
         debug_services = parse_debug_services(config.getoption("--container-debug"))
     debug_ports = getattr(config, "_cvat_debug_ports", {})
-    workspace_path = _generate_tests_vscode_workspace(config, debug_services, debug_ports, cvat_root_dir)
+    workspace_path = _generate_tests_vscode_workspace(
+        config, debug_services, debug_ports, cvat_root_dir
+    )
 
     terminal_reporter = config.pluginmanager.getplugin("terminalreporter")
     attach_messages = [

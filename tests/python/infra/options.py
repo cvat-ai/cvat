@@ -64,8 +64,7 @@ def add_infra_options(parser):
         action="store_true",
         default=False,
         help=(
-            "Skip startup sanity check for sdk/cli/server image versions. "
-            "(default: %(default)s)"
+            "Skip startup sanity check for sdk/cli/server image versions. " "(default: %(default)s)"
         ),
     )
     return group

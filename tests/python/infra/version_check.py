@@ -121,7 +121,9 @@ def check_server_image_version(cvat_root_dir: Path) -> None:
 def get_server_about_version(base_url: str, timeout: float = 3.0) -> str:
     about_url = f"{base_url.rstrip('/')}/api/server/about"
     try:
-        with urlopen(about_url, timeout=timeout) as response:  # nosec B310 (trusted local test endpoint)
+        with urlopen(
+            about_url, timeout=timeout
+        ) as response:  # nosec B310 (trusted local test endpoint)
             payload = json.loads(response.read().decode("utf-8"))
     except URLError as ex:
         raise RuntimeError(f"Server is not reachable at {about_url}: {ex}") from ex

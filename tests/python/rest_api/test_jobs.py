@@ -39,7 +39,6 @@ from .utils import (
 )
 
 
-
 def get_job_staff(job, tasks, projects):
     job_staff = []
     job_staff.append(job["assignee"])

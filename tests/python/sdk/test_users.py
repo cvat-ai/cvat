@@ -11,7 +11,6 @@ from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 
 
-
 class TestUserUsecases:
     @pytest.fixture(autouse=True)
     def setup(

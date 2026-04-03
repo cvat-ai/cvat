@@ -56,7 +56,9 @@ def get_api_url(endpoint, **kwargs):
 
 
 def get_method(username, endpoint, *, timeout=None, **kwargs):
-    return requests.get(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=timeout)
+    return requests.get(
+        get_api_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=timeout
+    )
 
 
 def options_method(username, endpoint, **kwargs):

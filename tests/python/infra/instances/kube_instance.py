@@ -57,6 +57,7 @@ _KUBE_STATIC_INFRA_IMAGES = (
     "docker.io/apache/kvrocks:2.12.1",
 )
 
+
 def _kube_cache_dir() -> Path:
     path = RuntimeInfraConfig.get_runtime_root_dir() / "kube-cache"
     path.mkdir(parents=True, exist_ok=True)
@@ -176,7 +177,9 @@ def _kube_infra_profile() -> str:
 
 
 def _kube_profile_values_file(*, cvat_root_dir: Path, chart_name: str) -> Path:
-    return cvat_root_dir / "tests/k8s/profiles" / f"{chart_name}.{_kube_infra_profile()}.values.yaml"
+    return (
+        cvat_root_dir / "tests/k8s/profiles" / f"{chart_name}.{_kube_infra_profile()}.values.yaml"
+    )
 
 
 def _sha256_file(path) -> str:
@@ -291,16 +294,24 @@ def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
         "memory": memory,
         "chart": {
             "cvat.values.yaml": _sha256_file(cvat_values) if cvat_values.exists() else "",
-            "tests/k8s/cvat.test.values.yaml": _sha256_file(test_values) if test_values.exists() else "",
+            "tests/k8s/cvat.test.values.yaml": (
+                _sha256_file(test_values) if test_values.exists() else ""
+            ),
             f"tests/k8s/profiles/cvat.{_kube_infra_profile()}.values.yaml": (
                 _sha256_file(cvat_profile_values) if cvat_profile_values.exists() else ""
             ),
             "Chart.yaml": _sha256_file(chart_yaml) if chart_yaml.exists() else "",
             "Chart.lock": _sha256_file(chart_lock) if chart_lock.exists() else "",
-            "tests/k8s/test-chart/Chart.yaml": _sha256_file(test_chart_yaml) if test_chart_yaml.exists() else "",
-            "tests/k8s/test-chart/values.yaml": _sha256_file(test_chart_values) if test_chart_values.exists() else "",
+            "tests/k8s/test-chart/Chart.yaml": (
+                _sha256_file(test_chart_yaml) if test_chart_yaml.exists() else ""
+            ),
+            "tests/k8s/test-chart/values.yaml": (
+                _sha256_file(test_chart_values) if test_chart_values.exists() else ""
+            ),
             f"tests/k8s/profiles/test-chart.{_kube_infra_profile()}.values.yaml": (
-                _sha256_file(test_chart_profile_values) if test_chart_profile_values.exists() else ""
+                _sha256_file(test_chart_profile_values)
+                if test_chart_profile_values.exists()
+                else ""
             ),
         },
     }
@@ -312,13 +323,13 @@ def _fingerprints_equal(lhs: dict | None, rhs: dict) -> bool:
     return json.dumps(lhs, sort_keys=True) == json.dumps(rhs, sort_keys=True)
 
 
-def _configure_kube_runtime_env(*, project_name: str, base_url: str, minio_endpoint_url: str) -> None:
+def _configure_kube_runtime_env(
+    *, project_name: str, base_url: str, minio_endpoint_url: str
+) -> None:
     os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
     os.environ["CVAT_BASE_URL"] = base_url
     os.environ["CVAT_MINIO_ENDPOINT_URL"] = minio_endpoint_url
-    os.environ[
-        "CVAT_TEST_WEBHOOK_RECEIVER_URL"
-    ] = (
+    os.environ["CVAT_TEST_WEBHOOK_RECEIVER_URL"] = (
         f"http://{_kube_webhook_receiver_service()}."
         f"{_kube_namespace()}.svc.cluster.local:2020/payload"
     )
@@ -548,7 +559,9 @@ def _load_images_into_minikube(profile: str) -> None:
             ["minikube", "-p", profile, "image", "ls"],
             logger=logger,
         )
-        minikube_images = {line.strip() for line in minikube_images_stdout.splitlines() if line.strip()}
+        minikube_images = {
+            line.strip() for line in minikube_images_stdout.splitlines() if line.strip()
+        }
     except Exception:
         minikube_images = set()
 
@@ -811,7 +824,9 @@ class KubeInstance(InfraInstance):
         return RuntimeInfraConfig.get_run_prefix_from_config(self.config)
 
     def _preferred_forward_port(self, *, state_key: str, start_port: int) -> int:
-        state = RuntimeInfraConfig.get_project_config(self._runtime_project_name()).load_state() or {}
+        state = (
+            RuntimeInfraConfig.get_project_config(self._runtime_project_name()).load_state() or {}
+        )
         preferred = state.get(state_key)
         if isinstance(preferred, int) and is_port_free(preferred, logger=logger):
             return preferred
@@ -824,7 +839,9 @@ class KubeInstance(InfraInstance):
         start_port: int,
         attempted_ports: set[int],
     ) -> int:
-        state = RuntimeInfraConfig.get_project_config(self._runtime_project_name()).load_state() or {}
+        state = (
+            RuntimeInfraConfig.get_project_config(self._runtime_project_name()).load_state() or {}
+        )
         preferred = state.get(state_key)
         if (
             isinstance(preferred, int)
@@ -930,9 +947,7 @@ class KubeInstance(InfraInstance):
                 node_port = port.get("nodePort")
                 break
         if not node_port:
-            raise RuntimeError(
-                f"Service '{ingress_service}' has no NodePort mapped for port 80"
-            )
+            raise RuntimeError(f"Service '{ingress_service}' has no NodePort mapped for port 80")
 
         minikube_ip = run_command(
             ["minikube", "-p", _kube_profile(), "ip"],
@@ -994,9 +1009,7 @@ class KubeInstance(InfraInstance):
 
         release_exists = _helm_release_exists(
             release=_kube_release(), namespace=_kube_namespace()
-        ) and _helm_release_exists(
-            release=_kube_test_release(), namespace=_kube_namespace()
-        )
+        ) and _helm_release_exists(release=_kube_test_release(), namespace=_kube_namespace())
         fingerprint_matches = _fingerprints_equal(saved_fingerprint, current_fingerprint)
         if not created and release_exists and fingerprint_matches:
             # When the minikube profile already exists, the API server can come
@@ -1240,12 +1253,13 @@ class KubeInstance(InfraInstance):
 
             mounted_file_share_dir = self.deps.cvat_root_dir / "tests/mounted_file_share"
             manifest_dir = (
-                self.deps.cvat_root_dir
-                / "tests/cypress/e2e/actions_tasks/assets/case_65_manifest"
+                self.deps.cvat_root_dir / "tests/cypress/e2e/actions_tasks/assets/case_65_manifest"
             )
             manifest_file = manifest_dir / "manifest.jsonl"
             if not mounted_file_share_dir.exists():
-                raise RuntimeError(f"Expected test asset directory is missing: {mounted_file_share_dir}")
+                raise RuntimeError(
+                    f"Expected test asset directory is missing: {mounted_file_share_dir}"
+                )
             if not manifest_dir.exists():
                 raise RuntimeError(f"Expected test asset directory is missing: {manifest_dir}")
             if not manifest_file.exists():
@@ -1357,7 +1371,9 @@ class KubeInstance(InfraInstance):
                 setattr(self, port_attr, local_port)
                 setattr(self, log_attr, log_handle)
                 return local_port
-        raise RuntimeError(last_error or f"Failed to start kubectl port-forward for service/{service_name}")
+        raise RuntimeError(
+            last_error or f"Failed to start kubectl port-forward for service/{service_name}"
+        )
 
     def _start_runtime_port_forwards(
         self, *, project_name: str, kube_fingerprint: dict | None = None
@@ -1461,7 +1477,9 @@ class KubeInstance(InfraInstance):
         _append_kube_trace("TRACE kube restore: finished wait_for_services")
         _append_kube_trace("TRACE kube restore: start loaddata")
         with profile_external_phase("kube.restore.loaddata"):
-            self.exec_cvat(["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"])
+            self.exec_cvat(
+                ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+            )
         _append_kube_trace("TRACE kube restore: finished loaddata")
         _append_kube_trace("TRACE kube restore: start restore_template")
         with profile_external_phase("kube.restore.restore_template"):
@@ -1542,7 +1560,9 @@ class KubeInstance(InfraInstance):
         self._copy_file_share_inner()
 
     def restore_clickhouse_db(self) -> None:
-        self.exec_cvat(["/bin/sh", "-c", f'python "{RuntimeInfraConfig.get_clickhouse_init_script()}" --clear'])
+        self.exec_cvat(
+            ["/bin/sh", "-c", f'python "{RuntimeInfraConfig.get_clickhouse_init_script()}" --clear']
+        )
 
     def restore_redis_inmem(self) -> None:
         self._get_redis_restorer().restore_inmem()
@@ -1665,7 +1685,10 @@ class KubeInstance(InfraInstance):
         raise RuntimeError(last_error or "Failed to start kubectl port-forward for PostgreSQL")
 
     def _start_redis_inmem_port_forward(self) -> int:
-        if self._redis_inmem_port_forward_proc is not None and self._redis_inmem_forward_port is not None:
+        if (
+            self._redis_inmem_port_forward_proc is not None
+            and self._redis_inmem_forward_port is not None
+        ):
             if self._redis_inmem_port_forward_proc.poll() is None:
                 return self._redis_inmem_forward_port
             self._close_redis_restorer()
@@ -1710,7 +1733,10 @@ class KubeInstance(InfraInstance):
         raise RuntimeError(last_error or "Failed to start kubectl port-forward for Redis in-memory")
 
     def _start_redis_ondisk_port_forward(self) -> int:
-        if self._redis_ondisk_port_forward_proc is not None and self._redis_ondisk_forward_port is not None:
+        if (
+            self._redis_ondisk_port_forward_proc is not None
+            and self._redis_ondisk_forward_port is not None
+        ):
             if self._redis_ondisk_port_forward_proc.poll() is None:
                 return self._redis_ondisk_forward_port
             self._close_redis_restorer()

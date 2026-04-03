@@ -81,9 +81,7 @@ class BackgroundJobCleaner:
         ]
         raise RuntimeError(f"Timed out waiting for background jobs to drain: {remaining_state}")
 
-    def _collect_active_jobs(
-        self, queues: list[Queue]
-    ) -> list[tuple[Queue, Job, JobStatus]]:
+    def _collect_active_jobs(self, queues: list[Queue]) -> list[tuple[Queue, Job, JobStatus]]:
         active_jobs: list[tuple[Queue, Job, JobStatus]] = []
         for queue in queues:
             jobs_by_id: dict[str, Job] = {}

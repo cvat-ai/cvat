@@ -53,7 +53,9 @@ def is_port_free(port: int, *, logger: logging.Logger | None = None) -> bool:
     return True
 
 
-def pick_free_port(start: int, used_ports: set[int], *, logger: logging.Logger | None = None) -> int:
+def pick_free_port(
+    start: int, used_ports: set[int], *, logger: logging.Logger | None = None
+) -> int:
     for port in range(start, 65535):
         if port not in used_ports and is_port_free(port, logger=logger):
             used_ports.add(port)

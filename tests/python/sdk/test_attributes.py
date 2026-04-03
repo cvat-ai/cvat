@@ -11,7 +11,6 @@ from cvat_sdk.attributes import (
 )
 
 
-
 def test_number_attribute_values_can_convert_good_values():
     assert number_attribute_values(0, 0, 1) == ["0", "0", "1"]
     assert number_attribute_values(0, 10, 1) == ["0", "10", "1"]

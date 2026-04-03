@@ -63,7 +63,9 @@ def wait_for_services(num_secs: int = 300) -> None:
         sleep(1)
 
     _append_health_trace(f"wait_for_services timeout url={url} timeout={num_secs}s")
-    raise Exception(f"Failed to reach the server during {num_secs} seconds. Please check the configuration.")
+    raise Exception(
+        f"Failed to reach the server during {num_secs} seconds. Please check the configuration."
+    )
 
 
 def wait_for_auth_login_ready(num_secs: int = 180) -> None:

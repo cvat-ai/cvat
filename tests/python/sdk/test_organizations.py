@@ -11,7 +11,6 @@ from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.organizations import Organization
 
 
-
 class TestOrganizationUsecases:
     @pytest.fixture(autouse=True)
     def setup(

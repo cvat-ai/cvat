@@ -39,7 +39,8 @@ class TestTasksBase:
         cases: Sequence, fixture_names: set[str], mark: pytest.MarkDecorator
     ) -> list:
         return [
-            pytest.param(case, marks=mark) if case.fixture in fixture_names else case for case in cases
+            pytest.param(case, marks=mark) if case.fixture in fixture_names else case
+            for case in cases
         ]
 
     def _image_task_fxt_base(

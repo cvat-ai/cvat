@@ -481,9 +481,9 @@ class TestTokenTracking:
 
             def find_single_row(description: str, predicate):
                 matches = [(i, r) for i, r in enumerate(rows) if predicate(r)]
-                assert len(matches) == 1, (
-                    f"Expected exactly one row for {description}, got {len(matches)}"
-                )
+                assert (
+                    len(matches) == 1
+                ), f"Expected exactly one row for {description}, got {len(matches)}"
                 return matches[0]
 
             token_creation_matches = find_matching_rows(
@@ -513,10 +513,7 @@ class TestTokenTracking:
             assert row["obj_val"] == updated_task_name
 
             token_update_matches = find_matching_rows(
-                lambda r: (
-                    r["scope"] == "update:accesstoken"
-                    and r["obj_name"] == "expiry_date"
-                ),
+                lambda r: (r["scope"] == "update:accesstoken" and r["obj_name"] == "expiry_date"),
             )
             # token id is not present in the "update:*" event fields, can't check it.
             # Multiple rows can exist in the same export window due to concurrent tests.

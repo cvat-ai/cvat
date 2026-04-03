@@ -35,10 +35,7 @@ def add_parallel_pytest_options(group) -> None:
         action="store",
         type=int,
         default=None,
-        help=(
-            "Run tests in N parallel instances, "
-            "e.g. --parallel 4"
-        ),
+        help=("Run tests in N parallel instances, " "e.g. --parallel 4"),
     )
     group._addoption(
         "--parallel-shuffle-seed",
@@ -51,9 +48,7 @@ def add_parallel_pytest_options(group) -> None:
         ),
     )
     group._addoption("--parallel-child", action="store_true", default=False, help=argparse.SUPPRESS)
-    group._addoption(
-        "--parallel-batch-file", action="store", default="", help=argparse.SUPPRESS
-    )
+    group._addoption("--parallel-batch-file", action="store", default="", help=argparse.SUPPRESS)
     group._addoption(
         "--parallel-lane-profile",
         action="store",
@@ -77,6 +72,7 @@ def lane_supports(required: str, lane_profile: str) -> bool:
 
 class ParallelInstance(InfraInstance):
     plugin_class: type[InfraPlugin]
+
     @classmethod
     def can_handle_config(cls, config) -> bool:
         if config.getoption("--parallel-child"):
@@ -150,10 +146,14 @@ class ParallelInstance(InfraInstance):
         return
 
     def exec_cvat(self, command: list[str] | str):
-        raise RuntimeError("Parallel parent instance does not execute commands inside CVAT containers")
+        raise RuntimeError(
+            "Parallel parent instance does not execute commands inside CVAT containers"
+        )
 
     def exec_redis_inmem(self, command: list[str] | str):
-        raise RuntimeError("Parallel parent instance does not execute commands inside Redis containers")
+        raise RuntimeError(
+            "Parallel parent instance does not execute commands inside Redis containers"
+        )
 
     def exec_cvat_cp(self, source: Path, target: str, *, cvat_host: str) -> None:
         raise RuntimeError("Parallel parent instance does not copy files into CVAT containers")
@@ -192,6 +192,7 @@ class ParallelPlugin(InfraPlugin):
         except ValueError:
             return True
         return parallel_count > 0
+
 
 ParallelInstance.plugin_class = ParallelPlugin
 
@@ -294,7 +295,9 @@ def _delete_parallel_state(run_prefix: str) -> None:
     _parallel_state_file(run_prefix).unlink(missing_ok=True)
 
 
-def _resolve_parent_parallel_profiles(*, config, run_prefix: str, parallel_count: int, infra_mode: InfraMode) -> list[str]:
+def _resolve_parent_parallel_profiles(
+    *, config, run_prefix: str, parallel_count: int, infra_mode: InfraMode
+) -> list[str]:
     state = _load_parallel_state(run_prefix)
     saved_profiles = list(state.get("profiles", [])) if state else []
     saved_platform = str(state.get("platform", "")) if state else ""
@@ -335,7 +338,9 @@ def _resolve_parent_parallel_profiles(*, config, run_prefix: str, parallel_count
     return _default_lane_profiles_for_count(parallel_count)
 
 
-def _resolve_execution_parallel_profiles(*, config, run_prefix: str, planned_profiles: list[str]) -> list[str]:
+def _resolve_execution_parallel_profiles(
+    *, config, run_prefix: str, planned_profiles: list[str]
+) -> list[str]:
     infra_mode = getattr(config, "_cvat_infra_mode")
     if infra_mode != InfraMode.REUSE:
         return planned_profiles
@@ -427,7 +432,9 @@ def _planned_lane_profiles(items, parallel_count: int) -> list[str]:
 def _parallel_group_key(item) -> str:
     parts = item.nodeid.split("::")
     grouping_marker = item.get_closest_marker("parallel_group")
-    grouping = str(grouping_marker.args[0]).lower() if grouping_marker and grouping_marker.args else "case"
+    grouping = (
+        str(grouping_marker.args[0]).lower() if grouping_marker and grouping_marker.args else "case"
+    )
 
     if grouping == "case":
         return item.nodeid
@@ -555,7 +562,9 @@ def modify_collection_for_parallel(config, items) -> None:
             try:
                 batch_nodeids = _load_batch_nodeids(batch_file)
             except OSError as ex:
-                raise pytest.UsageError(f"Cannot read --parallel-batch-file={batch_file!r}: {ex}") from ex
+                raise pytest.UsageError(
+                    f"Cannot read --parallel-batch-file={batch_file!r}: {ex}"
+                ) from ex
 
         allowed_nodeids = set(batch_nodeids)
 
@@ -580,7 +589,9 @@ def modify_collection_for_parallel(config, items) -> None:
         return
 
     if is_parallel_child:
-        raise pytest.UsageError("--parallel-child test execution requires internal --parallel-batch-file")
+        raise pytest.UsageError(
+            "--parallel-child test execution requires internal --parallel-batch-file"
+        )
 
     for item in items:
         selected.append(item)
@@ -749,9 +760,7 @@ def run_parallel_lanes(
     lane_bootstrap_mode: dict[int, InfraMode | None] = {
         lane.lane_idx: initial_lane_mode for lane in lane_processes
     }
-    lane_active_mode: dict[int, InfraMode | None] = {
-        lane.lane_idx: None for lane in lane_processes
-    }
+    lane_active_mode: dict[int, InfraMode | None] = {lane.lane_idx: None for lane in lane_processes}
     scheduled_by_lane: dict[int, int] = {lane.lane_idx: 0 for lane in lane_processes}
     batch_counter_by_lane: dict[int, int] = {lane.lane_idx: 0 for lane in lane_processes}
     combined_rc = 0
@@ -828,9 +837,8 @@ def run_parallel_lanes(
                 if terminal_reporter:
                     config.hook.pytest_runtest_logreport(report=report)
                 else:
-                    is_terminal_test_report = (
-                        report.when == "call"
-                        or (report.when == "setup" and report.outcome in {"failed", "skipped"})
+                    is_terminal_test_report = report.when == "call" or (
+                        report.when == "setup" and report.outcome in {"failed", "skipped"}
                     )
                     if is_terminal_test_report and report.nodeid not in printed_nodeids:
                         printed_nodeids.add(report.nodeid)
@@ -910,11 +918,11 @@ def run_parallel_lanes(
         return {
             required: sum(
                 1
-            for idx, lane_profile in enumerate(profiles, start=1)
-            if active_procs[idx] is None
-            and lane_done_at[idx] is None
-            and lane_supports(required, lane_profile)
-        )
+                for idx, lane_profile in enumerate(profiles, start=1)
+                if active_procs[idx] is None
+                and lane_done_at[idx] is None
+                and lane_supports(required, lane_profile)
+            )
             for required in RuntimeInfraConfig.get_infra_profiles()
         }
 
@@ -1000,7 +1008,10 @@ def run_parallel_lanes(
                         mode = lane_active_mode[lane_idx]
                         normalized_rc = 0 if rc == 5 else rc
                         if normalized_rc != 0:
-                            write_line(f"[parallel] lane {lane_idx} exited with code {normalized_rc}", red=True)
+                            write_line(
+                                f"[parallel] lane {lane_idx} exited with code {normalized_rc}",
+                                red=True,
+                            )
                         elif mode in {InfraMode.AUTO, InfraMode.RESTORE_DB}:
                             lane_bootstrap_mode[lane_idx] = None
                         combined_rc = combined_rc or normalized_rc
@@ -1340,8 +1351,7 @@ def run_parallel_infra_mode(
                 for lane_idx, project_name, rc, lane_log_path in down_failed
             )
             raise RuntimeError(
-                "Parallel infra mismatch reconciliation failed while stopping lanes: "
-                f"{details}"
+                "Parallel infra mismatch reconciliation failed while stopping lanes: " f"{details}"
             )
 
     for lane in lane_specs:

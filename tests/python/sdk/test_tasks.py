@@ -24,7 +24,6 @@ from shared.utils.helpers import generate_image_files
 from .common import TestDatasetExport
 from .util import make_pbar
 
-
 pytestmark = [pytest.mark.infra_profile("standard")]
 
 

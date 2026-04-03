@@ -11,7 +11,6 @@ from cvat_sdk.core.helpers import DeferredTqdmProgressReporter, TqdmProgressRepo
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 
 
-
 def _exercise_reporter(r: ProgressReporter) -> None:
     with r.task(total=5, desc="Test task", unit="parrots"):
         r.advance(1)

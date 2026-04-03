@@ -120,7 +120,9 @@ class RuntimeProfilerPlugin:
         fixture_rows = []
         fixture_setup_total = 0.0
         fixture_teardown_total = 0.0
-        for stat in sorted(self._fixtures.values(), key=lambda s: s.setup_total + s.teardown_total, reverse=True):
+        for stat in sorted(
+            self._fixtures.values(), key=lambda s: s.setup_total + s.teardown_total, reverse=True
+        ):
             fixture_setup_total += stat.setup_total
             fixture_teardown_total += stat.teardown_total
             fixture_rows.append(
@@ -130,13 +132,15 @@ class RuntimeProfilerPlugin:
                     "location": stat.location,
                     "setup_count": stat.setup_count,
                     "setup_total_s": stat.setup_total,
-                    "setup_avg_s": (stat.setup_total / stat.setup_count) if stat.setup_count else 0.0,
+                    "setup_avg_s": (
+                        (stat.setup_total / stat.setup_count) if stat.setup_count else 0.0
+                    ),
                     "setup_max_s": stat.setup_max,
                     "teardown_count": stat.teardown_count,
                     "teardown_total_s": stat.teardown_total,
-                    "teardown_avg_s": (stat.teardown_total / stat.teardown_count)
-                    if stat.teardown_count
-                    else 0.0,
+                    "teardown_avg_s": (
+                        (stat.teardown_total / stat.teardown_count) if stat.teardown_count else 0.0
+                    ),
                     "teardown_max_s": stat.teardown_max,
                 }
             )

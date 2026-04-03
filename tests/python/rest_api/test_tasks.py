@@ -3146,6 +3146,7 @@ def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user
         task, _ = api_client.tasks_api.retrieve(task["id"])
         assert task.jobs.completed == 1
 
+
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.infra_profile("standard")
 class TestImportTaskAnnotations:
@@ -4389,6 +4390,7 @@ class TestTrackImportExport:
             (3, True),
             (5, False),
         ]
+
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 # Keep this class atomic in parallel runs to avoid re-running heavy class-scoped setup per batch.

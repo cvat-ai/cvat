@@ -59,6 +59,7 @@ class InfraInstance(ABC):
         "/home/django/data/storages",
         "/home/django/data/tmp",
     )
+
     def __init__(self, session, deps: InstanceConfig):
         self.session = session
         self.config = session.config

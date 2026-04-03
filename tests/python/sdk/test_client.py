@@ -18,7 +18,6 @@ from shared.utils import config as shared_config
 from shared.utils.config import USER_PASS
 
 
-
 class TestClientUsecases:
     @pytest.fixture(autouse=True)
     def _restore_redis_inmem(self, restore_redis_inmem_per_function):
@@ -183,7 +182,9 @@ def test_can_check_server_version_in_ctor(
         if do_check:
             es.enter_context(pytest.raises(IncompatibleVersionException))
 
-        Client(url=shared_config.BASE_URL, logger=logger, config=config, check_server_version=do_check)
+        Client(
+            url=shared_config.BASE_URL, logger=logger, config=config, check_server_version=do_check
+        )
 
     assert (
         "Server version '0' is not compatible with SDK version" in logger_stream.getvalue()
@@ -200,7 +201,9 @@ def test_can_check_server_version_in_method(fxt_logger: tuple[Logger, io.StringI
 
     config = Config()
     config.allow_unsupported_server = False
-    client = Client(url=shared_config.BASE_URL, logger=logger, config=config, check_server_version=False)
+    client = Client(
+        url=shared_config.BASE_URL, logger=logger, config=config, check_server_version=False
+    )
 
     with client, pytest.raises(IncompatibleVersionException):
         client.check_server_version()

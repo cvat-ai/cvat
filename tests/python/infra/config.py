@@ -79,9 +79,7 @@ _INFRA_PROFILE_RANK = {
     str(InfraProfile.STANDARD): 1,
     str(InfraProfile.FULL): 2,
 }
-_INFRA_REQUIRED_MARKERS = {
-    profile: f"infra_required_{profile}" for profile in _INFRA_PROFILES
-}
+_INFRA_REQUIRED_MARKERS = {profile: f"infra_required_{profile}" for profile in _INFRA_PROFILES}
 _BACKGROUND_QUEUE_FAMILIES = {
     "media_io": ("import", "export", "chunks"),
     "annotation_async": ("annotation",),
@@ -93,6 +91,7 @@ _PROFILE_BACKGROUND_QUEUE_FAMILIES = {
     str(InfraProfile.STANDARD): ("media_io",),
     str(InfraProfile.FULL): ("media_io", "annotation_async", "webhook_async", "quality_async"),
 }
+
 
 def _validate_project_name(name: str) -> str:
     if not _PROJECT_NAME_PATTERN.match(name):

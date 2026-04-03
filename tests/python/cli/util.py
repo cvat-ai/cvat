@@ -25,6 +25,7 @@ from shared.utils.helpers import generate_image_file
 def _base_url() -> str:
     return os.environ.get("CVAT_BASE_URL", "http://localhost:8080")
 
+
 def run_cli(
     test: unittest.TestCase | Any,
     *args: str,
@@ -113,7 +114,9 @@ class TestCliBase:
         self.host, self.port = _base_url().rsplit(":", maxsplit=1)
         self.user = admin_user
         self.password = USER_PASS
-        self.client = make_client(host=self.host, port=self.port, credentials=(self.user, self.password))
+        self.client = make_client(
+            host=self.host, port=self.port, credentials=(self.user, self.password)
+        )
         self.client.config.status_check_period = 0.01
 
         yield
