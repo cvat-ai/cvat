@@ -6,6 +6,7 @@
 name: cvat
 
 x-backend-env: &backend-env
+  POSTGRES_VERSION: ${POSTGRES_VERSION:-16.13-alpine}
   CVAT_POSTGRES_HOST: cvat_db
   CVAT_POSTGRES_USER: ${CVAT_POSTGRES_USER:-root}
   CVAT_POSTGRES_PASSWORD: ${CVAT_POSTGRES_PASSWORD:-change-me}
@@ -41,7 +42,7 @@ x-clickhouse-env: &clickhouse-env
 services:
   cvat_db:
     container_name: cvat_db
-    image: postgres:15-alpine
+    image: postgres:${POSTGRES_VERSION:-16.13-alpine}
     restart: always
     environment:
       POSTGRES_USER: ${CVAT_POSTGRES_USER:-root}
