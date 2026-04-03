@@ -13,8 +13,6 @@ from cvat.apps.engine.models import (
     DimensionType,
     Project,
     RequestTarget,
-    StageChoice,
-    StateChoice,
     Task,
 )
 from cvat.apps.profiler import silk_profile
@@ -59,14 +57,9 @@ class QualityReportQueueManager(AbstractRequestManager):
             if self.db_instance.dimension != DimensionType.DIM_2D:
                 raise serializers.ValidationError("Quality reports are only supported in 2d tasks")
 
-            gt_job = self.db_instance.gt_job
-            if gt_job is None or not (
-                gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StateChoice.COMPLETED
-            ):
+            if self.db_instance.gt_job is None:
                 raise serializers.ValidationError(
-                    "Quality reports require a Ground Truth job in the task "
-                    f"at the {StageChoice.ACCEPTANCE} stage "
-                    f"and in the {StateChoice.COMPLETED} state"
+                    "Quality reports require a Ground Truth job in the task"
                 )
         else:
             assert False

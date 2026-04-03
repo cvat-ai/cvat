@@ -21,8 +21,6 @@ from cvat.apps.engine.models import (
     Job,
     JobType,
     Project,
-    StageChoice,
-    StateChoice,
     Task,
     ValidationMode,
 )
@@ -70,14 +68,11 @@ class TaskQualityCalculator:
             if isinstance(task, int):
                 task = Task.objects.select_related("data").get(id=task)
 
-            # The GT job could have been removed or marked incomplete during scheduling,
-            # so we need to check it
+            # The GT job could have been removed during scheduling, so we need to check it.
             gt_job_id = (
                 Job.objects.filter(
                     segment__task=task,
                     type=JobType.GROUND_TRUTH,
-                    state=StateChoice.COMPLETED,
-                    stage=StageChoice.ACCEPTANCE,
                 )
                 .values_list("id", flat=True)
                 .first()
@@ -472,8 +467,6 @@ class ProjectQualityCalculator:
                 for ids_chunk in take_by(all_task_ids, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE)
                 for task_id in Job.objects.filter(
                     type=JobType.GROUND_TRUTH,
-                    stage=StageChoice.ACCEPTANCE,
-                    state=StateChoice.COMPLETED,
                     segment__task__in=ids_chunk,
                 ).values_list("segment__task__id", flat=True)
             )

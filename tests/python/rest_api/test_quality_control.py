@@ -666,45 +666,8 @@ class TestPostQualityReports(_PermissionTestBase):
         with pytest.raises(exceptions.ApiException) as capture:
             self.create_quality_report(user=admin_user, task_id=task_id)
 
-        assert (
-            "Quality reports require a Ground Truth job in the task at the acceptance "
-            "stage and in the completed state"
-        ) in capture.value.body
+        assert "Quality reports require a Ground Truth job in the task" in capture.value.body
 
-    @pytest.mark.parametrize(
-        "field_name, field_value",
-        [
-            ("stage", "annotation"),
-            ("stage", "validation"),
-            ("state", "new"),
-            ("state", "in progress"),
-            ("state", "rejected"),
-        ],
-    )
-    def test_cannot_create_report_with_incomplete_gt_job(
-        self, admin_user, jobs, field_name, field_value
-    ):
-        gt_job = next(
-            j
-            for j in jobs
-            if j["type"] == "ground_truth"
-            and j["stage"] == "acceptance"
-            and j["state"] == "completed"
-        )
-        task_id = gt_job["task_id"]
-
-        with make_api_client(admin_user) as api_client:
-            api_client.jobs_api.partial_update(
-                gt_job["id"], patched_job_write_request={field_name: field_value}
-            )
-
-        with pytest.raises(exceptions.ApiException) as capture:
-            self.create_quality_report(user=admin_user, task_id=task_id)
-
-        assert (
-            "Quality reports require a Ground Truth job in the task at the acceptance "
-            "stage and in the completed state"
-        ) in capture.value.body
 
     def _test_create_report_200(self, user: str, task_id: int):
         return self.create_quality_report(user=user, task_id=task_id)
@@ -2063,7 +2026,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
 
         self.create_quality_report(user=admin_user, project_id=project_id)
 
-    def test_can_create_project_report_when_there_are_tasks_without_configured_gt(
+    def test_can_create_project_report_when_gt_job_is_not_in_acceptance_completed(
         self, admin_user, projects, tasks, jobs, labels
     ):
         project = next(
@@ -2087,7 +2050,17 @@ class TestPostProjectQualityReports(_PermissionTestBase):
             )
 
         # Create project report
-        self.create_quality_report(user=admin_user, project_id=project_id)
+        report = self.create_quality_report(user=admin_user, project_id=project_id, max_retries=30)
+
+        with make_api_client(admin_user) as api_client:
+            child_reports = get_paginated_collection(
+                api_client.quality_api.list_reports_endpoint,
+                parent_id=report["id"],
+                target="task",
+                return_json=True,
+            )
+
+        assert any(child_report["task_id"] == task["id"] for child_report in child_reports)
 
     def test_can_reuse_relevant_task_reports_in_project_report(
         self, admin_user, projects, tasks, labels, quality_settings, quality_reports
