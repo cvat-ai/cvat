@@ -101,6 +101,8 @@ jobs:
   unit_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      PYTEST_ADDOPTS: --platform=local --infra=auto --infra-profile=full
     steps:
       - uses: actions/checkout@v4
 
@@ -138,19 +140,19 @@ jobs:
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-      - name: Install test requirements
+      - name: Install SDK
         run: |
-          pip3 install -e ./cvat-sdk -e ./cvat-cli -r ./tests/python/requirements.txt
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
+            --extra-index-url https://download.pytorch.org/whl/cpu
 
       - name: REST API and SDK tests
         run: |
           echo 'Run 1: without cache'
           pytest tests/python/ --alluredir=tests/python/allure-results
-          pytest tests/python/ --stop-services
 
           echo 'Run 2: with cache'
           CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
-          pytest tests/python/ --stop-services
 
       - name: Upload allure results for REST API tests
         if: always()

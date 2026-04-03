@@ -135,7 +135,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      PYTEST_ADDOPTS: --platform=local --infra-profile=full
+      PYTEST_ADDOPTS: --platform=local --infra=auto --infra-profile=full
     strategy:
       fail-fast: false
       matrix:
