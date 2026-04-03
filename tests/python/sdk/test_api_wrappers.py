@@ -5,7 +5,6 @@
 import pickle
 from copy import deepcopy
 
-import pytest
 from cvat_sdk import models
 from deepdiff import DeepDiff
 

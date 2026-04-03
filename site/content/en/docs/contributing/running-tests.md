@@ -194,7 +194,8 @@ Docker-compose based debugging flow:
    docker exec -it dbg_cvat_server_1 /bin/bash
    ```
 1. Debug recommendation for parallel runs:
-   Run the failing test without `--parallel` when using `--pdb`/`--trace`. Interactive debugging is most reliable in a single pytest process.
+   Run the failing test without `--parallel` when using `--pdb`/`--trace`.
+   Interactive debugging is most reliable in a single pytest process.
 1. Stop and cleanup:
    ```bash
    pytest tests/python --run-prefix dbg down

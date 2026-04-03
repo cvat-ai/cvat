@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import sys
 from abc import ABC, abstractmethod
@@ -13,7 +12,7 @@ from pathlib import Path
 
 import pytest
 from infra.config import InfraMode, RuntimeInfraConfig
-from infra.system_utils import is_port_free, pick_free_port
+from infra.system_utils import pick_free_port
 
 logger = logging.getLogger(__name__)
 

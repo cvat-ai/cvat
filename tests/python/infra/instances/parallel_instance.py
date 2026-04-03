@@ -7,7 +7,6 @@ import json
 import logging
 import math
 import signal
-import sys
 from collections import defaultdict, deque
 from hashlib import sha1
 from pathlib import Path
@@ -20,6 +19,7 @@ from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.parallel.adapters import ParallelLane, build_parallel_adapter
 from infra.parsing import parse_debug_services
+from infra.system_utils import pick_free_port
 
 _MIN_BATCH_SIZE = 100
 _MAX_BATCH_SIZE = 200
@@ -1291,7 +1291,7 @@ def run_parallel_infra_mode(
         down_failed: list[tuple[int, str, int, Path]] = []
         if adapter.parallelize_infra_lifecycle:
             down_processes: list[tuple[int, str, Path, Popen, object]] = []
-            for lane_idx, project_name, _, _requested_profile in mismatch_lanes:
+            for lane_idx, project_name, _, _ in mismatch_lanes:
                 lane = lane_by_idx[lane_idx]
                 lane_log_path = lane.lane_dir / "infra-reconcile-down.log"
                 lane_log = open(lane_log_path, "w")
@@ -1315,7 +1315,7 @@ def run_parallel_infra_mode(
                 )
 
             try:
-                for lane_idx, project_name, lane_log_path, proc, _lane_log in down_processes:
+                for lane_idx, project_name, lane_log_path, proc, _ in down_processes:
                     rc = proc.wait()
                     if rc != 0:
                         down_failed.append((lane_idx, project_name, rc, lane_log_path))
@@ -1323,7 +1323,7 @@ def run_parallel_infra_mode(
                 for _, _, _, _, lane_log in down_processes:
                     lane_log.close()
         else:
-            for lane_idx, project_name, _, _requested_profile in mismatch_lanes:
+            for lane_idx, project_name, _, _ in mismatch_lanes:
                 lane = lane_by_idx[lane_idx]
                 lane_log_path = lane.lane_dir / "infra-reconcile-down.log"
                 lane_log = open(lane_log_path, "w")
@@ -1382,7 +1382,7 @@ def run_parallel_infra_mode(
             )
 
         try:
-            for lane_idx, project_name, profile, lane_log_path, proc, _lane_log in lane_processes:
+            for lane_idx, project_name, profile, lane_log_path, proc, _ in lane_processes:
                 lane_start = monotonic()
                 rc = proc.wait()
                 elapsed = monotonic() - lane_start

@@ -5,7 +5,6 @@
 import json
 import logging
 import os
-import re
 from pathlib import Path
 from subprocess import CalledProcessError, run
 from time import sleep
