@@ -10,14 +10,15 @@ from copy import copy, deepcopy
 from itertools import chain
 
 import numpy as np
+from scipy.optimize import linear_sum_assignment
+from shapely import geometry
+
 from cvat.apps.dataset_manager.util import (
     faster_deepcopy,
     make_getter_by_frame_for_annotation_stream,
 )
 from cvat.apps.engine.models import DimensionType, ShapeType
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from scipy.optimize import linear_sum_assignment
-from shapely import geometry
 
 
 class AnnotationIR:

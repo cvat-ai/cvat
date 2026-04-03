@@ -14,12 +14,26 @@ from datetime import timedelta
 from functools import wraps
 from typing import Any
 
-import cvat.apps.dataset_manager as dm
 import datumaro.util.mask_tools as mask_tools
 import django_rq
 import numpy as np
 import requests
 import rq
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.signing import BadSignature, TimestampSigner
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
+from rest_framework import serializers, status, viewsets
+from rest_framework.response import Response
+
+import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.task import PatchAction
 from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
@@ -47,19 +61,6 @@ from cvat.apps.lambda_manager.serializers import (
 )
 from cvat.apps.lambda_manager.signals import interactive_function_call_signal
 from cvat.utils.http import make_requests_session
-from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.core.signing import BadSignature, TimestampSigner
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (
-    OpenApiParameter,
-    OpenApiResponse,
-    extend_schema,
-    extend_schema_view,
-    inline_serializer,
-)
-from rest_framework import serializers, status, viewsets
-from rest_framework.response import Response
 
 slogger = ServerLogManager(__name__)
 

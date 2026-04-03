@@ -10,6 +10,7 @@ from unittest import mock
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
+
 from shared.utils import config as shared_config
 from shared.utils.config import USER_PASS, make_api_client
 

@@ -17,10 +17,35 @@ from datetime import datetime
 from types import SimpleNamespace
 from typing import Any, cast
 
-import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 import django_rq
 from attr.converters import to_bool
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.files.storage import storages
+from django.db import IntegrityError, transaction
+from django.db.models.query import Prefetch
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
+from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    PolymorphicProxySerializer,
+    extend_schema,
+    extend_schema_view,
+)
+from rest_framework import mixins, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.settings import api_settings
+from rq.job import Job as RQJob
+
+import cvat.apps.dataset_manager as dm
+import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine import backup
 from cvat.apps.engine.background import BackupImporter, DatasetImporter, TaskCreator
@@ -128,30 +153,6 @@ from cvat.apps.engine.view_utils import (
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
-from django.conf import settings
-from django.contrib.auth.models import User
-from django.core.files.storage import storages
-from django.db import IntegrityError, transaction
-from django.db.models.query import Prefetch
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
-from django.utils import timezone
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (
-    OpenApiExample,
-    OpenApiParameter,
-    OpenApiResponse,
-    PolymorphicProxySerializer,
-    extend_schema,
-    extend_schema_view,
-)
-from rest_framework import mixins, serializers, status, viewsets
-from rest_framework.decorators import action
-from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
-from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.settings import api_settings
-from rq.job import Job as RQJob
 from utils.dataset_manifest import ImageManifestManager
 
 from . import models

@@ -15,6 +15,7 @@ from cvat_sdk.core.proxies.types import Location
 from cvat_sdk.core.utils import filter_dict
 from PIL import Image
 from pytest_cases import fixture_ref, parametrize
+
 from shared.fixtures.data import CloudStorageAssets
 from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
 

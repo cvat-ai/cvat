@@ -7,6 +7,7 @@ from http import HTTPStatus
 from time import sleep
 
 from infra.config import RuntimeInfraConfig
+
 from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)

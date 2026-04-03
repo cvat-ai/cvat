@@ -10,12 +10,13 @@ from functools import partial
 from typing import Any
 from unittest import mock
 
+from django.test import TestCase
+
 from cvat.apps.dataset_manager import task as task_module
 from cvat.apps.dataset_manager.annotation import AnnotationIR, TrackManager
 from cvat.apps.engine import models
 from cvat.apps.engine.models import DimensionType, JobType, ShapeType
 from cvat.apps.engine.tests.utils import compare_objects
-from django.test import TestCase
 
 
 # --- SHAPE/TRACK GENERATION HELPERS ---

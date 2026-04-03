@@ -12,6 +12,7 @@ import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
+
 from shared.utils.helpers import generate_image_files
 
 from .util import restrict_api_requests

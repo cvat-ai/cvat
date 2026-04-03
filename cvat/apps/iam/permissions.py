@@ -14,19 +14,21 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
 from attrs import define, field
-from cvat.apps.organizations.models import Membership, Organization
-from cvat.utils.http import make_requests_session
 from django.apps import AppConfig
 from django.conf import settings
 from django.db.models import Model, Q, Value
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 
+from cvat.apps.organizations.models import Membership, Organization
+from cvat.utils.http import make_requests_session
+
 from .utils import add_opa_rules_path
 
 if TYPE_CHECKING:
-    from cvat.apps.engine.types import ExtendedRequest
     from rest_framework.viewsets import ViewSet
+
+    from cvat.apps.engine.types import ExtendedRequest
 
 
 class StrEnum(str, Enum):

@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from copy import deepcopy
 
 import pytest
+
 from shared.utils.config import ASSETS_DIR, replace_legacy_base_url
 
 

@@ -26,7 +26,6 @@ from typing import Any
 
 import numpy as np
 import pytest
-import shared.utils.s3 as s3
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -40,6 +39,8 @@ from deepdiff import DeepDiff
 from infra.fixtures import container_exec_cvat
 from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
+
+import shared.utils.s3 as s3
 from rest_api._test_base import SHARE_DIR, TestTasksBase
 from rest_api.utils import (
     DATUMARO_FORMAT_FOR_DIMENSION,

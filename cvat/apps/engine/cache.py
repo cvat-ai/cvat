@@ -26,6 +26,14 @@ import django_rq
 import PIL.Image
 import PIL.ImageOps
 import rq
+from django.conf import settings
+from django.core.cache import caches
+from django.db import models as django_models
+from django.utils import timezone as django_tz
+from redis.exceptions import LockError
+from rest_framework.exceptions import NotFound, ValidationError
+from rq.job import JobStatus as RQJobStatus
+
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.log import ServerLogManager
@@ -49,13 +57,6 @@ from cvat.apps.engine.utils import (
     get_rq_lock_for_job,
     md5_hash,
 )
-from django.conf import settings
-from django.core.cache import caches
-from django.db import models as django_models
-from django.utils import timezone as django_tz
-from redis.exceptions import LockError
-from rest_framework.exceptions import NotFound, ValidationError
-from rq.job import JobStatus as RQJobStatus
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)

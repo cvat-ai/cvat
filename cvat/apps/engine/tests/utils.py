@@ -22,7 +22,6 @@ import av
 import django.test
 import django_rq
 import numpy as np
-from cvat.apps.engine.models import User
 from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
@@ -32,6 +31,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from scipy.optimize import linear_sum_assignment
+
+from cvat.apps.engine.models import User
 
 T = TypeVar("T")
 

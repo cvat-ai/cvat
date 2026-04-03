@@ -4,18 +4,6 @@ from collections.abc import Iterable
 from typing import cast
 
 import django_rq
-from cvat.apps.engine.filters import (
-    NonModelJsonLogicFilter,
-    NonModelOrderingFilter,
-    NonModelSimpleFilter,
-)
-from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.rq import is_rq_job_owner
-from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
-from cvat.apps.redis_handler.permissions import RequestPermission
-from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
-from cvat.apps.redis_handler.serializers import RequestSerializer, RequestStatus
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseNotFound
 from django.utils.decorators import method_decorator
@@ -28,6 +16,19 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
+
+from cvat.apps.engine.filters import (
+    NonModelJsonLogicFilter,
+    NonModelOrderingFilter,
+    NonModelSimpleFilter,
+)
+from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.rq import is_rq_job_owner
+from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
+from cvat.apps.redis_handler.permissions import RequestPermission
+from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
+from cvat.apps.redis_handler.serializers import RequestSerializer, RequestStatus
 
 slogger = ServerLogManager(__name__)
 

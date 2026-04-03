@@ -8,7 +8,6 @@ import functools
 from allauth.account import app_settings as allauth_settings
 from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
 from allauth.account.views import ConfirmEmailView
-from cvat.apps.engine.log import ServerLogManager
 from dj_rest_auth.app_settings import api_settings as dj_rest_auth_settings
 from dj_rest_auth.registration.views import RegisterView
 from dj_rest_auth.utils import jwt_encode
@@ -21,6 +20,8 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import views
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
+
+from cvat.apps.engine.log import ServerLogManager
 
 from .utils import get_opa_bundle
 
