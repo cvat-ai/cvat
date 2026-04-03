@@ -11,7 +11,6 @@ from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 from pytest_cases import parametrize
-
 from shared.utils.config import make_api_client
 
 from .utils import CollectionSimpleFilterTestBase, export_backup, export_dataset, export_events

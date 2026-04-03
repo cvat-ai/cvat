@@ -3,12 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 import base64
-from PIL import Image
 import io
+import json
+
 import numpy as np
 from model_handler import ModelHandler
+from PIL import Image
 
 
 def init_context(context):

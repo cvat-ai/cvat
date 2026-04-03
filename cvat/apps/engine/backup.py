@@ -21,18 +21,8 @@ from pathlib import Path, PurePath
 from typing import Any, ClassVar
 from zipfile import ZipFile, ZipInfo
 
-import rapidjson
-from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import transaction
-from django.db.models import Min, Prefetch
-from django.utils import timezone
-from rest_framework.exceptions import ValidationError
-from rest_framework.parsers import JSONParser
-from rest_framework.renderers import JSONRenderer
-
 import cvat.apps.dataset_manager as dm
+import rapidjson
 from cvat.apps.dataset_manager.util import (
     ExportCacheManager,
     TmpDirManager,
@@ -69,6 +59,15 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.task import JobFileMapping
 from cvat.apps.engine.task import create_thread as create_task
 from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import transaction
+from django.db.models import Min, Prefetch
+from django.utils import timezone
+from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import JSONParser
+from rest_framework.renderers import JSONRenderer
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)

@@ -4,16 +4,6 @@
 
 import textwrap
 
-from drf_spectacular.utils import (
-    OpenApiParameter,
-    OpenApiResponse,
-    OpenApiTypes,
-    extend_schema,
-    extend_schema_view,
-)
-from rest_framework import mixins, viewsets
-from rest_framework.exceptions import NotFound
-
 from cvat.apps.consensus import merging_manager as merging
 from cvat.apps.consensus.models import ConsensusSettings
 from cvat.apps.consensus.permissions import ConsensusMergePermission, ConsensusSettingPermission
@@ -26,6 +16,15 @@ from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.view_utils import get_410_response_when_checking_process_status
 from cvat.apps.redis_handler.serializers import RqIdSerializer
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    OpenApiTypes,
+    extend_schema,
+    extend_schema_view,
+)
+from rest_framework import mixins, viewsets
+from rest_framework.exceptions import NotFound
 
 
 @extend_schema(tags=["consensus"])

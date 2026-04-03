@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from io import BytesIO
 import time
+from io import BytesIO
 
 import boto3
 from botocore.exceptions import ClientError
-
 from shared.utils.config import MINIO_ENDPOINT_URL, MINIO_KEY, MINIO_SECRET_KEY
 
 

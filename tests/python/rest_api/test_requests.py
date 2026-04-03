@@ -11,9 +11,8 @@ import pytest
 from cvat_sdk.api_client import ApiClient, models
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
-
-from shared.fixtures.data import Container
 from infra.fixtures import container_exec_redis_inmem
+from shared.fixtures.data import Container
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 

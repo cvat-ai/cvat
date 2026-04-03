@@ -14,8 +14,6 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PIL import Image
-
 from cvat_sdk.api_client import apis, exceptions, models
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
@@ -34,6 +32,7 @@ from cvat_sdk.core.proxies.model_proxy import (
 )
 from cvat_sdk.core.uploading import AnnotationUploader, DataUploader, Uploader
 from cvat_sdk.core.utils import filter_dict
+from PIL import Image
 
 if TYPE_CHECKING:
     from _typeshed import StrPath, SupportsWrite

@@ -9,7 +9,6 @@ from time import sleep, time
 
 import pytest
 from deepdiff import DeepDiff
-
 from infra.config import RuntimeInfraConfig
 from shared.utils.config import delete_method, get_method, patch_method, post_method
 

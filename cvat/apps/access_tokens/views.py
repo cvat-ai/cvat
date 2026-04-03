@@ -4,15 +4,14 @@
 
 import textwrap
 
+from cvat.apps.access_tokens.authentication import AccessTokenAuthentication
+from cvat.apps.engine.mixins import PartialUpdateModelMixin
+from cvat.apps.engine.types import ExtendedRequest
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
-
-from cvat.apps.access_tokens.authentication import AccessTokenAuthentication
-from cvat.apps.engine.mixins import PartialUpdateModelMixin
-from cvat.apps.engine.types import ExtendedRequest
 
 from . import models
 from .permissions import AccessTokenPermission

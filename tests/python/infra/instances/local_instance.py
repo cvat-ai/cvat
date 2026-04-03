@@ -2,34 +2,33 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import logging
 import os
 import re
-import json
 from pathlib import Path
 from subprocess import CalledProcessError, run
 from time import sleep
-import yaml
 
 import pytest
+import yaml
 from infra.config import (
-    InfraProfile,
     InfraMode,
+    InfraProfile,
     RuntimeInfraConfig,
 )
 from infra.db_restore import PsycopgDatabaseRestorer
-from infra.redis_restore import RedisStateRestorer
 from infra.debug import (
-    DEFAULT_DEBUG_PORT_BASE,
     DEBUG_SERVICE_TO_CONTAINER,
     DEBUG_SERVICE_TO_CONTAINER_PORT,
+    DEFAULT_DEBUG_PORT_BASE,
 )
 from infra.debug.host_debug import add_vscode_debug_options, maybe_wait_for_vscode_attach
-from infra.parsing import parse_debug_services
-from infra.system_utils import docker_cp, is_port_free, pick_free_port, run_command
-
 from infra.instances.base_instance import InfraInstance, InfraPlugin
+from infra.parsing import parse_debug_services
 from infra.profiler import profile_external_phase
+from infra.redis_restore import RedisStateRestorer
+from infra.system_utils import docker_cp, is_port_free, pick_free_port, run_command
 
 logger = logging.getLogger(__name__)
 

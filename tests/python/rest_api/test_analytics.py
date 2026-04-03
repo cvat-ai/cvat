@@ -13,9 +13,8 @@ from io import StringIO
 from time import sleep
 
 import pytest
-from dateutil import parser as datetime_parser
-
 import shared.utils.s3 as s3
+from dateutil import parser as datetime_parser
 from shared.utils.config import delete_method, get_method, make_api_client, server_get
 from shared.utils.helpers import generate_image_files
 

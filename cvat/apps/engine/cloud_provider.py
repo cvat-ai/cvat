@@ -26,15 +26,6 @@ from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError, ReadTimeoutError
 from botocore.handlers import disable_signing
-from django.conf import settings
-from google.api_core.exceptions import RetryError
-from google.cloud import storage
-from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
-from google.cloud.exceptions import NotFound as GoogleCloudNotFound
-from PIL import Image, ImageFile
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from rq import get_current_job
-
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
     CloudProviderChoice,
@@ -45,6 +36,14 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
+from django.conf import settings
+from google.api_core.exceptions import RetryError
+from google.cloud import storage
+from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
+from google.cloud.exceptions import NotFound as GoogleCloudNotFound
+from PIL import Image, ImageFile
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rq import get_current_job
 from utils.dataset_manifest.utils import (
     InvalidPcdError,
     MemNamedOpenable,

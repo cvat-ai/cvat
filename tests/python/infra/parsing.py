@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
-
 from infra.debug import DEBUG_SERVICE_TO_CONTAINER
 
 

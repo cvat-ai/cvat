@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
-
 from infra.config import InfraMode, RuntimeInfraConfig
 from infra.system_utils import is_port_free, pick_free_port
 

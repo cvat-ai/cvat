@@ -11,7 +11,6 @@ from cvat_sdk.core.proxies.jobs import Job
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.core.proxies.types import Location
-
 from shared.fixtures.data import CloudStorageAssets
 from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
 from shared.utils.s3 import S3Client

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
-
 from infra.config import InfraProfile, RuntimeInfraConfig
 
 

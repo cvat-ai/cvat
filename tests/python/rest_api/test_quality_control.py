@@ -18,7 +18,6 @@ from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
-
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 

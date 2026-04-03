@@ -15,7 +15,6 @@ from urllib.parse import urlsplit
 
 import boto3
 import pytest
-
 from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.db_restore import PsycopgDatabaseRestorer
 from infra.debug.host_debug import maybe_wait_for_vscode_attach

@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 from collections.abc import Generator
 from contextlib import contextmanager
-import os
 from pathlib import Path
 
 import requests

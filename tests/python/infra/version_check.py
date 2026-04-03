@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import json
 import re
-from subprocess import CalledProcessError, run
 from importlib import metadata
 from pathlib import Path
+from subprocess import CalledProcessError, run
 from urllib.error import URLError
 from urllib.request import urlopen
 

@@ -10,7 +10,6 @@ import pytest
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
-
 from sdk.util import generate_coco_json
 from shared.utils.helpers import generate_image_file
 

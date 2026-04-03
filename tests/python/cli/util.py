@@ -17,7 +17,6 @@ from typing import Any
 import pytest
 import requests
 from cvat_sdk import make_client
-
 from shared.utils.config import USER_PASS
 from shared.utils.helpers import generate_image_file
 

@@ -8,13 +8,12 @@ from typing import IO
 
 import numpy as np
 import pytest
+import shared.utils.s3 as s3
 from cvat_sdk.api_client import models
+from infra.fixtures import container_exec_cvat
 from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
-
-import shared.utils.s3 as s3
 from rest_api.utils import calc_end_frame, create_task, iter_exclude, unique
-from infra.fixtures import container_exec_cvat
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec

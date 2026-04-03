@@ -15,7 +15,6 @@ from cvat_sdk.core import Client as SdkClient
 from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.uploading import Uploader
 from pytest_cases import fixture, fixture_ref, parametrize
-
 from shared.fixtures.data import Container
 from shared.utils.config import get_method, make_sdk_client, post_method
 from shared.utils.resource_import_export import (

@@ -13,7 +13,6 @@ from cvat_sdk import Client, models
 from cvat_sdk.core.client import AccessTokenCredentials, Config, PasswordCredentials, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
-
 from shared.utils import config as shared_config
 from shared.utils.config import USER_PASS
 

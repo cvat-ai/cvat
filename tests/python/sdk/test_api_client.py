@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import pytest
-
 import json
 
+import pytest
 from shared.utils import config as shared_config
 from shared.utils.config import make_api_client
 

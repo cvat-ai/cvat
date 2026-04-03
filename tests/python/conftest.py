@@ -7,8 +7,8 @@ import os
 import pytest
 from infra import options as infra_options
 from infra.config import (
-    InfraProfile,
     InfraMode,
+    InfraProfile,
     RuntimeInfraConfig,
 )
 from infra.instances import InfraInstance, InstanceConfig

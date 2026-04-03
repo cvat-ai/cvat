@@ -5,22 +5,6 @@
 import textwrap
 from datetime import datetime
 
-from django.db.models import Q
-from django.http import HttpResponse
-from django.utils import timezone
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (
-    OpenApiParameter,
-    OpenApiResponse,
-    extend_schema,
-    extend_schema_view,
-)
-from rest_framework import mixins, status, viewsets
-from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
-from rest_framework.response import Response
-from rq.job import JobStatus as RqJobStatus
-
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import BaseRQMeta
@@ -51,6 +35,21 @@ from cvat.apps.quality_control.serializers import (
     QualitySettingsSerializer,
 )
 from cvat.apps.redis_handler.serializers import RqIdSerializer
+from django.db.models import Q
+from django.http import HttpResponse
+from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+from rq.job import JobStatus as RqJobStatus
 
 
 @extend_schema(tags=["quality"])

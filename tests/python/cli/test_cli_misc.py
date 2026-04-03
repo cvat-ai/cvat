@@ -9,10 +9,11 @@ from unittest import mock
 
 import packaging.version as pv
 import pytest
-from cvat_cli._internal.agent import _Event, _NewReconnectionDelay, _parse_event_stream
 from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
+
+from cvat_cli._internal.agent import _Event, _NewReconnectionDelay, _parse_event_stream
 
 from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
 

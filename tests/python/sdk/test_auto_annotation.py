@@ -15,7 +15,6 @@ from cvat_sdk import Client, models
 from cvat_sdk.attributes import attribute_vals_from_dict, number_attribute_values
 from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
-
 from shared.utils.helpers import generate_image_file
 
 from .util import make_pbar

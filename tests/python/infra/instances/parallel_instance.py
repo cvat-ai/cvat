@@ -2,22 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-import logging
-import json
-import sys
 import argparse
-import signal
+import json
+import logging
 import math
+import signal
+import sys
 from collections import defaultdict, deque
 from hashlib import sha1
 from pathlib import Path
 from subprocess import STDOUT, Popen
-from time import monotonic
-from time import sleep
+from time import monotonic, sleep
 
 import pytest
 from _pytest.reports import TestReport
-
 from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.parallel.adapters import ParallelLane, build_parallel_adapter

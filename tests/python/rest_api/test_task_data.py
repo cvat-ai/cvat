@@ -20,14 +20,13 @@ from typing import Any
 
 import numpy as np
 import pytest
+import shared.utils.s3 as s3
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
 from pytest_cases import parametrize
-
-import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
 from rest_api.utils import (
     create_task,

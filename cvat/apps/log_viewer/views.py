@@ -2,14 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+from cvat.apps.log_viewer.permissions import LogViewerPermission
 from django.conf import settings
 from django.http import HttpResponsePermanentRedirect
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
-from cvat.apps.log_viewer.permissions import LogViewerPermission
 
 
 @extend_schema(exclude=True)

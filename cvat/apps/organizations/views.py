@@ -3,15 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.core.exceptions import ImproperlyConfigured
-from django.db import transaction
-from django.utils.crypto import get_random_string
-from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from rest_framework import mixins, status, viewsets
-from rest_framework.decorators import action
-from rest_framework.permissions import SAFE_METHODS
-from rest_framework.response import Response
-
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.organizations.permissions import (
@@ -20,6 +11,14 @@ from cvat.apps.organizations.permissions import (
     OrganizationPermission,
 )
 from cvat.apps.organizations.throttle import ResendOrganizationInvitationThrottle
+from django.core.exceptions import ImproperlyConfigured
+from django.db import transaction
+from django.utils.crypto import get_random_string
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import SAFE_METHODS
+from rest_framework.response import Response
 
 from .models import Invitation, Membership, Organization
 from .serializers import (

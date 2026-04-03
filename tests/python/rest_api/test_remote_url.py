@@ -8,7 +8,6 @@ from time import sleep
 from typing import Any
 
 import pytest
-
 from shared.utils.config import get_method, post_method
 
 
