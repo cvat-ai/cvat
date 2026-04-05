@@ -246,8 +246,8 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const dataType = edge.getAttribute('data-type');
         const dataNodeFrom = edge.getAttribute('data-node-from');
         const dataNodeTo = edge.getAttribute('data-node-to');
-        const nodeFrom = svg.querySelector(`[data-node-id="${dataNodeFrom}"]`);
-        const nodeTo = svg.querySelector(`[data-node-id="${dataNodeTo}"]`);
+        const nodeFrom = svg.querySelector(`[data-node-id="${(dataNodeFrom || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`);
+        const nodeTo = svg.querySelector(`[data-node-id="${(dataNodeTo || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`);
 
         if (dataType !== 'edge' || !nodeFrom || !nodeTo) {
             return false;
