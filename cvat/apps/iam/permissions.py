@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 from attrs import define, field
 from django.apps import AppConfig
 from django.conf import settings
-from django.db.models import Model, Q
+from django.db.models import Model, Q, Value
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 
@@ -93,6 +93,7 @@ def build_iam_context(
     return {
         "user_id": request.user.id,
         "group_name": request.iam_context["privilege"],
+        "org_specified": request.iam_context["organization_specified"],
         "org_id": getattr(organization, "id", None),
         "org_slug": getattr(organization, "slug", None),
         "org_owner_id": organization.owner_id if organization else None,
@@ -111,6 +112,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
     user_id: int
     group_name: str | None
+    org_specified: bool
     org_id: int | None
     org_owner_id: int | None
     org_role: str | None
@@ -203,6 +205,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                     if self.org_id is not None
                     else None
                 ),
+                "organization_specified": self.org_specified,
             },
         }
 
@@ -235,6 +238,17 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
         return PermissionResult(allow=allow, reasons=reasons)
 
+    @staticmethod
+    def add_org_filter_proof(queryset):
+        """
+        Records that an organization filter has been applied to the queryset,
+        so that the check in OrganizationFilterBackend can succeed.
+        Normally, this is done automatically when `.filter` is called and the Rego filter rule
+        uses add_organization_filter. However, a view can also call this directly
+        if it implements custom logic for organization filtering.
+        """
+        return queryset.alias(org_filter_proof=Value(True))
+
     def filter(self, queryset):
         url = self.url.replace("/allow", "/filter")
 
@@ -246,7 +260,10 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
             "&": operator.and_,
         }
 
+        add_org_filter_proof = False
+
         def parse_filter(expr):
+            nonlocal add_org_filter_proof
             match expr:
                 case ["~", arg]:
                     return ~parse_filter(arg)
@@ -259,6 +276,9 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                     return ~Q(pk__in=[])
                 case {}:
                     return Q(**expr)
+                case "org_filter_proof":
+                    add_org_filter_proof = True
+                    return ~Q(pk__in=[])
                 case _:
                     assert False, "unknown expression type"
 
@@ -266,7 +286,12 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         # query spans multiple tables (e.g. members__user_id, owner_id), it's
         # possible to get duplicate results when a QuerySet is evaluated.
         # That's when you'd use distinct().
-        return queryset.filter(parse_filter(r)).distinct()
+        queryset = queryset.filter(parse_filter(r)).distinct()
+
+        if add_org_filter_proof:
+            queryset = self.add_org_filter_proof(queryset)
+
+        return queryset
 
     @classmethod
     def get_per_field_update_scopes(cls, request, scopes_per_field):
