@@ -467,7 +467,8 @@ jobs:
 
       - name: Load images
         run: |
-          eval $(minikube -p minikube docker-env)
+          # Keep images in the host Docker daemon. The pytest kube infra then
+          # loads them into its own active Minikube profile (`cvat-pytest`).
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
           docker image ls -a
