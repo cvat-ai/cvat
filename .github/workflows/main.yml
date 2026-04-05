@@ -435,8 +435,8 @@ jobs:
         --platform=kube
         --infra-profile=full
         --run-prefix=gha-kube-${{ github.run_id }}-${{ github.run_attempt }}
-        --kube-cpus=4
-        --kube-memory=8g
+        --kube-cpus=max
+        --kube-memory=max
     steps:
       - uses: actions/checkout@v4
 
@@ -447,11 +447,7 @@ jobs:
       - name: Start minikube
         uses: medyagh/setup-minikube@latest
         with:
-          cpus: max
-          memory: max
-
-      - name: Try the cluster
-        run: kubectl get pods -A
+          start: false
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v4
@@ -493,13 +489,11 @@ jobs:
       - name: Kube MinIO smoke check
         run: |
           pytest --timeout 30 --infra=reuse \
-            'tests/python/rest_api/test_cloud_storages.py::TestGetCloudStorageContent::test_can_get_storage_content_with_manually_created_dirs[2]' \
-            --log-cli-level DEBUG
+            'tests/python/rest_api/test_cloud_storages.py::TestGetCloudStorageContent::test_can_get_storage_content_with_manually_created_dirs[2]'
 
       - name: REST API and SDK tests
         run: |
-          pytest --timeout 30 --infra=reuse \
-            tests/python --log-cli-level DEBUG
+          pytest --timeout 30 --infra=reuse tests/python
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
