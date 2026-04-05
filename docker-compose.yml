@@ -7,7 +7,7 @@ name: cvat
 
 x-backend-env: &backend-env
   POSTGRES_VERSION: ${POSTGRES_VERSION:-16.13-alpine}
-  CVAT_POSTGRES_HOST: cvat_db
+  CVAT_POSTGRES_HOST: ${CVAT_POSTGRES_HOST:-cvat_db}
   CVAT_POSTGRES_USER: ${CVAT_POSTGRES_USER:-root}
   CVAT_POSTGRES_PASSWORD: ${CVAT_POSTGRES_PASSWORD:-change-me}
   CVAT_POSTGRES_DB: ${CVAT_POSTGRES_DB:-cvat}
@@ -92,11 +92,13 @@ services:
     container_name: cvat_server
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      <<: *backend-deps
-      cvat_opa:
-        condition:
-          service_started
+    depends_on: *backend-deps
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/auth/user" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
     environment:
       <<: [*backend-env, *clickhouse-env]
       DJANGO_MODWSGI_EXTRA_ARGS: ''
@@ -306,7 +308,7 @@ services:
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
       TRAEFIK_PROVIDERS_DOCKER_NETWORK: cvat
       TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/rules
-    # Uncomment to get Traefik dashboard
+      # Uncomment to get Traefik dashboard
       TRAEFIK_API_DASHBOARD: "true"
       TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
     labels:
@@ -329,6 +331,9 @@ services:
     container_name: cvat_opa
     image: openpolicyagent/opa:1.12.2
     restart: always
+    depends_on:
+      cvat_server:
+        condition: service_healthy
     networks:
       cvat:
         aliases:
