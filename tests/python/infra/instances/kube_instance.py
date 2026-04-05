@@ -276,8 +276,6 @@ def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
         cvat_root_dir=cvat_root_dir,
         chart_name="test-chart",
     )
-    server_image_ref = f"{_kube_server_image()}:{_kube_image_tag()}"
-    frontend_image_ref = f"{_kube_frontend_image()}:{_kube_image_tag()}"
     return {
         "version": _KUBE_FINGERPRINT_VERSION,
         "infra_profile": _kube_infra_profile(),
@@ -287,8 +285,6 @@ def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
         "server_image": _kube_server_image(),
         "frontend_image": _kube_frontend_image(),
         "image_tag": _kube_image_tag(),
-        "server_image_id": _docker_image_id(server_image_ref),
-        "frontend_image_id": _docker_image_id(frontend_image_ref),
         "helm_dependency_fingerprint": _helm_dependency_fingerprint(chart_dir),
         "cpus": cpus,
         "memory": memory,
@@ -321,6 +317,15 @@ def _fingerprints_equal(lhs: dict | None, rhs: dict) -> bool:
     if not lhs:
         return False
     return json.dumps(lhs, sort_keys=True) == json.dumps(rhs, sort_keys=True)
+
+
+def _fingerprint_diff(lhs: dict | None, rhs: dict) -> dict[str, dict[str, object]]:
+    lhs = lhs or {}
+    diff: dict[str, dict[str, object]] = {}
+    for key in sorted(set(lhs) | set(rhs)):
+        if lhs.get(key) != rhs.get(key):
+            diff[key] = {"saved": lhs.get(key), "current": rhs.get(key)}
+    return diff
 
 
 def _configure_kube_runtime_env(
@@ -1088,6 +1093,11 @@ class KubeInstance(InfraInstance):
                 memory=memory,
             )
             if not _fingerprints_equal(saved_fingerprint, current_fingerprint):
+                logger.error(
+                    "Kube reuse fingerprint mismatch for run-prefix '%s': %s",
+                    run_prefix,
+                    json.dumps(_fingerprint_diff(saved_fingerprint, current_fingerprint), sort_keys=True),
+                )
                 raise pytest.UsageError(
                     f"--infra={InfraMode.REUSE} fingerprint mismatch for run-prefix '{run_prefix}'. "
                     f"Run '--infra=up' again."
