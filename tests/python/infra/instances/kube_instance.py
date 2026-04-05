@@ -1005,7 +1005,7 @@ class KubeInstance(InfraInstance):
 
         project_cfg = RuntimeInfraConfig.get_project_config(run_prefix)
         state = project_cfg.load_state() or {}
-        current_fingerprint = _build_kube_fingerprint(
+        requested_fingerprint = _build_kube_fingerprint(
             cvat_root_dir=self.deps.cvat_root_dir,
             cpus=cpus,
             memory=memory,
@@ -1015,7 +1015,7 @@ class KubeInstance(InfraInstance):
         release_exists = _helm_release_exists(
             release=_kube_release(), namespace=_kube_namespace()
         ) and _helm_release_exists(release=_kube_test_release(), namespace=_kube_namespace())
-        fingerprint_matches = _fingerprints_equal(saved_fingerprint, current_fingerprint)
+        fingerprint_matches = _fingerprints_equal(saved_fingerprint, requested_fingerprint)
         if not created and release_exists and fingerprint_matches:
             # When the minikube profile already exists, the API server can come
             # back before CVAT pods finish becoming Ready. Wait for the saved
@@ -1027,7 +1027,7 @@ class KubeInstance(InfraInstance):
                 )
                 self._copy_file_share()
                 self._seed_minio_test_data()
-                return current_fingerprint
+                return requested_fingerprint
 
             logger.info(
                 "Existing minikube/helm stack for run-prefix '%s' did not become ready "
@@ -1058,7 +1058,11 @@ class KubeInstance(InfraInstance):
         _wait_for_kube_ready(timeout_s=self.deps.waiting_time)
         self._copy_file_share()
         self._seed_minio_test_data()
-        return current_fingerprint
+        return _build_kube_fingerprint(
+            cvat_root_dir=self.deps.cvat_root_dir,
+            cpus=cpus,
+            memory=memory,
+        )
 
     def _reuse_kube_stack(self, *, run_prefix: str) -> dict | None:
         profile = _kube_profile()
@@ -1096,7 +1100,9 @@ class KubeInstance(InfraInstance):
                 logger.error(
                     "Kube reuse fingerprint mismatch for run-prefix '%s': %s",
                     run_prefix,
-                    json.dumps(_fingerprint_diff(saved_fingerprint, current_fingerprint), sort_keys=True),
+                    json.dumps(
+                        _fingerprint_diff(saved_fingerprint, current_fingerprint), sort_keys=True
+                    ),
                 )
                 raise pytest.UsageError(
                     f"--infra={InfraMode.REUSE} fingerprint mismatch for run-prefix '{run_prefix}'. "
