@@ -94,7 +94,7 @@ services:
     restart: always
     depends_on: *backend-deps
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/auth/user" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/auth/rules" ]
       interval: 5s
       timeout: 5s
       retries: 30
