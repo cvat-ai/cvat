@@ -429,8 +429,6 @@ jobs:
         --platform=kube
         --infra-profile=full
         --run-prefix=gha-kube-${{ github.run_id }}-${{ github.run_attempt }}
-        --kube-cpus=max
-        --kube-memory=max
     steps:
       - uses: actions/checkout@v4
 
@@ -481,8 +479,6 @@ jobs:
           python tests/python/infra/debug/kube_perf.py \
             --run-prefix "${RUN_PREFIX}" \
             --infra-profile full \
-            --kube-cpus max \
-            --kube-memory max \
             --timeout 30 \
             --sample-interval 30 \
             --queue-interval 15 \

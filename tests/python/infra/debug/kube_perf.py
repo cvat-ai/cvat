@@ -244,16 +244,19 @@ def _load_kube_context(run_prefix: str) -> KubeContext:
 
 
 def _build_pytest_base(args: argparse.Namespace) -> list[str]:
-    return [
+    command = [
         sys.executable,
         "-m",
         "pytest",
         "--platform=kube",
         f"--infra-profile={args.infra_profile}",
         f"--run-prefix={args.run_prefix}",
-        f"--kube-cpus={args.kube_cpus}",
-        f"--kube-memory={args.kube_memory}",
     ]
+    if args.kube_cpus:
+        command.append(f"--kube-cpus={args.kube_cpus}")
+    if args.kube_memory:
+        command.append(f"--kube-memory={args.kube_memory}")
+    return command
 
 
 def _tee_process(
@@ -454,8 +457,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run local kube performance investigation")
     parser.add_argument("--run-prefix", default="kube-perf")
     parser.add_argument("--infra-profile", default="full")
-    parser.add_argument("--kube-cpus", default="4")
-    parser.add_argument("--kube-memory", default="12g")
+    parser.add_argument("--kube-cpus", default="")
+    parser.add_argument("--kube-memory", default="")
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument("--sample-interval", type=float, default=30.0)
     parser.add_argument("--queue-interval", type=float, default=15.0)

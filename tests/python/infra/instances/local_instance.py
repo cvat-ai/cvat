@@ -1062,14 +1062,36 @@ class LocalInstance(InfraInstance):
             if prefixed_name not in running:
                 continue
 
-            stdout, stderr = run_command(["docker", "logs", prefixed_name], logger=logger)
+            inspect_text = ""
+            restart_count = 0
+            try:
+                inspect_stdout, _ = run_command(["docker", "inspect", prefixed_name], logger=logger)
+                inspect_text = inspect_stdout
+                inspect_payload = json.loads(inspect_stdout)
+                restart_count = int(inspect_payload[0]["RestartCount"])
+                with open(logs_dir / f"{prefixed_name}.inspect.json", "w") as f:
+                    f.write(inspect_stdout)
+            except Exception:
+                logger.debug("Failed to inspect %s", prefixed_name, exc_info=True)
+
+            try:
+                stdout, stderr = run_command(["docker", "logs", prefixed_name], logger=logger)
+                log_text = (stdout or "") + (f"\n{stderr}" if stderr else "")
+            except CalledProcessError as ex:
+                log_text = ((ex.stdout or "") + f"\n{ex.stderr or ''}").strip()
             with open(logs_dir / f"{prefixed_name}.log", "w") as f:
-                if stdout:
-                    f.write(stdout)
-                if stderr:
-                    if stdout:
-                        f.write("\n")
-                    f.write(stderr)
+                f.write(log_text)
+
+            # Docker does not expose a Kubernetes-style previous-container log stream.
+            # Preserve restart evidence so failures can be correlated with restarts.
+            if restart_count:
+                summary = {
+                    "container": prefixed_name,
+                    "restart_count": restart_count,
+                    "inspect_available": bool(inspect_text),
+                }
+                with open(logs_dir / f"{prefixed_name}.restart-summary.json", "w") as f:
+                    f.write(json.dumps(summary, indent=2, sort_keys=True))
 
     def restore_db(self) -> None:
         self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")

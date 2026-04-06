@@ -1573,6 +1573,27 @@ class KubeInstance(InfraInstance):
 
     def collect_failure_logs(self) -> None:
         logs_dir = self.failure_logs_dir()
+        describe_stdout, describe_stderr = "", ""
+        try:
+            describe_stdout, describe_stderr = run_command(
+                [
+                    "kubectl",
+                    "--context",
+                    _kube_context(),
+                    "--namespace",
+                    _kube_namespace(),
+                    "get",
+                    "events",
+                    "--sort-by=.metadata.creationTimestamp",
+                ],
+                logger=logger,
+            )
+        except CalledProcessError as ex:
+            describe_stdout = ex.stdout or ""
+            describe_stderr = ex.stderr or ""
+        with open(logs_dir / "events.txt", "w") as f:
+            f.write((describe_stdout or "") + (f"\n{describe_stderr}" if describe_stderr else ""))
+
         stdout, _ = run_command(
             [
                 "kubectl",
@@ -1597,6 +1618,36 @@ class KubeInstance(InfraInstance):
 
             pod_name = metadata.get("name")
             spec = item.get("spec", {})
+            status = item.get("status", {})
+            restart_counts = {
+                status_item.get("name"): int(status_item.get("restartCount", 0))
+                for status_item in status.get("containerStatuses", [])
+                if status_item.get("name")
+            }
+            if pod_name:
+                try:
+                    pod_describe_stdout, pod_describe_stderr = run_command(
+                        [
+                            "kubectl",
+                            "--context",
+                            _kube_context(),
+                            "--namespace",
+                            _kube_namespace(),
+                            "describe",
+                            "pod",
+                            pod_name,
+                        ],
+                        logger=logger,
+                    )
+                    with open(logs_dir / f"{pod_name}.describe.txt", "w") as f:
+                        f.write(
+                            (pod_describe_stdout or "")
+                            + (f"\n{pod_describe_stderr}" if pod_describe_stderr else "")
+                        )
+                except CalledProcessError as ex:
+                    with open(logs_dir / f"{pod_name}.describe.txt", "w") as f:
+                        f.write(((ex.stdout or "") + f"\n{ex.stderr or ''}").strip())
+
             for container in spec.get("containers", []):
                 container_name = container.get("name")
                 if not pod_name or not container_name:
@@ -1625,6 +1676,33 @@ class KubeInstance(InfraInstance):
 
                 with open(logs_dir / f"{pod_name}-{container_name}.log", "w") as f:
                     f.write(log_text)
+
+                if restart_counts.get(container_name, 0) > 0:
+                    previous_log_text = ""
+                    try:
+                        previous_stdout, previous_stderr = run_command(
+                            [
+                                "kubectl",
+                                "--context",
+                                _kube_context(),
+                                "--namespace",
+                                _kube_namespace(),
+                                "logs",
+                                pod_name,
+                                "-c",
+                                container_name,
+                                "--previous",
+                            ],
+                            logger=logger,
+                        )
+                        previous_log_text = (previous_stdout or "") + (
+                            f"\n{previous_stderr}" if previous_stderr else ""
+                        )
+                    except CalledProcessError as ex:
+                        previous_log_text = ((ex.stdout or "") + f"\n{ex.stderr or ''}").strip()
+
+                    with open(logs_dir / f"{pod_name}-{container_name}.previous.log", "w") as f:
+                        f.write(previous_log_text)
 
     def restore_db(self) -> None:
         self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")
