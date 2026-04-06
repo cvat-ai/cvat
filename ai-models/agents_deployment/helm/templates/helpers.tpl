@@ -119,7 +119,7 @@ resources:
     {{- if .Values.agent.resources.limits.memory }}
     memory: {{ .Values.agent.resources.limits.memory }}
     {{- end }}
-    {{- if .Values.agent.resources.limits.gpu }}
+    {{- if .Values.agent.resources.limits.gpu and .Values.agent.use_cuda }}
     nvidia.com/gpu: {{ .Values.agent.resources.limits.gpu }}
     {{- end }}
   {{- end }}
@@ -131,7 +131,7 @@ resources:
     {{- if .Values.agent.resources.requests.memory }}
     memory: {{ .Values.agent.resources.requests.memory }}
     {{- end }}
-    {{- if .Values.agent.resources.requests.gpu }}
+    {{- if .Values.agent.resources.requests.gpu and .Values.agent.use_cuda }}
     nvidia.com/gpu: {{ .Values.agent.resources.requests.gpu }}
     {{- end }}
   {{- end }}
