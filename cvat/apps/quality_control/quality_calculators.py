@@ -136,27 +136,7 @@ class TaskQualityCalculator:
             }
 
             quality_requirements = list(quality_settings.requirements.all())
-            
-            # FALLBACK: If no requirements defined, use old monolithic behavior
-            # This happens after migration from old DatasetComparator to new requirements system
-            if not quality_requirements:
-                # Create a temporary in-memory requirement for shape annotations
-                # This mimics the old DatasetComparator behavior
-                from cvat.apps.quality_control.models import QualityRequirement, QualityRequirementAnnotationType, QualityTargetMetricType
-                
-                # Use default ComparisonParameters settings
-                default_requirement = QualityRequirement(
-                    name="Default Shape Requirement (Auto-created)",
-                    annotation_type=QualityRequirementAnnotationType.RECTANGLE,  # Will match all shapes
-                    target_metric=QualityTargetMetricType.ACCURACY,
-                    target_metric_threshold=0.5,
-                    parent=None,
-                )
-                # The __init__ of QualityRequirement will set defaults from ComparisonParameters
-                
-                # Don't save to settings, just use as temporary requirement
-                quality_requirements = [default_requirement]
-            
+
             job_comparison_reports: dict[int, ComparisonReport] = {}
             for job in jobs:
                 if job.id not in filtered_job_ids:
