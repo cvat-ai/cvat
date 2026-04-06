@@ -479,6 +479,8 @@ jobs:
           python tests/python/infra/debug/kube_perf.py \
             --run-prefix "${RUN_PREFIX}" \
             --infra-profile full \
+            --kube-cpus 4 \
+            --kube-memory 12g \
             --timeout 30 \
             --sample-interval 30 \
             --queue-interval 15 \

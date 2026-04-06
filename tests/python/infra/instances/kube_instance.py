@@ -211,22 +211,21 @@ def _collect_kube_logs_for_pod(
             ],
         )
 
-        if restart_counts.get(container_name, 0) > 0:
-            _capture_kube_command_output(
-                logs_dir / f"{pod_name}-{safe_container_name}-previous.log",
-                [
-                    "kubectl",
-                    "--context",
-                    _kube_context(),
-                    "--namespace",
-                    _kube_namespace(),
-                    "logs",
-                    pod_name,
-                    "-c",
-                    container_name,
-                    "--previous",
-                ],
-            )
+        _capture_kube_command_output(
+            logs_dir / f"{pod_name}-{safe_container_name}-previous.log",
+            [
+                "kubectl",
+                "--context",
+                _kube_context(),
+                "--namespace",
+                _kube_namespace(),
+                "logs",
+                pod_name,
+                "-c",
+                container_name,
+                "--previous",
+            ],
+        )
 
 
 def _collect_kube_diagnostics(logs_dir: Path) -> None:
