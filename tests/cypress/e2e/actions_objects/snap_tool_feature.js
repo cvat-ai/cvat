@@ -78,7 +78,7 @@ context('Snap tool feature.', () => {
         cy.openTaskJob(taskName);
     });
 
-    context('Testing "Snap to Contour"', () => {
+    describe('Testing "Snap to Contour"', () => {
         const createRectangleShape2PointsSec = {
             points: 'By 2 Points',
             type: 'Shape',
@@ -90,102 +90,187 @@ context('Snap tool feature.', () => {
         };
         let rectanglePoints;
 
-        beforeEach(() => {
-            cy.createRectangle(createRectangleShape2Points);
-            cy.createRectangle(createRectangleShape2PointsSec);
+        context('Basic drawing cases', () => {
+            beforeEach(() => {
+                cy.createRectangle(createRectangleShape2Points);
+                cy.createRectangle(createRectangleShape2PointsSec);
 
-            // Collect the rectagle points coordinates
-            testCollectCoord('rect', '#cvat_canvas_shape_1').then((points) => {
-                rectanglePoints = points;
+                // Collect the rectagle points coordinates
+                testCollectCoord('rect', '#cvat_canvas_shape_1').then((points) => {
+                    rectanglePoints = points;
+                });
+                toggleSnapTool('contour', true);
             });
-            toggleSnapTool('contour', true);
-        });
 
-        afterEach(() => {
-            cy.removeAnnotations();
+            afterEach(() => {
+                cy.removeAnnotations();
 
-            // Deactivate snap to contour.
-            toggleSnapTool('contour', false);
-        });
+                // Deactivate snap to contour.
+                toggleSnapTool('contour', false);
+            });
 
-        it('Drawing a polygon with autoborder.', () => {
-            cy.interactControlButton('draw-polygon');
-            cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
+            it('Drawing a polygon with autoborder.', () => {
+                cy.interactControlButton('draw-polygon');
+                cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
 
-            testAutoborderPointsCount(8); // 8 points at the rectangles
+                testAutoborderPointsCount(8); // 8 points at the rectangles
 
-            cy.get('.cvat-canvas-container').click(400, 350);
-            cy.wait(500);
+                cy.get('.cvat-canvas-container').click(400, 350);
+                cy.wait(500);
 
-            // top right
-            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 350);
-            cy.get('.cvat-canvas-container').trigger('mousedown', 500, 350, { button: 0 });
+                // top right
+                cy.get('.cvat-canvas-container').trigger('mousemove', 500, 350);
+                cy.get('.cvat-canvas-container').trigger('mousedown', 500, 350, { button: 0 });
 
-            // bottom left
-            cy.get('.cvat-canvas-container').trigger('mousemove', 400, 450);
-            cy.get('.cvat-canvas-container').trigger('mousedown', 400, 450, { button: 0 });
+                // bottom left
+                cy.get('.cvat-canvas-container').trigger('mousemove', 400, 450);
+                cy.get('.cvat-canvas-container').trigger('mousedown', 400, 450, { button: 0 });
 
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
-            cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
-            cy.get('.cvat_canvas_autoborder_point').should('not.exist');
+                cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
-            // Collect the polygon points coordinates
-            testCollectCoord('polygon', '#cvat_canvas_shape_3').should((polygonPoints) => {
+                // Collect the polygon points coordinates
+                testCollectCoord('polygon', '#cvat_canvas_shape_3').should((polygonPoints) => {
                 // The 1st point of the rect and the 1st polygon point
-                expect(polygonPoints[0]).to.be
-                    .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
-                expect(polygonPoints[1]).to.be
-                    .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
-                expect(polygonPoints[2]).to.be
-                    .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
-                expect(polygonPoints[3]).to.be
-                    .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
+                    expect(polygonPoints[0]).to.be
+                        .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
+                    expect(polygonPoints[1]).to.be
+                        .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
+                    expect(polygonPoints[2]).to.be
+                        .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
+                    expect(polygonPoints[3]).to.be
+                        .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
+                });
+            });
+
+            it('Start drawing a polyline with autobordering between the two shapes.', () => {
+                cy.interactControlButton('draw-polyline');
+                cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
+                testAutoborderPointsCount(8); // 8 points at the rectangles
+
+                cy.get('.cvat-canvas-container').click(700, 350);
+                cy.wait(500);
+
+                cy.get('.cvat-canvas-container').trigger('mousemove', 700, 450);
+                cy.get('.cvat-canvas-container').trigger('mousedown', 700, 450, { button: 0 });
+
+                cy.get('.cvat-canvas-container').trigger('mousemove', 600, 350);
+                cy.get('.cvat-canvas-container').trigger('mousedown', 600, 350, { button: 0 });
+
+                cy.get('.cvat-canvas-container').click(500, 350);
+
+                cy.get('.cvat-canvas-container').trigger('mousemove', 500, 450);
+                cy.get('.cvat-canvas-container').trigger('mousedown', 500, 450, { button: 0 });
+
+                cy.get('.cvat-canvas-container').trigger('mousemove', 400, 350);
+                cy.get('.cvat-canvas-container').trigger('mousedown', 400, 350, { button: 0 });
+
+                cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.get('.cvat_canvas_autoborder_point').should('not.exist');
+
+                // Collect the polyline points coordinates
+                testCollectCoord('polyline', '#cvat_canvas_shape_3').should((polylinePoints) => {
+                // The 2nd point of the polyline and the 4th point rect
+                    expect(polylinePoints[4]).to.be
+                        .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
+                    expect(polylinePoints[5]).to.be
+                        .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
+                    expect(polylinePoints[6]).to.be
+                        .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
+                    expect(polylinePoints[7]).to.be
+                        .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
+                });
             });
         });
 
-        it('Start drawing a polyline with autobordering between the two shapes.', () => {
-            cy.interactControlButton('draw-polyline');
-            cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
-            testAutoborderPointsCount(8); // 8 points at the rectangles
+        context('Path finding algorithm', () => {
+            const polygonPoints = [
+                { x: 400, y: 300 },
+                { x: 450, y: 300 },
+                { x: 600, y: 450 },
+                { x: 300, y: 450 },
+            ];
+            const createTrapeziumShape4Points = {
+                pointsMap: polygonPoints,
+                type: 'Shape',
+                labelName,
+            };
+            let polygonPointsGlobal;
 
-            cy.get('.cvat-canvas-container').click(700, 350);
-            cy.wait(500);
+            before(() => {
+                cy.createPolygon(createTrapeziumShape4Points);
+                testCollectCoord('polygon', '#cvat_canvas_shape_1').then((pointsGlobal) => {
+                    polygonPointsGlobal = pointsGlobal;
+                });
+                toggleSnapTool('contour', true);
+            });
 
-            cy.get('.cvat-canvas-container').trigger('mousemove', 700, 450);
-            cy.get('.cvat-canvas-container').trigger('mousedown', 700, 450, { button: 0 });
-
-            cy.get('.cvat-canvas-container').trigger('mousemove', 600, 350);
-            cy.get('.cvat-canvas-container').trigger('mousedown', 600, 350, { button: 0 });
-
-            cy.get('.cvat-canvas-container').click(500, 350);
-
-            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 450);
-            cy.get('.cvat-canvas-container').trigger('mousedown', 500, 450, { button: 0 });
-
-            cy.get('.cvat-canvas-container').trigger('mousemove', 400, 350);
-            cy.get('.cvat-canvas-container').trigger('mousedown', 400, 350, { button: 0 });
-
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
-            cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
-            cy.get('.cvat_canvas_autoborder_point').should('not.exist');
-
-            // Collect the polyline points coordinates
-            testCollectCoord('polyline', '#cvat_canvas_shape_3').should((polylinePoints) => {
-                // The 2nd point of the polyline and the 4th point rect
-                expect(polylinePoints[4]).to.be
-                    .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
-                expect(polylinePoints[5]).to.be
-                    .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
-                expect(polylinePoints[6]).to.be
-                    .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
-                expect(polylinePoints[7]).to.be
-                    .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
+            after(() => {
+                cy.removeAnnotations();
+                // cy.saveJob(); // todo: remove
+                toggleSnapTool('contour', false);
             });
         });
     });
 
     context('Testing "Snap to Point', () => {
+        let rectanglePointsGlobal;
 
+        beforeEach(() => {
+            cy.createRectangle(createRectangleShape2Points);
+            testCollectCoord('rect', '#cvat_canvas_shape_1').then((pointsGlobal) => {
+                rectanglePointsGlobal = pointsGlobal;
+            });
+            toggleSnapTool('point', true);
+        });
+
+        afterEach(() => {
+            cy.removeAnnotations();
+            // cy.saveJob(); // todo: remove
+            toggleSnapTool('point', false);
+        });
+
+        it('Draw a polyline. Should snap to every rect corner within radius', () => {
+            testCollectShapePointsRadius('#cvat_canvas_shape_1').then((radius) => {
+                cy.interactControlButton('draw-polyline');
+                cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
+                const delta = radius * 1.5; // snapping can be clearly seen on video
+                const regionOf = (point) => [point.x - delta, point.y - delta];
+                const rectToPoints = (rect) => [
+                    { x: rect.firstX, y: rect.firstY },
+                    { x: rect.secondX, y: rect.secondY },
+                ];
+                const rectanglePoints = rectToPoints(createRectangleShape2Points);
+
+                // Starting point
+                cy.get('.cvat-canvas-container').click(400, 150);
+                cy.wait(500);
+
+                // Should snap inside delta region. Mouse events should work in same position
+                cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rectanglePoints[0]));
+                cy.get('.cvat-canvas-container').trigger('mousedown', ...regionOf(rectanglePoints[0]), { button: 0 });
+
+                cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rectanglePoints[1]));
+                cy.get('.cvat-canvas-container').trigger('mousedown', ...regionOf(rectanglePoints[1]), { button: 0 });
+
+                cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+            });
+
+            cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
+            testCollectCoord('polyline', '#cvat_canvas_shape_2').should((polylinePoints) => {
+                const [, ...commonPoints] = polylinePoints;
+                expect(commonPoints[0]).to.be
+                    .equal(`${rectanglePointsGlobal[0]},${rectanglePointsGlobal[1]}`);
+                expect(commonPoints[1]).to.be
+                    .equal(`${rectanglePointsGlobal[2]},${rectanglePointsGlobal[3]}`);
+            });
+        });
+        it('Snapping works when shape is rotated', () => {
+            // TODO: pr
+        });
     });
 
     context('Regression tests', () => {
