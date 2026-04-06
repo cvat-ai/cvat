@@ -30,6 +30,7 @@ from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 @extend_schema(tags=["consensus"])
 class ConsensusMergesViewSet(viewsets.GenericViewSet):
+    iam_supports_organization_params = False
     iam_permission_class = ConsensusMergePermission
 
     CREATE_MERGE_RQ_ID_PARAMETER = "rq_id"
@@ -123,7 +124,7 @@ class ConsensusSettingsViewSet(
 ):
     queryset = ConsensusSettings.objects
 
-    iam_organization_field = "task__organization"
+    iam_supports_organization_params = True
     iam_permission_class = ConsensusSettingPermission
 
     search_fields = []

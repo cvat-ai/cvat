@@ -198,10 +198,7 @@ base_filter := {} if { # Django Q object to filter list of entries
     ]
 }
 
-filter := utils.add_organization_filter(base_filter, [
-    "issue__job__segment__task__organization",
-    "issue__job__segment__task__project__organization",
-])
+filter := utils.add_organization_filter(base_filter, ["issue__job__segment__task__organization"])
 
 allow if {
     input.scope == utils.VIEW
