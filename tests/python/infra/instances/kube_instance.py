@@ -1527,6 +1527,7 @@ class KubeInstance(InfraInstance):
             RuntimeInfraConfig.get_project_config(run_prefix).delete_state()
             pytest.exit("Kubernetes test infrastructure has been stopped", returncode=0)
 
+        RuntimeInfraConfig.write_context_for_project(run_prefix)
         if infra_mode == InfraMode.REUSE:
             kube_fingerprint = self._reuse_kube_stack(run_prefix=run_prefix)
         else:

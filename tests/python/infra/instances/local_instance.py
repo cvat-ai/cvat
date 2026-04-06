@@ -1006,6 +1006,7 @@ class LocalInstance(InfraInstance):
         if infra_mode == InfraMode.DOWN:
             os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         else:
+            RuntimeInfraConfig.write_context_for_project(project_name)
             resolve_local_project_context(self.session)
 
         self._run_local_lifecycle(
