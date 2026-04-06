@@ -34,10 +34,9 @@ import {
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import ApproximationAccuracy, {
-    thresholdFromAccuracy,
-} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
+import ApproximationAccuracy from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
+import { thresholdFromAccuracy } from 'utils/opencv-wrapper/object-cv-utils';
 import { enableImageFilter as enableImageFilterAction, disableImageFilter as disableImageFilterAction } from 'actions/settings-actions';
 import { ImageFilter, ImageFilterAlias, hasFilter } from 'utils/image-processing';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';

@@ -46,11 +46,10 @@ import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
 
-import ApproximationAccuracy, {
-    thresholdFromAccuracy,
-} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
+import ApproximationAccuracy from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import ConfidenceThreshold from 'components/annotation-page/standard-workspace/controls-side-bar/confidence-threshold';
 import { switchToolsBlockerState } from 'actions/settings-actions';
+import { thresholdFromAccuracy } from 'utils/opencv-wrapper/object-cv-utils';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
