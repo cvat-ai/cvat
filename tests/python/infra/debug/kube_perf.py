@@ -545,6 +545,28 @@ def main() -> int:
         if not args.skip_up:
             rc = _tee_process(up_cmd, cwd=REPO_ROOT, log_path=temp_up_log)
             if rc != 0:
+                resolved_output_dir = ensure_output_dir()
+                write_meta()
+                if temp_up_log.exists():
+                    temp_up_log.replace(resolved_output_dir / "infra-up.log")
+
+                summary_payload = {
+                    "suite_exit": rc,
+                    "tests_timed": 0,
+                    "tests_over_20s": 0,
+                    "tests_near_timeout": 0,
+                    "failed_tests": [],
+                    "infra_up_failed": True,
+                    "infra_up_exit": rc,
+                }
+                with open(resolved_output_dir / "summary.json", "w") as f:
+                    json.dump(summary_payload, f, indent=2)
+                with open(resolved_output_dir / "summary.md", "w") as f:
+                    f.write("# Kube profiler summary\n\n")
+                    f.write(f"- infra up failed with exit code `{rc}`\n")
+                    f.write(f"- output dir: `{resolved_output_dir}`\n")
+                    f.write("- tests did not start\n")
+
                 raise CommandError(f"infra up failed with exit code {rc}")
 
         resolved_output_dir = ensure_output_dir()

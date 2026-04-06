@@ -15,6 +15,7 @@ from urllib.parse import urlsplit
 
 import boto3
 import pytest
+
 from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.db_restore import PsycopgDatabaseRestorer
 from infra.debug.host_debug import maybe_wait_for_vscode_attach
@@ -22,7 +23,6 @@ from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.profiler import profile_external_phase
 from infra.redis_restore import RedisStateRestorer
 from infra.system_utils import is_port_free, kubectl_cp, pick_free_port, run_command
-
 from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)
@@ -162,6 +162,163 @@ def _append_kube_trace(message: str) -> None:
             f.write(message.rstrip() + "\n")
     except Exception:
         logger.debug("Failed to append kube trace", exc_info=True)
+
+
+def _write_text_file(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        f.write(content)
+
+
+def _capture_kube_command_output(path: Path, command: list[str]) -> None:
+    stdout, stderr = "", ""
+    try:
+        stdout, stderr = run_command(command, logger=logger)
+    except CalledProcessError as ex:
+        stdout = ex.stdout or ""
+        stderr = ex.stderr or ""
+    except Exception as ex:
+        stderr = str(ex)
+
+    payload = (stdout or "") + (f"\n{stderr}" if stderr else "")
+    _write_text_file(path, payload)
+
+
+def _collect_kube_logs_for_pod(
+    *, pod_name: str, logs_dir: Path, restart_counts: dict[str, int]
+) -> None:
+    containers: list[str] = []
+    for container_name in restart_counts:
+        if container_name not in containers:
+            containers.append(container_name)
+    if not containers:
+        containers.append(_KUBE_SERVER_CONTAINER)
+
+    for container_name in containers:
+        safe_container_name = re.sub(r"[^a-zA-Z0-9_.-]", "-", container_name)
+        _capture_kube_command_output(
+            logs_dir / f"{pod_name}-{safe_container_name}.log",
+            [
+                "kubectl",
+                "--context",
+                _kube_context(),
+                "--namespace",
+                _kube_namespace(),
+                "logs",
+                pod_name,
+                "-c",
+                container_name,
+            ],
+        )
+
+        if restart_counts.get(container_name, 0) > 0:
+            _capture_kube_command_output(
+                logs_dir / f"{pod_name}-{safe_container_name}-previous.log",
+                [
+                    "kubectl",
+                    "--context",
+                    _kube_context(),
+                    "--namespace",
+                    _kube_namespace(),
+                    "logs",
+                    pod_name,
+                    "-c",
+                    container_name,
+                    "--previous",
+                ],
+            )
+
+
+def _collect_kube_diagnostics(logs_dir: Path) -> None:
+    logs_dir.mkdir(parents=True, exist_ok=True)
+
+    _capture_kube_command_output(
+        logs_dir / "events.txt",
+        [
+            "kubectl",
+            "--context",
+            _kube_context(),
+            "--namespace",
+            _kube_namespace(),
+            "get",
+            "events",
+            "--sort-by=.metadata.creationTimestamp",
+        ],
+    )
+    _capture_kube_command_output(
+        logs_dir / "pods.txt",
+        [
+            "kubectl",
+            "--context",
+            _kube_context(),
+            "--namespace",
+            _kube_namespace(),
+            "get",
+            "pods",
+            "-o",
+            "wide",
+        ],
+    )
+
+    try:
+        stdout, _ = run_command(
+            [
+                "kubectl",
+                "--context",
+                _kube_context(),
+                "--namespace",
+                _kube_namespace(),
+                "get",
+                "pods",
+                "-o",
+                "json",
+            ],
+            logger=logger,
+        )
+        payload = json.loads(stdout)
+    except Exception as ex:
+        _write_text_file(logs_dir / "pods.json.error.txt", str(ex))
+        payload = {"items": []}
+    allowed_instances = {_kube_release(), _kube_test_release()}
+    for item in payload.get("items", []):
+        metadata = item.get("metadata", {})
+        labels = metadata.get("labels", {})
+        if labels.get("app.kubernetes.io/instance") not in allowed_instances:
+            continue
+
+        pod_name = metadata.get("name")
+        if not pod_name:
+            continue
+
+        status = item.get("status", {})
+        restart_counts = {
+            status_item.get("name"): int(status_item.get("restartCount", 0))
+            for status_item in status.get("containerStatuses", [])
+            if status_item.get("name")
+        }
+
+        _capture_kube_command_output(
+            logs_dir / f"{pod_name}.describe.txt",
+            [
+                "kubectl",
+                "--context",
+                _kube_context(),
+                "--namespace",
+                _kube_namespace(),
+                "describe",
+                "pod",
+                pod_name,
+            ],
+        )
+        _collect_kube_logs_for_pod(
+            pod_name=pod_name,
+            logs_dir=logs_dir,
+            restart_counts=restart_counts,
+        )
+
+    trace_path = RuntimeInfraConfig.get_run_dir() / "kube-up-trace.log"
+    if trace_path.exists():
+        _write_text_file(logs_dir / "kube-up-trace.log", trace_path.read_text())
 
 
 def _kube_server_image() -> str:
@@ -1532,10 +1689,14 @@ class KubeInstance(InfraInstance):
             pytest.exit("Kubernetes test infrastructure has been stopped", returncode=0)
 
         RuntimeInfraConfig.write_context_for_project(run_prefix)
-        if infra_mode == InfraMode.REUSE:
-            kube_fingerprint = self._reuse_kube_stack(run_prefix=run_prefix)
-        else:
-            kube_fingerprint = self._ensure_kube_stack(run_prefix=run_prefix)
+        try:
+            if infra_mode == InfraMode.REUSE:
+                kube_fingerprint = self._reuse_kube_stack(run_prefix=run_prefix)
+            else:
+                kube_fingerprint = self._ensure_kube_stack(run_prefix=run_prefix)
+        except Exception:
+            _collect_kube_diagnostics(RuntimeInfraConfig.get_run_dir() / "startup")
+            raise
 
         if infra_mode == InfraMode.UP:
             _append_kube_trace("TRACE kube infra=up: start runtime port-forwards")
@@ -1576,137 +1737,7 @@ class KubeInstance(InfraInstance):
         self._close_runtime_port_forwards()
 
     def collect_failure_logs(self) -> None:
-        logs_dir = self.failure_logs_dir()
-        describe_stdout, describe_stderr = "", ""
-        try:
-            describe_stdout, describe_stderr = run_command(
-                [
-                    "kubectl",
-                    "--context",
-                    _kube_context(),
-                    "--namespace",
-                    _kube_namespace(),
-                    "get",
-                    "events",
-                    "--sort-by=.metadata.creationTimestamp",
-                ],
-                logger=logger,
-            )
-        except CalledProcessError as ex:
-            describe_stdout = ex.stdout or ""
-            describe_stderr = ex.stderr or ""
-        with open(logs_dir / "events.txt", "w") as f:
-            f.write((describe_stdout or "") + (f"\n{describe_stderr}" if describe_stderr else ""))
-
-        stdout, _ = run_command(
-            [
-                "kubectl",
-                "--context",
-                _kube_context(),
-                "--namespace",
-                _kube_namespace(),
-                "get",
-                "pods",
-                "-o",
-                "json",
-            ],
-            logger=logger,
-        )
-        payload = json.loads(stdout)
-        allowed_instances = {_kube_release(), _kube_test_release()}
-        for item in payload.get("items", []):
-            metadata = item.get("metadata", {})
-            labels = metadata.get("labels", {})
-            if labels.get("app.kubernetes.io/instance") not in allowed_instances:
-                continue
-
-            pod_name = metadata.get("name")
-            spec = item.get("spec", {})
-            status = item.get("status", {})
-            restart_counts = {
-                status_item.get("name"): int(status_item.get("restartCount", 0))
-                for status_item in status.get("containerStatuses", [])
-                if status_item.get("name")
-            }
-            if pod_name:
-                try:
-                    pod_describe_stdout, pod_describe_stderr = run_command(
-                        [
-                            "kubectl",
-                            "--context",
-                            _kube_context(),
-                            "--namespace",
-                            _kube_namespace(),
-                            "describe",
-                            "pod",
-                            pod_name,
-                        ],
-                        logger=logger,
-                    )
-                    with open(logs_dir / f"{pod_name}.describe.txt", "w") as f:
-                        f.write(
-                            (pod_describe_stdout or "")
-                            + (f"\n{pod_describe_stderr}" if pod_describe_stderr else "")
-                        )
-                except CalledProcessError as ex:
-                    with open(logs_dir / f"{pod_name}.describe.txt", "w") as f:
-                        f.write(((ex.stdout or "") + f"\n{ex.stderr or ''}").strip())
-
-            for container in spec.get("containers", []):
-                container_name = container.get("name")
-                if not pod_name or not container_name:
-                    continue
-
-                try:
-                    container_stdout, container_stderr = run_command(
-                        [
-                            "kubectl",
-                            "--context",
-                            _kube_context(),
-                            "--namespace",
-                            _kube_namespace(),
-                            "logs",
-                            pod_name,
-                            "-c",
-                            container_name,
-                        ],
-                        logger=logger,
-                    )
-                    log_text = (container_stdout or "") + (
-                        f"\n{container_stderr}" if container_stderr else ""
-                    )
-                except CalledProcessError as ex:
-                    log_text = ((ex.stdout or "") + f"\n{ex.stderr or ''}").strip()
-
-                with open(logs_dir / f"{pod_name}-{container_name}.log", "w") as f:
-                    f.write(log_text)
-
-                if restart_counts.get(container_name, 0) > 0:
-                    previous_log_text = ""
-                    try:
-                        previous_stdout, previous_stderr = run_command(
-                            [
-                                "kubectl",
-                                "--context",
-                                _kube_context(),
-                                "--namespace",
-                                _kube_namespace(),
-                                "logs",
-                                pod_name,
-                                "-c",
-                                container_name,
-                                "--previous",
-                            ],
-                            logger=logger,
-                        )
-                        previous_log_text = (previous_stdout or "") + (
-                            f"\n{previous_stderr}" if previous_stderr else ""
-                        )
-                    except CalledProcessError as ex:
-                        previous_log_text = ((ex.stdout or "") + f"\n{ex.stderr or ''}").strip()
-
-                    with open(logs_dir / f"{pod_name}-{container_name}.previous.log", "w") as f:
-                        f.write(previous_log_text)
+        _collect_kube_diagnostics(self.failure_logs_dir())
 
     def restore_db(self) -> None:
         self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")
