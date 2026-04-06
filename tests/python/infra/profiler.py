@@ -15,7 +15,6 @@ from time import perf_counter
 from typing import Any
 
 import pytest
-
 from infra.config import RuntimeInfraConfig
 
 _EXTERNAL_PHASE_SECONDS: defaultdict[str, float] = defaultdict(float)

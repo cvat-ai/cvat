@@ -5,7 +5,6 @@
 import os
 
 import pytest
-
 from infra import options as infra_options
 from infra.config import (
     InfraMode,
