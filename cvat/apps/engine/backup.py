@@ -433,8 +433,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         super().__init__(logger=slogger.task[pk])
 
         self._db_task: models.Task = (
-            models.Task.objects
-            .prefetch_related("data__images", "annotation_guide__assets")
+            models.Task.objects.prefetch_related("data__images", "annotation_guide__assets")
             .select_related(
                 "data__video", "data__audio", "data__validation_layout", "annotation_guide"
             )
@@ -474,7 +473,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
 
         if self._db_task.media_type == models.MediaType.AUDIO:
-            return # there are no audio manifests
+            return  # there are no audio manifests
         elif self._db_task.media_type == models.MediaType.VIDEO:
             # No filtering necessary; just use the original manifest.
             self._write_files(
@@ -545,7 +544,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
             if self._db_task.media_type not in (
-                models.MediaType.IMAGE, models.MediaType.POINT_CLOUD
+                models.MediaType.IMAGE,
+                models.MediaType.POINT_CLOUD,
             ):
                 raise AssertionError("Only images can be stored in cloud storage")
 
@@ -790,7 +790,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         with zip_object.open(
             # without this, the file will have the default timestamp (1980-01-01)
             ZipInfo(target_annotations_file, date_time=timezone.now().timetuple()),
-            "w"
+            "w",
         ) as f:
             rapidjson.dump(annotations, f)
 

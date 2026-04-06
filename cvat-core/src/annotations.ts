@@ -229,22 +229,22 @@ export function importDataset(
         throw new ArgumentError('Option "convMaskToPoly" must be a boolean');
     }
     const allowedFileExtensions = [
-        '.zip', '.xml', '.json',
+        '.zip', '.xml', '.json', '.tsv'
     ];
     const allowedFileExtensionsList = allowedFileExtensions.join(', ');
     if (typeof file === 'string' && !(allowedFileExtensions.some((ext) => file.toLowerCase().endsWith(ext)))) {
         throw new ArgumentError(
-            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}. Found ${file}`,
         );
     }
     const allowedMimeTypes = [
         'application/zip', 'application/x-zip-compressed',
         'application/xml', 'text/xml',
-        'application/json',
+        'application/json', 'text/tab-separated-values'
     ];
     if (file instanceof File && !(allowedMimeTypes.includes(file.type))) {
         throw new ArgumentError(
-            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}. Found ${file.type}`,
         );
     }
 
