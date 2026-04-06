@@ -5,6 +5,7 @@
    the most important changes and their purpose.
 3. Commit only staged files. Confirm unstaged and untracked files are
    intentionally excluded.
-4. Before committing, run the applicable CI linters and formatters with the
-   exact commands from `.github/workflows/linters.yml`. Install missing tools
-   first. Do not use narrower local approximations.
+4. Before committing, run the exact commands from
+   `.github/workflows/linters.yml` for each affected language/toolchain.
+   Install missing tools first. If CI runs a tool repo-wide, run it repo-wide
+   locally too; do not replace it with narrower file-only checks.
