@@ -6,7 +6,7 @@
     "configurations": [
 
         {
-            "name": "docker: attach server",
+            "name": "REST API tests: Attach to server",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -26,7 +26,7 @@
             "justMyCode": false,
         },
         {
-            "name": "docker: attach worker annotation",
+            "name": "REST API tests: Attach to RQ annotation worker",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -46,7 +46,7 @@
             "justMyCode": false,
         },
         {
-            "name": "docker: attach worker export",
+            "name": "REST API tests: Attach to RQ export worker",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -66,7 +66,7 @@
             "justMyCode": false,
         },
         {
-            "name": "docker: attach worker import",
+            "name": "REST API tests: Attach to RQ import worker",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -86,7 +86,7 @@
             "justMyCode": false,
         },
         {
-            "name": "docker: attach worker quality reports",
+            "name": "REST API tests: Attach to RQ quality reports worker",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -106,7 +106,7 @@
             "justMyCode": false,
         },
         {
-            "name": "docker: attach worker consensus",
+            "name": "REST API tests: Attach to RQ consensus worker",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -123,16 +123,6 @@
                     "remoteRoot": "/opt/venv",
                 }
             ],
-            "justMyCode": false,
-        },
-        {
-            "name": "local: attach pytest (waiting)",
-            "type": "debugpy",
-            "request": "attach",
-            "connect": {
-                "host": "127.0.0.1",
-                "port": 5678
-            },
             "justMyCode": false,
         },
         {
@@ -430,20 +420,6 @@
                 "server: django",
                 "server: RQ - worker",
                 "server: RQ - scheduler",
-            ],
-            "stopAll": true,
-        },
-        {
-            "name": "docker: attach backend debug",
-            "preLaunchTask": "docker: up workers",
-            "stopAll": true,
-            "configurations": [
-                "docker: attach server",
-                "docker: attach worker annotation",
-                "docker: attach worker export",
-                "docker: attach worker import",
-                "docker: attach worker quality reports",
-                "docker: attach worker consensus",
             ]
         }
     ]
