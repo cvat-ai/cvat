@@ -48,3 +48,11 @@ spec:
               value: {{ .value | quote }}
             {{- end }}
             {{- include "agent.resources" . | nindent 10 }}
+          {{- if .Values.agent.extraVolumeMounts }}
+          volumeMounts:
+          {{- toYaml .Values.agent.extraVolumeMounts | nindent 12 }}
+          {{- end }}
+      {{- if .Values.agent.extraVolumes }}
+      volumes:
+      {{- toYaml .Values.agent.extraVolumes | nindent 8 }}
+      {{- end }}

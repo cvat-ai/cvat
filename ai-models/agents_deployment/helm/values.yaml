@@ -93,6 +93,14 @@ agent:
 #      operator: "Equal"
 #      value: "value1"
 #      effect: "NoSchedule"
+  extraVolumeMounts: []
+#  - name: example-volume
+#    mountPath: /path/in/container
+  extraVolumes: []
+#  - name: example-volume
+#    configMap:
+#      name: example-configmap
+
 
 job:
   resources:
