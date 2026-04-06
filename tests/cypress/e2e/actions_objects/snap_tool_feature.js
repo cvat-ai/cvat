@@ -10,11 +10,18 @@ import { taskName, labelName } from '../../support/const';
 
 context('Snap tool feature.', () => {
     const keyCodeN = 78;
-    const rectanglePoints = [];
-    const polygonPoints = [];
-    const polylinePoints = [];
+    const createRectangleShape2Points = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        labelName,
+        firstX: 400,
+        firstY: 350,
+        secondX: 500,
+        secondY: 450,
+    };
 
-    function testCollectCoord(type, id, arrToPush) {
+    function testCollectCoord(type, id) {
+        const arrToPush = [];
         if (type === 'rect') {
             cy.get(id).invoke('attr', 'x').then((x) => arrToPush.push(+x));
             cy.get(id).invoke('attr', 'y').then((y) => arrToPush.push(+y));
@@ -23,6 +30,7 @@ context('Snap tool feature.', () => {
         } else {
             cy.get(id).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
         }
+        return cy.wrap(arrToPush);
     }
 
     function testAutoborderPointsCount(expectedCount) {
@@ -34,22 +42,43 @@ context('Snap tool feature.', () => {
             });
     }
 
+    function testCollectShapePointsRadius(id) {
+        cy.get('.cvat_canvas_shape').first()
+            .should('exist').and('be.visible')
+            .trigger('mousemove', 'center', { scrollBehavior: false });
+        return cy.get('#cvat_canvas_content circle').first().should('exist').and('be.visible')
+            .invoke('attr', 'r').then((radius) => Number.parseFloat(radius));
+    }
+
+    /**
+     * Toggle one of the snap tools. Check its final state
+     * @param {'contour' | 'point'} toolName
+     * @param {boolean} expectedIsActive
+     */
+    function toggleSnapTool(toolName, expectedIsActive) {
+        const toolNameLower = toolName.toLowerCase();
+        const toolButton = `.cvat-snap-to-${toolNameLower}-button`;
+
+        cy.get('.cvat-snap-tools-control').click();
+        cy.get(toolButton).click();
+        cy.get(toolButton).should(
+            expectedIsActive === true ? 'have.class' : 'not.have.class',
+            'cvat-snap-tool-active',
+        );
+        // Close snap tools, ensure not visible
+        cy.get('.cvat-snap-tools-control').should(
+            expectedIsActive === true ? 'have.class' : 'not.have.class',
+            'cvat-snap-tools-active',
+        ).click();
+        cy.get('.cvat-snap-tools-control-popover').should('not.be.visible');
+    }
+
     before(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
     context('Testing "Snap to Contour"', () => {
-        const createRectangleShape2Points = {
-            points: 'By 2 Points',
-            type: 'Shape',
-            labelName,
-            firstX: 400,
-            firstY: 350,
-            secondX: 500,
-            secondY: 450,
-        };
-
         const createRectangleShape2PointsSec = {
             points: 'By 2 Points',
             type: 'Shape',
@@ -59,33 +88,29 @@ context('Snap tool feature.', () => {
             secondX: 700,
             secondY: 450,
         };
+        let rectanglePoints;
 
-        before(() => {
+        beforeEach(() => {
             cy.createRectangle(createRectangleShape2Points);
             cy.createRectangle(createRectangleShape2PointsSec);
+
+            // Collect the rectagle points coordinates
+            testCollectCoord('rect', '#cvat_canvas_shape_1').then((points) => {
+                rectanglePoints = points;
+            });
+            toggleSnapTool('contour', true);
         });
 
-        after(() => {
+        afterEach(() => {
             cy.removeAnnotations();
 
-            // Deactivate snap to contour. Ensure snap tools magnet is inactive
-            cy.get('.cvat-snap-tools-control').click();
-            cy.get('.cvat-snap-to-contour-button').click();
-            cy.get('.cvat-snap-to-contour-button').should('not.have.class', 'cvat-snap-tool-active');
-            cy.get('.cvat-snap-tools-control').should('not.have.class', 'cvat-snap-tools-active').click();
-            cy.get('.cvat-snap-tools-control-popover').should('not.be.visible');
+            // Deactivate snap to contour.
+            toggleSnapTool('contour', false);
         });
 
         it('Drawing a polygon with autoborder.', () => {
-            // Collect the rectagle points coordinates
-            testCollectCoord('rect', '#cvat_canvas_shape_1', rectanglePoints);
-
             cy.interactControlButton('draw-polygon');
             cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
-
-            cy.get('.cvat-snap-tools-control').click();
-            cy.get('.cvat-snap-to-contour-button').click();
-            cy.get('.cvat-snap-to-contour-button').should('have.class', 'cvat-snap-tool-active');
 
             testAutoborderPointsCount(8); // 8 points at the rectangles
 
@@ -105,13 +130,23 @@ context('Snap tool feature.', () => {
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
-            testCollectCoord('polygon', '#cvat_canvas_shape_3', polygonPoints);
+            testCollectCoord('polygon', '#cvat_canvas_shape_3').should((polygonPoints) => {
+                // The 1st point of the rect and the 1st polygon point
+                expect(polygonPoints[0]).to.be
+                    .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
+                expect(polygonPoints[1]).to.be
+                    .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
+                expect(polygonPoints[2]).to.be
+                    .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
+                expect(polygonPoints[3]).to.be
+                    .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
+            });
         });
 
         it('Start drawing a polyline with autobordering between the two shapes.', () => {
             cy.interactControlButton('draw-polyline');
             cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
-            testAutoborderPointsCount(12); // 8 points at the rectangles + 4 at the polygon
+            testAutoborderPointsCount(8); // 8 points at the rectangles
 
             cy.get('.cvat-canvas-container').click(700, 350);
             cy.wait(500);
@@ -134,30 +169,18 @@ context('Snap tool feature.', () => {
             cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
-            // Collect the polygon points coordinates
-            testCollectCoord('polyline', '#cvat_canvas_shape_4', polylinePoints);
-        });
-
-        it('Checking whether the coordinates of the contact points of the shapes match.', () => {
-            // The 1st point of the rect and the 1st polygon point
-            expect(polygonPoints[0]).to.be
-                .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
-            expect(polygonPoints[1]).to.be
-                .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
-            expect(polygonPoints[2]).to.be
-                .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
-            expect(polygonPoints[3]).to.be
-                .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
-
-            // The 2nd point of the polyline and the 4th point rect
-            expect(polylinePoints[4]).to.be
-                .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
-            expect(polylinePoints[5]).to.be
-                .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
-            expect(polylinePoints[6]).to.be
-                .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
-            expect(polylinePoints[7]).to.be
-                .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
+            // Collect the polyline points coordinates
+            testCollectCoord('polyline', '#cvat_canvas_shape_3').should((polylinePoints) => {
+                // The 2nd point of the polyline and the 4th point rect
+                expect(polylinePoints[4]).to.be
+                    .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
+                expect(polylinePoints[5]).to.be
+                    .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
+                expect(polylinePoints[6]).to.be
+                    .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
+                expect(polylinePoints[7]).to.be
+                    .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
+            });
         });
     });
 
