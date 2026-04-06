@@ -277,7 +277,18 @@ def local_exec(container, command, capture_output=True):
 def _docker_socket_path() -> str:
     # `docker ps` can become a bottleneck or hang under heavy test churn. Querying the
     # engine API over the local socket keeps local stack discovery cheap and reliable.
-    for path in ("/var/run/docker.sock", os.path.expanduser("~/.docker/run/docker.sock")):
+    docker_host = os.environ.get("DOCKER_HOST", "")
+    if docker_host.startswith("unix://"):
+        candidate = docker_host.removeprefix("unix://")
+        if os.path.exists(candidate):
+            return candidate
+
+    rootless_candidate = f"/run/user/{os.getuid()}/docker.sock"
+    for path in (
+        "/var/run/docker.sock",
+        rootless_candidate,
+        os.path.expanduser("~/.docker/run/docker.sock"),
+    ):
         if os.path.exists(path):
             return path
     raise FileNotFoundError("Docker socket not found")
@@ -325,7 +336,12 @@ def _profile_required_services(profile: str) -> set[str]:
     if normalized == str(InfraProfile.SIMPLE):
         return set()
     if normalized == str(InfraProfile.STANDARD):
-        return {"minio"}
+        return {
+            "minio",
+            "cvat_worker_chunks",
+            "cvat_worker_export",
+            "cvat_worker_import",
+        }
     if normalized == str(InfraProfile.FULL):
         return {
             "cvat_clickhouse",
@@ -335,7 +351,10 @@ def _profile_required_services(profile: str) -> set[str]:
             "cvat_grafana",
             "cvat_vector",
             "cvat_worker_annotation",
+            "cvat_worker_chunks",
             "cvat_worker_consensus",
+            "cvat_worker_export",
+            "cvat_worker_import",
             "cvat_worker_quality_reports",
             "cvat_worker_webhooks",
             "cvat_worker_utils",
@@ -349,6 +368,27 @@ def profile_services_ready(project_name: str, profile: str) -> bool:
         return True
     containers = set(running_containers())
     return all(f"{project_name}_{service}_1" in containers for service in required)
+
+
+def project_stack_compatible(
+    project_name: str,
+    *,
+    profile: str,
+    expected_db_port: int,
+    expected_redis_inmem_port: int,
+    expected_redis_ondisk_port: int,
+) -> tuple[bool, str]:
+    if not profile_services_ready(project_name, profile):
+        return False, f"missing required services for profile '{profile}'"
+    if not project_db_port_ready(project_name, expected_db_port):
+        return False, "PostgreSQL host port mapping is missing or outdated"
+    if not project_redis_ports_ready(
+        project_name,
+        expected_inmem_host_port=expected_redis_inmem_port,
+        expected_ondisk_host_port=expected_redis_ondisk_port,
+    ):
+        return False, "Redis host port mapping is missing or outdated"
+    return True, ""
 
 
 def project_db_port_ready(project_name: str, expected_host_port: int) -> bool:
@@ -798,7 +838,13 @@ class LocalInstance(InfraInstance):
 
     @staticmethod
     def collect_code_coverage_from_containers() -> None:
+        running = set(running_containers())
         for container in _COVERED_CONTAINERS:
+            prefixed_name = RuntimeInfraConfig.get_prefixed_container_name(container)
+            if prefixed_name not in running:
+                logger.info("Skipping coverage collection for absent container '%s'", prefixed_name)
+                continue
+
             process_command = "python3"
 
             # find process with code coverage
@@ -812,7 +858,7 @@ class LocalInstance(InfraInstance):
             local_exec(container, "coverage combine", capture_output=False)
             local_exec(container, "coverage json", capture_output=False)
             docker_cp(
-                f"{RuntimeInfraConfig.get_prefixed_container_name(container)}:home/django/coverage.json",
+                f"{prefixed_name}:home/django/coverage.json",
                 f"coverage_{container}.json",
             )
 
@@ -882,6 +928,18 @@ class LocalInstance(InfraInstance):
                 raise pytest.UsageError(
                     f"--infra={InfraMode.REUSE} requires running services for project '{project_name}'"
                 )
+            stack_ok, reason = project_stack_compatible(
+                project_name,
+                profile=RuntimeInfraConfig.get_infra_profile(),
+                expected_db_port=project_cfg.host_db_port,
+                expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
+                expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
+            )
+            if not stack_ok:
+                raise pytest.UsageError(
+                    f"--infra={InfraMode.REUSE} found an incompatible running stack for "
+                    f"project '{project_name}': {reason}"
+                )
             infra_health.wait_for_services(self.deps.waiting_time)
             infra_health.wait_for_auth_login_ready()
             return
@@ -904,45 +962,20 @@ class LocalInstance(InfraInstance):
             project_cfg.delete_state()
             pytest.exit("All testing containers are stopped", returncode=0)
 
-        if (
-            infra_mode == InfraMode.AUTO
-            and project_running
-            and not profile_services_ready(project_name, RuntimeInfraConfig.get_infra_profile())
-        ):
-            logger.warning(
-                "Project '%s' is running but missing required services for profile '%s'; recreating stack",
-                project_name,
-                RuntimeInfraConfig.get_infra_profile(),
-            )
-            self._close_db_restorer()
-            self._close_redis_restorer()
-            stop_services(
-                project_name=project_name,
-                dc_files=dc_files,
-                project_directory=self.deps.cvat_root_dir,
-            )
-            project_running = False
-        elif project_running and not project_db_port_ready(project_name, project_cfg.host_db_port):
-            logger.warning(
-                "Project '%s' is running but PostgreSQL host port mapping is missing/outdated; recreating stack",
-                project_name,
-            )
-            self._close_db_restorer()
-            self._close_redis_restorer()
-            stop_services(
-                project_name=project_name,
-                dc_files=dc_files,
-                project_directory=self.deps.cvat_root_dir,
-            )
-            project_running = False
-        elif project_running and not project_redis_ports_ready(
+        stack_ok, incompatibility_reason = project_stack_compatible(
             project_name,
-            expected_inmem_host_port=project_cfg.host_redis_inmem_port,
-            expected_ondisk_host_port=project_cfg.host_redis_ondisk_port,
-        ):
+            profile=RuntimeInfraConfig.get_infra_profile(),
+            expected_db_port=project_cfg.host_db_port,
+            expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
+            expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
+        )
+
+        if infra_mode == InfraMode.AUTO and project_running and not stack_ok:
             logger.warning(
-                "Project '%s' is running but Redis host port mapping is missing/outdated; recreating stack",
+                "Project '%s' is running but incompatible with the requested test runtime "
+                "(%s); recreating stack",
                 project_name,
+                incompatibility_reason,
             )
             self._close_db_restorer()
             self._close_redis_restorer()

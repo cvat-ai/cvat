@@ -34,6 +34,7 @@ _DEFAULT_KUBE_FRONTEND_IMAGE = "cvat/ui"
 _DEFAULT_KUBE_IMAGE_TAG = os.environ.get("CVAT_VERSION", "dev")
 _DEFAULT_KUBE_CPUS = "8"
 _DEFAULT_KUBE_MEMORY = "16g"
+_MAX_KUBE_RELEASE_NAME_LEN = 32
 _KUBE_SERVER_CONTAINER = "cvat-backend"
 _KUBE_FINGERPRINT_VERSION = 2
 _KUBE_TEST_RELEASE_SUFFIX = "-test"
@@ -89,15 +90,15 @@ def _save_kube_profile_cache(profile: str, payload: dict) -> None:
     tmp_path.replace(path)
 
 
-def _normalize_release_name(value: str) -> str:
+def _normalize_release_name(value: str, *, max_length: int = _MAX_KUBE_RELEASE_NAME_LEN) -> str:
     candidate = re.sub(r"[^a-z0-9-]", "-", value.lower())
     candidate = re.sub(r"-+", "-", candidate).strip("-")
     if not candidate:
         candidate = "cvat"
     if not candidate[0].isalnum():
         candidate = f"cvat-{candidate}"
-    # Helm release names should be <= 53 chars.
-    return candidate[:53]
+    candidate = candidate[:max_length].strip("-")
+    return candidate or "cvat"
 
 
 def _default_release_name(run_prefix: str) -> str:
@@ -123,7 +124,10 @@ def _kube_release() -> str:
 
 
 def _kube_test_release() -> str:
-    return _normalize_release_name(f"{_kube_release()}{_KUBE_TEST_RELEASE_SUFFIX}")
+    base = _kube_release()
+    suffix = _KUBE_TEST_RELEASE_SUFFIX
+    max_base_length = max(1, _MAX_KUBE_RELEASE_NAME_LEN - len(suffix))
+    return f"{_normalize_release_name(base, max_length=max_base_length)}{suffix}"
 
 
 def _kube_minio_service() -> str:
@@ -576,8 +580,8 @@ def _load_images_into_minikube(profile: str) -> None:
         if (
             cached.get("ref") == image["ref"]
             and cached.get("id") == image["id"]
-            and image["id"]
             and bool(image_ref_candidates & minikube_images)
+            and (bool(image["id"]) or not cached.get("id"))
         ):
             logger.info(
                 "Skipping minikube image load for %s (profile=%s, image=%s, id matched cache and image exists in node)",

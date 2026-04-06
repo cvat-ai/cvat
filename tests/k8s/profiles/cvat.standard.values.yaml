@@ -25,5 +25,3 @@ cvat:
         replicas: 0
       utils:
         replicas: 0
-      utils:
-        replicas: 0

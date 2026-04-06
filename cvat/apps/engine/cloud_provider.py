@@ -663,9 +663,10 @@ class S3CloudStorage(AbstractCloudStorage):
         return self._status_client.head_bucket(Bucket=self.name)
 
     def _head_file(self, key: str, /):
-        # Same rationale as _head(): object existence checks should surface endpoint
-        # problems quickly and must not inherit transfer-oriented retry behavior.
-        return self._status_client.head_object(Bucket=self.name, Key=key)
+        # Metadata reads are used by normal storage logic as well, not just endpoint
+        # health checks. Keep them on the regular client so they retain normal retry
+        # behavior on slower S3-compatible backends.
+        return self._client.head_object(Bucket=self.name, Key=key)
 
     def get_status(self):
         # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.head_object

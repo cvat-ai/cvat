@@ -3,12 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 import time
+from collections.abc import Callable
 from io import BytesIO
+from typing import BinaryIO, TypeVar
 
 import boto3
 from botocore.exceptions import ClientError
 
 from shared.utils.config import MINIO_ENDPOINT_URL, MINIO_KEY, MINIO_SECRET_KEY
+
+T = TypeVar("T")
 
 
 class S3Client:
@@ -45,7 +49,7 @@ class S3Client:
             secret_key=self.secret_key,
         )
 
-    def _call_with_retry(self, callback):
+    def _call_with_retry(self, callback: Callable[[], T]) -> T:
         max_retries = 4
         for attempt in range(max_retries + 1):
             try:
@@ -59,7 +63,9 @@ class S3Client:
                 self._refresh_client()
                 time.sleep(0.5 * (2**attempt))
 
-    def create_file(self, filename: str, data: bytes = b"", *, bucket: str | None = None):
+    def create_file(
+        self, filename: str, data: bytes | BinaryIO = b"", *, bucket: str | None = None
+    ):
         bucket = bucket or self.bucket
         assert bucket
 

@@ -41,9 +41,6 @@ class _FixtureStat:
     setup_count: int = 0
     setup_total: float = 0.0
     setup_max: float = 0.0
-    teardown_count: int = 0
-    teardown_total: float = 0.0
-    teardown_max: float = 0.0
 
 
 @dataclass
@@ -149,12 +146,8 @@ class RuntimeProfilerPlugin:
 
         fixture_rows = []
         fixture_setup_total = 0.0
-        fixture_teardown_total = 0.0
-        for stat in sorted(
-            self._fixtures.values(), key=lambda s: s.setup_total + s.teardown_total, reverse=True
-        ):
+        for stat in sorted(self._fixtures.values(), key=lambda s: s.setup_total, reverse=True):
             fixture_setup_total += stat.setup_total
-            fixture_teardown_total += stat.teardown_total
             fixture_rows.append(
                 {
                     "name": stat.name,
@@ -166,12 +159,6 @@ class RuntimeProfilerPlugin:
                         (stat.setup_total / stat.setup_count) if stat.setup_count else 0.0
                     ),
                     "setup_max_s": stat.setup_max,
-                    "teardown_count": stat.teardown_count,
-                    "teardown_total_s": stat.teardown_total,
-                    "teardown_avg_s": (
-                        (stat.teardown_total / stat.teardown_count) if stat.teardown_count else 0.0
-                    ),
-                    "teardown_max_s": stat.teardown_max,
                 }
             )
 
@@ -224,9 +211,7 @@ class RuntimeProfilerPlugin:
                 "report_call": self._reports["call"],
                 "report_teardown": self._reports["teardown"],
                 "fixture_setup": fixture_setup_total,
-                "fixture_teardown": fixture_teardown_total,
                 "pytest_setup_other": self._reports["setup"] - fixture_setup_total,
-                "pytest_teardown_other": self._reports["teardown"] - fixture_teardown_total,
                 "session_total": total_duration,
             },
             "external_phase_seconds": dict(sorted(_EXTERNAL_PHASE_SECONDS.items())),
