@@ -5,7 +5,9 @@
    the most important changes and their purpose.
 3. Commit only staged files. Confirm unstaged and untracked files are
    intentionally excluded.
-4. Before committing, run the exact commands from
-   `.github/workflows/linters.yml` for each affected language/toolchain.
-   Install missing tools first. If CI runs a tool repo-wide, run it repo-wide
-   locally too; do not replace it with narrower file-only checks.
+4. Before committing, run the exact commands and CI-pinned tool versions from
+   `.github/workflows/linters.yml` for each affected language/toolchain. If CI
+   installs a tool from a pinned spec or requirements file, use the same source
+   locally instead of a different version from your virtualenv. If CI runs a
+   tool repo-wide, run it repo-wide locally too; do not replace it with
+   narrower file-only checks.
