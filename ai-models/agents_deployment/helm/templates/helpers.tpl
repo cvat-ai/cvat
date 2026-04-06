@@ -106,3 +106,33 @@ Configure function name for agent
   value: "MyAgentFunction"
 {{- end }}
 {{- end }}
+
+{{/*
+Configure resources for agent*/}}
+{{- define "agent.resources" -}}
+resources:
+  {{- if .Values.agent.resources.limits }}
+  limits:
+    {{- if .Values.agent.resources.limits.cpu }}
+    cpu: {{ .Values.agent.resources.limits.cpu }}
+    {{- end }}
+    {{- if .Values.agent.resources.limits.memory }}
+    memory: {{ .Values.agent.resources.limits.memory }}
+    {{- end }}
+    {{- if and .Values.agent.resources.limits.gpu .Values.agent.use_cuda }}
+    nvidia.com/gpu: {{ .Values.agent.resources.limits.gpu }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.agent.resources.requests }}
+  requests:
+    {{- if .Values.agent.resources.requests.cpu }}
+    cpu: {{ .Values.agent.resources.requests.cpu }}
+    {{- end }}
+    {{- if .Values.agent.resources.requests.memory }}
+    memory: {{ .Values.agent.resources.requests.memory }}
+    {{- end }}
+    {{- if and .Values.agent.resources.requests.gpu .Values.agent.use_cuda }}
+    nvidia.com/gpu: {{ .Values.agent.resources.requests.gpu }}
+    {{- end }}
+  {{- end }}
+{{- end }}
