@@ -39,54 +39,44 @@ export function approxPolyDP(cv: any): (points: number[], threshold: number, clo
     };
 }
 
-export interface SimplifyPolygonOptions {
+export interface SimplifyPolyOptions {
     accuracy: number;
     closed: boolean;
 }
 
-export interface SimplifyPolygonResult {
+export interface SimplifyPolyResult {
     points: number[];
-    simplified: boolean;
-    originalPointCount: number;
-    simplifiedPointCount: number;
-    thresholdUsed: number;
     warning?: string;
 }
 
-export function simplifyPolygon(cv: any): (
+export function simplifyPoly(cv: any): (
     points: number[],
-    options: SimplifyPolygonOptions,
-) => SimplifyPolygonResult {
+    options: SimplifyPolyOptions,
+) => SimplifyPolyResult {
     const approxPolyDPFn = approxPolyDP(cv);
 
-    return (points: number[], options: SimplifyPolygonOptions): SimplifyPolygonResult => {
+    return (points: number[], options: SimplifyPolyOptions): SimplifyPolyResult => {
         const {
             accuracy,
             closed,
         } = options;
 
         const minPoints = 3;
-
         const threshold = thresholdFromAccuracy(accuracy);
-
-        const originalPointCount = points.length / 2;
         const minValues = minPoints * 2;
 
         if (points.length < minValues) {
+            const pointCount = points.length / 2;
             return {
                 points,
-                simplified: false,
-                originalPointCount,
-                simplifiedPointCount: originalPointCount,
-                thresholdUsed: threshold,
-                warning: `Shape has ${originalPointCount} points, minimum is ${minPoints}`,
+                warning: `Shape has ${pointCount} points, minimum is ${minPoints}`,
             };
         }
 
         let simplified = approxPolyDPFn(points, threshold, closed);
-        let thresholdUsed = threshold;
         let warning: string | undefined;
 
+        // Auto-adjust threshold if result has too few points
         if (simplified.length < minValues) {
             let adjustedThreshold = threshold * 0.5;
             let attempts = 0;
@@ -101,37 +91,13 @@ export function simplifyPolygon(cv: any): (
             if (simplified.length < minValues) {
                 return {
                     points,
-                    simplified: false,
-                    originalPointCount,
-                    simplifiedPointCount: originalPointCount,
-                    thresholdUsed: threshold,
                     warning: `Could not simplify to at least ${minPoints} points even with reduced threshold`,
                 };
             }
-
-            thresholdUsed = adjustedThreshold * 2;
-            warning = `Used reduced threshold (${thresholdUsed.toFixed(4)}) to maintain at least ${minPoints} points`;
-        }
-
-        const simplifiedPointCount = simplified.length / 2;
-
-        if (simplified.length >= points.length) {
-            return {
-                points,
-                simplified: false,
-                originalPointCount,
-                simplifiedPointCount: originalPointCount,
-                thresholdUsed,
-                warning: 'Threshold did not reduce point count',
-            };
         }
 
         return {
             points: simplified,
-            simplified: true,
-            originalPointCount,
-            simplifiedPointCount,
-            thresholdUsed,
             warning,
         };
     };

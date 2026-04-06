@@ -14,7 +14,7 @@ import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
-import { simplifyPolygon } from 'utils/opencv-wrapper/object-cv-utils';
+import { simplifyPoly } from 'utils/opencv-wrapper/object-cv-utils';
 import { MAX_ACCURACY } from './approximation-accuracy';
 
 interface Props {
@@ -26,7 +26,7 @@ interface Props {
     onUpdatePreview: (points: number[]) => void;
 }
 
-function PolygonSimplifyControl(props: Props): React.ReactPortal | null {
+function PolySimplifyControl(props: Props): React.ReactPortal | null {
     const {
         objectState, approxPolyAccuracy, onChangeAccuracy, onApply, onCancel, onUpdatePreview,
     } = props;
@@ -46,16 +46,20 @@ function PolygonSimplifyControl(props: Props): React.ReactPortal | null {
                 return;
             }
 
-            const simplifyFn = simplifyPolygon(cv);
+            const simplifyFn = simplifyPoly(cv);
             const result = simplifyFn(originalPointsRef.current, {
                 accuracy: approxPolyAccuracy,
                 closed,
             });
 
             // Update preview with simplified points
-            if (result.simplified && result.simplifiedPointCount >= 3) {
+            // If points are different from original and no critical warning, update preview
+            const pointsChanged = result.points !== originalPointsRef.current;
+            const pointCount = result.points.length / 2;
+
+            if (pointsChanged && pointCount >= 3) {
                 onUpdatePreview(result.points);
-            } else if (!result.simplified && result.warning) {
+            } else {
                 onUpdatePreview(originalPointsRef.current);
             }
         } catch (error) {
@@ -165,4 +169,4 @@ function PolygonSimplifyControl(props: Props): React.ReactPortal | null {
     ) : null;
 }
 
-export default PolygonSimplifyControl;
+export default PolySimplifyControl;
