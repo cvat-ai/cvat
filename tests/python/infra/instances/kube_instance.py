@@ -378,9 +378,9 @@ def _image_ref_candidates(image_ref: str) -> set[str]:
     return candidates
 
 
-def _minikube_cache_images() -> set[str]:
+def _minikube_cache_images(profile: str) -> set[str]:
     try:
-        stdout, _ = run_command(["minikube", "cache", "list"], logger=logger)
+        stdout, _ = run_command(["minikube", "-p", profile, "cache", "list"], logger=logger)
         return {line.strip() for line in stdout.splitlines() if line.strip()}
     except Exception:
         return set()
@@ -390,7 +390,7 @@ def _ensure_static_images_cached(profile: str) -> None:
     cache = _load_kube_profile_cache(profile)
     cache_key = "static_infra_images_cached"
     cached_images = set(cache.get(cache_key, []))
-    actual_cached_images = _minikube_cache_images()
+    actual_cached_images = _minikube_cache_images(profile)
     target_images = set(_KUBE_STATIC_INFRA_IMAGES) | {
         f"{_kube_server_image()}:{_kube_image_tag()}",
         f"{_kube_frontend_image()}:{_kube_image_tag()}",
@@ -401,7 +401,11 @@ def _ensure_static_images_cached(profile: str) -> None:
     for image in missing:
         logger.info("Caching static kube infra image for minikube: %s", image)
         try:
-            run_command(["minikube", "cache", "add", image], capture_output=False, logger=logger)
+            run_command(
+                ["minikube", "-p", profile, "cache", "add", image],
+                capture_output=False,
+                logger=logger,
+            )
             newly_cached.add(image)
         except Exception:
             logger.warning("Failed to cache static kube infra image: %s", image, exc_info=True)
