@@ -44,7 +44,7 @@ class AnnotationIR:
         assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.tracks.append(track)
 
-    def add_interval(self, interval):
+    def add_interval(self, interval: dict[str, Any]):
         assert not self.is_stream, "Not allowed to add annotations when streaming"
         self.intervals.append(interval)
 
