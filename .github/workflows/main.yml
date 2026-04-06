@@ -135,19 +135,23 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      PYTEST_ADDOPTS: --platform=local --infra=auto --infra-profile=full
+      PYTEST_ADDOPTS: --platform=local --infra=auto --infra-profile=full --run-prefix=${{ matrix.run_prefix }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - pattern: "test_task_data"
             allow_cache: 'true'
+            run_prefix: rest-api-taskdata-cache-yes
           - pattern: "test_task_data"
             allow_cache: 'no'
+            run_prefix: rest-api-taskdata-cache-no
           - pattern: "not test_task_data"
             allow_cache: 'no'
+            run_prefix: rest-api-other-cache-no
           - pattern: "not test_task_data"
             allow_cache: 'true'
+            run_prefix: rest-api-other-cache-yes
     name: rest_api_testing [${{ matrix.pattern }}, cache-${{ matrix.allow_cache }}]
     steps:
       - uses: actions/checkout@v4
@@ -205,26 +209,15 @@ jobs:
           path: |
             coverage*.json
 
-      - name: Creating a log file from cvat containers
-        if: failure() && steps.run_tests.conclusion == 'failure'
-        env:
-          LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
-        run: |
-            mkdir $LOGS_DIR
-            docker logs test_cvat_server_1 > $LOGS_DIR/cvat_server.log
-            docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
-            docker logs test_cvat_worker_import_1 > $LOGS_DIR/cvat_worker_import.log
-            docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
-
-      - name: Uploading "cvat" container logs as an artifact
+      - name: Upload pytest run artifacts
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: ${{format(
-              'rest_api_container_logs-{0}-cache-{1}',
+              'rest_api_run_artifacts-{0}-cache-{1}',
               matrix.pattern, matrix.allow_cache
             )}}
-          path: "${{ github.workspace }}/rest_api_testing"
+          path: /tmp/cvat_pytest_infra/runs/${{ matrix.run_prefix }}-*
 
       - name: Upload allure results
         if: always()
@@ -431,6 +424,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
+      RUN_PREFIX: gha-kube-${{ github.run_id }}-${{ github.run_attempt }}
       PYTEST_ADDOPTS: >-
         --platform=kube
         --infra-profile=full
@@ -482,36 +476,26 @@ jobs:
             -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
             --extra-index-url https://download.pytorch.org/whl/cpu
 
-      - name: Start kube test infrastructure
+      - name: Run kube REST API and SDK tests with profiler
         run: |
-          pytest tests/python --infra=up
+          python tests/python/infra/debug/kube_perf.py \
+            --run-prefix "${RUN_PREFIX}" \
+            --infra-profile full \
+            --kube-cpus max \
+            --kube-memory max \
+            --timeout 30 \
+            --sample-interval 30 \
+            --queue-interval 15 \
+            --slow-threshold 10 \
+            --skip-down \
+            tests/python
 
-      - name: Kube MinIO smoke check
-        run: |
-          pytest --timeout 30 --infra=reuse \
-            'tests/python/rest_api/test_cloud_storages.py::TestGetCloudStorageContent::test_can_get_storage_content_with_manually_created_dirs[2]'
-
-      - name: REST API and SDK tests
-        run: |
-          pytest --timeout 30 --infra=reuse tests/python
-
-      - name: Creating a log file from "cvat" container logs
-        if: failure()
-        env:
-            LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
-        run: |
-          mkdir ${LOGS_DIR}
-          for backend_pod in $(kubectl get pods -l tier=backend -o 'jsonpath={.items[*].metadata.name}'); do
-            kubectl logs ${backend_pod} >${LOGS_DIR}/${backend_pod}.log
-          done
-          kubectl logs $(kubectl get pods -l app.kubernetes.io/name=traefik -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/traefik.log
-
-      - name: Uploading "cvat" container logs as an artifact
-        if: failure()
+      - name: Upload kube run artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: helm_rest_api_container_logs
-          path: "${{ github.workspace }}/rest_api_testing"
+          name: helm_rest_api_kube_run
+          path: /tmp/cvat_pytest_infra/runs/${{ env.RUN_PREFIX }}-*
 
       - name: Stop kube test infrastructure
         if: always()

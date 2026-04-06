@@ -85,6 +85,18 @@ class InfraInstance(ABC):
     def finish(self) -> None:
         return None
 
+    def should_collect_failure_logs(self) -> bool:
+        if self.config.getoption("--collect-only"):
+            return False
+
+        exitstatus = getattr(self.config, "_cvat_exitstatus", 0)
+        return int(exitstatus) != 0
+
+    def failure_logs_dir(self) -> Path:
+        path = RuntimeInfraConfig.get_run_dir() / "container-logs"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
     # Fixture-level data restore capabilities.
     def restore_db(self) -> None:
         raise NotImplementedError

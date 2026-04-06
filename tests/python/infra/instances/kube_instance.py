@@ -9,12 +9,13 @@ import os
 import re
 from json import JSONDecodeError
 from pathlib import Path
-from subprocess import PIPE, STDOUT, Popen
+from subprocess import PIPE, STDOUT, CalledProcessError, Popen
 from time import monotonic, sleep
 from urllib.parse import urlsplit
 
 import boto3
 import pytest
+
 from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.db_restore import PsycopgDatabaseRestorer
 from infra.debug.host_debug import maybe_wait_for_vscode_attach
@@ -22,7 +23,6 @@ from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.profiler import profile_external_phase
 from infra.redis_restore import RedisStateRestorer
 from infra.system_utils import is_port_free, kubectl_cp, pick_free_port, run_command
-
 from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)
@@ -1564,9 +1564,66 @@ class KubeInstance(InfraInstance):
         maybe_wait_for_vscode_attach(self.session, cvat_root_dir=self.deps.cvat_root_dir)
 
     def finish(self) -> None:
+        if self.should_collect_failure_logs():
+            self.collect_failure_logs()
         self._close_db_restorer()
         self._close_redis_restorer()
         self._close_runtime_port_forwards()
+
+    def collect_failure_logs(self) -> None:
+        logs_dir = self.failure_logs_dir()
+        stdout, _ = run_command(
+            [
+                "kubectl",
+                "--context",
+                _kube_context(),
+                "--namespace",
+                _kube_namespace(),
+                "get",
+                "pods",
+                "-o",
+                "json",
+            ],
+            logger=logger,
+        )
+        payload = json.loads(stdout)
+        allowed_instances = {_kube_release(), _kube_test_release()}
+        for item in payload.get("items", []):
+            metadata = item.get("metadata", {})
+            labels = metadata.get("labels", {})
+            if labels.get("app.kubernetes.io/instance") not in allowed_instances:
+                continue
+
+            pod_name = metadata.get("name")
+            spec = item.get("spec", {})
+            for container in spec.get("containers", []):
+                container_name = container.get("name")
+                if not pod_name or not container_name:
+                    continue
+
+                try:
+                    container_stdout, container_stderr = run_command(
+                        [
+                            "kubectl",
+                            "--context",
+                            _kube_context(),
+                            "--namespace",
+                            _kube_namespace(),
+                            "logs",
+                            pod_name,
+                            "-c",
+                            container_name,
+                        ],
+                        logger=logger,
+                    )
+                    log_text = (container_stdout or "") + (
+                        f"\n{container_stderr}" if container_stderr else ""
+                    )
+                except CalledProcessError as ex:
+                    log_text = ((ex.stdout or "") + f"\n{ex.stderr or ''}").strip()
+
+                with open(logs_dir / f"{pod_name}-{container_name}.log", "w") as f:
+                    f.write(log_text)
 
     def restore_db(self) -> None:
         self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")

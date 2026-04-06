@@ -9,11 +9,13 @@ import os
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 from typing import Any
 
 import pytest
+
 from infra.config import RuntimeInfraConfig
 
 _EXTERNAL_PHASE_SECONDS: defaultdict[str, float] = defaultdict(float)
@@ -45,10 +47,22 @@ class _FixtureStat:
     teardown_max: float = 0.0
 
 
+@dataclass
+class _TestStat:
+    nodeid: str
+    outcome: str = "unknown"
+    phases: dict[str, dict[str, float]] | None = None
+
+    def __post_init__(self) -> None:
+        if self.phases is None:
+            self.phases = {}
+
+
 class RuntimeProfilerPlugin:
     def __init__(self, config):
         self._config = config
         self._session_start = perf_counter()
+        self._session_start_wall = datetime.now(timezone.utc)
         self._collection_start: float | None = None
         self._collection_end: float | None = None
         self._tests_collected = 0
@@ -58,6 +72,7 @@ class RuntimeProfilerPlugin:
         self._outcomes = defaultdict(int)
 
         self._fixtures: dict[tuple[str, str, str], _FixtureStat] = {}
+        self._tests: dict[str, _TestStat] = {}
         self._written = False
 
     def pytest_collection(self):
@@ -90,8 +105,24 @@ class RuntimeProfilerPlugin:
             self._reports[when] += duration
             self._report_counts[when] += 1
 
+            test = self._tests.get(report.nodeid)
+            if test is None:
+                test = _TestStat(nodeid=report.nodeid)
+                self._tests[report.nodeid] = test
+
+            end_offset_s = perf_counter() - self._session_start
+            start_offset_s = max(0.0, end_offset_s - duration)
+            test.phases[when] = {
+                "duration_s": duration,
+                "start_offset_s": start_offset_s,
+                "end_offset_s": end_offset_s,
+            }
+
         if report.when == "call":
             self._outcomes[report.outcome] += 1
+            self._tests[report.nodeid].outcome = report.outcome
+        elif report.failed and when in {"setup", "teardown"}:
+            self._tests[report.nodeid].outcome = report.outcome
 
     def pytest_sessionfinish(self, session, exitstatus):
         _ = session, exitstatus
@@ -151,6 +182,35 @@ class RuntimeProfilerPlugin:
 
         total_duration = perf_counter() - self._session_start
 
+        test_rows = []
+        for stat in sorted(
+            self._tests.values(),
+            key=lambda s: min(
+                (phase["start_offset_s"] for phase in s.phases.values()), default=0.0
+            ),
+        ):
+            phase_seconds = {
+                name: values["duration_s"] for name, values in sorted(stat.phases.items())
+            }
+            start_offset_s = min(
+                (phase["start_offset_s"] for phase in stat.phases.values()), default=0.0
+            )
+            end_offset_s = max(
+                (phase["end_offset_s"] for phase in stat.phases.values()), default=0.0
+            )
+            test_rows.append(
+                {
+                    "nodeid": stat.nodeid,
+                    "outcome": stat.outcome,
+                    "phase_seconds": phase_seconds,
+                    "total_s": sum(phase_seconds.values()),
+                    "start_offset_s": start_offset_s,
+                    "end_offset_s": end_offset_s,
+                    "start_utc": (self._session_start_wall.timestamp() + start_offset_s),
+                    "end_utc": (self._session_start_wall.timestamp() + end_offset_s),
+                }
+            )
+
         payload: dict[str, Any] = {
             "run_prefix": run_prefix,
             "run_id": run_id,
@@ -174,6 +234,7 @@ class RuntimeProfilerPlugin:
             "report_counts": self._report_counts,
             "outcomes": dict(self._outcomes),
             "fixtures": fixture_rows,
+            "tests": test_rows,
         }
 
         with open(out_path, "w") as f:

@@ -11,6 +11,7 @@ from time import sleep
 
 import pytest
 import yaml
+
 from infra.config import (
     InfraMode,
     InfraProfile,
@@ -40,6 +41,7 @@ _COVERED_CONTAINERS = (
     "cvat_worker_webhooks",
     "cvat_worker_utils",
 )
+_FAILURE_LOG_CONTAINERS = _COVERED_CONTAINERS + ("cvat_opa", "traefik")
 
 
 def add_container_debug_options(group) -> None:
@@ -1022,6 +1024,9 @@ class LocalInstance(InfraInstance):
         if self.config.getoption("--collect-only"):
             return
 
+        if self.should_collect_failure_logs():
+            self.collect_failure_logs()
+
         self._close_db_restorer()
         self._close_redis_restorer()
 
@@ -1045,6 +1050,26 @@ class LocalInstance(InfraInstance):
             profiles=profiles,
             is_parallel_child=is_parallel_child,
         )
+
+    def collect_failure_logs(self) -> None:
+        project_cfg = RuntimeInfraConfig.get_project_config(
+            RuntimeInfraConfig.get_run_prefix_from_config(self.config)
+        )
+        running = set(running_containers())
+        logs_dir = self.failure_logs_dir()
+        for container in _FAILURE_LOG_CONTAINERS:
+            prefixed_name = project_cfg.prefixed_container_name(container)
+            if prefixed_name not in running:
+                continue
+
+            stdout, stderr = run_command(["docker", "logs", prefixed_name], logger=logger)
+            with open(logs_dir / f"{prefixed_name}.log", "w") as f:
+                if stdout:
+                    f.write(stdout)
+                if stderr:
+                    if stdout:
+                        f.write("\n")
+                    f.write(stderr)
 
     def restore_db(self) -> None:
         self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")

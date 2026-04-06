@@ -5,6 +5,7 @@
 import os
 
 import pytest
+
 from infra import options as infra_options
 from infra.config import (
     InfraMode,
@@ -167,6 +168,7 @@ def pytest_sessionfinish(session, exitstatus: int) -> None:
     if session.config.getoption("--collect-only"):
         return
 
+    setattr(session.config, "_cvat_exitstatus", int(exitstatus))
     instance = getattr(session.config, "_cvat_infra_instance", None)
     if instance is not None:
         instance.finish()
