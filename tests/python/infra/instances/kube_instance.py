@@ -15,6 +15,7 @@ from urllib.parse import urlsplit
 
 import boto3
 import pytest
+
 from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.db_restore import PsycopgDatabaseRestorer
 from infra.debug.host_debug import maybe_wait_for_vscode_attach
@@ -22,7 +23,6 @@ from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.profiler import profile_external_phase
 from infra.redis_restore import RedisStateRestorer
 from infra.system_utils import is_port_free, kubectl_cp, pick_free_port, run_command
-
 from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)
@@ -32,8 +32,8 @@ _DEFAULT_KUBE_NAMESPACE = "default"
 _DEFAULT_KUBE_SERVER_IMAGE = "cvat/server"
 _DEFAULT_KUBE_FRONTEND_IMAGE = "cvat/ui"
 _DEFAULT_KUBE_IMAGE_TAG = os.environ.get("CVAT_VERSION", "dev")
-_DEFAULT_KUBE_CPUS = "8"
-_DEFAULT_KUBE_MEMORY = "16g"
+_DEFAULT_KUBE_CPUS = ""
+_DEFAULT_KUBE_MEMORY = ""
 _MAX_KUBE_RELEASE_NAME_LEN = 32
 _KUBE_SERVER_CONTAINER = "cvat-backend"
 _KUBE_FINGERPRINT_VERSION = 2
@@ -2022,13 +2022,19 @@ class KubePlugin(InfraPlugin):
             "--kube-cpus",
             action="store",
             default=_DEFAULT_KUBE_CPUS,
-            help="CPU count passed to `minikube start --cpus`. (default: %(default)s)",
+            help=(
+                "CPU count passed to `minikube start --cpus`. "
+                "If empty, minikube chooses automatically."
+            ),
         )
         group._addoption(
             "--kube-memory",
             action="store",
             default=_DEFAULT_KUBE_MEMORY,
-            help="Memory amount passed to `minikube start --memory` (e.g. 16g). (default: %(default)s)",
+            help=(
+                "Memory amount passed to `minikube start --memory` (e.g. 16g). "
+                "If empty, minikube chooses automatically."
+            ),
         )
         group._addoption(
             "--kube-namespace",
