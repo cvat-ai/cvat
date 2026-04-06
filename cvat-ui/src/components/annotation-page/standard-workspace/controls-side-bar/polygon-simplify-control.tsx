@@ -12,9 +12,8 @@ import message from 'antd/lib/message';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { ObjectState, ShapeType, simplifyPoly } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
-import { simplifyPoly } from 'utils/opencv-wrapper/object-cv-utils';
 import { MAX_ACCURACY } from './approximation-accuracy';
 
 interface Props {

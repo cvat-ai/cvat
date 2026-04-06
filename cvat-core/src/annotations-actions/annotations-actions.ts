@@ -15,6 +15,7 @@ import {
 
 import { RemoveFilteredShapes } from './remove-filtered-shapes';
 import { PropagateShapes } from './propagate-shapes';
+import { PolygonSimplify } from './polygon-simplify';
 
 const registeredActions: BaseAction[] = [];
 
@@ -46,6 +47,7 @@ export async function unregisterAction(action: BaseAction): Promise<void> {
 
 registerAction(new RemoveFilteredShapes());
 registerAction(new PropagateShapes());
+registerAction(new PolygonSimplify());
 
 export async function runAction(
     instance: Job | Task,

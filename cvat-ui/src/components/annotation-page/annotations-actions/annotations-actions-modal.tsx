@@ -33,6 +33,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
 import { changeDefaultApproxPolyAccuracy } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
+import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 
 const core = getCore();
 
@@ -577,6 +578,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                 <hr />
                             </Col>
                             {Object.entries(activeAction.parameters)
+                                .filter(([, { type }]) => type !== ActionParameterType.OPENCV_DEPENDENCY)
                                 .map(([name, { defaultValue, type, values }], idx) => (
                                     <Col
                                         key={`${activeAction.name}_${idx}`}
@@ -629,7 +631,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                         type='primary'
                         loading={fetching}
                         disabled={!activeAction || fetching}
-                        onClick={() => {
+                        onClick={async () => {
                             const appState = storage.getState();
                             const canvasInstance = appState.annotation.canvas.instance as Canvas;
                             const frameData = appState.annotation.player.frame.data;
@@ -641,43 +643,79 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                     dispatch(reducerActions.updateProgress(_progress, _message));
                                 };
 
-                                const currentFrame = storage.getState().annotation.player.frame.number;
-                                const actionPromise = targetObjectState ? core.actions.call(
-                                    jobInstance,
-                                    activeAction,
-                                    actionParameters[activeAction.name],
-                                    currentFrame,
-                                    [targetObjectState],
-                                    updateProgressWrapper,
-                                    () => cancellationRef.current,
-                                ) : core.actions.run(
-                                    jobInstance,
-                                    activeAction,
-                                    actionParameters[activeAction.name],
-                                    currentFrameAction ? currentFrame : frameFrom,
-                                    currentFrameAction ? currentFrame : frameTo,
-                                    storage.getState().annotation.annotations.filters,
-                                    updateProgressWrapper,
-                                    () => cancellationRef.current,
-                                );
+                                try {
+                                    const { parameters } = activeAction;
+                                    const requiresOpenCV = parameters && Object.values(parameters).some(
+                                        (param) => param.type === ActionParameterType.OPENCV_DEPENDENCY,
+                                    );
 
-                                actionPromise.then(() => {
-                                    if (!cancellationRef.current) {
-                                        canvasInstance.setup(frameData, []);
-                                        storage.dispatch(fetchAnnotationsAsync());
-                                        if (targetObjectState !== null) {
-                                            onClose();
+                                    const parametersWithCV = { ...actionParameters[activeAction.name] };
+                                    if (requiresOpenCV) {
+                                        if (!openCVWrapper.isInitialized) {
+                                            updateProgressWrapper('Initializing OpenCV', 0);
+                                            await openCVWrapper.initialize(() => {});
+
+                                            if (cancellationRef.current) {
+                                                dispatch(reducerActions.resetAfterRun());
+                                                return;
+                                            }
+                                        }
+
+                                        const { cv } = (window as any);
+                                        if (parameters) {
+                                            Object.entries(parameters).forEach(([name, param]) => {
+                                                if (param.type === ActionParameterType.OPENCV_DEPENDENCY) {
+                                                    parametersWithCV[name] = cv;
+                                                }
+                                            });
                                         }
                                     }
-                                }).finally(() => {
+
+                                    const currentFrame = storage.getState().annotation.player.frame.number;
+                                    const actionPromise = targetObjectState ? core.actions.call(
+                                        jobInstance,
+                                        activeAction,
+                                        parametersWithCV,
+                                        currentFrame,
+                                        [targetObjectState],
+                                        updateProgressWrapper,
+                                        () => cancellationRef.current,
+                                    ) : core.actions.run(
+                                        jobInstance,
+                                        activeAction,
+                                        parametersWithCV,
+                                        currentFrameAction ? currentFrame : frameFrom,
+                                        currentFrameAction ? currentFrame : frameTo,
+                                        storage.getState().annotation.annotations.filters,
+                                        updateProgressWrapper,
+                                        () => cancellationRef.current,
+                                    );
+
+                                    actionPromise.then(() => {
+                                        if (!cancellationRef.current) {
+                                            canvasInstance.setup(frameData, []);
+                                            storage.dispatch(fetchAnnotationsAsync());
+                                            if (targetObjectState !== null) {
+                                                onClose();
+                                            }
+                                        }
+                                    }).finally(() => {
+                                        dispatch(reducerActions.resetAfterRun());
+                                    }).catch((error: unknown) => {
+                                        if (error instanceof Error) {
+                                            notification.error({
+                                                message: error.message,
+                                            });
+                                        }
+                                    });
+                                } catch (error: unknown) {
                                     dispatch(reducerActions.resetAfterRun());
-                                }).catch((error: unknown) => {
                                     if (error instanceof Error) {
                                         notification.error({
-                                            message: error.message,
+                                            message: `Failed to initialize dependencies: ${error.message}`,
                                         });
                                     }
-                                });
+                                }
                             }
                         }}
                     >

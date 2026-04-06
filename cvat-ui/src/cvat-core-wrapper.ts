@@ -48,6 +48,10 @@ import { BaseShapesAction } from 'cvat-core/src/annotations-actions/base-shapes-
 import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-collection-action';
 import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
 import { Request, RequestOperation } from 'cvat-core/src/request';
+import {
+    thresholdFromAccuracy, approxPolyDP, simplifyPoly,
+    SimplifyPolyOptions, SimplifyPolyResult,
+} from 'cvat-core/src/object-utils';
 import AboutData from 'cvat-core/src/about';
 import { MinimalShape, TrackerResults, InteractorResults } from 'cvat-core/src/lambda-manager';
 
@@ -122,6 +126,9 @@ export {
     StorageLocation,
     MembershipRole,
     AboutData,
+    thresholdFromAccuracy,
+    approxPolyDP,
+    simplifyPoly,
 };
 
 export type {
@@ -144,4 +151,6 @@ export type {
     TrackerResults,
     ApiTokenModifiableFields,
     ApiTokensFilter,
+    SimplifyPolyOptions,
+    SimplifyPolyResult,
 };
