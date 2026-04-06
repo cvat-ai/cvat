@@ -4,7 +4,6 @@ services:
     entrypoint: ["/app/function_registration.sh"]
     volumes:
       - shared-data:/shared
-#      - userdata:/app/data:ro
     restart: "on-failure"
     environment:
       CVAT_BASE_URL:
@@ -18,7 +17,6 @@ services:
     profiles: [cpu]
     volumes:
       - shared-data:/shared:ro
-#      - userdata:/app/data:ro
     depends_on:
       cvat-function-register:
         condition: service_completed_successfully
@@ -53,7 +51,6 @@ services:
     entrypoint: ["/app/function_deregistration.sh"]
     volumes:
       - shared-data:/shared:ro
-#      - userdata:/app/data:ro
     profiles:
       - manual
     environment:
@@ -63,9 +60,3 @@ services:
 
 volumes:
   shared-data:
-#  userdata:
-#      driver: local
-#      driver_opts:
-#        type: none
-#        o: bind
-#        device: ${USER_DATA_ABSOLUTE_PATH}
