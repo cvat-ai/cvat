@@ -5,59 +5,32 @@ on:
       - 'develop'
 
 jobs:
-  get-sha:
-    uses: ./.github/workflows/search-cache.yml
-
   Caching_CVAT:
-    needs: get-sha
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      REPO: ${{ github.repository }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/cache@v4
-        id: server-cache-action
-        with:
-          path: /tmp/cvat_cache_server
-          key: ${{ runner.os }}-build-server-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-build-server-${{ needs.get-sha.outputs.sha }}
-            ${{ runner.os }}-build-server-
-
-      - uses: actions/cache@v4
-        id: ui-cache-action
-        with:
-          path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-build-ui-${{ needs.get-sha.outputs.sha }}
-            ${{ runner.os }}-build-ui-
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub for BuildKit cache
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Caching CVAT Server
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_server
-          cache-to: type=local,dest=/tmp/cvat_cache_server-new
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/server:buildcache-develop
+          cache-to: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/server:buildcache-develop,mode=max,image-manifest=true,oci-mediatypes=true
 
       - name: Caching CVAT UI
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.ui
-          cache-from: type=local,src=/tmp/cvat_cache_ui
-          cache-to: type=local,dest=/tmp/cvat_cache_ui-new
-
-      - name: Moving cache
-        run: |
-          rm -rf /tmp/cvat_cache_server
-          mv /tmp/cvat_cache_server-new /tmp/cvat_cache_server
-
-          rm -rf /tmp/cvat_cache_ui
-          mv /tmp/cvat_cache_ui-new /tmp/cvat_cache_ui
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/ui:buildcache-develop
+          cache-to: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/ui:buildcache-develop,mode=max,image-manifest=true,oci-mediatypes=true

@@ -19,15 +19,7 @@ env:
   CVAT_VERSION: "local"
 
 jobs:
-  search_cache:
-    if: |
-      github.event.pull_request.draft == false &&
-      !startsWith(github.event.pull_request.title, '[WIP]') &&
-      !startsWith(github.event.pull_request.title, '[Dependent]')
-    uses: ./.github/workflows/search-cache.yml
-
   build:
-    needs: search_cache
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,20 +30,15 @@ jobs:
       - name: Check changelog fragments
         run: ./dev/check_changelog_fragments.py
 
-      - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v4
-        with:
-          path: /tmp/cvat_cache_server
-          key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
-
-      - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v4
-        with:
-          path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub for BuildKit cache
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Create artifact directories
         run: |
@@ -59,12 +46,37 @@ jobs:
           mkdir /tmp/cvat_ui
           mkdir /tmp/cvat_sdk
 
-      - name: CVAT server. Build and push
+      - name: CVAT server. Build and push with registry cache refresh
+        if: ${{ secrets.DOCKERHUB_WORKSPACE != '' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' && github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'master') }}
         uses: docker/build-push-action@v6
         with:
           build-args: |
               "COVERAGE_PROCESS_START=.coveragerc"
-          cache-from: type=local,src=/tmp/cvat_cache_server
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/server:buildcache-develop
+          cache-to: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/server:buildcache-develop,mode=max,image-manifest=true,oci-mediatypes=true
+          context: .
+          file: Dockerfile
+          tags: cvat/server:${{ env.CVAT_VERSION }}
+          outputs: type=docker,dest=/tmp/cvat_server/image.tar
+
+      - name: CVAT server. Build and push with registry cache
+        if: ${{ secrets.DOCKERHUB_WORKSPACE != '' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' && !(github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'master')) }}
+        uses: docker/build-push-action@v6
+        with:
+          build-args: |
+              "COVERAGE_PROCESS_START=.coveragerc"
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/server:buildcache-develop
+          context: .
+          file: Dockerfile
+          tags: cvat/server:${{ env.CVAT_VERSION }}
+          outputs: type=docker,dest=/tmp/cvat_server/image.tar
+
+      - name: CVAT server. Build and push without external cache
+        if: ${{ secrets.DOCKERHUB_WORKSPACE == '' || secrets.DOCKERHUB_USERNAME == '' || secrets.DOCKERHUB_TOKEN == '' }}
+        uses: docker/build-push-action@v6
+        with:
+          build-args: |
+              "COVERAGE_PROCESS_START=.coveragerc"
           context: .
           file: Dockerfile
           tags: cvat/server:${{ env.CVAT_VERSION }}
@@ -76,10 +88,31 @@ jobs:
           yarn --immutable
           yarn run coverage
 
-      - name: CVAT UI. Build and push
+      - name: CVAT UI. Build and push with registry cache refresh
+        if: ${{ secrets.DOCKERHUB_WORKSPACE != '' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' && github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'master') }}
         uses: docker/build-push-action@v6
         with:
-          cache-from: type=local,src=/tmp/cvat_cache_ui
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/ui:buildcache-develop
+          cache-to: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/ui:buildcache-develop,mode=max,image-manifest=true,oci-mediatypes=true
+          context: .
+          file: Dockerfile.ui
+          tags: cvat/ui:${{ env.CVAT_VERSION }}
+          outputs: type=docker,dest=/tmp/cvat_ui/image.tar
+
+      - name: CVAT UI. Build and push with registry cache
+        if: ${{ secrets.DOCKERHUB_WORKSPACE != '' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' && !(github.event_name == 'push' && (github.ref_name == 'develop' || github.ref_name == 'master')) }}
+        uses: docker/build-push-action@v6
+        with:
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/ui:buildcache-develop
+          context: .
+          file: Dockerfile.ui
+          tags: cvat/ui:${{ env.CVAT_VERSION }}
+          outputs: type=docker,dest=/tmp/cvat_ui/image.tar
+
+      - name: CVAT UI. Build and push without external cache
+        if: ${{ secrets.DOCKERHUB_WORKSPACE == '' || secrets.DOCKERHUB_USERNAME == '' || secrets.DOCKERHUB_TOKEN == '' }}
+        uses: docker/build-push-action@v6
+        with:
           context: .
           file: Dockerfile.ui
           tags: cvat/ui:${{ env.CVAT_VERSION }}

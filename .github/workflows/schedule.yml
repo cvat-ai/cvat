@@ -37,30 +37,20 @@ jobs:
           echo "last_commit_time=${last_commit_time}" >> $GITHUB_OUTPUT
           echo "last_night_time=${last_night_time}" >> $GITHUB_OUTPUT
 
-  search_cache:
-    needs: check_updates
-    uses: ./.github/workflows/search-cache.yml
-
   build:
-    needs: search_cache
+    needs: check_updates
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v4
-        with:
-          path: /tmp/cvat_cache_server
-          key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
-
-      - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v4
-        with:
-          path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub for BuildKit cache
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Create artifact directories
         run: |
@@ -71,7 +61,7 @@ jobs:
       - name: CVAT server. Build and push
         uses: docker/build-push-action@v6
         with:
-          cache-from: type=local,src=/tmp/cvat_cache_server
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/server:buildcache-develop
           context: .
           file: Dockerfile
           tags: cvat/server:${{ env.CVAT_VERSION }}
@@ -80,7 +70,7 @@ jobs:
       - name: CVAT UI. Build and push
         uses: docker/build-push-action@v6
         with:
-          cache-from: type=local,src=/tmp/cvat_cache_ui
+          cache-from: type=registry,ref=docker.io/${{ secrets.DOCKERHUB_WORKSPACE }}/ui:buildcache-develop
           context: .
           file: Dockerfile.ui
           tags: cvat/ui:${{ env.CVAT_VERSION }}
