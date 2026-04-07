@@ -9,12 +9,12 @@ import { simplifyPoly, SimplifyPolyResult } from '../object-utils';
 import { ActionParameterType, ActionParameters } from './base-action';
 import { BaseShapesAction, ShapesActionInput, ShapesActionOutput } from './base-shapes-action';
 
-export class PolygonSimplify extends BaseShapesAction {
+export class PolySimplify extends BaseShapesAction {
     #accuracy = 0;
     #cv: any = null;
 
     public async init(_instance: any, parameters: Record<string, any>): Promise<void> {
-        this.#accuracy = parameters.Points as number;
+        this.#accuracy = parameters.Threshold as number;
         this.#cv = parameters.OpenCV;
     }
 
@@ -101,10 +101,11 @@ export class PolygonSimplify extends BaseShapesAction {
                 values: [],
                 defaultValue: '',
             },
-            Points: {
+            Threshold: {
                 type: ActionParameterType.SLIDER,
                 values: ['0', '13', '1'], // min, max, step
                 defaultValue: '7',
+                tooltip: 'Lower values create simpler shapes with fewer points. Higher values preserve more detail and points.',
             },
         };
     }

@@ -25,7 +25,7 @@ import {
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getObjectStateColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
-import PolySimplifyControl from 'components/annotation-page/standard-workspace/controls-side-bar/polygon-simplify-control';
+import PolySimplifyControl from 'components/annotation-page/standard-workspace/controls-side-bar/poly-simplify-control';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {

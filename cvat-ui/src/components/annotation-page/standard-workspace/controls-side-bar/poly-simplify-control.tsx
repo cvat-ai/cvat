@@ -1,4 +1,4 @@
-// Copyright (C) 2026 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,8 +11,8 @@ import Slider from 'antd/lib/slider';
 import message from 'antd/lib/message';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 
-import CVATTooltip from 'components/common/cvat-tooltip';
 import { ObjectState, ShapeType, simplifyPoly } from 'cvat-core-wrapper';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { MAX_ACCURACY } from './approximation-accuracy';
 
@@ -112,58 +112,39 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
 
     const target = window.document.getElementsByClassName('cvat-canvas-container')[0];
 
-    const sliderMarks: Record<number, { style: React.CSSProperties; label: JSX.Element }> = {};
-    sliderMarks[0] = {
-        style: {
-            color: '#1890ff',
-        },
-        label: <strong>less</strong>,
-    };
-    sliderMarks[MAX_ACCURACY] = {
-        style: {
-            color: '#61c200',
-        },
-        label: <strong>more</strong>,
-    };
-
     return target ? ReactDOM.createPortal(
-        <div className='cvat-approx-poly-threshold-wrapper'>
-            <Row align='middle' gutter={8}>
-                <Col offset={1}>
-                    <CVATTooltip title='Lower values create simpler shapes with fewer points. Higher values preserve more detail and points.'>
-                        <Text>Threshold: </Text>
-                    </CVATTooltip>
-                </Col>
-                <Col span={12}>
-                    <Slider
-                        value={approxPolyAccuracy}
-                        min={0}
-                        max={MAX_ACCURACY}
-                        step={1}
-                        dots
-                        tooltip={{
-                            open: false,
-                        }}
-                        onChange={onChangeAccuracy}
-                        marks={sliderMarks}
-                    />
-                </Col>
-                <Col style={{ textAlign: 'right' }} offset={1}>
-                    <Button
-                        type='primary'
-                        size='small'
-                        icon={<CheckOutlined />}
-                        onClick={handleApply}
-                        style={{ marginRight: 4 }}
-                    />
-                    <Button
-                        size='small'
-                        icon={<CloseOutlined />}
-                        onClick={onCancel}
-                    />
-                </Col>
-            </Row>
-        </div>,
+        <Row align='middle' className='cvat-approx-poly-threshold-wrapper'>
+            <Col span={20}>
+                <Slider
+                    value={approxPolyAccuracy}
+                    min={0}
+                    max={MAX_ACCURACY}
+                    step={1}
+                    dots
+                    tooltip={{
+                        open: false,
+                    }}
+                    onChange={onChangeAccuracy}
+                />
+            </Col>
+            <Col span={4} style={{ textAlign: 'right' }}>
+                <Button
+                    type='primary'
+                    size='small'
+                    icon={<CheckOutlined />}
+                    onClick={handleApply}
+                    style={{ marginRight: 4 }}
+                />
+                <Button
+                    size='small'
+                    icon={<CloseOutlined />}
+                    onClick={onCancel}
+                />
+            </Col>
+            <CVATTooltip title='Lower values create simpler shapes with fewer points. Higher values preserve more detail and points.'>
+                <Text type='secondary'>threshold</Text>
+            </CVATTooltip>
+        </Row>,
         target,
     ) : null;
 }

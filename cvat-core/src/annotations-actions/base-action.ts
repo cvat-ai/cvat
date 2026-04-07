@@ -21,6 +21,7 @@ export type ActionParameters = Record<string, {
     type: ActionParameterType;
     values: string[] | (({ instance }: { instance: Job | Task }) => string[]);
     defaultValue: string | (({ instance }: { instance: Job | Task }) => string);
+    tooltip?: string;
 }>;
 
 export abstract class BaseAction {

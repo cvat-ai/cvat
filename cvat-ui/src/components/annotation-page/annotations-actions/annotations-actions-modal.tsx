@@ -31,9 +31,9 @@ import {
 } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
-import { changeDefaultApproxPolyAccuracy } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 const core = getCore();
 
@@ -248,18 +248,17 @@ const componentStorage = createStore(reducer, {
 function ActionParameterComponent(props: ActionParameterProps & {
     onChange: (value: string) => void;
     parameterName?: string;
+    tooltip?: string;
 }): JSX.Element {
     const {
-        defaultValue, type, values, onChange, parameterName,
+        defaultValue, type, values, onChange, parameterName, tooltip,
     } = props;
     const store = getCVATStore();
 
     const job = store.getState().annotation.job.instance as Job;
     let computedDefaultValue = typeof defaultValue === 'function' ? defaultValue({ instance: job }) : defaultValue;
 
-    // Special handling for polygon simplification Points parameter
-    // Use the saved setting value if available
-    if (parameterName === 'Points') {
+    if (parameterName === 'Threshold') {
         const savedAccuracy = store.getState().settings.workspace.defaultApproxPolyAccuracy;
         if (savedAccuracy !== undefined) {
             computedDefaultValue = String(savedAccuracy);
@@ -269,14 +268,6 @@ function ActionParameterComponent(props: ActionParameterProps & {
     const [value, setValue] = useState(computedDefaultValue);
     useEffect(() => {
         onChange(value);
-        
-        // Save Points parameter to settings for persistence
-        if (parameterName === 'Points') {
-            const numericValue = Number(value);
-            if (!Number.isNaN(numericValue)) {
-                store.dispatch(changeDefaultApproxPolyAccuracy(numericValue));
-            }
-        }
     }, [value]);
 
     const computedValues = typeof values === 'function' ? values({ instance: job }) : values;
@@ -304,36 +295,30 @@ function ActionParameterComponent(props: ActionParameterProps & {
 
     if (type === ActionParameterType.SLIDER) {
         const [min, max, step] = computedValues.map((val) => +val);
-        const sliderMarks: Record<number, { style: React.CSSProperties; label: JSX.Element }> = {};
-        sliderMarks[min] = {
-            style: {
-                color: '#1890ff',
-            },
-            label: <strong>less</strong>,
-        };
-        sliderMarks[max] = {
-            style: {
-                color: '#61c200',
-            },
-            label: <strong>more</strong>,
-        };
 
         return (
-            <Slider
-                value={+value}
-                min={min}
-                max={max}
-                step={step}
-                dots
-                tooltip={{
-                    open: false,
-                }}
-                onChange={(_value: number) => {
-                    setValue(`${_value}`);
-                }}
-                marks={sliderMarks}
-                style={{ width: '35%' }}
-            />
+            <div className='cvat-approx-poly-threshold-wrapper' style={{ left: '0' }}>
+                <Slider
+                    value={+value}
+                    min={min}
+                    max={max}
+                    step={step}
+                    dots
+                    tooltip={{
+                        open: false,
+                    }}
+                    onChange={(_value: number) => {
+                        setValue(`${_value}`);
+                    }}
+                />
+                {tooltip ? (
+                    <CVATTooltip title={tooltip}>
+                        <Text type='secondary'>{parameterName?.toLowerCase() || 'value'}</Text>
+                    </CVATTooltip>
+                ) : (
+                    <Text type='secondary'>{parameterName?.toLowerCase() || 'value'}</Text>
+                )}
+            </div>
         );
     }
 
@@ -579,13 +564,23 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                             </Col>
                             {Object.entries(activeAction.parameters)
                                 .filter(([, { type }]) => type !== ActionParameterType.OPENCV_DEPENDENCY)
-                                .map(([name, { defaultValue, type, values }], idx) => (
+                                .map(([name, {
+                                    defaultValue, type, values, tooltip,
+                                }], idx) => (
                                     <Col
                                         key={`${activeAction.name}_${idx}`}
                                         span={24}
                                         className='cvat-action-runner-action-parameter'
                                     >
-                                        <Text>{name}</Text>
+                                        {type !== ActionParameterType.SLIDER && (
+                                            tooltip ? (
+                                                <CVATTooltip title={tooltip}>
+                                                    <Text>{name}</Text>
+                                                </CVATTooltip>
+                                            ) : (
+                                                <Text>{name}</Text>
+                                            )
+                                        )}
                                         <ActionParameterComponent
                                             onChange={(value: string) => {
                                                 dispatch(reducerActions.updateActionParameter(name, value));
@@ -594,6 +589,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                             type={type}
                                             values={values}
                                             parameterName={name}
+                                            tooltip={tooltip}
                                         />
                                     </Col>
                                 ))}
