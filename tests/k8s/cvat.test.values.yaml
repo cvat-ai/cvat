@@ -46,6 +46,18 @@ cvat:
         value: cvat.settings.testing_rest
       - name: CVAT_ACCESS_TOKEN_STALE_PERIOD
         value: "3153600000"
+      - name: CVAT_WORKERPROBE_DEBUG
+        value: "true"
+      - name: CVAT_WORKERPROBE_SOFT_TIMEOUT_SECONDS
+        value: "8"
+      livenessProbe:
+        # In test clusters, backend worker pods can take noticeably longer to
+        # enumerate Redis worker state under load. Keep liveness enabled, but
+        # avoid false-negative restarts from the workerprobe command itself.
+        initialDelaySeconds: 180
+        periodSeconds: 120
+        timeoutSeconds: 30
+        failureThreshold: 8
       annotation:
         replicas: 0
         additionalVolumeMounts:
