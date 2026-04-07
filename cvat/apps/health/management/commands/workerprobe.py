@@ -34,7 +34,6 @@ class Command(BaseCommand):
                     "Number of registered workers does not match the expected number, "
                     f"actual: {len(workers)}, expected: {expected_workers}"
                 )
-
             for worker in workers:
                 if datetime.now() - worker.last_heartbeat > timedelta(seconds=worker.worker_ttl):
                     raise CommandError(
