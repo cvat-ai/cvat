@@ -1197,7 +1197,6 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
                 // deactivate object to visualize changes immediately (UX)
                 dispatch(activateObject(null, null, null));
             }
-
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
             let states = await Promise.all(promises);
 

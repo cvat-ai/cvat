@@ -54,7 +54,7 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
-    keyMap: Record<string, string>;
+    keyMap: Record<string, { sequences: string[] }>;
     canvasInstance: Canvas | Canvas3d;
     focusedObjectPadding: number;
     defaultApproxPolyAccuracy: number;
@@ -128,8 +128,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
         },
-        updateState(state: any): void {
-            dispatch(updateAnnotationsAsync([state]));
+        updateState(state: any): Promise<void> {
+            return dispatch(updateAnnotationsAsync([state]));
         },
         activateObject(activatedStateID: number | null): void {
             dispatch(activateObjectAction(activatedStateID, null, null));
@@ -166,6 +166,7 @@ interface State {
     simplifyMode: boolean;
     approxPolyAccuracy: number;
     originalPoints: number[] | null;
+    previewPoints: number[] | null;
 }
 
 class ObjectItemContainer extends React.PureComponent<Props, State> {
@@ -177,6 +178,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             simplifyMode: false,
             approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             originalPoints: null,
+            previewPoints: null,
         };
     }
 
@@ -195,10 +197,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Readonly<Props>): void {
-        const { objectState, simplifyState, defaultApproxPolyAccuracy } = this.props;
+        const {
+            objectState, simplifyState, defaultApproxPolyAccuracy,
+        } = this.props;
         const { simplifyMode } = this.state;
 
-        // Check if simplify was triggered for this object
         if (
             !simplifyMode &&
             simplifyState.objectState &&
@@ -206,11 +209,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             (!prevProps.simplifyState.objectState ||
                 prevProps.simplifyState.objectState.clientID !== objectState.clientID)
         ) {
-            // Enter simplify mode
-            this.setState({
-                simplifyMode: true,
-                originalPoints: simplifyState.originalPoints,
-            });
+            this.simplify();
         }
 
         // Update approxPolyAccuracy when default setting changes (but not during active simplification)
@@ -269,22 +268,21 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private simplify = (): void => {
-        const { objectState, canvasInstance, activateObject } = this.props;
-
+    private simplify = async (): Promise<void> => {
+        const {
+            objectState, canvasInstance, activateObject, jobInstance,
+        } = this.props;
         if ([ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
-            // Store original points for restoration if cancelled
             const originalPoints = objectState.points ? [...objectState.points] : [];
 
-            // Ensure this object is activated and focused
             activateObject(objectState.clientID as number, null);
 
-            // Lock canvas interactions (similar to edit/slice mode)
             if (canvasInstance instanceof Canvas && canvasInstance.mode() !== CanvasMode.IDLE) {
                 canvasInstance.cancel();
             }
 
-            // Enter simplify mode
+            await jobInstance.actions.freeze(true);
+
             this.setState({
                 simplifyMode: true,
                 originalPoints,
@@ -294,8 +292,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private applySimplification = async (): Promise<void> => {
         const {
-            objectState, updateState, switchSimplifyVisibility,
+            objectState, updateState, switchSimplifyVisibility, jobInstance,
         } = this.props;
+        const { originalPoints } = this.state;
 
         try {
             // Initialize OpenCV if needed
@@ -303,51 +302,58 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 await openCVWrapper.initialize(() => {});
             }
 
-            // The control component has already updated objectState.points with preview
-            // Just save it
+            const simplifiedPoints = objectState.points ? [...objectState.points] : [];
+
+            if (originalPoints) {
+                objectState.points = [...originalPoints];
+                await updateState(objectState);
+            }
+
+            jobInstance.actions.freeze(false);
+
+            objectState.points = [...simplifiedPoints];
             await updateState(objectState);
 
-            // Clear Redux simplify state
             switchSimplifyVisibility(null, null);
 
-            // Exit simplify mode (keep approxPolyAccuracy for next time)
-            this.setState({ simplifyMode: false });
+            this.setState({ simplifyMode: false, previewPoints: null });
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to apply simplification:', error);
+            jobInstance.actions.freeze(false);
             switchSimplifyVisibility(null, null);
-            this.setState({ simplifyMode: false });
+            this.setState({ simplifyMode: false, previewPoints: null });
         }
     };
 
-    private cancelSimplification = (): void => {
+    private cancelSimplification = async (): Promise<void> => {
         const {
-            objectState, updateState, switchSimplifyVisibility,
+            objectState, updateState, switchSimplifyVisibility, jobInstance,
         } = this.props;
         const { originalPoints } = this.state;
 
-        // Restore original points
         if (originalPoints) {
             objectState.points = originalPoints;
-            updateState(objectState);
+            await updateState(objectState);
         }
 
-        // Clear Redux simplify state
+        jobInstance.actions.freeze(false);
         switchSimplifyVisibility(null, null);
-
-        // Exit simplify mode without saving (keep approxPolyAccuracy for next time)
         this.setState({
             simplifyMode: false,
             originalPoints: null,
+            previewPoints: null,
         });
     };
 
-    private updateSimplificationPreview = (points: number[]): void => {
+    private updateSimplificationPreview = async (points: number[]): Promise<void> => {
         const { objectState, updateState } = this.props;
 
-        // Update points temporarily for preview
+        this.setState({ previewPoints: points });
+
         objectState.points = points;
-        updateState(objectState);
+
+        await updateState(objectState);
     };
 
     private onChangeAccuracy = (value: number): void => {
