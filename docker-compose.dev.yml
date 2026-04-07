@@ -91,6 +91,7 @@ services:
       - '9091:9091'
 
   cvat_ui:
+    image: cvat/ui:dev
     build:
       context: .
       args:

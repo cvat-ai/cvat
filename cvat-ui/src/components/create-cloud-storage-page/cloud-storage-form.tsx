@@ -30,8 +30,8 @@ export interface Props {
     cloudStorage?: CloudStorage;
 }
 
-type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'connection_string';
-type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'connectionString';
+type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'connection_string' | 'azure_tenant_id' | 'azure_client_id';
+type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'connectionString' | 'azureTenantId' | 'azureClientId';
 
 interface CloudStorageForm {
     credentials_type: CredentialsType;
@@ -51,6 +51,9 @@ interface CloudStorageForm {
     project_id?: string;
     manifests: string[];
     endpoint_url?: string;
+    azure_tenant_id?: string;
+    azure_client_id?: string;
+    azure_certificate_file?: File;
 }
 
 const { Dragger } = Upload;
@@ -80,6 +83,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         secretKey: 'X'.repeat(40),
         keyFile: new File([], 'fakeKey.json'),
         connectionString: 'X'.repeat(400),
+        azureTenantId: 'X'.repeat(36),
+        azureClientId: 'X'.repeat(36),
+        azureCertificateFile: new File([], 'fakeCert.pem'),
     };
 
     const [keyVisibility, setKeyVisibility] = useState(false);
@@ -87,11 +93,15 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [sessionTokenVisibility, setSessionTokenVisibility] = useState(false);
     const [accountNameVisibility, setAccountNameVisibility] = useState(false);
     const [connectionStringVisibility, setConnectionStringVisibility] = useState(false);
+    const [azureTenantIdVisibility, setAzureTenantIdVisibility] = useState(false);
+    const [azureClientIdVisibility, setAzureClientIdVisibility] = useState(false);
 
     const [manifestNames, setManifestNames] = useState<string[]>([]);
 
     const [uploadedKeyFile, setUploadedKeyFile] = useState<File | null>(null);
     const [isFakeKeyFileAttached, setIsFakeKeyFileAttached] = useState(!!cloudStorage);
+    const [uploadedCertificateFile, setUploadedCertificateFile] = useState<File | null>(null);
+    const [isFakeCertificateFileAttached, setIsFakeCertificateFileAttached] = useState(!!cloudStorage);
 
     function initializeFields(): void {
         setManifestNames(cloudStorage.manifests);
@@ -117,6 +127,11 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             setUploadedKeyFile(fakeCredentialsData.keyFile);
         } else if (cloudStorage.credentialsType === CredentialsType.CONNECTION_STRING) {
             fieldsValue.connection_string = fakeCredentialsData.connectionString;
+        } else if (cloudStorage.credentialsType === CredentialsType.CERTIFICATE_CREDENTIAL) {
+            fieldsValue.account_name = cloudStorage.accountName || '';
+            fieldsValue.azure_tenant_id = fakeCredentialsData.azureTenantId;
+            fieldsValue.azure_client_id = fakeCredentialsData.azureClientId;
+            setUploadedCertificateFile(fakeCredentialsData.azureCertificateFile);
         }
 
         if (cloudStorage.specificAttributes) {
@@ -150,6 +165,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             setManifestNames([]);
             setSelectedRegion(undefined);
             setUploadedKeyFile(null);
+            setUploadedCertificateFile(null);
             form.resetFields();
         }
     }
@@ -242,6 +258,10 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             cloudStorageData.key_file = uploadedKeyFile;
         }
 
+        if (uploadedCertificateFile && !isFakeCertificateFileAttached) {
+            cloudStorageData.azure_certificate_file = uploadedCertificateFile;
+        }
+
         if (cloudStorageData.credentials_type === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
             delete cloudStorageData.SAS_token;
             cloudStorageData.session_token = formValues.SAS_token;
@@ -270,6 +290,12 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             if (cloudStorageData.connection_string === fakeCredentialsData.connectionString) {
                 delete cloudStorageData.connection_string;
             }
+            if (cloudStorageData.azure_tenant_id === fakeCredentialsData.azureTenantId) {
+                delete cloudStorageData.azure_tenant_id;
+            }
+            if (cloudStorageData.azure_client_id === fakeCredentialsData.azureClientId) {
+                delete cloudStorageData.azure_client_id;
+            }
             dispatch(updateCloudStorageAsync(cloudStorageData));
         } else {
             dispatch(createCloudStorageAsync(cloudStorageData));
@@ -282,8 +308,11 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             secret_key: undefined,
             session_token: undefined,
             account_name: undefined,
+            azure_tenant_id: undefined,
+            azure_client_id: undefined,
         });
         setUploadedKeyFile(null);
+        setUploadedCertificateFile(null);
     };
 
     const onFocusCredentialsItem = (credential: CredentialsCamelCaseNames, key: CredentialsFormNames): void => {
@@ -485,6 +514,67 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
+        if (providerType === ProviderType.AZURE_CONTAINER && credentialsType === CredentialsType.CERTIFICATE_CREDENTIAL) {
+            return (
+                <>
+                    <Form.Item
+                        label='Tenant ID'
+                        name='azure_tenant_id'
+                        rules={[{ required: true, message: 'Please specify your Azure tenant ID' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={255}
+                            visibilityToggle={azureTenantIdVisibility}
+                            onChange={() => setAzureTenantIdVisibility(true)}
+                            placeholder='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        label='Client ID'
+                        name='azure_client_id'
+                        rules={[{ required: true, message: 'Please specify your Azure client ID' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={255}
+                            visibilityToggle={azureClientIdVisibility}
+                            onChange={() => setAzureClientIdVisibility(true)}
+                            placeholder='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        name='azure_certificate_file'
+                        rules={[{ required: true, message: 'Certificate file is required' }]}
+                        {...internalCommonProps}
+                        label='Certificate File (PEM)'
+                    >
+                        <Space align='start' className='cvat-cloud-storage-form-item-key-file'>
+                            <Dragger
+                                accept='.pem, .pfx, .p12'
+                                multiple={false}
+                                maxCount={1}
+                                fileList={
+                                    uploadedCertificateFile ? [{ uid: '1', name: uploadedCertificateFile.name }] : []
+                                }
+                                beforeUpload={(file: RcFile): boolean => {
+                                    setIsFakeCertificateFileAttached(false);
+                                    setUploadedCertificateFile(file);
+                                    return false;
+                                }}
+                                onRemove={() => setUploadedCertificateFile(null)}
+                            >
+                                <Space>
+                                    Attach certificate file
+                                    <UploadOutlined />
+                                </Space>
+                            </Dragger>
+                        </Space>
+                    </Form.Item>
+                </>
+            );
+        }
+
         return null;
     };
 
@@ -561,6 +651,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         </Select.Option>
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
                         <Select.Option value={CredentialsType.CONNECTION_STRING}>Connection string</Select.Option>
+                        <Select.Option value={CredentialsType.CERTIFICATE_CREDENTIAL}>Principal Certificate</Select.Option>
                     </Select>
                 </Form.Item>
 
