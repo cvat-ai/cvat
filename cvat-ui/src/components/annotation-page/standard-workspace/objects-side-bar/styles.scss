@@ -448,6 +448,7 @@
     border-radius: $border-radius-base;
     border: 1px solid $border-color-1;
     z-index: 100;
+    padding: $grid-unit-size * 0.5 $grid-unit-size;
 
     .ant-slider {
         height: $grid-unit-size * 2;
