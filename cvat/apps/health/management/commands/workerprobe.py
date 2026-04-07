@@ -1,6 +1,7 @@
 import os
 import platform
 from datetime import datetime, timedelta
+from pathlib import Path
 from time import monotonic
 
 import django_rq
@@ -11,6 +12,7 @@ from rq.worker import Worker
 
 class Command(BaseCommand):
     help = "Check worker liveness in specified queues"
+    _DEFAULT_LOG_PATH = Path("/home/django/logs/workerprobe.log")
 
     def add_arguments(self, parser):
         parser.add_argument("queue_names", nargs="+", type=str)
@@ -26,6 +28,24 @@ class Command(BaseCommand):
     @staticmethod
     def _debug_enabled() -> bool:
         return os.getenv("CVAT_WORKERPROBE_DEBUG", "").lower() in {"1", "true", "yes", "on"}
+
+    @classmethod
+    def _log_path(cls) -> Path | None:
+        value = os.getenv("CVAT_WORKERPROBE_LOG_PATH")
+        if value:
+            return Path(value)
+
+        return cls._DEFAULT_LOG_PATH if cls._debug_enabled() else None
+
+    @classmethod
+    def _persist_message(cls, message: str) -> None:
+        log_path = cls._log_path()
+        if log_path is None:
+            return
+
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a", encoding="utf-8") as fp:
+            fp.write(f"{message}\n")
 
     def _report_progress(
         self,
@@ -48,6 +68,7 @@ class Command(BaseCommand):
 
         if self._debug_enabled():
             self.stderr.write(message)
+        self._persist_message(message)
 
         soft_timeout = self._soft_timeout_seconds()
         if soft_timeout is not None and total_elapsed >= soft_timeout:
