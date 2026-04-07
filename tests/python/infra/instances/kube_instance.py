@@ -22,7 +22,6 @@ from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.profiler import profile_external_phase
 from infra.redis_restore import RedisStateRestorer
 from infra.system_utils import is_port_free, kubectl_cp, pick_free_port, run_command
-
 from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)
@@ -1768,6 +1767,7 @@ class KubeInstance(InfraInstance):
             self._close_db_restorer()
             self._close_redis_restorer()
             self._close_runtime_port_forwards()
+            _use_minikube_context(_kube_profile())
             _helm_uninstall(release=_kube_release(), namespace=_kube_namespace())
             _helm_uninstall(release=_kube_test_release(), namespace=_kube_namespace())
             if config.getoption("--kube-delete-profile"):
