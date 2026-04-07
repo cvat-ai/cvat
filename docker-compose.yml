@@ -282,8 +282,8 @@ services:
     container_name: traefik
     restart: always
     ports:
-      - "${UI_BIND_IP:-127.0.0.1}:8080:8080"
-      - "${UI_BIND_IP:-127.0.0.1}:8090:8090"
+      - "${BIND_IP:-127.0.0.1}:8080:8080"
+      - "${BIND_IP:-127.0.0.1}:8090:8090"
     environment:
       CVAT_HOST: ${CVAT_HOST:-localhost}
       DJANGO_LOG_VIEWER_HOST: grafana
