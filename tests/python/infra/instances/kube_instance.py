@@ -17,7 +17,6 @@ import boto3
 import pytest
 from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.db_restore import PsycopgDatabaseRestorer
-from infra.debug.host_debug import maybe_wait_for_vscode_attach
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.profiler import profile_external_phase
 from infra.redis_restore import RedisStateRestorer
@@ -623,6 +622,61 @@ def _kubectl(command: list[str], *, capture_output: bool = True) -> tuple[str, s
 def _kubectl_root(command: list[str], *, capture_output: bool = True) -> tuple[str, str]:
     cmd = ["kubectl", "--context", _kube_context(), *command]
     return run_command(cmd, capture_output=capture_output, logger=logger)
+
+
+def _delete_kube_namespace(namespace: str, *, wait_timeout_s: float = 120.0) -> None:
+    if namespace == _DEFAULT_KUBE_NAMESPACE:
+        return
+
+    # Helm deliberately keeps some PVCs (for example backend-data), which leaves the
+    # namespace in Terminating for a long time. Remove PVCs first, then wait for the
+    # namespace to disappear so the next run starts from a clean cluster state.
+    try:
+        run_command(
+            [
+                "kubectl",
+                "--context",
+                _kube_context(),
+                "--namespace",
+                namespace,
+                "delete",
+                "pvc",
+                "--all",
+                "--ignore-not-found=true",
+                "--wait=false",
+            ],
+            capture_output=False,
+            logger=logger,
+        )
+    except Exception:
+        logger.warning("Failed to delete PVCs in test namespace %s", namespace, exc_info=True)
+
+    run_command(
+        [
+            "kubectl",
+            "--context",
+            _kube_context(),
+            "delete",
+            "namespace",
+            namespace,
+            "--wait=false",
+        ],
+        capture_output=False,
+        logger=logger,
+    )
+
+    deadline = monotonic() + wait_timeout_s
+    while monotonic() < deadline:
+        try:
+            run_command(
+                ["kubectl", "--context", _kube_context(), "get", "namespace", namespace],
+                logger=logger,
+            )
+        except Exception:
+            return
+        sleep(2)
+
+    logger.warning("Timed out waiting for test namespace %s to be deleted", namespace)
 
 
 def _label_selector(extra: str) -> str:
@@ -1775,19 +1829,7 @@ class KubeInstance(InfraInstance):
             _helm_uninstall(release=_kube_test_release(), namespace=namespace)
             if namespace != _DEFAULT_KUBE_NAMESPACE:
                 try:
-                    run_command(
-                        [
-                            "kubectl",
-                            "--context",
-                            _kube_context(),
-                            "delete",
-                            "namespace",
-                            namespace,
-                            "--wait=false",
-                        ],
-                        capture_output=False,
-                        logger=logger,
-                    )
+                    _delete_kube_namespace(namespace)
                 except Exception:
                     logger.warning(
                         "Failed to delete test namespace %s during kube down",
@@ -1829,7 +1871,6 @@ class KubeInstance(InfraInstance):
         if infra_mode == InfraMode.REUSE:
             infra_health.wait_for_services(self.deps.waiting_time)
             infra_health.wait_for_auth_login_ready()
-            maybe_wait_for_vscode_attach(self.session, cvat_root_dir=self.deps.cvat_root_dir)
             return
 
         if infra_mode in {InfraMode.AUTO, InfraMode.RESTORE_DB}:
@@ -1837,8 +1878,6 @@ class KubeInstance(InfraInstance):
 
         if infra_mode == InfraMode.RESTORE_DB:
             pytest.exit("CVAT database has been restored from test assets.", returncode=0)
-
-        maybe_wait_for_vscode_attach(self.session, cvat_root_dir=self.deps.cvat_root_dir)
 
     def finish(self) -> None:
         if self.should_collect_failure_logs():

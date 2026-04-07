@@ -129,11 +129,6 @@ def pytest_sessionstart(session) -> None:
         )
         pytest.exit("CVAT images have been rebuilt (cvat/server:dev, cvat/ui:dev)", returncode=0)
 
-    if config.getoption("--container-debug-wait") and not config.getoption("--container-debug"):
-        raise pytest.UsageError(
-            "--container-debug-wait requires --container-debug with at least one service"
-        )
-
     should_run_version_check = (
         not collect_only
         and infra_mode

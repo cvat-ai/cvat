@@ -18,7 +18,6 @@ from _pytest.reports import TestReport
 from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.parallel.adapters import ParallelLane, build_parallel_adapter
-from infra.parsing import parse_debug_services
 from infra.system_utils import pick_free_port
 
 _MIN_BATCH_SIZE = 100
@@ -97,14 +96,10 @@ class ParallelInstance(InfraInstance):
         if parallel_count <= 0:
             return
 
-        debug_services = parse_debug_services(config.getoption("--container-debug"))
         cleanup = config.getoption("--cleanup")
         dumpdb = config.getoption("--dumpdb")
-        vscode = config.getoption("--vscode")
-        if any((cleanup, dumpdb, vscode, bool(debug_services))):
-            raise pytest.UsageError(
-                "--parallel does not support --cleanup/--dumpdb/--vscode/--container-debug in parent mode"
-            )
+        if any((cleanup, dumpdb)):
+            raise pytest.UsageError("--parallel does not support --cleanup/--dumpdb in parent mode")
         if infra_mode == InfraMode.RESTORE_DB:
             raise pytest.UsageError("--infra=restore-db is not supported with --parallel")
 

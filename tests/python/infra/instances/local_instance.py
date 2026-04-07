@@ -19,14 +19,7 @@ from infra.config import (
     RuntimeInfraConfig,
 )
 from infra.db_restore import PsycopgDatabaseRestorer
-from infra.debug import (
-    DEBUG_SERVICE_TO_CONTAINER,
-    DEBUG_SERVICE_TO_CONTAINER_PORT,
-    DEFAULT_DEBUG_PORT_BASE,
-)
-from infra.debug.host_debug import add_vscode_debug_options, maybe_wait_for_vscode_attach
 from infra.instances.base_instance import InfraInstance, InfraPlugin
-from infra.parsing import parse_debug_services
 from infra.profiler import profile_external_phase
 from infra.redis_restore import RedisStateRestorer
 from infra.system_utils import docker_cp, is_port_free, pick_free_port, run_command
@@ -44,111 +37,6 @@ _COVERED_CONTAINERS = (
 )
 _FAILURE_LOG_CONTAINERS = _COVERED_CONTAINERS + ("cvat_opa", "traefik")
 _WORKERPROBE_LOG_PATH = "/home/django/logs/workerprobe.log"
-
-
-def add_container_debug_options(group) -> None:
-    group._addoption(
-        "--container-debug",
-        action="store",
-        default="",
-        help=(
-            "Enable container-side debugpy for selected services. "
-            "Use comma-separated names: "
-            + ", ".join(DEBUG_SERVICE_TO_CONTAINER.keys())
-            + ", workers, all."
-        ),
-    )
-    group._addoption(
-        "--container-debug-wait",
-        action="store_true",
-        default=False,
-        help="When --container-debug is enabled, wait for debugger attach before processing requests/jobs.",
-    )
-    group._addoption(
-        "--container-debug-port-base",
-        action="store",
-        type=int,
-        default=DEFAULT_DEBUG_PORT_BASE,
-        help=(
-            "Base host port for container debugpy mappings in --container-debug mode. "
-            "Per-service ports are allocated starting from this value."
-        ),
-    )
-
-
-def resolve_debug_port_config(
-    *,
-    requested_services: list[str],
-    debug_port_base: int,
-    state: dict,
-    project_running: bool,
-    running_service_ports: dict[str, dict[int, int]],
-    used_ports: set[int],
-) -> dict[str, int]:
-    if not requested_services:
-        return {}
-
-    stored_ports = state.get("debug", {}).get("ports", {})
-    debug_ports: dict[str, int] = {}
-    for offset, service_name in enumerate(requested_services):
-        container_name = DEBUG_SERVICE_TO_CONTAINER[service_name]
-        container_debug_port = DEBUG_SERVICE_TO_CONTAINER_PORT[service_name]
-        existing_host_port = running_service_ports.get(container_name, {}).get(container_debug_port)
-        if existing_host_port:
-            debug_ports[service_name] = int(existing_host_port)
-            used_ports.add(int(existing_host_port))
-            continue
-
-        stored_host_port = stored_ports.get(service_name)
-        if isinstance(stored_host_port, int) and (
-            project_running or is_port_free(stored_host_port, logger=logger)
-        ):
-            debug_ports[service_name] = stored_host_port
-            used_ports.add(stored_host_port)
-            continue
-
-        start = debug_port_base + offset
-        debug_ports[service_name] = pick_free_port(start, used_ports, logger=logger)
-
-    return debug_ports
-
-
-def apply_compose_debug(
-    service_name: str, service_config: dict, *, is_dev: bool, debug_state: dict
-) -> None:
-    if is_dev:
-        return
-
-    debug_services = set(debug_state.get("services", []))
-    debug_wait = bool(debug_state.get("wait", False))
-    debug_ports = debug_state.get("ports", {})
-
-    debug_service_name = next(
-        (
-            candidate
-            for candidate, container_name in DEBUG_SERVICE_TO_CONTAINER.items()
-            if container_name == service_name
-        ),
-        None,
-    )
-    if not debug_service_name or debug_service_name not in debug_services:
-        return
-
-    host_port = debug_ports.get(debug_service_name)
-    if not isinstance(host_port, int):
-        return
-
-    container_port = DEBUG_SERVICE_TO_CONTAINER_PORT[debug_service_name]
-    service_env = service_config.setdefault("environment", {})
-    service_env["CVAT_DEBUG_ENABLED"] = "yes"
-    service_env["CVAT_DEBUG_PORT"] = str(container_port)
-    service_env["CVAT_DEBUG_WAIT"] = "yes" if debug_wait else "no"
-    service_env["NUMPROCS"] = "1"
-
-    ports = service_config.setdefault("ports", [])
-    mapping = f"{host_port}:{container_port}"
-    if mapping not in ports:
-        ports.append(mapping)
 
 
 def _configure_runtime_env(
@@ -187,8 +75,6 @@ def preconfigure_local_runtime_env(config) -> None:
     """
     project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
     infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
-    requested_debug_services = parse_debug_services(config.getoption("--container-debug"))
-    debug_port_base = int(config.getoption("--container-debug-port-base"))
     if config.getoption("--parallel-child"):
         os.environ["CVAT_TEST_INFRA_PROFILE"] = config.getoption("--parallel-lane-profile")
     else:
@@ -212,20 +98,7 @@ def preconfigure_local_runtime_env(config) -> None:
     )
     project_state = project_cfg.load_state() or {}
     project_running = project_containers_running(project_cfg.project_name)
-    running_service_ports = (
-        project_service_port_map(project_cfg.project_name) if project_running else {}
-    )
-    used_ports = project_host_ports(project_cfg.project_name)
-    debug_ports = resolve_debug_port_config(
-        requested_services=requested_debug_services,
-        debug_port_base=debug_port_base,
-        state=project_state,
-        project_running=project_running,
-        running_service_ports=running_service_ports,
-        used_ports=used_ports,
-    )
-    setattr(config, "_cvat_debug_services", requested_debug_services)
-    setattr(config, "_cvat_debug_ports", debug_ports)
+    _ = project_state, project_running
     _configure_runtime_env(project_name=project_name, port_config=port_config)
 
 
@@ -237,25 +110,6 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
         project_cfg,
         default_project_name=RuntimeInfraConfig.get_default_project_name(),
     )
-    requested_debug_services = parse_debug_services(config.getoption("--container-debug"))
-    debug_wait = bool(config.getoption("--container-debug-wait"))
-    debug_port_base = int(config.getoption("--container-debug-port-base"))
-    project_state = project_cfg.load_state() or {}
-    project_running = project_containers_running(project_cfg.project_name)
-    running_service_ports = (
-        project_service_port_map(project_cfg.project_name) if project_running else {}
-    )
-    used_ports = project_host_ports(project_cfg.project_name)
-    debug_ports = resolve_debug_port_config(
-        requested_services=requested_debug_services,
-        debug_port_base=debug_port_base,
-        state=project_state,
-        project_running=project_running,
-        running_service_ports=running_service_ports,
-        used_ports=used_ports,
-    )
-    setattr(config, "_cvat_debug_services", requested_debug_services)
-    setattr(config, "_cvat_debug_ports", debug_ports)
     _configure_runtime_env(project_name=project_name, port_config=port_config)
     project_cfg.save_state(
         {
@@ -264,12 +118,6 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
             **port_config,
             "base_url": os.environ["CVAT_BASE_URL"],
             "minio_endpoint_url": os.environ["CVAT_MINIO_ENDPOINT_URL"],
-            "debug": {
-                "services": requested_debug_services,
-                "wait": debug_wait,
-                "port_base": debug_port_base,
-                "ports": debug_ports,
-            },
         }
     )
     return project_name, port_config
@@ -608,9 +456,6 @@ def _create_compose_files(
     cvat_root_dir: Path,
     project_cfg,
 ):
-    state = project_cfg.load_state() or {}
-    debug_state = state.get("debug", {})
-
     def _namespace_traefik_labels(service_config: dict) -> None:
         labels = service_config.get("labels")
         if not isinstance(labels, dict):
@@ -704,9 +549,6 @@ def _create_compose_files(
                         f"{project_cfg.host_redis_ondisk_port}:6666",
                     ]
 
-                apply_compose_debug(
-                    service_name, service_config, is_dev=is_dev_compose, debug_state=debug_state
-                )
                 _namespace_traefik_labels(service_config)
 
             yaml.dump(dc_config, ndcf)
@@ -1059,9 +901,6 @@ class LocalInstance(InfraInstance):
             cleanup=config.getoption("--cleanup"),
         )
 
-        if infra_mode == InfraMode.AUTO:
-            maybe_wait_for_vscode_attach(self.session, cvat_root_dir=self.deps.cvat_root_dir)
-
     def finish(self) -> None:
         if self.config.getoption("--platform") != "local":
             return
@@ -1181,8 +1020,7 @@ class LocalInstance(InfraInstance):
 class LocalPlugin(InfraPlugin):
     @classmethod
     def register_options(cls, group) -> None:
-        add_container_debug_options(group)
-        add_vscode_debug_options(group)
+        pass
 
     @classmethod
     def configure(cls, config) -> None:
