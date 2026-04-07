@@ -120,47 +120,6 @@ Notes:
 - The first run is slower because minikube base images/charts and service images are pulled/loaded.
 - `--cleanup`, `--dumpdb` are local-only and not supported with `--platform kube`.
 
-Kube performance profiler:
-
-Use the profiler when you need per-test timings and queue/resource samples for a full
-`--platform kube` run.
-
-Local usage:
-
-```bash
-source .env-cvat/bin/activate
-
-python tests/python/infra/debug/kube_perf.py \
-  --run-prefix perf-kube \
-  --kube-cpus 4 \
-  --kube-memory 12g \
-  tests/python
-```
-
-Useful options:
-- `--timeout 30`: match the kube CI test timeout
-- `--sample-interval 30`: cadence for `kubectl get/top` snapshots
-- `--queue-interval 15`: cadence for RQ queue sampling
-- `--slow-threshold 10`: include more of the slow tail in queue-pressure correlation output
-- By default, artifacts are written into the existing run directory under `kube-profiler/`.
-- `--output-dir <dir>`: override that location if you need a custom directory
-
-Profiler artifacts:
-- `summary.md`: quick overview of the run, top slow tests, failure count
-- `test-timings.json`: per-test timings from JUnit
-- `runtime-tests.json`: per-test timings from the runtime profiler with UTC windows
-- `rq-queues.jsonl`: periodic RQ queue and worker snapshots
-- `kube-snapshots.jsonl`: periodic pod/node/top snapshots
-- `slow-tests-with-queue-pressure.json`: slow or failed tests correlated with queue activity
-
-GitHub Actions usage:
-
-- The normal kube CI job `helm_rest_api_testing` now runs through the profiler.
-- Every kube CI run uploads a `helm_rest_api_kube_run` artifact.
-- That artifact contains the full per-run directory for the kube run prefix, including
-  profiler output, runtime profiles, state, queue backlog samples, and kube snapshots
-  from the GitHub runner.
-
 Profile-based runs:
 
 ```bash

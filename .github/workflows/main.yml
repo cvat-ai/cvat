@@ -476,17 +476,9 @@ jobs:
             -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
             --extra-index-url https://download.pytorch.org/whl/cpu
 
-      - name: Run kube REST API and SDK tests with profiler
+      - name: Run kube REST API and SDK tests
         run: |
-          python tests/python/infra/debug/kube_perf.py \
-            --run-prefix "${RUN_PREFIX}" \
-            --infra-profile full \
-            --timeout 30 \
-            --sample-interval 30 \
-            --queue-interval 15 \
-            --slow-threshold 10 \
-            --skip-down \
-            tests/python
+          pytest tests/python
 
       - name: Upload kube run artifacts
         if: always()

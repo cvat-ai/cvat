@@ -22,6 +22,7 @@ from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.profiler import profile_external_phase
 from infra.redis_restore import RedisStateRestorer
 from infra.system_utils import is_port_free, kubectl_cp, pick_free_port, run_command
+
 from shared.utils.config import ADMIN_PASS, ADMIN_USER
 
 logger = logging.getLogger(__name__)
@@ -737,6 +738,7 @@ def _start_minikube(*, profile: str, cpus: str, memory: str) -> bool:
         "-p",
         profile,
         "--driver=docker",
+        "--container-runtime=containerd",
         "--wait=apiserver,system_pods,default_sa",
         "--wait-timeout=10m",
         "--auto-pause-interval=24h",
@@ -1768,8 +1770,30 @@ class KubeInstance(InfraInstance):
             self._close_redis_restorer()
             self._close_runtime_port_forwards()
             _use_minikube_context(_kube_profile())
-            _helm_uninstall(release=_kube_release(), namespace=_kube_namespace())
-            _helm_uninstall(release=_kube_test_release(), namespace=_kube_namespace())
+            namespace = _kube_namespace()
+            _helm_uninstall(release=_kube_release(), namespace=namespace)
+            _helm_uninstall(release=_kube_test_release(), namespace=namespace)
+            if namespace != _DEFAULT_KUBE_NAMESPACE:
+                try:
+                    run_command(
+                        [
+                            "kubectl",
+                            "--context",
+                            _kube_context(),
+                            "delete",
+                            "namespace",
+                            namespace,
+                            "--wait=false",
+                        ],
+                        capture_output=False,
+                        logger=logger,
+                    )
+                except Exception:
+                    logger.warning(
+                        "Failed to delete test namespace %s during kube down",
+                        namespace,
+                        exc_info=True,
+                    )
             if config.getoption("--kube-delete-profile"):
                 _stop_minikube(_kube_profile())
             RuntimeInfraConfig.get_project_config(run_prefix).delete_state()
