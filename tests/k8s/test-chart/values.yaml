@@ -4,7 +4,7 @@ smokescreen:
 
 minio:
   enabled: true
-  serviceName: "minio"
+  serviceName: "{{ .Release.Name }}-minio"
   image: quay.io/minio/minio
   tag: RELEASE.2022-09-17T00-09-45Z
   imagePullPolicy: IfNotPresent
@@ -13,6 +13,6 @@ minio:
 
 webhookReceiver:
   enabled: true
-  serviceName: "webhook-receiver"
+  serviceName: "{{ .Release.Name }}-webhook-receiver"
   port: 2020
   payloadEndpoint: payload

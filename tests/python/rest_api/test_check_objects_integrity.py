@@ -29,7 +29,7 @@ class TestGetResources:
                 endpoint = "auth/access_tokens"
 
             if endpoint == "annotations":
-                objects = config.replace_legacy_base_url(json.load(f))
+                objects = config.normalize_runtime_asset_urls(json.load(f))
                 for jid, annotations in objects["job"].items():
                     response = config.get_method("admin1", f"jobs/{jid}/annotations").json()
                     assert (
@@ -42,7 +42,7 @@ class TestGetResources:
                         == {}
                     )
             elif endpoint == "auth/access_tokens":
-                objects = config.replace_legacy_base_url(json.load(f))
+                objects = config.normalize_runtime_asset_urls(json.load(f))
                 assert set(objects) == {"user"}
 
                 for username, tokens in objects["user"].items():
@@ -59,7 +59,7 @@ class TestGetResources:
                     )
             else:
                 response = config.get_method("admin1", endpoint, page_size="all")
-                json_objs = config.replace_legacy_base_url(json.load(f))
+                json_objs = config.normalize_runtime_asset_urls(json.load(f))
                 resp_objs = response.json()
                 if endpoint == "jobs":
                     for items in (json_objs.get("results", []), resp_objs.get("results", [])):

@@ -2,9 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+import http.client
 import json
 import logging
 import os
+import socket
 from pathlib import Path
 from subprocess import CalledProcessError, run
 from time import sleep
@@ -162,6 +164,8 @@ def _configure_runtime_env(
     os.environ["CVAT_TEST_MINIO_PORT"] = str(port_config["minio_port"])
     os.environ["CVAT_TEST_MINIO_CONSOLE_PORT"] = str(port_config["minio_console_port"])
     os.environ["CVAT_TEST_DB_PORT"] = str(port_config["db_port"])
+    os.environ.pop("CVAT_TEST_DB_MINIO_ENDPOINT_URL", None)
+    os.environ.pop("CVAT_TEST_DB_WEBHOOK_RECEIVER_URL", None)
 
     # config.py can be imported before session_start (e.g. by conftest),
     # so refresh module-level constants to the current runtime values.
@@ -191,6 +195,10 @@ def preconfigure_local_runtime_env(config) -> None:
         os.environ.setdefault("CVAT_TEST_INFRA_PROFILE", str(InfraProfile.FULL))
 
     if config.getoption("--platform") != "local":
+        return
+
+    if config.getoption("--collect-only"):
+        os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         return
 
     if infra_mode == InfraMode.DOWN:
@@ -252,7 +260,7 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
     project_cfg.save_state(
         {
             "project_name": project_name,
-            "infra_profile": config.getoption("--parallel-lane-profile"),
+            "infra_profile": RuntimeInfraConfig.get_infra_profile(),
             **port_config,
             "base_url": os.environ["CVAT_BASE_URL"],
             "minio_endpoint_url": os.environ["CVAT_MINIO_ENDPOINT_URL"],
@@ -296,18 +304,21 @@ def _docker_socket_path() -> str:
 
 
 def _docker_api_list_containers() -> list[dict]:
-    stdout, _ = run_command(
-        [
-            "curl",
-            "--silent",
-            "--show-error",
-            "--unix-socket",
-            _docker_socket_path(),
-            "http://localhost/containers/json",
-        ],
-        logger=logger,
-    )
-    return json.loads(stdout)
+    socket_path = _docker_socket_path()
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+        client.settimeout(5.0)
+        client.connect(socket_path)
+        client.sendall(
+            b"GET /containers/json HTTP/1.1\r\n" b"Host: localhost\r\n" b"Connection: close\r\n\r\n"
+        )
+        response = http.client.HTTPResponse(client)
+        response.begin()
+        if response.status != 200:
+            raise RuntimeError(f"Docker API request failed: HTTP {response.status}")
+
+        body = response.read()
+
+    return json.loads(body.decode("utf-8"))
 
 
 def running_containers() -> list[str]:
@@ -893,7 +904,7 @@ class LocalInstance(InfraInstance):
             with profile_external_phase("local.restore_assets_db"):
                 self.restore_cvat_data()
                 docker_cp(
-                    self.deps.cvat_db_dir / "data.json",
+                    self.prepare_runtime_db_fixture(),
                     f"{prefixed_name('cvat_server')}:/tmp/data.json",
                 )
                 infra_health.wait_for_services(self.deps.waiting_time)
@@ -971,7 +982,7 @@ class LocalInstance(InfraInstance):
             expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
         )
 
-        if infra_mode == InfraMode.AUTO and project_running and not stack_ok:
+        if project_running and not stack_ok and infra_mode in {InfraMode.AUTO, InfraMode.UP}:
             logger.warning(
                 "Project '%s' is running but incompatible with the requested test runtime "
                 "(%s); recreating stack",

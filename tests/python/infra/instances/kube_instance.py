@@ -132,11 +132,11 @@ def _kube_test_release() -> str:
 
 
 def _kube_minio_service() -> str:
-    return _MINIO_SERVICE_SUFFIX
+    return f"{_kube_test_release()}-{_MINIO_SERVICE_SUFFIX}"
 
 
 def _kube_webhook_receiver_service() -> str:
-    return _WEBHOOK_RECEIVER_SERVICE_SUFFIX
+    return f"{_kube_test_release()}-{_WEBHOOK_RECEIVER_SERVICE_SUFFIX}"
 
 
 def _kube_allow_minio_configmap() -> str:
@@ -373,6 +373,21 @@ def _sha256_file(path) -> str:
     return digest.hexdigest()
 
 
+def _sha256_tree(root: Path) -> str:
+    digest = hashlib.sha256()
+    if not root.exists():
+        return digest.hexdigest()
+
+    for path in sorted(candidate for candidate in root.rglob("*") if candidate.is_file()):
+        relative_path = path.relative_to(root).as_posix()
+        digest.update(relative_path.encode())
+        digest.update(b":")
+        digest.update(_sha256_file(path).encode())
+        digest.update(b"\n")
+
+    return digest.hexdigest()
+
+
 def _docker_image_id(image_ref: str) -> str:
     try:
         return run_command(
@@ -454,8 +469,10 @@ def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
     cvat_profile_values = _kube_profile_values_file(cvat_root_dir=cvat_root_dir, chart_name="cvat")
     chart_yaml = chart_dir / "Chart.yaml"
     chart_lock = chart_dir / "Chart.lock"
+    chart_templates = chart_dir / "templates"
     test_chart_yaml = test_chart_dir / "Chart.yaml"
     test_chart_values = test_chart_dir / "values.yaml"
+    test_chart_templates = test_chart_dir / "templates"
     test_chart_profile_values = _kube_profile_values_file(
         cvat_root_dir=cvat_root_dir,
         chart_name="test-chart",
@@ -482,12 +499,14 @@ def _build_kube_fingerprint(*, cvat_root_dir, cpus: str, memory: str) -> dict:
             ),
             "Chart.yaml": _sha256_file(chart_yaml) if chart_yaml.exists() else "",
             "Chart.lock": _sha256_file(chart_lock) if chart_lock.exists() else "",
+            "templates/": _sha256_tree(chart_templates),
             "tests/k8s/test-chart/Chart.yaml": (
                 _sha256_file(test_chart_yaml) if test_chart_yaml.exists() else ""
             ),
             "tests/k8s/test-chart/values.yaml": (
                 _sha256_file(test_chart_values) if test_chart_values.exists() else ""
             ),
+            "tests/k8s/test-chart/templates/": _sha256_tree(test_chart_templates),
             f"tests/k8s/profiles/test-chart.{_kube_infra_profile()}.values.yaml": (
                 _sha256_file(test_chart_profile_values)
                 if test_chart_profile_values.exists()
@@ -515,13 +534,19 @@ def _fingerprint_diff(lhs: dict | None, rhs: dict) -> dict[str, dict[str, object
 def _configure_kube_runtime_env(
     *, project_name: str, base_url: str, minio_endpoint_url: str
 ) -> None:
-    os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
-    os.environ["CVAT_BASE_URL"] = base_url
-    os.environ["CVAT_MINIO_ENDPOINT_URL"] = minio_endpoint_url
-    os.environ["CVAT_TEST_WEBHOOK_RECEIVER_URL"] = (
+    webhook_receiver_url = (
         f"http://{_kube_webhook_receiver_service()}."
         f"{_kube_namespace()}.svc.cluster.local:2020/payload"
     )
+    db_minio_endpoint_url = (
+        f"http://{_kube_minio_service()}." f"{_kube_namespace()}.svc.cluster.local:9000"
+    )
+    os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
+    os.environ["CVAT_BASE_URL"] = base_url
+    os.environ["CVAT_MINIO_ENDPOINT_URL"] = minio_endpoint_url
+    os.environ["CVAT_TEST_WEBHOOK_RECEIVER_URL"] = webhook_receiver_url
+    os.environ["CVAT_TEST_DB_WEBHOOK_RECEIVER_URL"] = webhook_receiver_url
+    os.environ["CVAT_TEST_DB_MINIO_ENDPOINT_URL"] = db_minio_endpoint_url
 
     # shared.utils.config can be imported before session start, refresh constants.
     try:
@@ -972,10 +997,49 @@ def _wait_for_kube_ready_inner(timeout_s: int = 300) -> None:
             f"Last error: {last_error}"
         )
 
+    def maybe_wait_selector(selector: str) -> None:
+        try:
+            names = _kubectl(
+                ["get", "pods", "-l", selector, "-o", "jsonpath={.items[*].metadata.name}"]
+            )[0].split()
+        except Exception:
+            names = []
+
+        if names:
+            wait_selector(selector)
+
     wait_selector(_label_selector("component=server"))
     wait_selector(_label_selector("app.kubernetes.io/name=postgresql"))
+    wait_selector(_label_selector("app.kubernetes.io/name=redis"))
+    maybe_wait_selector(_label_selector("app.kubernetes.io/name=cvat,tier=kvrocks"))
     if _kube_service_exists(_kube_minio_service()):
         wait_selector(_test_label_selector("component=minio"))
+
+    required_worker_components = {
+        str(InfraProfile.SIMPLE): (
+            "component=worker-utils",
+            "component=worker-webhooks",
+        ),
+        str(InfraProfile.STANDARD): (
+            "component=worker-utils",
+            "component=worker-webhooks",
+            "component=worker-import",
+            "component=worker-export",
+            "component=worker-chunks",
+        ),
+        str(InfraProfile.FULL): (
+            "component=worker-utils",
+            "component=worker-webhooks",
+            "component=worker-import",
+            "component=worker-export",
+            "component=worker-chunks",
+            "component=worker-annotation",
+            "component=worker-qualityreports",
+            "component=worker-consensus",
+        ),
+    }
+    for component_selector in required_worker_components.get(_kube_infra_profile(), ()):
+        maybe_wait_selector(_label_selector(component_selector))
 
 
 def _kube_service_exists(service_name: str) -> bool:
@@ -1662,7 +1726,7 @@ class KubeInstance(InfraInstance):
         _append_kube_trace(f"TRACE kube restore: start copy data.json to {server_pod_name}")
         with profile_external_phase("kube.restore.copy_data_json"):
             kubectl_cp(
-                self.deps.cvat_db_dir / "data.json",
+                self.prepare_runtime_db_fixture(),
                 f"{server_pod_name}:/tmp/data.json",
                 context=_kube_context(),
                 namespace=_kube_namespace(),

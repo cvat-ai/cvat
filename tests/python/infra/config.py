@@ -21,7 +21,7 @@ _CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name =
 _CVAT_DB_DIR = _CVAT_ROOT_DIR / "tests/python/shared/assets/cvat_db"
 _CLICKHOUSE_INIT_SCRIPT = "components/analytics/clickhouse/init.py"
 _DEFAULT_PROJECT_NAME = "test"
-_PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")
+_PROJECT_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
 
 class InfraMode(str, Enum):
@@ -96,7 +96,7 @@ _PROFILE_BACKGROUND_QUEUE_FAMILIES = {
 def _validate_project_name(name: str) -> str:
     if not _PROJECT_NAME_PATTERN.match(name):
         raise pytest.UsageError(
-            "Invalid project name. Use letters, digits, '_', '-', '.' and start with a letter or digit."
+            "Invalid project name. Use lowercase letters, digits, '_' or '-', and start with a letter or digit."
         )
 
     return name

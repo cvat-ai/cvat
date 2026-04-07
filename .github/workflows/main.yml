@@ -428,6 +428,8 @@ jobs:
       PYTEST_ADDOPTS: >-
         --platform=kube
         --infra-profile=full
+        --kube-cpus=max
+        --kube-memory=max
         --run-prefix=gha-kube-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
@@ -479,8 +481,6 @@ jobs:
           python tests/python/infra/debug/kube_perf.py \
             --run-prefix "${RUN_PREFIX}" \
             --infra-profile full \
-            --kube-cpus 4 \
-            --kube-memory 12g \
             --timeout 30 \
             --sample-interval 30 \
             --queue-interval 15 \

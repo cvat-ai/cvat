@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,6 +11,8 @@ from typing import Any
 
 from infra.config import RuntimeInfraConfig
 from infra.rq_cleanup import BackgroundJobCleaner
+
+from shared.utils.config import normalize_runtime_asset_urls
 
 
 @dataclass(frozen=True)
@@ -96,6 +100,24 @@ class InfraInstance(ABC):
         path = RuntimeInfraConfig.get_run_dir() / "container-logs"
         path.mkdir(parents=True, exist_ok=True)
         return path
+
+    def prepare_runtime_db_fixture(self) -> Path:
+        source = self.deps.cvat_db_dir / "data.json"
+        target = RuntimeInfraConfig.get_run_dir() / "data.runtime.json"
+
+        with open(source) as f:
+            data = json.load(f)
+
+        data = normalize_runtime_asset_urls(
+            data,
+            webhook_url=os.environ.get("CVAT_TEST_DB_WEBHOOK_RECEIVER_URL"),
+            minio_url=os.environ.get("CVAT_TEST_DB_MINIO_ENDPOINT_URL"),
+        )
+
+        with open(target, "w") as f:
+            json.dump(data, f, indent=2)
+
+        return target
 
     # Fixture-level data restore capabilities.
     def restore_db(self) -> None:

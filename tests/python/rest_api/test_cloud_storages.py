@@ -16,7 +16,7 @@ from cvat_sdk.api_client.model.file_info import FileInfo
 from deepdiff import DeepDiff
 from PIL import Image
 
-from shared.utils.config import get_method, make_api_client
+from shared.utils.config import get_method, get_runtime_cloud_storage_endpoint_url, make_api_client
 from shared.utils.s3 import make_client as make_s3_client
 
 from .utils import CollectionSimpleFilterTestBase
@@ -154,7 +154,7 @@ class TestPostCloudStorage:
         "credentials_type": "KEY_SECRET_KEY_PAIR",
         "key": "minio_access_key",
         "secret_key": "minio_secret_key",
-        "specific_attributes": "endpoint_url=http://minio:9000",
+        "specific_attributes": f"endpoint_url={get_runtime_cloud_storage_endpoint_url()}",
         "description": "Some description",
         "manifests": ["images_with_manifest/manifest.jsonl"],
     }

@@ -722,7 +722,7 @@ def run_parallel_lanes(
         "--run-prefix",
     )
     base_args = [arg for arg in base_args if arg not in {"up", "down", "restore-db"}]
-    is_collect_only = any(arg in {"--collect-only", "--co"} for arg in base_args)
+    is_collect_only = bool(config.getoption("--collect-only"))
     if is_collect_only:
         return 0
     shuffle_seed = config.getoption("--parallel-shuffle-seed")

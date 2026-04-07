@@ -10,7 +10,7 @@ from copy import deepcopy
 
 import pytest
 
-from shared.utils.config import ASSETS_DIR, replace_legacy_base_url
+from shared.utils.config import ASSETS_DIR, normalize_runtime_asset_urls
 
 
 class Container:
@@ -43,9 +43,9 @@ def _load_asset(filename: str, root_key: str = "results"):
         data = json.load(f)
 
     if root_key is None:
-        return replace_legacy_base_url(data)
+        return normalize_runtime_asset_urls(data)
 
-    return replace_legacy_base_url(data[root_key])
+    return normalize_runtime_asset_urls(data[root_key])
 
 
 @pytest.fixture(scope="session")
