@@ -50,9 +50,7 @@ allow if {
     utils.is_resource_owner
 }
 
-q_user_is_owner(user) := [
-    {"owner_id": user.id},
-]
+q_user_is_owner(user) := {"owner_id": user.id}
 
 # Django Q object to filter list of entries
 filter := q_user_is_owner(input.auth.user)

@@ -73,11 +73,7 @@ from cvat.apps.redis_handler.serializers import RqIdSerializer
 class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = AnnotationConflict.objects.prefetch_related("annotation_ids")
 
-    iam_organization_field = [
-        "report__job__segment__task__organization",
-        "report__task__organization",
-        "report__project__organization",
-    ]
+    iam_supports_organization_params = True
     iam_permission_class = AnnotationConflictPermission
 
     search_fields = []
@@ -126,6 +122,8 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                     queryset = queryset.filter(report__parents__parents=report)
                 else:
                     assert False
+
+                queryset = AnnotationConflictPermission.add_org_filter_proof(queryset)
             else:
                 perm = AnnotationConflictPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
@@ -197,11 +195,7 @@ class QualityReportViewSet(
 ):
     queryset = QualityReport.objects.prefetch_related("assignee")
 
-    iam_organization_field = [
-        "job__segment__task__organization",
-        "task__organization",
-        "project__organization",
-    ]
+    iam_supports_organization_params = True
     iam_permission_class = QualityReportPermission
 
     search_fields = []
@@ -518,7 +512,7 @@ class QualitySettingsViewSet(
 ):
     queryset = QualitySettings.objects
 
-    iam_organization_field = ["task__organization", "project__organization"]
+    iam_supports_organization_params = True
     iam_permission_class = QualitySettingPermission
 
     search_fields = []

@@ -10,7 +10,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Sequence
-from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
 from io import BytesIO
@@ -43,7 +43,7 @@ from cvat.apps.engine.models import (
     DimensionType,
 )
 from cvat.apps.engine.rq import ExportRQMeta
-from cvat.apps.engine.utils import get_cpu_number
+from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest.utils import (
     InvalidPcdError,
@@ -241,6 +241,12 @@ class AbstractCloudStorage(ABC):
                 top_job = queue.get()
                 yield top_job.result()
 
+    def _in_parallel(self, fn: Callable[[T], object], args: Sequence[T]) -> None:
+        threads_number = get_max_threads_number(len(args))
+
+        with ThreadPoolExecutor(max_workers=threads_number) as executor:
+            list(executor.map(fn, args))
+
     def bulk_download_to_dir(
         self,
         files: Sequence[PurePath | tuple[str, PurePath]],
@@ -251,24 +257,26 @@ class AbstractCloudStorage(ABC):
         :param upload_dir: the output directory
         """
 
-        threads_number = get_max_threads_number(len(files))
+        def download_one(f: PurePath | tuple[str, PurePath]) -> None:
+            if isinstance(f, tuple):
+                key, output_path = f
+            else:
+                key = f.as_posix()
+                output_path = f
 
-        with ThreadPoolExecutor(max_workers=threads_number) as executor:
-            futures = []
-            for f in files:
-                if isinstance(f, tuple):
-                    key, output_path = f
-                else:
-                    key = f.as_posix()
-                    output_path = f
+            self.download_file(key, upload_dir / output_path)
 
-                output_path = upload_dir / output_path
-                futures.append(executor.submit(self.download_file, key, output_path))
+        self._in_parallel(download_one, files)
 
-            done, _ = wait(futures, return_when=FIRST_EXCEPTION)
-            for future in done:
-                if ex := future.exception():
-                    raise ex
+    def bulk_upload_from_dir(
+        self,
+        files: Sequence[PurePath],
+        upload_dir: Path,
+    ):
+        def upload_one(f: PurePath):
+            self.upload_file(upload_dir / f, f.as_posix())
+
+        self._in_parallel(upload_one, files)
 
     @abstractmethod
     def upload_fileobj(self, file_obj: BinaryIO, key: str, /) -> None:
@@ -276,6 +284,10 @@ class AbstractCloudStorage(ABC):
 
     @abstractmethod
     def upload_file(self, file_path: Path, key: str | None = None, /) -> None:
+        pass
+
+    @abstractmethod
+    def bulk_delete(self, files: Sequence[str]) -> None:
         pass
 
     @abstractmethod
@@ -354,7 +366,7 @@ class AbstractCloudStorage(ABC):
         prefix: str = "",
         *,
         _use_flat_listing: bool = False,
-    ) -> list[str]:
+    ) -> list[dict]:
         all_files = []
         next_token = None
         while True:
@@ -743,13 +755,12 @@ class S3CloudStorage(AbstractCloudStorage):
                     slogger.glob.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
             raise
 
-    def delete_file(self, file_name: str, /):
-        try:
-            self._client.delete_object(Bucket=self.name, Key=file_name)
-        except Exception as ex:
-            msg = str(ex)
-            slogger.glob.info(msg)
-            raise
+    def bulk_delete(self, files: Sequence[str]) -> None:
+        def delete_batch(batch: Sequence[str]):
+            delete_request = {"Objects": [{"Key": f} for f in batch], "Quiet": True}
+            self._client.delete_objects(Bucket=self.name, Delete=delete_request)
+
+        self._in_parallel(delete_batch, list(take_by(files, 1000)))
 
     @property
     def supported_actions(self):
@@ -869,6 +880,12 @@ class AzureBlobCloudStorage(AbstractCloudStorage):
     def upload_file(self, file_path: Path, key: str | None = None, /):
         with open(file_path, "rb") as f:
             self.upload_fileobj(f, key or file_path.name)
+
+    def bulk_delete(self, files: Sequence[str]) -> None:
+        def delete_batch(batch: Sequence[str]) -> None:
+            self._client.delete_blobs(*batch)
+
+        self._in_parallel(delete_batch, list(take_by(files, 256)))
 
     def _list_raw_content_on_one_page(
         self,
@@ -1032,6 +1049,14 @@ class GcsCloudStorage(AbstractCloudStorage):
     def upload_file(self, file_path: Path, key: str | None = None, /):
         self.bucket.blob(key or file_path.name).upload_from_filename(os.fspath(file_path))
 
+    def bulk_delete(self, files: Sequence[str]) -> None:
+        def delete_batch(batch: Sequence[str]):
+            with self._client.batch():
+                for key in batch:
+                    self.bucket.delete_blob(key)
+
+        self._in_parallel(delete_batch, list(take_by(files, 100)))
+
     @validate_file_status
     @validate_bucket_status
     def get_file_last_modified(self, key: str, /):
@@ -1042,6 +1067,73 @@ class GcsCloudStorage(AbstractCloudStorage):
     @property
     def supported_actions(self):
         pass
+
+
+class SubdirectoryCloudStorage(AbstractCloudStorage):
+    def __init__(self, underlying: AbstractCloudStorage, subdirectory: str) -> None:
+        super().__init__()
+
+        self.underlying = underlying
+        self.subdirectory = subdirectory
+        if not self.subdirectory.endswith("/"):
+            self.subdirectory += "/"
+
+    def _map_key(self, key: str) -> str:
+        return self.subdirectory + key
+
+    def _unmap_key(self, key: str) -> str:
+        assert key.startswith(self.subdirectory)
+        return key[len(self.subdirectory) :]
+
+    @property
+    def name(self) -> str:
+        return self.underlying.name + "/" + self.subdirectory
+
+    def get_status(self) -> Status:
+        return self.underlying.get_status()
+
+    def get_file_status(self, key: str, /) -> Status:
+        return self.underlying.get_file_status(self._map_key(key))
+
+    def get_file_last_modified(self, key: str, /) -> datetime:
+        return self.underlying.get_file_last_modified(self._map_key(key))
+
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
+        return self.underlying._download_fileobj_to_stream(self._map_key(key), stream)
+
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
+        return self.underlying._download_range_of_bytes(
+            self._map_key(key), start_byte=start_byte, stop_byte=stop_byte
+        )
+
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /) -> None:
+        return self.underlying.upload_fileobj(file_obj, self._map_key(key))
+
+    def upload_file(self, file_path: Path, key: str | None = None, /) -> None:
+        assert key is not None
+        return self.underlying.upload_file(file_path, self._map_key(key))
+
+    def bulk_delete(self, files: Sequence[str]) -> None:
+        self.underlying.bulk_delete(list(map(self._map_key, files)))
+
+    def _list_raw_content_on_one_page(
+        self,
+        prefix: str = "",
+        *,
+        next_token: str | None = None,
+        page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
+    ) -> dict:
+        result = self.underlying._list_raw_content_on_one_page(
+            self._map_key(prefix), next_token=next_token, page_size=page_size
+        )
+
+        for key in ("files", "directories"):
+            result[key] = list(map(self._unmap_key, result[key]))
+
+        return result
+
+    def supported_actions(self):
+        return self.underlying.supported_actions
 
 
 class Credentials:
