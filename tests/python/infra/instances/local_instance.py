@@ -36,7 +36,6 @@ _COVERED_CONTAINERS = (
     "cvat_worker_utils",
 )
 _FAILURE_LOG_CONTAINERS = _COVERED_CONTAINERS + ("cvat_opa", "traefik")
-_WORKERPROBE_LOG_PATH = "/home/django/logs/workerprobe.log"
 
 
 def _configure_runtime_env(
@@ -965,27 +964,6 @@ class LocalInstance(InfraInstance):
                 log_text = ((ex.stdout or "") + f"\n{ex.stderr or ''}").strip()
             with open(logs_dir / f"{prefixed_name}.log", "w") as f:
                 f.write(log_text)
-
-            try:
-                probe_stdout, probe_stderr = run_command(
-                    [
-                        "docker",
-                        "exec",
-                        prefixed_name,
-                        "sh",
-                        "-c",
-                        f"test -f {_WORKERPROBE_LOG_PATH} && cat {_WORKERPROBE_LOG_PATH}",
-                    ],
-                    logger=logger,
-                )
-                probe_log_text = (probe_stdout or "") + (
-                    f"\n{probe_stderr}" if probe_stderr else ""
-                )
-                if probe_log_text.strip():
-                    with open(logs_dir / f"{prefixed_name}.workerprobe.log", "w") as f:
-                        f.write(probe_log_text)
-            except CalledProcessError:
-                pass
 
             # Docker does not expose a Kubernetes-style previous-container log stream.
             # Preserve restart evidence so failures can be correlated with restarts.

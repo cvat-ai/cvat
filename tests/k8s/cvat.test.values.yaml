@@ -46,13 +46,7 @@ cvat:
         value: cvat.settings.testing_rest
       - name: CVAT_ACCESS_TOKEN_STALE_PERIOD
         value: "3153600000"
-      - name: CVAT_WORKERPROBE_DEBUG
-        value: "true"
-      - name: CVAT_WORKERPROBE_SOFT_TIMEOUT_SECONDS
-        value: "8"
       livenessProbe:
-        # Keep the default exec timeout so probe slowness still reproduces in
-        # tests, but persist workerprobe timings for postmortem analysis.
         initialDelaySeconds: 180
         periodSeconds: 120
         timeoutSeconds: 10

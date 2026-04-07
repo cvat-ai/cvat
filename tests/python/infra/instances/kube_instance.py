@@ -37,7 +37,6 @@ _MAX_KUBE_RELEASE_NAME_LEN = 32
 _KUBE_SERVER_CONTAINER = "cvat-backend"
 _KUBE_FINGERPRINT_VERSION = 2
 _KUBE_TEST_RELEASE_SUFFIX = "-test"
-_WORKERPROBE_LOG_PATH = "/home/django/logs/workerprobe.log"
 _MINIO_SERVICE_SUFFIX = "minio"
 _WEBHOOK_RECEIVER_SERVICE_SUFFIX = "webhook-receiver"
 _ALLOW_MINIO_CONFIGMAP_SUFFIX = "allow-minio"
@@ -224,25 +223,6 @@ def _collect_kube_logs_for_pod(
                 "-c",
                 container_name,
                 "--previous",
-            ],
-        )
-
-        _capture_kube_command_output(
-            logs_dir / f"{pod_name}-{safe_container_name}.workerprobe.log",
-            [
-                "kubectl",
-                "--context",
-                _kube_context(),
-                "--namespace",
-                _kube_namespace(),
-                "exec",
-                pod_name,
-                "-c",
-                container_name,
-                "--",
-                "sh",
-                "-c",
-                f"test -f {_WORKERPROBE_LOG_PATH} && cat {_WORKERPROBE_LOG_PATH}",
             ],
         )
 
