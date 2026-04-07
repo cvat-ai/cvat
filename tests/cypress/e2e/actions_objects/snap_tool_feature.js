@@ -42,7 +42,7 @@ context('Snap tool feature.', () => {
             });
     }
 
-    function testCollectShapePointsRadius(id) {
+    function testCollectShapePointRadius() {
         cy.get('.cvat_canvas_shape').first()
             .should('exist').and('be.visible')
             .trigger('mousemove', 'center', { scrollBehavior: false });
@@ -185,18 +185,19 @@ context('Snap tool feature.', () => {
             });
         });
 
-        context('Path finding algorithm', () => {
+        context('Path finding', () => {
             const polygonPoints = [
-                { x: 400, y: 300 },
-                { x: 450, y: 300 },
-                { x: 600, y: 450 },
-                { x: 300, y: 450 },
+                { x: 400, y: 300 }, // B
+                { x: 450, y: 300 }, // C
+                { x: 600, y: 450 }, // A
+                { x: 300, y: 450 }, // D
             ];
             const createTrapeziumShape4Points = {
                 pointsMap: polygonPoints,
                 type: 'Shape',
                 labelName,
             };
+            const pointToArr = (point) => [point.x, point.y];
             let polygonPointsGlobal;
 
             before(() => {
@@ -211,6 +212,43 @@ context('Snap tool feature.', () => {
                 cy.removeAnnotations();
                 // cy.saveJob(); // todo: remove
                 toggleSnapTool('contour', false);
+            });
+            it('Draw a diagonal in the trapezium. Should pick the shortest path', () => {
+                cy.interactControlButton('draw-polyline');
+                cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
+
+                testAutoborderPointsCount(4);
+
+                // Starting point
+                cy.get('.cvat-canvas-container').click(400, 150);
+                cy.wait(500);
+
+                // top right
+                cy.get('.cvat-canvas-container').trigger('mousemove', ...pointToArr(polygonPoints[1]));
+                cy.get('.cvat-canvas-container').trigger('mousedown', ...pointToArr(polygonPoints[1]), { button: 0 });
+
+                // bottom left
+                cy.get('.cvat-canvas-container').trigger('mousemove', ...pointToArr(polygonPoints[3]));
+                cy.get('.cvat-canvas-container').trigger('mousedown', ...pointToArr(polygonPoints[3]), { button: 0 });
+
+                cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.get('.cvat_canvas_autoborder_point').should('not.exist');
+
+                testCollectCoord('polyline', '#cvat_canvas_shape_2').should((polylinePoints) => {
+                    // Check that polyline picked the right path
+                    expect(polylinePoints[1]).to.be
+                        .equal(`${polygonPointsGlobal[1]}`);
+                    expect(polylinePoints[2]).to.be
+                        .equal(`${polygonPointsGlobal[0]}`);
+                    expect(polylinePoints[3]).to.be
+                        .equal(`${polygonPointsGlobal[3]}`);
+
+                    // Confirm no polyline points on the other vertex
+                    expect(polylinePoints).does.not.include(`${polygonPointsGlobal[2]}`,
+                        'Polyline went the wrong way',
+                    );
+                });
             });
         });
     });
@@ -233,7 +271,7 @@ context('Snap tool feature.', () => {
         });
 
         it('Draw a polyline. Should snap to every rect corner within radius', () => {
-            testCollectShapePointsRadius('#cvat_canvas_shape_1').then((radius) => {
+            testCollectShapePointRadius('#cvat_canvas_shape_1').then((radius) => {
                 cy.interactControlButton('draw-polyline');
                 cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
                 const delta = radius * 1.5; // snapping can be clearly seen on video
@@ -249,6 +287,7 @@ context('Snap tool feature.', () => {
                 cy.wait(500);
 
                 // Should snap inside delta region. Mouse events should work in same position
+                // TODO: move polyshape tracing to a cy.command
                 cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rectanglePoints[0]));
                 cy.get('.cvat-canvas-container').trigger('mousedown', ...regionOf(rectanglePoints[0]), { button: 0 });
 
