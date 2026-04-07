@@ -360,7 +360,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.dispatchCanceledEvent();
                 return;
             }
-
             const { zLayer } = this.controller;
             const event: CustomEvent = new CustomEvent('canvas.drawn', {
                 bubbles: false,
@@ -372,6 +371,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         zOrder: zLayer || 0,
                     },
                     continue: continueDraw,
+                    simplifyPoly: data?.simplifyPoly || false,
                     duration,
                 },
             });

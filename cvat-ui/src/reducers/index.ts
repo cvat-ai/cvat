@@ -891,6 +891,7 @@ export interface AnnotationState {
         activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
+        activeSimplifyPoly?: boolean;
     };
     editing: EditingState;
     annotations: {

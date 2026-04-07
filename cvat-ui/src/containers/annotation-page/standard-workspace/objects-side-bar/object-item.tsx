@@ -54,6 +54,7 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
+    keyMap: Record<string, string>;
     canvasInstance: Canvas | Canvas3d;
     focusedObjectPadding: number;
     defaultApproxPolyAccuracy: number;
@@ -94,7 +95,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             shapes: { colorBy },
             workspace: { focusedObjectPadding, defaultApproxPolyAccuracy },
         },
-        shortcuts: { normalizedKeyMap },
+        shortcuts: { normalizedKeyMap, keyMap },
     } = state;
 
     const { objectStates: states, clientID } = own;
@@ -114,6 +115,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
+        keyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
         focusedObjectPadding,
         defaultApproxPolyAccuracy,
@@ -543,6 +545,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             activated,
             colorBy,
             normalizedKeyMap,
+            keyMap,
             jobInstance,
         } = this.props;
 
@@ -587,6 +590,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     <PolySimplifyControl
                         objectState={objectState}
                         approxPolyAccuracy={approxPolyAccuracy}
+                        repeatDrawShapeShortcut={keyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
                         onChangeAccuracy={this.onChangeAccuracy}
                         onApply={this.applySimplification}
                         onCancel={this.cancelSimplification}

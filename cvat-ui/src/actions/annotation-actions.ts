@@ -354,8 +354,9 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     };
 }
 
-export function fetchAnnotationsAsync(): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
+export function fetchAnnotationsAsync(): (
+    dispatch: ThunkDispatch, getState: () => CombinedState) => Promise<ObjectState[] | null> {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<ObjectState[] | null> => {
         try {
             const {
                 states, history, minZ, maxZ,
@@ -374,6 +375,7 @@ export function fetchAnnotationsAsync(): ThunkAction {
                     maxZ,
                 },
             });
+            return states;
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED,
@@ -381,6 +383,7 @@ export function fetchAnnotationsAsync(): ThunkAction {
                     error,
                 },
             });
+            return null;
         }
     };
 }
@@ -1169,6 +1172,7 @@ export function rememberObject(createParams: {
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
     activeCuboidDrawingMethod?: CuboidDrawingMethod;
+    activeSimplifyPoly?: boolean;
 }, updateCurrentControl = true): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_OBJECT,
@@ -1252,12 +1256,17 @@ export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
     };
 }
 
-export function createAnnotationsAsync(statesToCreate: any[]): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+export function createAnnotationsAsync(
+    statesToCreate: any[],
+): (dispatch: ThunkDispatch) => Promise<ObjectState[] | null> {
+    return async (dispatch: ThunkDispatch): Promise<ObjectState[] | null> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
-            await jobInstance.annotations.put(statesToCreate);
-            dispatch(fetchAnnotationsAsync());
+            const createdIds = await jobInstance.annotations.put(statesToCreate);
+            const annotations = await dispatch(fetchAnnotationsAsync()) as unknown as ObjectState[] | null;
+            return annotations?.filter(
+                (annotation: ObjectState) => (annotation.clientID ? createdIds.includes(annotation.clientID) : false),
+            ) || [];
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
@@ -1265,6 +1274,7 @@ export function createAnnotationsAsync(statesToCreate: any[]): ThunkAction {
                     error,
                 },
             });
+            return null;
         }
     };
 }
@@ -1554,6 +1564,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 activeNumOfPoints,
                 activeRectDrawingMethod,
                 activeCuboidDrawingMethod,
+                activeSimplifyPoly,
             },
         } = getStore().getState().annotation;
 
@@ -1610,6 +1621,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(activeShapeType),
                 skeletonSVG: activeShapeType === ShapeType.SKELETON ? activeLabel.structure!.svg : undefined,
+                simplifyPoly: activeSimplifyPoly,
             });
         }
     };

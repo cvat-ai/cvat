@@ -8,6 +8,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Switch from 'antd/lib/switch';
 import Text from 'antd/lib/typography/Text';
 import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 
@@ -25,10 +26,12 @@ interface Props {
     numberOfPoints?: number;
     selectedLabelID: number | null;
     repeatShapeShortcut: string;
+    simplifyPoly?: boolean;
     onChangeLabel(value: Label | null): void;
     onChangePoints(value: number | undefined): void;
     onChangeRectDrawingMethod(event: RadioChangeEvent): void;
     onChangeCuboidDrawingMethod(event: RadioChangeEvent): void;
+    onChangeSimplifyPoly?(value: boolean): void;
     onDrawTrack(): void;
     onDrawShape(): void;
     jobInstance: any;
@@ -44,12 +47,14 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         rectDrawingMethod,
         cuboidDrawingMethod,
         repeatShapeShortcut,
+        simplifyPoly,
         onDrawTrack,
         onDrawShape,
         onChangeLabel,
         onChangePoints,
         onChangeRectDrawingMethod,
         onChangeCuboidDrawingMethod,
+        onChangeSimplifyPoly,
         jobInstance,
     } = props;
 
@@ -127,26 +132,45 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 </>
             )}
             {is2D && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.POINTS].includes(shapeType) ? (
-                <Row justify='space-around' align='middle'>
-                    <Col span={14}>
-                        <Text className='cvat-text-color'> Number of points: </Text>
-                    </Col>
-                    <Col span={10}>
-                        <InputNumber
-                            onChange={(value: number | undefined | string | null) => {
-                                if (typeof value === 'undefined' || value === null) {
-                                    onChangePoints(undefined);
-                                } else {
-                                    onChangePoints(Math.floor(clamp(+value, minimumPoints, Number.MAX_SAFE_INTEGER)));
-                                }
-                            }}
-                            className='cvat-draw-shape-popover-points-selector'
-                            min={minimumPoints}
-                            value={numberOfPoints}
-                            step={1}
-                        />
-                    </Col>
-                </Row>
+                <>
+                    <Row justify='space-around' align='middle'>
+                        <Col span={14}>
+                            <Text className='cvat-text-color'> Number of points: </Text>
+                        </Col>
+                        <Col span={10}>
+                            <InputNumber
+                                onChange={(value: number | undefined | string | null) => {
+                                    if (typeof value === 'undefined' || value === null) {
+                                        onChangePoints(undefined);
+                                    } else {
+                                        const clampedValue = Math.floor(
+                                            clamp(+value, minimumPoints, Number.MAX_SAFE_INTEGER),
+                                        );
+                                        onChangePoints(clampedValue);
+                                    }
+                                }}
+                                className='cvat-draw-shape-popover-points-selector'
+                                min={minimumPoints}
+                                value={numberOfPoints}
+                                step={1}
+                            />
+                        </Col>
+                    </Row>
+                    {[ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType) && (
+                        <Row justify='space-around' align='middle'>
+                            <Col span={14}>
+                                <Text className='cvat-text-color'> Simplify </Text>
+                            </Col>
+                            <Col span={10}>
+                                <Switch
+                                    checked={simplifyPoly}
+                                    onChange={onChangeSimplifyPoly}
+                                    className='cvat-draw-shape-popover-simplify-checkbox'
+                                />
+                            </Col>
+                        </Row>
+                    )}
+                </>
             ) : null}
             <Row justify='space-around'>
                 <Col span={24}>

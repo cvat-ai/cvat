@@ -19,6 +19,7 @@ import { MAX_ACCURACY } from './approximation-accuracy';
 interface Props {
     objectState: ObjectState;
     approxPolyAccuracy: number;
+    repeatDrawShapeShortcut: { sequences: string[] };
     onChangeAccuracy: (value: number) => void;
     onApply: () => void;
     onCancel: () => void;
@@ -27,7 +28,7 @@ interface Props {
 
 function PolySimplifyControl(props: Props): React.ReactPortal | null {
     const {
-        objectState, approxPolyAccuracy, onChangeAccuracy, onApply, onCancel, onUpdatePreview,
+        objectState, approxPolyAccuracy, repeatDrawShapeShortcut, onChangeAccuracy, onApply, onCancel, onUpdatePreview,
     } = props;
 
     const originalPointsRef = useRef<number[]>(objectState.points ? [...objectState.points] : []);
@@ -72,7 +73,12 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
     };
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-        if (event.key === 'Enter') {
+        if (
+            event.key === 'Enter' ||
+            repeatDrawShapeShortcut.sequences.some(
+                (seq) => event.key.toLowerCase() === seq.toLowerCase(),
+            )
+        ) {
             event.preventDefault();
             event.stopImmediatePropagation();
             handleApply();
