@@ -279,13 +279,13 @@ context('Snap tool feature.', () => {
                 y: rotatedY + origin.y,
             };
         }
-        const rectanglePointsGlobal = [];
+        let rectanglePointsGlobal;
         let regionOf;
 
         beforeEach(() => {
             cy.createRectangle(createRectangleShape2Points);
             testCollectCoord('rect', '#cvat_canvas_shape_1').then((pointsGlobal) => {
-                pointsGlobal.forEach((point) => rectanglePointsGlobal.push(point));
+                rectanglePointsGlobal = pointsGlobal;
             });
             testCollectShapePointRadius('#cvat_canvas_shape_1').then((radius) => {
                 const delta = Math.floor(radius * 1.3); // snapping is seen better
@@ -297,6 +297,7 @@ context('Snap tool feature.', () => {
         afterEach(() => {
             cy.removeAnnotations();
             toggleSnapTool('point', false);
+            rectanglePointsGlobal = null;
         });
 
         it('Draw a polyline. Should snap to rect corners within radius', () => {
