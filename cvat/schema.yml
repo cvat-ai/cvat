@@ -10622,10 +10622,12 @@ components:
           type: string
           writeOnly: true
           minLength: 1
+          maxLength: 256
         password2:
           type: string
           writeOnly: true
           minLength: 1
+          maxLength: 256
         first_name:
           type: string
           minLength: 1
