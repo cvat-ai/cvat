@@ -290,7 +290,6 @@ context('Snap tool feature.', () => {
             testCollectShapePointRadius('#cvat_canvas_shape_1').then((radius) => {
                 const delta = Math.floor(radius * 1.3); // snapping is seen better
                 regionOf = (point) => [point.x - delta, point.y - delta];
-                cy.task('log', { radius, delta });
             });
             toggleSnapTool('point', true);
         });
@@ -324,7 +323,7 @@ context('Snap tool feature.', () => {
                 expect(commonPoints[0]).to.be
                     .equal(`${rectanglePointsGlobal[0]},${rectanglePointsGlobal[1]}`);
                 expect(commonPoints[1]).to.be
-                    .equal(`${rectanglePointsGlobal[2]},${rectanglePointsGlobal[1]}`);
+                    .equal(`${rectanglePointsGlobal[2]},${rectanglePointsGlobal[3]}`);
             });
         });
         it('Snapping works when shape is rotated', { scrollBehavior: false }, () => {
