@@ -17,6 +17,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
+from cvat.apps.iam.password_validation import DEFAULT_MAX_PASSWORD_LENGTH
 from cvat.apps.iam.utils import get_dummy_or_regular_user
 
 
@@ -24,6 +25,18 @@ class RegisterSerializerEx(RegisterSerializer):
     # workaround for https://github.com/iMerica/dj-rest-auth/issues/707
     email = serializers.EmailField(
         required=allauth_settings.EMAIL_REQUIRED, max_length=allauth_settings.EMAIL_MAX_LENGTH
+    )
+    password1 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
+    password2 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
     )
 
     first_name = serializers.CharField(

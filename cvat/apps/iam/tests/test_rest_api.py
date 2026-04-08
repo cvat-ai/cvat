@@ -208,3 +208,17 @@ class UserRegisterAPITestCase(ApiTestBase):
         db_email_address.verified = True
         db_email_address.save()
         self._authenticate_with_basic_auth(should_be_authorized=True)
+
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION="none")
+    def test_register_rejects_oversized_passwords(self):
+        response = self._run_api_v2_user_register(
+            {
+                **self.user_data,
+                "password1": "A1" + ("x" * 255),
+                "password2": "A1" + ("x" * 255),
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["password1"][0].code, "max_length")
+        self.assertFalse(User.objects.filter(username=self.user_data["username"]).exists())

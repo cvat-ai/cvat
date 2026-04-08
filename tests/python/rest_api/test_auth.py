@@ -275,6 +275,27 @@ class TestCredentialsManagement:
             assert user.username == username
             assert user.email == email
 
+    def test_cannot_register_with_oversized_password(self):
+        username = "newuser"
+        email = "123@456.com"
+        oversized_password = "A1" + ("x" * 255)
+        with ApiClient(Configuration(host=BASE_URL)) as api_client:
+            _, response = api_client.auth_api.create_register(
+                models.RegisterSerializerExRequest(
+                    username=username,
+                    password1=oversized_password,
+                    password2=oversized_password,
+                    email=email,
+                ),
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert json.loads(response.data) == {
+                "password1": ["Ensure this field has no more than 256 characters."],
+                "password2": ["Ensure this field has no more than 256 characters."],
+            }
+
     def test_can_change_password(self, admin_user: str):
         username = admin_user
         new_pass = "5w4knrqaW#$@gewa"
