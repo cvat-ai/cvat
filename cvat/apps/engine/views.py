@@ -6,7 +6,6 @@
 import itertools
 import os
 import os.path as osp
-import re
 import shutil
 import textwrap
 import traceback
@@ -171,7 +170,7 @@ _RETRY_AFTER_TIMEOUT = 10
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
-    iam_organization_field = None
+    iam_supports_organization_params = False
     iam_permission_class = ServerPermission
 
     # To get nice documentation about ServerViewSet actions it is necessary
@@ -277,10 +276,8 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request: ExtendedRequest):
         data = {
-            'GIT_INTEGRATION': False, # kept for backwards compatibility
             'ANALYTICS': settings.ANALYTICS_ENABLED,
-            'MODELS': to_bool(os.environ.get("CVAT_SERVERLESS", False)),
-            'PREDICT': False, # FIXME: it is unused anymore (for UI only)
+            'MODELS': to_bool(os.environ.get("CVAT_SERVERLESS", False)), # not used anymore, remove later
         }
         return Response(PluginsSerializer(data).data)
 
@@ -332,7 +329,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
-    iam_organization_field = 'organization'
+    iam_supports_organization_params = True
     iam_permission_class = ProjectPermission
 
     def get_serializer_class(self):
@@ -408,7 +405,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # of exporting process|download a result file, but also to initiate export process
             return get_410_response_for_export_api("/api/projects/id/dataset/export?save_images=True")
 
-        return self.upload_data(request)
+        return self.upload_data(request, append_url_name="append-dataset-chunk")
 
 
     @tus_chunk_action(detail=True, suffix_base="dataset")
@@ -479,7 +476,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if "rq_id" in request.query_params:
             return get_410_response_when_checking_process_status("import")
 
-        return self.upload_data(request)
+        return self.upload_data(request, append_url_name="append-backup-chunk")
 
     @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
@@ -874,7 +871,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     simple_filters = list(search_fields) + ['project_id']
     ordering_fields = list(filter_fields)
     ordering = "-id"
-    iam_organization_field = 'organization'
+    iam_supports_organization_params = True
     iam_permission_class = TaskPermission
 
     def get_serializer_class(self):
@@ -934,7 +931,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if "rq_id" in request.query_params:
             return get_410_response_when_checking_process_status("import")
 
-        return self.upload_data(request)
+        return self.upload_data(request, append_url_name="append-backup-chunk")
 
     @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
@@ -1040,8 +1037,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return list(expected_files)
 
     # UploadMixin method
-    def init_tus_upload(self, request):
-        response = super().init_tus_upload(request)
+    def init_tus_upload(self, request: ExtendedRequest, *, append_url_name: str) -> Response:
+        response = super().init_tus_upload(request, append_url_name=append_url_name)
 
         if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
             self._maybe_append_upload_info_entry(TusFile.TusMeta.from_request(request).filename)
@@ -1277,7 +1274,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 elif task_data.size != 0:
                     return Response(data='Adding more data is not supported',
                         status=status.HTTP_400_BAD_REQUEST)
-                return self.upload_data(request)
+                return self.upload_data(request, append_url_name="append-data-chunk")
         else:
             data_type = request.query_params.get('type', None)
             data_num = request.query_params.get('number', None)
@@ -1363,7 +1360,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(data)
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
-            return self.upload_data(request)
+            return self.upload_data(request, append_url_name="append-annotations-chunk")
 
         elif request.method == 'PUT':
             if {"format", "rq_id"} & set(request.query_params.keys()):
@@ -1657,15 +1654,21 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
     UploadMixin, DatasetMixin
 ):
-    queryset = Job.objects.select_related(
-        'assignee',
-        'segment__task__data',
-        'segment__task__project',
-        'segment__task__annotation_guide',
-        'segment__task__project__annotation_guide',
+    queryset = (
+        Job.objects
+        .select_related(
+            'assignee',
+            'segment__task',
+            'segment__task__project',
+        )
+        .prefetch_related(
+            'segment__task__data',
+            'segment__task__annotation_guide',
+            'segment__task__project__annotation_guide',
+        )
     )
 
-    iam_organization_field = 'segment__task__organization'
+    iam_supports_organization_params = True
     iam_permission_class = JobPermission
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + [
@@ -1689,12 +1692,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'list':
             perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
-
-            queryset = queryset.prefetch_related(
-                "segment__task__source_storage", "segment__task__target_storage"
-            )
+            # with_* optimized in JobReadListSerializer
         else:
-            queryset = queryset.with_issue_counts() # optimized in JobReadSerializer
+            queryset = queryset.with_issue_counts().with_child_jobs_counts()
 
         return queryset
 
@@ -1851,7 +1851,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             return Response(annotations)
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
-            return self.upload_data(request)
+            return self.upload_data(request, append_url_name="append-annotations-chunk")
 
         elif request.method == 'PUT':
             if {"format", "rq_id"} & set(request.query_params.keys()):
@@ -2141,7 +2141,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'job__segment__task', 'owner', 'assignee', 'job'
     ).all()
 
-    iam_organization_field = 'job__segment__task__organization'
+    iam_supports_organization_params = True
     iam_permission_class = IssuePermission
     search_fields = ('owner', 'assignee')
     filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
@@ -2213,7 +2213,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'issue', 'issue__job', 'owner'
     ).all()
 
-    iam_organization_field = 'issue__job__segment__task__organization'
+    iam_supports_organization_params = True
     iam_permission_class = CommentPermission
     search_fields = ('owner',)
     filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
@@ -2298,7 +2298,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project__organization'
     ).all()
 
-    iam_organization_field = ('task__organization', 'project__organization')
+    iam_supports_organization_params = True
     iam_permission_class = LabelPermission
 
     search_fields = ('name', 'parent')
@@ -2352,6 +2352,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # )
                 self.check_object_permissions(self.request, instance)
                 queryset = instance.get_labels(prefetch=True)
+                queryset = LabelPermission.add_org_filter_proof(queryset)
             else:
                 # In other cases permissions are checked already
                 queryset = super().get_queryset()
@@ -2443,7 +2444,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
-    iam_organization_field = 'memberships__organization'
+    iam_supports_organization_params = True
     iam_permission_class = UserPermission
 
     search_fields = ('username', 'first_name', 'last_name')
@@ -2469,13 +2470,11 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         user = self.request.user
         is_self = int(self.kwargs.get("pk", 0)) == user.id or \
             self.action == "self"
-        if user.is_staff:
-            return UserSerializer if not is_self else UserSerializer
+
+        if is_self or user.is_superuser:
+            return UserSerializer
         else:
-            if is_self and self.request.method in SAFE_METHODS:
-                return UserSerializer
-            else:
-                return BasicUserSerializer
+            return BasicUserSerializer
 
     @extend_schema(summary='Get details of the current user',
         responses={
@@ -2537,7 +2536,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
-    iam_organization_field = 'organization'
+    iam_supports_organization_params = True
     iam_permission_class = CloudStoragePermission
 
     # Multipart support is necessary here, as CloudStorageWriteSerializer
@@ -2624,7 +2623,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
                 full_manifest_path = db_storage.get_storage_dirname() / manifest_path
                 if not full_manifest_path.exists() or \
-                        datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
+                        datetime.fromtimestamp(full_manifest_path.stat().st_mtime, tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
                     storage.download_file(manifest_path, full_manifest_path)
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
                 # need to update index
@@ -2775,6 +2774,7 @@ class AssetsViewSet(
     parser_classes = [MultiPartParser]
     search_fields = ()
     ordering = "uuid"
+    iam_supports_organization_params = False
     iam_permission_class = GuideAssetPermission
 
     def check_object_permissions(self, request: ExtendedRequest, obj):
@@ -2860,20 +2860,17 @@ class AnnotationGuidesViewSet(
     ).prefetch_related('assets').all()
     search_fields = ()
     ordering = "-id"
-    iam_organization_field = None
+    iam_supports_organization_params = False
     iam_permission_class = AnnotationGuidePermission
 
     def _update_related_assets(self, request: ExtendedRequest, guide: AnnotationGuide):
         existing_assets = list(guide.assets.all())
         new_assets = []
-
-        pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
-        results = set(re.findall(pattern, guide.markdown))
-
+        asset_ids = AnnotationGuide.get_asset_ids_from_markdown(guide.markdown)
         db_assets_to_copy = {}
 
         # first check if we need to copy some assets and if user has permissions to access them
-        for asset_id in results:
+        for asset_id in asset_ids:
             with suppress(models.Asset.DoesNotExist):
                 db_asset = models.Asset.objects.select_related('guide').get(pk=asset_id)
                 if db_asset.guide.id != guide.id:
@@ -2893,7 +2890,7 @@ class AnnotationGuidesViewSet(
         # then copy those assets, where user has permissions
         assets_mapping = {}
         with transaction.atomic():
-            for asset_id in results:
+            for asset_id in asset_ids:
                 db_asset = db_assets_to_copy.get(asset_id)
                 if db_asset is not None:
                     copied_asset = Asset(
@@ -2906,7 +2903,7 @@ class AnnotationGuidesViewSet(
 
         # finally apply changes on filesystem out of transaction
         try:
-            for asset_id in results:
+            for asset_id in asset_ids:
                 copied_asset = assets_mapping.get(asset_id)
                 if copied_asset is not None:
                     db_asset = db_assets_to_copy.get(asset_id)

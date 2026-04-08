@@ -1,5 +1,6 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "cvat.fullname" . -}}
+{{- $localValues := .Values.cvat.ingress -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,7 +8,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "cvat.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- with merge $localValues.annotations .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}

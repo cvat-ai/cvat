@@ -19,7 +19,6 @@ import {
 } from 'cvat-core-wrapper';
 
 interface Props {
-    readonly: boolean;
     workspace: Workspace;
     contextMenuParentID: number | null;
     contextMenuClientID: number | null;
@@ -113,7 +112,6 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         visible,
         left,
         top,
-        readonly,
         workspace,
         latestComments,
         onStartIssue,
@@ -208,7 +206,6 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         return ReactDOM.createPortal(
             <div className='cvat-canvas-context-menu' style={{ top, left }}>
                 <ObjectItemElementComponent
-                    readonly={readonly}
                     key={contextMenuClientID}
                     clientID={contextMenuClientID}
                     parentID={contextMenuParentID as number}
@@ -221,7 +218,6 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
     return ReactDOM.createPortal(
         <div className='cvat-canvas-context-menu' style={{ top, left }}>
             <ObjectItemContainer
-                readonly={readonly}
                 key={contextMenuClientID}
                 clientID={contextMenuClientID}
                 objectStates={objectStates}

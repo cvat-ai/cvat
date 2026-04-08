@@ -22,7 +22,6 @@ import { ShowGroundTruthIcon } from 'icons';
 
 interface Props {
     workspace: Workspace;
-    readonly: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
     statesCollapsed: boolean;
@@ -107,7 +106,7 @@ function CollapseAllSwitcher(props: Props): JSX.Element {
 
 function ObjectListHeader(props: Props): JSX.Element {
     const {
-        workspace, readonly, statesOrdering, count, changeStatesOrdering,
+        workspace, statesOrdering, count, changeStatesOrdering,
     } = props;
 
     return (
@@ -122,7 +121,7 @@ function ObjectListHeader(props: Props): JSX.Element {
                 </Col>
                 <Col span={24}>
                     <Row justify='space-around' align='middle'>
-                        {!readonly && <LockAllSwitcher {...props} />}
+                        <LockAllSwitcher {...props} />
                         <HideAllSwitcher {...props} />
                         { workspace === Workspace.REVIEW && (
                             <GTSwitcher {...props} />

@@ -4,7 +4,6 @@
 
 import logging
 import os
-import shlex
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -30,6 +29,7 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "docker-compose.dev.yml",
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
+    "tests/docker-compose.pat_settings.yml",
     "tests/docker-compose.test_servers.yml",
 ]
 
@@ -95,35 +95,23 @@ def pytest_addoption(parser):
 
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
-    try:
-        logger.debug(f"Executing a command: {_command}")
+    logger.debug(f"Executing a command: {_command}")
 
-        stdout, stderr = "", ""
-        if capture_output:
-            proc = run(_command, check=True, stdout=PIPE, stderr=PIPE)  # nosec
-            stdout, stderr = proc.stdout.decode(), proc.stderr.decode()
-        else:
-            proc = run(_command)  # nosec
+    if capture_output:
+        proc = run(_command, check=True, stdout=PIPE)  # nosec
+        stdout = proc.stdout.decode()
+    else:
+        proc = run(_command, check=True)  # nosec
+        stdout = ""
 
-        if stdout:
-            logger.debug(f"Output (stdout): {stdout}")
-        if stderr:
-            logger.debug(f"Output (stderr): {stderr}")
+    if stdout:
+        logger.debug(f"Output (stdout): {stdout}")
 
-        return stdout, stderr
-    except CalledProcessError as exc:
-        message = f"Command failed: {' '.join(map(shlex.quote, _command))}."
-        message += f"\nExit code: {exc.returncode}"
-        if capture_output:
-            message += f"\nStandard output:\n{exc.stdout.decode()}"
-            message += f"\nStandard error:\n{exc.stderr.decode()}"
-
-        pytest.exit(message)
+    return stdout
 
 
 def _kube_get_pod_name(label_filter):
-    output, _ = _run(f"kubectl get pods -l {label_filter} -o jsonpath={{.items[0].metadata.name}}")
-    return output
+    return _run(f"kubectl get pods -l {label_filter} -o jsonpath={{.items[0].metadata.name}}")
 
 
 def _kube_get_server_pod_name():
@@ -296,7 +284,7 @@ def kube_restore_redis_ondisk():
 
 
 def running_containers():
-    return [cn for cn in _run("docker ps --format {{.Names}}")[0].split("\n") if cn]
+    return [cn for cn in _run("docker ps --format {{.Names}}").split("\n") if cn]
 
 
 def dump_db():
@@ -435,19 +423,15 @@ def session_start(
 
     if session.config.getoption("--collect-only"):
         if any((stop, start, rebuild, cleanup, dumpdb)):
-            raise Exception(
-                """--collect-only is not compatible with any of the other options:
-                --stop-services --start-services --rebuild --cleanup --dumpdb"""
-            )
+            raise Exception("""--collect-only is not compatible with any of the other options:
+                --stop-services --start-services --rebuild --cleanup --dumpdb""")
         return  # don't need to start the services to collect tests
 
     platform = session.config.getoption("--platform")
 
     if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb)):
-        raise Exception(
-            """--platform=kube is not compatible with any of the other options
-            --stop-services --start-services --rebuild --cleanup --dumpdb"""
-        )
+        raise Exception("""--platform=kube is not compatible with any of the other options
+            --stop-services --start-services --rebuild --cleanup --dumpdb""")
 
     if platform == "local":
         local_start(
@@ -502,7 +486,9 @@ def local_start(
 
     wait_for_services(waiting_time)
 
-    docker_exec_cvat("python manage.py loaddata /tmp/data.json")
+    docker_exec_cvat(
+        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+    )
     docker_exec(
         Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
     )
@@ -520,7 +506,9 @@ def kube_start(cvat_db_dir):
 
     wait_for_services()
 
-    kube_exec_cvat("python manage.py loaddata /tmp/data.json")
+    kube_exec_cvat(
+        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+    )
 
     kube_exec_cvat_db(
         [
@@ -549,20 +537,13 @@ def session_finish(session):
         if os.environ.get("COVERAGE_PROCESS_START"):
             collect_code_coverage_from_containers()
 
-        docker_restore_db()
-        docker_exec(Container.DB, "dropdb test_db")
-
-        docker_exec(Container.DB, "dropdb --if-exists cvat")
-        docker_exec(Container.DB, "createdb cvat")
-        docker_exec_cvat("python manage.py migrate")
-
 
 def collect_code_coverage_from_containers():
     for container in Container.covered():
         process_command = "python3"
 
         # find process with code coverage
-        pid, _ = docker_exec(container, f"pidof {process_command} -o 1")
+        pid = docker_exec(container, f"pidof {process_command} -o 1")
 
         # stop process with code coverage
         docker_exec(container, f"kill -15 {pid}")

@@ -112,7 +112,7 @@ Cypress.Commands.add(
                         if (field === 'Attributes') {
                             cy.get('[placeholder="Enter string"]').last().type(`${value}{Enter}`);
                         } else if (!valueSource) {
-                            if (field === 'ObjectID' || field === 'Width' || field === 'Height') {
+                            if (field === 'ObjectID' || field === 'Width' || field === 'Height' || field === 'Rotation') {
                                 cy.get('[placeholder="Enter number"]').type(`${value}{Enter}`);
                             } else {
                                 cy.get('[type="search"]').last().type(`${value}{Enter}`);

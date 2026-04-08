@@ -1,7 +1,7 @@
 bandit==1.8.6
-black==25.*
-isort==6.*
-pylint-django==2.6.1
-pylint-plugin-utils==0.8.2
-pylint==3.3.7
+black==26.*
+isort==7.*
+pylint-django==2.7.0
+pylint-plugin-utils==0.9.0
+pylint==4.0.4
 typos==1.40.0

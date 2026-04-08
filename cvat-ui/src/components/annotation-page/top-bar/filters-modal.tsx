@@ -144,6 +144,11 @@ function FiltersModalComponent(): JSX.Element {
                     type: 'number',
                     fieldSettings: { min: 0 },
                 },
+                rotation: {
+                    label: 'Rotation',
+                    type: 'number',
+                    fieldSettings: { min: 0 },
+                },
                 objectID: {
                     label: 'ObjectID',
                     type: 'number',
@@ -154,6 +159,16 @@ function FiltersModalComponent(): JSX.Element {
                     label: 'ServerID',
                     type: 'number',
                     hideForCompare: true,
+                    fieldSettings: { min: 0 },
+                },
+                score: {
+                    label: 'Score',
+                    type: 'number',
+                    fieldSettings: { min: 0, max: 1 },
+                },
+                votes: {
+                    label: 'Votes',
+                    type: 'number',
                     fieldSettings: { min: 0 },
                 },
                 attr: {

@@ -28,14 +28,12 @@ class TestMasks:
         )
 
     def test_encode_mask_without_bbox(self):
-        bitmap = self._bitmap_from_string(
-            """\
+        bitmap = self._bitmap_from_string("""\
             0000000
             0001110
             0011000
             0000000
-            """
-        )
+            """)
 
         assert encode_mask(bitmap) == [1, 5, 2, 2, 1, 5, 2]
 
@@ -46,12 +44,10 @@ class TestMasks:
         assert encode_mask(bitmap) == [0, 4 * 6, 0, 0, 5, 3]
 
     def test_encode_mask_with_bbox(self):
-        bitmap = self._bitmap_from_string(
-            """\
+        bitmap = self._bitmap_from_string("""\
             001110
             011000
-            """
-        )
+            """)
         bbox = [2.9, 0.9, 4.1, 1.1]  # will get rounded to [2, 0, 5, 2]
 
         # There's slightly different logic for when the cropped mask starts with
@@ -119,14 +115,12 @@ class TestMasks:
 
         points = [1, 5, 2, 2, 1, 5, 2]
 
-        bitmap = self._bitmap_from_string(
-            """\
+        bitmap = self._bitmap_from_string("""\
             0000000
             0001110
             0011000
             0000000
-            """
-        )
+            """)
         np.testing.assert_array_equal(decode_mask(points, image_width=7, image_height=4), bitmap)
 
         # Same mask, but with the bbox covering the whole image.

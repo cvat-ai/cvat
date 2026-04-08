@@ -831,9 +831,9 @@ class TrackManager(ObjectManager):
                 for i, angle0 in enumerate(angles):
                     if i < 3:
                         angle1 = angles[i + 3]
-                        angle0 = (angle0 if angle0 >= 0 else angle0 + math.pi * 2) * 180 / math.pi
-                        angle1 = (angle1 if angle1 >= 0 else angle1 + math.pi * 2) * 180 / math.pi
-                        angle = angle0 + find_angle_diff(angle1, angle0) * offset * math.pi / 180
+                        angle0 = math.degrees(angle0 if angle0 >= 0 else angle0 + math.pi * 2)
+                        angle1 = math.degrees(angle1 if angle1 >= 0 else angle1 + math.pi * 2)
+                        angle = math.radians(angle0 + find_angle_diff(angle1, angle0) * offset)
                         shape["points"][i + 3] = angle if angle <= math.pi else angle - math.pi * 2
 
                 yield shape
@@ -1080,7 +1080,7 @@ class TrackManager(ObjectManager):
 
             if dimension == DimensionType.DIM_3D:
                 yield from simple_3d_interpolation(shape0, shape1)
-            if is_rectangle or is_cuboid or is_ellipse or is_skeleton:
+            elif is_rectangle or is_cuboid or is_ellipse or is_skeleton:
                 yield from simple_interpolation(shape0, shape1)
             elif is_points:
                 yield from points_interpolation(shape0, shape1)

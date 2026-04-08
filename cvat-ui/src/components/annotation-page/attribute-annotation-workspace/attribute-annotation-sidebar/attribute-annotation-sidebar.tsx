@@ -64,18 +64,6 @@ const componentShortcuts = {
         sequences: ['up'],
         scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
-    NEXT_OBJECT: {
-        name: 'Next object',
-        description: 'Go to the next object',
-        sequences: ['tab'],
-        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
-    },
-    PREVIOUS_OBJECT: {
-        name: 'Previous object',
-        description: 'Go to the previous object',
-        sequences: ['shift+tab'],
-        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
-    },
     SWITCH_LOCK: {
         name: 'Lock/unlock an object',
         description: 'Change locked state for an active object',
@@ -282,14 +270,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             preventDefault(event);
             nextAttribute(-1);
         },
-        NEXT_OBJECT: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            nextObject(1);
-        },
-        PREVIOUS_OBJECT: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            nextObject(-1);
-        },
         SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             if (activeObjectState) {
@@ -363,7 +343,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     }}
                 />
                 <ObjectButtonsContainer
-                    readonly={false}
                     clientID={activeObjectState.clientID}
                     outsideDisabled
                     hiddenDisabled

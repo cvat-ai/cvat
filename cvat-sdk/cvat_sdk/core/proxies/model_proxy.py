@@ -120,7 +120,7 @@ class ModelCreateMixin(Generic[_EntityT, IModel]):
         Creates a new object on the server and returns the corresponding local object
         """
 
-        (model, _) = self.api.create(spec)
+        model, _ = self.api.create(spec)
         return self._entity_type(self._client, model)
 
 
@@ -130,7 +130,7 @@ class ModelRetrieveMixin(Generic[_EntityT]):
         Retrieves an object from the server by ID
         """
 
-        (model, _) = self.api.retrieve(id=obj_id)
+        model, _ = self.api.retrieve(id=obj_id)
         return self._entity_type(self._client, model)
 
 
@@ -161,7 +161,7 @@ class ModelBatchDeleteMixin(Repo):
         type_name = self._entity_type.__name__
 
         for object_id in ids:
-            (_, response) = self.api.destroy(object_id, _check_status=False)
+            _, response = self.api.destroy(object_id, _check_status=False)
 
             if 200 <= response.status <= 299:
                 self._client.logger.info(f"{type_name} #{object_id} deleted")
@@ -199,7 +199,7 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
         """
 
         # TODO: implement revision checking
-        (self._model, _) = self.api.retrieve(id=getattr(self, self._model_id_field))
+        self._model, _ = self.api.retrieve(id=getattr(self, self._model_id_field))
         return self
 
     def update(self: Entity, values: dict[str, Any] | IModel) -> Self:

@@ -14,8 +14,8 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
     const cuboidCreationParams = {
         objectType: 'Shape',
         labelName,
-        x: 500,
-        y: 250,
+        x: 360,
+        y: 320,
     };
 
     before(() => {
@@ -24,8 +24,7 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
         cy.openJob();
         cy.wait(2000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
-        cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
-        cy.get('.cvat-canvas3d-perspective').click(); // Deactivate the cuboid
+        cy.get('.cvat-move-control').click(); // to deactivate the cuboid
     });
 
     const getScene = (el) => el.scene.children[0];
@@ -50,12 +49,12 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
         });
 
         it('Change selected opacity to 100. To 0.', () => {
+            cy.get('.cvat-active-canvas-control').click();
             cy.get('.cvat-appearance-selected-opacity-slider').click('right');
             cy.get('.cvat-appearance-selected-opacity-slider').find('[role="slider"]').should('have.attr', 'aria-valuenow', 100);
             cy.get('body').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 250);
-            cy.wait(1000); // Waiting for the cuboid activation
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 320);
+            cy.wait(500); // Waiting for the cuboid activation
 
             cy.get('.cvat-canvas3d-perspective canvas').then(([el]) => {
                 expect(el.scene.children[0].children[0].material.opacity).to.equal(1);

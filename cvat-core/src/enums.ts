@@ -89,6 +89,7 @@ export enum Source {
     AUTO = 'auto',
     FILE = 'file',
     GT = 'Ground truth',
+    CONSENSUS = 'consensus',
 }
 
 export enum EventScope {

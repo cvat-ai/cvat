@@ -16,6 +16,324 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.62.0'></a>
+## \[2.62.0\] - 2026-04-02
+
+### Added
+
+- Show success notification after saving annotation guide (<https://github.com/cvat-ai/cvat/pull/10342>)
+
+- Compose for transformers + Helm support for function name env var
+  (<https://github.com/cvat-ai/cvat/pull/10388>)
+
+### Changed
+
+- The format for filters in Rego policy files has changed; if you have
+  added custom policy files, you may need to update them
+  (<https://github.com/cvat-ai/cvat/pull/10387>)
+
+- 'Remove annotations' confirmation message now more user-friendly.
+- 'Delete' button renamed to 'Remove' to match the message
+  (<https://github.com/cvat-ai/cvat/pull/10407>)
+
+- Bounding box is used as a default prompt for SAM models instead of points
+  (<https://github.com/cvat-ai/cvat/pull/10432>)
+
+- Snap to contour and snap to point features are now accessible on the controls sidebar
+  (<https://github.com/cvat-ai/cvat/pull/10421>)
+
+### Fixed
+
+- Width misalignment between top bars and content lists (tasks, jobs, projects,
+  cloud storages, webhooks pages) by applying consistent scrollbar gutter spacing.
+  (<https://github.com/cvat-ai/cvat/pull/10324>)
+
+- Content size on resource pages for smaller screens (<1000px) to provide better responsive layout
+  (<https://github.com/cvat-ai/cvat/pull/10324>)
+
+- Exported interpolated shapes in 3D cuboid tracks can have invalid rotation
+  (<https://github.com/cvat-ai/cvat/pull/10413>)
+
+- Fixed chunk generation in tasks with backing cloud storage where the
+  manifest contains incomplete paths
+  (<https://github.com/cvat-ai/cvat/pull/10429>)
+
+<a id='changelog-2.61.0'></a>
+## \[2.61.0\] - 2026-03-20
+
+### Added
+
+- "Snap to point" feature for polygon and polyline editing. While enabled,
+  points being moved or drawn will automatically snap to nearby points from other shapes
+  (<https://github.com/cvat-ai/cvat/pull/10353>)
+
+- Join tool now supports polygon shapes, allowing to merge multiple
+  polygons into a single unified polygon.
+  (<https://github.com/cvat-ai/cvat/pull/10362>)
+
+### Changed
+
+- Minor visual improvements on the controls sidebar
+  (<https://github.com/cvat-ai/cvat/pull/10374>)
+
+### Fixed
+
+- Helm modifiable permissionFix paths and command
+  (<https://github.com/cvat-ai/cvat/pull/7932>)
+
+<a id='changelog-2.60.0'></a>
+## \[2.60.0\] - 2026-03-17
+
+### Added
+
+- Docker + compose for YOLO
+  (<https://github.com/cvat-ai/cvat/pull/10325>)
+
+- Interactors can now return multiple shapes instead of a single one
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Interactors can now return a confidence attribute. If present, interaction
+  results can be filtered in the UI (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Added UI controls to remove point and rectangle prompts when using Interactors or OpenCV tools
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Server may add text prompts to interactors as `text_prompts` field in `POST: /api/lambda/functions/<id>`
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+### Changed
+
+- Unified the expected interactor interface to align with the `/annotations` API and AI detector outputs
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Updated the IoG serverless function to support the new interactor interface
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+### Fixed
+
+- Reduced memory usage by replacing JavaScript arrays with typed arrays
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- Fixed memory leaks related to unreleased object URLs in `cvat-canvas`
+  (<https://github.com/cvat-ai/cvat/pull/10329>)
+
+- \[SDK\] Fixed a crash in `TasksRepo.create_from_backup`,
+  `ProjectsRepo.create_from_backup`, `Task.upload_data` that could occur
+  if a recoverable error occurred during chunk uploading
+  (<https://github.com/cvat-ai/cvat/pull/10375>)
+
+<a id='changelog-2.59.1'></a>
+## \[2.59.1\] - 2026-03-09
+
+### Fixed
+
+- Missing escaping for string fields in `.csv` export
+  (<https://github.com/cvat-ai/cvat/pull/10345>)
+
+<a id='changelog-2.59.0'></a>
+## \[2.59.0\] - 2026-03-06
+
+### Added
+
+- Docker compose to run SAM2 agent
+  (<https://github.com/cvat-ai/cvat/pull/10272>)
+
+- Added support for using cloud storage as backing storage for local tasks
+  (<https://github.com/cvat-ai/cvat/pull/10282>)
+
+- Feature to download Projects, Tasks, Jobs list as `.csv` table
+  (<https://github.com/cvat-ai/cvat/pull/10312>)
+
+### Changed
+
+- Changed the display of parent and replica jobs to a flat list.
+  For convenience, jobs are now marked with “parent” and “replica” tags.
+  By default, replica jobs are hidden using a filter, but they can be shown if needed.
+  (<https://github.com/cvat-ai/cvat/pull/10217>)
+
+- Consistent behaviour for Tab/Shift+Tab on 2D and 3D workspace
+  (<https://github.com/cvat-ai/cvat/pull/10299>)
+
+- Filters on a task page and on jobs page now create a new browser history entry,
+  enabling Back/Forward navigation between filter states.
+  (<https://github.com/cvat-ai/cvat/pull/10217>)
+
+- Models page is now always visible on UI, regardless of whether the serverless module is installed
+  (<https://github.com/cvat-ai/cvat/pull/10333>)
+
+### Deprecated
+
+- \[Server API\] `GET api/jobs` and `GET api/jobs/{id}/` responses:
+  - `consensus_replicas` - deprecated in favor of the new `replicas_count` field,
+  (<https://github.com/cvat-ai/cvat/pull/10217>)
+
+- Property `MODELS` from `/api/server/plugins` now unused on client and soon will be removed from the response
+  (<https://github.com/cvat-ai/cvat/pull/10333>)
+
+### Removed
+
+- Field `consensus_replicas`, used for consensus-based tasks, removed from task backups.
+  Backups created before this change can still be imported, but newer backups will require
+  a recent CVAT version.
+  (<https://github.com/cvat-ai/cvat/pull/10294>)
+
+- Deprecated properties `GIT_INTEGRATION` and `PREDICT` from `/api/server/plugins`
+  (<https://github.com/cvat-ai/cvat/pull/10333>)
+
+### Fixed
+
+- The `POST /api/task/<id>/data` endpoint now responds with a correct
+  `Location` header when invoked without a trailing slash
+  (<https://github.com/cvat-ai/cvat/pull/10266>)
+
+- Ground truth annotations are not locked in review mode of regular jobs
+  (<https://github.com/cvat-ai/cvat/pull/10273>)
+
+<a id='changelog-2.58.0'></a>
+## \[2.58.0\] - 2026-02-23
+
+### Added
+
+- Added a new annotation filter to find rotated bounding boxes and ellipses.
+  (<https://github.com/cvat-ai/cvat/pull/10291>)
+
+### Fixed
+
+- Memory leaks on 3D canvas because of unreleased GL resources
+  (<https://github.com/cvat-ai/cvat/pull/10268>)
+
+<a id='changelog-2.57.0'></a>
+## \[2.57.0\] - 2026-02-17
+
+### Added
+
+- Ability to change zOrder of an object one by one, using corresponding buttons in object menu or shortcuts
+  (<https://github.com/cvat-ai/cvat/pull/9063>)
+
+### Fixed
+
+- Creation of extra "create" and "update" events on children summary field
+  updates and inclusion of invalid data in the events for these fields
+  (<https://github.com/cvat-ai/cvat/pull/10257>)
+
+- Fixed a crash on fetching an empty related image chunk
+  of a task in cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/10277>)
+
+- Fixed creating a task from an attached file share in the case where
+  at least one image and one directory are specified
+  (<https://github.com/cvat-ai/cvat/pull/10281>)
+
+<a id='changelog-2.56.1'></a>
+## \[2.56.1\] - 2026-02-03
+
+### Fixed
+
+- Consensus score calculation always returning 1.0 regardless of actual agreement
+  (<https://github.com/cvat-ai/cvat/pull/10247>)
+
+<a id='changelog-2.56.0'></a>
+## \[2.56.0\] - 2026-02-02
+
+### Added
+
+- Adds the option to sort annotations by label
+  (<https://github.com/cvat-ai/cvat/pull/9738>)
+
+- Score visualization in UI with a virtual "Votes" attribute calculated as `score × replica_jobs`
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+- A user now may navigate between different shapes with shortcuts (Tab/Shift+Tab by default) in Standard, Review modes
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+- Review mode now supports editing objects. Users can unlock and edit individual annotations as needed
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+- Double-clicking an object in the sidebar now centers it on the canvas and expands its details
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+- Added a keyboard shortcut to switch object appearance using the “Color by” setting on the annotation page
+  (<https://github.com/cvat-ai/cvat/pull/10175>)
+
+- Individual annotations for CVAT and analytics ingress in Helm chart
+  (<https://github.com/cvat-ai/cvat/pull/10231>)
+
+### Changed
+
+- Increased the maximum number of assets per guide from 30 to 150
+  (<https://github.com/cvat-ai/cvat/pull/10185>)
+
+- Consensus merge function now preserves all shapes with their scores, regardless of quorum threshold
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+### Removed
+
+- Consensus quorum setting has been removed. All merged annotations are now kept with their consensus scores,
+  allowing users to filter results based on score thresholds instead
+  (<https://github.com/cvat-ai/cvat/pull/10172>)
+
+### Fixed
+
+- Missing validation for the maximum number of annotation guide assets
+  (<https://github.com/cvat-ai/cvat/pull/10185>)
+
+- In the raw label editor, double quote characters inside SVG strings are no
+  longer displayed as "\&quot;"
+  (<https://github.com/cvat-ai/cvat/pull/10198>)
+
+- Annotation `source` was not updated on label change
+  (<https://github.com/cvat-ai/cvat/pull/9886>)
+
+- Incorrect camera position on 3d scene when position of point clouds
+  shifted from center of coordinates (<https://github.com/cvat-ai/cvat/pull/10221>)
+
+- Possible 500 error in TUS uploading via SDK/CLI in development or customized deployments
+  (<https://github.com/cvat-ai/cvat/pull/10227>)
+
+<a id='changelog-2.55.0'></a>
+## \[2.55.0\] - 2026-01-19
+
+### Added
+
+- An option to download quality report as a confusion matrix CSV file
+  (<https://github.com/cvat-ai/cvat/pull/10177>)
+
+### Fixed
+
+- Added reading HTTP request data in chunks instead of loading entire body into memory for TUS PATCH requests
+  (<https://github.com/cvat-ai/cvat/issues/5261>)
+
+- Return a 404 for HEAD requests after a file upload is completed via TUS, instead of a 500 Internal Server Error
+  (<https://github.com/cvat-ai/cvat/issues/5261>)
+
+- When creating a task, manifest files uploaded alongside videos are no longer ignored
+  (<https://github.com/cvat-ai/cvat/pull/10162>)
+
+- Improved annotation import performance for Ultralytics YOLO Classification
+  (<https://github.com/cvat-ai/cvat/pull/10163>)
+
+- Fixed a AssertionError that occurred during the download of 3D annotations.
+  (<https://github.com/cvat-ai/cvat/pull/10165>)
+
+- Removed redundant `PATCH: /api/jobs/<id>/meta` requests sent from annotation view
+  (<https://github.com/cvat-ai/cvat/pull/10184>)
+
+- \[CLI\] Fixed agents waiting for inappropriate amounts between retrying
+  failed AR acquire requests
+  (<https://github.com/cvat-ai/cvat/pull/10193>)
+
+- \[CLI\] Made agents handle failure of queue-related HTTP requests
+  in a more robust manner
+  (<https://github.com/cvat-ai/cvat/pull/10194>)
+
+### Security
+
+- Fixed XSS vulnerabilities related to skeleton SVG images
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-3m7p-wx65-c7mp>)
+
+- Upgrade OPA to new version (1.12.2)
+  (<https://github.com/cvat-ai/cvat/pull/10183>)
+
+- Users with staff status can no longer change their permissions
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-7pvv-w55f-qmw7>)
+
 <a id='changelog-2.54.0'></a>
 ## \[2.54.0\] - 2025-12-24
 

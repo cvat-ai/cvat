@@ -1,3 +1,9 @@
 cvat-sdk[masks]>=2.44
 scikit-image
-transformers
+# The torch, timm and scipy dependencies are not required by the function itself;
+# however, transformers requires torch to actually load any models, while several models
+# require timm or scipy, so for convenience we include them here.
+# As of transformers 5.3.0, this set of extra dependencies is sufficient to load
+# all supported models except one (DiNAT).
+transformers[torch,timm]
+scipy

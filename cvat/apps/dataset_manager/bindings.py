@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 
 slogger = ServerLogManager(__name__)
 
-CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
+CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation', 'source', 'score'}
 
 class InstanceLabelData:
     class Attribute(NamedTuple):
@@ -231,6 +231,7 @@ class CommonData(InstanceLabelData):
         elements: Sequence[CommonData.LabeledShape] = ()
         outside: bool = False
         id: int | None = None
+        score: float = 1.0
 
     class TrackedShape(NamedTuple):
         type: int
@@ -1588,13 +1589,9 @@ class MediaProvider3D(MediaProvider):
     def get_media_for_frame(self, source_id: int, frame_id: int, **image_kwargs) -> dm.PointCloud:
         source = self._sources[source_id]
 
-        upload_dir = source.db_task.data.get_upload_dirname()
         point_cloud_path = image_kwargs['path']
 
-        related_image_paths = [
-            osp.relpath(str(ri_path), upload_dir)
-            for ri_path in self._ri_per_source[source_id].get(frame_id, [])
-        ]
+        related_image_paths = self._ri_per_source[source_id].get(frame_id, [])
 
         def get_pcd_bytes():
             self._load_source(source_id, source)
@@ -1628,7 +1625,7 @@ class MediaProvider3D(MediaProvider):
 
             frame_related_images = {
                 ri_path: Path(ri_realpath).read_bytes()
-                for _, (ri_realpath, ri_path, _) in cache.read_raw_context_images(
+                for _, (ri_realpath, ri_path) in cache.read_raw_context_images(
                     self._sources[self._current_source_id].db_task.data,
                     frame_ids=[frame_id],
                     truncate_common_filename_prefix=False,
@@ -2248,6 +2245,10 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                 if hasattr(ann, 'label') and ann.label is None:
                     raise CvatImportError("annotation has no label")
 
+                score = ann.attributes.pop('score', None)
+                if score is None:
+                    score = 1
+
                 attributes = [
                     instance_data.Attribute(name=n, value=str(v))
                     for n, v in ann.attributes.items()
@@ -2323,6 +2324,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                             rotation=rotation,
                             attributes=attributes,
                             elements=elements,
+                            score=score,
                         ))
                         continue
 
@@ -2397,10 +2399,33 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
 
     def _validate_track_shapes(shapes):
         shapes = sorted(shapes, key=lambda t: t.frame)
-        new_shapes = []
+
+        def _close_last_interval(closing_shape):
+            # Make the last visible frame a keyframe for correct interpolation.
+            # Otherwise, the keyframe used for the interpolation will be the outside frame,
+            # so the interpolation distance will be longer by 1 frame,
+            # while keeping the coordinates of the last visible frame.
+            if not keyframe_shapes or keyframe_shapes[-1].frame != closing_shape.frame:
+                closing_shape = closing_shape._replace(keyframe=True)
+                keyframe_shapes.append(closing_shape)
+
+            # Add an outside shape
+            closing_shape = closing_shape._replace(outside=True, keyframe=True,
+                frame=closing_shape.frame + instance_data.frame_step)
+            keyframe_shapes.append(closing_shape)
+
+            return closing_shape
+
+        # Infer the keyframe shapes and keep only them
+        keyframe_shapes = []
         prev_shape = None
-        # infer the keyframe shapes and keep only them
         for shape in shapes:
+            if prev_shape and prev_shape.frame == shape.frame:
+                raise ValueError(
+                    f"Found several track shapes on the same frame '{shape.frame}'. "
+                    "Track shape frames must be strictly ascending."
+                )
+
             prev_is_visible = prev_shape and not prev_shape.outside
             cur_is_visible = shape and not shape.outside
 
@@ -2409,13 +2434,11 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
                 has_gap = prev_shape.frame + instance_data.frame_step < shape.frame
 
             if has_gap:
-                prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                    frame=prev_shape.frame + instance_data.frame_step)
-                new_shapes.append(prev_shape)
+                prev_shape = _close_last_interval(prev_shape)
 
             if prev_is_visible != cur_is_visible or cur_is_visible and (has_gap or shape.keyframe):
                 shape = shape._replace(keyframe=True)
-                new_shapes.append(shape)
+                keyframe_shapes.append(shape)
 
             prev_shape = shape
 
@@ -2423,11 +2446,9 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: ProjectData | C
             prev_shape.frame + instance_data.frame_step <= stop_frame
             # has a gap before the current instance segment end
         ):
-            prev_shape = prev_shape._replace(outside=True, keyframe=True,
-                frame=prev_shape.frame + instance_data.frame_step)
-            new_shapes.append(prev_shape)
+            prev_shape = _close_last_interval(prev_shape)
 
-        return new_shapes
+        return keyframe_shapes
 
     stop_frame = int(instance_data.meta[instance_data.META_FIELD]['stop_frame'])
     for track_id, track in tracks.items():

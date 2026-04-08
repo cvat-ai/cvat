@@ -46,7 +46,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
         selfUserName: state.auth.user?.username ?? '',
     }), shallowEqual);
 
-    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
 
     const rowClassName = `cvat-organization-member-item${selected ? ' cvat-item-selected' : ''}`;
     const canUpdateRole = (membership: Membership): boolean => (membership.role !== 'owner');
@@ -74,6 +74,47 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
     };
 
     /* eslint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */
+    const row = (
+        <Row
+            ref={itemRef}
+            className={rowClassName}
+            justify='space-between'
+            onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
+        >
+            <Col span={5} className='cvat-organization-member-item-username'>
+                <Text strong>{username}</Text>
+            </Col>
+            <Col span={6} className='cvat-organization-member-item-name'>
+                <Text strong>{`${firstName || ''} ${lastName || ''}`}</Text>
+            </Col>
+            <Col span={8} className='cvat-organization-member-item-dates'>
+                {invitation ? (
+                    <Text type='secondary'>
+                        {`Invited ${dayjs(invitation.createdDate).fromNow()}`}
+                        {invitation.owner && ` by ${invitation.owner.username}`}
+                    </Text>
+                ) : null}
+                {joinedDate ? <Text type='secondary'>{`Joined ${dayjs(joinedDate).fromNow()}`}</Text> : <Text type='secondary'>Invitation pending</Text>}
+            </Col>
+            <Col span={3} className='cvat-organization-member-item-role'>
+                <MemberRoleSelector
+                    value={role}
+                    onChange={onUpdateMembershipRole}
+                    disabled={role === 'owner'}
+                />
+            </Col>
+            <Col span={1}>
+                <div
+                    onClick={handleContextMenuClick}
+                    className='cvat-organization-actions-button cvat-actions-menu-button cvat-menu-icon'
+                >
+                    <MoreOutlined className='cvat-menu-icon' />
+                </div>
+            </Col>
+        </Row>
+    );
+
     return (
         <MemberActionsMenu
             membershipInstance={membershipInstance}
@@ -81,45 +122,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
             dropdownTrigger={['contextMenu']}
             fetchMembers={fetchMembers}
             onUpdateMembershipRole={onUpdateMembershipRole}
-            triggerElement={(
-                <Row
-                    ref={itemRef}
-                    className={rowClassName}
-                    justify='space-between'
-                    onClick={onClick}
-                >
-                    <Col span={5} className='cvat-organization-member-item-username'>
-                        <Text strong>{username}</Text>
-                    </Col>
-                    <Col span={6} className='cvat-organization-member-item-name'>
-                        <Text strong>{`${firstName || ''} ${lastName || ''}`}</Text>
-                    </Col>
-                    <Col span={8} className='cvat-organization-member-item-dates'>
-                        {invitation ? (
-                            <Text type='secondary'>
-                                {`Invited ${dayjs(invitation.createdDate).fromNow()}`}
-                                {invitation.owner && ` by ${invitation.owner.username}`}
-                            </Text>
-                        ) : null}
-                        {joinedDate ? <Text type='secondary'>{`Joined ${dayjs(joinedDate).fromNow()}`}</Text> : <Text type='secondary'>Invitation pending</Text>}
-                    </Col>
-                    <Col span={3} className='cvat-organization-member-item-role'>
-                        <MemberRoleSelector
-                            value={role}
-                            onChange={onUpdateMembershipRole}
-                            disabled={role === 'owner'}
-                        />
-                    </Col>
-                    <Col span={1}>
-                        <div
-                            onClick={handleContextMenuClick}
-                            className='cvat-organization-actions-button cvat-actions-menu-button cvat-menu-icon'
-                        >
-                            <MoreOutlined className='cvat-menu-icon' />
-                        </div>
-                    </Col>
-                </Row>
-            )}
+            triggerElement={row}
         />
     );
 }

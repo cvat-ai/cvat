@@ -16,13 +16,14 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
+from collections.abc import Sequence
 from contextlib import ExitStack
 from datetime import timedelta
 from enum import Enum
 from glob import glob
 from io import BytesIO, IOBase
 from itertools import product
-from pathlib import Path
+from pathlib import Path, PurePath
 from pprint import pformat
 from time import sleep
 from typing import BinaryIO
@@ -36,7 +37,7 @@ from botocore.exceptions import ClientError, EndpointConnectionError
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import FileResponse, HttpResponse
-from django.test import override_settings
+from django.test import SimpleTestCase, override_settings
 from pdf2image import convert_from_bytes
 from PIL import Image
 from pycocotools import coco as coco_loader
@@ -54,6 +55,7 @@ from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
     AttributeSpec,
     AttributeType,
+    CloudStorage,
     Data,
     DimensionType,
     Job,
@@ -94,14 +96,14 @@ def create_db_users(
     extra: bool = True,
 ):
     if admin:
-        (group_admin, _) = Group.objects.get_or_create(name="admin")
+        group_admin, _ = Group.objects.get_or_create(name="admin")
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
         user_admin.groups.add(group_admin)
         cls.admin = user_admin
 
     if primary:
-        (group_user, _) = Group.objects.get_or_create(name="user")
-        (group_annotator, _) = Group.objects.get_or_create(name="worker")
+        group_user, _ = Group.objects.get_or_create(name="user")
+        group_annotator, _ = Group.objects.get_or_create(name="worker")
         user_owner = User.objects.create_user(username="user1", password="user1")
         user_owner.groups.add(group_user)
         user_assignee = User.objects.create_user(username="user2", password="user2")
@@ -113,7 +115,7 @@ def create_db_users(
         cls.annotator = cls.user3 = user_annotator
 
     if extra:
-        (group_somebody, _) = Group.objects.get_or_create(name="somebody")
+        group_somebody, _ = Group.objects.get_or_create(name="somebody")
         user_somebody = User.objects.create_user(username="user4", password="user4")
         user_somebody.groups.add(group_somebody)
         user_dummy = User.objects.create_user(username="user5", password="user5")
@@ -826,25 +828,32 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
     def test_api_v2_users_id_admin_partial(self):
         data = {"username": "user09", "last_name": "my last name"}
         response = self._run_api_v2_users_id(self.admin, self.user.id, data)
+        self._check_response_with_data(self.user, response, data, True)
 
+        data = {"is_staff": True, "is_superuser": True, "is_active": False, "groups": ["admin"]}
+        response = self._run_api_v2_users_id(self.admin, self.user.id, data)
         self._check_response_with_data(self.user, response, data, True)
 
     def test_api_v2_users_id_user_partial(self):
         data = {"username": "user10", "first_name": "my name"}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self._check_response_with_data(self.user, response, data, False)
+        self._check_response_with_data(self.user, response, data, True)
+
+        data = {"email": "unverified@example.com"}
+        response = self._run_api_v2_users_id(self.user, self.user.id, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"is_staff": True}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"username": "admin", "is_superuser": True}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"username": "non_active", "is_active": False}
         response = self._run_api_v2_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         data = {"username": "annotator01", "first_name": "slave"}
         response = self._run_api_v2_users_id(self.user, self.annotator.id, data)
@@ -1409,13 +1418,15 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         }
         image_count = 10
         imagename_pattern = "test_{}.jpg"
+
+        share_root: Path = settings.SHARE_ROOT
+
         for i in range(image_count):
             filename = imagename_pattern.format(i)
-            path = os.path.join(settings.SHARE_ROOT, filename)
+            path = share_root / filename
             cls.media["files"].append(path)
             _, data = generate_random_image_file(filename)
-            with open(path, "wb") as image:
-                image.write(data.read())
+            path.write_bytes(data.read())
 
         cls.media_data.append(
             {
@@ -1434,11 +1445,10 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = "test_video_1.mp4"
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = share_root / filename
         cls.media["files"].append(path)
         _, data = generate_video_file(filename, width=1280, height=720)
-        with open(path, "wb") as video:
-            video.write(data.read())
+        path.write_bytes(data.read())
         cls.media_data.append(
             {
                 "image_quality": 75,
@@ -1451,11 +1461,10 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = os.path.join("test_archive_1.zip")
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = share_root / filename
         cls.media["files"].append(path)
         _, data = generate_zip_archive_file(filename, count=5)
-        with open(path, "wb") as zip_archive:
-            zip_archive.write(data.read())
+        path.write_bytes(data.read())
         cls.media_data.append(
             {
                 "image_quality": 75,
@@ -1464,12 +1473,11 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
         )
 
         filename = os.path.join("videos", "test_video_1.mp4")
-        path = os.path.join(settings.SHARE_ROOT, filename)
+        path = share_root / filename
         cls.media["dirs"].append(os.path.dirname(path))
         os.makedirs(os.path.dirname(path))
         _, data = generate_video_file(filename, width=1280, height=720)
-        with open(path, "wb") as video:
-            video.write(data.read())
+        path.write_bytes(data.read())
 
         manifest_path = share_root / "videos" / "manifest.jsonl"
         generate_manifest_file(
@@ -1837,6 +1845,16 @@ class ProjectBackupAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
 class _CloudStorageTestBase(ApiTestBase):
     @classmethod
+    def setUpClass(cls) -> None:
+        cls.mock_aws = cls._start_aws_patch()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls._stop_aws_patch()
+
+    @classmethod
     def _start_aws_patch(cls):
         class MockS3(S3CloudStorage):
             _files = {}
@@ -1845,8 +1863,16 @@ class _CloudStorageTestBase(ApiTestBase):
                 return Status.AVAILABLE
 
             @classmethod
-            def create_file(cls, key, _bytes):
+            def create_file(cls, key: str, _bytes: bytes) -> None:
                 cls._files[key] = _bytes
+
+            @classmethod
+            def retrieve_file(cls, key: str) -> bytes:
+                return cls._files[key]
+
+            @classmethod
+            def file_exists(cls, key: str) -> bool:
+                return key in cls._files
 
             def get_file_status(self, key: str, /):
                 return Status.AVAILABLE if key in self._files else Status.NOT_FOUND
@@ -1856,6 +1882,13 @@ class _CloudStorageTestBase(ApiTestBase):
 
             def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /):
                 stream.write(self._files[key])
+
+            def upload_file(self, file_path: Path, key: str | None = None, /) -> None:
+                self._files[key] = file_path.read_bytes()
+
+            def bulk_delete(self, files: Sequence[str]) -> None:
+                for key in files:
+                    del self._files[key]
 
         cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.S3CloudStorage", MockS3)
         cls._aws_patch.start()
@@ -1888,6 +1921,20 @@ class _CloudStorageTestBase(ApiTestBase):
             )
             return response.json()["id"]
 
+    def _create_task(self, data, image_data):
+        with ForceLogin(self.owner, self.client):
+            response = self.client.post("/api/tasks", data=data, format="json")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            tid = response.data["id"]
+
+            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+            response = self.client.get("/api/tasks/%s" % tid)
+            task = response.data
+
+        return task
+
 
 @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
 class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _CloudStorageTestBase):
@@ -1897,7 +1944,6 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
     def setUpTestData(cls):
         create_db_users(cls)
         cls.client = APIClient()
-        cls.mock_aws = cls._start_aws_patch()
         cls.cloud_storage_id = cls._create_cloud_storage()
         cls._create_media()
         cls._create_projects()
@@ -1909,11 +1955,6 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
                 raise RuntimeError("Disabled!")
 
             cls.mock_aws._download_fileobj_to_stream = disabled
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._stop_aws_patch()
-        super().tearDownClass()
 
     def _compare_tasks(self, original_task, imported_task):
         super()._compare_tasks(original_task, imported_task)
@@ -2776,6 +2817,7 @@ class TaskMoveAPITestCase(ApiTestBase):
                     "label_id": cls.task.label_set.first().id,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": cls.task.label_set.first().attributespec_set.first().id,
@@ -3125,11 +3167,10 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 )
 
         filename = os.path.join("videos", "test_video_1.mp4")
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        os.makedirs(os.path.dirname(path))
+        path = share_root / filename
+        path.parent.mkdir(parents=True, exist_ok=True)
         _, data = generate_video_file(filename, width=1280, height=720)
-        with open(path, "wb") as video:
-            video.write(data.read())
+        path.write_bytes(data.read())
 
         generate_manifest_file(
             data_type=ManifestDataType.video,
@@ -3547,14 +3588,14 @@ class ManifestDataType(str, Enum):
 def generate_manifest_file(
     data_type: ManifestDataType,
     manifest_path: Path,
-    sources,
+    sources: list[Path],
     *,
     sorting_method=SortingMethod.LEXICOGRAPHICAL,
-    root_dir=None,
+    root_dir: Path | None = None,
 ):
     if data_type == "video":
         manifest = VideoManifestManager(manifest_path, create_index=False)
-        manifest.link(media_file=Path(sources[0]), force=True)
+        manifest.link(media_file=sources[0], force=True)
     else:
         assert root_dir
 
@@ -3562,11 +3603,7 @@ def generate_manifest_file(
 
         manifest = ImageManifestManager(manifest_path, create_index=False)
         manifest.link(
-            sources=[
-                Path(p)
-                for p in sources
-                if (root_dir is not None and os.path.relpath(p, root_dir) or p) in scenes
-            ],
+            sources=[p for p in sources if p.relative_to(root_dir) in scenes],
             sorting_method=sorting_method,
             use_image_hash=True,
             data_dir=root_dir,
@@ -3949,7 +3986,7 @@ class TaskDataAPITestCase(ApiTestBase):
             self.assertEqual(expected_compressed_type, task["data_compressed_chunk_type"])
             self.assertEqual(expected_original_type, task["data_original_chunk_type"])
             self.assertEqual(len(expected_image_sizes), task["size"])
-            db_data = Task.objects.get(pk=task_id).data
+            db_data = Task.objects.get(pk=task_id).require_data()
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
             # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share
@@ -4881,9 +4918,9 @@ class TaskDataAPITestCase(ApiTestBase):
             image_sizes, image_files = generate_random_image_files(
                 "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
             )
-            image_paths = []
+            image_paths: list[Path] = []
             for image in image_files:
-                fp = os.path.join(test_dir, image.name)
+                fp = Path(test_dir, image.name)
                 with open(fp, "wb") as f:
                     f.write(image.getvalue())
                 image_paths.append(fp)
@@ -4898,7 +4935,7 @@ class TaskDataAPITestCase(ApiTestBase):
                     manifest_path,
                     image_paths,
                     sorting_method=SortingMethod.PREDEFINED,
-                    root_dir=test_dir,
+                    root_dir=Path(test_dir),
                 )
 
                 task_data_common["use_cache"] = caching_enabled
@@ -5021,9 +5058,9 @@ class TaskDataAPITestCase(ApiTestBase):
             image_sizes, image_files = generate_random_image_files(
                 "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
             )
-            image_paths = []
+            image_paths: list[Path] = []
             for image in image_files:
-                fp = os.path.join(test_dir, image.name)
+                fp = Path(test_dir, image.name)
                 with open(fp, "wb") as f:
                     f.write(image.getvalue())
                 image_paths.append(fp)
@@ -5729,6 +5766,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -5748,6 +5786,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -5851,6 +5890,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -5870,6 +5910,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -5990,6 +6031,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": 32234234,
@@ -6009,6 +6051,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     "label_id": 1212121,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6161,6 +6204,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6180,6 +6224,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6283,6 +6328,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6302,6 +6348,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6422,6 +6469,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": task["labels"][0]["id"],
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [
                         {
                             "spec_id": 32234234,
@@ -6441,6 +6489,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                     "label_id": 1212121,
                     "group": None,
                     "source": "manual",
+                    "score": 1.0,
                     "attributes": [],
                     "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
                     "type": "polygon",
@@ -6663,6 +6712,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6689,6 +6739,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][2]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][2]["attributes"][0]["id"],
@@ -6719,6 +6770,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [2.0, 2.1, 40, 50.7],
                         "type": "rectangle",
@@ -6736,6 +6788,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [2.0, 2.1, 100, 30.22, 40, 77, 1, 3],
                         "type": "polygon",
@@ -6753,6 +6806,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 1,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -6793,6 +6847,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [20.0, 0.1, 10, 3.22, 4, 7, 10, 30, 1, 2],
                         "type": "points",
@@ -6921,6 +6976,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [4, 4, 5, 91, 96, 93, 97, 4],
                         "type": "polygon",
@@ -6933,6 +6989,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][1]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [14, 14, 15, 85, 88, 87, 90, 13],
                         "type": "polygon",
@@ -6991,6 +7048,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [
                             -3.62,
@@ -7022,6 +7080,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "points": [
                             23.01,
@@ -7075,6 +7134,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7092,6 +7152,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7113,6 +7174,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7142,6 +7204,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "label_id": task["labels"][0]["id"],
                         "group": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [
                             {
                                 "spec_id": task["labels"][0]["attributes"][0]["id"],
@@ -7187,6 +7250,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                         "group": 0,
                         "frame": 0,
                         "source": "manual",
+                        "score": 1.0,
                         "attributes": [],
                         "elements": [
                             {
@@ -7201,6 +7265,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "label_id": task["labels"][0]["sublabels"][0]["id"],
                                 "group": 0,
                                 "source": "manual",
+                                "score": 1.0,
                                 "attributes": [],
                             },
                             {
@@ -7215,6 +7280,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, ImportApiTestBase, JobAnnotat
                                 "label_id": task["labels"][0]["sublabels"][1]["id"],
                                 "group": 0,
                                 "source": "manual",
+                                "score": 1.0,
                                 "attributes": [],
                             },
                         ],
@@ -7753,14 +7819,8 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
     def setUpTestData(cls):
         create_db_users(cls)
         cls.client = APIClient()
-        cls.mock_aws = cls._start_aws_patch()
         cls.cloud_storage_id_1 = cls._create_cloud_storage()
         cls.cloud_storage_id_2 = cls._create_cloud_storage()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._stop_aws_patch()
-        super().tearDownClass()
 
     def _create_cloud_task(self):
         data = {
@@ -7785,37 +7845,6 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
             "storage": StorageChoice.CLOUD_STORAGE,
         }
         return self._create_task(data, image_data)
-
-    def _create_local_task(self):
-        data = {
-            "name": "my local task #1",
-            "owner_id": self.owner.id,
-            "overlap": 0,
-            "segment_size": 100,
-            "labels": [{"name": "person"}],
-        }
-
-        image_data = {
-            "client_files[0]": generate_random_image_file("test_1.jpg")[1],
-            "client_files[1]": generate_random_image_file("test_2.jpg")[1],
-            "client_files[2]": generate_random_image_file("test_3.jpg")[1],
-            "image_quality": 75,
-        }
-        return self._create_task(data, image_data)
-
-    def _create_task(self, data, image_data):
-        with ForceLogin(self.owner, self.client):
-            response = self.client.post("/api/tasks", data=data, format="json")
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            tid = response.data["id"]
-
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
-            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-            response = self.client.get("/api/tasks/%s" % tid)
-            task = response.data
-
-        return task
 
     def test_can_change_cloud_storage(self):
         def get_cache_keys():
@@ -7887,6 +7916,105 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
                 response.status_code,
                 response.content,
             )
+
+
+class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
+    _IMAGE_PATHS = ["test_1.jpg", "test_2.jpg", "related_images/test_1_jpg/context_1.jpg"]
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.client = APIClient()
+        cls.cloud_storage_id = cls._create_cloud_storage()
+
+    def _create_local_task(self):
+        data = {
+            "name": "my local task #1",
+            "owner_id": self.owner.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [{"name": "person"}],
+        }
+
+        f = io.BytesIO()
+        with zipfile.ZipFile(f, "w") as zip_file:
+            for p in self._IMAGE_PATHS:
+                zip_file.writestr(p, generate_random_image_file(p)[1].getbuffer())
+
+        f.seek(0)
+        f.name = "test.zip"
+
+        image_data = {"client_files[0]": f, "image_quality": 75}
+        return self._create_task(data, image_data)
+
+    def test_can_move_to_backing_cs(self):
+        # Set up task.
+        task = self._create_local_task()
+        task_id = task["id"]
+
+        data = Data.objects.get(task__id=task_id)
+        upload_dir = data.get_upload_dirname()
+
+        self.assertTrue(data.images.exists())
+        self.assertTrue(data.related_files.exists())
+
+        def local_path(rel_path):
+            return upload_dir / rel_path
+
+        def cloud_key(rel_path):
+            return PurePath(f"data/{data.id}/raw", rel_path).as_posix()
+
+        images = [(p, local_path(p).read_bytes()) for p in self._IMAGE_PATHS]
+        self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
+
+        # Move the task to backing cloud storage.
+        with self.captureOnCommitCallbacks(execute=True):
+            data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
+
+        self.assertEqual(data.local_storage_backing_cs_id, self.cloud_storage_id)
+
+        for image_rel_path, image_bytes in images:
+            self.assertFalse(local_path(image_rel_path).exists())
+            self.assertEqual(self.mock_aws.retrieve_file(cloud_key(image_rel_path)), image_bytes)
+        self.assertFalse(local_path("related_images").exists())
+
+        # The manifest should still be in the local FS.
+        self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
+        self.assertFalse(self.mock_aws.file_exists(cloud_key(Data.MANIFEST_FILENAME)))
+
+        # Move the task back.
+        with self.captureOnCommitCallbacks(execute=True):
+            data.move_from_backing_cs()
+
+        self.assertEqual(data.local_storage_backing_cs_id, None)
+
+        for image_rel_path, image_bytes in images:
+            self.assertEqual(local_path(image_rel_path).read_bytes(), image_bytes)
+            self.assertFalse(self.mock_aws.file_exists(cloud_key(image_rel_path)))
+
+    def test_deletion_with_backing_cs(self):
+        task = self._create_local_task()
+        task_id = task["id"]
+
+        data = Data.objects.get(task__id=task_id)
+        upload_dir = data.get_upload_dirname()
+
+        def cloud_key(rel_path):
+            return PurePath(f"data/{data.id}/raw", rel_path).as_posix()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
+
+        for p in self._IMAGE_PATHS:
+            self.assertTrue(self.mock_aws.file_exists(cloud_key(p)))
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self._delete_request(f"/api/tasks/{task['id']}", self.owner)
+
+        self.assertFalse(upload_dir.exists())
+
+        for p in self._IMAGE_PATHS:
+            self.assertFalse(self.mock_aws.file_exists(cloud_key(p)))
 
 
 class TaskJobLimitAPITestCase(ApiTestBase):
@@ -8018,7 +8146,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         self.assertEqual(job_count, 0)
 
 
-class TestCloudStorageS3Status(_CloudStorageTestBase):
+class TestCloudStorageS3Status(SimpleTestCase):
     def setUp(self):
         self.storage = S3CloudStorage(
             bucket="test-bucket",
@@ -8057,7 +8185,7 @@ class TestCloudStorageS3Status(_CloudStorageTestBase):
         self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
 
 
-class TestCloudStorageAzureStatus(_CloudStorageTestBase):
+class TestCloudStorageAzureStatus(SimpleTestCase):
     def setUp(self):
         self.storage = AzureBlobCloudStorage(
             container="test-container",

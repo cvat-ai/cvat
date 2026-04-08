@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.54.1
+  version: 2.62.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -4551,6 +4551,14 @@ paths:
       operationId: quality_retrieve_report_data
       summary: Get quality report contents
       parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+          default: json
       - in: path
         name: id
         schema:
@@ -4571,7 +4579,8 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                type: object
+                type: string
+                format: binary
           description: ''
   /api/quality/settings:
     get:
@@ -7453,13 +7462,6 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
-        quorum:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Minimum required share of sources having an annotation for it to be accepted
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -8242,10 +8244,18 @@ components:
         task_id:
           type: integer
           readOnly: true
+        task_name:
+          type: string
+          nullable: true
+          readOnly: true
         project_id:
           type: integer
           readOnly: true
           nullable: true
+        project_name:
+          type: string
+          nullable: true
+          readOnly: true
         assignee:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -8344,6 +8354,10 @@ components:
           nullable: true
           readOnly: true
         consensus_replicas:
+          type: integer
+          readOnly: true
+          deprecated: true
+        replicas_count:
           type: integer
           readOnly: true
       required:
@@ -8720,6 +8734,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
         elements:
           type: array
           items:
@@ -8775,6 +8795,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
         elements:
           type: array
           items:
@@ -9569,13 +9595,6 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
-        quorum:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Minimum required share of sources having an annotation for it to be accepted
     PatchedDataMetaWriteRequest:
       type: object
       properties:
@@ -10055,19 +10074,13 @@ components:
     Plugins:
       type: object
       properties:
-        GIT_INTEGRATION:
-          type: boolean
         ANALYTICS:
           type: boolean
         MODELS:
           type: boolean
-        PREDICT:
-          type: boolean
       required:
       - ANALYTICS
-      - GIT_INTEGRATION
       - MODELS
-      - PREDICT
     ProjectFileRequest:
       type: object
       properties:
@@ -10884,6 +10897,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
       required:
       - frame
       - label_id
@@ -10935,6 +10954,12 @@ components:
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
       required:
       - frame
       - label_id
@@ -11120,6 +11145,10 @@ components:
         project_id:
           type: integer
           nullable: true
+        project_name:
+          type: string
+          nullable: true
+          readOnly: true
         mode:
           type: string
           readOnly: true
@@ -11186,6 +11215,7 @@ components:
           readOnly: true
         data:
           type: integer
+          nullable: true
           readOnly: true
         dimension:
           type: string

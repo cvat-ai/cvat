@@ -13,7 +13,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from enum import Enum, IntEnum
 from functools import cached_property
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from django.conf import settings
@@ -29,12 +29,14 @@ from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
+from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import MaybeUndefined
 from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
 
 if TYPE_CHECKING:
+    from cvat.apps.engine.cloud_provider import AbstractCloudStorage
     from cvat.apps.organizations.models import Organization
 
 
@@ -234,6 +236,125 @@ class FloatArrayField(AbstractArrayField):
 class IntArrayField(AbstractArrayField):
     converter = int
 
+
+class TimestampedModel(models.Model):
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+    def touch(self) -> None:
+        self.save(update_fields=["updated_date"])
+
+
+class CloudProviderChoice(TextChoices):
+    AMAZON_S3 = "AWS_S3_BUCKET", "Amazon S3"
+    AZURE_BLOB_STORAGE = "AZURE_CONTAINER", "Azure Blob Storage"
+    GOOGLE_CLOUD_STORAGE = "GOOGLE_CLOUD_STORAGE", "Google Cloud Storage"
+
+
+class CredentialsTypeChoice(str, Enum):
+    # ignore bandit issues because false positives
+    KEY_SECRET_KEY_PAIR = "KEY_SECRET_KEY_PAIR" # nosec
+    ACCOUNT_NAME_TOKEN_PAIR = "ACCOUNT_NAME_TOKEN_PAIR" # nosec
+    KEY_FILE_PATH = "KEY_FILE_PATH"
+    ANONYMOUS_ACCESS = "ANONYMOUS_ACCESS"
+    CONNECTION_STRING = "CONNECTION_STRING"
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return [x.value for x in cls]
+
+    def __str__(self):
+        return self.value
+
+
+class CloudStorage(TimestampedModel):
+    # restrictions:
+    # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
+    # https://cloud.google.com/storage/docs/naming-buckets#requirements
+    # AWS access key id - 20, Oracle OCI access key id - 40
+    # AWS secret access key - 40, Oracle OCI secret access key - 44, Cloudflare R2 secret access key - 64
+    # AWS temporary session token - None
+    # The size of the security token that AWS STS API operations return is not fixed.
+    # We strongly recommend that you make no assumptions about the maximum size.
+    # The typical token size is less than 4096 bytes, but that can vary.
+    # specific attributes:
+    # location - max 23
+    # project ID: 6 - 30 (https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin)
+    provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices)
+    resource = models.CharField(max_length=222)
+    display_name = models.CharField(max_length=63)
+    owner = models.ForeignKey(User, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="cloud_storages", related_query_name="cloud_storage"
+    )
+    credentials = models.CharField(max_length=1024, null=True, blank=True)
+    credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
+    specific_attributes = models.CharField(max_length=1024, blank=True)
+    description = models.TextField(blank=True)
+    organization = models.ForeignKey("organizations.Organization", null=True, default=None,
+        blank=True, on_delete=models.SET_NULL,
+        related_name="cloud_storages", related_query_name="cloud_storage",
+    )
+
+    class Meta:
+        default_permissions = ()
+
+    def __str__(self):
+        return "{} {} {}".format(self.provider_type, self.display_name, self.id)
+
+    def get_storage_dirname(self) -> Path:
+        return settings.CLOUD_STORAGE_ROOT / str(self.id)
+
+    def get_specific_attributes(self):
+        return parse_specific_attributes(self.specific_attributes)
+
+    def get_key_file_path(self) -> Path:
+        return self.get_storage_dirname() / "key.json"
+
+    @property
+    def has_at_least_one_manifest(self) -> bool:
+        return self.manifests.exists()
+
+
+class Location(str, Enum):
+    CLOUD_STORAGE = "cloud_storage"
+    LOCAL = "local"
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+    @classmethod
+    def list(cls):
+        return [i.value for i in cls]
+
+    @classmethod
+    def _missing_(cls, value):
+        raise ValueError(f"The specified location {value!r} is not supported")
+
+
+class Storage(models.Model):
+    location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
+    cloud_storage = models.ForeignKey(
+        CloudStorage,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="+",
+    )
+
+    class Meta:
+        default_permissions = ()
+
+
 class ValidationMode(str, Enum):
     GT = "gt"
     GT_POOL = "gt_pool"
@@ -301,28 +422,37 @@ class FrameQuality(IntEnum):
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
+    # Content descriptors
     content_size = models.PositiveBigIntegerField(null=True)
-    chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
-    image_quality = models.PositiveSmallIntegerField(default=50)
     start_frame = models.PositiveIntegerField(default=0)
     stop_frame = models.PositiveIntegerField(default=0)
     frame_filter = models.CharField(max_length=256, default="", blank=True)
+    deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
+    validation_layout: MaybeUndefined[ValidationLayout]
+
+    # Media descriptors
+    images: models.manager.RelatedManager[Image]
+    video: MaybeUndefined[Video]
+    related_files: models.manager.RelatedManager[RelatedFile]
+
+    # Cache descriptors
+    chunk_size = models.PositiveIntegerField(null=True)
+    image_quality = models.PositiveSmallIntegerField(default=50)
     compressed_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         default=DataChoice.IMAGESET)
     original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         default=DataChoice.IMAGESET)
+
+    # Storage descriptors
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
     storage = models.CharField(max_length=15, choices=StorageChoice.choices(), default=StorageChoice.LOCAL)
-    cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
+    local_storage_backing_cs = models.ForeignKey(CloudStorage, on_delete=models.PROTECT, null=True, related_name="+")
+    local_storage_backing_cs_id: int | None
+    cloud_storage = models.ForeignKey(CloudStorage, on_delete=models.SET_NULL, null=True, related_name='data')
+
+    # Task creation parameters
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
-    deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
-
-    images: models.manager.RelatedManager[Image]
-    video: MaybeUndefined[Video]
-    related_files: models.manager.RelatedManager[RelatedFile]
-    validation_layout: MaybeUndefined[ValidationLayout]
-
     client_files: models.manager.RelatedManager[ClientFile]
     server_files: models.manager.RelatedManager[ServerFile]
     remote_files: models.manager.RelatedManager[RemoteFile]
@@ -414,6 +544,96 @@ class Data(models.Model):
     def validation_mode(self) -> ValidationMode | None:
         return getattr(getattr(self, 'validation_layout', None), 'mode', None)
 
+    def get_all_media_rel_paths(self) -> list[PurePath]:
+        if video := getattr(self, "video", None):
+            return [PurePath(video.path)]
+        else:
+            return (
+                [PurePath(image.path) for image in self.images.filter(is_placeholder=False)]
+                + [PurePath(f.path) for f in self.related_files.all()]
+            )
+
+    def get_cloud_storage_instance(self) -> AbstractCloudStorage | None:
+        from .cloud_provider import SubdirectoryCloudStorage, db_storage_to_storage_instance
+
+        if self.storage == StorageChoice.CLOUD_STORAGE:
+            if self.cloud_storage_id is None:
+                raise CloudStorageMissingError("Task is not connected to cloud storage")
+
+            return db_storage_to_storage_instance(self.cloud_storage)
+
+        if self.storage == StorageChoice.LOCAL and self.local_storage_backing_cs:
+            return SubdirectoryCloudStorage(
+                db_storage_to_storage_instance(self.local_storage_backing_cs), f"data/{self.id}/raw"
+            )
+
+        return None
+
+    def supports_backing_cs(self) -> bool:
+        return (
+            self.storage == StorageChoice.LOCAL
+            and self.storage_method == StorageMethodChoice.CACHE
+            and not hasattr(self, "video")
+        )
+
+    def move_to_backing_cs(self, backing_cs: CloudStorage) -> None:
+        assert self.supports_backing_cs()
+        assert not self.local_storage_backing_cs_id
+
+        self.local_storage_backing_cs = backing_cs
+
+        cloud_storage_instance = self.get_cloud_storage_instance()
+        assert cloud_storage_instance
+
+        upload_dir = self.get_upload_dirname()
+        assert (upload_dir / self.MANIFEST_FILENAME).is_file()
+
+        rel_paths_to_move = self.get_all_media_rel_paths()
+
+        cloud_storage_instance.bulk_upload_from_dir(rel_paths_to_move, upload_dir)
+
+        self.save(update_fields=["local_storage_backing_cs"])
+
+        def clear_original_files() -> None:
+            parents = set()
+
+            for path in rel_paths_to_move:
+                (upload_dir / path).unlink()
+                parents.update(path.parents)
+
+            # Delete all empty parent directories, except for upload_dir itself.
+            parents.remove(PurePath())
+
+            for parent in sorted(parents, key=lambda path: -len(path.parts)):
+                try:
+                    (upload_dir / parent).rmdir()
+                except OSError:
+                    pass
+
+        transaction.on_commit(clear_original_files, robust=True)
+
+    def move_from_backing_cs(self) -> None:
+        assert self.supports_backing_cs()
+        assert self.local_storage_backing_cs_id
+
+        cloud_storage_instance = self.get_cloud_storage_instance()
+        assert cloud_storage_instance
+
+        upload_dir = self.get_upload_dirname()
+
+        rel_paths_to_move = self.get_all_media_rel_paths()
+
+        cloud_storage_instance.bulk_download_to_dir(rel_paths_to_move, upload_dir)
+
+        self.local_storage_backing_cs = None
+        self.save(update_fields=["local_storage_backing_cs"])
+
+        def clear_original_files() -> None:
+            cloud_storage_instance.bulk_delete([p.as_posix() for p in rel_paths_to_move])
+
+        transaction.on_commit(clear_original_files, robust=True)
+
+
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
@@ -439,16 +659,6 @@ class Image(models.Model):
 
     class Meta:
         default_permissions = ()
-
-class TimestampedModel(models.Model):
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
-
-    def touch(self) -> None:
-        self.save(update_fields=["updated_date"])
 
 class AssignableModel(models.Model):
     assignee = models.ForeignKey(
@@ -541,9 +751,9 @@ class Project(TimestampedModel, AssignableModel, FileSystemRelatedModel):
                               default=StatusChoice.ANNOTATION)
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="projects")
-    source_storage = models.ForeignKey('Storage', null=True, default=None,
+    source_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-    target_storage = models.ForeignKey('Storage', null=True, default=None,
+    target_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
     tasks: models.manager.RelatedManager[Task]
@@ -637,14 +847,17 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     subset = models.CharField(max_length=64, blank=True, default="")
     organization = models.ForeignKey('organizations.Organization', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="tasks", related_query_name="task")
-    source_storage = models.ForeignKey('Storage', null=True, default=None,
+    source_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-    target_storage = models.ForeignKey('Storage', null=True, default=None,
+    target_storage = models.ForeignKey(Storage, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
     consensus_replicas = models.IntegerField(default=0)
     "Per job consensus replica count"
 
     segment_set: models.manager.RelatedManager[Segment]
+
+    user_can_view_task: MaybeUndefined[bool]
+    "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
     # Extend default permission model
     class Meta:
@@ -669,6 +882,10 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
         if self.assignee == user_id:
             return True
         return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
+
+    def require_data(self) -> Data:
+        assert self.data is not None
+        return self.data
 
     @cached_property
     def completed_jobs_count(self) -> int | None:
@@ -786,8 +1003,7 @@ class RelatedFile(models.Model):
         related_name="related_files", related_query_name="related_file",
         default=1, null=True,
     )
-    path = models.FileField(upload_to=upload_path_handler,
-                            max_length=1024, storage=MyFileSystemStorage())
+    path = models.CharField(max_length=1024)
     images = models.ManyToManyField(
         Image, related_name="related_files", related_query_name="related_file"
     )
@@ -921,6 +1137,8 @@ class JobQuerySet(models.QuerySet):
     def with_issue_counts(self):
         return self.annotate(issue__count=models.Count('issue'))
 
+    def with_child_jobs_counts(self):
+        return self.annotate(child_jobs__count=models.Count('child_job'))
 
 
 class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
@@ -958,6 +1176,9 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
     issue__count: MaybeUndefined[int]
+    "Can be defined by the fetching queryset"
+
+    child_jobs__count: MaybeUndefined[int]
     "Can be defined by the fetching queryset"
 
     def get_target_storage(self) -> Storage | None:
@@ -1206,6 +1427,7 @@ class LabeledImageAttributeVal(AttributeVal):
 
 class LabeledShape(Annotation, Shape):
     parent = models.ForeignKey('self', on_delete=models.DO_NOTHING, null=True, related_name='elements')
+    score = models.FloatField(default=1)
 
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(LabeledShape, on_delete=models.DO_NOTHING,
@@ -1290,117 +1512,16 @@ class Comment(TimestampedModel):
     def get_job_id(self):
         return self.issue.get_job_id()
 
-class CloudProviderChoice(TextChoices):
-    AMAZON_S3 = "AWS_S3_BUCKET", "Amazon S3"
-    AZURE_BLOB_STORAGE = "AZURE_CONTAINER", "Azure Blob Storage"
-    GOOGLE_CLOUD_STORAGE = "GOOGLE_CLOUD_STORAGE", "Google Cloud Storage"
-
-class CredentialsTypeChoice(str, Enum):
-    # ignore bandit issues because false positives
-    KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR' # nosec
-    ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
-    KEY_FILE_PATH = 'KEY_FILE_PATH'
-    ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
-    CONNECTION_STRING = 'CONNECTION_STRING'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return [x.value for x in cls]
-
-    def __str__(self):
-        return self.value
-
 class Manifest(models.Model):
     filename = models.CharField(max_length=1024, default='manifest.jsonl')
     cloud_storage = models.ForeignKey(
-        'CloudStorage', on_delete=models.CASCADE, null=True,
+        CloudStorage, on_delete=models.CASCADE, null=True,
         related_name='manifests', related_query_name='manifest',
     )
 
     def __str__(self):
         return '{}'.format(self.filename)
 
-class Location(str, Enum):
-    CLOUD_STORAGE = 'cloud_storage'
-    LOCAL = 'local'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-    @classmethod
-    def list(cls):
-        return [i.value for i in cls]
-
-    @classmethod
-    def _missing_(cls, value):
-        raise ValueError(f"The specified location {value!r} is not supported")
-
-class CloudStorage(TimestampedModel):
-    # restrictions:
-    # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
-    # https://cloud.google.com/storage/docs/naming-buckets#requirements
-    # AWS access key id - 20, Oracle OCI access key id - 40
-    # AWS secret access key - 40, Oracle OCI secret access key - 44, Cloudflare R2 secret access key - 64
-    # AWS temporary session token - None
-    # The size of the security token that AWS STS API operations return is not fixed.
-    # We strongly recommend that you make no assumptions about the maximum size.
-    # The typical token size is less than 4096 bytes, but that can vary.
-    # specific attributes:
-    # location - max 23
-    # project ID: 6 - 30 (https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin)
-    provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices)
-    resource = models.CharField(max_length=222)
-    display_name = models.CharField(max_length=63)
-    owner = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="cloud_storages", related_query_name="cloud_storage"
-    )
-    credentials = models.CharField(max_length=1024, null=True, blank=True)
-    credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
-    specific_attributes = models.CharField(max_length=1024, blank=True)
-    description = models.TextField(blank=True)
-    organization = models.ForeignKey('organizations.Organization', null=True, default=None,
-        blank=True, on_delete=models.SET_NULL,
-        related_name="cloud_storages", related_query_name="cloud_storage",
-    )
-
-    class Meta:
-        default_permissions = ()
-
-    def __str__(self):
-        return "{} {} {}".format(self.provider_type, self.display_name, self.id)
-
-    def get_storage_dirname(self) -> Path:
-        return settings.CLOUD_STORAGE_ROOT / str(self.id)
-
-    def get_specific_attributes(self):
-        return parse_specific_attributes(self.specific_attributes)
-
-    def get_key_file_path(self) -> Path:
-        return self.get_storage_dirname() / "key.json"
-
-    @property
-    def has_at_least_one_manifest(self) -> bool:
-        return self.manifests.exists()
-
-class Storage(models.Model):
-    location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
-    cloud_storage = models.ForeignKey(
-        CloudStorage,
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='+',
-    )
-
-    class Meta:
-        default_permissions = ()
 
 class AnnotationGuide(TimestampedModel):
     task = models.OneToOneField(Task, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
@@ -1417,6 +1538,11 @@ class AnnotationGuide(TimestampedModel):
     @property
     def organization_id(self):
         return self.target.organization_id
+
+    @staticmethod
+    def get_asset_ids_from_markdown(markdown: str) -> set[str]:
+        pattern = r"\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)"
+        return set(re.findall(pattern, markdown))
 
 class Asset(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

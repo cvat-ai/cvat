@@ -61,7 +61,7 @@ class TestGetAuditEvents:
     @staticmethod
     def _create_project(user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            (project, response) = api_client.projects_api.create(spec, **kwargs)
+            project, response = api_client.projects_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
         return project.id, response.headers.get("X-Request-Id")
 

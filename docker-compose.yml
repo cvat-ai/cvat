@@ -312,7 +312,7 @@ services:
 
   cvat_opa:
     container_name: cvat_opa
-    image: openpolicyagent/opa:0.63.0
+    image: openpolicyagent/opa:1.12.2
     restart: always
     networks:
       cvat:
@@ -321,6 +321,7 @@ services:
     command:
       - run
       - --server
+      - --addr=:8181
       - --log-level=error
       - --set=services.cvat.url=http://cvat-server:8080
       - --set=bundles.cvat.service=cvat

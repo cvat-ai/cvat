@@ -260,10 +260,12 @@ interface ResourceQueryDefaultParams {
 export function useResourceQuery<QueryType extends {
     page: number;
     pageSize: number;
+    filter?: string;
 }>(query: QueryType, defaultParams: ResourceQueryDefaultParams = {}): QueryType {
     const {
         page = 1,
         pageSize = 10,
+        filter = null,
     } = defaultParams;
 
     const history = useHistory();
@@ -278,6 +280,9 @@ export function useResourceQuery<QueryType extends {
         if (key === 'pageSize') {
             updatedQuery.pageSize = updatedQuery.pageSize ? +updatedQuery.pageSize : pageSize;
         }
+        if (key === 'filter') {
+            updatedQuery.filter = updatedQuery.filter ? updatedQuery.filter : filter;
+        }
     }
     return updatedQuery;
 }
@@ -285,9 +290,18 @@ export function useResourceQuery<QueryType extends {
 export interface ContextMenuClick<T extends HTMLElement = HTMLElement> {
     itemRef: React.RefObject<T>;
     handleContextMenuClick: (e: React.MouseEvent) => void;
+    handleContextMenuCapture: (e: React.MouseEvent) => void;
 }
 
-export function useContextMenuClick<T extends HTMLElement = HTMLElement>(): ContextMenuClick<T> {
+export function useContextMenuClick<T extends HTMLElement = HTMLElement>(
+    preventSelectors: string[] = [
+        'a',
+        'input',
+        '.ant-dropdown-menu-item',
+        '.ant-select-item-option',
+        '.ant-select-selector',
+    ],
+): ContextMenuClick<T> {
     const itemRef = useRef<T>(null);
 
     const handleContextMenuClick = useCallback((e: React.MouseEvent) => {
@@ -296,5 +310,16 @@ export function useContextMenuClick<T extends HTMLElement = HTMLElement>(): Cont
         }
     }, []);
 
-    return { itemRef, handleContextMenuClick };
+    const shouldPreventContextMenu = useCallback((target: EventTarget | null): boolean => {
+        if (!target || !(target instanceof Element)) return false;
+        return preventSelectors.some((selector) => target.closest(selector) !== null);
+    }, [preventSelectors]);
+
+    const handleContextMenuCapture = useCallback((e: React.MouseEvent) => {
+        if (shouldPreventContextMenu(e.target)) {
+            e.stopPropagation();
+        }
+    }, [shouldPreventContextMenu]);
+
+    return { itemRef, handleContextMenuClick, handleContextMenuCapture };
 }

@@ -516,15 +516,16 @@ Cypress.Commands.add('openJob', (jobIdx = 0, removeAnnotations = true, expectedF
 });
 
 Cypress.Commands.add('pressSplitControl', () => {
-    cy.document().then((doc) => {
-        const [el] = doc.getElementsByClassName('cvat-extra-controls-control');
-        if (el) {
-            cy.get('.cvat-extra-controls-control').click();
+    cy.get('.cvat-extra-controls-control').then(($el) => {
+        if ($el.is(':visible')) {
+            cy.wrap($el).click();
         }
+    });
 
-        cy.get('.cvat-split-track-control').click();
+    cy.get('.cvat-split-track-control').click();
 
-        if (el) {
+    cy.get('.cvat-extra-controls-control').then(($el) => {
+        if ($el.is(':visible')) {
             cy.get('body').click();
         }
     });
@@ -1003,7 +1004,7 @@ Cypress.Commands.add('removeAnnotations', () => {
         cy.contains('Remove annotations').click();
     });
     cy.get('.cvat-modal-confirm-remove-annotation').within(() => {
-        cy.contains('button', 'Delete').click();
+        cy.contains('button', 'Remove').click();
     });
 });
 
@@ -1739,7 +1740,7 @@ Cypress.Commands.add('joinShapes', (
     interactWithTool();
 
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains('Click masks you would like to join').should('exist');
+        cy.contains(/Click .* you would like to join/).should('exist');
     });
 
     for (const [index, object] of objects.entries()) {
@@ -1874,18 +1875,20 @@ Cypress.Commands.add('mergeConsensusTask', (status = 202) => {
 });
 
 Cypress.Commands.add('mergeConsensusJob', (jobID, status = 202) => {
-    cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
-    cy.get('.cvat-job-item')
-        .filter(':has(.cvat-tag-consensus)')
+    const getJobItemMoreButton = () => cy.get('.cvat-job-item')
+        .filter(':has(.cvat-tag-parent)')
         .filter(`:contains("Job #${jobID}")`)
-        .find('.anticon-more').first().click();
+        .find('.cvat-job-item-more-button').first();
+    cy.intercept('POST', '/api/consensus/merges**').as('mergeJob');
+    getJobItemMoreButton().scrollIntoView();
+    getJobItemMoreButton().click();
 
-    cy.get('.ant-dropdown-menu').should('exist').and('be.visible')
-        .contains('li', 'Merge consensus job').should('exist').and('be.visible')
-        .click({ scrollBehavior: 'center' });
+    cy.get('.cvat-job-item-menu').should('exist').and('be.visible');
+    cy.contains('li', 'Merge consensus job').should('exist').and('be.visible')
+        .click({ scrollBehavior: false });
     cy.get('.cvat-modal-confirm-consensus-merge-job')
         .contains('button', 'Merge')
-        .click();
+        .click({ scrollBehavior: false });
 
     cy.wait('@mergeJob').its('response.statusCode').should('eq', status);
 });

@@ -301,7 +301,6 @@ export interface BulkActionsState {
 
 export enum SupportedPlugins {
     ANALYTICS = 'ANALYTICS',
-    MODELS = 'MODELS',
 }
 
 export type PluginsList = {
@@ -789,6 +788,7 @@ export enum StatesOrdering {
     ID_ASCENT = 'ID - ascent',
     UPDATED = 'Updated time',
     Z_ORDER = 'Z Order',
+    LABEL_NAME = 'Label name',
 }
 
 export enum ContextMenuType {
@@ -880,7 +880,10 @@ export interface AnnotationState {
     };
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
-        activeInteractorParameters?: MLModel['params']['canvas'];
+        activeInteractorParameters: Partial<{
+            command: Parameters<Canvas['interact']>[0]['command'];
+            settings: Parameters<Canvas['interact']>[0]['settings'];
+        }>;
         activeShapeType: ShapeType | null;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
@@ -991,6 +994,7 @@ export interface WorkspaceSettingsState {
     autoSaveInterval: number; // in ms
     focusedObjectPadding: number;
     automaticBordering: boolean;
+    snapToPoint: boolean;
     adaptiveZoom: boolean;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;

@@ -99,11 +99,10 @@ context('Create any track, check if track works correctly after deleting some fr
 
         beforeEach(() => {
             cy.headlessRestoreAllFrames(jobID);
-
             // Get job meta updates from the server and reload page to bring changes to UI
             cy.reload();
-
-            cy.saveJob();
+            cy.get('.cvat-canvas-container').should('exist');
+            cy.get('.cvat-spinner').should('not.exist');
             cy.get('.cvat-player-first-button').click();
         });
 
@@ -144,6 +143,8 @@ context('Create any track, check if track works correctly after deleting some fr
                 pos1 = posOnFrame1;
             });
             cy.reload().then(() => {
+                cy.get('.cvat-canvas-container').should('exist');
+                cy.get('.cvat-spinner').should('not.exist');
                 cy.goToNextFrame(1).then(() => validateShapeCoords(pos1));
                 cy.goToNextFrame(3).then(() => validateShapeCoords(pos3));
             });

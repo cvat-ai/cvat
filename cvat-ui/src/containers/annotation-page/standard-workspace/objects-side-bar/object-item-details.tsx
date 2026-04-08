@@ -20,6 +20,7 @@ interface StateToProps {
     collapsed: boolean;
     state: ObjectState | null;
     workspace: Workspace;
+    textContent: string;
 }
 
 interface DispatchToProps {
@@ -49,6 +50,11 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             },
             workspace,
         },
+        settings: {
+            workspace: {
+                textContent,
+            },
+        },
     } = state;
 
     const collapsed = typeof statesCollapsed[clientID as number] === 'undefined' ? collapsedAll : statesCollapsed[clientID];
@@ -57,6 +63,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         collapsed,
         state: objectState,
         workspace,
+        textContent,
     };
 }
 
@@ -115,7 +122,7 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         const {
-            readonly, collapsed, state, workspace,
+            readonly, collapsed, state, workspace, textContent,
         } = this.props;
 
         if (state) {
@@ -128,7 +135,6 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
                     length: parseFloat(state.points[8].toFixed(2)), // Z
                 };
             }
-
             return (
                 <ObjectItemDetails
                     readonly={readonly}
@@ -139,6 +145,10 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
                     attributes={[...state.label.attributes]}
                     changeSize={this.changeSize}
                     sizeParams={sizeParams}
+                    source={state.source}
+                    score={state.score}
+                    votes={state.votes}
+                    textContent={textContent}
                 />
             );
         }

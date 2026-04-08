@@ -28,7 +28,7 @@ def get_paginated_collection(
     results = []
     page = 1
     while True:
-        (page_contents, response) = endpoint.call_with_http_info(**kwargs, page=page)
+        page_contents, response = endpoint.call_with_http_info(**kwargs, page=page)
         expect_status(200, response)
 
         if return_json:

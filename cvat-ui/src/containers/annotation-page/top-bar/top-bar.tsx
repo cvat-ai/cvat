@@ -10,7 +10,7 @@ import { RouteComponentProps } from 'react-router-dom';
 
 import {
     changeFrameAsync,
-    changeWorkspace as changeWorkspaceAction,
+    changeWorkspaceAsync,
     setHoveredChapter as setHoveredChapterAction,
     collectStatisticsAsync,
     deleteFrameAsync,
@@ -233,7 +233,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(searchChaptersAsync(sessionInstance, frameFrom, frameTo));
         },
         changeWorkspace(workspace: Workspace): void {
-            dispatch(changeWorkspaceAction(workspace));
+            dispatch(changeWorkspaceAsync(workspace));
         },
         setHoveredChapter(id: number | null) {
             dispatch(setHoveredChapterAction(id));

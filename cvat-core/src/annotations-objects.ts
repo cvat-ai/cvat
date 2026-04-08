@@ -16,8 +16,9 @@ import {
 } from './enums';
 import AnnotationHistory from './annotations-history';
 import { SerializedShape, SerializedTrack, SerializedTag } from './server-response-types';
+import { mask2Rle, rle2Mask } from './rle-utils';
 import {
-    checkNumberOfPoints, attrsAsAnObject, checkShapeArea, mask2Rle, rle2Mask,
+    checkNumberOfPoints, attrsAsAnObject, checkShapeArea,
     computeWrappingBox, findAngleDiff, rotatePoint, validateAttributeValue, cropMask,
 } from './object-utils';
 
@@ -35,6 +36,15 @@ function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): Track
     };
 }
 
+function serverAttributesToDictionary(attributes: SerializedShape['attributes']): Record<number, string> {
+    const object = Object.create(null);
+    for (const attr of attributes) {
+        object[attr.spec_id] = attr.value;
+    }
+
+    return object;
+}
+
 function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape {
     return {
         serverID: shape.id,
@@ -43,16 +53,17 @@ function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape 
         points: shape.points,
         outside: shape.outside,
         rotation: shape.rotation || 0,
-        attributes: shape.attributes.reduce((attributeAccumulator, attr) => {
-            attributeAccumulator[attr.spec_id] = attr.value;
-            return attributeAccumulator;
-        }, {}),
+        attributes: serverAttributesToDictionary(shape.attributes),
     };
 }
 
 function computeNewSource(currentSource: Source): Source {
     if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
         return Source.SEMI_AUTO;
+    }
+
+    if (currentSource === Source.CONSENSUS) {
+        return Source.CONSENSUS;
     }
 
     return Source.MANUAL;
@@ -78,6 +89,7 @@ export interface BasicInjection {
     jobType: JobType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
+    replicasCount?: number;
 }
 
 type AnnotationInjection = BasicInjection & {
@@ -104,6 +116,8 @@ class Annotation {
     protected readOnlyFields: string[];
     protected color: string;
     protected source: Source;
+    public score: number;
+    public votes: number;
     public updated: number;
     public attributes: Record<number, string>;
     protected groupObject: {
@@ -127,11 +141,11 @@ class Annotation {
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
         this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
+        this.score = data.score;
+        this.votes = injection.replicasCount !== undefined ?
+            Math.round(this.score * injection.replicasCount) : 0;
         this.updated = Date.now();
-        this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
-            attributeAccumulator[attr.spec_id] = attr.value;
-            return attributeAccumulator;
-        }, {});
+        this.attributes = serverAttributesToDictionary(data.attributes);
         this.groupObject = Object.defineProperties(
             {}, {
                 color: {
@@ -213,7 +227,11 @@ class Annotation {
         const undoLabel = this.label;
         const redoLabel = label;
         const undoAttributes = { ...this.attributes };
+        const undoSource = this.source;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+
         this.label = label;
+        this.source = redoSource;
         this.attributes = {};
         this.appendDefaultAttributes(label);
 
@@ -235,11 +253,13 @@ class Annotation {
             () => {
                 this.label = undoLabel;
                 this.attributes = undoAttributes;
+                this.source = undoSource;
                 this.updated = Date.now();
             },
             () => {
                 this.label = redoLabel;
                 this.attributes = redoAttributes;
+                this.source = redoSource;
                 this.updated = Date.now();
             },
             [this.clientID],
@@ -561,6 +581,7 @@ export class Shape extends Drawn {
             label_id: this.label.id,
             group: this.group,
             source: this.source,
+            score: this.score,
         };
 
         if (this.serverID !== null) {
@@ -600,6 +621,8 @@ export class Shape extends Drawn {
             pinned: this.pinned,
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
 
@@ -950,6 +973,8 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -1040,6 +1065,8 @@ export class Track extends Drawn {
     protected saveLabel(label: Label, frame: number): void {
         const undoLabel = this.label;
         const redoLabel = label;
+        const undoSource = this.source;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoAttributes = {
             unmutable: { ...this.attributes },
             mutable: Object.keys(this.shapes).map((key) => ({
@@ -1049,6 +1076,7 @@ export class Track extends Drawn {
         };
 
         this.label = label;
+        this.source = redoSource;
         this.attributes = {};
         for (const shape of Object.values(this.shapes)) {
             shape.attributes = {};
@@ -1068,6 +1096,7 @@ export class Track extends Drawn {
             () => {
                 this.label = undoLabel;
                 this.attributes = undoAttributes.unmutable;
+                this.source = undoSource;
                 for (const mutable of undoAttributes.mutable) {
                     this.shapes[mutable.frame].attributes = mutable.attributes;
                 }
@@ -1076,6 +1105,7 @@ export class Track extends Drawn {
             () => {
                 this.label = redoLabel;
                 this.attributes = redoAttributes.unmutable;
+                this.source = redoSource;
                 for (const mutable of redoAttributes.mutable) {
                     this.shapes[mutable.frame].attributes = mutable.attributes;
                 }
@@ -1478,6 +1508,8 @@ export class Tag extends Annotation {
             updated: this.updated,
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -2005,6 +2037,7 @@ export class SkeletonShape extends Shape {
             label_id: this.label.id,
             group: this.group,
             source: this.source,
+            score: this.score,
         };
 
         if (this.serverID !== null) {
@@ -2049,6 +2082,8 @@ export class SkeletonShape extends Shape {
             hidden: elements.every((el) => el.hidden),
             frame,
             source: this.source,
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }
@@ -2216,7 +2251,7 @@ export class MaskShape extends Shape {
         super(data, clientID, color, injection);
         const [left, top, right, bottom] = this.points.slice(-4);
         const { width, height } = this.framesInfo[this.frame];
-        if (left >= width || top >= height || right >= width || bottom >= height) {
+        if (left < 0 || top < 0 || right >= width || bottom >= height) {
             this.points = cropMask(this.points, width, height);
         }
         [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
@@ -2231,7 +2266,6 @@ export class MaskShape extends Shape {
             const { width, height } = this.framesInfo[frame];
             return cropMask(data.points, width, height);
         }
-
         return [];
     }
 
@@ -3091,6 +3125,8 @@ export class SkeletonTrack extends Track {
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
+            score: this.score,
+            votes: this.votes,
             __internal: this.withContext(frame),
         };
     }

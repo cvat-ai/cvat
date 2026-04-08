@@ -10,12 +10,13 @@ import json
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Sequence
-from concurrent.futures import FIRST_EXCEPTION, Future, ThreadPoolExecutor, wait
+from concurrent.futures import Future, ThreadPoolExecutor
+from datetime import datetime
 from enum import Enum
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePath
 from queue import Queue
-from typing import Any, BinaryIO, TypeVar
+from typing import Any, BinaryIO, Concatenate, ParamSpec, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
@@ -35,9 +36,14 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rq import get_current_job
 
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice, DimensionType
+from cvat.apps.engine.models import (
+    CloudProviderChoice,
+    CloudStorage,
+    CredentialsTypeChoice,
+    DimensionType,
+)
 from cvat.apps.engine.rq import ExportRQMeta
-from cvat.apps.engine.utils import get_cpu_number
+from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest.utils import (
     InvalidPcdError,
@@ -141,33 +147,25 @@ def validate_file_status(func):
     return wrapper
 
 
-class _CloudStorage(ABC):
-    def __init__(self, prefix: str | None = None):
+class AbstractCloudStorage(ABC):
+    def __init__(self, prefix: str | None = None) -> None:
         self.prefix = prefix
 
     @property
     @abstractmethod
-    def name(self):
+    def name(self) -> str:
         pass
 
     @abstractmethod
-    def _head_file(self, key: str, /):
+    def get_status(self) -> Status:
         pass
 
     @abstractmethod
-    def _head(self):
+    def get_file_status(self, key: str, /) -> Status:
         pass
 
     @abstractmethod
-    def get_status(self):
-        pass
-
-    @abstractmethod
-    def get_file_status(self, key: str, /):
-        pass
-
-    @abstractmethod
-    def get_file_last_modified(self, key: str, /):
+    def get_file_last_modified(self, key: str, /) -> datetime:
         pass
 
     @abstractmethod
@@ -183,13 +181,13 @@ class _CloudStorage(ABC):
 
     @validate_file_status
     @validate_bucket_status
-    def download_file(self, key: str, path: str, /) -> None:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+    def download_file(self, key: str, path: Path, /) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
         try:
             with open(path, "wb") as f:
                 self._download_fileobj_to_stream(key, f)
         except Exception:
-            Path(path).unlink()
+            path.unlink()
             raise
 
     @validate_file_status
@@ -214,7 +212,7 @@ class _CloudStorage(ABC):
         return self._download_range_of_bytes(key, stop_byte=stop_byte, start_byte=start_byte)
 
     @abstractmethod
-    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int):
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
         pass
 
     def bulk_download_to_memory(
@@ -243,41 +241,53 @@ class _CloudStorage(ABC):
                 top_job = queue.get()
                 yield top_job.result()
 
+    def _in_parallel(self, fn: Callable[[T], object], args: Sequence[T]) -> None:
+        threads_number = get_max_threads_number(len(args))
+
+        with ThreadPoolExecutor(max_workers=threads_number) as executor:
+            list(executor.map(fn, args))
+
     def bulk_download_to_dir(
         self,
-        files: list[str | tuple[str, str]],
-        upload_dir: str,
+        files: Sequence[PurePath | tuple[str, PurePath]],
+        upload_dir: Path,
     ) -> None:
         """
         :param files: a list of filenames or (storage filename, output filename) pairs
         :param upload_dir: the output directory
         """
 
-        threads_number = get_max_threads_number(len(files))
+        def download_one(f: PurePath | tuple[str, PurePath]) -> None:
+            if isinstance(f, tuple):
+                key, output_path = f
+            else:
+                key = f.as_posix()
+                output_path = f
 
-        with ThreadPoolExecutor(max_workers=threads_number) as executor:
-            futures = []
-            for f in files:
-                if isinstance(f, tuple):
-                    key, output_path = f
-                else:
-                    key = f
-                    output_path = f
+            self.download_file(key, upload_dir / output_path)
 
-                output_path = os.path.join(upload_dir, output_path)
-                futures.append(executor.submit(self.download_file, key, output_path))
+        self._in_parallel(download_one, files)
 
-            done, _ = wait(futures, return_when=FIRST_EXCEPTION)
-            for future in done:
-                if ex := future.exception():
-                    raise ex
+    def bulk_upload_from_dir(
+        self,
+        files: Sequence[PurePath],
+        upload_dir: Path,
+    ):
+        def upload_one(f: PurePath):
+            self.upload_file(upload_dir / f, f.as_posix())
+
+        self._in_parallel(upload_one, files)
 
     @abstractmethod
-    def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /) -> None:
         pass
 
     @abstractmethod
-    def upload_file(self, file_path: str, key: str | None = None, /):
+    def upload_file(self, file_path: Path, key: str | None = None, /) -> None:
+        pass
+
+    @abstractmethod
+    def bulk_delete(self, files: Sequence[str]) -> None:
         pass
 
     @abstractmethod
@@ -356,7 +366,7 @@ class _CloudStorage(ABC):
         prefix: str = "",
         *,
         _use_flat_listing: bool = False,
-    ) -> list[str]:
+    ) -> list[dict]:
         all_files = []
         next_token = None
         while True:
@@ -375,17 +385,9 @@ class _CloudStorage(ABC):
     def supported_actions(self):
         pass
 
-    @property
-    def read_access(self):
-        return Permissions.READ in self.access
-
-    @property
-    def write_access(self):
-        return Permissions.WRITE in self.access
-
 
 class HeaderFirstDownloader(ABC):
-    def __init__(self, *, client: _CloudStorage):
+    def __init__(self, *, client: AbstractCloudStorage):
         self.client = client
 
     @abstractmethod
@@ -534,7 +536,7 @@ def get_cloud_storage_instance(
     cloud_provider: CloudProviderChoice,
     resource: str,
     credentials: Credentials,
-    specific_attributes: dict[str, Any] | None = None,
+    specific_attributes: dict[str, Any],
 ):
     instance = None
     if cloud_provider == CloudProviderChoice.AMAZON_S3:
@@ -569,7 +571,7 @@ def get_cloud_storage_instance(
     return instance
 
 
-class S3CloudStorage(_CloudStorage):
+class S3CloudStorage(AbstractCloudStorage):
     transfer_config = {
         "max_io_queue": 10,
     }
@@ -688,11 +690,11 @@ class S3CloudStorage(_CloudStorage):
         )
 
     @validate_bucket_status
-    def upload_file(self, file_path: str, key: str | None = None, /):
+    def upload_file(self, file_path: Path, key: str | None = None, /):
         try:
             self._bucket.upload_file(
-                file_path,
-                key or os.path.basename(file_path),
+                os.fspath(file_path),
+                key or file_path.name,
                 Config=TransferConfig(max_io_queue=self.transfer_config["max_io_queue"]),
             )
         except ClientError as ex:
@@ -753,13 +755,12 @@ class S3CloudStorage(_CloudStorage):
                     slogger.glob.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
             raise
 
-    def delete_file(self, file_name: str, /):
-        try:
-            self._client.delete_object(Bucket=self.name, Key=file_name)
-        except Exception as ex:
-            msg = str(ex)
-            slogger.glob.info(msg)
-            raise
+    def bulk_delete(self, files: Sequence[str]) -> None:
+        def delete_batch(batch: Sequence[str]):
+            delete_request = {"Objects": [{"Key": f} for f in batch], "Quiet": True}
+            self._client.delete_objects(Bucket=self.name, Delete=delete_request)
+
+        self._in_parallel(delete_batch, list(take_by(files, 1000)))
 
     @property
     def supported_actions(self):
@@ -788,7 +789,7 @@ class S3CloudStorage(_CloudStorage):
         return allowed_actions
 
 
-class AzureBlobCloudStorage(_CloudStorage):
+class AzureBlobCloudStorage(AbstractCloudStorage):
     MAX_CONCURRENCY = 3
 
     class Effect:
@@ -876,9 +877,15 @@ class AzureBlobCloudStorage(_CloudStorage):
     def upload_fileobj(self, file_obj: BinaryIO, key: str, /):
         self._client.upload_blob(name=key, data=file_obj, overwrite=True)
 
-    def upload_file(self, file_path: str, key: str | None = None, /):
+    def upload_file(self, file_path: Path, key: str | None = None, /):
         with open(file_path, "rb") as f:
-            self.upload_fileobj(f, key or os.path.basename(file_path))
+            self.upload_fileobj(f, key or file_path.name)
+
+    def bulk_delete(self, files: Sequence[str]) -> None:
+        def delete_batch(batch: Sequence[str]) -> None:
+            self._client.delete_blobs(*batch)
+
+        self._in_parallel(delete_batch, list(take_by(files, 256)))
 
     def _list_raw_content_on_one_page(
         self,
@@ -941,7 +948,7 @@ def _define_gcs_status(func):
     return wrapper
 
 
-class GcsCloudStorage(_CloudStorage):
+class GcsCloudStorage(AbstractCloudStorage):
 
     class Effect:
         pass
@@ -1039,8 +1046,16 @@ class GcsCloudStorage(_CloudStorage):
         self.bucket.blob(key).upload_from_file(file_obj)
 
     @validate_bucket_status
-    def upload_file(self, file_path: str, key: str | None = None, /):
-        self.bucket.blob(key or os.path.basename(file_path)).upload_from_filename(file_path)
+    def upload_file(self, file_path: Path, key: str | None = None, /):
+        self.bucket.blob(key or file_path.name).upload_from_filename(os.fspath(file_path))
+
+    def bulk_delete(self, files: Sequence[str]) -> None:
+        def delete_batch(batch: Sequence[str]):
+            with self._client.batch():
+                for key in batch:
+                    self.bucket.delete_blob(key)
+
+        self._in_parallel(delete_batch, list(take_by(files, 100)))
 
     @validate_file_status
     @validate_bucket_status
@@ -1052,6 +1067,73 @@ class GcsCloudStorage(_CloudStorage):
     @property
     def supported_actions(self):
         pass
+
+
+class SubdirectoryCloudStorage(AbstractCloudStorage):
+    def __init__(self, underlying: AbstractCloudStorage, subdirectory: str) -> None:
+        super().__init__()
+
+        self.underlying = underlying
+        self.subdirectory = subdirectory
+        if not self.subdirectory.endswith("/"):
+            self.subdirectory += "/"
+
+    def _map_key(self, key: str) -> str:
+        return self.subdirectory + key
+
+    def _unmap_key(self, key: str) -> str:
+        assert key.startswith(self.subdirectory)
+        return key[len(self.subdirectory) :]
+
+    @property
+    def name(self) -> str:
+        return self.underlying.name + "/" + self.subdirectory
+
+    def get_status(self) -> Status:
+        return self.underlying.get_status()
+
+    def get_file_status(self, key: str, /) -> Status:
+        return self.underlying.get_file_status(self._map_key(key))
+
+    def get_file_last_modified(self, key: str, /) -> datetime:
+        return self.underlying.get_file_last_modified(self._map_key(key))
+
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
+        return self.underlying._download_fileobj_to_stream(self._map_key(key), stream)
+
+    def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int) -> bytes:
+        return self.underlying._download_range_of_bytes(
+            self._map_key(key), start_byte=start_byte, stop_byte=stop_byte
+        )
+
+    def upload_fileobj(self, file_obj: BinaryIO, key: str, /) -> None:
+        return self.underlying.upload_fileobj(file_obj, self._map_key(key))
+
+    def upload_file(self, file_path: Path, key: str | None = None, /) -> None:
+        assert key is not None
+        return self.underlying.upload_file(file_path, self._map_key(key))
+
+    def bulk_delete(self, files: Sequence[str]) -> None:
+        self.underlying.bulk_delete(list(map(self._map_key, files)))
+
+    def _list_raw_content_on_one_page(
+        self,
+        prefix: str = "",
+        *,
+        next_token: str | None = None,
+        page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
+    ) -> dict:
+        result = self.underlying._list_raw_content_on_one_page(
+            self._map_key(prefix), next_token=next_token, page_size=page_size
+        )
+
+        for key in ("files", "directories"):
+            result[key] = list(map(self._unmap_key, result[key]))
+
+        return result
+
+    def supported_actions(self):
+        return self.underlying.supported_actions
 
 
 class Credentials:
@@ -1142,7 +1224,7 @@ class Credentials:
         ]
 
 
-def db_storage_to_storage_instance(db_storage):
+def db_storage_to_storage_instance(db_storage: CloudStorage) -> AbstractCloudStorage:
     credentials = Credentials()
     credentials.convert_from_db(
         {
@@ -1158,28 +1240,29 @@ def db_storage_to_storage_instance(db_storage):
     return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
 
 
-T = TypeVar("T", Callable[[str, int, int], int], Callable[[str, int, str, bool], None])
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 def import_resource_from_cloud_storage(
     filename: str,
-    db_storage: Any,
+    db_storage: CloudStorage,
     key: str,
-    import_func: T,
-    *args,
-    **kwargs,
-) -> Any:
+    import_func: Callable[Concatenate[str, P], T],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> T:
     storage = db_storage_to_storage_instance(db_storage)
-    storage.download_file(key, filename)
+    storage.download_file(key, Path(filename))
 
     return import_func(filename, *args, **kwargs)
 
 
 def export_resource_to_cloud_storage(
-    db_storage: Any,
-    func: Callable[[int, str | None, str | None], str],
-    *args,
-    **kwargs,
+    db_storage: CloudStorage,
+    func: Callable[P, str],
+    *args: P.args,
+    **kwargs: P.kwargs,
 ) -> str:
     rq_job = get_current_job()
     assert rq_job, "func can be executed only from a background job"
@@ -1188,6 +1271,6 @@ def export_resource_to_cloud_storage(
     rq_job_meta = ExportRQMeta.for_job(rq_job)
 
     storage = db_storage_to_storage_instance(db_storage)
-    storage.upload_file(file_path, rq_job_meta.result_filename)
+    storage.upload_file(Path(file_path), rq_job_meta.result_filename)
 
     return file_path

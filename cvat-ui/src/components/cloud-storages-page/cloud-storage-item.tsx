@@ -33,7 +33,7 @@ interface Props {
 export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
-    const { itemRef, handleContextMenuClick } = useContextMenuClick<HTMLDivElement>();
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
 
     const { cloudStorage, selected = false, onClick = () => {} } = props;
     const {
@@ -96,73 +96,76 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
         });
     }, [cloudStorage, currentCloudStorages, selectedIds, isBulkMode, displayName]);
 
+    const card = (
+        <Card
+            ref={itemRef}
+            cover={(
+                <>
+                    <Preview
+                        cloudStorage={cloudStorage}
+                        loadingClassName='cvat-cloud-storage-item-loading-preview'
+                        emptyPreviewClassName='cvat-cloud-storage-item-empty-preview'
+                        previewClassName='cvat-cloud-storage-item-preview'
+                    />
+                    {description ? (
+                        <CVATTooltip overlay={description}>
+                            <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />
+                        </CVATTooltip>
+                    ) : null}
+                </>
+            )}
+            size='small'
+            style={style}
+            className={cardClassName}
+            hoverable
+            onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
+        >
+            <Meta
+                title={(
+                    <Paragraph ellipsis={{ tooltip: displayName }}>
+                        <Text strong>{`#${id}: `}</Text>
+                        <Text>{displayName}</Text>
+                    </Paragraph>
+                )}
+                description={(
+                    <>
+                        <Paragraph>
+                            <Text type='secondary'>Provider: </Text>
+                            <Text>{providerType}</Text>
+                        </Paragraph>
+                        <Paragraph>
+                            <Text type='secondary'>Created </Text>
+                            {owner ? <Text type='secondary'>{`by ${owner.username}`}</Text> : null}
+                            <Text type='secondary'> on </Text>
+                            <Text type='secondary'>{dayjs(createdDate).format('MMMM Do YYYY')}</Text>
+                        </Paragraph>
+                        <Paragraph>
+                            <Text type='secondary'>Last updated </Text>
+                            <Text type='secondary'>{dayjs(updatedDate).fromNow()}</Text>
+                        </Paragraph>
+                        <Status cloudStorage={cloudStorage} />
+                        <Button
+                            type='link'
+                            size='large'
+                            onClick={handleContextMenuClick}
+                            className='cvat-cloud-storage-item-menu-button cvat-actions-menu-button'
+                        >
+                            <MoreOutlined className='cvat-menu-icon' />
+                        </Button>
+                    </>
+                )}
+            />
+        </Card>
+    );
+
     return (
         <CloudStorageActionsMenu
             onUpdate={onUpdate}
             onDelete={onDelete}
             selectedIds={selectedIds}
             dropdownTrigger={['contextMenu']}
-            triggerElement={(
-                <Card
-                    ref={itemRef}
-                    cover={(
-                        <>
-                            <Preview
-                                cloudStorage={cloudStorage}
-                                loadingClassName='cvat-cloud-storage-item-loading-preview'
-                                emptyPreviewClassName='cvat-cloud-storage-item-empty-preview'
-                                previewClassName='cvat-cloud-storage-item-preview'
-                            />
-                            {description ? (
-                                <CVATTooltip overlay={description}>
-                                    <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />
-                                </CVATTooltip>
-                            ) : null}
-                        </>
-                    )}
-                    size='small'
-                    style={style}
-                    className={cardClassName}
-                    hoverable
-                    onClick={onClick}
-                >
-                    <Meta
-                        title={(
-                            <Paragraph ellipsis={{ tooltip: displayName }}>
-                                <Text strong>{`#${id}: `}</Text>
-                                <Text>{displayName}</Text>
-                            </Paragraph>
-                        )}
-                        description={(
-                            <>
-                                <Paragraph>
-                                    <Text type='secondary'>Provider: </Text>
-                                    <Text>{providerType}</Text>
-                                </Paragraph>
-                                <Paragraph>
-                                    <Text type='secondary'>Created </Text>
-                                    {owner ? <Text type='secondary'>{`by ${owner.username}`}</Text> : null}
-                                    <Text type='secondary'> on </Text>
-                                    <Text type='secondary'>{dayjs(createdDate).format('MMMM Do YYYY')}</Text>
-                                </Paragraph>
-                                <Paragraph>
-                                    <Text type='secondary'>Last updated </Text>
-                                    <Text type='secondary'>{dayjs(updatedDate).fromNow()}</Text>
-                                </Paragraph>
-                                <Status cloudStorage={cloudStorage} />
-                                <Button
-                                    type='link'
-                                    size='large'
-                                    onClick={handleContextMenuClick}
-                                    className='cvat-cloud-storage-item-menu-button cvat-actions-menu-button'
-                                >
-                                    <MoreOutlined className='cvat-menu-icon' />
-                                </Button>
-                            </>
-                        )}
-                    />
-                </Card>
-            )}
+            triggerElement={card}
         />
     );
 }

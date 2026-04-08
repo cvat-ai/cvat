@@ -744,7 +744,7 @@ IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 ASSET_MAX_SIZE_MB = 10
 ASSET_SUPPORTED_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf")
 ASSET_MAX_IMAGE_SIZE = 1920
-ASSET_MAX_COUNT_PER_GUIDE = 30
+ASSET_MAX_COUNT_PER_GUIDE = 150
 
 SMOKESCREEN_ENABLED = True
 

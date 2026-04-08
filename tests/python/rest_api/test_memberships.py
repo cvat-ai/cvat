@@ -170,7 +170,7 @@ class TestDeleteMemberships:
         expected_status = HTTPStatus.NO_CONTENT if is_allow else HTTPStatus.FORBIDDEN
 
         with make_api_client(who) as api_client:
-            (_, response) = api_client.memberships_api.destroy(membership_id, _check_status=False)
+            _, response = api_client.memberships_api.destroy(membership_id, _check_status=False)
             assert response.status == expected_status
 
     @pytest.mark.parametrize(

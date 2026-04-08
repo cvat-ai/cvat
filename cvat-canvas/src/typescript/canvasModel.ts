@@ -78,6 +78,7 @@ export enum ColorBy {
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
+    snapToPoint?: boolean;
     adaptiveZoom?: boolean;
     displayAllText?: boolean;
     textFontSize?: number;
@@ -98,6 +99,7 @@ export interface Configuration {
     resetZoom?: boolean;
     hideEditedObject?: boolean;
     focusedObjectPadding?: number;
+    snapRadius?: number;
 }
 
 export interface BrushTool {
@@ -114,7 +116,7 @@ export interface DrawData {
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;
-    skeletonSVG?: string;
+    skeletonSVG?: SVGSVGElement;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
@@ -126,23 +128,25 @@ export interface DrawData {
 
 export interface InteractionData {
     enabled: boolean;
-    shapeType?: string;
-    crosshair?: boolean;
-    minPosVertices?: number;
-    minNegVertices?: number;
-    startWithBox?: boolean;
-    enableSliding?: boolean;
-    allowRemoveOnlyLast?: boolean;
-    intermediateShape?: {
-        shapeType: string;
-        points: number[];
+    command?: 'draw_points' | 'draw_box' | 'put_shapes' | 'refine';
+    payload?: {
+        shapes: {
+            shapeType: string;
+            points: ArrayLike<number>;
+        }[];
+    };
+    settings?: {
+        crosshair?: boolean; // default is false
+        points_type?: 'any' | 'positive' | 'negative'; // default is any
+        removalStrategy?: 'any' | 'last'; // default is any
+        appendCursorPositionAsPoint?: boolean; // default is false
     };
 }
 
 export interface InteractionResult {
     points: number[];
     shapeType: string;
-    button: number;
+    type: 'positive' | 'negative';
 }
 
 export interface PolyEditData {
@@ -177,7 +181,7 @@ export interface JoinData {
 export interface SliceData {
     enabled: boolean;
     clientID?: number;
-    getContour?: (state: any) => Promise<number[]>;
+    getContour?: (state: any) => Promise<[number, number][]>;
 }
 
 export enum FrameZoom {
@@ -401,6 +405,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             configuration: {
                 smoothImage: true,
                 autoborders: false,
+                snapToPoint: false,
+                snapRadius: 10,
                 adaptiveZoom: true,
                 displayAllText: false,
                 showProjections: false,
@@ -838,16 +844,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
-        if (interactionData.enabled) {
-            if (!this.data.interactionData.enabled && !interactionData.shapeType) {
-                throw new Error('A shape type was not specified');
-            }
-        }
-        this.data.interactionData = interactionData;
-        if (typeof this.data.interactionData.crosshair !== 'boolean') {
-            this.data.interactionData.crosshair = true;
-        }
 
+        this.data.interactionData = interactionData;
         this.notify(UpdateReasons.INTERACT);
     }
 
@@ -965,6 +963,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (typeof configuration.autoborders === 'boolean') {
             this.data.configuration.autoborders = configuration.autoborders;
+        }
+        if (typeof configuration.snapToPoint === 'boolean') {
+            this.data.configuration.snapToPoint = configuration.snapToPoint;
+        }
+        if (typeof configuration.snapRadius === 'number' && configuration.snapRadius > 0) {
+            this.data.configuration.snapRadius = configuration.snapRadius;
         }
         if (typeof configuration.adaptiveZoom === 'boolean') {
             this.data.configuration.adaptiveZoom = configuration.adaptiveZoom;

@@ -62,6 +62,11 @@ polyline.cvat_shape_drawing_opacity {
     font-style: oblique 40deg;
 }
 
+.cvat_canvas_text_score {
+    fill: #FFB347;
+    font-style: oblique 10deg;
+}
+
 .cvat_canvas_crosshair {
     stroke: red;
 }
@@ -225,25 +230,37 @@ g.cvat_canvas_shape_occluded {
 }
 
 .cvat_canvas_autoborder_point {
-    opacity: 0.55;
+    transition: opacity 0.05s;
+    opacity: 1;
 }
 
 .cvat_canvas_autoborder_point:hover {
-    opacity: 1;
-    fill: red;
+    opacity: 0.5;
 }
 
 .cvat_canvas_autoborder_point:active {
-    opacity: 0.55;
-    fill: red;
-}
-
-.cvat_canvas_autoborder_point_direction {
-    fill: blueviolet;
+    opacity: 1;
 }
 
 .cvat_canvas_interact_intermediate_shape {
     @extend .cvat_canvas_shape;
+}
+
+.cvat_interaction_delete_button {
+    opacity: 0.25;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+.cvat_interaction_rectangle {
+    @extend .cvat_canvas_shape_drawing;
+}
+
+.cvat_interaction_delete_button, .cvat_interaction_point {
+    transition: stroke-width 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 30%));
 }
 
 .cvat_canvas_removable_interaction_point {

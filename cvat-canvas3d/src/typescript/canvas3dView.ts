@@ -18,11 +18,13 @@ import {
     createCuboidEdges, removeCuboidEdges, CuboidModel, makeCornerPointsMatrix,
 } from './cuboid';
 import { ObjectState, ObjectType } from '.';
+import { disposeScene } from './utils';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
     render(): void;
     keyControls(keys: KeyboardEvent): void;
+    focusObjectByClientId(clientID: number, animate?: boolean): void;
 }
 
 export enum CameraAction {
@@ -127,6 +129,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         data: DrawnObjectData;
         cuboid: CuboidModel;
     }>;
+    private hoverNeedsUpdate: boolean;
+
+    public focusObjectByClientId(clientID: number, animate: boolean = true): void {
+        const cuboidModel = this.drawnObjects[clientID];
+        if (cuboidModel) {
+            this.fitObject(cuboidModel.cuboid, animate);
+        }
+    }
 
     private action: {
         translation: any;
@@ -137,7 +147,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
         scan: any;
         rotation: any;
-        frameCoordinates: any;
         detected: any;
         initialMouseVector: any;
     };
@@ -205,13 +214,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         };
 
         this.isCtrlDown = false;
+        this.hoverNeedsUpdate = false;
         this.action = {
             scan: null,
-            frameCoordinates: {
-                x: 0,
-                y: 0,
-                z: 0,
-            },
             detected: false,
             initialMouseVector: new THREE.Vector2(),
             translation: {
@@ -402,6 +407,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const { mouseVector } = this.views.perspective.rayCaster as { mouseVector: THREE.Vector2 };
             mouseVector.x = ((event.clientX - (canvas.offsetLeft + rect.left)) / canvas.clientWidth) * 2 - 1;
             mouseVector.y = -((event.clientY - (canvas.offsetTop + rect.top)) / canvas.clientHeight) * 2 + 1;
+            this.hoverNeedsUpdate = true;
         });
 
         canvasPerspectiveView.addEventListener('click', (e: MouseEvent): void => {
@@ -416,6 +422,18 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const intersectionClientID = +(intersects[0]?.object?.name) || null;
             const objectState = Number.isInteger(intersectionClientID) ? this.model.objects
                 .find((state: ObjectState) => state.clientID === intersectionClientID) : null;
+
+            if (objectState) {
+                this.dispatchEvent(
+                    new CustomEvent('canvas.clicked', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            clientID: intersectionClientID,
+                        },
+                    }),
+                );
+            }
 
             const handleClick = (targetList: ObjectState[]): void => {
                 const objectStateIdx = targetList
@@ -471,6 +489,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 } else {
                     const clientID = intersects[0].object.name;
                     this.fitObject(this.drawnObjects[clientID].cuboid, true);
+
+                    this.dispatchEvent(
+                        new CustomEvent('canvas.doubleclicked', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                clientID: Number(clientID),
+                            },
+                        }),
+                    );
                 }
                 return;
             }
@@ -674,10 +702,10 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         up.copy(new THREE.Vector3().crossVectors(right, forward).normalize());
 
         // 4) Project corners onto right/up to get world extents independent of current distance
-        let minU = +Infinity; let
-            maxU = -Infinity;
-        let minV = +Infinity; let
-            maxV = -Infinity;
+        let minU = +Infinity;
+        let maxU = -Infinity;
+        let minV = +Infinity;
+        let maxV = -Infinity;
         for (const c of worldCorners) {
             const u = c.dot(right);
             const v = c.dot(up);
@@ -715,7 +743,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private fitCanvas(animation: boolean): void {
-        const { x, y, z } = this.action.frameCoordinates;
+        const [x, y, z] = this.cameraSettings.perspective.lookAt;
         this.positionAllViews(x, y, z, animation);
         this.updateCameraFrustumPlane();
     }
@@ -1272,11 +1300,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private deleteObjects(clientIDs: number[]): void {
         clientIDs.forEach((clientID: number): void => {
             const { cuboid } = this.drawnObjects[clientID];
-            Object.keys(this.views).forEach((view: string): void => {
-                this.views[view as keyof Views].scene.children[0].remove(cuboid[view as keyof Views]);
-            });
-
-            delete this.drawnObjects[clientID];
+            this.removeSceneChildren(cuboid, clientID);
         });
     }
 
@@ -1302,6 +1326,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.views.top.scene.children[0].add(shapeObject.top);
         this.views.side.scene.children[0].add(shapeObject.side);
         this.views.front.scene.children[0].add(shapeObject.front);
+    }
+
+    private removeSceneChildren(shapeObject: CuboidModel, clientID: number): void {
+        this.views.perspective.scene.children[0].remove(shapeObject.perspective);
+        this.views.top.scene.children[0].remove(shapeObject.top);
+        this.views.side.scene.children[0].remove(shapeObject.side);
+        this.views.front.scene.children[0].remove(shapeObject.front);
+
+        shapeObject.dispose();
+        delete this.drawnObjects[clientID];
     }
 
     private dispatchEvent(event: CustomEvent): void {
@@ -1373,7 +1407,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             // in input data is incorrect
                             let cloud = null;
                             try {
-                                console.error = () => {};
+                                console.error = () => { };
                                 cloud = loader.parse(data) as THREE.Points;
                             } finally {
                                 console.error = defaultImpl;
@@ -1609,10 +1643,16 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private clearScene(): void {
+        Object.entries(this.drawnObjects).forEach(([clientID, { cuboid }]) => {
+            this.removeSceneChildren(cuboid, +clientID);
+        });
+
         this.drawnObjects = {};
         this.activatedElementID = null;
+
         Object.keys(this.views).forEach((view: string): void => {
-            this.views[view as keyof Views].scene.children = [];
+            const viewData = this.views[view as keyof Views];
+            disposeScene(viewData.scene);
         });
     }
 
@@ -1715,21 +1755,39 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         const getCameraSettingsToFitScene = (
             camera: THREE.PerspectiveCamera,
             boundingBox: THREE.Box3,
-        ): [number, number, number] => {
-            const offset = 5;
+        ): {
+            position: [number, number, number],
+            lookAt: [number, number, number],
+        } => {
             const width = boundingBox.max.x - boundingBox.min.x;
             const height = boundingBox.max.y - boundingBox.min.y;
+            const depth = boundingBox.max.z - boundingBox.min.z;
 
-            // find the maximum width or height, compute z to approximately fit the scene
-            const maxDim = Math.max(width, height);
-            const fov = camera.fov * (Math.PI / 180);
-            const cameraZ = Math.abs((maxDim / 8) * Math.tan(fov * 2));
+            // Center of the scene
+            const centerX = boundingBox.min.x + width / 2;
+            const centerY = boundingBox.min.y + height / 2;
+            const centerZ = boundingBox.min.z + depth / 2;
 
-            return [
-                boundingBox.min.x + offset,
-                boundingBox.max.y + offset,
-                cameraZ + offset,
-            ];
+            // Calculate distance to fit the scene: distance = (size / 2) / tan(fov / 2)
+            const maxDim = Math.max(width, height, depth);
+            const fovRadians = camera.fov * (Math.PI / 180);
+            const cameraDistance = (maxDim / 2) / Math.tan(fovRadians / 2);
+
+            // Position camera above and slightly offset from center
+            const offset = 5;
+
+            return {
+                position: [
+                    centerX + offset,
+                    centerY + offset,
+                    centerZ + cameraDistance + offset,
+                ],
+                lookAt: [
+                    centerX,
+                    centerY,
+                    centerZ,
+                ],
+            };
         };
 
         // eslint-disable-next-line no-param-reassign
@@ -1744,13 +1802,27 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         // updating correct camera settings
         points.geometry.computeBoundingBox();
-        this.cameraSettings.perspective.position = getCameraSettingsToFitScene(
+        const { position, lookAt } = getCameraSettingsToFitScene(
             this.views.perspective.camera as THREE.PerspectiveCamera, points.geometry.boundingBox,
         );
 
+        this.cameraSettings.perspective.position = position;
         this.sceneBBox = new THREE.Box3().setFromObject(points);
-        this.views.perspective.scene.add(points.clone());
-        this.views.perspective.scene.add(new THREE.AxesHelper(5));
+        const perspectiveCloud = points.clone();
+        this.views.perspective.scene.add(perspectiveCloud);
+
+        const origin = new THREE.Vector3(0, 0, 0);
+        const isOriginInScene = this.sceneBBox.containsPoint(origin);
+        const axesHelper = new THREE.AxesHelper(5);
+        if (isOriginInScene) {
+            this.cameraSettings.perspective.lookAt = [0, 0, 0];
+            axesHelper.position.set(0, 0, 0);
+        } else {
+            this.cameraSettings.perspective.lookAt = lookAt;
+            axesHelper.position.set(lookAt[0], lookAt[1], lookAt[2]);
+        }
+
+        this.views.perspective.scene.add(axesHelper);
         // Setup TopView
         const canvasTopView = this.views.top.renderer.domElement;
         const topScenePlane = new THREE.Mesh(
@@ -1772,7 +1844,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // eslint-disable-next-line no-param-reassign
         points.material = material;
         material.size = 0.5;
-        this.views.top.scene.add(points.clone());
+        const topCloud = points.clone();
+        this.views.top.scene.add(topCloud);
         this.views.top.scene.add(topScenePlane);
         // Setup Side View
         const canvasSideView = this.views.side.renderer.domElement;
@@ -1794,7 +1867,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         sideScenePlane.name = Planes.SIDE;
         (sideScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
         (sideScenePlane as any).verticesNeedUpdate = true;
-        this.views.side.scene.add(points.clone());
+        const sideCloud = points.clone();
+        this.views.side.scene.add(sideCloud);
         this.views.side.scene.add(sideScenePlane);
         // Setup front View
         const canvasFrontView = this.views.front.renderer.domElement;
@@ -1815,7 +1889,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         frontScenePlane.name = Planes.FRONT;
         (frontScenePlane.material as THREE.MeshBasicMaterial).side = THREE.DoubleSide;
         (frontScenePlane as any).verticesNeedUpdate = true;
-        this.views.front.scene.add(points.clone());
+        const frontCloud = points.clone();
+        this.views.front.scene.add(frontCloud);
         this.views.front.scene.add(frontScenePlane);
 
         if (this.mode === Mode.DRAW) {
@@ -1831,9 +1906,9 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.views.front.controls
         ) {
             this.views.perspective.controls.setLookAt(
-                x + this.cameraSettings.perspective.position[0],
-                y - this.cameraSettings.perspective.position[1],
-                z + this.cameraSettings.perspective.position[2],
+                this.cameraSettings.perspective.position[0],
+                this.cameraSettings.perspective.position[1],
+                this.cameraSettings.perspective.position[2],
                 x, y, z, animation,
             );
 
@@ -1900,15 +1975,28 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                     this.stateToBeSplitted = objectState;
                     this.drawnObjects[castedClientID].cuboid.setColor(this.receiveShapeColor(objectState));
                 } else if (this.mode === Mode.IDLE && !this.isCtrlDown) {
-                    if (this.model.data.activeElement.clientID !== clientID) {
-                        const object = this.views.perspective.scene.getObjectByName(clientID);
-                        if (object === undefined) return;
+                    const intersectedClientID = intersects[0]?.object?.name || null;
+                    const activeClientID = this.model.data.activeElement.clientID;
+                    if (activeClientID !== null && !this.hoverNeedsUpdate) {
+                        return;
+                    }
+                    this.hoverNeedsUpdate = false;
+
+                    if (activeClientID !== intersectedClientID) {
+                        const object = intersectedClientID ?
+                            this.views.perspective.scene.getObjectByName(intersectedClientID) :
+                            null;
+                        if (intersectedClientID && object === undefined) return;
+
+                        const numericClientID =
+                            typeof intersectedClientID === 'string' ? +intersectedClientID : null;
+
                         this.dispatchEvent(
                             new CustomEvent('canvas.selected', {
                                 bubbles: false,
                                 cancelable: true,
                                 detail: {
-                                    clientID: castedClientID,
+                                    clientID: numericClientID,
                                 },
                             }),
                         );
@@ -2092,11 +2180,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // small check to avoid case when points change their relative orientation
         if (
             Math.sign(crosslyingPointInternalCoordinates.x - cuboidNodes[currentPointNumber][0]) !==
-                Math.sign(crosslyingPointInternalCoordinates.x - currentPointInternalCoordinates.x) ||
+            Math.sign(crosslyingPointInternalCoordinates.x - currentPointInternalCoordinates.x) ||
             Math.sign(crosslyingPointInternalCoordinates.y - cuboidNodes[currentPointNumber][1]) !==
-                Math.sign(crosslyingPointInternalCoordinates.y - currentPointInternalCoordinates.y) ||
+            Math.sign(crosslyingPointInternalCoordinates.y - currentPointInternalCoordinates.y) ||
             Math.sign(crosslyingPointInternalCoordinates.z - cuboidNodes[currentPointNumber][2]) !==
-                Math.sign(crosslyingPointInternalCoordinates.z - currentPointInternalCoordinates.z)
+            Math.sign(crosslyingPointInternalCoordinates.z - currentPointInternalCoordinates.z)
         ) {
             return;
         }

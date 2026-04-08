@@ -30,6 +30,7 @@ from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 @extend_schema(tags=["consensus"])
 class ConsensusMergesViewSet(viewsets.GenericViewSet):
+    iam_supports_organization_params = False
     iam_permission_class = ConsensusMergePermission
 
     CREATE_MERGE_RQ_ID_PARAMETER = "rq_id"
@@ -41,12 +42,10 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
         responses={
             "202": OpenApiResponse(
                 RqIdSerializer,
-                description=textwrap.dedent(
-                    """\
+                description=textwrap.dedent("""\
                     A consensus merge request has been enqueued, the request id is returned.
                     The request status can be checked by using common requests API: GET /api/requests/<rq_id>
-                """
-                ),
+                """),
             ),
             "400": OpenApiResponse(
                 description="Invalid or failed request, check the response data for details"
@@ -125,7 +124,7 @@ class ConsensusSettingsViewSet(
 ):
     queryset = ConsensusSettings.objects
 
-    iam_organization_field = "task__organization"
+    iam_supports_organization_params = True
     iam_permission_class = ConsensusSettingPermission
 
     search_fields = []

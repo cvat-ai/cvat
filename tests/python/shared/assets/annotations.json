@@ -18,6 +18,7 @@
             377.9619903564453
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -46,6 +47,7 @@
             250.15180722891637
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -74,6 +76,7 @@
             258.9650602409638
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -102,6 +105,7 @@
             270.9230854605994
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -126,6 +130,7 @@
             499.25283018867776
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -161,6 +166,7 @@
             319.63386727689067
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -198,6 +204,7 @@
             163.03832951945333
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -231,6 +238,7 @@
             127.35044929396645
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -258,6 +266,7 @@
             362.6243902439037
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -297,6 +306,7 @@
             763.3266590389048
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -322,6 +332,7 @@
             138.40000000000146
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -355,6 +366,7 @@
             71.45483359746322
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -382,6 +394,7 @@
             241.263671875
           ],
           "rotation": 45.9,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -402,6 +415,7 @@
             286.75693673695605
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -451,6 +465,7 @@
                 118.10276296228554
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -468,6 +483,7 @@
                 274.6245183225243
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -490,6 +506,7 @@
                 67.8260869565238
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -507,6 +524,7 @@
                 276.52173913043686
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -520,6 +538,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 0
@@ -733,6 +752,7 @@
             643.614457831327
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -753,6 +773,7 @@
             513.3868808567604
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -780,6 +801,7 @@
             241.263671875
           ],
           "rotation": 45.9,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -800,6 +822,7 @@
             286.75693673695605
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -844,6 +867,7 @@
                 138.72697241590762
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -861,6 +885,7 @@
                 421.9659673659692
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -878,6 +903,7 @@
                 107.42983682983868
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -895,6 +921,7 @@
                 337.46374412038085
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -908,6 +935,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 0
@@ -940,6 +968,7 @@
             191.28914362778414
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -965,6 +994,7 @@
             251.54672960215976
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -997,6 +1027,7 @@
             170.58636363636288
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -1022,6 +1053,7 @@
             209.8590909090908
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -1189,6 +1221,7 @@
             138.0929989443539
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -1209,6 +1242,7 @@
                 51.085564225393554
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1226,6 +1260,7 @@
                 101.86367376801435
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1243,6 +1278,7 @@
                 30.260833689097126
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1260,6 +1296,7 @@
                 114.13029555429613
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -1273,6 +1310,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 0
@@ -1429,6 +1467,7 @@
             279.29221193910234
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -1458,6 +1497,7 @@
             154.708984375
           ],
           "rotation": 118.39999999999998,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -1487,6 +1527,7 @@
             255.08366924483562
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -1522,6 +1563,7 @@
             253.77548562694574
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -1555,6 +1597,7 @@
             121.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -1707,6 +1750,7 @@
             158.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "mask",
           "z_order": 0
@@ -1727,6 +1771,7 @@
             155.80020141601562
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -1756,6 +1801,7 @@
             259.6930442448356
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -1789,6 +1835,7 @@
             375.5
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 3
@@ -1813,6 +1860,7 @@
             300.8837248764885
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 4
@@ -1837,6 +1885,7 @@
             206.70000000000073
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 3
@@ -1870,6 +1919,7 @@
             266.8609498975875
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 1
@@ -1899,6 +1949,7 @@
             228.9128038007966
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 4
@@ -1928,6 +1979,7 @@
             72.30000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -1957,6 +2009,7 @@
             70.30000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -1986,6 +2039,7 @@
             72.80000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -2015,6 +2069,7 @@
             69.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -2044,6 +2099,7 @@
             39.871289443968635
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -2073,6 +2129,7 @@
             40.47109413146973
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -2102,6 +2159,7 @@
             41.80000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -2131,6 +2189,7 @@
             42.400000000001455
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -2160,6 +2219,7 @@
             42.5
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -2189,6 +2249,7 @@
             43.20000000000073
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -2218,6 +2279,7 @@
             42.5
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -2249,6 +2311,7 @@
             318.60000000000036
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -2267,6 +2330,7 @@
             314.6240234375
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -2294,6 +2358,7 @@
             302.1923828125
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -2323,6 +2388,7 @@
             324.43784450126077
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 4
@@ -2341,6 +2407,7 @@
             283.8720703125
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -2370,6 +2437,7 @@
             338.8000000000011
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -2403,6 +2471,7 @@
             167.41038033611403
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 4
@@ -2438,6 +2507,7 @@
             204.0501219746493
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 4
@@ -2467,6 +2537,7 @@
             191.6484375
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "ellipse",
           "z_order": 4
@@ -2474,23 +2545,6 @@
         {
           "attributes": [],
           "elements": [
-            {
-              "attributes": [],
-              "frame": 0,
-              "group": 0,
-              "id": 144,
-              "label_id": 70,
-              "occluded": false,
-              "outside": false,
-              "points": [
-                616.9673812833025,
-                96.87642507954297
-              ],
-              "rotation": 0.0,
-              "source": "manual",
-              "type": "points",
-              "z_order": 4
-            },
             {
               "attributes": [],
               "frame": 0,
@@ -2504,6 +2558,25 @@
                 65.9970703125
               ],
               "rotation": 0.0,
+              "score": 1.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 4
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 144,
+              "label_id": 70,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                616.9673812833025,
+                96.87642507954297
+              ],
+              "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2521,6 +2594,7 @@
                 97.32024233915763
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2538,6 +2612,7 @@
                 128.1533203125
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2551,6 +2626,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 4
@@ -2571,6 +2647,7 @@
                 67.95976734549367
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2588,6 +2665,7 @@
                 102.15625
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2605,6 +2683,7 @@
                 102.618369002279
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2622,6 +2701,7 @@
                 134.04215851499248
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -2635,6 +2715,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 4
@@ -2646,6 +2727,31 @@
     },
     "28": {
       "shapes": [
+        {
+          "attributes": [],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 97,
+          "label_id": 66,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            455.359375,
+            88.2421875,
+            463.2108659572077,
+            158.9047260271691,
+            545.6502846439089,
+            155.6333205237297,
+            536.4903492342764,
+            84.97096164941286
+          ],
+          "rotation": 0.0,
+          "score": 1.0,
+          "source": "manual",
+          "type": "polygon",
+          "z_order": 0
+        },
         {
           "attributes": [
             {
@@ -2677,6 +2783,7 @@
             128.80779539551622
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -2710,6 +2817,7 @@
             270.7867942448356
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -2743,6 +2851,7 @@
             258.35545333176196
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -2772,6 +2881,7 @@
             154.32475832235104
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -2803,6 +2913,7 @@
             315.93219019231583
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -2832,35 +2943,7 @@
             40.5
           ],
           "rotation": 0.0,
-          "source": "manual",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 13,
-              "value": "yy"
-            },
-            {
-              "spec_id": 14,
-              "value": "1"
-            }
-          ],
-          "elements": [],
-          "frame": 0,
-          "group": 1,
-          "id": 104,
-          "label_id": 67,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            147.84765625,
-            18.888671875,
-            170.06289062500036,
-            42.408593750000364
-          ],
-          "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -2890,6 +2973,7 @@
             41.771484375
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -2919,6 +3003,7 @@
             44.371484375000364
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -2948,6 +3033,7 @@
             43.80000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -2977,6 +3063,7 @@
             43.100000000000364
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -3006,6 +3093,7 @@
             43.80000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -3035,6 +3123,7 @@
             43.80000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -3064,6 +3153,7 @@
             69.92229946158295
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -3093,6 +3183,7 @@
             72.5396207363392
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -3122,6 +3213,7 @@
             73.84818293771605
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -3151,6 +3243,7 @@
             73.84818293771605
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -3184,6 +3277,7 @@
             319.5961643561677
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -3217,6 +3311,7 @@
             239.3813014118059
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -3315,6 +3410,7 @@
             284.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "mask",
           "z_order": 0
@@ -3344,6 +3440,7 @@
             328.36474392649325
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -3371,6 +3468,7 @@
             290.4150390625
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -3398,6 +3496,7 @@
             302.1923828125
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -3425,6 +3524,7 @@
             309.3896484375
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -3443,6 +3543,7 @@
             338.8000000000011
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -3470,32 +3571,39 @@
             315.2000000000007
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
         },
         {
-          "attributes": [],
+          "attributes": [
+            {
+              "spec_id": 13,
+              "value": "yy"
+            },
+            {
+              "spec_id": 14,
+              "value": "1"
+            }
+          ],
           "elements": [],
           "frame": 0,
-          "group": 0,
-          "id": 97,
-          "label_id": 66,
+          "group": 1,
+          "id": 104,
+          "label_id": 67,
           "occluded": false,
           "outside": false,
           "points": [
-            455.359375,
-            88.2421875,
-            463.2108659572077,
-            158.9047260271691,
-            545.6502846439089,
-            155.6333205237297,
-            536.4903492342764,
-            84.97096164941286
+            147.84765625,
+            18.888671875,
+            170.06289062500036,
+            42.408593750000364
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
-          "type": "polygon",
+          "type": "rectangle",
           "z_order": 0
         },
         {
@@ -3514,6 +3622,7 @@
                 102.21971169729295
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3531,6 +3640,7 @@
                 102.5765956792493
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3548,6 +3658,7 @@
                 126.84447272867328
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3565,6 +3676,7 @@
                 75.810546875
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3578,6 +3690,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 0
@@ -3598,6 +3711,7 @@
                 125.53573700986453
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3615,6 +3729,7 @@
                 68.61328125
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3632,6 +3747,7 @@
                 98.06965739794214
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3649,6 +3765,7 @@
                 98.46772030089414
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -3662,6 +3779,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 0
@@ -3697,6 +3815,7 @@
             25.36264261373799
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -3726,6 +3845,7 @@
             37.9365234375
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "ellipse",
           "z_order": 0
@@ -3767,6 +3887,7 @@
             91.11401473101215
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "cuboid",
           "z_order": 0
@@ -4087,6 +4208,7 @@
             124.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "mask",
           "z_order": 0
@@ -4120,6 +4242,7 @@
             122.28994314590454
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -4153,6 +4276,7 @@
             140.0476165258424
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -4182,6 +4306,7 @@
             62.357795488609554
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4244,6 +4369,7 @@
             271.5955777168274
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4264,6 +4390,7 @@
             164.59188774228096
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4284,6 +4411,7 @@
             679.8631751060493
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4304,6 +4432,7 @@
             182.6914280414585
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4324,6 +4453,7 @@
             196.5581221222874
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4351,6 +4481,7 @@
             129.34078386128022
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4371,6 +4502,7 @@
             333.9054008126259
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4391,6 +4523,7 @@
             374.42159963250197
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4411,6 +4544,7 @@
             214.25403320789337
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4431,6 +4565,7 @@
             141.0943407505747
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4458,6 +4593,7 @@
             115.21824382543673
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4485,6 +4621,7 @@
             610.5770170927044
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -4505,6 +4642,7 @@
             128.69934738874508
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -4525,6 +4663,7 @@
             76.9621251821518
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -4545,6 +4684,7 @@
             366.6659974813465
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -4565,6 +4705,7 @@
             201.82309412956238
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -4585,6 +4726,7 @@
             85.61091347932779
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -4605,6 +4747,7 @@
             213.02496989369502
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -4667,6 +4810,7 @@
             18.900000000001455
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4692,6 +4836,7 @@
             15.200000000002547
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4717,6 +4862,7 @@
             24.900000000001455
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4742,6 +4888,7 @@
             23.900000000001455
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4774,6 +4921,7 @@
             17.30000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4799,6 +4947,7 @@
             26.400000000003274
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4824,6 +4973,7 @@
             38.55000000000291
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -4853,6 +5003,7 @@
             24.450000000002547
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -4880,6 +5031,7 @@
             39.77950727505595
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -4916,6 +5068,7 @@
             11.30000000000291
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -4943,6 +5096,7 @@
             20.400000000003274
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -4974,6 +5128,7 @@
             12.100000000002183
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -4999,6 +5154,7 @@
             21.600000000004002
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -5024,6 +5180,7 @@
             35.071444674014856
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -5049,6 +5206,7 @@
             17.100000000002183
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -5074,6 +5232,7 @@
             21.500000000003638
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -5106,6 +5265,7 @@
             21.700000000002547
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -5131,6 +5291,7 @@
             19.50000000000182
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -5156,6 +5317,7 @@
             34.50000000000182
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -5181,6 +5343,7 @@
             18.700000000002547
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -5206,6 +5369,7 @@
             42.765472201610464
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -5237,6 +5401,7 @@
             53.3835173651496
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "polygon",
           "z_order": 0
@@ -5269,6 +5434,7 @@
             134.61
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "rectangle",
           "z_order": 0
@@ -5296,6 +5462,7 @@
             130.02
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "polygon",
           "z_order": 0
@@ -5323,6 +5490,7 @@
             167.15
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "polygon",
           "z_order": 0
@@ -5352,6 +5520,7 @@
             107.06
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "polyline",
           "z_order": 0
@@ -5379,6 +5548,7 @@
             143.42
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "polyline",
           "z_order": 0
@@ -5408,6 +5578,7 @@
             40.48
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "points",
           "z_order": 0
@@ -5435,6 +5606,7 @@
             18.29
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "points",
           "z_order": 0
@@ -5460,6 +5632,7 @@
             78.45
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "ellipse",
           "z_order": 0
@@ -5734,6 +5907,7 @@
             80.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "mask",
           "z_order": 0
@@ -6032,6 +6206,7 @@
             81.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "mask",
           "z_order": 0
@@ -6078,6 +6253,7 @@
             134.6134376525879
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -6105,6 +6281,7 @@
             130.0215477107613
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -6134,6 +6311,7 @@
             107.06161319529565
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -6161,6 +6339,7 @@
             68.02972451900314
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -6186,6 +6365,7 @@
             78.45000000000073
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "ellipse",
           "z_order": 0
@@ -6223,6 +6403,7 @@
             124.6208099212563
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "cuboid",
           "z_order": 0
@@ -6497,6 +6678,7 @@
             80.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "mask",
           "z_order": 0
@@ -6543,6 +6725,7 @@
             134.61353461385443
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -6570,6 +6753,7 @@
             130.0215477107613
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -6599,6 +6783,7 @@
             103.20000000000073
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -6626,6 +6811,7 @@
             40.47780310044436
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -6651,6 +6837,7 @@
             96.72207031249854
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "ellipse",
           "z_order": 0
@@ -6688,6 +6875,7 @@
             138.84761929236265
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "cuboid",
           "z_order": 0
@@ -6962,6 +7150,7 @@
             80.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "mask",
           "z_order": 0
@@ -7008,6 +7197,7 @@
             134.61353461385443
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -7035,6 +7225,7 @@
             130.0215477107613
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -7064,6 +7255,7 @@
             107.06161319529565
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -7093,6 +7285,7 @@
             40.47780310044436
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -7118,6 +7311,7 @@
             97.1220703125
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "ellipse",
           "z_order": 0
@@ -7155,6 +7349,7 @@
             124.62080992126721
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "cuboid",
           "z_order": 0
@@ -7429,6 +7624,7 @@
             80.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "mask",
           "z_order": 0
@@ -7456,6 +7652,7 @@
             167.1504539607613
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -7483,6 +7680,7 @@
             143.42489444529565
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -7510,6 +7708,7 @@
             18.293232787944362
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -7808,6 +8007,7 @@
             81.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "mask",
           "z_order": 0
@@ -7854,6 +8054,7 @@
             110.50560337261595
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -7886,6 +8087,7 @@
             226.14893165908325
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -7911,6 +8113,7 @@
             376.3369068338834
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -7949,6 +8152,7 @@
             239.4008118215661
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -7974,6 +8178,7 @@
             424.9271340963169
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8006,6 +8211,7 @@
             111.65360009838878
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8031,6 +8237,7 @@
             127.72555425921564
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8056,6 +8263,7 @@
             215.98915686784676
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8088,6 +8296,7 @@
             200.1
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "rectangle",
           "z_order": 0
@@ -8199,6 +8408,7 @@
             200.10000000000036
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8224,6 +8434,7 @@
             201.2023437500011
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8303,6 +8514,7 @@
             168.20000000000073
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8328,6 +8540,7 @@
             136.70000000000073
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8353,6 +8566,7 @@
             103.53329630866392
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8451,6 +8665,7 @@
             84.28634338054144
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8471,6 +8686,7 @@
             80.07650016588923
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8498,6 +8714,7 @@
             113.40121456218549
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8518,6 +8735,7 @@
             83.67852446735014
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8538,6 +8756,7 @@
             114.86900172736205
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8558,6 +8777,7 @@
             77.89582791912471
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8585,6 +8805,7 @@
             81.73397491757532
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8612,6 +8833,7 @@
             81.73397491757532
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8632,6 +8854,7 @@
             103.64994146798927
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8652,6 +8875,7 @@
             81.51198562735408
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8679,6 +8903,7 @@
             84.03594384666576
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8699,6 +8924,7 @@
             84.03594384666576
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8719,6 +8945,7 @@
             83.33201414520954
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -8778,6 +9005,7 @@
             377.9619903564453
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -8806,6 +9034,7 @@
             250.15180722891637
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -8834,6 +9063,7 @@
             258.9650602409638
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -8862,6 +9092,7 @@
             270.9230854605994
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -8886,6 +9117,7 @@
             499.25283018867776
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -8921,6 +9153,7 @@
             319.63386727689067
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -8958,6 +9191,7 @@
             163.03832951945333
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -8991,6 +9225,7 @@
             127.35044929396645
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -9018,6 +9253,7 @@
             362.6243902439037
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9038,6 +9274,7 @@
             763.3266590389048
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9063,6 +9300,7 @@
             138.40000000000146
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9096,6 +9334,7 @@
             71.45483359746322
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -9123,6 +9362,7 @@
             241.263671875
           ],
           "rotation": 45.9,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9143,6 +9383,7 @@
             286.75693673695605
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9192,6 +9433,7 @@
                 118.10276296228554
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9209,6 +9451,7 @@
                 274.6245183225243
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9231,6 +9474,7 @@
                 67.8260869565238
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9248,6 +9492,7 @@
                 276.52173913043686
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9261,6 +9506,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 0
@@ -9474,6 +9720,7 @@
             643.614457831327
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9494,6 +9741,7 @@
             513.3868808567604
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9521,6 +9769,7 @@
             241.263671875
           ],
           "rotation": 45.9,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9541,6 +9790,7 @@
             286.75693673695605
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9585,6 +9835,7 @@
                 138.72697241590762
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9602,6 +9853,7 @@
                 421.9659673659692
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9619,6 +9871,7 @@
                 107.42983682983868
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9636,6 +9889,7 @@
                 337.46374412038085
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9649,6 +9903,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 0
@@ -9681,6 +9936,7 @@
             191.28914362778414
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9706,6 +9962,7 @@
             251.54672960215976
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9738,6 +9995,7 @@
             170.58636363636288
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9763,6 +10021,7 @@
             209.8590909090908
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9790,6 +10049,7 @@
             138.0929989443539
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -9810,6 +10070,7 @@
                 51.085564225393554
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9827,6 +10088,7 @@
                 101.86367376801435
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9844,6 +10106,7 @@
                 30.260833689097126
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9861,6 +10124,7 @@
                 114.13029555429613
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 0
@@ -9874,6 +10138,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 0
@@ -10230,6 +10495,7 @@
             279.29221193910234
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -10259,6 +10525,7 @@
             154.708984375
           ],
           "rotation": 118.39999999999998,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -10288,6 +10555,7 @@
             255.08366924483562
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -10323,6 +10591,7 @@
             253.77548562694574
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -10356,6 +10625,7 @@
             121.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -10508,6 +10778,7 @@
             158.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "mask",
           "z_order": 0
@@ -10528,6 +10799,7 @@
             155.80020141601562
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10557,6 +10829,7 @@
             259.6930442448356
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 0
@@ -10590,6 +10863,7 @@
             375.5
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 3
@@ -10614,6 +10888,7 @@
             300.8837248764885
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 4
@@ -10638,6 +10913,7 @@
             206.70000000000073
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 3
@@ -10671,6 +10947,7 @@
             266.8609498975875
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 1
@@ -10700,6 +10977,7 @@
             228.9128038007966
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 4
@@ -10729,6 +11007,7 @@
             72.30000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10758,6 +11037,7 @@
             70.30000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10787,6 +11067,7 @@
             72.80000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10816,6 +11097,7 @@
             69.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10845,6 +11127,7 @@
             39.871289443968635
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10874,6 +11157,7 @@
             40.47109413146973
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10903,6 +11187,7 @@
             41.80000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10932,6 +11217,7 @@
             42.400000000001455
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10961,6 +11247,7 @@
             42.5
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -10990,6 +11277,7 @@
             43.20000000000073
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -11019,6 +11307,7 @@
             42.5
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 1
@@ -11050,6 +11339,7 @@
             318.60000000000036
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -11068,6 +11358,7 @@
             314.6240234375
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -11095,6 +11386,7 @@
             302.1923828125
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -11124,6 +11416,7 @@
             324.43784450126077
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 4
@@ -11142,6 +11435,7 @@
             283.8720703125
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -11171,6 +11465,7 @@
             338.8000000000011
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 4
@@ -11204,6 +11499,7 @@
             167.41038033611403
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polyline",
           "z_order": 4
@@ -11239,6 +11535,7 @@
             204.0501219746493
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 4
@@ -11268,6 +11565,7 @@
             191.6484375
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "ellipse",
           "z_order": 4
@@ -11275,23 +11573,6 @@
         {
           "attributes": [],
           "elements": [
-            {
-              "attributes": [],
-              "frame": 0,
-              "group": 0,
-              "id": 144,
-              "label_id": 70,
-              "occluded": false,
-              "outside": false,
-              "points": [
-                616.9673812833025,
-                96.87642507954297
-              ],
-              "rotation": 0.0,
-              "source": "manual",
-              "type": "points",
-              "z_order": 4
-            },
             {
               "attributes": [],
               "frame": 0,
@@ -11305,6 +11586,25 @@
                 65.9970703125
               ],
               "rotation": 0.0,
+              "score": 1.0,
+              "source": "manual",
+              "type": "points",
+              "z_order": 4
+            },
+            {
+              "attributes": [],
+              "frame": 0,
+              "group": 0,
+              "id": 144,
+              "label_id": 70,
+              "occluded": false,
+              "outside": false,
+              "points": [
+                616.9673812833025,
+                96.87642507954297
+              ],
+              "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11322,6 +11622,7 @@
                 97.32024233915763
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11339,6 +11640,7 @@
                 128.1533203125
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11352,6 +11654,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 4
@@ -11372,6 +11675,7 @@
                 67.95976734549367
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11389,6 +11693,7 @@
                 102.15625
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11406,6 +11711,7 @@
                 102.618369002279
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11423,6 +11729,7 @@
                 134.04215851499248
               ],
               "rotation": 0.0,
+              "score": 1.0,
               "source": "manual",
               "type": "points",
               "z_order": 4
@@ -11436,6 +11743,7 @@
           "outside": false,
           "points": [],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "skeleton",
           "z_order": 4
@@ -11463,6 +11771,7 @@
             271.5955777168274
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11483,6 +11792,7 @@
             164.59188774228096
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11503,6 +11813,7 @@
             679.8631751060493
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11523,6 +11834,7 @@
             182.6914280414585
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11543,6 +11855,7 @@
             196.5581221222874
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11563,6 +11876,7 @@
             129.34078386128022
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11583,6 +11897,7 @@
             333.9054008126259
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11603,6 +11918,7 @@
             374.42159963250197
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11623,6 +11939,7 @@
             214.25403320789337
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11643,6 +11960,7 @@
             141.0943407505747
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11663,6 +11981,7 @@
             115.21824382543673
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11725,6 +12044,7 @@
             18.900000000001455
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11750,6 +12070,7 @@
             15.200000000002547
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11775,6 +12096,7 @@
             24.900000000001455
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11800,6 +12122,7 @@
             23.900000000001455
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11825,6 +12148,7 @@
             17.30000000000109
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11850,6 +12174,7 @@
             26.400000000003274
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11875,6 +12200,7 @@
             38.55000000000291
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -11904,6 +12230,7 @@
             24.450000000002547
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -11931,6 +12258,7 @@
             39.77950727505595
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "points",
           "z_order": 0
@@ -11960,6 +12288,7 @@
             11.30000000000291
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -11987,6 +12316,7 @@
             20.400000000003274
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -12018,6 +12348,7 @@
             12.100000000002183
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "polygon",
           "z_order": 0
@@ -12043,6 +12374,7 @@
             21.600000000004002
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -12068,6 +12400,7 @@
             35.071444674014856
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -12093,6 +12426,7 @@
             17.100000000002183
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -12118,6 +12452,7 @@
             21.500000000003638
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -12143,6 +12478,7 @@
             21.700000000002547
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -12168,6 +12504,7 @@
             19.50000000000182
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -12193,6 +12530,7 @@
             34.50000000000182
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -12218,6 +12556,7 @@
             18.700000000002547
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -12243,6 +12582,7 @@
             42.765472201610464
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -12274,6 +12614,7 @@
             53.3835173651496
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "polygon",
           "z_order": 0
@@ -12306,6 +12647,7 @@
             134.61
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "rectangle",
           "z_order": 0
@@ -12333,6 +12675,7 @@
             130.02
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "polygon",
           "z_order": 0
@@ -12360,6 +12703,7 @@
             167.15
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "polygon",
           "z_order": 0
@@ -12389,6 +12733,7 @@
             107.06
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "polyline",
           "z_order": 0
@@ -12416,6 +12761,7 @@
             143.42
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "polyline",
           "z_order": 0
@@ -12445,6 +12791,7 @@
             40.48
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "points",
           "z_order": 0
@@ -12472,6 +12819,7 @@
             18.29
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "points",
           "z_order": 0
@@ -12497,6 +12845,7 @@
             78.45
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "ellipse",
           "z_order": 0
@@ -12771,6 +13120,7 @@
             80.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "mask",
           "z_order": 0
@@ -13069,6 +13419,7 @@
             81.0
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "mask",
           "z_order": 0
@@ -13094,6 +13445,7 @@
             110.50560337261595
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -13119,6 +13471,7 @@
             111.65360009838878
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -13144,6 +13497,7 @@
             127.72555425921564
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -13169,6 +13523,7 @@
             215.98915686784676
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -13215,6 +13570,7 @@
             200.1
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "consensus",
           "type": "rectangle",
           "z_order": 0
@@ -13321,6 +13677,7 @@
             84.28634338054144
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -13341,6 +13698,7 @@
             80.07650016588923
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -13368,6 +13726,7 @@
             81.73397491757532
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -13388,6 +13747,7 @@
             81.73397491757532
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -13408,6 +13768,7 @@
             103.64994146798927
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -13428,6 +13789,7 @@
             81.51198562735408
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "manual",
           "type": "rectangle",
           "z_order": 0
@@ -13448,6 +13810,7 @@
             84.03594384666576
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -13468,6 +13831,7 @@
             84.03594384666576
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0
@@ -13488,6 +13852,7 @@
             83.33201414520954
           ],
           "rotation": 0.0,
+          "score": 1.0,
           "source": "Ground truth",
           "type": "rectangle",
           "z_order": 0

@@ -8,7 +8,7 @@ import {
     ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
-    DataStorageLocation,
+    DataStorageLocation, RQStatus,
 } from './enums';
 import { Camelized, CamelizedV2 } from './type-utils';
 
@@ -126,6 +126,7 @@ export interface SerializedTask {
     overlap: number | null;
     owner: SerializedUser;
     project_id: number | null;
+    project_name: string | null;
     guide_id: number | null;
     segment_size: number;
     size: number;
@@ -149,6 +150,7 @@ export interface SerializedJob {
     labels: { count: number; url: string };
     mode: TaskMode;
     project_id: number | null;
+    project_name: string | null;
     guide_id: number | null;
     stage: JobStage;
     state: JobState;
@@ -157,13 +159,14 @@ export interface SerializedJob {
     start_frame: number;
     stop_frame: number;
     task_id: number;
+    task_name: string;
     updated_date: string;
     created_date: string;
     url: string;
     source_storage: SerializedStorage | null;
     target_storage: SerializedStorage | null;
     parent_job_id: number | null;
-    consensus_replicas: number;
+    replicas_count: number;
 }
 
 export type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
@@ -377,7 +380,6 @@ export interface SerializedQualityReportData {
 export interface SerializedConsensusSettingsData {
     id?: number;
     task?: number;
-    quorum?: number;
     iou_threshold?: number;
     descriptions?: Record<string, string>;
 }
@@ -423,6 +425,7 @@ export interface SerializedShape {
     group: number;
     frame: number;
     source: Source;
+    score?: number;
     attributes: { spec_id: number; value: string }[];
     elements: Omit<SerializedShape, 'elements'>[];
     occluded: boolean;
@@ -576,6 +579,20 @@ export interface SerializedRequest {
     finished_date?: string;
     expiry_date?: string;
     owner: any;
+}
+
+export interface SerializedFunctionRequest {
+    id: string;
+    status: RQStatus;
+    enqueued: string;
+    started: string | null;
+    ended: string | null;
+    exc_info: string;
+    progress: number | null;
+    function: {
+        id: number | string;
+        task: number;
+    };
 }
 
 export interface SerializedJobValidationLayout {

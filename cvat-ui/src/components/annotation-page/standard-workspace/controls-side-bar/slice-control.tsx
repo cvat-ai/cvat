@@ -88,4 +88,5 @@ function SliceControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(SliceControl, { displayName: 'SliceControl' });
 export default React.memo(SliceControl);
