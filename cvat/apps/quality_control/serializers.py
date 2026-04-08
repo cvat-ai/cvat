@@ -25,11 +25,19 @@ class AnnotationIdSerializer(serializers.ModelSerializer):
 
 class AnnotationConflictSerializer(serializers.ModelSerializer):
     annotation_ids = AnnotationIdSerializer(many=True)
+    attributes = serializers.ListSerializer(child=serializers.CharField(), required=False)
 
     class Meta:
         model = models.AnnotationConflict
         fields = ("id", "frame", "type", "annotation_ids", "attributes", "report_id", "severity")
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        serialized = super().to_representation(instance)
+        if not instance.attributes:
+            serialized.pop("attributes")
+
+        return serialized
 
 
 class QualityReportTasksSummarySerializer(serializers.Serializer):

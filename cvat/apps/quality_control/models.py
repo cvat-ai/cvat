@@ -229,6 +229,7 @@ class AnnotationType(str, Enum):
     TAG = "tag"
     SHAPE = "shape"
     TRACK = "track"
+    INTERVAL = "interval"
 
     def __str__(self) -> str:
         return self.value
@@ -254,7 +255,7 @@ class AnnotationId(models.Model):
         if self.type in [AnnotationType.SHAPE, AnnotationType.TRACK]:
             if not self.shape_type:
                 raise ValidationError("Annotation kind must be specified")
-        elif self.type == AnnotationType.TAG:
+        elif self.type in [AnnotationType.TAG, AnnotationType.INTERVAL]:
             if self.shape_type:
                 raise ValidationError("Annotation kind must be empty")
         else:
