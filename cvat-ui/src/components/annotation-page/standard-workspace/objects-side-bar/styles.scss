@@ -469,6 +469,12 @@
     }
 }
 
+.cvat-actions-slider-wrapper {
+    position: relative;
+    left: 0;
+    margin-bottom: $grid-unit-size;
+}
+
 .cvat-interactor-threshold-wrapper {
     @extend .cvat-approx-poly-threshold-wrapper;
 

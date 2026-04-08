@@ -297,7 +297,7 @@ function ActionParameterComponent(props: ActionParameterProps & {
         const [min, max, step] = computedValues.map((val) => +val);
 
         return (
-            <div className='cvat-approx-poly-threshold-wrapper' style={{ left: '0' }}>
+            <div className='cvat-approx-poly-threshold-wrapper cvat-actions-slider-wrapper'>
                 <Slider
                     value={+value}
                     min={min}
