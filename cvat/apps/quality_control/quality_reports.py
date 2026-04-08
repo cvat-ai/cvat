@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import csv
 from collections.abc import Hashable
-from contextlib import suppress
 from functools import cached_property
 from io import BytesIO, StringIO
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -14,7 +13,6 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import datumaro as dm
 from datumaro.util import dump_json
 from django.db import transaction
-from django.db.models import OuterRef, Subquery, prefetch_related_objects
 from django.utils.text import slugify
 
 from cvat.apps.dataset_manager.bindings import (
@@ -27,7 +25,6 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.engine import serializers as engine_serializers
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     Job,
     Project,
@@ -38,8 +35,6 @@ from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
     AnnotationId,
     ComparisonReport,
-    ComparisonReportJobStats,
-    ComparisonReportTaskStats,
 )
 from cvat.apps.quality_control.models import AnnotationType
 

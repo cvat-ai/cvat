@@ -24,6 +24,7 @@ from shared.utils.config import make_api_client
 
 from .utils import (
     CollectionSimpleFilterTestBase,
+    DEFAULT_RETRIES,
     invite_user_to_org,
     register_new_user,
     wait_background_request,
@@ -32,7 +33,12 @@ from .utils import (
 
 class _PermissionTestBase:
     def create_quality_report(
-        self, *, user: str, task_id: int | None = None, project_id: int | None = None
+        self,
+        *,
+        user: str,
+        task_id: int | None = None,
+        project_id: int | None = None,
+        max_retries: int = DEFAULT_RETRIES,
     ) -> dict:
         assert task_id is not None or project_id is not None
 
@@ -47,7 +53,11 @@ class _PermissionTestBase:
             assert response.status == HTTPStatus.ACCEPTED
             rq_id = json.loads(response.data)["rq_id"]
 
-            background_request, _ = wait_background_request(api_client, rq_id)
+            background_request, _ = wait_background_request(
+                api_client,
+                rq_id,
+                max_retries=max_retries,
+            )
             assert (
                 background_request.status.value
                 == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
