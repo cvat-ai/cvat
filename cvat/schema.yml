@@ -351,7 +351,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordChangeSerializerExRequest'
+              $ref: '#/components/schemas/PasswordChangeRequest'
         required: true
       security:
       - tokenAuth: []
@@ -413,7 +413,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PasswordResetConfirmSerializerExRequest'
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
         required: true
       security:
       - tokenAuth: []
@@ -9452,7 +9452,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WebhookRead'
-    PasswordChangeSerializerExRequest:
+    PasswordChangeRequest:
       type: object
       properties:
         old_password:
@@ -9473,7 +9473,7 @@ components:
       - new_password1
       - new_password2
       - old_password
-    PasswordResetConfirmSerializerExRequest:
+    PasswordResetConfirmRequest:
       type: object
       description: Serializer for confirming a password reset attempt.
       properties:

@@ -300,7 +300,7 @@ class TestCredentialsManagement:
         new_pass = "5w4knrqaW#$@gewa"
         with make_api_client(username) as api_client:
             info, response = api_client.auth_api.create_password_change(
-                models.PasswordChangeSerializerExRequest(
+                models.PasswordChangeRequest(
                     old_password=USER_PASS, new_password1=new_pass, new_password2=new_pass
                 )
             )
@@ -322,7 +322,7 @@ class TestCredentialsManagement:
         new_pass = "Aa1" + ("x" * 253)
         with make_api_client(username) as api_client:
             info, response = api_client.auth_api.create_password_change(
-                models.PasswordChangeSerializerExRequest(
+                models.PasswordChangeRequest(
                     old_password=USER_PASS, new_password1=new_pass, new_password2=new_pass
                 )
             )
@@ -356,7 +356,7 @@ class TestCredentialsManagement:
         new_pass = "pass"
         with make_api_client(username) as api_client:
             _, response = api_client.auth_api.create_password_change(
-                models.PasswordChangeSerializerExRequest(
+                models.PasswordChangeRequest(
                     old_password=USER_PASS, new_password1=new_pass, new_password2=new_pass
                 ),
                 _parse_response=False,
@@ -374,7 +374,7 @@ class TestCredentialsManagement:
         username = admin_user
         with make_api_client(username) as api_client:
             _, response = api_client.auth_api.create_password_change(
-                models.PasswordChangeSerializerExRequest(
+                models.PasswordChangeRequest(
                     old_password=USER_PASS, new_password1="3j4tb13/T$#", new_password2="q#@$n34g5"
                 ),
                 _parse_response=False,

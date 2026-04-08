@@ -17,7 +17,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext_lazy as _
-from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -125,6 +125,7 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
         return {"domain_override": domain}
 
 
+@extend_schema_serializer(component_name="PasswordResetConfirm")
 class PasswordResetConfirmSerializerEx(PasswordResetConfirmSerializer):
     # Keep CVAT's password length policy independent from dj-rest-auth defaults.
     new_password1 = serializers.CharField(
@@ -141,6 +142,7 @@ class PasswordResetConfirmSerializerEx(PasswordResetConfirmSerializer):
     )
 
 
+@extend_schema_serializer(component_name="PasswordChange")
 class PasswordChangeSerializerEx(PasswordChangeSerializer):
     # Keep old password uncapped here so existing users are not blocked by serializer limits.
     old_password = serializers.CharField(
