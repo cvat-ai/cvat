@@ -29,16 +29,23 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         settings_id: int | None = None,
         enabled: bool = True,
         required_score: float = 0.7,
+        annotation_type: str = "rectangle",
+        filter_expression: str | None = None,
+        parent_requirement: int | None = None,
     ) -> dict[str, Any]:
         payload = {
             "name": name,
-            "annotation_type": "rectangle",
+            "annotation_type": annotation_type,
             "metric": "accuracy",
             "required_score": required_score,
             "enabled": enabled,
         }
         if settings_id is not None:
             payload["settings_id"] = settings_id
+        if filter_expression is not None:
+            payload["filter"] = filter_expression
+        if parent_requirement is not None:
+            payload["parent_requirement"] = parent_requirement
         return payload
 
     def _get_task_settings(self, user: str, *, task_id: int, **kwargs) -> dict[str, Any]:
@@ -202,6 +209,112 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         response = self._delete_requirement(admin_user, requirement_id)
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "last quality requirement" in json.dumps(response.json()).lower()
+
+    # TODO: Add parent skeleton information to the model 
+    def test_create_requirement_rejects_unimplemented_filter_terms(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"unsupported-filter-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="skeleton_keypoint",
+                filter_expression=json.dumps(
+                    {"==": [{"var": "shape.skeleton.label"}, "person"]}
+                ),
+            ),
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "shape.skeleton.label" in json.dumps(response.json())
+
+    def test_create_requirement_rejects_attribute_root_terms_for_shape_requirements(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"invalid-shape-filter-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="rectangle",
+                filter_expression=json.dumps(
+                    {"==": [{"var": "attribute.name"}, "color"]}
+                ),
+            ),
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "attribute.name" in json.dumps(response.json())
+
+    def test_create_attribute_requirement_accepts_attribute_root_terms(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        parent_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"parent-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="rectangle",
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        created_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"attribute-filter-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="attribute",
+                parent_requirement=parent_requirement["id"],
+                filter_expression=json.dumps(
+                    {"==": [{"var": "attribute.name"}, "color"]}
+                ),
+            ),
+        )
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert created_requirement["annotation_type"] == "attribute"
+        assert created_requirement["parent_requirement"] == parent_requirement["id"]
+        assert created_requirement["filter"] == json.dumps(
+            {"==": [{"var": "attribute.name"}, "color"]}
+        )
+
+    def test_patch_requirement_validates_filter_using_existing_annotation_type(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        created_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"patch-filter-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="rectangle",
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        _, response = self._patch_requirement(
+            admin_user,
+            created_requirement["id"],
+            {
+                "filter": json.dumps({"==": [{"var": "attribute.name"}, "color"]}),
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "attribute.name" in json.dumps(response.json())
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_list_requirements_in_sandbox(

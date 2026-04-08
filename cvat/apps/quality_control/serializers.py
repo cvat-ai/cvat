@@ -12,6 +12,7 @@ from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.serializers import WriteOnceMixin
+from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control import models
 
 
@@ -250,6 +251,17 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             """
         ).strip(),
     )
+
+    def validate_filter(self, value):
+        annotation_type = self.initial_data.get("annotation_type")
+        if annotation_type is None and self.instance is not None:
+            annotation_type = self.instance.annotation_type
+
+        RequirementJsonLogicFilter.validate_expression(
+            value,
+            annotation_type=annotation_type,
+        )
+        return value
 
     class Meta:
         model = models.QualityRequirement
