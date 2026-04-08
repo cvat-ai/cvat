@@ -14,7 +14,6 @@ from cvat.apps.quality_control.models import (
     QualitySettings,
 )
 
-
 _DEFAULT_REQUIREMENT_TYPE_ORDER = (
     QualityRequirementAnnotationType.TAG,
     QualityRequirementAnnotationType.RECTANGLE,
@@ -49,7 +48,11 @@ def _collect_default_requirement_types(labels: Iterable[Label]) -> list[str]:
 
         available_types.update(_LABEL_TYPE_TO_REQUIREMENT_TYPES.get(LabelType(label.type), ()))
 
-    return [annotation_type for annotation_type in _DEFAULT_REQUIREMENT_TYPE_ORDER if annotation_type in available_types]
+    return [
+        annotation_type
+        for annotation_type in _DEFAULT_REQUIREMENT_TYPE_ORDER
+        if annotation_type in available_types
+    ]
 
 
 def _ensure_default_requirements_for_task(task: Task) -> None:

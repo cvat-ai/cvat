@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import itertools
+from abc import ABC, abstractmethod
 from collections import Counter
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
@@ -14,18 +14,19 @@ import attrs
 import datumaro as dm
 import numpy as np
 
+from cvat.apps.quality_control import models
 from cvat.apps.quality_control.annotation_matching import Comparator, LineMatcher, MatchingResults
 from cvat.apps.quality_control.comparison_report import (
     AnnotationConflict,
     AnnotationId,
-    ComparisonReport,
     ComparisonParameters,
+    ComparisonReport,
     ComparisonReportAnnotationComponentsSummary,
     ComparisonReportAnnotationLabelSummary,
-    ComparisonReportRequirementSummary,
     ComparisonReportAnnotationShapeSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
+    ComparisonReportRequirementSummary,
     ComparisonReportSummary,
     ComparisonReportTargetsSummary,
     ConfusionMatrix,
@@ -33,7 +34,6 @@ from cvat.apps.quality_control.comparison_report import (
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
 from cvat.apps.quality_control.utils import array_safe_divide
-from cvat.apps.quality_control import models
 
 if TYPE_CHECKING:
     from cvat.apps.quality_control.quality_reports import JobDataProvider
@@ -74,9 +74,7 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
         params = dict(requirement)
     else:
         params = {
-            name: value
-            for name, value in vars(requirement).items()
-            if not name.startswith("_")
+            name: value for name, value in vars(requirement).items() if not name.startswith("_")
         }
 
     parent = params.pop("parent", None)
@@ -98,11 +96,20 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
 def merge_annotations_summary(
     target: ComparisonReportAnnotationsSummary, other: ComparisonReportAnnotationsSummary
 ) -> None:
-    for field in ("valid_count", "missing_count", "extra_count", "total_count", "ds_count", "gt_count"):
+    for field in (
+        "valid_count",
+        "missing_count",
+        "extra_count",
+        "total_count",
+        "ds_count",
+        "gt_count",
+    ):
         setattr(target, field, getattr(target, field) + getattr(other, field))
 
     if target.confusion_matrix is None:
-        target.confusion_matrix = deepcopy(other.confusion_matrix) if other.confusion_matrix else None
+        target.confusion_matrix = (
+            deepcopy(other.confusion_matrix) if other.confusion_matrix else None
+        )
     elif (
         other.confusion_matrix
         and target.confusion_matrix.labels
@@ -323,7 +330,7 @@ class RequirementHandler(ABC):
     def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset) -> AnnotationId:
         """Convert Datumaro annotation to AnnotationId"""
         return self.context.estimator._dm_ann_to_ann_id(ann, dataset)
-    
+
     def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
         """Convert Datumaro item to frame ID"""
         return self.context.estimator._dm_item_to_frame_id(item, dataset)
@@ -555,7 +562,7 @@ class TagRequirementHandler(RequirementHandler):
 
         # Build confusion matrix
         confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
-        
+
         for gt_ann, ds_ann in itertools.chain(
             matches,
             mismatches,
@@ -617,7 +624,7 @@ class ShapeRequirementHandler(RequirementHandler):
         # Unpack results for all annotation types
         all_ann_types_result = matching_results["all_ann_types"]
         matches, mismatches, gt_unmatched, ds_unmatched, _ = all_ann_types_result
-        
+
         # Unpack results for shape annotation types
         all_shape_types_result = matching_results["all_shape_ann_types"]
         (
@@ -915,14 +922,12 @@ class AttributeRequirementHandler(RequirementHandler):
             gt_attrs = {
                 name: value
                 for name, value in dict(getattr(gt_ann, "attributes", {}) or {}).items()
-                if name not in ignored_attrs
-                and self._filter.matches_attribute(gt_ann, name, value)
+                if name not in ignored_attrs and self._filter.matches_attribute(gt_ann, name, value)
             }
             ds_attrs = {
                 name: value
                 for name, value in dict(getattr(ds_ann, "attributes", {}) or {}).items()
-                if name not in ignored_attrs
-                and self._filter.matches_attribute(ds_ann, name, value)
+                if name not in ignored_attrs and self._filter.matches_attribute(ds_ann, name, value)
             }
 
             selected_attr_names.update(gt_attrs)
@@ -997,7 +1002,9 @@ class AttributeRequirementHandler(RequirementHandler):
                     )
                 )
 
-        total_attributes = valid_attributes + invalid_attributes + missing_attributes + extra_attributes
+        total_attributes = (
+            valid_attributes + invalid_attributes + missing_attributes + extra_attributes
+        )
 
         return RequirementFrameResult(
             summary=ComparisonReportFrameSummary(
@@ -1156,12 +1163,14 @@ class DatasetQualityEstimator:
         shape_reqs = [
             req
             for req in self._requirements
-            if req.annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE and req.enabled
+            if req.annotation_type != models.QualityRequirementAnnotationType.ATTRIBUTE
+            and req.enabled
         ]
         attribute_reqs = [
             req
             for req in self._requirements
-            if req.annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE and req.enabled
+            if req.annotation_type == models.QualityRequirementAnnotationType.ATTRIBUTE
+            and req.enabled
         ]
 
         per_requirement_results = {}

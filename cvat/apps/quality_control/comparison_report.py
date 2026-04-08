@@ -866,10 +866,7 @@ class ComparisonReport(ReportNode):
                 else None
             ),
             groups=(
-                {
-                    k: ComparisonReportRequirementSummary.from_dict(v)
-                    for k, v in d["groups"].items()
-                }
+                {k: ComparisonReportRequirementSummary.from_dict(v) for k, v in d["groups"].items()}
                 if d.get("groups") is not None
                 else None
             ),
@@ -885,9 +882,7 @@ class ComparisonReport(ReportNode):
         if d.get("groups") is not None:
             for group in d["groups"].values():
                 if group.get("frame_results") is not None:
-                    group["frame_results"] = {
-                        str(k): v for k, v in group["frame_results"].items()
-                    }
+                    group["frame_results"] = {str(k): v for k, v in group["frame_results"].items()}
 
         return dump_json(d).decode()
 

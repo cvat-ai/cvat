@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Collection
 import operator
+from collections.abc import Collection
 from typing import Any
 
 import datumaro as dm
@@ -157,9 +157,7 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
 
         if op in {"!=", "==", "<", ">", "<=", ">="}:
             if not isinstance(args, list) or len(args) != 2:
-                raise ValidationError(
-                    f"filter: operation '{op}' requires exactly 2 arguments"
-                )
+                raise ValidationError(f"filter: operation '{op}' requires exactly 2 arguments")
 
             cls._validate_var_operand(args[0], op=op, allowed_terms=allowed_terms)
             return
@@ -213,12 +211,8 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
 
         return self._matches(self._build_shape_filter_context(ann))
 
-    def matches_attribute(
-        self, shape_ann: dm.Annotation, attr_name: str, attr_value: Any
-    ) -> bool:
-        return self._matches(
-            self._build_attribute_filter_context(shape_ann, attr_name, attr_value)
-        )
+    def matches_attribute(self, shape_ann: dm.Annotation, attr_name: str, attr_value: Any) -> bool:
+        return self._matches(self._build_attribute_filter_context(shape_ann, attr_name, attr_value))
 
     def filter_item(self, item: dm.DatasetItem) -> dm.DatasetItem:
         filtered_annotations = [ann for ann in item.annotations if self.matches_annotation(ann)]
@@ -341,7 +335,10 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
             if isinstance(args[0], dict):
                 var = lookup_fields[args[0]["var"]]
                 var_value = self.get_nested_attr(obj, var)
-                return any(self._contains(args[1], candidate) for candidate in self._get_candidate_values(var_value))
+                return any(
+                    self._contains(args[1], candidate)
+                    for candidate in self._get_candidate_values(var_value)
+                )
 
             var = lookup_fields[args[1]["var"]]
             var_value = self.get_nested_attr(obj, var)

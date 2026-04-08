@@ -45,6 +45,7 @@ from cvat.apps.quality_control.models import AnnotationType
 
 # For backwards compatibility, don't break old reports when requirements are changed
 
+
 class _MemoizingAnnotationConverterFactory:
     def __init__(self):
         self._annotation_mapping = {}  # dm annotation -> cvat annotation
@@ -151,7 +152,6 @@ class QualitySettingsManager:
             quality_settings = self.get_project_settings(task.project)
 
         return quality_settings
-
 
 
 def _serialize_confusion_matrix_csv(confusion_matrix) -> str:
@@ -322,7 +322,9 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         serialized_data.pop("frame_results")
     else:
         _decorate_frame_results(serialized_data["frame_results"])
-        serialized_data["frame_results"] = _stringify_frame_results(serialized_data["frame_results"])
+        serialized_data["frame_results"] = _stringify_frame_results(
+            serialized_data["frame_results"]
+        )
 
     for group in serialized_data.get("groups", {}).values():
         if group.get("frame_results") is None:

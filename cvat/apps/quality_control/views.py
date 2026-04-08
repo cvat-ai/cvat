@@ -614,7 +614,9 @@ class QualitySettingsViewSet(
         parameters=[
             OpenApiParameter("task_id", type=OpenApiTypes.INT, description="Task id filter"),
             OpenApiParameter("project_id", type=OpenApiTypes.INT, description="Project id filter"),
-            OpenApiParameter("settings_id", type=OpenApiTypes.INT, description="Settings id filter"),
+            OpenApiParameter(
+                "settings_id", type=OpenApiTypes.INT, description="Settings id filter"
+            ),
         ],
         responses={"200": QualityRequirementSerializer(many=True)},
     ),

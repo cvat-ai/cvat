@@ -5,15 +5,16 @@
 import textwrap
 from enum import Enum
 
-from django.db import models as django_models, transaction
+from django.db import models as django_models
+from django.db import transaction
 from rest_framework import serializers
 
 from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.serializers import WriteOnceMixin
-from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control import models
+from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 
 
 class AnnotationIdSerializer(serializers.ModelSerializer):
@@ -234,22 +235,18 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         required=False,
         min_value=0,
         max_value=1,
-        help_text=textwrap.dedent(
-            """
+        help_text=textwrap.dedent("""
             Defines the minimal quality requirements in terms of the selected target metric.
-            """
-        ).strip(),
+            """).strip(),
     )
     parent_requirement = serializers.PrimaryKeyRelatedField(
         source="parent",
         queryset=models.QualityRequirement.objects.all(),
         allow_null=True,
         required=False,
-        help_text=textwrap.dedent(
-            """
+        help_text=textwrap.dedent("""
             The parent requirement. Must be specified if the annotation type is attribute
-            """
-        ).strip(),
+            """).strip(),
     )
 
     def validate_filter(self, value):
@@ -405,10 +402,16 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         if parent_requirement is not None and parent_requirement.settings_id != settings.id:
             raise serializers.ValidationError(
-                {"parent_requirement": "Parent requirement must belong to the same quality settings."}
+                {
+                    "parent_requirement": "Parent requirement must belong to the same quality settings."
+                }
             )
 
-        if self.instance and parent_requirement is not None and parent_requirement.id == self.instance.id:
+        if (
+            self.instance
+            and parent_requirement is not None
+            and parent_requirement.id == self.instance.id
+        ):
             raise serializers.ValidationError(
                 {"parent_requirement": "A requirement cannot reference itself as a parent."}
             )

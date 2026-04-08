@@ -33,8 +33,8 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportAnnotationComponentsSummary,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameSummary,
-    ComparisonReportRequirementSummary,
     ComparisonReportJobStats,
+    ComparisonReportRequirementSummary,
     ComparisonReportSummary,
     ComparisonReportTaskStats,
 )
@@ -46,7 +46,6 @@ from cvat.apps.quality_control.quality_handlers import (
     merge_frame_summaries,
 )
 from cvat.apps.quality_control.quality_reports import JobDataProvider, QualitySettingsManager
-
 
 _DEFAULT_FETCH_CHUNK_SIZE = 1000
 
@@ -434,7 +433,9 @@ class ProjectQualityCalculator:
                 project = Project.objects.get(id=project)
 
             project_quality_params = self.get_quality_params(project)
-            project_requirements = list(QualitySettingsManager().get_project_settings(project).requirements.all())
+            project_requirements = list(
+                QualitySettingsManager().get_project_settings(project).requirements.all()
+            )
 
             # Tasks could be added or removed in the project after initial report fetching
             # Fix working the set of tasks by requesting ids first.
@@ -630,8 +631,12 @@ class ProjectQualityCalculator:
 
             for group_name, group_report in (r.groups or {}).items():
                 project_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
-                project_group_total_frames[group_name] += group_report.comparison_summary.total_frames
-                project_group_validated_frames[group_name] += group_report.comparison_summary.frame_count
+                project_group_total_frames[
+                    group_name
+                ] += group_report.comparison_summary.total_frames
+                project_group_validated_frames[
+                    group_name
+                ] += group_report.comparison_summary.frame_count
 
                 group_weight = 1 / (group_report.comparison_summary.frame_share or 1)
                 project_group_annotations.setdefault(
@@ -639,7 +644,9 @@ class ProjectQualityCalculator:
                 ).accumulate(group_report.comparison_summary.annotations, weight=group_weight)
                 project_group_components.setdefault(
                     group_name, ComparisonReportAnnotationComponentsSummary.create_empty()
-                ).accumulate(group_report.comparison_summary.annotation_components, weight=group_weight)
+                ).accumulate(
+                    group_report.comparison_summary.annotation_components, weight=group_weight
+                )
                 project_group_conflicts.setdefault(group_name, []).extend(group_report.conflicts)
 
         requirement_groups = {}

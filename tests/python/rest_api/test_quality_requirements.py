@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import json
-from io import BytesIO
 from http import HTTPStatus
+from io import BytesIO
 from typing import Any
 from zipfile import ZipFile
 
@@ -12,7 +12,13 @@ import pytest
 from deepdiff import DeepDiff
 
 from rest_api.utils import create_task
-from shared.utils.config import delete_method, get_method, make_api_client, patch_method, post_method
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    make_api_client,
+    patch_method,
+    post_method,
+)
 from shared.utils.helpers import generate_image_files
 
 from .test_quality_control import _PermissionTestBase
@@ -69,7 +75,9 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         return response.json() if response.content else None, response
 
     def _patch_requirement(self, user: str, requirement_id: int, data: dict[str, Any], **kwargs):
-        response = patch_method(user, f"{self._requirements_endpoint}/{requirement_id}", data, **kwargs)
+        response = patch_method(
+            user, f"{self._requirements_endpoint}/{requirement_id}", data, **kwargs
+        )
         return response.json() if response.content else None, response
 
     def _delete_requirement(self, user: str, requirement_id: int, **kwargs):
@@ -173,7 +181,9 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         )
         assert response.status_code == HTTPStatus.CREATED
 
-        listed_requirements, response = self._list_requirements(admin_user, settings_id=settings["id"])
+        listed_requirements, response = self._list_requirements(
+            admin_user, settings_id=settings["id"]
+        )
         assert response.status_code == HTTPStatus.OK
         listed_requirements_by_name = {
             requirement["name"]: requirement for requirement in listed_requirements
@@ -184,14 +194,18 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         response = self._delete_requirement(admin_user, another_requirement["id"])
         assert response.status_code == HTTPStatus.NO_CONTENT
 
-        listed_requirements, response = self._list_requirements(admin_user, settings_id=settings["id"])
+        listed_requirements, response = self._list_requirements(
+            admin_user, settings_id=settings["id"]
+        )
         assert response.status_code == HTTPStatus.OK
         listed_requirements_by_name = {
             requirement["name"]: requirement for requirement in listed_requirements
         }
         assert requirement_name in listed_requirements_by_name
 
-    def test_settings_patch_can_replace_requirements(self, admin_user, find_sandbox_task_without_gt):
+    def test_settings_patch_can_replace_requirements(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
 
@@ -231,7 +245,9 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert len(patched_settings["requirements"]) == 1
         assert patched_settings["requirements"][0]["name"] == replacement_payload["name"]
 
-        listed_requirements, response = self._list_requirements(admin_user, settings_id=settings["id"])
+        listed_requirements, response = self._list_requirements(
+            admin_user, settings_id=settings["id"]
+        )
         assert response.status_code == HTTPStatus.OK
         assert [requirement["name"] for requirement in listed_requirements] == [
             replacement_payload["name"]
@@ -241,7 +257,9 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
 
-        requirement_payload = self._build_requirement_payload(f"last-{task['id']}", required_score=0.2)
+        requirement_payload = self._build_requirement_payload(
+            f"last-{task['id']}", required_score=0.2
+        )
         patched_settings, response = self._patch_settings(
             admin_user,
             settings["id"],
@@ -255,7 +273,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "last quality requirement" in json.dumps(response.json()).lower()
 
-    # TODO: Add parent skeleton information to the model 
+    # TODO: Add parent skeleton information to the model
     def test_create_requirement_rejects_unimplemented_filter_terms(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -268,9 +286,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                 f"unsupported-filter-{task['id']}",
                 settings_id=settings["id"],
                 annotation_type="skeleton_keypoint",
-                filter_expression=json.dumps(
-                    {"==": [{"var": "shape.skeleton.label"}, "person"]}
-                ),
+                filter_expression=json.dumps({"==": [{"var": "shape.skeleton.label"}, "person"]}),
             ),
         )
 
@@ -289,9 +305,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                 f"invalid-shape-filter-{task['id']}",
                 settings_id=settings["id"],
                 annotation_type="rectangle",
-                filter_expression=json.dumps(
-                    {"==": [{"var": "attribute.name"}, "color"]}
-                ),
+                filter_expression=json.dumps({"==": [{"var": "attribute.name"}, "color"]}),
             ),
         )
 
@@ -321,9 +335,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                 settings_id=settings["id"],
                 annotation_type="attribute",
                 parent_requirement=parent_requirement["id"],
-                filter_expression=json.dumps(
-                    {"==": [{"var": "attribute.name"}, "color"]}
-                ),
+                filter_expression=json.dumps({"==": [{"var": "attribute.name"}, "color"]}),
             ),
         )
 
@@ -374,10 +386,14 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         )
         assert response.status_code == HTTPStatus.CREATED
 
-        listed_requirements, response = self._list_requirements(user["username"], task_id=task["id"])
+        listed_requirements, response = self._list_requirements(
+            user["username"], task_id=task["id"]
+        )
         assert response.status_code == (HTTPStatus.OK if allow else HTTPStatus.FORBIDDEN)
         if allow:
-            assert any(requirement["name"] == requirement_name for requirement in listed_requirements)
+            assert any(
+                requirement["name"] == requirement_name for requirement in listed_requirements
+            )
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_create_requirement_in_sandbox(
@@ -498,9 +514,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         enabled=True,
                         required_score=1.0,
                         annotation_type="rectangle",
-                        filter_expression=json.dumps(
-                            {"==": [{"var": "shape.label"}, "car"]}
-                        ),
+                        filter_expression=json.dumps({"==": [{"var": "shape.label"}, "car"]}),
                     )
                 ],
             },
@@ -546,7 +560,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        group_annotations = report_data["groups"][requirement_name]["comparison_summary"]["annotations"]
+        group_annotations = report_data["groups"][requirement_name]["comparison_summary"][
+            "annotations"
+        ]
         assert group_annotations["valid_count"] == 1
         assert group_annotations["missing_count"] == 0
         assert group_annotations["extra_count"] == 0
@@ -786,7 +802,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "completed": 1,
         }
         assert report_data["groups"][enabled_requirement_name]["parameters"]["metric"] == "accuracy"
-        assert report_data["groups"][enabled_requirement_name]["parameters"]["required_score"] == 0.0
+        assert (
+            report_data["groups"][enabled_requirement_name]["parameters"]["required_score"] == 0.0
+        )
         assert (
             report_data["groups"][disabled_requirement_name]["comparison_summary"]["annotations"][
                 "total_count"

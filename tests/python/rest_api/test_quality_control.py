@@ -686,7 +686,6 @@ class TestPostQualityReports(_PermissionTestBase):
 
         assert "Quality reports require a Ground Truth job in the task" in capture.value.body
 
-
     def _test_create_report_200(self, user: str, task_id: int):
         return self.create_quality_report(user=user, task_id=task_id)
 
