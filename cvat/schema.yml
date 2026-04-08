@@ -5781,6 +5781,10 @@ paths:
                 type: string
                 format: date-time
               description: Data update date, applicable for chunks only
+            X-Media-Offset:
+              schema:
+                type: integer
+              description: Data start offset, applicable for chunks only
           description: Data of a specific type
     post:
       operationId: tasks_create_data
@@ -7549,7 +7553,6 @@ components:
       - chunks_updated_date
       - deleted_frames
       - frames
-      - image_quality
     DataRequest:
       type: object
       description: |-
@@ -7992,10 +7995,8 @@ components:
           type: boolean
           readOnly: true
       required:
-      - height
       - name
       - related_files
-      - width
     FrameSelectionMethod:
       enum:
       - random_uniform
@@ -8614,6 +8615,11 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrack'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledInterval'
+          default: []
     LabeledDataRequest:
       type: object
       properties:
@@ -8635,15 +8641,72 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
+          default: []
     LabeledImage:
       type: object
       properties:
         id:
           type: integer
           nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+        source:
+          type: string
+          default: manual
         frame:
           type: integer
           minimum: 0
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
+      required:
+      - frame
+      - label_id
+    LabeledImageRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+        source:
+          type: string
+          minLength: 1
+          default: manual
+        frame:
+          type: integer
+          minimum: 0
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
+      required:
+      - frame
+      - label_id
+    LabeledInterval:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
         label_id:
           type: integer
           minimum: 0
@@ -8659,18 +8722,29 @@ components:
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
       required:
-      - frame
       - label_id
-    LabeledImageRequest:
+      - start
+      - stop
+    LabeledIntervalRequest:
       type: object
       properties:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8687,9 +8761,23 @@ components:
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
       required:
-      - frame
       - label_id
+      - start
+      - stop
     LabeledShape:
       type: object
       properties:
@@ -8718,9 +8806,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8731,6 +8816,9 @@ components:
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8778,9 +8866,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8792,6 +8877,9 @@ components:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8817,9 +8905,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8830,15 +8915,18 @@ components:
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
         elements:
           type: array
           items:
@@ -8853,9 +8941,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8867,15 +8952,18 @@ components:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
         elements:
           type: array
           items:
@@ -9735,6 +9823,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
+          default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
           default: []
     PatchedMembershipWriteRequest:
       type: object
@@ -10905,9 +10998,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10918,6 +11008,9 @@ components:
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -10961,9 +11054,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10975,6 +11065,9 @@ components:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -10996,9 +11089,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -11009,15 +11099,18 @@ components:
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
       required:
       - frame
       - label_id
@@ -11028,9 +11121,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -11042,15 +11132,18 @@ components:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
       required:
       - frame
       - label_id
@@ -11423,17 +11516,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeVal'
-          default: []
       required:
       - frame
       - type
@@ -11462,17 +11555,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeValRequest'
-          default: []
       required:
       - frame
       - type
