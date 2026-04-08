@@ -1202,13 +1202,14 @@ export default class Collection {
         const additionalClientIDs = [];
         let globalEmptyMaskOccurred = false;
         for (const object of importedArray) {
-            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels.enabled) {
+            if (object instanceof MaskShape && config.removeUnderlyingMaskPixels.enabled) {
                 const {
                     clientIDs,
                     emptyMaskOccurred,
                     undo: undoWithUnderlyingPixels,
                     redo: redoWithUnderlyingPixels,
-                } = (object as MaskShape).removeUnderlyingPixels(object.frame);
+                } = object.removeUnderlyingPixels(object.frame);
+
                 additionalUndo.push(undoWithUnderlyingPixels);
                 additionalRedo.push(redoWithUnderlyingPixels);
                 additionalClientIDs.push(clientIDs);
