@@ -209,7 +209,6 @@ context('Snap tool feature.', () => {
 
             after(() => {
                 cy.removeAnnotations();
-                // cy.saveJob(); // todo: remove
                 toggleSnapTool('contour', false);
             });
             it('Draw a diagonal in the trapezium. Should pick the shortest path', () => {
@@ -297,9 +296,7 @@ context('Snap tool feature.', () => {
         });
 
         afterEach(() => {
-            // cy.removeAnnotations();
-            cy.saveJob();
-            // cy.saveJob(); // todo: remove
+            cy.removeAnnotations();
             toggleSnapTool('point', false);
         });
 
@@ -312,7 +309,6 @@ context('Snap tool feature.', () => {
             cy.wait(500);
 
             // Should snap inside delta region. Mouse events should work in same position
-            // TODO: move polyshape tracing to a cy.command
             cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rectanglePoints[0]));
             cy.get('.cvat-canvas-container').trigger('mousedown', ...regionOf(rectanglePoints[0]), { button: 0 });
 
@@ -360,7 +356,6 @@ context('Snap tool feature.', () => {
             // cy.wait(1000);
 
             // Should snap inside delta region
-            // TODO: move polyshape tracing to a cy.command
             cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rotatedPoints[0]));
             cy.get('.cvat-canvas-container').trigger('mousedown', ...regionOf(rotatedPoints[0]), { button: 0 });
 
