@@ -171,6 +171,10 @@ REST_AUTH = {
     "REGISTER_SERIALIZER": "cvat.apps.iam.serializers.RegisterSerializerEx",
     "LOGIN_SERIALIZER": "cvat.apps.iam.serializers.LoginSerializerEx",
     "PASSWORD_RESET_SERIALIZER": "cvat.apps.iam.serializers.PasswordResetSerializerEx",
+    # Define password-setting serializers explicitly so CVAT controls length limits
+    # instead of inheriting hardcoded third-party defaults.
+    "PASSWORD_RESET_CONFIRM_SERIALIZER": "cvat.apps.iam.serializers.PasswordResetConfirmSerializerEx",
+    "PASSWORD_CHANGE_SERIALIZER": "cvat.apps.iam.serializers.PasswordChangeSerializerEx",
     "OLD_PASSWORD_FIELD_ENABLED": True,
 }
 

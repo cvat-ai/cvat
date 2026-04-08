@@ -7,7 +7,12 @@ from allauth.account import app_settings as allauth_settings
 from allauth.account.adapter import get_adapter
 from allauth.account.utils import filter_users_by_email, setup_user_email
 from dj_rest_auth.registration.serializers import RegisterSerializer
-from dj_rest_auth.serializers import LoginSerializer, PasswordResetSerializer
+from dj_rest_auth.serializers import (
+    LoginSerializer,
+    PasswordChangeSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetSerializer,
+)
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -118,6 +123,44 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
             if hasattr(settings, "UI_PORT") and settings.UI_PORT:
                 domain += ":{}".format(settings.UI_PORT)
         return {"domain_override": domain}
+
+
+class PasswordResetConfirmSerializerEx(PasswordResetConfirmSerializer):
+    # Keep CVAT's password length policy independent from dj-rest-auth defaults.
+    new_password1 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
+    new_password2 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
+
+
+class PasswordChangeSerializerEx(PasswordChangeSerializer):
+    # Keep old password uncapped here so existing users are not blocked by serializer limits.
+    old_password = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+    )
+    # Keep CVAT's password length policy independent from dj-rest-auth defaults.
+    new_password1 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
+    new_password2 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
 
 
 class LoginSerializerEx(LoginSerializer):
