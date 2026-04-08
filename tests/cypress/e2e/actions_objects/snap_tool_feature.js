@@ -299,7 +299,7 @@ context('Snap tool feature.', () => {
             toggleSnapTool('point', false);
         });
 
-        it('Draw a polyline. Should snap to every rect corner within radius', () => {
+        it('Draw a polyline. Should snap to rect corners within radius', () => {
             cy.interactControlButton('draw-polyline');
             cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
             const rectanglePoints = rectToPoints(createRectangleShape2Points);
