@@ -23,8 +23,8 @@ from shared.tasks.utils import parse_frame_step
 from shared.utils.config import make_api_client
 
 from .utils import (
-    CollectionSimpleFilterTestBase,
     DEFAULT_RETRIES,
+    CollectionSimpleFilterTestBase,
     invite_user_to_org,
     register_new_user,
     wait_background_request,
