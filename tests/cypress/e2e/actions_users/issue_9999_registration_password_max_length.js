@@ -16,7 +16,8 @@ context('Registration password length validation', () => {
         cy.get('#lastName').type('User');
         cy.get('#username').type(`test_user_ui_limit_${suffix}`);
         cy.get('#email').type(`test_user_ui_limit_${suffix}@example.local`);
-        cy.get('#password1').type(oversizedPassword).blur();
+        cy.get('#password1').type(oversizedPassword);
+        cy.get('#password1').blur();
 
         cy.contains('Password must be between 8 and 256 characters').should('be.visible');
         cy.get('.cvat-credentials-action-button').should('be.disabled');
