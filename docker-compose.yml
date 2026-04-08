@@ -306,7 +306,7 @@ services:
       TRAEFIK_LOG_FORMAT: json
       TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
-      TRAEFIK_PROVIDERS_DOCKER_NETWORK: cvat
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: cvat_cvat
       TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/rules
       # Uncomment to get Traefik dashboard
       TRAEFIK_API_DASHBOARD: "true"
