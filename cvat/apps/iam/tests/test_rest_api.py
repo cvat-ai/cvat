@@ -225,6 +225,20 @@ class UserRegisterAPITestCase(ApiTestBase):
         self.assertEqual(response.data["password1"][0].code, "max_length")
         self.assertFalse(User.objects.filter(username=self.user_data["username"]).exists())
 
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION="none")
+    def test_register_rejects_short_passwords(self):
+        response = self._run_api_v2_user_register(
+            {
+                **self.user_data,
+                "password1": "Aa1pass",
+                "password2": "Aa1pass",
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["password1"][0].code, "min_length")
+        self.assertFalse(User.objects.filter(username=self.user_data["username"]).exists())
+
     def test_password_change_rejects_oversized_new_passwords(self):
         oversized_password = "Aa1" + ("x" * 254)
 
@@ -241,6 +255,21 @@ class UserRegisterAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["new_password1"][0].code, "max_length")
         self.assertEqual(response.data["new_password2"][0].code, "max_length")
+
+    def test_password_change_rejects_short_new_passwords(self):
+        response = self._post_request(
+            "/api/auth/password/change",
+            self.admin,
+            data={
+                "old_password": "admin",
+                "new_password1": "Aa1pass",
+                "new_password2": "Aa1pass",
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["new_password1"][0].code, "min_length")
+        self.assertEqual(response.data["new_password2"][0].code, "min_length")
 
     def test_password_reset_confirm_accepts_256_character_password(self):
         new_password = "Aa1" + ("x" * 253)
@@ -281,3 +310,22 @@ class UserRegisterAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["new_password1"][0].code, "max_length")
         self.assertEqual(response.data["new_password2"][0].code, "max_length")
+
+    def test_password_reset_confirm_rejects_short_passwords(self):
+        uid = user_pk_to_url_str(self.admin)
+        token = default_token_generator.make_token(self.admin)
+
+        response = self.client.post(
+            reverse("rest_password_reset_confirm"),
+            {
+                "uid": uid,
+                "token": token,
+                "new_password1": "Aa1pass",
+                "new_password2": "Aa1pass",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["new_password1"][0].code, "min_length")
+        self.assertEqual(response.data["new_password2"][0].code, "min_length")

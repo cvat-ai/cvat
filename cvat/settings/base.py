@@ -29,6 +29,7 @@ from django.core.exceptions import ImproperlyConfigured
 from logstash_async.constants import constants as logstash_async_constants
 
 from cvat import __version__
+from cvat.apps.iam.password_validation import DEFAULT_MIN_PASSWORD_LENGTH
 
 # Build paths inside the project like this: BASE_DIR / ...
 BASE_DIR = Path(__file__).parents[2]
@@ -404,6 +405,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": DEFAULT_MIN_PASSWORD_LENGTH},
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",

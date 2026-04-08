@@ -4,6 +4,7 @@
 
 from django.core.exceptions import ValidationError
 
+DEFAULT_MIN_PASSWORD_LENGTH = 8
 DEFAULT_MAX_PASSWORD_LENGTH = 256
 
 

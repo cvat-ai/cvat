@@ -9462,12 +9462,12 @@ components:
         new_password1:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
           maxLength: 256
         new_password2:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
           maxLength: 256
       required:
       - new_password1
@@ -9480,12 +9480,12 @@ components:
         new_password1:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
           maxLength: 256
         new_password2:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
           maxLength: 256
         uid:
           type: string
@@ -10625,12 +10625,12 @@ components:
         password1:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
           maxLength: 256
         password2:
           type: string
           writeOnly: true
-          minLength: 1
+          minLength: 8
           maxLength: 256
         first_name:
           type: string
