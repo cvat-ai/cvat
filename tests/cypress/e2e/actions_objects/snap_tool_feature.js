@@ -33,7 +33,6 @@ context('Snap tool feature.', () => {
         }
         return cy.wrap(arrToPush);
     }
-
     function testAutoborderPointsCount(expectedCount) {
         cy.get('.cvat_canvas_autoborder_point')
             .should('exist')
@@ -281,23 +280,25 @@ context('Snap tool feature.', () => {
                 y: rotatedY + origin.y,
             };
         }
-        let rectanglePointsGlobal;
+        const rectanglePointsGlobal = [];
         let regionOf;
 
         beforeEach(() => {
             cy.createRectangle(createRectangleShape2Points);
             testCollectCoord('rect', '#cvat_canvas_shape_1').then((pointsGlobal) => {
-                rectanglePointsGlobal = pointsGlobal;
+                pointsGlobal.forEach((point) => rectanglePointsGlobal.push(point));
             });
             testCollectShapePointRadius('#cvat_canvas_shape_1').then((radius) => {
-                const delta = radius * 1.5; // snapping is seen better
+                const delta = Math.floor(radius * 1.3); // snapping is seen better
                 regionOf = (point) => [point.x - delta, point.y - delta];
+                cy.task('log', { radius, delta });
             });
             toggleSnapTool('point', true);
         });
 
         afterEach(() => {
-            cy.removeAnnotations();
+            // cy.removeAnnotations();
+            cy.saveJob();
             // cy.saveJob(); // todo: remove
             toggleSnapTool('point', false);
         });
@@ -327,25 +328,36 @@ context('Snap tool feature.', () => {
                 expect(commonPoints[0]).to.be
                     .equal(`${rectanglePointsGlobal[0]},${rectanglePointsGlobal[1]}`);
                 expect(commonPoints[1]).to.be
-                    .equal(`${rectanglePointsGlobal[2]},${rectanglePointsGlobal[3]}`);
+                    .equal(`${rectanglePointsGlobal[2]},${rectanglePointsGlobal[1]}`);
             });
         });
         it('Snapping works when shape is rotated', { scrollBehavior: false }, () => {
             allure.issue('https://github.com/cvat-ai/cvat/pull/10448', 'Snap to rotated boxes');
 
+            const coordsToRect = (coords) => ({
+                firstX: coords[0],
+                firstY: coords[1],
+                secondX: coords[2],
+                secondY: coords[3],
+            });
+            const rectangleGlobal = coordsToRect(rectanglePointsGlobal);
+
             // Rotate rectangle, calculate expected point position
             const degrees = 15;
+            const rotatedPoints = rectToPoints(createRectangleShape2Points)
+                .map((p) => rotate(p, createRectangleShape2Points, degrees));
+            const rotatedPointsGlobal = rectToPoints(rectangleGlobal)
+                .map((p) => rotate(p, rectangleGlobal, degrees));
             cy.shapeRotate('#cvat_canvas_shape_1', degrees.toFixed(1), true);
-            const rectanglePoints = rectToPoints(createRectangleShape2Points);
-            const rotatedPoints = rectanglePoints.map((p) => rotate(p, createRectangleShape2Points, degrees));
-            cy.task('log', { rotatedPoints });
 
             // Draw a polygon
             cy.interactControlButton('draw-polygon');
             cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
 
-            cy.get('.cvat-canvas-container').click(...defaultStartingPoint);
-            cy.wait(500);
+            // cy.get('.cvat-canvas-container').click(...defaultStartingPoint);
+            cy.get('.cvat-canvas-container').trigger('mousemove', ...defaultStartingPoint);
+            cy.get('.cvat-canvas-container').trigger('mousedown', ...defaultStartingPoint, { button: 0 });
+            // cy.wait(1000);
 
             // Should snap inside delta region
             // TODO: move polyshape tracing to a cy.command
@@ -359,21 +371,13 @@ context('Snap tool feature.', () => {
             cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
 
             // Compare polygon's coords with rotated coords, should have 2 common
-            testCollectCoord('rect', '#cvat_canvas_shape_1').then((rotatedPointsGlobal) => {
-                testCollectCoord('polygon', '#cvat_canvas_shape_2').then((polygonPoints) => {
-                    // cy.task('log', { rotatedPointsGlobal });
-                    // cy.task('log', { polygonPoints });
-                    const [, ...commonPoints] = polygonPoints;
-                    expect(commonPoints[0]).to.be
-                        .equal(`${rotatedPointsGlobal[0]},${rotatedPointsGlobal[1]}`);
-                    expect(commonPoints[1]).to.be
-                        .equal(`${rotatedPointsGlobal[4]},${rotatedPointsGlobal[5]}`);
-                });
+            testCollectCoord('polygon', '#cvat_canvas_shape_2').then((polygonPoints) => {
+                const [, ...commonPoints] = polygonPoints;
+                expect(commonPoints[0]).to.be
+                    .equal(`${rotatedPointsGlobal[0].x},${rotatedPointsGlobal[0].y}`);
+                expect(commonPoints[1]).to.be
+                    .equal(`${rotatedPointsGlobal[1].x},${rotatedPointsGlobal[1].y}`);
             });
-
-            // testCollectCoord('rect', '#cvat_canvas_shape_1').then((rotatedRectPoints) => {
-            //     cy.task('log', { rotatedRectPoints });
-            // });
         });
     });
 
