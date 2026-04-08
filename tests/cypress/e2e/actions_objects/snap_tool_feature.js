@@ -250,7 +250,7 @@ context('Snap tool feature.', () => {
         });
     });
 
-    context('Testing "Snap to Point', () => {
+    context('Testing "Snap to Point"', () => {
         const rectToPoints = (rect) => [
             { x: rect.firstX, y: rect.firstY },
             { x: rect.secondX, y: rect.secondY },
