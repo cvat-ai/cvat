@@ -36,6 +36,15 @@ function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): Track
     };
 }
 
+function serverAttributesToDictionary(attributes: SerializedShape['attributes']): Record<number, string> {
+    const object = Object.create(null);
+    for (const attr of attributes) {
+        object[attr.spec_id] = attr.value;
+    }
+
+    return object;
+}
+
 function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape {
     return {
         serverID: shape.id,
@@ -44,10 +53,7 @@ function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape 
         points: shape.points,
         outside: shape.outside,
         rotation: shape.rotation || 0,
-        attributes: shape.attributes.reduce((attributeAccumulator, attr) => {
-            attributeAccumulator[attr.spec_id] = attr.value;
-            return attributeAccumulator;
-        }, {}),
+        attributes: serverAttributesToDictionary(shape.attributes),
     };
 }
 
@@ -139,10 +145,7 @@ class Annotation {
         this.votes = injection.replicasCount !== undefined ?
             Math.round(this.score * injection.replicasCount) : 0;
         this.updated = Date.now();
-        this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
-            attributeAccumulator[attr.spec_id] = attr.value;
-            return attributeAccumulator;
-        }, {});
+        this.attributes = serverAttributesToDictionary(data.attributes);
         this.groupObject = Object.defineProperties(
             {}, {
                 color: {
@@ -2248,7 +2251,7 @@ export class MaskShape extends Shape {
         super(data, clientID, color, injection);
         const [left, top, right, bottom] = this.points.slice(-4);
         const { width, height } = this.framesInfo[this.frame];
-        if (left >= width || top >= height || right >= width || bottom >= height) {
+        if (left < 0 || top < 0 || right >= width || bottom >= height) {
             this.points = cropMask(this.points, width, height);
         }
         [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
@@ -2263,7 +2266,6 @@ export class MaskShape extends Shape {
             const { width, height } = this.framesInfo[frame];
             return cropMask(data.points, width, height);
         }
-
         return [];
     }
 
