@@ -20,6 +20,7 @@ import datumaro.components.annotations.matcher
 import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
+import jiwer
 import json_stream
 import numpy as np
 from attrs import asdict, define, fields_dict
@@ -43,6 +44,8 @@ from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.media_providers.frame_provider import TaskFrameProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
+    AttributeSpec,
+    AttributeType,
     DimensionType,
     Image,
     Job,
@@ -62,9 +65,32 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictSeverity,
     AnnotationConflictType,
     AnnotationType,
+    TranscriptionQualityMetric,
 )
 from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.apps.redis_handler.background import AbstractRequestManager
+
+
+class AttributePath:
+    def __init__(self, attribute: str, label: str, parent_label: str | None) -> None:
+        path = [attribute, label]
+        if parent_label:
+            path.append(parent_label)
+
+        self.path = tuple(path)
+
+    def __hash__(self):
+        return hash(self.path)
+
+    def __eq__(self, other: AttributePath) -> bool:
+        return isinstance(other, AttributePath) and self.path == other.path
+
+    def to_list(self) -> list[str]:
+        return list(self.path)
+
+    @classmethod
+    def from_list(cls, lst: list[str]) -> AttributePath:
+        return cls(*lst)
 
 
 @define(slots=False)
@@ -204,9 +230,10 @@ class AnnotationId(ReportNode):
 
 @define(kw_only=True, init=False, slots=False)
 class AnnotationConflict(ReportNode):
-    frame_id: int
+    frame_id: int | None
     type: AnnotationConflictType
     annotation_ids: list[AnnotationId]
+    attributes: list[str] | None = None
 
     @property
     def severity(self) -> AnnotationConflictSeverity:
@@ -238,9 +265,33 @@ class AnnotationConflict(ReportNode):
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
-            frame_id=d["frame_id"],
+            frame_id=d.get("frame_id", None),
             type=AnnotationConflictType(d["type"]),
             annotation_ids=list(AnnotationId.from_dict(v) for v in d["annotation_ids"]),
+            attribute=list(d.get("attribute", None)),
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
+class TranscriptionRequirement(ReportNode):
+    attribute: AttributePath
+    metric: TranscriptionQualityMetric
+    acceptance_threshold: float
+
+    def _value_serializer(self, v):
+        if isinstance(v, AttributePath):
+            return v.to_list()
+        elif isinstance(v, TranscriptionQualityMetric):
+            return str(v)
+        else:
+            return super()._value_serializer(v)
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            attribute=AttributePath.from_list(d["attribute"]),
+            metric=TranscriptionQualityMetric(d["metric"]),
+            acceptance_threshold=d["acceptance_threshold"],
         )
 
 
@@ -321,6 +372,9 @@ class ComparisonParameters(ReportNode):
     job_filter: str = ""
     "JSON filter expression for included jobs"
 
+    transcription_requirements: list[TranscriptionRequirement] = []
+    "Requirements for transcription attributes"
+
     def _value_serializer(self, v):
         if isinstance(v, dm.AnnotationType):
             return str(v.name)
@@ -330,13 +384,43 @@ class ComparisonParameters(ReportNode):
     @classmethod
     def from_dict(cls, d: dict) -> ComparisonParameters:
         fields = fields_dict(cls)
-        return cls(**{field_name: d[field_name] for field_name in fields if field_name in d})
+        return cls(
+            **{
+                field_name: d[field_name]
+                for field_name in fields
+                if field_name in d
+                if field_name not in ("transcription_requirements",)
+            },
+            transcription_requirements=[
+                TranscriptionRequirement.from_dict(r)
+                for r in d.get("transcription_requirements", [])
+            ],
+        )
 
     @classmethod
     def from_settings(
         cls, settings: models.QualitySettings, *, inherited: bool
     ) -> ComparisonParameters:
-        parameters = cls.from_dict(settings.to_dict())
+        settings_dict = settings.to_dict()
+
+        transcription_requirements = []
+        for requirement in settings.transcription_requirements.all():
+            attribute_spec = requirement.attribute
+            label_spec = attribute_spec.label
+            parent_label = label_spec.parent
+            attribute_path = AttributePath(
+                attribute_spec.name, label_spec.name, getattr(parent_label, "name", None)
+            )
+
+            transcription_requirements.append(
+                {
+                    "attribute": attribute_path,
+                    "metric": requirement.metric,
+                    "acceptance_threshold": requirement.acceptance_threshold,
+                }
+            )
+
+        parameters = cls.from_dict(settings_dict)
         parameters.inherited = inherited
         return parameters
 
@@ -594,19 +678,82 @@ class ComparisonReportAnnotationLabelSummary(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
+class ComparisonReportAnnotationAttributeSummary(ReportNode):
+    attribute: AttributePath
+    valid_count: int
+    invalid_count: int
+    total_count: int
+
+    @property
+    def accuracy(self) -> float:
+        return self.valid_count / (self.total_count or 1)
+
+    def accumulate(self, other: ComparisonReportAnnotationAttributeSummary, *, weight: float = 1):
+        assert self.attribute == other.attribute
+        for field in ["valid_count", "total_count", "invalid_count"]:
+            setattr(self, field, getattr(self, field) + math.ceil(getattr(other, field) * weight))
+
+    def _value_serializer(self, v):
+        if isinstance(v, AttributePath):
+            return v.to_list()
+        else:
+            return super()._value_serializer(v)
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(
+            attribute=AttributePath.from_list(d["attribute"]),
+            valid_count=d["valid_count"],
+            invalid_count=d["invalid_count"],
+            total_count=d["total_count"],
+        )
+
+    @classmethod
+    def create_empty(cls, attribute: AttributePath) -> ComparisonReportAnnotationAttributeSummary:
+        return cls(
+            attribute=attribute,
+            valid_count=0,
+            invalid_count=0,
+            total_count=0,
+        )
+
+
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportAnnotationComponentsSummary(ReportNode):
     shape: ComparisonReportAnnotationShapeSummary
     label: ComparisonReportAnnotationLabelSummary
+    attribute: list[ComparisonReportAnnotationAttributeSummary]
 
     def accumulate(self, other: ComparisonReportAnnotationComponentsSummary, *, weight: float = 1):
         self.shape.accumulate(other.shape, weight=weight)
         self.label.accumulate(other.label, weight=weight)
+
+        self_attributes = self.attribute_dict
+        other_attributes = other.attribute_dict
+        for k in other_attributes:
+            if k not in self_attributes:
+                self_attributes[k] = ComparisonReportAnnotationAttributeSummary.create_empty(k)
+
+        for k, self_v in self_attributes.items():
+            other_v = other_attributes.get(k, None)
+            if other_v is not None:
+                self_v.accumulate(other_v, weight=weight)
+
+        self.attribute = list(self_attributes.values())
+
+    @property
+    def attribute_dict(self) -> dict[tuple, ComparisonReportAnnotationAttributeSummary]:
+        return {a.attribute: a for a in self.attribute}
 
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
             shape=ComparisonReportAnnotationShapeSummary.from_dict(d["shape"]),
             label=ComparisonReportAnnotationLabelSummary.from_dict(d["label"]),
+            attribute=[
+                ComparisonReportAnnotationAttributeSummary.from_dict(a)
+                for a in d.get("attribute", [])
+            ],
         )
 
     @classmethod
@@ -614,6 +761,7 @@ class ComparisonReportAnnotationComponentsSummary(ReportNode):
         return cls(
             shape=ComparisonReportAnnotationShapeSummary.create_empty(),
             label=ComparisonReportAnnotationLabelSummary.create_empty(),
+            attribute=[],
         )
 
 
@@ -2089,9 +2237,13 @@ class DatasetComparator:
         self._ds_dataset = self._ds_data_provider.dm_dataset
         self._gt_dataset = self._gt_data_provider.dm_dataset
 
-        self._frame_results: dict[int, ComparisonReportFrameSummary] = {}
+        self._intermediate_results: dict[str, Any] = {}
 
         self.comparator = _Comparator(self._gt_dataset.categories(), settings=settings)
+
+    @property
+    def _frame_results(self) -> dict[int, ComparisonReportFrameSummary]:
+        return self._intermediate_results.setdefault("frame_results", {})
 
     def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
         if dataset is self._ds_dataset:
@@ -2116,16 +2268,20 @@ class DatasetComparator:
     def _get_total_frames(self) -> int:
         return len(self._ds_data_provider.job_data)
 
-    def _find_gt_conflicts(self):
+    def _compare_datasets(self):
         ds_job_dataset = self._ds_dataset
         gt_job_dataset = self._gt_dataset
 
+        # process intraframe annotations
         for gt_item in gt_job_dataset:
             ds_item = ds_job_dataset.get(id=gt_item.id, subset=gt_item.subset)
             if not ds_item:
                 continue  # we need to compare only intersecting frames
 
             self._process_frame(ds_item, gt_item)
+
+        # process interframe annotations
+        self._process_intervals()
 
     def _process_frame(
         self, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem
@@ -2138,6 +2294,163 @@ class DatasetComparator:
         self._generate_frame_annotation_conflicts(
             frame_id, frame_results, gt_item=gt_item, ds_item=ds_item
         )
+
+    def _process_intervals(self):
+        def range_iou(a: tuple[float, float], b: tuple[float, float]) -> float:
+            int_lb = min(a[1], b[0])
+            int_ub = max(a[0], b[1])
+            int_lb, int_ub = min(int_lb, int_ub), max(int_lb, int_ub)
+            intersection = int_ub - int_lb
+            if intersection <= 0:
+                return 0
+
+            uni_lb = min(a[0], b[0])
+            uni_ub = max(a[1], b[1])
+            union = uni_ub - uni_lb
+            return intersection / union
+
+        def interval_iou(a: dict[str, Any], b: dict[str, Any]) -> float:
+            return range_iou((a["start"], a["stop"]), (b["start"], b["stop"]))
+
+        def interval_wer(a: dict[str, Any], b: dict[str, Any], *, key: str) -> float:
+            return jiwer.wer(a["attributes"].get(key, ""), b["attributes"].get(key, ""))
+
+        def interval_cer(a: dict[str, Any], b: dict[str, Any], *, key: str) -> float:
+            # TODO: change to maximum CER over word-aligned matches?
+            return jiwer.cer(
+                a["attributes"].get(key, "").split(), b["attributes"].get(key, "").split()
+            )
+
+        metrics = {
+            TranscriptionQualityMetric.WER: interval_wer,
+            TranscriptionQualityMetric.CER: interval_cer,
+        }
+
+        attribute_specs: dict[AttributePath, AttributeSpec] = {
+            AttributePath(
+                spec.name, spec.label.name, getattr(spec.label.parent, "name", None)
+            ): spec
+            for label_attrs in self._gt_data_provider.job_data._attribute_mapping.values()
+            for spec in label_attrs["spec"].values()
+        }
+
+        gt_intervals = self._gt_data_provider.job_annotation.ir_data.intervals
+        ds_intervals = self._ds_data_provider.job_annotation.ir_data.intervals
+
+        matches, mismatches, gt_unmatched, ds_unmatched = match_segments(
+            gt_intervals,
+            ds_intervals,
+            distance=interval_iou,
+            dist_thresh=self.settings.iou_threshold,
+        )
+
+        confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
+
+        for gt_ann, ds_ann in itertools.chain(
+            # fully matched annotations - shape, label, attributes
+            matches,
+            mismatches,
+            zip(itertools.repeat(None), ds_unmatched),
+            zip(gt_unmatched, itertools.repeat(None)),
+        ):
+            ds_label_idx = label_id_map[ds_ann.label] if ds_ann else self._UNMATCHED_IDX
+            gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
+            confusion_matrix[ds_label_idx, gt_label_idx] += 1
+
+        results = self._intermediate_results
+        conflicts = results.setdefault("conflicts", [])
+
+        intermediate_shape_summary = ComparisonReportAnnotationShapeSummary(
+            valid_count=len(matches) + len(mismatches),
+            missing_count=len(gt_unmatched),
+            extra_count=len(ds_unmatched),
+            total_count=len(gt_intervals) + len(ds_intervals),
+            gt_count=len(gt_intervals),
+            ds_count=len(ds_intervals),
+            mean_iou=0,  # TODO
+        )
+
+        intermediate_label_summary = ComparisonReportAnnotationLabelSummary(
+            valid_count=len(matches),
+            invalid_count=len(mismatches),
+            total_count=len(matches) + len(mismatches),
+        )
+
+        intermediate_attribute_summaies = {}
+
+        match_idx = 0
+        while match_idx < len(matches):
+            gt_ann, ds_ann = matches[match_idx]
+            match_confirmed = True
+
+            for requirement in self.settings.transcription_requirements:
+                attribute_spec = attribute_specs.get(requirement.attribute)
+                if attribute_spec is None or attribute_spec.input_type != AttributeType.TEXT:
+                    # Silently ignore, as the settings can be out of sync with labels
+                    continue
+
+                distance_func = partial(metrics[requirement.metric], key=attribute_spec.name)
+                distance = distance_func(gt_ann, ds_ann)
+                req_satisfied = distance < requirement.acceptance_threshold
+
+                if not req_satisfied:
+                    match_confirmed = False
+                    conflicts.append(
+                        AnnotationConflict(
+                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                            annotation_ids=[
+                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                            ],
+                            attributes=[attribute_spec.name],
+                        )
+                    )
+
+                attribute_summary = ComparisonReportAnnotationAttributeSummary(
+                    attribute=requirement.attribute,
+                    valid_count=int(req_satisfied),
+                    invalid_count=int(not req_satisfied),
+                    total_count=1,
+                )
+                intermediate_attribute_summaies.setdefault(
+                    requirement.attribute,
+                    ComparisonReportAnnotationAttributeSummary.create_empty(requirement.attribute),
+                ).accumulate(attribute_summary)
+
+            if not match_confirmed:
+                mismatches.append(matches.pop(match_idx))
+            else:
+                match_idx += 1
+
+        annotations_summary = self._compute_annotations_summary(
+            confusion_matrix, confusion_matrix_labels
+        )
+
+        component_summaries = ComparisonReportAnnotationComponentsSummary(
+            shape=ComparisonReportAnnotationShapeSummary(
+                valid_count=intermediate_shape_summary.valid_count,
+                missing_count=intermediate_shape_summary.missing_count,
+                extra_count=intermediate_shape_summary.extra_count,
+                total_count=intermediate_shape_summary.total_count,
+                gt_count=intermediate_shape_summary.gt_count,
+                ds_count=intermediate_shape_summary.ds_count,
+                mean_iou=0,  # TODO
+            ),
+            label=ComparisonReportAnnotationLabelSummary(
+                valid_count=intermediate_label_summary.valid_count,
+                invalid_count=intermediate_label_summary.invalid_count,
+                total_count=intermediate_label_summary.total_count,
+            ),
+            attribute=list(intermediate_attribute_summaies.values()),
+        )
+
+        results.setdefault(
+            "annotations", ComparisonReportAnnotationsSummary.create_empty()
+        ).accumulate(annotations_summary)
+
+        results.setdefault(
+            "annotation_components", ComparisonReportAnnotationComponentsSummary.create_empty()
+        ).accumulate(component_summaries)
 
     def _generate_frame_annotation_conflicts(
         self, frame_id: str, frame_results, *, gt_item: dm.DatasetItem, ds_item: dm.DatasetItem
@@ -2290,20 +2603,14 @@ class DatasetComparator:
                     )
                 )
 
+        attribute_summaries = {}
         if self.settings.compare_attributes:
-            for gt_ann, ds_ann in matches:
-                attribute_results = self.comparator.match_attrs(gt_ann, ds_ann)
-                if any(attribute_results[1:]):
-                    conflicts.append(
-                        AnnotationConflict(
-                            frame_id=frame_id,
-                            type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
-                            annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                            ],
-                        )
-                    )
+            self._match_attributes(
+                matches,
+                frame_id=frame_id,
+                conflicts=conflicts,
+                attribute_summaries=attribute_summaries,
+            )
 
         if self.settings.compare_groups:
             gt_groups, gt_group_map = self.comparator.find_groups(gt_item)
@@ -2398,11 +2705,60 @@ class DatasetComparator:
                     invalid_count=invalid_labels_count,
                     total_count=total_labels_count,
                 ),
+                attribute=list(attribute_summaries.values()),
             ),
             conflicts=conflicts,
         )
 
         return conflicts
+
+    def _match_attributes(
+        self,
+        annotations: Sequence[tuple[dm.Annotation, dm.Annotation]],
+        *,
+        frame_id: int | None,
+        conflicts: list[AnnotationConflict],
+        attribute_summaries: dict[AttributePath, ComparisonReportAnnotationAttributeSummary],
+    ):
+        label_id_map = list(enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]))
+
+        def _make_attribute_path(label_id: int, attribute_name: str) -> tuple:
+            label_info = label_id_map[label_id]
+            return AttributePath(attribute_name, label_info.name, label_info.parent)
+
+        for gt_ann, ds_ann in annotations:
+            attribute_results = self.comparator.match_attrs(gt_ann, ds_ann)
+            mismatching_attrs = sorted(itertools.chain.from_iterable(attribute_results[1:]))
+            if mismatching_attrs:
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=frame_id,
+                        type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                        annotation_ids=[
+                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
+                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                        ],
+                        attributes=mismatching_attrs,
+                    )
+                )
+
+        for k in attribute_results[0]:
+            key = _make_attribute_path(gt_ann.label, k)
+            attribute_summaries.setdefault(
+                key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
+            ).valid_count += 1
+
+        for k in attribute_results[1]:
+            key = _make_attribute_path(gt_ann.label, k)
+            attribute_summaries.setdefault(
+                key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
+            ).invalid_count += 1
+
+        for k in itertools.chain.from_iterable(attribute_results):
+            key = _make_attribute_path(gt_ann.label, k)
+            attribute_summaries.setdefault(
+                key, ComparisonReportAnnotationAttributeSummary.create_empty(key)
+            ).total_count += 1
 
     # row/column index in the confusion matrix corresponding to unmatched annotations
     _UNMATCHED_IDX = -1
@@ -2484,11 +2840,13 @@ class DatasetComparator:
 
         return summary
 
-    def _generate_dataset_annotations_summary(
-        self, frame_summaries: dict[int, ComparisonReportFrameSummary]
+    def _generate_annotation_summaries(
+        self,
     ) -> tuple[ComparisonReportAnnotationsSummary, ComparisonReportAnnotationComponentsSummary]:
-        # accumulate stats
-        annotation_components = ComparisonReportAnnotationComponentsSummary(
+        frame_summaries = self._intermediate_results.pop("frame_results", {})
+
+        # accumulate stats from frame- and non-frame annotations
+        component_summaries = ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
                 valid_count=0,
                 missing_count=0,
@@ -2503,6 +2861,7 @@ class DatasetComparator:
                 invalid_count=0,
                 total_count=0,
             ),
+            attribute=[],
         )
         mean_ious = []
         empty_gt_frames = set()
@@ -2526,10 +2885,10 @@ class DatasetComparator:
             ):
                 empty_gt_frames.add(frame_id)
 
-            if annotation_components is None:
-                annotation_components = deepcopy(frame_result.annotation_components)
+            if component_summaries is None:
+                component_summaries = deepcopy(frame_result.annotation_components)
             else:
-                annotation_components.accumulate(frame_result.annotation_components)
+                component_summaries.accumulate(frame_result.annotation_components)
 
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
@@ -2545,23 +2904,34 @@ class DatasetComparator:
             annotation_summary.ds_count += len(empty_ds_frames)
             annotation_summary.gt_count += len(empty_gt_frames)
 
-        # Cannot be computed in accumulate()
-        annotation_components.shape.mean_iou = np.mean(mean_ious or [])
+        if "annotation_summary" in self._intermediate_results:
+            mean_ious.append(self._intermediate_results["annotation_components"].shape.mean_ion)
 
-        return annotation_summary, annotation_components
+            self._intermediate_results["annotation"].accumulate(annotation_summary)
+            self._intermediate_results["annotation_components"].accumulate(component_summaries)
+
+            annotation_summary = self._intermediate_results.pop("annotation")
+            component_summaries = self._intermediate_results.pop("annotation_components")
+
+        # Cannot be computed in accumulate()
+        component_summaries.shape.mean_iou = np.mean(mean_ious or [])
+
+        return annotation_summary, component_summaries
 
     def generate_report(self) -> ComparisonReport:
-        self._find_gt_conflicts()
+        self._compare_datasets()
 
+        conflicts = self._intermediate_results.pop("conflicts", [])
         intersection_frames = []
-        conflicts = []
-        for frame_id, frame_result in self._frame_results.items():
+        frame_results = self._frame_results
+        for frame_id, frame_result in frame_results.items():
             intersection_frames.append(frame_id)
             conflicts += frame_result.conflicts
 
-        annotation_summary, annotations_component_summary = (
-            self._generate_dataset_annotations_summary(self._frame_results)
-        )
+        annotation_summary, annotations_component_summary = self._generate_annotation_summaries()
+
+        # Make sure nothing is left unprocessed
+        assert not self._intermediate_results
 
         conflicts_by_severity = Counter(c.severity for c in conflicts)
         return ComparisonReport(
@@ -2578,7 +2948,7 @@ class DatasetComparator:
                 tasks=None,
                 jobs=None,
             ),
-            frame_results=self._frame_results,
+            frame_results=frame_results,
         )
 
 
@@ -2947,6 +3317,7 @@ class TaskQualityCalculator:
                     type=conflict["type"],
                     frame=conflict["frame_id"],
                     severity=conflict["severity"],
+                    annotations=conflict["annotations"],
                 )
                 db_conflicts.append(db_conflict)
 
