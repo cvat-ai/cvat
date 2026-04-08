@@ -11,6 +11,7 @@ from rest_framework import serializers
 from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.filters import JsonLogicFilter
+from cvat.apps.engine.models import AttributeType
 from cvat.apps.engine.serializers import WriteOnceMixin
 from cvat.apps.quality_control import models
 
@@ -27,7 +28,7 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.AnnotationConflict
-        fields = ("id", "frame", "type", "annotation_ids", "report_id", "severity")
+        fields = ("id", "frame", "type", "annotation_ids", "attributes", "report_id", "severity")
         read_only_fields = fields
 
 
@@ -199,9 +200,36 @@ class QualitySettingsParentType(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class TranscriptionRequirementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.TranscriptionQualityRequirement
+        fields = (
+            "attribute_id",
+            "metric",
+            "acceptance_threshold",
+        )
+
+        extra_kwargs = {
+            "attribute_id": {
+                "help_text": (
+                    f"The transcription (type '{AttributeType.TEXT}') "
+                    "attribute to apply the requirement to"
+                ),
+            },
+            "acceptance_threshold": {
+                "required": False,
+                "min_value": 0,
+                "max_value": 1,
+            },
+        }
+
+
 class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
     task_id = serializers.IntegerField(required=False, allow_null=True)
     project_id = serializers.IntegerField(required=False, allow_null=True)
+    transcription_requirements = TranscriptionRequirementSerializer(
+        required=False, partial=True, many=True
+    )
 
     class Meta:
         model = models.QualitySettings
@@ -228,6 +256,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "panoptic_comparison",
             "compare_attributes",
             "empty_is_annotated",
+            "transcription_requirements",
             "created_date",
             "updated_date",
         )
@@ -354,5 +383,20 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.task.touch()
         elif instance.project_id:
             instance.project.touch()
+
+        if "transcription_requirements" in validated_data:
+            if not validated_data["transcription_requirements"]:
+                models.TranscriptionQualityRequirement.objects.filter(settings=instance).delete()
+            else:
+                for transcription_requirement in validated_data["transcription_requirements"]:
+                    attribute = models.AttributeSpec.objects.get(
+                        pk=transcription_requirement["attribute"]
+                    )
+
+                    if attribute.input_type != AttributeType.TEXT:
+                        raise serializers.ValidationError(
+                            "The selected attribute must have "
+                            f"the '{AttributeType.TEXT.value}' type"
+                        )
 
         return super().update(instance, validated_data)
