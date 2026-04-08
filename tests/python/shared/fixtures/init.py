@@ -21,11 +21,12 @@ logger = logging.getLogger(__name__)
 CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 CLICKHOUSE_INIT_SCRIPT = "components/analytics/clickhouse/init.py"
-PREFIX = "test"
 
-CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
+DC_PROJECT_NAME = "test"
 
-DC_FILES = CONTAINER_NAME_FILES + [
+GENERATED_DC_FILES = ["docker-compose.tests.yml"]
+
+DC_FILES = GENERATED_DC_FILES + [
     "docker-compose.dev.yml",
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
@@ -142,12 +143,16 @@ def kube_cp(source, target):
     _run(f"kubectl cp {source} {target}")
 
 
+def dc_container(service_name: str) -> str:
+    return f"{DC_PROJECT_NAME}-{service_name}-1"
+
+
 def docker_exec(container, command, capture_output=True):
-    return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
+    return _run(f"docker exec -u root {dc_container(container)} {command}", capture_output)
 
 
 def docker_exec_cvat(command: list[str] | str):
-    base = f"docker exec {PREFIX}_cvat_server_1"
+    base = f"docker exec {dc_container('cvat_server')} "
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
@@ -175,7 +180,7 @@ def kube_exec_cvat_db(command):
 
 
 def docker_exec_clickhouse_db(command):
-    _run(["docker", "exec", f"{PREFIX}_cvat_clickhouse_1"] + command)
+    _run(["docker", "exec", dc_container("cvat_clickhouse")] + command)
 
 
 def kube_exec_clickhouse_db(command):
@@ -184,7 +189,7 @@ def kube_exec_clickhouse_db(command):
 
 
 def docker_exec_redis_inmem(command):
-    return _run(["docker", "exec", f"{PREFIX}_cvat_redis_inmem_1"] + command)
+    return _run(["docker", "exec", dc_container("cvat_redis_inmem")] + command)
 
 
 def kube_exec_redis_inmem(command):
@@ -193,7 +198,7 @@ def kube_exec_redis_inmem(command):
 
 
 def docker_exec_redis_ondisk(command):
-    _run(["docker", "exec", f"{PREFIX}_cvat_redis_ondisk_1"] + command)
+    _run(["docker", "exec", dc_container("cvat_redis_ondisk")] + command)
 
 
 def kube_exec_redis_ondisk(command):
@@ -288,12 +293,12 @@ def running_containers():
 
 
 def dump_db():
-    if "test_cvat_server_1" not in running_containers():
+    if dc_container("cvat_server") not in running_containers():
         pytest.exit("CVAT is not running")
     with open(CVAT_DB_DIR / "data.json", "w") as f:
         try:
             run(  # nosec
-                "docker exec test_cvat_server_1 \
+                f"docker exec {dc_container('cvat_server')} \
                     python manage.py dumpdata \
                     --indent 2 --natural-foreign \
                     --exclude=auth.permission --exclude=contenttypes".split(),
@@ -304,8 +309,8 @@ def dump_db():
             pytest.exit("Database dump failed.\n")
 
 
-def create_compose_files(container_name_files):
-    for filename in container_name_files:
+def create_compose_files(generated_dc_files):
+    for filename in generated_dc_files:
         with (
             open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf,
             open(filename, "w") as ndcf,
@@ -313,7 +318,6 @@ def create_compose_files(container_name_files):
             dc_config = yaml.safe_load(dcf)
 
             for service_name, service_config in dc_config["services"].items():
-                service_config.pop("container_name", None)
                 if service_name in (Container.SERVER, Container.WORKER_UTILS):
                     service_env = service_config["environment"]
                     service_env["DJANGO_SETTINGS_MODULE"] = "cvat.settings.testing_rest"
@@ -328,8 +332,8 @@ def create_compose_files(container_name_files):
             yaml.dump(dc_config, ndcf)
 
 
-def delete_compose_files(container_name_files):
-    for filename in container_name_files:
+def delete_compose_files(generated_dc_files):
+    for filename in generated_dc_files:
         filename.unlink(missing_ok=True)
 
 
@@ -360,7 +364,7 @@ def wait_for_services(num_secs: int = 300) -> None:
 def docker_restore_data_volumes():
     docker_cp(
         CVAT_DB_DIR / "cvat_data.tar.bz2",
-        f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
+        f"{dc_container('cvat_server')}:/tmp/cvat_data.tar.bz2",
     )
     docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
@@ -382,10 +386,7 @@ def docker_compose(dc_files, cvat_root_dir):
     return [
         "docker",
         "compose",
-        f"--project-name={PREFIX}",
-        # use compatibility mode to have fixed names for containers (with underscores)
-        # https://github.com/docker/compose#about-update-and-backward-compatibility
-        "--compatibility",
+        f"--project-name={DC_PROJECT_NAME}",
         f"--env-file={cvat_root_dir / 'tests/python/webhook_receiver/.env'}",
         *(f"--file={f}" for f in dc_files),
     ]
@@ -464,15 +465,15 @@ def local_start(
     if extra_dc_files is not None:
         dc_files += extra_dc_files
 
-    container_name_files = [cvat_root_dir / f for f in CONTAINER_NAME_FILES]
+    generated_dc_files = [cvat_root_dir / f for f in GENERATED_DC_FILES]
 
     if cleanup:
-        delete_compose_files(container_name_files)
+        delete_compose_files(generated_dc_files)
         pytest.exit("All generated test files have been deleted", returncode=0)
 
-    if not all([f.exists() for f in container_name_files]) or rebuild:
-        delete_compose_files(container_name_files)
-        create_compose_files(container_name_files)
+    if not all([f.exists() for f in generated_dc_files]) or rebuild:
+        delete_compose_files(generated_dc_files)
+        create_compose_files(generated_dc_files)
 
     if stop:
         stop_services(dc_files, cvat_root_dir)
@@ -481,8 +482,8 @@ def local_start(
     start_services(dc_files, rebuild, cvat_root_dir)
 
     docker_restore_data_volumes()
-    docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
-    docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
+    docker_cp(cvat_db_dir / "restore.sql", f"{dc_container('cvat_db')}:/tmp/restore.sql")
+    docker_cp(cvat_db_dir / "data.json", f"{dc_container('cvat_server')}:/tmp/data.json")
 
     wait_for_services(waiting_time)
 
@@ -553,7 +554,7 @@ def collect_code_coverage_from_containers():
         docker_exec(container, "coverage combine", capture_output=False)
         docker_exec(container, "coverage json", capture_output=False)
         docker_cp(
-            f"{PREFIX}_{container}_1:home/django/coverage.json",
+            f"{dc_container(container)}:/home/django/coverage.json",
             f"coverage_{container}.json",
         )
 
