@@ -79,6 +79,51 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         response = patch_method(user, f"{self._settings_endpoint}/{settings_id}", data, **kwargs)
         return response.json() if response.content else None, response
 
+    def _get_report_data(self, user: str, report_id: int) -> dict[str, Any]:
+        with make_api_client(user) as api_client:
+            _, response = api_client.quality_api.retrieve_report_data(
+                report_id, _parse_response=False
+            )
+            assert response.status == HTTPStatus.OK
+            return json.loads(response.data)
+
+    def _get_task_labels_by_name(self, user: str, *, task_id: int) -> dict[str, Any]:
+        with make_api_client(user) as api_client:
+            labels, response = api_client.labels_api.list(task_id=task_id)
+            assert response.status == HTTPStatus.OK
+            return {label.name: label for label in labels.results}
+
+    def _complete_job(self, user: str, job_id: int) -> None:
+        with make_api_client(user) as api_client:
+            _, response = api_client.jobs_api.partial_update(
+                job_id,
+                patched_job_write_request={
+                    "stage": "acceptance",
+                    "state": "completed",
+                },
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.OK
+
+    @staticmethod
+    def _build_rectangle_shape(
+        *,
+        frame: int,
+        label_id: int,
+        points: list[float],
+        attributes: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "frame": frame,
+            "label_id": label_id,
+            "points": points,
+            "rotation": 0,
+            "type": "rectangle",
+            "occluded": False,
+            "outside": False,
+            "attributes": attributes or [],
+        }
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityRequirementsApi(_QualityRequirementsTestBase):
@@ -424,6 +469,275 @@ class TestDefaultQualityRequirementsApi(_QualityRequirementsTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
+    def test_task_report_data_applies_shape_requirement_filter_to_metrics(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "shape-filter-report",
+                "labels": [
+                    {"name": "car", "type": "rectangle"},
+                    {"name": "person", "type": "rectangle"},
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+
+        requirement_name = f"cars-only-{task_id}"
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    self._build_requirement_payload(
+                        requirement_name,
+                        enabled=True,
+                        required_score=1.0,
+                        annotation_type="rectangle",
+                        filter_expression=json.dumps(
+                            {"==": [{"var": "shape.label"}, "car"]}
+                        ),
+                    )
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["car"].id,
+                            points=[0, 0, 10, 10],
+                        ),
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["person"].id,
+                            points=[20, 20, 30, 30],
+                        ),
+                    ]
+                },
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["car"].id,
+                            points=[0, 0, 10, 10],
+                        ),
+                    ]
+                },
+            )
+
+        self._complete_job(admin_user, gt_job.id)
+
+        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+
+        group_annotations = report_data["groups"][requirement_name]["comparison_summary"]["annotations"]
+        assert group_annotations["valid_count"] == 1
+        assert group_annotations["missing_count"] == 0
+        assert group_annotations["extra_count"] == 0
+        assert group_annotations["total_count"] == 1
+
+        total_annotations = report_data["comparison_summary"]["annotations"]
+        assert total_annotations["valid_count"] == 1
+        assert total_annotations["total_count"] == 1
+        assert report_data["comparison_summary"]["conflict_count"] == 0
+
+    @pytest.mark.parametrize(
+        "filter_expression,expected_report",
+        [
+            pytest.param(
+                json.dumps({"==": [{"var": "attribute.name"}, "color"]}),
+                {
+                    "valid_count": 1,
+                    "missing_count": 0,
+                    "extra_count": 0,
+                    "total_count": 1,
+                    "invalid_count": 0,
+                    "conflict_count": 0,
+                },
+                id="color",
+            ),
+            pytest.param(
+                json.dumps({"==": [{"var": "attribute.name"}, "size"]}),
+                {
+                    "valid_count": 0,
+                    "missing_count": 0,
+                    "extra_count": 0,
+                    "total_count": 1,
+                    "invalid_count": 1,
+                    "conflict_count": 1,
+                },
+                id="size",
+            ),
+            pytest.param(
+                json.dumps(
+                    {
+                        "or": [
+                            {"==": [{"var": "attribute.name"}, "color"]},
+                            {"==": [{"var": "attribute.name"}, "size"]},
+                        ]
+                    }
+                ),
+                {
+                    "valid_count": 1,
+                    "missing_count": 0,
+                    "extra_count": 0,
+                    "total_count": 2,
+                    "invalid_count": 1,
+                    "conflict_count": 1,
+                },
+                id="color-and-size",
+            ),
+        ],
+    )
+    def test_task_report_data_applies_attribute_requirement_filter_to_metrics(
+        self,
+        admin_user,
+        filter_expression,
+        expected_report,
+    ):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "attribute-filter-report",
+                "labels": [
+                    {
+                        "name": "car",
+                        "type": "rectangle",
+                        "attributes": [
+                            {
+                                "name": "color",
+                                "mutable": False,
+                                "input_type": "select",
+                                "default_value": "red",
+                                "values": ["red", "blue"],
+                            },
+                            {
+                                "name": "size",
+                                "mutable": False,
+                                "input_type": "select",
+                                "default_value": "large",
+                                "values": ["large", "small"],
+                            },
+                        ],
+                    }
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+
+        parent_requirement_name = f"boxes-{task_id}"
+        patched_settings, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    self._build_requirement_payload(
+                        parent_requirement_name,
+                        enabled=True,
+                        required_score=1.0,
+                        annotation_type="rectangle",
+                    )
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        parent_requirement = patched_settings["requirements"][0]
+
+        attribute_requirement_name = f"attribute-filter-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                attribute_requirement_name,
+                settings_id=settings["id"],
+                enabled=True,
+                required_score=1.0,
+                annotation_type="attribute",
+                parent_requirement=parent_requirement["id"],
+                filter_expression=filter_expression,
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
+        car_label = labels_by_name["car"]
+        attribute_ids = {attribute.name: attribute.id for attribute in car_label.attributes}
+
+        gt_attributes = [
+            {"spec_id": attribute_ids["color"], "value": "red"},
+            {"spec_id": attribute_ids["size"], "value": "large"},
+        ]
+        ds_attributes = [
+            {"spec_id": attribute_ids["color"], "value": "red"},
+            {"spec_id": attribute_ids["size"], "value": "small"},
+        ]
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=car_label.id,
+                            points=[0, 0, 10, 10],
+                            attributes=gt_attributes,
+                        )
+                    ]
+                },
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=car_label.id,
+                            points=[0, 0, 10, 10],
+                            attributes=ds_attributes,
+                        )
+                    ]
+                },
+            )
+
+        self._complete_job(admin_user, gt_job.id)
+
+        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+
+        attribute_group = report_data["groups"][attribute_requirement_name]["comparison_summary"]
+        attribute_annotations = attribute_group["annotations"]
+        assert attribute_annotations["valid_count"] == expected_report["valid_count"]
+        assert attribute_annotations["missing_count"] == expected_report["missing_count"]
+        assert attribute_annotations["extra_count"] == expected_report["extra_count"]
+        assert attribute_annotations["total_count"] == expected_report["total_count"]
+        assert (
+            attribute_group["annotation_components"]["label"]["invalid_count"]
+            == expected_report["invalid_count"]
+        )
+        assert attribute_group["conflict_count"] == expected_report["conflict_count"]
+
     def test_task_report_data_contains_groups_and_targets(
         self, admin_user, find_sandbox_task_without_gt
     ):
