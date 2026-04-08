@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
+import {
+    ObjectState, ShapeType, SimplifyPolyOptions, SimplifyPolyResult, getCore, simplifyPoly,
+} from 'cvat-core-wrapper';
 import config from 'config';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation from './tracker-mil';
@@ -51,11 +53,14 @@ export class OpenCVWrapper {
     private onProgress: ((percent: number) => void) | null;
     private injectionProcess: Promise<void> | null;
 
+    private simplifyPolyFn: ((points: number[], options: SimplifyPolyOptions) => SimplifyPolyResult) | null;
+
     public constructor() {
         this.initialized = false;
         this.cv = null;
         this.onProgress = null;
         this.injectionProcess = null;
+        this.simplifyPolyFn = null;
     }
 
     private checkInitialization(): void {
@@ -404,6 +409,17 @@ export class OpenCVWrapper {
                 kind: 'opencv_tracker_mil',
             },
         };
+    }
+
+    public simplifyPolygon(
+        points: number[],
+        options: SimplifyPolyOptions,
+    ): SimplifyPolyResult {
+        this.checkInitialization();
+        if (!this.simplifyPolyFn) {
+            this.simplifyPolyFn = simplifyPoly(this.cv);
+        }
+        return this.simplifyPolyFn(points, options);
     }
 }
 

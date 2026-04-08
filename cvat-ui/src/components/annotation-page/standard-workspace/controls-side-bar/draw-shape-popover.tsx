@@ -157,18 +157,20 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                     {[ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType) && (
-                        <Row justify='space-around' align='middle'>
-                            <Col span={14}>
-                                <Text className='cvat-text-color'> Simplify </Text>
-                            </Col>
-                            <Col span={10}>
-                                <Switch
-                                    checked={simplifyPoly}
-                                    onChange={onChangeSimplifyPoly}
-                                    className='cvat-draw-shape-popover-simplify-checkbox'
-                                />
-                            </Col>
-                        </Row>
+                        <CVATTooltip title='Automatically start polygon/polyline simplification after shape is drawn'>
+                            <Row justify='space-around' align='middle'>
+                                <Col span={14}>
+                                    <Text className='cvat-text-color'> Simplify </Text>
+                                </Col>
+                                <Col span={10}>
+                                    <Switch
+                                        checked={simplifyPoly}
+                                        onChange={onChangeSimplifyPoly}
+                                        className='cvat-draw-shape-popover-simplify-checkbox'
+                                    />
+                                </Col>
+                            </Row>
+                        </CVATTooltip>
                     )}
                 </>
             ) : null}

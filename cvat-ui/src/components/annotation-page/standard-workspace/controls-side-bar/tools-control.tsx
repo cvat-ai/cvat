@@ -29,6 +29,7 @@ import { Canvas, convertShapesForInteractor, InteractionResult } from 'cvat-canv
 import {
     getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
     MinimalShape, InteractorResults, TrackerResults,
+    thresholdFromAccuracy,
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -49,7 +50,6 @@ import CVATMarkdown from 'components/common/cvat-markdown';
 import ApproximationAccuracy from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import ConfidenceThreshold from 'components/annotation-page/standard-workspace/controls-side-bar/confidence-threshold';
 import { switchToolsBlockerState } from 'actions/settings-actions';
-import { thresholdFromAccuracy } from 'utils/opencv-wrapper/object-cv-utils';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 

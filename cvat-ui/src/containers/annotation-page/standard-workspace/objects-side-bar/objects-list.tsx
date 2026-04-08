@@ -66,7 +66,7 @@ interface DispatchToProps {
     removeObject: (objectState: any, force: boolean) => void;
     copyShape: (objectState: any) => void;
     switchPropagateVisibility: (visible: boolean) => void;
-    switchSimplifyVisibility: (objectState: any, originalPoints: number[] | null) => void;
+    switchSimplifyVisibility: (objectState: ObjectState | null) => void;
     changeFrame(frame: number): void;
     changeGroupColor(group: number, color: string): void;
     changeShowGroundTruth(value: boolean): void;
@@ -288,8 +288,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         switchPropagateVisibility(visible: boolean): void {
             dispatch(switchPropagateVisibilityAction(visible));
         },
-        switchSimplifyVisibility(objectState: any, originalPoints: number[] | null): void {
-            dispatch(switchSimplifyVisibilityAction(objectState, originalPoints));
+        switchSimplifyVisibility(objectState: ObjectState | null): void {
+            dispatch(switchSimplifyVisibilityAction(objectState));
         },
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
@@ -672,8 +672,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
-                    const originalPoints = state.points ? [...state.points] : [];
-                    switchSimplifyVisibility(state, originalPoints);
+                    switchSimplifyVisibility(state);
                 }
             },
         };

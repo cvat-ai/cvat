@@ -11,7 +11,7 @@ import Slider from 'antd/lib/slider';
 import message from 'antd/lib/message';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 
-import { ObjectState, ShapeType, simplifyPoly } from 'cvat-core-wrapper';
+import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { MAX_ACCURACY } from './approximation-accuracy';
@@ -34,42 +34,25 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
     const originalPointsRef = useRef<number[]>(objectState.points ? [...objectState.points] : []);
 
     const updatePreview = async (): Promise<void> => {
-        try {
-            if (!openCVWrapper.isInitialized) {
-                return;
-            }
-
-            const closed = objectState.shapeType === ShapeType.POLYGON;
-
-            const { cv } = (window as any);
-            if (!cv) {
-                return;
-            }
-
-            const simplifyFn = simplifyPoly(cv);
-            const result = simplifyFn(originalPointsRef.current, {
-                accuracy: approxPolyAccuracy,
-                closed,
-            });
-
-            // Update preview with simplified points
-            // If points are different from original and no critical warning, update preview
-            const pointsChanged = result.points !== originalPointsRef.current;
-            const pointCount = result.points.length / 2;
-
-            if (pointsChanged && pointCount >= 3) {
-                onUpdatePreview(result.points);
-            } else {
-                onUpdatePreview(originalPointsRef.current);
-            }
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to preview simplification:', error);
+        if (!openCVWrapper.isInitialized) {
+            return;
         }
-    };
 
-    const handleApply = (): void => {
-        onApply();
+        const closed = objectState.shapeType === ShapeType.POLYGON;
+
+        const result = openCVWrapper.simplifyPolygon(originalPointsRef.current, {
+            accuracy: approxPolyAccuracy,
+            closed,
+        });
+
+        const pointsChanged = result.points !== originalPointsRef.current;
+        const pointCount = result.points.length / 2;
+
+        if (pointsChanged && pointCount >= 3) {
+            onUpdatePreview(result.points);
+        } else {
+            onUpdatePreview(originalPointsRef.current);
+        }
     };
 
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -81,7 +64,7 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
         ) {
             event.preventDefault();
             event.stopImmediatePropagation();
-            handleApply();
+            onApply();
         } else if (event.key === 'Escape') {
             event.preventDefault();
             event.stopImmediatePropagation();
@@ -138,7 +121,7 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
                     type='primary'
                     size='small'
                     icon={<CheckOutlined />}
-                    onClick={handleApply}
+                    onClick={onApply}
                     style={{ marginRight: 4 }}
                 />
                 <Button
@@ -155,4 +138,4 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
     ) : null;
 }
 
-export default PolySimplifyControl;
+export default React.memo(PolySimplifyControl);

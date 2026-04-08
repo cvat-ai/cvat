@@ -133,7 +133,7 @@ interface DispatchToProps {
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateAnnotations(states: ObjectState[]): void;
-    onCreateAnnotations(states: ObjectState[], callback?: (states: ObjectState[] | null) => void): void;
+    onCreateAnnotations(states: ObjectState[]): Promise<ObjectState[] | null>;
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
@@ -156,7 +156,7 @@ interface DispatchToProps {
     onCanvasErrorOccurred(error: Error): void;
     onStartIssue(position: number[]): void;
     onUpdateEditedObject(editedState: ObjectState | null): void;
-    onSwitchSimplifyVisibility(objectState: any, originalPoints: number[] | null): void;
+    onSwitchSimplifyVisibility(objectState: ObjectState | null): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -319,8 +319,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        onCreateAnnotations(states: ObjectState[], callback?: (states: ObjectState[] | null) => void): void {
-            dispatch(createAnnotationsAsync(states)).then(callback);
+        onCreateAnnotations(states: ObjectState[]): Promise<ObjectState[] | null> {
+            return dispatch(createAnnotationsAsync(states));
         },
         onMergeAnnotations(states: ObjectState[]): void {
             dispatch(mergeAnnotationsAsync(states));
@@ -392,8 +392,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onUpdateEditedObject(editedState: ObjectState | null): void {
             dispatch(updateEditedStateAsync(editedState));
         },
-        onSwitchSimplifyVisibility(objectState: any, originalPoints: number[] | null = null): void {
-            dispatch(switchSimplifyVisibility(objectState, originalPoints));
+        onSwitchSimplifyVisibility(objectState: ObjectState | null): void {
+            dispatch(switchSimplifyVisibility(objectState));
         },
     };
 }
@@ -690,7 +690,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         this.canvasTipsRef.current?.update(messages, topic);
     };
 
-    private onCanvasShapeDrawn = (event: any): void => {
+    private onCanvasShapeDrawn = async (event: any): Promise<void> => {
         const {
             jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
             onUpdateEditedObject, activeObjectHidden, workspace, onSwitchSimplifyVisibility,
@@ -728,15 +728,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         } else {
             jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration });
         }
-        console.log(simplifyPoly);
         const objectState = new cvat.classes.ObjectState(state);
-        onCreateAnnotations([objectState], (states) => {
+        const states = await onCreateAnnotations([objectState]);
+        if (states) {
             onUpdateEditedObject(null);
-            if (simplifyPoly && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType) && states) {
+            if (simplifyPoly && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
                 const [createdState] = states;
-                onSwitchSimplifyVisibility(createdState, createdState.points);
+                onSwitchSimplifyVisibility(createdState);
             }
-        });
+        }
     };
 
     private onCanvasObjectsMerged = (event: any): void => {

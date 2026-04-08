@@ -509,7 +509,8 @@ export function switchPropagateVisibility(visible: boolean): AnyAction {
     };
 }
 
-export function switchSimplifyVisibility(objectState: any, originalPoints: number[] | null = null): AnyAction {
+export function switchSimplifyVisibility(objectState: ObjectState | null): AnyAction {
+    const originalPoints = objectState?.points ? [...objectState.points] : null;
     return {
         type: AnnotationActionTypes.SWITCH_SIMPLIFY_VISIBILITY,
         payload: { objectState, originalPoints },
@@ -1197,6 +1198,7 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
                 // deactivate object to visualize changes immediately (UX)
                 dispatch(activateObject(null, null, null));
             }
+
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
             let states = await Promise.all(promises);
 

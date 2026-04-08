@@ -59,7 +59,7 @@ interface StateToProps {
     focusedObjectPadding: number;
     defaultApproxPolyAccuracy: number;
     simplifyState: {
-        objectState: any;
+        objectState: ObjectState | null;
         originalPoints: number[] | null;
     };
 }
@@ -71,7 +71,7 @@ interface DispatchToProps {
     removeObject: (objectState: ObjectState) => void;
     copyShape: (objectState: ObjectState) => void;
     switchPropagateVisibility: (visible: boolean) => void;
-    switchSimplifyVisibility: (objectState: any, originalPoints: number[] | null) => void;
+    switchSimplifyVisibility: (objectState: ObjectState | null) => void;
     changeGroupColor(group: number, color: string): void;
     updateActiveControl(activeControl: ActiveControl): void;
     expandObject(objectState: ObjectState): void;
@@ -144,8 +144,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         switchPropagateVisibility(visible: boolean): void {
             dispatch(switchPropagateVisibilityAction(visible));
         },
-        switchSimplifyVisibility(objectState: any, originalPoints: number[] | null): void {
-            dispatch(switchSimplifyVisibilityAction(objectState, originalPoints));
+        switchSimplifyVisibility(objectState: ObjectState | null): void {
+            dispatch(switchSimplifyVisibilityAction(objectState));
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
@@ -313,16 +313,14 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
             objectState.points = [...simplifiedPoints];
             await updateState(objectState);
-
-            switchSimplifyVisibility(null, null);
+            switchSimplifyVisibility(null);
 
             this.setState({ simplifyMode: false, previewPoints: null });
         } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to apply simplification:', error);
             jobInstance.actions.freeze(false);
-            switchSimplifyVisibility(null, null);
+            switchSimplifyVisibility(null);
             this.setState({ simplifyMode: false, previewPoints: null });
+            throw error;
         }
     };
 
@@ -338,7 +336,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
 
         jobInstance.actions.freeze(false);
-        switchSimplifyVisibility(null, null);
+        switchSimplifyVisibility(null);
         this.setState({
             simplifyMode: false,
             originalPoints: null,
@@ -348,11 +346,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private updateSimplificationPreview = async (points: number[]): Promise<void> => {
         const { objectState, updateState } = this.props;
-
         this.setState({ previewPoints: points });
-
         objectState.points = points;
-
         await updateState(objectState);
     };
 

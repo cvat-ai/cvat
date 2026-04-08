@@ -360,6 +360,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.dispatchCanceledEvent();
                 return;
             }
+
             const { zLayer } = this.controller;
             const event: CustomEvent = new CustomEvent('canvas.drawn', {
                 bubbles: false,
