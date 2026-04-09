@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 from copy import deepcopy
+from datetime import timedelta
 from http import HTTPStatus
 
 import django_rq
@@ -16,6 +17,7 @@ from django.db import transaction
 from django.db.models import Model
 from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.dispatch import Signal, receiver
+from django.utils import timezone
 
 from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
 from cvat.apps.engine.serializers import BasicUserSerializer
@@ -36,11 +38,49 @@ from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 WEBHOOK_TIMEOUT = 10
 RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
 
+# Status codes that should trigger automatic retry
+# 408 Request Timeout, 429 Too Many Requests, 5xx Server Errors
+RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+
 signal_redelivery = Signal()
 signal_ping = Signal()
 
 
-def send_webhook(webhook, payload, redelivery=False):
+def should_retry(status_code, webhook):
+    """Determine if a delivery should be retried based on status code and webhook config."""
+    if webhook.max_retries == 0:
+        return False
+
+    # Retry on network errors (represented as 502 or 504) and retryable status codes
+    return status_code in RETRYABLE_STATUS_CODES
+
+
+def calculate_retry_delay(attempt_number, webhook):
+    """Calculate delay before next retry using exponential backoff with jitter."""
+    import random
+
+    # Calculate exponential backoff: initial_delay * (backoff_factor ^ (attempt - 1))
+    delay = webhook.retry_delay * (webhook.retry_backoff_factor ** (attempt_number - 1))
+
+    # Add jitter (up to 10% of delay) to avoid thundering herd
+    jitter = delay * 0.1 * random.random()
+    delay += jitter
+
+    # Cap maximum delay at 1 hour
+    max_delay = 3600
+    return min(delay, max_delay)
+
+
+def send_webhook(webhook, payload, redelivery=False, attempt_number=1):
+    """
+    Send webhook delivery and handle retry logic.
+
+    Args:
+        webhook: Webhook model instance
+        payload: JSON payload to send
+        redelivery: Whether this is a manual redelivery
+        attempt_number: Current attempt number (1 for first attempt)
+    """
     headers = {}
     if webhook.secret:
         headers["X-Signature-256"] = (
@@ -75,22 +115,49 @@ def send_webhook(webhook, payload, redelivery=False):
     if response_body is not None and len(response_body) < RESPONSE_SIZE_LIMIT + 1:
         response = response_body.decode("utf-8")
 
+    # Determine if retry is needed
+    next_retry_date = None
+    if not redelivery and attempt_number <= webhook.max_retries and should_retry(status_code, webhook):
+        delay_seconds = calculate_retry_delay(attempt_number, webhook)
+        next_retry_date = timezone.now() + timedelta(seconds=delay_seconds)
+
     delivery = WebhookDelivery.objects.create(
         webhook_id=webhook.id,
         event=payload["event"],
         status_code=status_code,
         changed_fields=",".join(list(payload.get("before_update", {}).keys())),
         redelivery=redelivery,
+        attempt_number=attempt_number,
+        next_retry_date=next_retry_date,
         request=payload,
         response=response,
     )
 
+    # Schedule retry if needed
+    if next_retry_date and not redelivery:
+        schedule_retry(webhook, payload, attempt_number + 1, delay_seconds)
+
     return delivery
 
 
-def add_to_queue(webhook, payload, redelivery=False):
+def schedule_retry(webhook, payload, next_attempt_number, delay_seconds):
+    """Schedule a retry attempt for a failed webhook delivery."""
     queue = django_rq.get_queue(settings.CVAT_QUEUES.WEBHOOKS.value)
-    queue.enqueue_call(func=send_webhook, args=(webhook, payload, redelivery))
+    # Use RQ's job scheduling to delay the retry
+    queue.enqueue_in(
+        timedelta(seconds=delay_seconds),
+        send_webhook,
+        webhook=webhook,
+        payload=payload,
+        redelivery=False,
+        attempt_number=next_attempt_number,
+    )
+
+
+def add_to_queue(webhook, payload, redelivery=False, attempt_number=1):
+    """Add webhook delivery to the queue."""
+    queue = django_rq.get_queue(settings.CVAT_QUEUES.WEBHOOKS.value)
+    queue.enqueue_call(func=send_webhook, args=(webhook, payload, redelivery, attempt_number))
 
 
 def batch_add_to_queue(webhooks: list | dict, data: dict | None):
