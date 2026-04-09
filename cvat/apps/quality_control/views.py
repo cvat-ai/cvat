@@ -712,6 +712,7 @@ class QualityRequirementViewSet(
             )
             allowed_settings = permissions.filter(settings_queryset).values_list("id", flat=True)
             queryset = queryset.filter(settings_id__in=allowed_settings)
+            queryset = QualityRequirementPermission.add_org_filter_proof(queryset)
 
         return queryset
 
