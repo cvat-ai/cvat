@@ -262,8 +262,12 @@ const samPlugin: SAMPlugin = {
                                         resolve({
                                             shapes: payload.map((item) => {
                                                 const { mask_input: maskInput, bounds } = item;
-                                                const rle = plugin.callbacks.mask2Rle!(item.points);
-                                                rle.push(...(rle.length ? bounds : [0, 0, 0, 0]));
+                                                let rle = plugin.callbacks.mask2Rle!(item.points);
+                                                if (rle.length < 2) {
+                                                    rle = [0, 0, 0, 0, 0];
+                                                } else {
+                                                    rle.push(...bounds);
+                                                }
 
                                                 plugin.data.lowResMasks.set(key, maskInput);
                                                 return {
