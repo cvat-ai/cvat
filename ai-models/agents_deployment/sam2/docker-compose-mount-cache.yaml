@@ -1,13 +1,13 @@
 services:
   cvat-function-register:
     volumes:
-      - userdata:/app/data:ro
+      - userdata:/home/agent/.cache/huggingface
   cvat-agent:
     volumes:
-      - userdata:/app/data:ro
+      - userdata:/home/agent/.cache/huggingface
   cvat-function-deregister:
     volumes:
-      - userdata:/app/data:ro
+      - userdata:/home/agent/.cache/huggingface
 
 volumes:
   userdata:

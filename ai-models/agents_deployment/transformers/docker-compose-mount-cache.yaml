@@ -1,0 +1,18 @@
+services:
+  cvat-function-register:
+    volumes:
+      - userdata:/home/agent/.cache/huggingface
+  cvat-agent:
+    volumes:
+      - userdata:/home/agent/.cache/huggingface
+  cvat-function-deregister:
+    volumes:
+      - userdata:/home/agent/.cache/huggingface
+
+volumes:
+  userdata:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${USER_DATA_ABSOLUTE_PATH}
