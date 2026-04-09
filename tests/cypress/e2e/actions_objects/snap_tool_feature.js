@@ -373,7 +373,7 @@ context('Snap tool feature.', () => {
         });
     });
 
-    context('Regression tests', () => {
+    context.only('Regression tests', () => {
         const createRectangleShape2PointsHidden = {
             points: 'By 2 Points',
             type: 'Shape',
@@ -385,9 +385,11 @@ context('Snap tool feature.', () => {
         };
         before(() => {
             cy.createRectangle(createRectangleShape2PointsHidden);
+            toggleSnapTool('contour', true);
         });
         after(() => {
             cy.removeAnnotations();
+            toggleSnapTool('contour', false);
         });
         it('Issue 3931: Autoborder points are not visible for invisible shapes', () => {
             allure.issue('https://github.com/cvat-ai/cvat/pull/3931');
