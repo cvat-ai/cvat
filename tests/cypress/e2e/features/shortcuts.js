@@ -136,8 +136,8 @@ context('Customizable Shortcuts', () => {
                 description: 'Submit unsaved changes of annotations to the server',
             },
             {
-                title: 'Switch automatic bordering',
-                description: 'Switch automatic bordering for polygons and polylines during drawing/editing',
+                title: 'Switch snap to contour',
+                description: 'Switch automatic snap to contour for polygons and polylines during drawing/editing',
             },
         ];
         const searchItemClass = search === 'description' ? '.cvat-shortcuts-settings-item-title' : '.cvat-shortcuts-settings-item-description';

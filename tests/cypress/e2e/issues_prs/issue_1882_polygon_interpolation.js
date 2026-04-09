@@ -53,15 +53,15 @@ context("The points of the previous polygon mustn't appear while polygon's inter
             });
             cy.createPolygon(reDrawPolygonTrack);
         });
-        it('Activate auto bordering mode', () => {
-            cy.openSettings();
-            cy.get('.ant-modal-content').within(() => {
-                cy.contains('Workspace').click();
-                cy.get('.cvat-workspace-settings-autoborders').within(() => {
-                    cy.get('[type="checkbox"]').check();
-                });
+        it('Activate snap to contour mode via snap tools control', () => {
+            cy.get('.cvat-snap-tools-control').click();
+            cy.get('.cvat-snap-tools-control').should('have.class', 'ant-popover-open');
+            cy.get('.cvat-snap-tools-control-popover').should('be.visible');
+            cy.get('.cvat-snap-tools-control-popover').within(() => {
+                cy.get('.cvat-snap-to-contour-button').click();
+                cy.get('.cvat-snap-to-contour-button').should('have.class', 'cvat-snap-tool-active');
             });
-            cy.closeSettings();
+            cy.get('body').click();
         });
         it('Old points invisible', () => {
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');

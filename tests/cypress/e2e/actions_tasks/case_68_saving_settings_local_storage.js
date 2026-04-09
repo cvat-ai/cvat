@@ -39,7 +39,6 @@ context('Saving setting to local storage.', () => {
         cy.contains('[role="tab"]', 'Workspace').click();
         cy.get('.cvat-workspace-settings-show-interpolated').find('[type="checkbox"]')[method]();
         cy.get('.cvat-workspace-settings-show-text-always').find('[type="checkbox"]')[method]();
-        cy.get('.cvat-workspace-settings-autoborders').find('[type="checkbox"]')[method]();
         cy.closeSettings();
         cy.window().then((window) => {
             const { localStorage } = window;
@@ -64,7 +63,6 @@ context('Saving setting to local storage.', () => {
         for (const ws of [
             '.cvat-workspace-settings-show-interpolated',
             '.cvat-workspace-settings-show-text-always',
-            '.cvat-workspace-settings-autoborders',
         ]) {
             if (checked) {
                 cy.get(ws).find('[type="checkbox"]').should('be.checked');

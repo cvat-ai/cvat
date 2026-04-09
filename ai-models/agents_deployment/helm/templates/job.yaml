@@ -16,6 +16,18 @@ spec:
       labels:
         {{- include "agent.jobSelectorLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.agent.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agent.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agent.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
       {{- include "agent.podSecurityContext" . | nindent 8 }}
       serviceAccountName: {{ include "agent.fullname" . }}-job-sa
@@ -34,5 +46,15 @@ spec:
             - name: {{ .name }}
               value: {{ .value | quote }}
             {{- end }}
+          {{- if .Values.job.resources }}
           resources:
             {{- toYaml .Values.job.resources | nindent 12 }}
+          {{- end }}
+      {{- if .Values.agent.extraVolumeMounts }}
+          volumeMounts:
+          {{- toYaml .Values.agent.extraVolumeMounts | nindent 12 }}
+          {{- end }}
+      {{- if .Values.agent.extraVolumes }}
+      volumes:
+      {{- toYaml .Values.agent.extraVolumes | nindent 8 }}
+      {{- end }}

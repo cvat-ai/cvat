@@ -10,6 +10,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { PolylineIcon } from 'icons';
 import { ShapeType } from 'cvat-core-wrapper';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 import withVisibilityHandling from './handle-popover-visibility';
 
@@ -46,7 +47,9 @@ function DrawPolylineControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.POLYLINE} />}
         >
-            <Icon {...dynamicIconProps} component={PolylineIcon} />
+            <CVATTooltip title='Draw a polyline' placement='right'>
+                <Icon {...dynamicIconProps} component={PolylineIcon} />
+            </CVATTooltip>
         </CustomPopover>
     );
 }

@@ -102,11 +102,27 @@ is_organization if {
     input.auth.organization != null
 }
 
-add_organization_filter(base_filter, organization_fields) := base_filter if is_sandbox
+add_organization_filter(base_filter, organization_fields) := qobject if {
+    is_sandbox
+    not input.auth.organization_specified
+    qobject := ["&", base_filter, "org_filter_proof"]
+}
+
+add_organization_filter(base_filter, organization_fields) := qobject if {
+    is_sandbox
+    input.auth.organization_specified
+    qobject := ["&", base_filter, make_sandbox_filter(organization_fields), "org_filter_proof"]
+}
 
 add_organization_filter(base_filter, organization_fields) := qobject if {
     is_organization
-    qobject := ["&", base_filter, make_organization_filter(organization_fields)]
+    qobject := ["&", base_filter, make_organization_filter(organization_fields), "org_filter_proof"]
+}
+
+make_sandbox_filter(organization_fields) := qobject if {
+    is_array(organization_fields)
+    count(organization_fields) > 0
+    qobject := array.concat(["&"], [{f: null} | some f in organization_fields])
 }
 
 make_organization_filter(organization_fields) := qobject if {
