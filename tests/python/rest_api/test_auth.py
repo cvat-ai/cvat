@@ -9,7 +9,6 @@ from http import HTTPStatus
 from unittest import mock
 
 import pytest
-import requests
 from cvat_sdk.api_client import ApiClient, Configuration, models
 
 from shared.utils.config import BASE_URL, USER_PASS, make_api_client
@@ -276,43 +275,6 @@ class TestCredentialsManagement:
             assert user.username == username
             assert user.email == email
 
-    def test_cannot_register_with_oversized_password(self):
-        username = "newuser"
-        email = "123@456.com"
-        oversized_password = "A1" + ("x" * 255)
-        response = requests.post(
-            f"{BASE_URL}/api/auth/register",
-            json={
-                "username": username,
-                "password1": oversized_password,
-                "password2": oversized_password,
-                "email": email,
-            },
-        )
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert response.json() == {
-            "password1": ["Ensure this field has no more than 256 characters."],
-            "password2": ["Ensure this field has no more than 256 characters."],
-        }
-
-    def test_cannot_register_with_short_password(self):
-        username = "newuser"
-        email = "123@456.com"
-        response = requests.post(
-            f"{BASE_URL}/api/auth/register",
-            json={
-                "username": username,
-                "password1": "Aa1pass",
-                "password2": "Aa1pass",
-                "email": email,
-            },
-        )
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert response.json() == {
-            "password1": ["Ensure this field has at least 8 characters."],
-            "password2": ["Ensure this field has at least 8 characters."],
-        }
-
     def test_can_change_password(self, admin_user: str):
         username = admin_user
         new_pass = "5w4knrqaW#$@gewa"
@@ -334,56 +296,6 @@ class TestCredentialsManagement:
             user, response = api_client.users_api.retrieve_self()
             assert response.status == HTTPStatus.OK
             assert user.username == username
-
-    def test_can_change_password_to_256_character_password(self, admin_user: str):
-        username = admin_user
-        new_pass = "Aa1" + ("x" * 253)
-        with make_api_client(username) as api_client:
-            info, response = api_client.auth_api.create_password_change(
-                models.PasswordChangeRequest(
-                    old_password=USER_PASS, new_password1=new_pass, new_password2=new_pass
-                )
-            )
-            assert response.status == HTTPStatus.OK
-            assert info.detail == "New password has been saved."
-
-            api_client.configuration.password = new_pass
-            user, response = api_client.users_api.retrieve_self()
-            assert response.status == HTTPStatus.OK
-            assert user.username == username
-
-    def test_cannot_change_password_to_oversized_password(self, admin_user: str):
-        oversized_password = "Aa1" + ("x" * 254)
-        response = requests.post(
-            f"{BASE_URL}/api/auth/password/change",
-            json={
-                "old_password": USER_PASS,
-                "new_password1": oversized_password,
-                "new_password2": oversized_password,
-            },
-            auth=(admin_user, USER_PASS),
-        )
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert response.json() == {
-            "new_password1": ["Ensure this field has no more than 256 characters."],
-            "new_password2": ["Ensure this field has no more than 256 characters."],
-        }
-
-    def test_cannot_change_password_to_short_password(self, admin_user: str):
-        response = requests.post(
-            f"{BASE_URL}/api/auth/password/change",
-            json={
-                "old_password": USER_PASS,
-                "new_password1": "Aa1pass",
-                "new_password2": "Aa1pass",
-            },
-            auth=(admin_user, USER_PASS),
-        )
-        assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert response.json() == {
-            "new_password1": ["Ensure this field has at least 8 characters."],
-            "new_password2": ["Ensure this field has at least 8 characters."],
-        }
 
     def test_can_report_weak_password(self, admin_user: str):
         username = admin_user

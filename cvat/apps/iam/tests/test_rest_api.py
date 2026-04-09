@@ -271,6 +271,26 @@ class UserRegisterAPITestCase(ApiTestBase):
         self.assertEqual(response.data["new_password1"][0].code, "min_length")
         self.assertEqual(response.data["new_password2"][0].code, "min_length")
 
+    def test_password_change_accepts_old_password_longer_than_limit(self):
+        old_password = "Aa1" + ("x" * 254)
+        new_password = "Bb2" + ("y" * 13)
+        self.admin.set_password(old_password)
+        self.admin.save(update_fields=["password"])
+
+        response = self._post_request(
+            "/api/auth/password/change",
+            self.admin,
+            data={
+                "old_password": old_password,
+                "new_password1": new_password,
+                "new_password2": new_password,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.check_password(new_password))
+
     def test_password_reset_confirm_accepts_256_character_password(self):
         new_password = "Aa1" + ("x" * 253)
         uid = user_pk_to_url_str(self.admin)
