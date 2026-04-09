@@ -867,103 +867,112 @@ def _create_validation_jobs(
 ) -> None:
     db_data = db_task.require_data()
 
-    if (
-        db_task.media_type != models.MediaType.AUDIO
-        and validation_params
-        and validation_params["mode"] == models.ValidationMode.GT
-    ):
+    if validation_params and validation_params["mode"] == models.ValidationMode.GT:
 
         def _to_rel_frame(abs_frame: int) -> int:
             return (abs_frame - db_data.start_frame) // db_data.get_frame_step()
 
-        # The RNG backend must not change to yield reproducible frame picks,
-        # so here we specify it explicitly
-        from numpy import random
+        if db_task.media_type == models.MediaType.AUDIO:
+            if extra_params := set(validation_params.keys()) - {"mode"}:
+                raise ValidationError(
+                    "Validation parameters {} are not applicable to the '{}' media type.".format(
+                        ", ".join(f"'{v}'" for v in extra_params),
+                        db_task.media_type,
+                    )
+                )
 
-        seed = validation_params.get("random_seed")
-        rng = random.Generator(random.MT19937(seed=seed))
+            validation_frames = []
+        else:
+            # The RNG backend must not change to yield reproducible frame picks,
+            # so here we specify it explicitly
+            from numpy import random
 
-        match validation_params["frame_selection_method"]:
-            case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                all_frames = range(db_data.size)
+            seed = validation_params.get("random_seed")
+            rng = random.Generator(random.MT19937(seed=seed))
 
-                if frame_count := validation_params.get("frame_count"):
-                    if db_data.size < frame_count:
+            match validation_params["frame_selection_method"]:
+                case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                    all_frames = range(db_data.size)
+
+                    if frame_count := validation_params.get("frame_count"):
+                        if db_data.size < frame_count:
+                            raise ValidationError(
+                                f"The number of validation frames requested ({frame_count}) "
+                                f"is greater that the number of task frames ({db_data.size})"
+                            )
+                    elif frame_share := validation_params.get("frame_share"):
+                        frame_count = max(1, int(frame_share * len(all_frames)))
+                    else:
+                        raise ValidationError("The number of validation frames is not specified")
+
+                    validation_frames = rng.choice(
+                        all_frames, size=frame_count, shuffle=False, replace=False
+                    ).tolist()
+                case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+                    if frame_count := validation_params.get("frames_per_job_count"):
+                        if db_task.segment_size < frame_count:
+                            raise ValidationError(
+                                "The requested number of GT frames per job must be less "
+                                f"than task segment size ({db_task.segment_size})"
+                            )
+                    elif frame_share := validation_params.get("frames_per_job_share"):
+                        frame_count = min(
+                            max(1, int(frame_share * db_task.segment_size)), db_data.size
+                        )
+                    else:
+                        raise ValidationError("The number of validation frames is not specified")
+
+                    validation_frames: list[int] = []
+                    overlap = db_task.overlap
+                    for segment in db_task.segment_set.all():
+                        segment_frames = set(map(_to_rel_frame, segment.frame_set))
+                        selected_frames = segment_frames.intersection(validation_frames)
+                        selected_count = len(selected_frames)
+
+                        missing_count = min(len(segment_frames), frame_count) - selected_count
+                        if missing_count <= 0:
+                            continue
+
+                        selectable_segment_frames = set(
+                            sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
+                        ).difference(selected_frames)
+
+                        validation_frames.extend(
+                            rng.choice(
+                                tuple(selectable_segment_frames), size=missing_count, replace=False
+                            ).tolist()
+                        )
+                case models.JobFrameSelectionMethod.MANUAL:
+                    if not images:
                         raise ValidationError(
-                            f"The number of validation frames requested ({frame_count}) "
-                            f"is greater that the number of task frames ({db_data.size})"
+                            "{} validation frame selection method at task creation "
+                            "is only available for image-based tasks. "
+                            "Please create the GT job after the task is created.".format(
+                                models.JobFrameSelectionMethod.MANUAL
+                            )
                         )
-                elif frame_share := validation_params.get("frame_share"):
-                    frame_count = max(1, int(frame_share * len(all_frames)))
-                else:
-                    raise ValidationError("The number of validation frames is not specified")
 
-                validation_frames = rng.choice(
-                    all_frames, size=frame_count, shuffle=False, replace=False
-                ).tolist()
-            case models.JobFrameSelectionMethod.RANDOM_PER_JOB:
-                if frame_count := validation_params.get("frames_per_job_count"):
-                    if db_task.segment_size < frame_count:
+                    validation_frames: list[int] = []
+                    known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
+                    unknown_requested_frames = []
+                    for frame_filename in validation_params["frames"]:
+                        frame_id = known_frame_names.get(frame_filename)
+                        if frame_id is None:
+                            unknown_requested_frames.append(frame_filename)
+                            continue
+
+                        validation_frames.append(frame_id)
+
+                    if unknown_requested_frames:
                         raise ValidationError(
-                            "The requested number of GT frames per job must be less "
-                            f"than task segment size ({db_task.segment_size})"
+                            "Unknown validation frames requested: {}".format(
+                                format_list(sorted(unknown_requested_frames))
+                            )
                         )
-                elif frame_share := validation_params.get("frames_per_job_share"):
-                    frame_count = min(max(1, int(frame_share * db_task.segment_size)), db_data.size)
-                else:
-                    raise ValidationError("The number of validation frames is not specified")
-
-                validation_frames: list[int] = []
-                overlap = db_task.overlap
-                for segment in db_task.segment_set.all():
-                    segment_frames = set(map(_to_rel_frame, segment.frame_set))
-                    selected_frames = segment_frames.intersection(validation_frames)
-                    selected_count = len(selected_frames)
-
-                    missing_count = min(len(segment_frames), frame_count) - selected_count
-                    if missing_count <= 0:
-                        continue
-
-                    selectable_segment_frames = set(
-                        sorted(segment_frames)[overlap * (segment.start_frame != 0) :]
-                    ).difference(selected_frames)
-
-                    validation_frames.extend(
-                        rng.choice(
-                            tuple(selectable_segment_frames), size=missing_count, replace=False
-                        ).tolist()
-                    )
-            case models.JobFrameSelectionMethod.MANUAL:
-                if not images:
-                    raise ValidationError(
-                        "{} validation frame selection method at task creation "
-                        "is only available for image-based tasks. "
-                        "Please create the GT job after the task is created.".format(
-                            models.JobFrameSelectionMethod.MANUAL
-                        )
-                    )
-
-                validation_frames: list[int] = []
-                known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
-                unknown_requested_frames = []
-                for frame_filename in validation_params["frames"]:
-                    frame_id = known_frame_names.get(frame_filename)
-                    if frame_id is None:
-                        unknown_requested_frames.append(frame_filename)
-                        continue
-
-                    validation_frames.append(frame_id)
-
-                if unknown_requested_frames:
-                    raise ValidationError(
-                        "Unknown validation frames requested: {}".format(
-                            format_list(sorted(unknown_requested_frames))
-                        )
-                    )
-            case _:
-                assert (
-                    False
-                ), f'Unknown frame selection method {validation_params["frame_selection_method"]}'
+                case _:
+                    assert (
+                        False
+                    ), f'Unknown frame selection method {validation_params["frame_selection_method"]}'
 
         db_data.update_validation_layout(
             models.ValidationLayout(
@@ -983,7 +992,11 @@ def _create_validation_jobs(
                 start_frame=0,
                 stop_frame=db_data.size - 1,
                 frames=list(map(_to_abs_frame, db_data.validation_layout.frames)),
-                type=models.SegmentType.SPECIFIC_FRAMES,
+                type=(
+                    models.SegmentType.SPECIFIC_FRAMES
+                    if db_data.validation_layout.frames
+                    else models.SegmentType.RANGE
+                ),
             )
         elif db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
             db_gt_segment = models.Segment(
