@@ -30,23 +30,38 @@ resolve_org_slug() {
     fi
 }
 
-# This example is for SAM2 function.
-# For your function it will be different.
-resolve_model_id() {
-    if [ -z "$MODEL_ID" ]; then
-        echo "Warning: MODEL_ID environment variable not found. Default is facebook/sam2.1-hiera-tiny"
-        MODEL_ID="facebook/sam2.1-hiera-tiny"
-    else
-        echo "Using MODEL_ID: $MODEL_ID"
-    fi
-}
-
 resolve_cuda() {
     if [ "$USE_CUDA" = "true" ]; then
         echo "Using CUDA! Please ensure that you are using proper image with CUDA support"
         USE_CUDA_ARGS=(-p device=str:cuda)
     else
         echo "Info: USE_CUDA environment variable not found. Model will run on CPU."
+    fi
+}
+
+resolve_model_params() {
+    if [ -z "$MODEL_CONFIG_PARAMS" ]; then
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable not found. Default model will be used: facebook/detr-resnet-50"
+        MODEL_CONFIG_PARAMS="-p model=facebook/detr-resnet-50"
+        MODEL="-p task=str:object-detection -p model=str:facebook/detr-resnet-50"
+    elif result=$(echo "$MODEL_CONFIG_PARAMS" | grep -oP 'model=str:\K[^ ]+'); then
+        echo "Extracted MODEL from MODEL_CONFIG_PARAMS: $result"
+        MODEL="$result"
+    else
+        echo "Warning: MODEL_CONFIG_PARAMS environment variable is set but model param is malformed. Your config will be discarded. Default values will be used."
+        echo "MODEL_CONFIG_PARAMS should contain model in format -p model=str:your_model_name"
+        echo "Following params will be used for cvat-cli: -p task=str:object-detection -p model=str:facebook/detr-resnet-50"
+        MODEL_CONFIG_PARAMS="-p task=str:object-detection -p model=str:facebook/detr-resnet-50"
+        MODEL="facebook/detr-resnet-50"
+    fi
+}
+
+resolve_function_name() {
+    if [ -z "$FUNCTION_NAME" ]; then
+        echo "Warning: FUNCTION_NAME environment variable not found. Default is TRANSFORMERS"
+        FUNCTION_NAME="TRANSFORMERS"
+    else
+        echo "Using FUNCTION_NAME: $FUNCTION_NAME"
     fi
 }
 

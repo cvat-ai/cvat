@@ -708,7 +708,15 @@ function extractSnapPointsFromState(drawnState: DrawnState): Readonly<number[]> 
         result = drawnState.points;
     } else if (drawnState.shapeType === 'rectangle') {
         const [xtl, ytl, xbr, ybr] = drawnState.points;
-        result = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
+        const corners = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr];
+
+        if (drawnState.rotation && drawnState.rotation !== 0) {
+            const cx = (xtl + xbr) / 2;
+            const cy = (ytl + ybr) / 2;
+            result = rotate2DPoints(cx, cy, drawnState.rotation, corners);
+        } else {
+            result = corners;
+        }
     } else {
         result = [];
     }
