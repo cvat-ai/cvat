@@ -372,7 +372,9 @@ class QualitySettings(TimestampedModel):
 
     def to_dict(self):
         d = model_to_dict(self)
-        d["transcription_requirements"] = [r.to_dict() for r in self.transcription_requirements]
+        d["transcription_requirements"] = [
+            r.to_dict() for r in self.transcription_requirements.all()
+        ]
         return d
 
     @property
@@ -431,4 +433,6 @@ class TranscriptionQualityRequirement(models.Model):
         ]
 
     def to_dict(self):
-        return model_to_dict(self)
+        d = model_to_dict(self, exclude=("settings"))
+        d["attribute_id"] = d.pop("attribute")
+        return d

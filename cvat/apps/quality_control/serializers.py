@@ -209,6 +209,13 @@ class QualitySettingsParentType(str, Enum):
 
 
 class TranscriptionRequirementSerializer(serializers.ModelSerializer):
+    attribute_id = serializers.IntegerField(
+        read_only=False,
+        help_text=textwrap.dedent(f"""\
+            The transcription (type '{AttributeType.TEXT}') attribute to apply the requirement to
+            """),
+    )
+
     class Meta:
         model = models.TranscriptionQualityRequirement
         fields = (
@@ -218,18 +225,35 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
         )
 
         extra_kwargs = {
-            "attribute_id": {
-                "help_text": (
-                    f"The transcription (type '{AttributeType.TEXT}') "
-                    "attribute to apply the requirement to"
-                ),
-            },
             "acceptance_threshold": {
                 "required": False,
                 "min_value": 0,
                 "max_value": 1,
             },
         }
+
+    def update(self, instance, validated_data):
+        assert False
+
+    def create(self, validated_data):
+        attribute = models.AttributeSpec.objects.get(pk=validated_data["attribute_id"])
+
+        if attribute.input_type != AttributeType.TEXT:
+            raise serializers.ValidationError(
+                "The selected attribute must have " f"the '{AttributeType.TEXT.value}' type"
+            )
+
+        settings = self._context["settings"]
+        if (settings.task_id != attribute.label.task_id) or (
+            settings.project_id != attribute.label.project_id
+        ):
+            raise serializers.ValidationError(
+                f"Attribute {attribute.id} must belong to the same task or project as the settings"
+            )
+
+        validated_data["settings"] = settings
+
+        return super().create(validated_data)
 
 
 class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -393,18 +417,19 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.project.touch()
 
         if "transcription_requirements" in validated_data:
-            if not validated_data["transcription_requirements"]:
-                models.TranscriptionQualityRequirement.objects.filter(settings=instance).delete()
-            else:
-                for transcription_requirement in validated_data["transcription_requirements"]:
-                    attribute = models.AttributeSpec.objects.get(
-                        pk=transcription_requirement["attribute"]
-                    )
+            models.TranscriptionQualityRequirement.objects.filter(settings=instance).delete()
 
-                    if attribute.input_type != AttributeType.TEXT:
-                        raise serializers.ValidationError(
-                            "The selected attribute must have "
-                            f"the '{AttributeType.TEXT.value}' type"
-                        )
+            for requirement_params in validated_data["transcription_requirements"]:
+                requirement_serializer = TranscriptionRequirementSerializer(
+                    data=requirement_params,
+                    context={
+                        **self.context,
+                        "settings": instance,
+                    },
+                )
+                requirement_serializer.is_valid(raise_exception=True)
+                requirement_serializer.save()
+
+            validated_data.pop("transcription_requirements")
 
         return super().update(instance, validated_data)
