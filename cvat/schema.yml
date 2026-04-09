@@ -7493,6 +7493,10 @@ components:
     DataMetaRead:
       type: object
       properties:
+        dimension:
+          $ref: '#/components/schemas/Dimension'
+        media_type:
+          $ref: '#/components/schemas/MediaType'
         chapters:
           type: array
           items:
@@ -7552,7 +7556,9 @@ components:
       required:
       - chunks_updated_date
       - deleted_frames
+      - dimension
       - frames
+      - media_type
     DataRequest:
       type: object
       description: |-
@@ -7776,6 +7782,16 @@ components:
       required:
       - exporters
       - importers
+    Dimension:
+      enum:
+      - 1d
+      - 2d
+      - 3d
+      type: string
+      description: |-
+        * `1d` - DIM_1D
+        * `2d` - DIM_2D
+        * `3d` - DIM_3D
     Event:
       type: object
       properties:
@@ -8276,9 +8292,13 @@ components:
           readOnly: true
           nullable: true
         dimension:
-          type: string
+          allOf:
+          - $ref: '#/components/schemas/Dimension'
           readOnly: true
-          maxLength: 2
+        media_type:
+          allOf:
+          - $ref: '#/components/schemas/MediaType'
+          readOnly: true
         bug_tracker:
           type: string
           readOnly: true
@@ -9012,6 +9032,18 @@ components:
           minLength: 1
       required:
       - password
+    MediaType:
+      enum:
+      - image
+      - video
+      - point_cloud
+      - audio
+      type: string
+      description: |-
+        * `image` - Image
+        * `video` - Video
+        * `point_cloud` - Point Cloud
+        * `audio` - Audio
     MembershipRead:
       type: object
       properties:
@@ -11355,6 +11387,12 @@ components:
           readOnly: true
         dimension:
           type: string
+        media_type:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MediaType'
+          - $ref: '#/components/schemas/NullEnum'
         subset:
           type: string
           readOnly: true
