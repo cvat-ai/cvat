@@ -1587,6 +1587,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             for item in media
         ]
 
+        db_data.dimension = db_task.dimension
+        db_data.media_type = db_task.media_type
         db_data.frames = frame_meta
         db_data.chunks_updated_date = db_task.get_chunks_updated_date()
         db_data.chapters = chapters
@@ -2164,6 +2166,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             for item in media
         ]
 
+        db_data.dimension = db_task.dimension
+        db_data.media_type = db_task.media_type
         db_data.frames = frame_meta
         db_data.chapters = chapters
 

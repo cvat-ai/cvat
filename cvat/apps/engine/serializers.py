@@ -765,7 +765,12 @@ class JobReadSerializer(serializers.ModelSerializer):
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     frame_count = serializers.ReadOnlyField(source="segment.frame_count")
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
-    dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
+    dimension = serializers.ChoiceField(
+        source='segment.task.dimension', choices=models.DimensionType.choices(), read_only=True
+    )
+    media_type = serializers.ChoiceField(
+        source='segment.task.media_type', choices=models.MediaType.choices, read_only=True
+    )
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='organization_id', allow_null=True)
     data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
@@ -783,7 +788,8 @@ class JobReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
-            'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
+            'dimension', 'media_type',
+            'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
@@ -2427,7 +2433,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
             'status', 'data_chunk_size', 'data_original_chunk_type', 'data_compressed_chunk_type',
-            'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data', 'dimension',
+            'data_cloud_storage_id', 'guide_id', 'size', 'image_quality', 'data',
+            'dimension', 'media_type',
             'subset', 'organization_id',
             'organization', # deprecated field
             'target_storage', 'source_storage', 'jobs', 'labels',
@@ -2979,10 +2986,14 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         A list of valid frame ids. The None value means all frames are included.
         """))
     chunks_updated_date = serializers.DateTimeField()
+    dimension = serializers.ChoiceField(choices=models.DimensionType.choices())
+    media_type = serializers.ChoiceField(choices=models.MediaType.choices)
 
     class Meta:
         model = models.Data
         fields = (
+            'dimension',
+            'media_type',
             'chapters',
             'chunks_updated_date',
             'chunk_size',
