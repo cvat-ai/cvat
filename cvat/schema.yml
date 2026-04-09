@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.62.1
+  version: 2.62.1.dev20260409092135
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -4546,6 +4546,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualityReport'
           description: ''
+  /api/quality/reports/{id}/confusion:
+    get:
+      operationId: quality_retrieve_report_confusion
+      summary: Download quality report confusion matrices
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality report.
+        required: true
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: string
+                format: binary
+          description: ZIP archive with the overall and per-requirement confusion
+            matrices
   /api/quality/reports/{id}/data:
     get:
       operationId: quality_retrieve_report_data
@@ -4707,6 +4736,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualitySettings'
           description: ''
+    put:
+      operationId: quality_update_settings
+      summary: Replace a quality settings instance
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a quality settings instance
+        required: true
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualitySettingsRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualitySettings'
+          description: ''
     patch:
       operationId: quality_partial_update_settings
       summary: Update a quality settings instance
@@ -4738,6 +4798,249 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualitySettings'
           description: ''
+  /api/quality/settings/requirements:
+    get:
+      operationId: quality_list_settings_requirements
+      summary: List quality requirements
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: annotation_type
+        in: query
+        description: A simple equality filter for the annotation_type field
+        schema:
+          type: string
+          enum:
+          - tag
+          - rectangle
+          - skeleton
+          - skeleton_keypoint
+          - points
+          - polyline
+          - mask
+          - polygon
+          - ellipse
+          - attribute
+      - name: enabled
+        in: query
+        description: A simple equality filter for the enabled field
+        schema:
+          type: boolean
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'settings_id', 'task_id', 'project_id', 'annotation_type', 'enabled', 'created_date', 'updated_date'].
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: Project id filter
+      - in: query
+        name: settings_id
+        schema:
+          type: integer
+        description: Settings id filter
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''settings_id'', ''task_id'', ''project_id'', ''annotation_type'',
+          ''enabled'', ''created_date'', ''updated_date'', ''name'']'
+        schema:
+          type: string
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: Task id filter
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQualityRequirementList'
+          description: ''
+    post:
+      operationId: quality_create_settings_requirements
+      summary: Create a quality requirement
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityRequirementRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityRequirement'
+          description: ''
+  /api/quality/settings/requirements/{id}:
+    get:
+      operationId: quality_retrieve_settings_requirements
+      summary: Get quality requirement details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality requirement.
+        required: true
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityRequirement'
+          description: ''
+    put:
+      operationId: quality_update_settings_requirements
+      summary: Replace a quality requirement
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality requirement.
+        required: true
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityRequirementRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityRequirement'
+          description: ''
+    patch:
+      operationId: quality_partial_update_settings_requirements
+      summary: Update a quality requirement
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality requirement.
+        required: true
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedQualityRequirementRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityRequirement'
+          description: ''
+    delete:
+      operationId: quality_destroy_settings_requirements
+      summary: Delete a quality requirement
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality requirement.
+        required: true
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: Requirement deleted
   /api/requests:
     get:
       operationId: requests_list
@@ -7061,6 +7364,30 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ShapeType'
           - $ref: '#/components/schemas/NullEnum'
+    AnnotationTypeEnum:
+      enum:
+      - tag
+      - rectangle
+      - skeleton
+      - skeleton_keypoint
+      - points
+      - polyline
+      - mask
+      - polygon
+      - ellipse
+      - attribute
+      type: string
+      description: |-
+        * `tag` - Tag
+        * `rectangle` - Rectangle
+        * `skeleton` - Skeleton
+        * `skeleton_keypoint` - Skeleton Keypoint
+        * `points` - Points
+        * `polyline` - Polyline
+        * `mask` - Mask
+        * `polygon` - Polygon
+        * `ellipse` - Ellipse
+        * `attribute` - Attribute
     AssetRead:
       type: object
       properties:
@@ -9337,6 +9664,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualityReport'
+    PaginatedQualityRequirementList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityRequirement'
     PaginatedQualitySettingsList:
       type: object
       required:
@@ -9790,21 +10140,22 @@ components:
           type: integer
           writeOnly: true
           nullable: true
-    PatchedQualitySettingsRequest:
+    PatchedQualityRequirementRequest:
       type: object
       properties:
-        job_filter:
+        settings_id:
+          type: integer
+        name:
           type: string
-          description: |
-            A JSON-based logic expression used to filter jobs for quality validation.
-            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
-          maxLength: 1024
-        inherit:
+          minLength: 1
+          maxLength: 250
+        filter:
+          type: string
+        enabled:
           type: boolean
-          description: |
-            Allow using project settings when computing task quality.
-            Only applicable to task quality settings inside projects
-        target_metric:
+        annotation_type:
+          $ref: '#/components/schemas/AnnotationTypeEnum'
+        metric:
           allOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           description: |-
@@ -9813,34 +10164,29 @@ components:
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
-        target_metric_threshold:
+        required_score:
           type: number
           format: double
           maximum: 1
           minimum: 0
-          description: |
-            Defines the minimal quality requirements in terms of the selected target metric.
-        max_validations_per_job:
+          description: Defines the minimal quality requirements in terms of the selected
+            target metric.
+        parent_requirement:
           type: integer
-          maximum: 2147483647
-          minimum: 0
-          description: |
-            The maximum number of job validation attempts for the job assignee.
-            The job can be automatically accepted if the job quality is above the required
-            threshold, defined by the target threshold parameter.
+          nullable: true
+          description: The parent requirement. Must be specified if the annotation
+            type is attribute
         iou_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
-          default: 0.4
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
           maximum: 1
           minimum: 0
-          default: 0.09
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -9850,7 +10196,6 @@ components:
         point_size_base:
           allOf:
           - $ref: '#/components/schemas/QualityPointSizeBase'
-          default: group_bbox_size
           description: |-
             When comparing point annotations (including both separate points and point groups),
             the OKS sigma parameter defines matching area for each GT point based to the
@@ -9871,7 +10216,6 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          default: 0.01
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -9881,39 +10225,33 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
           type: boolean
-          default: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
-          default: 0.1
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
-          default: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
-          default: 0.5
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
         check_covered_annotations:
           type: boolean
-          default: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
@@ -9921,19 +10259,16 @@ components:
           format: double
           maximum: 1
           minimum: 0
-          default: 0.05
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
-          default: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
-          default: true
           description: Enables or disables annotation attribute comparison
         empty_is_annotated:
           type: boolean
@@ -9943,6 +10278,30 @@ components:
             accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
+    PatchedQualitySettingsRequest:
+      type: object
+      properties:
+        job_filter:
+          type: string
+          description: |
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+          maxLength: 1024
+        inherit:
+          type: boolean
+          description: |
+            Allow using project settings when computing task quality.
+            Only applicable to task quality settings inside projects
+        max_validations_per_job:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: |
+            The maximum number of job validation attempts for the job assignee.
+            The job can be automatically accepted if the job quality is above the required
+            threshold, defined by the target threshold parameter.
+        requirements:
+          type: string
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
@@ -10351,6 +10710,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/QualityReportJobsSummary'
           description: Included only in task and project reports
+        targets:
+          $ref: '#/components/schemas/QualityReportTargetsSummary'
       required:
       - accuracy
       - conflict_count
@@ -10376,6 +10737,19 @@ components:
         * `job` - JOB
         * `task` - TASK
         * `project` - PROJECT
+    QualityReportTargetsSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        enabled:
+          type: integer
+        completed:
+          type: integer
+      required:
+      - completed
+      - enabled
+      - total
     QualityReportTasksSummary:
       type: object
       properties:
@@ -10400,6 +10774,300 @@ components:
       - included
       - not_configured
       - total
+    QualityRequirement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        settings_id:
+          type: integer
+        task_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        project_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        name:
+          type: string
+          maxLength: 250
+        filter:
+          type: string
+        enabled:
+          type: boolean
+        annotation_type:
+          $ref: '#/components/schemas/AnnotationTypeEnum'
+        metric:
+          allOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+        required_score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Defines the minimal quality requirements in terms of the selected
+            target metric.
+        parent_requirement:
+          type: integer
+          nullable: true
+          description: The parent requirement. Must be specified if the annotation
+            type is attribute
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Used for distinction between matched / unmatched shapes
+        oks_sigma:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Like IoU threshold, but for points.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
+            Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          allOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the OKS sigma parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
+        line_thickness:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        low_overlap_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Used for distinction between strong / weak (low_overlap) matches
+        compare_line_orientation:
+          type: boolean
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'compare_line_orientation' parameter is true
+        compare_groups:
+          type: boolean
+          description: Enables or disables annotation group checks
+        group_match_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'compare_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        compare_attributes:
+          type: boolean
+          description: Enables or disables annotation attribute comparison
+        empty_is_annotated:
+          type: boolean
+          default: false
+          description: |
+            Consider empty frames annotated as "empty". This affects target metrics like
+            accuracy in cases there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+            This will also add virtual annotations to empty frames in the comparison results.
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+    QualityRequirementRequest:
+      type: object
+      properties:
+        settings_id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 250
+        filter:
+          type: string
+        enabled:
+          type: boolean
+        annotation_type:
+          $ref: '#/components/schemas/AnnotationTypeEnum'
+        metric:
+          allOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+        required_score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Defines the minimal quality requirements in terms of the selected
+            target metric.
+        parent_requirement:
+          type: integer
+          nullable: true
+          description: The parent requirement. Must be specified if the annotation
+            type is attribute
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Used for distinction between matched / unmatched shapes
+        oks_sigma:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Like IoU threshold, but for points.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
+            Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          allOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the OKS sigma parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
+        line_thickness:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        low_overlap_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Used for distinction between strong / weak (low_overlap) matches
+        compare_line_orientation:
+          type: boolean
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'compare_line_orientation' parameter is true
+        compare_groups:
+          type: boolean
+          description: Enables or disables annotation group checks
+        group_match_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'compare_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        compare_attributes:
+          type: boolean
+          description: Enables or disables annotation attribute comparison
+        empty_is_annotated:
+          type: boolean
+          default: false
+          description: |
+            Consider empty frames annotated as "empty". This affects target metrics like
+            accuracy in cases there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+            This will also add virtual annotations to empty frames in the comparison results.
     QualitySettings:
       type: object
       properties:
@@ -10423,22 +11091,6 @@ components:
           description: |
             Allow using project settings when computing task quality.
             Only applicable to task quality settings inside projects
-        target_metric:
-          allOf:
-          - $ref: '#/components/schemas/QualityTargetMetric'
-          description: |-
-            The primary metric used for quality estimation
-
-            * `accuracy` - ACCURACY
-            * `precision` - PRECISION
-            * `recall` - RECALL
-        target_metric_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
           type: integer
           maximum: 2147483647
@@ -10447,121 +11099,8 @@ components:
             The maximum number of job validation attempts for the job assignee.
             The job can be automatically accepted if the job quality is above the required
             threshold, defined by the target threshold parameter.
-        iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.4
-          description: Used for distinction between matched / unmatched shapes
-        oks_sigma:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.09
-          description: |
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
-        point_size_base:
-          allOf:
-          - $ref: '#/components/schemas/QualityPointSizeBase'
-          default: group_bbox_size
-          description: |-
-            When comparing point annotations (including both separate points and point groups),
-            the OKS sigma parameter defines matching area for each GT point based to the
-            object size. The point size base parameter allows to configure how to determine
-            the object size.
-            If image_size, the image size is used. Useful if each point
-            annotation represents a separate object or boxes grouped with points do not
-            represent object boundaries.
-            If group_bbox_size, the object size is based on
-            the point group bbox size. Useful if each point group represents an object
-            or there is a bbox grouped with points, representing the object size.
-
-
-            * `image_size` - IMAGE_SIZE
-            * `group_bbox_size` - GROUP_BBOX_SIZE
-        line_thickness:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.01
-          description: |
-            Thickness of polylines, relatively to the (image area) ^ 0.5.
-            The distance to the boundary around the GT line,
-            inside of which the checked line points should be
-        low_overlap_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.8
-          description: |
-            Used for distinction between strong / weak (low_overlap) matches
-        compare_line_orientation:
-          type: boolean
-          default: true
-          description: Enables or disables polyline orientation comparison
-        line_orientation_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.1
-          description: |
-            The minimal gain in the GT IoU between the given and reversed line directions
-            to consider the line inverted.
-            Only used when the 'compare_line_orientation' parameter is true
-        compare_groups:
-          type: boolean
-          default: true
-          description: Enables or disables annotation group checks
-        group_match_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.5
-          description: |
-            Minimal IoU for groups to be considered matching.
-            Only used when the 'compare_groups' parameter is true
-        check_covered_annotations:
-          type: boolean
-          default: true
-          description: |
-            Check for partially-covered annotations, useful in segmentation tasks
-        object_visibility_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.05
-          description: |
-            Minimal visible area percent of the spatial annotations (polygons, masks)
-            for reporting covered annotations.
-            Only used when the 'object_visibility_threshold' parameter is true
-        panoptic_comparison:
-          type: boolean
-          default: true
-          description: |
-            Use only the visible part of the masks and polygons in comparisons
-        compare_attributes:
-          type: boolean
-          default: true
-          description: Enables or disables annotation attribute comparison
-        empty_is_annotated:
-          type: boolean
-          default: false
-          description: |
-            Consider empty frames annotated as "empty". This affects target metrics like
-            accuracy in cases there are no annotations. If disabled, frames without annotations
-            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-            This will also add virtual annotations to empty frames in the comparison results.
+        requirements:
+          type: string
         created_date:
           type: string
           format: date-time
@@ -10570,6 +11109,30 @@ components:
           type: string
           format: date-time
           readOnly: true
+    QualitySettingsRequest:
+      type: object
+      properties:
+        job_filter:
+          type: string
+          description: |
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+          maxLength: 1024
+        inherit:
+          type: boolean
+          description: |
+            Allow using project settings when computing task quality.
+            Only applicable to task quality settings inside projects
+        max_validations_per_job:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: |
+            The maximum number of job validation attempts for the job assignee.
+            The job can be automatically accepted if the job quality is above the required
+            threshold, defined by the target threshold parameter.
+        requirements:
+          type: string
     QualityTargetMetric:
       enum:
       - accuracy
