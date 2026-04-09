@@ -3430,7 +3430,6 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
         def convert_shape(shape):
             result = _convert_annotation(shape, [
                 'id', 'label_id', 'type', 'frame', 'group', 'source', 'score',
-                'id', 'label_id', 'type', 'frame', 'group', 'source', 'score',
                 'occluded', 'outside', 'z_order', 'rotation', 'points',
             ])
             result['attributes'] = _convert_attributes(shape['attributes'])
