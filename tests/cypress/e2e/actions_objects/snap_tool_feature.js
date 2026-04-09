@@ -21,15 +21,15 @@ context('Snap tool feature.', () => {
     };
     const defaultStartingPoint = [450, 150];
 
-    function testCollectCoord(type, id) {
+    function getShapeCoord(type, objectId) {
         const arrToPush = [];
         if (type === 'rect') {
-            cy.get(id).invoke('attr', 'x').then((x) => arrToPush.push(+x));
-            cy.get(id).invoke('attr', 'y').then((y) => arrToPush.push(+y));
-            cy.get(id).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
-            cy.get(id).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
+            cy.get(objectId).invoke('attr', 'x').then((x) => arrToPush.push(+x));
+            cy.get(objectId).invoke('attr', 'y').then((y) => arrToPush.push(+y));
+            cy.get(objectId).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
+            cy.get(objectId).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
         } else {
-            cy.get(id).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
+            cy.get(objectId).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
         }
         return cy.wrap(arrToPush);
     }
@@ -64,7 +64,6 @@ context('Snap tool feature.', () => {
             expectedIsActive === true ? 'have.class' : 'not.have.class',
             'cvat-snap-tool-active',
         );
-        // Close snap tools, ensure not visible
         cy.get('.cvat-snap-tools-control').should(
             expectedIsActive === true ? 'have.class' : 'not.have.class',
             'cvat-snap-tools-active',
@@ -95,7 +94,7 @@ context('Snap tool feature.', () => {
                 cy.createRectangle(createRectangleShape2PointsSec);
 
                 // Collect the rectagle points coordinates
-                testCollectCoord('rect', '#cvat_canvas_shape_1').then((points) => {
+                getShapeCoord('rect', '#cvat_canvas_shape_1').then((points) => {
                     rectanglePoints = points;
                 });
                 toggleSnapTool('contour', true);
@@ -130,7 +129,7 @@ context('Snap tool feature.', () => {
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
                 // Collect the polygon points coordinates
-                testCollectCoord('polygon', '#cvat_canvas_shape_3').should((polygonPoints) => {
+                getShapeCoord('polygon', '#cvat_canvas_shape_3').should((polygonPoints) => {
                 // The 1st point of the rect and the 1st polygon point
                     expect(polygonPoints[0]).to.be
                         .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
@@ -170,7 +169,7 @@ context('Snap tool feature.', () => {
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
                 // Collect the polyline points coordinates
-                testCollectCoord('polyline', '#cvat_canvas_shape_3').should((polylinePoints) => {
+                getShapeCoord('polyline', '#cvat_canvas_shape_3').should((polylinePoints) => {
                 // The 2nd point of the polyline and the 4th point rect
                     expect(polylinePoints[4]).to.be
                         .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
@@ -186,10 +185,10 @@ context('Snap tool feature.', () => {
 
         context('Path finding', () => {
             const polygonPoints = [
-                { x: 400, y: 300 }, // B
-                { x: 450, y: 300 }, // C
-                { x: 600, y: 450 }, // A
-                { x: 300, y: 450 }, // D
+                { x: 400, y: 300 },
+                { x: 450, y: 300 },
+                { x: 600, y: 450 },
+                { x: 300, y: 450 },
             ];
             const createTrapeziumShape4Points = {
                 pointsMap: polygonPoints,
@@ -201,7 +200,7 @@ context('Snap tool feature.', () => {
 
             before(() => {
                 cy.createPolygon(createTrapeziumShape4Points);
-                testCollectCoord('polygon', '#cvat_canvas_shape_1').then((pointsGlobal) => {
+                getShapeCoord('polygon', '#cvat_canvas_shape_1').then((pointsGlobal) => {
                     polygonPointsGlobal = pointsGlobal;
                 });
                 toggleSnapTool('contour', true);
@@ -232,7 +231,7 @@ context('Snap tool feature.', () => {
                 cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
-                testCollectCoord('polyline', '#cvat_canvas_shape_2').should((polylinePoints) => {
+                getShapeCoord('polyline', '#cvat_canvas_shape_2').should((polylinePoints) => {
                     // Check that polyline picked the right path
                     expect(polylinePoints[1]).to.be
                         .equal(`${polygonPointsGlobal[1]}`);
@@ -284,7 +283,7 @@ context('Snap tool feature.', () => {
 
         beforeEach(() => {
             cy.createRectangle(createRectangleShape2Points);
-            testCollectCoord('rect', '#cvat_canvas_shape_1').then((pointsGlobal) => {
+            getShapeCoord('rect', '#cvat_canvas_shape_1').then((pointsGlobal) => {
                 rectanglePointsGlobal = pointsGlobal;
             });
             testCollectShapePointRadius('#cvat_canvas_shape_1').then((radius) => {
@@ -319,7 +318,7 @@ context('Snap tool feature.', () => {
             cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
 
             cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
-            testCollectCoord('polyline', '#cvat_canvas_shape_2').should((polylinePoints) => {
+            getShapeCoord('polyline', '#cvat_canvas_shape_2').should((polylinePoints) => {
                 const [, ...commonPoints] = polylinePoints;
                 expect(commonPoints[0]).to.be
                     .equal(`${rectanglePointsGlobal[0]},${rectanglePointsGlobal[1]}`);
@@ -350,10 +349,8 @@ context('Snap tool feature.', () => {
             cy.interactControlButton('draw-polygon');
             cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
 
-            // cy.get('.cvat-canvas-container').click(...defaultStartingPoint);
             cy.get('.cvat-canvas-container').trigger('mousemove', ...defaultStartingPoint);
             cy.get('.cvat-canvas-container').trigger('mousedown', ...defaultStartingPoint, { button: 0 });
-            // cy.wait(1000);
 
             // Should snap inside delta region
             cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rotatedPoints[0]));
@@ -366,7 +363,7 @@ context('Snap tool feature.', () => {
             cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
 
             // Compare polygon's coords with rotated coords, should have 2 common
-            testCollectCoord('polygon', '#cvat_canvas_shape_2').then((polygonPoints) => {
+            getShapeCoord('polygon', '#cvat_canvas_shape_2').then((polygonPoints) => {
                 const [, ...commonPoints] = polygonPoints;
                 expect(commonPoints[0]).to.be
                     .equal(`${rotatedPointsGlobal[0].x},${rotatedPointsGlobal[0].y}`);
