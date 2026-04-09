@@ -46,10 +46,10 @@ from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     AttributeSpec,
     AttributeType,
-    DimensionType,
     Image,
     Job,
     JobType,
+    MediaType,
     Project,
     RequestTarget,
     ShapeType,
@@ -72,7 +72,7 @@ from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
 class AttributePath:
-    def __init__(self, attribute: str, label: str, parent_label: str | None) -> None:
+    def __init__(self, attribute: str, label: str, parent_label: str | None = None) -> None:
         path = [attribute, label]
         if parent_label:
             path.append(parent_label)
@@ -81,6 +81,9 @@ class AttributePath:
 
     def __hash__(self):
         return hash(self.path)
+
+    def __repr__(self) -> str:
+        return str(self.path)
 
     def __eq__(self, other: AttributePath) -> bool:
         return isinstance(other, AttributePath) and self.path == other.path
@@ -414,11 +417,12 @@ class ComparisonParameters(ReportNode):
 
             transcription_requirements.append(
                 {
-                    "attribute": attribute_path,
+                    "attribute": attribute_path.to_list(),
                     "metric": requirement.metric,
                     "acceptance_threshold": requirement.acceptance_threshold,
                 }
             )
+        settings_dict["transcription_requirements"] = transcription_requirements
 
         parameters = cls.from_dict(settings_dict)
         parameters.inherited = inherited
@@ -728,8 +732,8 @@ class ComparisonReportAnnotationComponentsSummary(ReportNode):
         self.shape.accumulate(other.shape, weight=weight)
         self.label.accumulate(other.label, weight=weight)
 
-        self_attributes = self.attribute_dict
-        other_attributes = other.attribute_dict
+        self_attributes = self.attributes_dict()
+        other_attributes = other.attributes_dict()
         for k in other_attributes:
             if k not in self_attributes:
                 self_attributes[k] = ComparisonReportAnnotationAttributeSummary.create_empty(k)
@@ -741,8 +745,7 @@ class ComparisonReportAnnotationComponentsSummary(ReportNode):
 
         self.attribute = list(self_attributes.values())
 
-    @property
-    def attribute_dict(self) -> dict[tuple, ComparisonReportAnnotationAttributeSummary]:
+    def attributes_dict(self) -> dict[tuple, ComparisonReportAnnotationAttributeSummary]:
         return {a.attribute: a for a in self.attribute}
 
     @classmethod
@@ -2312,14 +2315,16 @@ class DatasetComparator:
         def interval_iou(a: dict[str, Any], b: dict[str, Any]) -> float:
             return range_iou((a["start"], a["stop"]), (b["start"], b["stop"]))
 
-        def interval_wer(a: dict[str, Any], b: dict[str, Any], *, key: str) -> float:
-            return jiwer.wer(a["attributes"].get(key, ""), b["attributes"].get(key, ""))
+        def interval_wer(a: dict[str, Any], b: dict[str, Any], *, attr_id: int) -> float:
+            a_value = next(iter(a["attributes"]), lambda attr: attr["spec_id"] == attr_id)["value"]
+            b_value = next(iter(b["attributes"]), lambda attr: attr["spec_id"] == attr_id)["value"]
+            return jiwer.wer(a_value, b_value)
 
-        def interval_cer(a: dict[str, Any], b: dict[str, Any], *, key: str) -> float:
+        def interval_cer(a: dict[str, Any], b: dict[str, Any], *, attr_id: int) -> float:
             # TODO: change to maximum CER over word-aligned matches?
-            return jiwer.cer(
-                a["attributes"].get(key, "").split(), b["attributes"].get(key, "").split()
-            )
+            a_value = next(iter(a["attributes"]), lambda attr: attr["spec_id"] == attr_id)["value"]
+            b_value = next(iter(b["attributes"]), lambda attr: attr["spec_id"] == attr_id)["value"]
+            return jiwer.cer(a_value.split(), b_value.split())
 
         metrics = {
             TranscriptionQualityMetric.WER: interval_wer,
@@ -2342,20 +2347,8 @@ class DatasetComparator:
             ds_intervals,
             distance=interval_iou,
             dist_thresh=self.settings.iou_threshold,
+            label_matcher=lambda a, b: a["label_id"] == b["label_id"],
         )
-
-        confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
-
-        for gt_ann, ds_ann in itertools.chain(
-            # fully matched annotations - shape, label, attributes
-            matches,
-            mismatches,
-            zip(itertools.repeat(None), ds_unmatched),
-            zip(gt_unmatched, itertools.repeat(None)),
-        ):
-            ds_label_idx = label_id_map[ds_ann.label] if ds_ann else self._UNMATCHED_IDX
-            gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
-            confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
         results = self._intermediate_results
         conflicts = results.setdefault("conflicts", [])
@@ -2364,7 +2357,7 @@ class DatasetComparator:
             valid_count=len(matches) + len(mismatches),
             missing_count=len(gt_unmatched),
             extra_count=len(ds_unmatched),
-            total_count=len(gt_intervals) + len(ds_intervals),
+            total_count=sum(map(len, [matches, mismatches, gt_unmatched, ds_unmatched])),
             gt_count=len(gt_intervals),
             ds_count=len(ds_intervals),
             mean_iou=0,  # TODO
@@ -2373,7 +2366,7 @@ class DatasetComparator:
         intermediate_label_summary = ComparisonReportAnnotationLabelSummary(
             valid_count=len(matches),
             invalid_count=len(mismatches),
-            total_count=len(matches) + len(mismatches),
+            total_count=sum(map(len, [matches, mismatches])),
         )
 
         intermediate_attribute_summaies = {}
@@ -2389,7 +2382,7 @@ class DatasetComparator:
                     # Silently ignore, as the settings can be out of sync with labels
                     continue
 
-                distance_func = partial(metrics[requirement.metric], key=attribute_spec.name)
+                distance_func = partial(metrics[requirement.metric], attr_id=attribute_spec.id)
                 distance = distance_func(gt_ann, ds_ann)
                 req_satisfied = distance < requirement.acceptance_threshold
 
@@ -2398,9 +2391,20 @@ class DatasetComparator:
                     conflicts.append(
                         AnnotationConflict(
                             type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
+                            frame_id=None,
                             annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                                AnnotationId(
+                                    obj_id=ds_ann["id"],
+                                    job_id=self._ds_data_provider.job_id,
+                                    type=AnnotationType.INTERVAL,
+                                    shape_type=None,
+                                ),
+                                AnnotationId(
+                                    obj_id=gt_ann["id"],
+                                    job_id=self._gt_data_provider.job_id,
+                                    type=AnnotationType.INTERVAL,
+                                    shape_type=None,
+                                ),
                             ],
                             attributes=[attribute_spec.name],
                         )
@@ -2418,9 +2422,41 @@ class DatasetComparator:
                 ).accumulate(attribute_summary)
 
             if not match_confirmed:
-                mismatches.append(matches.pop(match_idx))
+                matches.pop(match_idx)
+                gt_unmatched.append(gt_ann)
+                ds_unmatched.append(ds_ann)
             else:
                 match_idx += 1
+
+        confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
+
+        cvat_dm_label_id_map = {
+            self._gt_data_provider.job_data._get_label_id(
+                dm_label.name,
+                (
+                    self._gt_data_provider.job_data._get_label_id(dm_label.parent)
+                    if dm_label.parent
+                    else None
+                ),
+            ): dm_label_id
+            for dm_label_id, dm_label in enumerate(
+                self._gt_dataset.categories()[dm.AnnotationType.label]
+            )
+        }
+        label_id_map = {
+            cvat_label_id: label_id_map[dm_label_id]
+            for cvat_label_id, dm_label_id in cvat_dm_label_id_map.items()
+        }
+
+        for gt_ann, ds_ann in itertools.chain(
+            matches,
+            mismatches,
+            zip(itertools.repeat(None), ds_unmatched),
+            zip(gt_unmatched, itertools.repeat(None)),
+        ):
+            ds_label_idx = label_id_map[ds_ann["label_id"]] if ds_ann else self._UNMATCHED_IDX
+            gt_label_idx = label_id_map[gt_ann["label_id"]] if gt_ann else self._UNMATCHED_IDX
+            confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
         annotations_summary = self._compute_annotations_summary(
             confusion_matrix, confusion_matrix_labels
@@ -2904,13 +2940,13 @@ class DatasetComparator:
             annotation_summary.ds_count += len(empty_ds_frames)
             annotation_summary.gt_count += len(empty_gt_frames)
 
-        if "annotation_summary" in self._intermediate_results:
-            mean_ious.append(self._intermediate_results["annotation_components"].shape.mean_ion)
+        if "annotations" in self._intermediate_results:
+            mean_ious.append(self._intermediate_results["annotation_components"].shape.mean_iou)
 
-            self._intermediate_results["annotation"].accumulate(annotation_summary)
+            self._intermediate_results["annotations"].accumulate(annotation_summary)
             self._intermediate_results["annotation_components"].accumulate(component_summaries)
 
-            annotation_summary = self._intermediate_results.pop("annotation")
+            annotation_summary = self._intermediate_results.pop("annotations")
             component_summaries = self._intermediate_results.pop("annotation_components")
 
         # Cannot be computed in accumulate()
@@ -2982,8 +3018,14 @@ class QualityReportRQJobManager(AbstractRequestManager):
         if isinstance(self.db_instance, Project):
             return  # nothing prevents project reports
         elif isinstance(self.db_instance, Task):
-            if self.db_instance.dimension != DimensionType.DIM_2D:
-                raise serializers.ValidationError("Quality reports are only supported in 2d tasks")
+            if self.db_instance.media_type not in (
+                MediaType.AUDIO,
+                MediaType.IMAGE,
+                MediaType.POINT_CLOUD,
+            ):
+                raise serializers.ValidationError(
+                    f"Quality reports are not supported for {self.db_instance.media_type} tasks"
+                )
 
             gt_job = self.db_instance.gt_job
             if gt_job is None or not (
