@@ -3,8 +3,8 @@ title: "Snap tools"
 linkTitle: "Snap tools"
 weight: 2
 aliases:
-- /docs/manual/advanced/annotation-with-polygons/snap-tools/
-- /docs/annotation/tools/annotation-with-polygons/snap-tools/
+- /docs/manual/advanced/annotation-with-polygons/automatic-borders/
+- /docs/annotation/tools/annotation-with-polygons/automatic-borders/
 ---
 
 # Snap to contour
