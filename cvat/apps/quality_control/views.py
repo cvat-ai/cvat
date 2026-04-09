@@ -661,6 +661,7 @@ class QualityRequirementViewSet(
         "parent",
     )
 
+    iam_supports_organization_params = True
     iam_organization_field = ["settings__task__organization", "settings__project__organization"]
     iam_permission_class = QualityRequirementPermission
 
