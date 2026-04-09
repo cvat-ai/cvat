@@ -368,3 +368,6 @@ zipp==3.23.0
     # via importlib-metadata
 zstandard==0.23.0
     # via clickhouse-connect
+
+jiwer>=4
+rapidfuzz>=3.14.5
