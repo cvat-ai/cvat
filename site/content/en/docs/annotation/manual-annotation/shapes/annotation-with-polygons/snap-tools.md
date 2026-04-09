@@ -19,7 +19,7 @@ You can enable snap to contour in several ways:
 
 ![Snap to contour button](/images/snap_to_contour_button.png)
 
-- **Keyboard shortcut**: Go to shortcut settings and set up a shortcut for a “Snap to contour" feature
+- **Keyboard shortcut**: Go to shortcut settings and set up a shortcut for a "Snap to contour" feature
 
 
 ## Using snap to contour
