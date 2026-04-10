@@ -5,6 +5,7 @@
 import textwrap
 from enum import Enum
 
+from django.conf import settings as django_settings
 from django.db import models as django_models
 from django.db import transaction
 from rest_framework import serializers
@@ -249,6 +250,37 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             """).strip(),
     )
 
+    @staticmethod
+    def _get_requirement_limit() -> int:
+        return django_settings.MAX_QUALITY_REQUIREMENTS_PER_SETTINGS
+
+    @classmethod
+    def get_requirement_limit_error_message(cls) -> str:
+        return (
+            "No more than "
+            f"{cls._get_requirement_limit()} quality requirements are allowed per task or project."
+        )
+
+    def _should_skip_requirement_limit_validation(self) -> bool:
+        return self.context.get("skip_requirement_limit_validation", False)
+
+    def _validate_requirement_limit_for_settings(
+        self, quality_settings: models.QualitySettings
+    ) -> None:
+        if self._should_skip_requirement_limit_validation():
+            return
+
+        if self.instance is not None and self.instance.settings_id == quality_settings.id:
+            return
+
+        if (
+            quality_settings.requirements.count()
+            >= self._get_requirement_limit()
+        ):
+            raise serializers.ValidationError(
+                {"settings_id": self.get_requirement_limit_error_message()}
+            )
+
     def validate_filter(self, value):
         annotation_type = self.initial_data.get("annotation_type")
         if annotation_type is None and self.instance is not None:
@@ -374,14 +406,14 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
 
-        settings = attrs.get("settings", getattr(self.instance, "settings", None))
+        quality_settings = attrs.get("settings", getattr(self.instance, "settings", None))
         parent_requirement = attrs.get("parent", getattr(self.instance, "parent", None))
         annotation_type = attrs.get(
             "annotation_type", getattr(self.instance, "annotation_type", None)
         )
         name = attrs.get("name", getattr(self.instance, "name", None))
 
-        if settings is None:
+        if quality_settings is None:
             raise serializers.ValidationError({"settings_id": "This field is required."})
 
         if not name:
@@ -400,10 +432,12 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 {"parent_requirement": "Only attribute requirements can have a parent requirement."}
             )
 
-        if parent_requirement is not None and parent_requirement.settings_id != settings.id:
+        if parent_requirement is not None and parent_requirement.settings_id != quality_settings.id:
             raise serializers.ValidationError(
                 {
-                    "parent_requirement": "Parent requirement must belong to the same quality settings."
+                    "parent_requirement": (
+                        "Parent requirement must belong to the same quality settings."
+                    )
                 }
             )
 
@@ -416,8 +450,10 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 {"parent_requirement": "A requirement cannot reference itself as a parent."}
             )
 
+        self._validate_requirement_limit_for_settings(quality_settings)
+
         if name:
-            qs = models.QualityRequirement.objects.filter(settings=settings, name=name)
+            qs = models.QualityRequirement.objects.filter(settings=quality_settings, name=name)
             if self.instance:
                 qs = qs.exclude(id=self.instance.id)
 
@@ -551,6 +587,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             **self.context,
             "touch_settings": False,
             "retained_requirement_ids": retained_requirement_ids,
+            "skip_requirement_limit_validation": True,
         }
         serializer_data = {
             **data,
@@ -571,6 +608,11 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if not requirements_data:
             raise serializers.ValidationError(
                 {"requirements": "At least one quality requirement must be specified."}
+            )
+
+        if len(requirements_data) > QualityRequirementSerializer._get_requirement_limit():
+            raise serializers.ValidationError(
+                {"requirements": QualityRequirementSerializer.get_requirement_limit_error_message()}
             )
 
         existing_requirements = {

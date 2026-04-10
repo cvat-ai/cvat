@@ -27,6 +27,7 @@ from .test_quality_control import _PermissionTestBase
 class _QualityRequirementsTestBase(_PermissionTestBase):
     _requirements_endpoint = "quality/settings/requirements"
     _settings_endpoint = "quality/settings"
+    _max_requirements_per_settings = 100
 
     @staticmethod
     def _build_requirement_payload(
@@ -53,6 +54,29 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         if parent_requirement is not None:
             payload["parent_requirement"] = parent_requirement
         return payload
+
+    @classmethod
+    def _build_requirement_payloads(
+        cls,
+        prefix: str,
+        count: int,
+        *,
+        annotation_type: str = "rectangle",
+    ) -> list[dict[str, Any]]:
+        return [
+            cls._build_requirement_payload(
+                f"{prefix}-{index}",
+                annotation_type=annotation_type,
+            )
+            for index in range(count)
+        ]
+
+    @classmethod
+    def _get_requirement_limit_error_message(cls) -> str:
+        return (
+            f"No more than {cls._max_requirements_per_settings} quality requirements "
+            "are allowed per task or project."
+        )
 
     def _get_task_settings(self, user: str, *, task_id: int, **kwargs) -> dict[str, Any]:
         response = get_method(user, self._settings_endpoint, task_id=task_id, **kwargs)
@@ -252,6 +276,53 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert [requirement["name"] for requirement in listed_requirements] == [
             replacement_payload["name"]
         ]
+
+    def test_cannot_create_requirement_above_limit(self, admin_user, find_sandbox_task_without_gt):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        filled_requirements = self._build_requirement_payloads(
+            f"limit-fill-{task['id']}",
+            self._max_requirements_per_settings,
+        )
+        patched_settings, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {"requirements": filled_requirements},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert len(patched_settings["requirements"]) == self._max_requirements_per_settings
+
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"limit-overflow-{task['id']}",
+                settings_id=settings["id"],
+            ),
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.json()["settings_id"] == [self._get_requirement_limit_error_message()]
+
+    def test_settings_patch_rejects_payload_above_limit(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "requirements": self._build_requirement_payloads(
+                    f"limit-payload-{task['id']}",
+                    self._max_requirements_per_settings + 1,
+                )
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.json()["requirements"] == self._get_requirement_limit_error_message()
 
     def test_cannot_delete_last_quality_requirement(self, admin_user, find_sandbox_task_without_gt):
         task, _ = find_sandbox_task_without_gt(True)
