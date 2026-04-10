@@ -273,10 +273,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         if self.instance is not None and self.instance.settings_id == quality_settings.id:
             return
 
-        if (
-            quality_settings.requirements.count()
-            >= self._get_requirement_limit()
-        ):
+        if quality_settings.requirements.count() >= self._get_requirement_limit():
             raise serializers.ValidationError(
                 {"settings_id": self.get_requirement_limit_error_message()}
             )
