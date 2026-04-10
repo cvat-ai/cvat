@@ -349,17 +349,10 @@ context('Snap tool feature.', () => {
             cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
 
-            // const regionOfRotatedPoints = rotatedPoints.map((regionOf));
-            // const regionOfRotatedPointsPolygonShape = {
-            //     pointsMap: [
-            //         defaultStartingPoint,
-            //         regionOfRotatedPoints[0],
-            //         regionOfRotatedPoints[1],
-            //     ],
-            //     type: 'Shape',
-            //     labelName,
-            // };
-            // cy.createPolygon(regionOfRotatedPointsPolygonShape);
+            // TODO: cy.createPolygon approach used in previous tests doesn't work here
+            // some snapped points are drawn twice and persist after test
+            // cy.wait in loop doesn't work
+            // not reproducible manually though, so not a user issue
 
             // Compare polygon's coords with rotated coords, should have 2 common
             getShapeCoord('polygon', '#cvat_canvas_shape_2').then((polygonPoints) => {
