@@ -19,7 +19,7 @@ context('Snap tool feature.', () => {
         secondX: 500,
         secondY: 450,
     };
-    const defaultStartingPoint = [450, 150];
+    const defaultStartingPoint = { x: 450, y: 150 };
 
     function getShapeCoord(type, objectId) {
         const arrToPush = [];
@@ -89,6 +89,27 @@ context('Snap tool feature.', () => {
         let rectanglePoints;
 
         context('Basic drawing cases', () => {
+            const createPolygonShape = {
+                type: 'Shape',
+                labelName,
+                pointsMap: [
+                    { x: 400, y: 350 },
+                    { x: 500, y: 350 },
+                    { x: 400, y: 450 },
+                ],
+            };
+            const createPolylineShape = {
+                type: 'Shape',
+                labelName,
+                pointsMap: [
+                    { x: 700, y: 350 },
+                    { x: 700, y: 450 },
+                    { x: 600, y: 350 },
+                    { x: 500, y: 350 },
+                    { x: 500, y: 450 },
+                    { x: 400, y: 350 },
+                ],
+            };
             beforeEach(() => {
                 cy.createRectangle(createRectangleShape2Points);
                 cy.createRectangle(createRectangleShape2PointsSec);
@@ -113,19 +134,7 @@ context('Snap tool feature.', () => {
 
                 testAutoborderPointsCount(8); // 8 points at the rectangles
 
-                cy.get('.cvat-canvas-container').click(400, 350);
-                cy.wait(500);
-
-                // top right
-                cy.get('.cvat-canvas-container').trigger('mousemove', 500, 350);
-                cy.get('.cvat-canvas-container').trigger('mousedown', 500, 350, { button: 0 });
-
-                // bottom left
-                cy.get('.cvat-canvas-container').trigger('mousemove', 400, 450);
-                cy.get('.cvat-canvas-container').trigger('mousedown', 400, 450, { button: 0 });
-
-                cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
-                cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.createPolygon(createPolygonShape);
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
                 // Collect the polygon points coordinates
@@ -147,29 +156,11 @@ context('Snap tool feature.', () => {
                 cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
                 testAutoborderPointsCount(8); // 8 points at the rectangles
 
-                cy.get('.cvat-canvas-container').click(700, 350);
-                cy.wait(500);
-
-                cy.get('.cvat-canvas-container').trigger('mousemove', 700, 450);
-                cy.get('.cvat-canvas-container').trigger('mousedown', 700, 450, { button: 0 });
-
-                cy.get('.cvat-canvas-container').trigger('mousemove', 600, 350);
-                cy.get('.cvat-canvas-container').trigger('mousedown', 600, 350, { button: 0 });
-
-                cy.get('.cvat-canvas-container').click(500, 350);
-
-                cy.get('.cvat-canvas-container').trigger('mousemove', 500, 450);
-                cy.get('.cvat-canvas-container').trigger('mousedown', 500, 450, { button: 0 });
-
-                cy.get('.cvat-canvas-container').trigger('mousemove', 400, 350);
-                cy.get('.cvat-canvas-container').trigger('mousedown', 400, 350, { button: 0 });
-
-                cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
-                cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.createPolyline(createPolylineShape);
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
                 // Collect the polyline points coordinates
-                getShapeCoord('polyline', '#cvat_canvas_shape_3').should((polylinePoints) => {
+                getShapeCoord('polyline', '#cvat_canvas_shape_3').then((polylinePoints) => {
                 // The 2nd point of the polyline and the 4th point rect
                     expect(polylinePoints[4]).to.be
                         .equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
@@ -184,18 +175,26 @@ context('Snap tool feature.', () => {
         });
 
         context('Path finding', () => {
-            const polygonPoints = [
-                { x: 400, y: 300 },
-                { x: 450, y: 300 },
-                { x: 600, y: 450 },
-                { x: 300, y: 450 },
-            ];
             const createTrapeziumShape4Points = {
-                pointsMap: polygonPoints,
+                pointsMap: [
+                    { x: 400, y: 300 },
+                    { x: 450, y: 300 },
+                    { x: 600, y: 450 },
+                    { x: 300, y: 450 },
+                ],
                 type: 'Shape',
                 labelName,
             };
-            const pointToArr = (point) => [point.x, point.y];
+            const createPolylineShape = {
+                pointsMap: [
+                    defaultStartingPoint,
+                    // diagonal
+                    createTrapeziumShape4Points.pointsMap[1],
+                    createTrapeziumShape4Points.pointsMap[3],
+                ],
+                type: 'Shape',
+                labelName,
+            };
             let polygonPointsGlobal;
 
             before(() => {
@@ -216,19 +215,7 @@ context('Snap tool feature.', () => {
 
                 testAutoborderPointsCount(4);
 
-                cy.get('.cvat-canvas-container').click(...defaultStartingPoint);
-                cy.wait(500);
-
-                // top right
-                cy.get('.cvat-canvas-container').trigger('mousemove', ...pointToArr(polygonPoints[1]));
-                cy.get('.cvat-canvas-container').trigger('mousedown', ...pointToArr(polygonPoints[1]), { button: 0 });
-
-                // bottom left
-                cy.get('.cvat-canvas-container').trigger('mousemove', ...pointToArr(polygonPoints[3]));
-                cy.get('.cvat-canvas-container').trigger('mousedown', ...pointToArr(polygonPoints[3]), { button: 0 });
-
-                cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
-                cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.createPolyline(createPolylineShape);
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
                 getShapeCoord('polyline', '#cvat_canvas_shape_2').should((polylinePoints) => {
@@ -288,7 +275,7 @@ context('Snap tool feature.', () => {
             });
             testCollectShapePointRadius('#cvat_canvas_shape_1').then((radius) => {
                 const delta = Math.floor(radius * 1.3); // snapping is seen better
-                regionOf = (point) => [point.x - delta, point.y - delta];
+                regionOf = (point) => ({ x: point.x - delta, y: point.y - delta });
             });
             toggleSnapTool('point', true);
         });
@@ -300,22 +287,20 @@ context('Snap tool feature.', () => {
         });
 
         it('Draw a polyline. Should snap to rect corners within radius', () => {
+            const createRegionOfRectanglePolylineShape = {
+                pointsMap: [
+                    defaultStartingPoint,
+                    // diagonal
+                    ...rectToPoints(createRectangleShape2Points).map((regionOf)),
+                ],
+                type: 'Shape',
+                labelName,
+            };
+
             cy.interactControlButton('draw-polyline');
             cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
-            const rectanglePoints = rectToPoints(createRectangleShape2Points);
 
-            cy.get('.cvat-canvas-container').click(...defaultStartingPoint);
-            cy.wait(500);
-
-            // Should snap inside delta region. Mouse events should work in same position
-            cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rectanglePoints[0]));
-            cy.get('.cvat-canvas-container').trigger('mousedown', ...regionOf(rectanglePoints[0]), { button: 0 });
-
-            cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rectanglePoints[1]));
-            cy.get('.cvat-canvas-container').trigger('mousedown', ...regionOf(rectanglePoints[1]), { button: 0 });
-
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
-            cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.createPolyline(createRegionOfRectanglePolylineShape);
 
             cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
             getShapeCoord('polyline', '#cvat_canvas_shape_2').should((polylinePoints) => {
@@ -327,6 +312,7 @@ context('Snap tool feature.', () => {
             });
         });
         it('Snapping works when shape is rotated', { scrollBehavior: false }, () => {
+            // on rotation, scrollBehavior=true obscures points from view
             allure.issue('https://github.com/cvat-ai/cvat/pull/10448', 'Snap to rotated boxes');
 
             const coordsToRect = (coords) => ({
@@ -346,21 +332,34 @@ context('Snap tool feature.', () => {
             cy.shapeRotate('#cvat_canvas_shape_1', degrees.toFixed(1), true);
 
             // Draw a polygon
+            const toArr = (p) => ([p.x, p.y]);
             cy.interactControlButton('draw-polygon');
             cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
 
-            cy.get('.cvat-canvas-container').trigger('mousemove', ...defaultStartingPoint);
-            cy.get('.cvat-canvas-container').trigger('mousedown', ...defaultStartingPoint, { button: 0 });
+            cy.get('.cvat-canvas-container').trigger('mousemove', ...toArr(defaultStartingPoint));
+            cy.get('.cvat-canvas-container').trigger('mousedown', ...toArr(defaultStartingPoint), { button: 0 });
 
             // Should snap inside delta region
-            cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rotatedPoints[0]));
-            cy.get('.cvat-canvas-container').trigger('mousedown', ...regionOf(rotatedPoints[0]), { button: 0 });
+            cy.get('.cvat-canvas-container').trigger('mousemove', ...toArr(regionOf(rotatedPoints[0])));
+            cy.get('.cvat-canvas-container').trigger('mousedown', ...toArr(regionOf(rotatedPoints[0])), { button: 0 });
 
-            cy.get('.cvat-canvas-container').trigger('mousemove', ...regionOf(rotatedPoints[1]));
-            cy.get('.cvat-canvas-container').trigger('mousedown', ...regionOf(rotatedPoints[1]), { button: 0 });
+            cy.get('.cvat-canvas-container').trigger('mousemove', ...toArr(regionOf(rotatedPoints[1])));
+            cy.get('.cvat-canvas-container').trigger('mousedown', ...toArr(regionOf(rotatedPoints[1])), { button: 0 });
 
             cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+
+            // const regionOfRotatedPoints = rotatedPoints.map((regionOf));
+            // const regionOfRotatedPointsPolygonShape = {
+            //     pointsMap: [
+            //         defaultStartingPoint,
+            //         regionOfRotatedPoints[0],
+            //         regionOfRotatedPoints[1],
+            //     ],
+            //     type: 'Shape',
+            //     labelName,
+            // };
+            // cy.createPolygon(regionOfRotatedPointsPolygonShape);
 
             // Compare polygon's coords with rotated coords, should have 2 common
             getShapeCoord('polygon', '#cvat_canvas_shape_2').then((polygonPoints) => {
@@ -373,7 +372,7 @@ context('Snap tool feature.', () => {
         });
     });
 
-    context.only('Regression tests', () => {
+    context('Regression tests', () => {
         const createRectangleShape2PointsHidden = {
             points: 'By 2 Points',
             type: 'Shape',
