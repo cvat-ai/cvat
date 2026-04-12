@@ -15,3 +15,9 @@ WARNING: You are using a hardcoded CVAT access token in plain text. This token W
 Consider using .Values.agent.secret_env to store the token in a Kubernetes Secret for better security.
 NB! this token overrides the value from .Values.agent.secret_env if both are set.
 {{- end }}
+
+{{- if .Values.agent.use_cuda }}
+NOTE: CUDA support is enabled. Ensure that your cluster has compatible NVIDIA drivers and that the NVIDIA device plugin is installed and configured correctly for GPU scheduling.
+Please consider using node selectors or taints/tolerations to schedule agent pods on GPU-enabled nodes.
+Your node must have .status.allocatable.nvidia.com/gpu for the agent to be scheduled there.
+{{- end }}

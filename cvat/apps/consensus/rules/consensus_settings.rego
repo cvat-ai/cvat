@@ -83,7 +83,4 @@ base_filter := {} if { # Django Q object to filter list of entries
     ]
 }
 
-filter := utils.add_organization_filter(base_filter, [
-    "task__organization",
-    "task__project__organization",
-])
+filter := utils.add_organization_filter(base_filter, ["task__organization"])

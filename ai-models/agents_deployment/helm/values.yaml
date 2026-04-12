@@ -63,9 +63,11 @@ agent:
   resources:
     limits:
       cpu: 1
-#      memory: 1.5Gi
+      gpu: 1   # Only used if agent.use_cuda is true
+    #      memory: 1.5Gi
     requests:
       cpu: 200m
+      gpu: 1   # Only used if agent.use_cuda is true
       memory: 256Mi
   envVars: []
 #    - name: EXAMPLE_ENV_VAR
@@ -74,6 +76,31 @@ agent:
     - name: CVAT_ACCESS_TOKEN
       secretName: cvat-agent
       secretKey: token
+  ### nodeSelector, tolerations and affinity
+  nodeSelector: {}
+#    nodetype: gpu
+  affinity: {}
+#    nodeAffinity:
+#      requiredDuringSchedulingIgnoredDuringExecution:
+#        nodeSelectorTerms:
+#          - matchExpressions:
+#              - key: nodetype
+#                operator: In
+#                values:
+#                  - gpu
+  tolerations: []
+#    - key: "key1"
+#      operator: "Equal"
+#      value: "value1"
+#      effect: "NoSchedule"
+  extraVolumeMounts: []
+#  - name: example-volume
+#    mountPath: /path/in/container
+  extraVolumes: []
+#  - name: example-volume
+#    configMap:
+#      name: example-configmap
+
 
 job:
   resources:

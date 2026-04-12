@@ -115,6 +115,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private outlinedBorders: string;
     private isHidden: boolean;
     private getDrawnStates: (() => Record<number, DrawnState>) | null;
+    private isCtrlKeyDown: (() => boolean) | null;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -593,7 +594,8 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('drawupdate', (): void => {
             this.transform(this.geometry);
 
-            if (this.configuration.pointSnap &&
+            if (this.configuration.snapToPoint &&
+                !this.isCtrlKeyDown() &&
                 ['polygon', 'polyline'].includes(this.drawData.shapeType) &&
                 this.getDrawnStates) {
                 const pointsArray = (this.drawInstance as any).array().valueOf();
@@ -1304,6 +1306,7 @@ export class DrawHandlerImpl implements DrawHandler {
         geometry: Geometry,
         configuration: Configuration,
         getDrawnStates: () => Record<number, DrawnState>,
+        isCtrlKeyDown: () => boolean,
     ) {
         this.autoborderHandler = autoborderHandler;
         this.configuration = configuration;
@@ -1324,6 +1327,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance = null;
         this.pointsGroup = null;
         this.getDrawnStates = getDrawnStates;
+        this.isCtrlKeyDown = isCtrlKeyDown;
         this.cursorPosition = {
             x: 0,
             y: 0,

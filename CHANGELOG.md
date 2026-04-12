@@ -16,6 +16,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.62.0'></a>
+## \[2.62.0\] - 2026-04-02
+
+### Added
+
+- Show success notification after saving annotation guide (<https://github.com/cvat-ai/cvat/pull/10342>)
+
+- Compose for transformers + Helm support for function name env var
+  (<https://github.com/cvat-ai/cvat/pull/10388>)
+
+### Changed
+
+- The format for filters in Rego policy files has changed; if you have
+  added custom policy files, you may need to update them
+  (<https://github.com/cvat-ai/cvat/pull/10387>)
+
+- 'Remove annotations' confirmation message now more user-friendly.
+- 'Delete' button renamed to 'Remove' to match the message
+  (<https://github.com/cvat-ai/cvat/pull/10407>)
+
+- Bounding box is used as a default prompt for SAM models instead of points
+  (<https://github.com/cvat-ai/cvat/pull/10432>)
+
+- Snap to contour and snap to point features are now accessible on the controls sidebar
+  (<https://github.com/cvat-ai/cvat/pull/10421>)
+
+### Fixed
+
+- Width misalignment between top bars and content lists (tasks, jobs, projects,
+  cloud storages, webhooks pages) by applying consistent scrollbar gutter spacing.
+  (<https://github.com/cvat-ai/cvat/pull/10324>)
+
+- Content size on resource pages for smaller screens (<1000px) to provide better responsive layout
+  (<https://github.com/cvat-ai/cvat/pull/10324>)
+
+- Exported interpolated shapes in 3D cuboid tracks can have invalid rotation
+  (<https://github.com/cvat-ai/cvat/pull/10413>)
+
+- Fixed chunk generation in tasks with backing cloud storage where the
+  manifest contains incomplete paths
+  (<https://github.com/cvat-ai/cvat/pull/10429>)
+
 <a id='changelog-2.61.0'></a>
 ## \[2.61.0\] - 2026-03-20
 
