@@ -465,6 +465,20 @@ class Data(models.Model):
     class Meta:
         default_permissions = ()
 
+    @property
+    def organization(self):
+        try:
+            return self.tasks.first().organization
+        except AttributeError:
+            return None
+
+    @property
+    def organization_id(self):
+        try:
+            return self.tasks.first().organization_id
+        except AttributeError:
+            return None
+
     def get_frame_step(self):
         match = re.search(r"step\s*=\s*([1-9]\d*)", self.frame_filter)
         return int(match.group(1)) if match else 1
