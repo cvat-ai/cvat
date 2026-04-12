@@ -30,15 +30,15 @@ interface Props {
 }
 
 export enum SizeType {
+    LENGTH = 'length',
     WIDTH = 'width',
     HEIGHT = 'height',
-    LENGTH = 'length',
 }
 
 export interface SizeParams {
+    length: number;
     width: number;
     height: number;
-    length: number;
 }
 
 export function attrValuesAreEqual(next: Record<number, string>, prev: Record<number, string>): boolean {
@@ -66,8 +66,17 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
 
 function ItemAttributesComponent(props: Props): JSX.Element | null {
     const {
-        collapsed, attributes, values, readonly, changeAttribute, collapse,
-        sizeParams, changeSize, source, score, votes,
+        collapsed,
+        attributes,
+        values,
+        readonly,
+        changeAttribute,
+        collapse,
+        sizeParams,
+        changeSize,
+        source,
+        score,
+        votes,
     } = props;
 
     const isConsensus = source === Source.CONSENSUS;
@@ -108,12 +117,13 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
             </Tag>
         </Tooltip>
     ) : null;
-    const scoreVotesElement = scoreTag || votesTag ? (
-        <Row className='cvat-object-item-score-votes-wrapper'>
-            {scoreTag}
-            {votesTag}
-        </Row>
-    ) : null;
+    const scoreVotesElement =
+        scoreTag || votesTag ? (
+            <Row className='cvat-object-item-score-votes-wrapper'>
+                {scoreTag}
+                {votesTag}
+            </Row>
+        ) : null;
 
     if (!hasDetails) {
         if (scoreVotesElement) {
@@ -128,59 +138,62 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
                 className='cvat-objects-sidebar-state-item-collapse'
                 activeKey={collapsed ? [] : ['details']}
                 onChange={collapse}
-                items={[{
-                    key: 'details',
-                    label: (
-                        <Row style={{ width: '100%' }} align='middle' justify='space-between'>
-                            <Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>
-                            {scoreVotesElement}
-                        </Row>
-                    ),
-                    children: [
-                        sizeParams && (
-                            <Row key='size' justify='space-around' className='cvat-objects-sidebar-size-params'>
-                                {Object.keys(sizeParams).map((key) => (
-                                    <Col key={key}>
-                                        <Text type='secondary'>
-                                            {`${key.charAt(0).toUpperCase()}:`}
-                                        </Text>
-                                        <InputNumber
-                                            value={sizeParams[key as keyof SizeParams] || ''}
-                                            onChange={(value) => {
-                                                if (typeof value === 'number') {
-                                                    changeSize(
-                                                        SizeType[key.toUpperCase() as keyof typeof SizeType],
-                                                        value,
-                                                    );
-                                                }
-                                            }}
-                                            disabled={readonly}
-                                        />
-                                    </Col>
-                                ))}
+                items={[
+                    {
+                        key: 'details',
+                        label: (
+                            <Row style={{ width: '100%' }} align='middle' justify='space-between'>
+                                <Text style={{ fontSize: 10 }} type='secondary'>
+                                    DETAILS
+                                </Text>
+                                {scoreVotesElement}
                             </Row>
                         ),
-                        ...attributes.map(
-                            (attribute: any): JSX.Element => (
-                                <Row
-                                    key={attribute.id}
-                                    align='middle'
-                                    justify='start'
-                                    className='cvat-object-item-attribute-wrapper'
-                                >
-                                    <ItemAttribute
-                                        readonly={readonly}
-                                        attrValue={values[attribute.id]}
-                                        attrInputType={attribute.inputType}
-                                        attrName={attribute.name}
-                                        attrID={attribute.id}
-                                        attrValues={attribute.values}
-                                        changeAttribute={changeAttribute}
-                                    />
+                        children: [
+                            sizeParams && (
+                                <Row key='size' justify='space-around' className='cvat-objects-sidebar-size-params'>
+                                    {Object.keys(sizeParams).map((key) => (
+                                        <Col key={key}>
+                                            <Text type='secondary'>{`${key.charAt(0).toUpperCase()}:`}</Text>
+                                            <InputNumber
+                                                value={sizeParams[key as keyof SizeParams] || ''}
+                                                onChange={(value) => {
+                                                    if (typeof value === 'number') {
+                                                        changeSize(
+                                                            SizeType[key.toUpperCase() as keyof typeof SizeType],
+                                                            value,
+                                                        );
+                                                    }
+                                                }}
+                                                disabled={readonly}
+                                            />
+                                        </Col>
+                                    ))}
                                 </Row>
                             ),
-                        )],
-                }]}
+                            ...attributes.map(
+                                (attribute: any): JSX.Element => (
+                                    <Row
+                                        key={attribute.id}
+                                        align='middle'
+                                        justify='start'
+                                        className='cvat-object-item-attribute-wrapper'
+                                    >
+                                        <ItemAttribute
+                                            readonly={readonly}
+                                            attrValue={values[attribute.id]}
+                                            attrInputType={attribute.inputType}
+                                            attrName={attribute.name}
+                                            attrID={attribute.id}
+                                            attrValues={attribute.values}
+                                            changeAttribute={changeAttribute}
+                                        />
+                                    </Row>
+                                ),
+                            ),
+                        ],
+                    },
+                ]}
             />
         </Row>
     );

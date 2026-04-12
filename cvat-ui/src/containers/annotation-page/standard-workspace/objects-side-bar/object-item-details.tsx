@@ -5,7 +5,9 @@
 import React from 'react';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
-import ObjectItemDetails, { SizeType } from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
+import ObjectItemDetails, {
+    SizeType,
+} from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { updateAnnotationsAsync, collapseObjectItems } from 'actions/annotation-actions';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'utils/redux';
@@ -33,8 +35,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     let objectState: ObjectState | null = null;
     const { states } = state.annotation.annotations;
     if (parentID) {
-        const parentState = (states as ObjectState[])
-            .find((_objectState: ObjectState) => _objectState.clientID === parentID);
+        const parentState = (states as ObjectState[]).find(
+            (_objectState: ObjectState) => _objectState.clientID === parentID,
+        );
         if (parentState) {
             objectState = parentState.elements.find((el: ObjectState) => el.clientID === clientID) || null;
         }
@@ -44,20 +47,16 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
     const {
         annotation: {
-            annotations: {
-                collapsedAll,
-                collapsed: statesCollapsed,
-            },
+            annotations: { collapsedAll, collapsed: statesCollapsed },
             workspace,
         },
         settings: {
-            workspace: {
-                textContent,
-            },
+            workspace: { textContent },
         },
     } = state;
 
-    const collapsed = typeof statesCollapsed[clientID as number] === 'undefined' ? collapsedAll : statesCollapsed[clientID];
+    const collapsed =
+        typeof statesCollapsed[clientID as number] === 'undefined' ? collapsedAll : statesCollapsed[clientID];
 
     return {
         collapsed,
@@ -97,13 +96,13 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
             if (state.shapeType === ShapeType.CUBOID && state.points) {
                 const points = state.points.slice();
                 switch (type) {
-                    case SizeType.WIDTH:
+                    case SizeType.LENGTH:
                         points[6] = value;
                         break;
-                    case SizeType.HEIGHT:
+                    case SizeType.WIDTH:
                         points[7] = value;
                         break;
-                    case SizeType.LENGTH:
+                    case SizeType.HEIGHT:
                         points[8] = value;
                         break;
                     default:
@@ -121,18 +120,16 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
     };
 
     public render(): JSX.Element | null {
-        const {
-            readonly, collapsed, state, workspace, textContent,
-        } = this.props;
+        const { readonly, collapsed, state, workspace, textContent } = this.props;
 
         if (state) {
             let sizeParams = null;
 
             if (state.shapeType === ShapeType.CUBOID && workspace === Workspace.STANDARD3D && state.points) {
                 sizeParams = {
-                    width: parseFloat(state.points[6].toFixed(2)), // X
-                    height: parseFloat(state.points[7].toFixed(2)), // Y
-                    length: parseFloat(state.points[8].toFixed(2)), // Z
+                    length: parseFloat(state.points[6].toFixed(2)), // X
+                    width: parseFloat(state.points[7].toFixed(2)), // Y
+                    height: parseFloat(state.points[8].toFixed(2)), // Z
                 };
             }
             return (
