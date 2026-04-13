@@ -4,7 +4,6 @@
 
 /// <reference types="cypress" />
 
-import { Exception } from 'sass';
 import {
     taskName, labelName, attrName,
     textDefaultValue,
@@ -15,7 +14,7 @@ import { defaultTaskSpec } from '../../support/default-specs';
 it('Prepare for testing', () => {
     cy.log('Seeding shared data');
     cy.visit('/auth/login');
-    throw Exception('Something very bad happened during setup');
+    throw Error('Something very bad happened during setup');
     const attributes = [
         { name: attrName, values: textDefaultValue, type: 'text' },
         { ...multiAttrParams },
