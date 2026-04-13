@@ -230,7 +230,7 @@ function findMaskBorders(rle: ArrayLike<number>, width: number, height: number):
             const absY = y + currentTop;
             const absX = x + currentLeft;
 
-            if (absX >= 0 && absX < width && absY >= 0 && absY < height && value) {
+            if (value && absX >= 0 && absX < width && absY >= 0 && absY < height) {
                 // update coordinates to fit them around non-zero values
                 atLeastOnePixel = true;
                 left = Math.min(left, absX);
