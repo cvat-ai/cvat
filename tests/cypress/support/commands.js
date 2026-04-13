@@ -8,6 +8,7 @@
 /* eslint-disable security/detect-non-literal-regexp */
 
 import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
+import { checkAutoborderPointsCount } from './utils.cy';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -684,7 +685,7 @@ Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
         .trigger('keyup', { keyCode: keyCodeG, code: 'KeyG' });
 });
 
-Cypress.Commands.add('createPolygon', (createPolygonParams) => {
+Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = null) => {
     if (!createPolygonParams.reDraw) {
         cy.interactControlButton('draw-polygon');
         cy.switchLabel(createPolygonParams.labelName, 'draw-polygon');
@@ -698,6 +699,9 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
             }
             cy.contains('button', createPolygonParams.type).click();
         });
+    }
+    if (autoborderParams && autoborderParams.numberOfAutoborderPoints) {
+        checkAutoborderPointsCount(autoborderParams.numberOfAutoborderPoints);
     }
     createPolygonParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
@@ -856,7 +860,7 @@ Cypress.Commands.add('updateAttributes', (attributes) => {
     });
 });
 
-Cypress.Commands.add('createPolyline', (createPolylineParams) => {
+Cypress.Commands.add('createPolyline', (createPolylineParams, autoborderParams = null) => {
     cy.interactControlButton('draw-polyline');
     cy.switchLabel(createPolylineParams.labelName, 'draw-polyline');
     cy.get('.cvat-draw-polyline-popover').within(() => {
@@ -869,6 +873,9 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
         }
         cy.contains('button', createPolylineParams.type).click();
     });
+    if (autoborderParams && autoborderParams.numberOfAutoborderPoints) {
+        checkAutoborderPointsCount(autoborderParams.numberOfAutoborderPoints);
+    }
     createPolylineParams.pointsMap.forEach((element) => {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
@@ -1487,7 +1494,7 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
         if (pressShift) {
             cy.get('body').type('{shift}', { release: false });
         }
-        cy.get('#root').trigger('mousemove', x + 20, y);
+        cy.get('#root').trigger('mousemove', x + 20, y, { force: true });
         cy.get(shape).should('have.attr', 'transform');
         cy.document().then((doc) => {
             const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
@@ -1495,7 +1502,7 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
             cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTransformMatrix}°`);
             expect(`${shapeTransformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
         });
-        cy.get('#root').trigger('mouseup');
+        cy.get('#root').trigger('mouseup', { force: true });
     });
 });
 

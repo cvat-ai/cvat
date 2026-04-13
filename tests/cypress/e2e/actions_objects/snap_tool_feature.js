@@ -7,6 +7,7 @@
 
 import * as allure from 'allure-js-commons';
 import { taskName, labelName } from '../../support/const';
+import { checkAutoborderPointsCount } from '../../support/utils.cy';
 
 context('Snap tool feature.', () => {
     const keyCodeN = 78;
@@ -32,14 +33,6 @@ context('Snap tool feature.', () => {
             cy.get(objectId).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
         }
         return cy.wrap(arrToPush);
-    }
-    function testAutoborderPointsCount(expectedCount) {
-        cy.get('.cvat_canvas_autoborder_point')
-            .should('exist')
-            .and('be.visible')
-            .then(($autoborderPoints) => {
-                expect($autoborderPoints.length).to.be.equal(expectedCount);
-            });
     }
 
     function testCollectShapePointRadius(objectId) {
@@ -196,9 +189,7 @@ context('Snap tool feature.', () => {
                 cy.interactControlButton('draw-polygon');
                 cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
 
-                testAutoborderPointsCount(8); // 8 points at the rectangles
-
-                cy.createPolygon(createPolygonShape);
+                cy.createPolygon(createPolygonShape, { numberOfAutoborderPoints: 8 });
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
                 // Collect the polygon points coordinates
@@ -233,13 +224,12 @@ context('Snap tool feature.', () => {
                 cy.interactControlButton('draw-polygon');
                 cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
 
-                testAutoborderPointsCount(8); // 8 points at the rectangles (4 per rectangle)
+                checkAutoborderPointsCount(8); // 8 points at the rectangles (4 per rectangle)
 
                 // Create polygon at rotated positions (use first 3 corners)
                 const { tl, br } = getRectCorners(createRectangleShape2Points);
                 const [p1, p2] = [tl, br].map((p) => toArr(rotate(p, createRectangleShape2Points, degrees)));
 
-                // cy.createPolygon(createPolygonAlongRotatedRect);
                 cy.get('.cvat-canvas-container').trigger('mousemove', ...p1);
                 cy.get('.cvat-canvas-container').trigger('mousedown', ...p1, { button: 0 });
 
@@ -262,11 +252,7 @@ context('Snap tool feature.', () => {
             });
 
             it('Start drawing a polyline with autobordering between the two shapes.', () => {
-                cy.interactControlButton('draw-polyline');
-                cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
-                testAutoborderPointsCount(8); // 8 points at the rectangles
-
-                cy.createPolyline(createPolylineShape);
+                cy.createPolyline(createPolylineShape, { numberOfAutoborderPoints: 8 });
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
                 // Collect the polyline points coordinates
@@ -320,12 +306,7 @@ context('Snap tool feature.', () => {
                 toggleSnapTool('contour', false);
             });
             it('Draw a diagonal in the trapezium. Should pick the shortest path', () => {
-                cy.interactControlButton('draw-polyline');
-                cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
-
-                testAutoborderPointsCount(4);
-
-                cy.createPolyline(createPolylineShape);
+                cy.createPolyline(createPolylineShape, { numberOfAutoborderPoints: 4 });
                 cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
                 getShapeCoord('polyline', '#cvat_canvas_shape_2').should((polylinePoints) => {
@@ -424,7 +405,7 @@ context('Snap tool feature.', () => {
             cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
 
-            // TODO: cy.createPolygon approach used in previous tests doesn't work here
+            // TODO: cy.createPolygon approach used in previous as doesn't work here
             // some snapped points are drawn twice and persist after test
             // cy.wait in loop doesn't work
             // not reproducible manually though, so not a user issue
