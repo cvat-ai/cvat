@@ -2313,8 +2313,17 @@ class DatasetComparator:
             union = uni_ub - uni_lb
             return intersection / union
 
+        def label_eq(a: dict[str, Any], b: dict[str, Any]) -> bool:
+            return a["label_id"] == b["label_id"]
+
         def interval_iou(a: dict[str, Any], b: dict[str, Any]) -> float:
             return range_iou((a["start"], a["stop"]), (b["start"], b["stop"]))
+
+        def interval_iou_with_label(a: dict[str, Any], b: dict[str, Any]) -> float:
+            if not label_eq(a, b):
+                return 0
+
+            return interval_iou(a, b)
 
         def interval_wer(a: dict[str, Any], b: dict[str, Any], *, attr_id: int) -> float:
             a_value = next(iter(a["attributes"]), lambda attr: attr["spec_id"] == attr_id)["value"]
@@ -2343,16 +2352,119 @@ class DatasetComparator:
         gt_intervals = self._gt_data_provider.job_annotation.ir_data.intervals
         ds_intervals = self._ds_data_provider.job_annotation.ir_data.intervals
 
-        matches, mismatches, gt_unmatched, ds_unmatched = match_segments(
+        # In the case of audio, there can be many heavily-overlapping annotations.
+        # We prioritize same-label matching over position matching in this case.
+        distances = {}
+
+        # match with the same label first
+        distance_func, distances_with_label = (
+            self.comparator._annotation_comparator._make_memoizing_distance(interval_iou_with_label)
+        )
+        matches, _, gt_unmatched, ds_unmatched = match_segments(
             gt_intervals,
             ds_intervals,
-            distance=interval_iou,
+            distance=distance_func,
             dist_thresh=self.settings.iou_threshold,
-            label_matcher=lambda a, b: a["label_id"] == b["label_id"],
+            label_matcher=label_eq,
         )
+        distances.update(distances_with_label)
+
+        # find matches with different labels
+        distance_func, distances_without_label = (
+            self.comparator._annotation_comparator._make_memoizing_distance(interval_iou)
+        )
+        _, mismatches, gt_unmatched, ds_unmatched = match_segments(
+            gt_unmatched,
+            ds_unmatched,
+            distance=distance_func,
+            dist_thresh=self.settings.iou_threshold,
+            label_matcher=label_eq,
+        )
+        distances.update(distances_without_label)
+
+        def _get_similarity(gt_ann: dict, ds_ann: dict) -> float | None:
+            return self.comparator.get_distance(distances, gt_ann, ds_ann)
 
         results = self._intermediate_results
         conflicts = results.setdefault("conflicts", [])
+
+        for gt_ann, ds_ann in itertools.chain(matches, mismatches):
+            similarity = _get_similarity(gt_ann, ds_ann)
+            if similarity and similarity < self.settings.low_overlap_threshold:
+                conflicts.append(
+                    AnnotationConflict(
+                        frame_id=None,
+                        type=AnnotationConflictType.LOW_OVERLAP,
+                        annotation_ids=[
+                            AnnotationId(
+                                obj_id=ds_ann["id"],
+                                job_id=self._ds_data_provider.job_id,
+                                type=AnnotationType.INTERVAL,
+                                shape_type=None,
+                            ),
+                            AnnotationId(
+                                obj_id=gt_ann["id"],
+                                job_id=self._gt_data_provider.job_id,
+                                type=AnnotationType.INTERVAL,
+                                shape_type=None,
+                            ),
+                        ],
+                    )
+                )
+
+        for unmatched_ann in gt_unmatched:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=None,
+                    type=AnnotationConflictType.MISSING_ANNOTATION,
+                    annotation_ids=[
+                        AnnotationId(
+                            obj_id=unmatched_ann["id"],
+                            job_id=self._gt_data_provider.job_id,
+                            type=AnnotationType.INTERVAL,
+                            shape_type=None,
+                        ),
+                    ],
+                )
+            )
+
+        for unmatched_ann in ds_unmatched:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=None,
+                    type=AnnotationConflictType.EXTRA_ANNOTATION,
+                    annotation_ids=[
+                        AnnotationId(
+                            obj_id=unmatched_ann["id"],
+                            job_id=self._ds_data_provider.job_id,
+                            type=AnnotationType.INTERVAL,
+                            shape_type=None,
+                        ),
+                    ],
+                )
+            )
+
+        for gt_ann, ds_ann in mismatches:
+            conflicts.append(
+                AnnotationConflict(
+                    frame_id=None,
+                    type=AnnotationConflictType.MISMATCHING_LABEL,
+                    annotation_ids=[
+                        AnnotationId(
+                            obj_id=ds_ann["id"],
+                            job_id=self._ds_data_provider.job_id,
+                            type=AnnotationType.INTERVAL,
+                            shape_type=None,
+                        ),
+                        AnnotationId(
+                            obj_id=gt_ann["id"],
+                            job_id=self._gt_data_provider.job_id,
+                            type=AnnotationType.INTERVAL,
+                            shape_type=None,
+                        ),
+                    ],
+                )
+            )
 
         intermediate_shape_summary = ComparisonReportAnnotationShapeSummary(
             valid_count=len(matches) + len(mismatches),
