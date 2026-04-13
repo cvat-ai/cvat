@@ -2341,12 +2341,34 @@ class DatasetComparator:
             TranscriptionQualityMetric.CER: interval_cer,
         }
 
+        attribute_specs_by_id = {
+            spec.id: spec
+            for label_attrs in self._gt_data_provider.job_data._attribute_mapping.values()
+            for spec in label_attrs["spec"].values()
+        }
+
         attribute_specs: dict[AttributePath, AttributeSpec] = {
             AttributePath(
                 spec.name, spec.label.name, getattr(spec.label.parent, "name", None)
             ): spec
-            for label_attrs in self._gt_data_provider.job_data._attribute_mapping.values()
-            for spec in label_attrs["spec"].values()
+            for spec in attribute_specs_by_id.values()
+        }
+        transcription_attr_ids = set(
+            attribute_specs[req.attribute].id for req in self.settings.transcription_requirements
+        )
+
+        cvat_dm_label_id_map = {
+            self._gt_data_provider.job_data._get_label_id(
+                dm_label.name,
+                (
+                    self._gt_data_provider.job_data._get_label_id(dm_label.parent)
+                    if dm_label.parent
+                    else None
+                ),
+            ): dm_label_id
+            for dm_label_id, dm_label in enumerate(
+                self._gt_dataset.categories()[dm.AnnotationType.label]
+            )
         }
 
         gt_intervals = self._gt_data_provider.job_annotation.ir_data.intervals
@@ -2541,21 +2563,44 @@ class DatasetComparator:
             else:
                 match_idx += 1
 
+            if self.settings.compare_attributes:
+                gt_ann_dm = dm.Label(
+                    id=gt_ann["id"],
+                    label=cvat_dm_label_id_map[gt_ann["label_id"]],
+                    attributes={
+                        attribute_specs_by_id[a["spec_id"]].name: a["value"]
+                        for a in gt_ann["attributes"]
+                        if a["spec_id"] not in transcription_attr_ids
+                    },
+                )
+                ds_ann_dm = dm.Label(
+                    id=ds_ann["id"],
+                    label=cvat_dm_label_id_map[ds_ann["label_id"]],
+                    attributes={
+                        attribute_specs_by_id[a["spec_id"]].name: a["value"]
+                        for a in ds_ann["attributes"]
+                        if a["spec_id"] not in transcription_attr_ids
+                    },
+                )
+                ann_job_id_map = {
+                    id(gt_ann_dm): self._gt_data_provider.job_id,
+                    id(ds_ann_dm): self._ds_data_provider.job_id,
+                }
+                self._match_attributes(
+                    [(gt_ann_dm, ds_ann_dm)],
+                    frame_id=None,
+                    conflicts=conflicts,
+                    attribute_summaries=intermediate_attribute_summaies,
+                    make_annotation_id=lambda a, _: AnnotationId(
+                        obj_id=a.id,
+                        job_id=ann_job_id_map[id(a)],
+                        type=AnnotationType.INTERVAL,
+                        shape_type=None,
+                    ),
+                )
+
         confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
 
-        cvat_dm_label_id_map = {
-            self._gt_data_provider.job_data._get_label_id(
-                dm_label.name,
-                (
-                    self._gt_data_provider.job_data._get_label_id(dm_label.parent)
-                    if dm_label.parent
-                    else None
-                ),
-            ): dm_label_id
-            for dm_label_id, dm_label in enumerate(
-                self._gt_dataset.categories()[dm.AnnotationType.label]
-            )
-        }
         label_id_map = {
             cvat_label_id: label_id_map[dm_label_id]
             for cvat_label_id, dm_label_id in cvat_dm_label_id_map.items()
@@ -2868,8 +2913,12 @@ class DatasetComparator:
         frame_id: int | None,
         conflicts: list[AnnotationConflict],
         attribute_summaries: dict[AttributePath, ComparisonReportAnnotationAttributeSummary],
+        make_annotation_id: Callable[[dm.Annotation, dm.IDataset], AnnotationId] | None = None,
     ):
-        label_id_map = list(enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]))
+        if make_annotation_id is None:
+            make_annotation_id = self._dm_ann_to_ann_id
+
+        label_id_map = dict(enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]))
 
         def _make_attribute_path(label_id: int, attribute_name: str) -> tuple:
             label_info = label_id_map[label_id]
@@ -2884,8 +2933,8 @@ class DatasetComparator:
                         frame_id=frame_id,
                         type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
                         annotation_ids=[
-                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                            make_annotation_id(ds_ann, self._ds_dataset),
+                            make_annotation_id(gt_ann, self._gt_dataset),
                         ],
                         attributes=mismatching_attrs,
                     )
