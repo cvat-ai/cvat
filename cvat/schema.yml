@@ -6949,6 +6949,7 @@ components:
         frame:
           type: integer
           readOnly: true
+          nullable: true
         type:
           allOf:
           - $ref: '#/components/schemas/AnnotationConflictType'
@@ -10156,6 +10157,10 @@ components:
     PatchedTranscriptionRequirementRequest:
       type: object
       properties:
+        attribute_id:
+          type: integer
+          description: |
+            The transcription (type 'text') attribute to apply the requirement to
         metric:
           $ref: '#/components/schemas/TranscriptionQualityMetric'
         acceptance_threshold:
@@ -11637,10 +11642,8 @@ components:
       properties:
         attribute_id:
           type: integer
-          nullable: true
-          readOnly: true
-          description: The transcription (type 'text') attribute to apply the requirement
-            to
+          description: |
+            The transcription (type 'text') attribute to apply the requirement to
         metric:
           $ref: '#/components/schemas/TranscriptionQualityMetric'
         acceptance_threshold:
@@ -11648,6 +11651,8 @@ components:
           format: double
           maximum: 1
           minimum: 0
+      required:
+      - attribute_id
     User:
       type: object
       properties:
