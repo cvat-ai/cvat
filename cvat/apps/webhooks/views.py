@@ -26,7 +26,7 @@ from .serializers import (
     WebhookReadSerializer,
     WebhookWriteSerializer,
 )
-from .signals import signal_ping, signal_redelivery
+from .signals import ping, redeliver
 
 
 @extend_schema(tags=["webhooks"])
@@ -173,8 +173,9 @@ class WebhookViewSet(viewsets.ModelViewSet):
         serializer_class=None,
     )
     def redelivery(self, request, pk, delivery_id):
-        delivery = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
-        signal_redelivery.send(sender=self, data=delivery.request)
+        webhook = self.get_object()
+        delivery = webhook.deliveries.get(id=delivery_id)
+        redeliver(webhook, delivery.request)
         return Response({}, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -187,6 +188,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
         instance = self.get_object()  # force call of check_object_permissions()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
-        delivery = signal_ping.send(sender=self, serializer=serializer)[0][1]
+        delivery = ping(serializer)
         serializer = WebhookDeliveryReadSerializer(delivery, context={"request": request})
         return Response(serializer.data)
