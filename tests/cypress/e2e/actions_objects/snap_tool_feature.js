@@ -42,8 +42,8 @@ context('Snap tool feature.', () => {
             });
     }
 
-    function testCollectShapePointRadius(id) {
-        cy.get(id).should('exist').and('be.visible')
+    function testCollectShapePointRadius(objectId) {
+        cy.get(objectId).should('exist').and('be.visible')
             .trigger('mousemove', 'center', { scrollBehavior: false });
         return cy.get('#cvat_canvas_content circle').first().should('exist').and('be.visible')
             .invoke('attr', 'r').then((radius) => Number.parseFloat(radius));
