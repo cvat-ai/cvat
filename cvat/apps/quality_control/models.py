@@ -207,12 +207,12 @@ class QualityReport(models.Model):
 
 class AnnotationConflict(models.Model):
     report = models.ForeignKey(QualityReport, on_delete=models.CASCADE, related_name="conflicts")
-    frame = models.PositiveIntegerField()
+    frame = models.PositiveIntegerField(null=True)
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
 
     annotation_ids: Sequence[AnnotationId]
-    attributes = models.JSONField(default=str)
+    attributes = models.JSONField(default=None, null=True)
 
     @property
     def organization_id(self):

@@ -271,7 +271,7 @@ class AnnotationConflict(ReportNode):
             frame_id=d.get("frame_id", None),
             type=AnnotationConflictType(d["type"]),
             annotation_ids=list(AnnotationId.from_dict(v) for v in d["annotation_ids"]),
-            attribute=list(d.get("attribute", None)),
+            attributes=list(d["attributes"]) if d.get("attributes", None) is not None else None,
         )
 
 
@@ -979,7 +979,7 @@ class ComparisonReport(ReportNode):
     comparison_summary: ComparisonReportSummary
     frame_results: dict[int, ComparisonReportFrameSummary] | None
 
-    @property
+    @cached_property
     def conflicts(self) -> list[AnnotationConflict]:
         if not self.frame_results:
             return []
@@ -999,6 +999,7 @@ class ComparisonReport(ReportNode):
                 if d.get("frame_results") is not None
                 else None
             ),
+            conflicts=[AnnotationConflict.from_dict(c) for c in d.get("conflicts", [])],
         )
 
     def to_json(self) -> str:
@@ -2985,6 +2986,7 @@ class DatasetComparator:
                 jobs=None,
             ),
             frame_results=frame_results,
+            conflicts=conflicts,
         )
 
 
@@ -3359,7 +3361,7 @@ class TaskQualityCalculator:
                     type=conflict["type"],
                     frame=conflict["frame_id"],
                     severity=conflict["severity"],
-                    annotations=conflict["annotations"],
+                    attributes=conflict["attributes"],
                 )
                 db_conflicts.append(db_conflict)
 
