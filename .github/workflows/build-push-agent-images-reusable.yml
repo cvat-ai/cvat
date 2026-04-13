@@ -1,0 +1,65 @@
+name: Build Agent Image
+
+on:
+  workflow_call:
+    inputs:
+      repo_name:
+        required: true
+        type: string
+      dockerfile:
+        required: true
+        type: string
+      platforms:
+        required: true
+        type: string
+      build_args:
+        required: false
+        type: string
+        default: ''
+      tag:
+        required: true
+        type: string
+      tag_suffix:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+      DOCKERHUB_WORKSPACE:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ inputs.dockerfile }}
+          platforms: ${{ inputs.platforms }}
+          push: true
+          build-args: ${{ inputs.build_args }}
+          tags: |
+            ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ inputs.repo_name }}:${{ inputs.tag }}${{ inputs.tag_suffix }}
+            ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ inputs.repo_name }}:latest${{ inputs.tag_suffix }}
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_WORKSPACE }}/${{ inputs.repo_name }}:latest${{ inputs.tag_suffix }}
+          cache-to: type=inline

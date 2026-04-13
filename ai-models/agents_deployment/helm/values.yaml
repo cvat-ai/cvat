@@ -8,6 +8,8 @@ image:
 
 agent:
   ### Common configuration
+  # Please specify a unique name for your agent's function. Uniqueness is username + function name.
+  function_name: "myfunction"
   # Please specify the number of agent replicas you want to deploy.
   replicaCount: 1
   # Please specify the organization slug in CVAT if you want to deploy agent under organization. Else leave empty.
@@ -35,12 +37,19 @@ agent:
       model_id:
         type: str
         value: "facebook/sam2.1-hiera-tiny"
+    transformers-detr:
+      model:
+        type: str
+        value: "facebook/detr-resnet-50"
+      task:
+        type: str
+        value: "object-detection"
     custom:
       # use modelParamsOverride to specify custom parameters for your model.
 
   # Please pick a preset for your agent's model configuration. The preset will automatically fill in the necessary parameters for the chosen model type. If you choose a preset, you can still override specific parameters in the `modelParamsOverride` section below.
   # Keys with empty 'value' will be ignored.
-  preset: sam2
+  preset: transformers-detr
   modelParamsOverride: { }
 #  modelParamsOverride:
 #      model:
@@ -54,9 +63,11 @@ agent:
   resources:
     limits:
       cpu: 1
-#      memory: 1.5Gi
+      gpu: 1   # Only used if agent.use_cuda is true
+    #      memory: 1.5Gi
     requests:
       cpu: 200m
+      gpu: 1   # Only used if agent.use_cuda is true
       memory: 256Mi
   envVars: []
 #    - name: EXAMPLE_ENV_VAR
@@ -65,6 +76,31 @@ agent:
     - name: CVAT_ACCESS_TOKEN
       secretName: cvat-agent
       secretKey: token
+  ### nodeSelector, tolerations and affinity
+  nodeSelector: {}
+#    nodetype: gpu
+  affinity: {}
+#    nodeAffinity:
+#      requiredDuringSchedulingIgnoredDuringExecution:
+#        nodeSelectorTerms:
+#          - matchExpressions:
+#              - key: nodetype
+#                operator: In
+#                values:
+#                  - gpu
+  tolerations: []
+#    - key: "key1"
+#      operator: "Equal"
+#      value: "value1"
+#      effect: "NoSchedule"
+  extraVolumeMounts: []
+#  - name: example-volume
+#    mountPath: /path/in/container
+  extraVolumes: []
+#  - name: example-volume
+#    configMap:
+#      name: example-configmap
+
 
 job:
   resources:

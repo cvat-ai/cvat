@@ -170,7 +170,7 @@ _RETRY_AFTER_TIMEOUT = 10
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
-    iam_organization_field = None
+    iam_supports_organization_params = False
     iam_permission_class = ServerPermission
 
     # To get nice documentation about ServerViewSet actions it is necessary
@@ -329,7 +329,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
-    iam_organization_field = 'organization'
+    iam_supports_organization_params = True
     iam_permission_class = ProjectPermission
 
     def get_serializer_class(self):
@@ -871,7 +871,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     simple_filters = list(search_fields) + ['project_id']
     ordering_fields = list(filter_fields)
     ordering = "-id"
-    iam_organization_field = 'organization'
+    iam_supports_organization_params = True
     iam_permission_class = TaskPermission
 
     def get_serializer_class(self):
@@ -1668,7 +1668,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         )
     )
 
-    iam_organization_field = 'segment__task__organization'
+    iam_supports_organization_params = True
     iam_permission_class = JobPermission
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + [
@@ -2141,7 +2141,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'job__segment__task', 'owner', 'assignee', 'job'
     ).all()
 
-    iam_organization_field = 'job__segment__task__organization'
+    iam_supports_organization_params = True
     iam_permission_class = IssuePermission
     search_fields = ('owner', 'assignee')
     filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
@@ -2213,7 +2213,7 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'issue', 'issue__job', 'owner'
     ).all()
 
-    iam_organization_field = 'issue__job__segment__task__organization'
+    iam_supports_organization_params = True
     iam_permission_class = CommentPermission
     search_fields = ('owner',)
     filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
@@ -2298,7 +2298,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project__organization'
     ).all()
 
-    iam_organization_field = ('task__organization', 'project__organization')
+    iam_supports_organization_params = True
     iam_permission_class = LabelPermission
 
     search_fields = ('name', 'parent')
@@ -2352,6 +2352,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # )
                 self.check_object_permissions(self.request, instance)
                 queryset = instance.get_labels(prefetch=True)
+                queryset = LabelPermission.add_org_filter_proof(queryset)
             else:
                 # In other cases permissions are checked already
                 queryset = super().get_queryset()
@@ -2443,7 +2444,7 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
-    iam_organization_field = 'memberships__organization'
+    iam_supports_organization_params = True
     iam_permission_class = UserPermission
 
     search_fields = ('username', 'first_name', 'last_name')
@@ -2535,7 +2536,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
-    iam_organization_field = 'organization'
+    iam_supports_organization_params = True
     iam_permission_class = CloudStoragePermission
 
     # Multipart support is necessary here, as CloudStorageWriteSerializer
@@ -2773,6 +2774,7 @@ class AssetsViewSet(
     parser_classes = [MultiPartParser]
     search_fields = ()
     ordering = "uuid"
+    iam_supports_organization_params = False
     iam_permission_class = GuideAssetPermission
 
     def check_object_permissions(self, request: ExtendedRequest, obj):
@@ -2858,7 +2860,7 @@ class AnnotationGuidesViewSet(
     ).prefetch_related('assets').all()
     search_fields = ()
     ordering = "-id"
-    iam_organization_field = None
+    iam_supports_organization_params = False
     iam_permission_class = AnnotationGuidePermission
 
     def _update_related_assets(self, request: ExtendedRequest, guide: AnnotationGuide):
