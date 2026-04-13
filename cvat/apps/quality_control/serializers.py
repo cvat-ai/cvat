@@ -3,17 +3,24 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
+from collections import Counter
 from enum import Enum
+from typing import Any
 
 from django.db import models as django_models
+from django.db.models import prefetch_related_objects
 from rest_framework import serializers
 
 from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.filters import JsonLogicFilter
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import AttributeType
 from cvat.apps.engine.serializers import WriteOnceMixin
+from cvat.apps.engine.utils import FORMATTED_LIST_DISPLAY_THRESHOLD, format_list
 from cvat.apps.quality_control import models
+
+MAX_ATTRIBUTE_REQUIREMENTS = 100
 
 
 class AnnotationIdSerializer(serializers.ModelSerializer):
@@ -236,7 +243,7 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         assert False
 
-    def create(self, validated_data):
+    def validate_pre_create(self, validated_data) -> dict[str, Any]:
         attribute = models.AttributeSpec.objects.get(pk=validated_data["attribute_id"])
 
         if attribute.input_type != AttributeType.TEXT:
@@ -254,7 +261,10 @@ class TranscriptionRequirementSerializer(serializers.ModelSerializer):
 
         validated_data["settings"] = settings
 
-        return super().create(validated_data)
+        return validated_data
+
+    def create(self, validated_data):
+        return super().create(self.validate_pre_create(validated_data))
 
 
 class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -398,6 +408,33 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             JsonLogicFilter().parse_query(value, raise_on_empty=False)
         return value
 
+    def validate_transcription_requirements(self, value):
+        if MAX_ATTRIBUTE_REQUIREMENTS and len(value) >= MAX_ATTRIBUTE_REQUIREMENTS:
+            # NOTE: This check only works till all the requirements are specified
+            # in a single request
+            raise serializers.ValidationError(
+                f"The number of transcription requirements cannot "
+                f"exceed {MAX_ATTRIBUTE_REQUIREMENTS}. Received {len(value)}"
+            )
+
+        id_counter = Counter(req.get("attribute_id", None) for req in value)
+        id_counter.pop(None, None)
+        if id_counter and id_counter.most_common(1)[0][1] > 1:
+            raise serializers.ValidationError(
+                "Transcription requirements must relate to different attributes. "
+                "Repeated attribute ids: {}".format(
+                    format_list(
+                        [
+                            str(v[0])
+                            for v in id_counter.most_common(FORMATTED_LIST_DISPLAY_THRESHOLD)
+                            if v[1] > 1
+                        ]
+                    )
+                )
+            )
+
+        return value
+
     def get_extra_kwargs(self):
         defaults = models.QualitySettings.get_defaults()
 
@@ -417,6 +454,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         elif instance.project_id:
             instance.project.touch()
 
+        transcription_requirements = []
         if "transcription_requirements" in validated_data:
             models.TranscriptionQualityRequirement.objects.filter(settings=instance).delete()
 
@@ -429,8 +467,23 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     },
                 )
                 requirement_serializer.is_valid(raise_exception=True)
-                requirement_serializer.save()
+                requirement_params = requirement_serializer.validate_pre_create(
+                    requirement_serializer.validated_data
+                )
+                transcription_requirements.append(
+                    models.TranscriptionQualityRequirement(**requirement_params)
+                )
+
+            transcription_requirements = bulk_create(
+                models.TranscriptionQualityRequirement, transcription_requirements
+            )
 
             validated_data.pop("transcription_requirements")
 
-        return super().update(instance, validated_data)
+        instance = super().update(instance, validated_data)
+
+        # TODO: populate related transcription_requirements cache in the instance without a request
+        if transcription_requirements:
+            prefetch_related_objects([instance], "transcription_requirements")
+
+        return instance
