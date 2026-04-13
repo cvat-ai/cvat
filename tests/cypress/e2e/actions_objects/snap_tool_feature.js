@@ -436,6 +436,7 @@ context('Snap tool feature.', () => {
             toggleSnapTool('contour', true);
         });
         after(() => {
+            cy.realPress('Escape');
             cy.removeAnnotations();
             toggleSnapTool('contour', false);
         });
@@ -444,6 +445,10 @@ context('Snap tool feature.', () => {
 
             cy.get('.cvat-objects-sidebar-state-item').find('[data-icon="eye"]').click();
             cy.get('.cvat_canvas_shape').should('be.hidden');
+
+            cy.interactControlButton('draw-polygon');
+            cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
+            checkAutoborderPointsCount(0);
         });
     });
 });
