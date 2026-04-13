@@ -429,7 +429,11 @@ class TranscriptionQualityRequirement(models.Model):
                 check=(
                     models.Q(acceptance_threshold__gte=0) & models.Q(acceptance_threshold__lte=1)
                 ),
-            )
+            ),
+            models.UniqueConstraint(
+                name="transcription_quality_requirement_attr_unique_per_settings",
+                fields=["settings_id", "attribute_id"],
+            ),
         ]
 
     def to_dict(self):
