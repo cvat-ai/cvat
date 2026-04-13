@@ -3126,6 +3126,12 @@ class DatasetComparator:
             intersection_frames.append(frame_id)
             conflicts += frame_result.conflicts
 
+        # this value can include more than just the separate intersection_frames
+        intersection_frames_count = len(
+            self._gt_data_provider.job_data.get_included_frames()
+            & self._ds_data_provider.job_data.get_included_frames()
+        )
+
         annotation_summary, annotations_component_summary = self._generate_annotation_summaries()
 
         # Make sure nothing is left unprocessed
@@ -3136,6 +3142,7 @@ class DatasetComparator:
             parameters=self.settings,
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
+                frame_count=intersection_frames_count,
                 total_frames=self._get_total_frames(),
                 conflict_count=len(conflicts),
                 warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
