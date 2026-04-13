@@ -1,0 +1,318 @@
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+import IntelligentScissorsImplementation, {
+    type IntelligentScissorsInterface,
+} from './intelligent-scissors';
+import HistogramEqualizationImplementation, {
+    type HistogramEqualizationInterface,
+} from './histogram-equalization';
+import TrackerMILImplementation, {
+    type TrackerMILInterface,
+} from './tracker-mil';
+
+export interface SimplifyPolyOptions {
+    accuracy: number;
+    closed: boolean;
+}
+
+export interface SimplifyPolyResult {
+    points: number[];
+    warning?: string;
+}
+
+export function thresholdFromAccuracy(accuracy: number): number {
+    // Convert accuracy (0-13 scale) to epsilon threshold
+    // This matches the approximation accuracy slider
+    const approxPolyMaxDistance = 13 - accuracy;
+
+    if (approxPolyMaxDistance > 0) {
+        if (approxPolyMaxDistance <= 8) {
+            // Linear interpolation from (1, 0.25) to (8, 3)
+            return (2.75 * approxPolyMaxDistance - 1) / 7;
+        }
+        // Exponential: 4 for 9, 8 for 10, 16 for 11, 32 for 12, 64 for 13
+        return 2 ** (approxPolyMaxDistance - 7);
+    }
+    return 0;
+}
+
+function approxPolyDP(cv: any): (points: number[], threshold: number, closed?: boolean) => number[] {
+    return (points: number[], threshold: number, closed = true): number[] => {
+        if (points.length < 3 || points.length % 2) {
+            return points;
+        }
+
+        const rows = points.length / 2;
+        const cols = 2;
+        const approx = new cv.Mat();
+        const contour = cv.matFromArray(rows, cols, cv.CV_32FC1, points);
+
+        try {
+            cv.approxPolyDP(contour, approx, threshold, closed);
+            return Array.from(approx.data32F);
+        } finally {
+            approx.delete();
+            contour.delete();
+        }
+    };
+}
+
+export function simplifyPoly(cv: any): (
+    points: number[],
+    options: SimplifyPolyOptions,
+) => SimplifyPolyResult {
+    const approxPolyDPFn = approxPolyDP(cv);
+
+    return (points: number[], options: SimplifyPolyOptions): SimplifyPolyResult => {
+        const {
+            accuracy,
+            closed,
+        } = options;
+
+        const minPoints = 3;
+        const threshold = thresholdFromAccuracy(accuracy);
+        const minValues = minPoints * 2;
+
+        if (points.length < minValues) {
+            const pointCount = points.length / 2;
+            return {
+                points,
+                warning: `Shape has ${pointCount} points, minimum is ${minPoints}`,
+            };
+        }
+
+        let simplified = approxPolyDPFn(points, threshold, closed);
+        let warning: string | undefined;
+
+        // Auto-adjust threshold if result has too few points
+        if (simplified.length < minValues) {
+            let adjustedThreshold = threshold * 0.5;
+            let attempts = 0;
+            const maxAttempts = 5;
+
+            while (simplified.length < minValues && attempts < maxAttempts && adjustedThreshold > 0.01) {
+                simplified = approxPolyDPFn(points, adjustedThreshold, closed);
+                adjustedThreshold *= 0.5;
+                attempts++;
+            }
+
+            if (simplified.length < minValues) {
+                return {
+                    points,
+                    warning: `Could not simplify to at least ${minPoints} points even with reduced threshold`,
+                };
+            }
+        }
+
+        return {
+            points: simplified,
+            warning,
+        };
+    };
+}
+
+export enum MatType {
+    CV_8UC1,
+    CV_8UC3,
+    CV_8UC4,
+}
+
+export interface MatSpace {
+    fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => any;
+}
+
+export interface MatVectorSpace {
+    empty: () => any;
+}
+
+export interface Contours {
+    convexHull: (src: [number, number][][]) => [number, number][];
+    findContours: (src: any) => [number, number][][];
+    approxPoly: (points: [number, number][], threshold: number, closed?: boolean) => [number, number][];
+}
+
+export interface IntelligentScissors extends IntelligentScissorsInterface {}
+
+export interface HistogramEqualization extends HistogramEqualizationInterface {}
+
+export interface TrackerMIL extends TrackerMILInterface {}
+
+export interface Segmentation {
+    intelligentScissorsFactory: () => IntelligentScissorsInterface;
+}
+
+export interface ImgProc {
+    hist: () => HistogramEqualizationInterface;
+}
+
+export interface TrackerModel {
+    init(frame: any, boundingBox: number[]): boolean;
+    update(frame: any): { rect: number[] };
+    delete(): void;
+}
+
+export interface OpenCVTracker {
+    model: () => TrackerMILInterface;
+}
+
+export interface Tracking {
+    trackerMIL: OpenCVTracker;
+}
+
+export interface OpenCVInterface {
+    mat: MatSpace;
+    matVector: MatVectorSpace;
+    contours: Contours;
+    segmentation: Segmentation;
+    imgproc: ImgProc;
+    tracking: Tracking;
+    simplifyPolygon: (points: number[], options: SimplifyPolyOptions) => SimplifyPolyResult;
+}
+
+export function createOpenCVInterface(cv: any): OpenCVInterface {
+    let simplifyPolyFn: ((points: number[], options: SimplifyPolyOptions) => SimplifyPolyResult) | null = null;
+
+    return {
+        mat: {
+            fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => {
+                const typeToCVType = {
+                    [MatType.CV_8UC1]: cv.CV_8UC1,
+                    [MatType.CV_8UC3]: cv.CV_8UC3,
+                    [MatType.CV_8UC4]: cv.CV_8UC4,
+                };
+
+                const mat = cv.matFromArray(height, width, typeToCVType[type], data);
+                return mat;
+            },
+        },
+
+        matVector: {
+            empty: () => new cv.MatVector(),
+        },
+
+        contours: {
+            convexHull: (contours: [number, number][][]): [number, number][] => {
+                const points = contours.flat(2) as number[];
+                const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
+                const output = new cv.Mat();
+                try {
+                    cv.convexHull(input, output, false, true);
+                    const result = Array.from(output.data32S as number[]);
+                    const converted: [number, number][] = [];
+                    for (let i = 0; i < result.length; i += 2) {
+                        converted.push([result[i], result[i + 1]]);
+                    }
+                    return converted;
+                } finally {
+                    output.delete();
+                    input.delete();
+                }
+            },
+
+            findContours: (src: any): [number, number][][] => {
+                type ArrayWithPixelLength = Array<Array<[number, number]> & { pixelLength?: number }>;
+
+                const contours = new cv.MatVector();
+                const hierarchy = new cv.Mat();
+                const expanded = new cv.Mat();
+                const kernel = cv.Mat.ones(2, 2, cv.CV_8U);
+                const anchor = new cv.Point(-1, -1);
+                const jsContours: ArrayWithPixelLength = [];
+                try {
+                    cv.copyMakeBorder(src, expanded, 1, 1, 1, 1, cv.BORDER_CONSTANT);
+                    // morph transform to get better contour including all the pixels
+                    cv.dilate(
+                        expanded,
+                        expanded,
+                        kernel,
+                        anchor,
+                        1,
+                        cv.BORDER_CONSTANT,
+                        cv.morphologyDefaultBorderValue(),
+                    );
+
+                    cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
+                    for (let i = 0; i < contours.size(); i++) {
+                        const contour = contours.get(i);
+                        const converted: [number, number][] = [];
+
+                        let prevX = contour.data32S[0] - 1;
+                        let prevY = contour.data32S[1] - 1;
+                        let contourLength = 0;
+                        for (let j = 0; j < contour.data32S.length; j += 2) {
+                            // subtract offset we created when copied source image
+                            const x = contour.data32S[j] - 1;
+                            const y = contour.data32S[j + 1] - 1;
+                            converted.push([x, y]);
+                            contourLength += Math.hypot(x - prevX, y - prevY);
+                            prevX = x;
+                            prevY = y;
+                        }
+
+                        Object.defineProperty(converted, 'pixelLength', {
+                            value: contourLength,
+                            writable: false,
+                        });
+
+                        jsContours.push(converted);
+                        contour.delete();
+                    }
+                } finally {
+                    kernel.delete();
+                    expanded.delete();
+                    hierarchy.delete();
+                    contours.delete();
+                }
+
+                return jsContours.sort((arr1, arr2) => (arr2.pixelLength || 0) - (arr1.pixelLength || 0));
+            },
+
+            approxPoly: (points: [number, number][], threshold: number, closed = true): [number, number][] => {
+                if (points.length < 3) {
+                    // nothing to approximate
+                    return points;
+                }
+
+                const rows = points.length;
+                const cols = 2;
+                const approx = new cv.Mat();
+                const contour = cv.matFromArray(rows, cols, cv.CV_32FC1, points.flat());
+                try {
+                    cv.approxPolyDP(contour, approx, threshold, closed); // approx output type is CV_32F
+                    const result: [number, number][] = [];
+                    for (let row = 0; row < approx.rows; row++) {
+                        result.push([approx.floatAt(row, 0), approx.floatAt(row, 1)]);
+                    }
+                    return result;
+                } finally {
+                    approx.delete();
+                    contour.delete();
+                }
+            },
+        },
+
+        segmentation: {
+            intelligentScissorsFactory: () => new IntelligentScissorsImplementation(cv),
+        },
+
+        imgproc: {
+            hist: () => new HistogramEqualizationImplementation(cv),
+        },
+
+        tracking: {
+            trackerMIL: {
+                model: () => new TrackerMILImplementation(cv),
+            },
+        },
+
+        simplifyPolygon: (points: number[], options: SimplifyPolyOptions): SimplifyPolyResult => {
+            if (!simplifyPolyFn) {
+                simplifyPolyFn = simplifyPoly(cv);
+            }
+            return simplifyPolyFn(points, options);
+        },
+    };
+}

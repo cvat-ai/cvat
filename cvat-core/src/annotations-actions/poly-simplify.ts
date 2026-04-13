@@ -4,7 +4,7 @@
 
 import ObjectState from '../object-state';
 import { ShapeType, ObjectType } from '../enums';
-import { simplifyPoly, SimplifyPolyResult } from '../object-utils';
+import { simplifyPoly, type SimplifyPolyResult } from '../opencv/opencv-interface';
 
 import { ActionParameterType, ActionParameters } from './base-action';
 import { BaseShapesAction, ShapesActionInput, ShapesActionOutput } from './base-shapes-action';

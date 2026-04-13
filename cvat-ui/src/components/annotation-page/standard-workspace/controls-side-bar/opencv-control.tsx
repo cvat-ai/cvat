@@ -21,11 +21,10 @@ import { throttle } from 'lodash';
 import { OpenCVIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
-    getCore, Job, ObjectState, ObjectType, ShapeType,
+    getCore, IntelligentScissors, Job, ObjectState, ObjectType, OpenCVTracker, ShapeType,
     thresholdFromAccuracy,
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
-import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
     CombinedState, ActiveControl, ToolsBlockerState,
 } from 'reducers';
@@ -36,7 +35,6 @@ import {
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ApproximationAccuracy from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
-import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { enableImageFilter as enableImageFilterAction, disableImageFilter as disableImageFilterAction } from 'actions/settings-actions';
 import { ImageFilter, ImageFilterAlias, hasFilter } from 'utils/image-processing';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';

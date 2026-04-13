@@ -6,7 +6,8 @@
 import { omit } from 'lodash';
 import config from './config';
 import ObjectState, { SerializedData } from './object-state';
-import { checkObjectType, clamp } from './common';
+import { checkObjectType } from './common';
+import { clamp } from './opencv/math-utils';
 import {
     DataError, ArgumentError, ScriptingError,
 } from './exceptions';

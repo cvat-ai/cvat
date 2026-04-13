@@ -49,9 +49,13 @@ import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-col
 import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
 import { Request, RequestOperation } from 'cvat-core/src/request';
 import {
-    thresholdFromAccuracy, approxPolyDP, simplifyPoly,
-    SimplifyPolyOptions, SimplifyPolyResult,
-} from 'cvat-core/src/object-utils';
+    createOpenCVInterface, simplifyPoly, thresholdFromAccuracy, MatType,
+    type OpenCVInterface, type MatSpace, type MatVectorSpace, type Contours,
+    type IntelligentScissors, type HistogramEqualization, type Segmentation,
+    type ImgProc, type TrackerModel, type OpenCVTracker, type Tracking,
+    type SimplifyPolyOptions, type SimplifyPolyResult,
+} from 'cvat-core/src/opencv/opencv-interface';
+import { ImageProcessing, BaseImageFilter } from 'cvat-core/src/opencv/image-processing';
 import AboutData from 'cvat-core/src/about';
 import { MinimalShape, TrackerResults, InteractorResults } from 'cvat-core/src/lambda-manager';
 
@@ -126,9 +130,11 @@ export {
     StorageLocation,
     MembershipRole,
     AboutData,
-    thresholdFromAccuracy,
-    approxPolyDP,
     simplifyPoly,
+    createOpenCVInterface,
+    MatType,
+    thresholdFromAccuracy,
+    BaseImageFilter,
 };
 
 export type {
@@ -153,4 +159,16 @@ export type {
     ApiTokensFilter,
     SimplifyPolyOptions,
     SimplifyPolyResult,
+    OpenCVInterface,
+    MatSpace,
+    MatVectorSpace,
+    Contours,
+    IntelligentScissors,
+    HistogramEqualization,
+    Segmentation,
+    ImgProc,
+    TrackerModel,
+    OpenCVTracker,
+    Tracking,
+    ImageProcessing,
 };
