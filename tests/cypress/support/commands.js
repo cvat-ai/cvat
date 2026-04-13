@@ -700,7 +700,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams, autoborderParams = n
             cy.contains('button', createPolygonParams.type).click();
         });
     }
-    if (autoborderParams && autoborderParams.numberOfAutoborderPoints) {
+    if (autoborderParams && Number.isInteger(autoborderParams.numberOfAutoborderPoints)) {
         checkAutoborderPointsCount(autoborderParams.numberOfAutoborderPoints);
     }
     createPolygonParams.pointsMap.forEach((element) => {
