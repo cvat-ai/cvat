@@ -2925,13 +2925,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/fabric@npm:^4.5.7":
-  version: 4.5.15
-  resolution: "@types/fabric@npm:4.5.15"
-  checksum: 10c0/9719e44f7387982d1f1a7c7d9023e8857bb16c1ffd3e1269848f62086426d780e76bcf57bc66502736cbcb92dc5f528e1378f0e6e083bce1636899c6875f73c0
-  languageName: node
-  linkType: hard
-
 "@types/hast@npm:^2.0.0":
   version: 2.3.10
   resolution: "@types/hast@npm:2.3.10"
@@ -5815,7 +5808,6 @@ __metadata:
     "@babel/preset-typescript": "npm:^7.6.0"
     "@babel/register": "npm:^7.22.5"
     "@istanbuljs/nyc-config-babel": "npm:^3.0.0"
-    "@types/fabric": "npm:^4.5.7"
     "@types/lodash": "npm:^4.14.191"
     "@types/mousetrap": "npm:^1.6.5"
     "@types/node": "npm:^18.0.3"

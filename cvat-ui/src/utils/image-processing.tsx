@@ -2,9 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { fabric } from 'fabric';
-
-export type ConfigurableFilterType = fabric.IBaseFilter;
+export interface ConfigurableFilterType {
+    applyTo2d(options: { imageData: ImageData }): void;
+    setOptions?(options: object): void;
+}
 export interface SerializedImageFilter {
     alias: ImageFilterAlias;
     params: object;
@@ -20,7 +21,7 @@ export interface ImageProcessing {
 
 /* eslint @typescript-eslint/no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
 export class BaseImageFilter implements ImageProcessing {
-    public filter: fabric.IBaseFilter | null = null;
+    public filter: ConfigurableFilterType | null = null;
     public currentProcessedImage: number | null = null;
 
     processImage(_r: ImageData, _frameNumber: number): ImageData {

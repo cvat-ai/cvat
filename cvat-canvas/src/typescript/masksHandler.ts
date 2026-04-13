@@ -2,7 +2,18 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { fabric } from 'fabric';
+import {
+    Canvas,
+    Circle,
+    Color,
+    FabricImage,
+    FabricObject,
+    Point,
+    Polyline,
+    Polygon,
+    Rect,
+    type TPointerEventInfo,
+} from 'fabric';
 import debounce from 'lodash/debounce';
 
 import {
@@ -49,14 +60,14 @@ export class MasksHandlerImpl implements MasksHandler {
     private isMouseDown: boolean;
     private isBrushSizeChanging: boolean;
     private resizeBrushToolLatestX: number;
-    private brushMarker: fabric.Rect | fabric.Circle | null;
-    private drawablePolygon: null | fabric.Polygon;
+    private brushMarker: Rect | Circle | null;
+    private drawablePolygon: null | Polygon;
     private isPolygonDrawing: boolean;
-    private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[];
+    private drawnObjects: (Polygon | Circle | Rect | Polyline | FabricImage)[];
 
     private tool: DrawData['brushTool'] | null;
     private drawData: DrawData | null;
-    private canvas: fabric.Canvas;
+    private canvas: Canvas;
 
     private editData: MasksEditData | null;
 
@@ -89,15 +100,17 @@ export class MasksHandlerImpl implements MasksHandler {
                 evented: false,
                 selectable: false,
                 opacity: 0.75,
+                originX: 'left' as const,
+                originY: 'top' as const,
                 left: this.latestMousePos.x - this.tool.size / 2,
                 top: this.latestMousePos.y - this.tool.size / 2,
                 strokeWidth: 1,
                 stroke: 'white',
             };
-            this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
+            this.brushMarker = this.tool.form === 'circle' ? new Circle({
                 ...common,
                 radius: Math.round(this.tool.size / 2),
-            }) : new fabric.Rect({
+            }) : new Rect({
                 ...common,
                 width: this.tool.size,
                 height: this.tool.size,
@@ -168,12 +181,12 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     private getDrawnObjectsWrappingBox(): WrappingBBox {
-        type BoundingRect = ReturnType<PropType<fabric.Polygon, 'getBoundingRect'>>;
+        type BoundingRect = ReturnType<PropType<Polygon, 'getBoundingRect'>>;
         type TwoCornerBox = Pick<BoundingRect, 'top' | 'left'> & { right: number; bottom: number };
         const { width, height } = this.geometry.image;
         const wrappingBbox = this.drawnObjects
             .map((obj) => {
-                if (obj instanceof fabric.Polygon) {
+                if (obj instanceof Polygon) {
                     const bbox = computeWrappingBox(obj.points
                         .reduce(((acc, val) => {
                             acc.push(val.x, val.y);
@@ -188,7 +201,7 @@ export class MasksHandlerImpl implements MasksHandler {
                     };
                 }
 
-                if (obj instanceof fabric.Image) {
+                if (obj instanceof FabricImage) {
                     return {
                         left: obj.left,
                         top: obj.top,
@@ -250,20 +263,20 @@ export class MasksHandlerImpl implements MasksHandler {
         this.removeBrushMarker();
         if (brushTool) {
             if (brushTool.color && this.tool?.color !== brushTool.color) {
-                const color = fabric.Color.fromHex(brushTool.color);
+                const color = Color.fromHex(brushTool.color);
                 for (const object of this.drawnObjects) {
-                    if (object instanceof fabric.Line) {
-                        const alpha = +object.stroke.split(',')[3].slice(0, -1);
+                    if (object instanceof Polyline) {
+                        const alpha = typeof object.stroke === 'string' ? +object.stroke.split(',')[3].slice(0, -1) : 1;
                         color.setAlpha(alpha);
                         object.set({ stroke: color.toRgba() });
                     } else if (
-                        object instanceof fabric.Rect ||
-                        object instanceof fabric.Polygon ||
-                        object instanceof fabric.Circle
+                        object instanceof Rect ||
+                        object instanceof Polygon ||
+                        object instanceof Circle
                     ) {
                         const alpha = +(object.fill as string).split(',')[3].slice(0, -1);
                         color.setAlpha(alpha);
-                        (object as fabric.Object).set({ fill: color.toRgba() });
+                        (object as FabricObject).set({ fill: color.toRgba() });
                     }
                 }
                 this.canvas.renderAll();
@@ -284,21 +297,23 @@ export class MasksHandlerImpl implements MasksHandler {
                 shapeType: 'polygon',
                 onDrawDone: (data: { points: number[] } | null) => {
                     if (!data) return;
-                    const points = data.points.reduce((acc: fabric.Point[], _: number, idx: number) => {
+                    const points = data.points.reduce((acc: Point[], _: number, idx: number) => {
                         if (idx % 2) {
-                            acc.push(new fabric.Point(data.points[idx - 1], data.points[idx]));
+                            acc.push(new Point(data.points[idx - 1], data.points[idx]));
                         }
 
                         return acc;
                     }, []);
 
-                    const color = fabric.Color.fromHex(this.tool.color);
+                    const color = Color.fromHex(this.tool.color);
                     color.setAlpha(this.tool.type === 'polygon-minus' ? 1 : this.drawingOpacity);
-                    const polygon = new fabric.Polygon(points, {
+                    const polygon = new Polygon(points, {
                         fill: color.toRgba(),
                         selectable: false,
                         objectCaching: false,
                         absolutePositioned: true,
+                        originX: 'left',
+                        originY: 'top',
                         globalCompositeOperation: this.tool.type === 'polygon-minus' ? 'destination-out' : 'xor',
                     });
 
@@ -375,7 +390,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.onEditDone = onEditDone;
         this.onEditStart = onEditStart;
         this.vectorDrawHandler = vectorDrawHandler;
-        this.canvas = new fabric.Canvas(canvas, {
+        this.canvas = new Canvas(canvas, {
             containerClass: 'cvat_masks_canvas_wrapper',
             fireRightClick: true,
             selection: false,
@@ -391,10 +406,11 @@ export class MasksHandlerImpl implements MasksHandler {
             this.isBrushSizeChanging = false;
         });
 
-        this.canvas.on('mouse:down', (options: fabric.IEvent<MouseEvent>) => {
+        this.canvas.on('mouse:down', (options: TPointerEventInfo) => {
             const { isDrawing, isEditing, isInsertion } = this;
-            this.isMouseDown = (isDrawing || isEditing) && options.e.button === 0 && !options.e.altKey;
-            this.isBrushSizeChanging = (isDrawing || isEditing) && options.e.button === 2 && options.e.altKey;
+            const mouseEvent = options.e instanceof MouseEvent ? options.e : null;
+            this.isMouseDown = (isDrawing || isEditing) && mouseEvent?.button === 0 && !options.e.altKey;
+            this.isBrushSizeChanging = (isDrawing || isEditing) && mouseEvent?.button === 2 && options.e.altKey;
 
             if (isInsertion) {
                 const continueInserting = options.e.ctrlKey;
@@ -421,10 +437,10 @@ export class MasksHandlerImpl implements MasksHandler {
             }
         });
 
-        this.canvas.on('mouse:move', (e: fabric.IEvent<MouseEvent>) => {
+        this.canvas.on('mouse:move', (e: TPointerEventInfo) => {
             const { image: { width: imageWidth, height: imageHeight } } = this.geometry;
             const { angle } = this.geometry;
-            let [x, y] = [e.pointer.x, e.pointer.y];
+            let { x, y } = e.scenePoint;
             if (angle === 180) {
                 [x, y] = [imageWidth - x, imageHeight - y];
             } else if (angle === 270) {
@@ -440,7 +456,7 @@ export class MasksHandlerImpl implements MasksHandler {
 
             if (isInsertion) {
                 const [object] = this.drawnObjects;
-                if (object && object instanceof fabric.Image) {
+                if (object && object instanceof FabricImage) {
                     object.left = position.x - object.width / 2;
                     object.top = position.y - object.height / 2;
                     this.canvas.renderAll();
@@ -448,7 +464,7 @@ export class MasksHandlerImpl implements MasksHandler {
             }
 
             if (isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
-                const xDiff = e.pointer.x - this.resizeBrushToolLatestX;
+                const xDiff = e.scenePoint.x - this.resizeBrushToolLatestX;
                 let onUpdateConfiguration = null;
                 if (this.isDrawing) {
                     onUpdateConfiguration = this.drawData.onUpdateConfiguration;
@@ -463,7 +479,7 @@ export class MasksHandlerImpl implements MasksHandler {
                     });
                 }
 
-                this.resizeBrushToolLatestX = e.pointer.x;
+                this.resizeBrushToolLatestX = e.scenePoint.x;
                 e.e.stopPropagation();
                 return;
             }
@@ -471,35 +487,38 @@ export class MasksHandlerImpl implements MasksHandler {
             if (this.brushMarker) {
                 this.brushMarker.left = position.x - tool.size / 2;
                 this.brushMarker.top = position.y - tool.size / 2;
-                this.canvas.bringToFront(this.brushMarker);
+                this.canvas.bringObjectToFront(this.brushMarker);
                 this.canvas.renderAll();
             }
 
             if (isMouseDown && !this.isHidden && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
-                const color = fabric.Color.fromHex(tool.color);
+                const color = Color.fromHex(tool.color);
                 color.setAlpha(tool.type === 'eraser' ? 1 : 0.5);
+                const globalCompositeOperation: GlobalCompositeOperation = tool.type === 'eraser' ? 'destination-out' : 'xor';
 
                 const commonProperties = {
                     selectable: false,
                     evented: false,
-                    globalCompositeOperation: tool.type === 'eraser' ? 'destination-out' : 'xor',
+                    globalCompositeOperation,
                 };
 
                 const shapeProperties = {
                     ...commonProperties,
                     fill: color.toRgba(),
+                    originX: 'left' as const,
+                    originY: 'top' as const,
                     left: position.x - tool.size / 2,
                     top: position.y - tool.size / 2,
                 };
 
-                let shape: fabric.Circle | fabric.Rect | null = null;
+                let shape: Circle | Rect | null = null;
                 if (tool.form === 'circle') {
-                    shape = new fabric.Circle({
+                    shape = new Circle({
                         ...shapeProperties,
                         radius: Math.round(tool.size / 2),
                     });
                 } else if (tool.form === 'square') {
-                    shape = new fabric.Rect({
+                    shape = new Rect({
                         ...shapeProperties,
                         width: tool.size,
                         height: tool.size,
@@ -516,13 +535,12 @@ export class MasksHandlerImpl implements MasksHandler {
                     const dx = position.x - this.latestMousePos.x;
                     const dy = position.y - this.latestMousePos.y;
                     if (Math.sqrt(dx ** 2 + dy ** 2) > tool.size / 2) {
-                        const line = new fabric.Line([
-                            this.latestMousePos.x - tool.size / 2,
-                            this.latestMousePos.y - tool.size / 2,
-                            position.x - tool.size / 2,
-                            position.y - tool.size / 2,
+                        const line = new Polyline([
+                            new Point(this.latestMousePos.x - tool.size / 2, this.latestMousePos.y - tool.size / 2),
+                            new Point(position.x - tool.size / 2, position.y - tool.size / 2),
                         ], {
                             ...commonProperties,
+                            fill: '',
                             stroke: color.toRgba(),
                             strokeWidth: tool.size,
                             strokeLineCap: tool.form === 'circle' ? 'round' : 'square',
@@ -539,8 +557,8 @@ export class MasksHandlerImpl implements MasksHandler {
                 // update the polygon position
                 const points = this.drawablePolygon.get('points');
                 if (points.length) {
-                    points[points.length - 1].setX(e.e.offsetX);
-                    points[points.length - 1].setY(e.e.offsetY);
+                    points[points.length - 1].setX(position.x);
+                    points[points.length - 1].setY(position.y);
                 }
                 this.canvas.renderAll();
             }
@@ -567,8 +585,6 @@ export class MasksHandlerImpl implements MasksHandler {
 
         const topCanvas = this.canvas.getElement().parentElement as HTMLDivElement;
         if (this.canvas.width !== width || this.canvas.height !== height) {
-            this.canvas.setHeight(height);
-            this.canvas.setWidth(width);
             this.canvas.setDimensions({ width, height });
         }
 
@@ -587,7 +603,7 @@ export class MasksHandlerImpl implements MasksHandler {
             if (!this.isInsertion && drawData.initialState?.shapeType === 'mask') {
                 // initialize inserting pipeline if not started
                 const { points } = drawData.initialState;
-                const color = fabric.Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
+                const color = Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
                 imageDataToDataURL(
@@ -595,7 +611,12 @@ export class MasksHandlerImpl implements MasksHandler {
                     right - left + 1,
                     bottom - top + 1,
                     (dataURL: string) => {
-                        fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
+                        FabricImage.fromURL(dataURL, {}, {
+                            left,
+                            top,
+                            originX: 'left',
+                            originY: 'top',
+                        }).then((image: FabricImage) => {
                             URL.revokeObjectURL(dataURL);
                             image.selectable = false;
                             image.evented = false;
@@ -611,7 +632,7 @@ export class MasksHandlerImpl implements MasksHandler {
                             */
                             this.drawnObjects = [image];
                             this.canvas.renderAll();
-                        }, { left, top });
+                        });
                     },
                 );
 
@@ -679,7 +700,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 // start editing pipeline if not started yet
                 this.canvas.getElement().parentElement.style.display = 'block';
                 const { points } = editData.state;
-                const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
+                const color = Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
                 imageDataToDataURL(
@@ -687,7 +708,12 @@ export class MasksHandlerImpl implements MasksHandler {
                     right - left + 1,
                     bottom - top + 1,
                     (dataURL: string) => {
-                        fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
+                        FabricImage.fromURL(dataURL, {}, {
+                            left,
+                            top,
+                            originX: 'left',
+                            originY: 'top',
+                        }).then((image: FabricImage) => {
                             URL.revokeObjectURL(dataURL);
                             image.selectable = false;
                             image.evented = false;
@@ -696,7 +722,7 @@ export class MasksHandlerImpl implements MasksHandler {
                             this.canvas.add(image);
                             this.drawnObjects.push(image);
                             this.canvas.renderAll();
-                        }, { left, top });
+                        });
                     },
                 );
 

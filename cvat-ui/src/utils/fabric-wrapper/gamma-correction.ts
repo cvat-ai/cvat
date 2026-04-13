@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { fabric } from 'fabric';
+import { filters } from 'fabric';
 import { ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
 import FabricFilter from './fabric-wrapper';
 
 export interface GammaFilterOptions {
-    gamma: number[];
+    gamma: [number, number, number];
 }
 
 export default class GammaCorrection extends FabricFilter {
@@ -21,8 +21,7 @@ export default class GammaCorrection extends FabricFilter {
             throw Error(`Incorrect option for gamma filter, expected array: [R, G, B] got ${gamma}`);
         }
 
-        // @ts-ignore: Some filters are not typed yet https://github.com/DefinitelyTyped/DefinitelyTyped/issues/62371
-        this.filter = new fabric.Image.filters.Gamma({
+        this.filter = new filters.Gamma({
             gamma,
         });
         this.#gamma = gamma;

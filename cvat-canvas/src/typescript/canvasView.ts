@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import polylabel from 'polylabel';
-import { fabric } from 'fabric';
+import { Color } from 'fabric';
 import * as SVG from 'svg.js';
 import * as martinez from 'martinez-polygon-clipping';
 
@@ -3510,7 +3510,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addMask(points: number[], state: any): SVG.Image {
         const colorization = this.getShapeColorization(state);
-        const color = fabric.Color.fromHex(colorization.fill).getSource();
+        const color = Color.fromHex(colorization.fill).getSource();
         const [left, top, right, bottom] = points.slice(-4);
         const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
 

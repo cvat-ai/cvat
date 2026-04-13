@@ -19,7 +19,7 @@ export default class FabricFilter extends BaseImageFilter {
     }
 
     public configure(options: object): void {
-        if (this.filter) {
+        if (this.filter?.setOptions) {
             this.filter.setOptions(options);
         }
     }
