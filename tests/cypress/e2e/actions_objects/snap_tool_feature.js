@@ -397,12 +397,6 @@ context('Snap tool feature.', () => {
             // on rotation, scrollBehavior=true obscures points from view
             allure.issue('https://github.com/cvat-ai/cvat/pull/10448', 'Snap to rotated boxes');
 
-            const coordsToRect = (coords) => ({
-                firstX: coords[0],
-                firstY: coords[1],
-                secondX: coords[2],
-                secondY: coords[3],
-            });
             const rectangleGlobal = coordsToRect(rectanglePointsGlobal);
 
             // Rotate rectangle, calculate expected point position
@@ -414,7 +408,6 @@ context('Snap tool feature.', () => {
             cy.shapeRotate('#cvat_canvas_shape_1', degrees.toFixed(1), true);
 
             // Draw a polygon
-            const toArr = (p) => ([p.x, p.y]);
             cy.interactControlButton('draw-polygon');
             cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
 
