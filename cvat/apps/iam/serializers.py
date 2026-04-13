@@ -34,6 +34,8 @@ class RegisterSerializerEx(RegisterSerializer):
     email = serializers.EmailField(
         required=allauth_settings.EMAIL_REQUIRED, max_length=allauth_settings.EMAIL_MAX_LENGTH
     )
+    # Override the upstream password fields to expose CVAT's explicit password
+    # length contract in the API schema and enforce it at the serializer boundary.
     password1 = serializers.CharField(
         write_only=True,
         style={"input_type": "password"},

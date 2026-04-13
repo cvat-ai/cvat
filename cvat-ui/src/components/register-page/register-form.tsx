@@ -250,7 +250,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                             htmlType='submit'
                             className='cvat-credentials-action-button'
                             loading={fetching}
-                            disabled={fetching || form.getFieldsError().some(({ errors }) => errors.length > 0)}
+                            disabled={fetching}
                         >
                             Create account
                         </Button>
