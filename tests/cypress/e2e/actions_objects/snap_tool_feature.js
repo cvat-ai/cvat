@@ -71,6 +71,70 @@ context('Snap tool feature.', () => {
         cy.get('.cvat-snap-tools-control-popover').should('not.be.visible');
     }
 
+    const toArr = (p) => ([p.x, p.y]);
+    const coordsToRect = (coords) => ({
+        firstX: coords[0],
+        firstY: coords[1],
+        secondX: coords[2],
+        secondY: coords[3],
+    });
+    function rawPointToPoint(rawPoint) {
+        const xy = rawPoint.split(',').map((Number.parseFloat));
+        return {
+            x: xy[0],
+            y: xy[1],
+        };
+    }
+    const rectToPoints = (rect) => [
+        { x: rect.firstX, y: rect.firstY },
+        { x: rect.secondX, y: rect.secondY },
+    ];
+    const getRectCenter = (rect) => ({
+        center: {
+            x: rect.firstX + (Math.abs(rect.secondX - rect.firstX) / 2),
+            y: rect.firstY + (Math.abs(rect.secondY - rect.firstY) / 2),
+        },
+    });
+    function getRectCorners(rect, sort = false) {
+        const corners = {
+            tl: { x: rect.firstX, y: rect.firstY },
+            tr: { x: rect.secondX, y: rect.firstY },
+            br: { x: rect.secondX, y: rect.secondY },
+            bl: { x: rect.firstX, y: rect.secondY },
+        };
+        if (sort) return [corners.tl, corners.tr, corners.br, corners.bl];
+        return corners;
+    }
+
+    /**
+     * Rotate a point around the center of a rectangle
+     * @param {object} point
+     * @param {number} point.x
+     * @param {number} point.y
+     * @param {object} rect
+     * @param {number} angleDegrees
+     * @returns {object} new point
+     */
+    function rotate(point, rect, angleDegrees) {
+        const { center: origin } = getRectCenter(rect);
+
+        // Translate to origin
+        const ox = point.x - origin.x;
+        const oy = point.y - origin.y;
+
+        const angleRad = angleDegrees * (Math.PI / 180);
+
+        // Rotate
+        const rotatedX = ox * Math.cos(angleRad) - oy * Math.sin(angleRad);
+        const rotatedY = ox * Math.sin(angleRad) + oy * Math.cos(angleRad);
+
+        // Translate back
+        return {
+            x: rotatedX + origin.x,
+            y: rotatedY + origin.y,
+        };
+    }
+
     before(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
@@ -148,6 +212,52 @@ context('Snap tool feature.', () => {
                         .equal(`${rectanglePoints[2]},${rectanglePoints[3]}`);
                     expect(polygonPoints[3]).to.be
                         .equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
+                });
+            });
+
+            it('Drawing a polygon with autoborder on rotated shapes.', { scrollBehavior: false }, () => {
+                // on rotation, scrollBehavior=true obscures points from view
+                allure.issue('https://github.com/cvat-ai/cvat/pull/10457', 'Fix snap to contour with rotation');
+
+                const rectangleGlobal = coordsToRect(rectanglePoints);
+
+                // Rotate the first rectangle
+                const degrees = 15;
+                cy.shapeRotate('#cvat_canvas_shape_1', degrees.toFixed(1), true);
+
+                // Calculate expected rotated corner positions
+                const rotatedCornersGlobal = getRectCorners(rectangleGlobal, true)
+                    .map((p) => rotate(p, rectangleGlobal, degrees));
+
+                // Draw polygon with autoborder at the rotated corner positions
+                cy.interactControlButton('draw-polygon');
+                cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
+
+                testAutoborderPointsCount(8); // 8 points at the rectangles (4 per rectangle)
+
+                // Create polygon at rotated positions (use first 3 corners)
+                const { tl, br } = getRectCorners(createRectangleShape2Points);
+                const [p1, p2] = [tl, br].map((p) => toArr(rotate(p, createRectangleShape2Points, degrees)));
+
+                // cy.createPolygon(createPolygonAlongRotatedRect);
+                cy.get('.cvat-canvas-container').trigger('mousemove', ...p1);
+                cy.get('.cvat-canvas-container').trigger('mousedown', ...p1, { button: 0 });
+
+                cy.get('.cvat-canvas-container').trigger('mousemove', ...p2);
+                cy.get('.cvat-canvas-container').trigger('mousedown', ...p2, { button: 0 });
+
+                cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+                cy.get('.cvat_canvas_autoborder_point').should('not.exist');
+
+                // Collect the polygon points coordinates and verify they match rotated rectangle corners
+                getShapeCoord('polygon', '#cvat_canvas_shape_3').then((polygonCoords) => {
+                    expect(polygonCoords).to.have.length(3);
+                    polygonCoords.forEach((rawPoint, i) => {
+                        const p = rawPointToPoint(rawPoint);
+                        expect(p.x).to.be.closeTo(rotatedCornersGlobal[i].x, 1);
+                        expect(p.y).to.be.closeTo(rotatedCornersGlobal[i].y, 1);
+                    });
                 });
             });
 
@@ -237,34 +347,6 @@ context('Snap tool feature.', () => {
     });
 
     context('Testing "Snap to Point"', () => {
-        const rectToPoints = (rect) => [
-            { x: rect.firstX, y: rect.firstY },
-            { x: rect.secondX, y: rect.secondY },
-        ];
-        function rotate(point, rect, angleDegrees) {
-            const width = Math.abs(rect.secondX - rect.firstX);
-            const height = Math.abs(rect.secondY - rect.firstY);
-            const origin = {
-                x: rect.firstX + width / 2,
-                y: rect.firstY + height / 2,
-            };
-
-            // Translate to origin
-            const ox = point.x - origin.x;
-            const oy = point.y - origin.y;
-
-            const angleRad = angleDegrees * (Math.PI / 180);
-
-            // Rotate
-            const rotatedX = ox * Math.cos(angleRad) - oy * Math.sin(angleRad);
-            const rotatedY = ox * Math.sin(angleRad) + oy * Math.cos(angleRad);
-
-            // Translate back
-            return {
-                x: rotatedX + origin.x,
-                y: rotatedY + origin.y,
-            };
-        }
         let rectanglePointsGlobal;
         let regionOf;
 
