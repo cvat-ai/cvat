@@ -106,7 +106,7 @@ module.exports = (on, config) => {
     });
     on('after:spec', (spec, results) => {
         if (results && results.stats.failures === 0 && results.video) {
-            fs.unlinkSync(results.video);
+            // fs.unlinkSync(results.video);
         }
     });
     return config;

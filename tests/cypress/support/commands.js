@@ -1494,7 +1494,7 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
         if (pressShift) {
             cy.get('body').type('{shift}', { release: false });
         }
-        cy.get('#root').trigger('mousemove', x + 20, y, { force: true });
+        cy.get('#root').trigger('mousemove', x + 20, y);
         cy.get(shape).should('have.attr', 'transform');
         cy.document().then((doc) => {
             const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
@@ -1502,7 +1502,7 @@ Cypress.Commands.add('shapeRotate', (shape, expectedRotateDeg, pressShift = fals
             cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTransformMatrix}°`);
             expect(`${shapeTransformMatrix}°`).to.be.equal(`${expectedRotateDeg}°`);
         });
-        cy.get('#root').trigger('mouseup', { force: true });
+        cy.get('#root').trigger('mouseup');
     });
 });
 
