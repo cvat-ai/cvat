@@ -96,9 +96,9 @@ class LambdaManager {
                 // wrap old interactor interfaces for backward compatibility
                 const maskHeight = result.mask.length;
                 const maskWidth = result.mask[0].length;
-                const rle = mask2Rle(result.mask.flat());
-                if (!rle.length) {
-                    rle.push(0, 0, 0, 0);
+                let rle = mask2Rle(result.mask.flat());
+                if (rle.length < 2) {
+                    rle = [0, 0, 0, 0, 0];
                 } else {
                     rle.push(0, 0, maskWidth - 1, maskHeight - 1);
                 }
