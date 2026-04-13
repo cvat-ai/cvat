@@ -211,6 +211,7 @@ class QualitySettingsParentType(str, Enum):
 class TranscriptionRequirementSerializer(serializers.ModelSerializer):
     attribute_id = serializers.IntegerField(
         read_only=False,
+        allow_null=False,
         help_text=textwrap.dedent(f"""\
             The transcription (type '{AttributeType.TEXT}') attribute to apply the requirement to
             """),
