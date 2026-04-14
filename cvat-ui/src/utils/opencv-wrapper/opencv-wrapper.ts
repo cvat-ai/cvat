@@ -10,23 +10,15 @@ import {
     createOpenCVInterface,
     MatType,
     type OpenCVInterface,
-    type MatSpace,
-    type MatVectorSpace,
-    type Contours,
-    type Segmentation,
-    type ImgProc,
-    type Tracking,
-    type SimplifyPolyOptions,
-    type SimplifyPolyResult,
 } from 'cvat-core-wrapper';
 import config from 'config';
 import TrackerMILAction from './annotations-actions/tracker-mil';
 
 const core = getCore();
 
-type OpenCVTrackingWrapper = Tracking & {
+type OpenCVTrackingWrapper = OpenCVInterface['tracking'] & {
     trackerMIL: {
-        model: () => ReturnType<Tracking['trackerMIL']['model']>,
+        model: () => ReturnType<OpenCVInterface['tracking']['trackerMIL']['model']>,
         name: string,
         description: string,
         kind: string,
@@ -176,15 +168,15 @@ export class OpenCVWrapper {
         return !!this.injectionProcess;
     }
 
-    public get mat(): MatSpace {
+    public get mat(): OpenCVInterface['mat'] {
         return this.getCVInterface().mat;
     }
 
-    public get matVector(): MatVectorSpace {
+    public get matVector(): OpenCVInterface['matVector'] {
         return this.getCVInterface().matVector;
     }
 
-    public get contours(): Contours {
+    public get contours(): OpenCVInterface['contours'] {
         return this.getCVInterface().contours;
     }
 
@@ -241,11 +233,11 @@ export class OpenCVWrapper {
         return contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
     };
 
-    public get segmentation(): Segmentation {
+    public get segmentation(): OpenCVInterface['segmentation'] {
         return this.getCVInterface().segmentation;
     }
 
-    public get imgproc(): ImgProc {
+    public get imgproc(): OpenCVInterface['imgproc'] {
         return this.getCVInterface().imgproc;
     }
 

@@ -13,11 +13,6 @@ import TrackerMILImplementation, {
     type TrackerMILInterface,
 } from './tracker-mil';
 
-export interface SimplifyPolyOptions {
-    accuracy: number;
-    closed: boolean;
-}
-
 export function thresholdFromAccuracy(accuracy: number): number {
     // Convert accuracy (0-13 scale) to epsilon threshold
     // This matches the approximation accuracy slider
@@ -40,56 +35,30 @@ export enum MatType {
     CV_8UC4,
 }
 
-export interface MatSpace {
-    fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => any;
-}
-
-export interface MatVectorSpace {
-    empty: () => any;
-}
-
-export interface Contours {
-    convexHull: (src: [number, number][][]) => [number, number][];
-    findContours: (src: any) => [number, number][][];
-    approxPoly: (points: [number, number][], threshold: number, closed?: boolean) => [number, number][];
-    simplifyPolygon: (points: number[], options: SimplifyPolyOptions) => number[];
-}
-
-export interface IntelligentScissors extends IntelligentScissorsInterface {}
-
-export interface HistogramEqualization extends HistogramEqualizationInterface {}
-
-export interface TrackerMIL extends TrackerMILInterface {}
-
-export interface Segmentation {
-    intelligentScissorsFactory: () => IntelligentScissorsInterface;
-}
-
-export interface ImgProc {
-    hist: () => HistogramEqualizationInterface;
-}
-
-export interface TrackerModel {
-    init(frame: any, boundingBox: number[]): boolean;
-    update(frame: any): { rect: number[] };
-    delete(): void;
-}
-
-export interface OpenCVTracker {
-    model: () => TrackerMILInterface;
-}
-
-export interface Tracking {
-    trackerMIL: OpenCVTracker;
-}
-
 export interface OpenCVInterface {
-    mat: MatSpace;
-    matVector: MatVectorSpace;
-    contours: Contours;
-    segmentation: Segmentation;
-    imgproc: ImgProc;
-    tracking: Tracking;
+    mat: {
+        fromData: (width: number, height: number, type: MatType, data: ArrayLike<number>) => any;
+    };
+    matVector: {
+        empty: () => any;
+    };
+    contours: {
+        convexHull: (src: [number, number][][]) => [number, number][];
+        findContours: (src: any) => [number, number][][];
+        approxPoly: (points: [number, number][], threshold: number, closed?: boolean) => [number, number][];
+        simplifyPolygon: (points: number[], accuracy: number, closed: boolean) => number[];
+    };
+    segmentation: {
+        intelligentScissorsFactory: () => IntelligentScissorsInterface;
+    };
+    imgproc: {
+        hist: () => HistogramEqualizationInterface;
+    };
+    tracking: {
+        trackerMIL: {
+            model: () => TrackerMILInterface;
+        };
+    };
 }
 
 export function createOpenCVInterface(cv: any): OpenCVInterface {
@@ -213,13 +182,9 @@ export function createOpenCVInterface(cv: any): OpenCVInterface {
 
             simplifyPolygon: function simplifyPolygon(
                 points: number[],
-                options: SimplifyPolyOptions,
+                accuracy: number,
+                closed: boolean,
             ): number[] {
-                const {
-                    accuracy,
-                    closed,
-                } = options;
-
                 const minPoints = 3;
                 const threshold = thresholdFromAccuracy(accuracy);
                 const minValues = minPoints * 2;

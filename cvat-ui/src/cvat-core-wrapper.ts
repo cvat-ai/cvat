@@ -50,10 +50,7 @@ import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actio
 import { Request, RequestOperation } from 'cvat-core/src/request';
 import {
     createOpenCVInterface, thresholdFromAccuracy, MatType,
-    type OpenCVInterface, type MatSpace, type MatVectorSpace, type Contours,
-    type IntelligentScissors, type HistogramEqualization, type Segmentation,
-    type ImgProc, type TrackerModel, type OpenCVTracker, type Tracking,
-    type SimplifyPolyOptions,
+    type OpenCVInterface,
 } from 'cvat-core/src/opencv/opencv-interface';
 import { ImageProcessing, BaseImageFilter } from 'cvat-core/src/opencv/image-processing';
 import AboutData from 'cvat-core/src/about';
@@ -156,17 +153,6 @@ export type {
     TrackerResults,
     ApiTokenModifiableFields,
     ApiTokensFilter,
-    SimplifyPolyOptions,
     OpenCVInterface,
-    MatSpace,
-    MatVectorSpace,
-    Contours,
-    IntelligentScissors,
-    HistogramEqualization,
-    Segmentation,
-    ImgProc,
-    TrackerModel,
-    OpenCVTracker,
-    Tracking,
     ImageProcessing,
 };

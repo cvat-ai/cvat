@@ -5,7 +5,7 @@
 /* eslint-disable no-restricted-globals */
 
 import { initializeOpenCVInWorker } from '../worker-utils';
-import type { OpenCVInterface, SimplifyPolyOptions } from '../opencv/opencv-interface';
+import type { OpenCVInterface } from '../opencv/opencv-interface';
 
 export enum WorkerAction {
     INITIALIZE = 'initialize',
@@ -22,7 +22,7 @@ export interface WorkerRequest {
     command: WorkerAction;
     opencvPath?: string;
     shapes?: SimplifyShape[];
-    options?: SimplifyPolyOptions;
+    accuracy?: number;
 }
 
 export interface WorkerResponse {
@@ -39,7 +39,7 @@ class ActionsWorkerManager {
         this.initialized = true;
     }
 
-    public simplifyShapes(shapes: SimplifyShape[], options: SimplifyPolyOptions): SimplifyShape[] {
+    public simplifyShapes(shapes: SimplifyShape[], accuracy: number): SimplifyShape[] {
         if (!this.initialized || !this.cvInterface) {
             throw new Error('Worker not initialized');
         }
@@ -51,10 +51,11 @@ class ActionsWorkerManager {
                 }
 
                 const closed = shape.shapeType === 'polygon';
-                const simplifiedPoints = this.cvInterface!.contours.simplifyPolygon(shape.points, {
-                    accuracy: options.accuracy,
+                const simplifiedPoints = this.cvInterface!.contours.simplifyPolygon(
+                    shape.points,
+                    accuracy,
                     closed,
-                });
+                );
 
                 return {
                     ...shape,
@@ -96,17 +97,17 @@ if ((self as any).importScripts) {
                     } as WorkerResponse);
                 });
         } else if (command === WorkerAction.SIMPLIFY_POLYGONS) {
-            const { shapes, options } = event.data;
+            const { shapes, accuracy } = event.data;
 
-            if (!shapes || !options) {
+            if (!shapes || accuracy === undefined) {
                 postMessage({
-                    error: 'Missing shapes or options for simplification',
+                    error: 'Missing shapes or accuracy for simplification',
                 } as WorkerResponse);
                 return;
             }
 
             try {
-                const simplifiedShapes = manager.simplifyShapes(shapes, options);
+                const simplifiedShapes = manager.simplifyShapes(shapes, accuracy);
                 postMessage({
                     shapes: simplifiedShapes,
                 } as WorkerResponse);

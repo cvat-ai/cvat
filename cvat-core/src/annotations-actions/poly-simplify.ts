@@ -112,10 +112,7 @@ export class PolySimplify extends BaseShapesAction {
             this.#worker!.postMessage({
                 command: WorkerAction.SIMPLIFY_POLYGONS,
                 shapes,
-                options: {
-                    accuracy: this.#accuracy,
-                    closed: true,
-                },
+                accuracy: this.#accuracy,
             } as WorkerRequest);
         });
     }
