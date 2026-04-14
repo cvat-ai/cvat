@@ -220,6 +220,22 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     }
 
+    public componentWillUnmount(): void {
+        const {
+            objectState, jobInstance, switchSimplifyVisibility, updateState,
+        } = this.props;
+        const { simplifyMode, originalPoints } = this.state;
+
+        if (simplifyMode) {
+            if (originalPoints) {
+                objectState.points = originalPoints;
+                updateState(objectState);
+            }
+            jobInstance.actions.freeze(false);
+            switchSimplifyVisibility(null);
+        }
+    }
+
     private copy = (): void => {
         const { objectState, copyShape } = this.props;
         copyShape(objectState);
