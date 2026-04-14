@@ -1028,6 +1028,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             throw new Error('OpenCV was not initialized');
         }
 
+        if (mask.length < 6) {
+            // minimal non-empty RLE is 6 points
+            return [];
+        }
+
         const polygons = openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });
         if (polygons.length) {
             return polygons[0].map<[number, number]>((val) => [val[0], val[1]]);

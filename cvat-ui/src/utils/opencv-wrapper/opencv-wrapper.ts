@@ -272,7 +272,7 @@ export class OpenCVWrapper {
                             const x = contour.data32S[j] - 1;
                             const y = contour.data32S[j + 1] - 1;
                             converted.push([x, y]);
-                            contourLength += Math.sqrt((x - prevX) ** 2 + (y - prevY) ** 2);
+                            contourLength += Math.hypot(x - prevX, y - prevY);
                             prevX = x;
                             prevY = y;
                         }
