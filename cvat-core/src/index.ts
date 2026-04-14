@@ -61,6 +61,7 @@ export default interface CVATCore {
         list: typeof lambdaManager.list;
         run: typeof lambdaManager.run;
         call: typeof lambdaManager.call;
+        callAction: typeof lambdaManager.callAction;
         cancel: typeof lambdaManager.cancel;
         listen: typeof lambdaManager.listen;
         requests: typeof lambdaManager.requests;

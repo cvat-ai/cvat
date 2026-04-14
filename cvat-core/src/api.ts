@@ -267,6 +267,10 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.call, task, model, args);
                 return result;
             },
+            async callAction(model, action) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.callAction, model, action);
+                return result;
+            },
             async cancel(requestID) {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID);
                 return result;

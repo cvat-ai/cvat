@@ -22,6 +22,7 @@ type InteractorShape = Pick<SerializedShape, 'group' | 'source' | 'attributes' |
 // Also supported service "confidence" attribute in attributes list with "spec_id" equal to 0
 export type InteractorResults = {
     shapes: InteractorShape[];
+    logits?: string | null;
 };
 
 export interface MinimalShape {
@@ -135,11 +136,17 @@ class LambdaManager {
                         rotation: typeof item.rotation === 'number' ? item.rotation : 0,
                         type: item.type ?? ShapeType.MASK,
                     })).filter((item) => item.type === ShapeType.MASK),
+                    logits: result.logits ?? null,
                 };
             }
         }
 
         return result;
+    }
+
+    async callAction(model: MLModel, action: string): Promise<any> {
+        const body = { action };
+        return serverProxy.lambda.call(model.id, body);
     }
 
     async requests(): Promise<SerializedFunctionRequest[]> {

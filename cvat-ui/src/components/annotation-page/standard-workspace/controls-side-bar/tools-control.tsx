@@ -7,6 +7,7 @@ import React, { ReactPortal } from 'react';
 import ReactDOM from 'react-dom';
 import { connect } from 'react-redux';
 import Icon, {
+    CloudDownloadOutlined,
     EnvironmentFilled,
     EnvironmentOutlined,
     LoadingOutlined,
@@ -22,6 +23,7 @@ import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Switch from 'antd/lib/switch';
+import InputNumber from 'antd/lib/input-number';
 import lodash from 'lodash';
 
 import { AIToolsIcon } from 'icons';
@@ -85,6 +87,11 @@ const MIN_SUPPORTED_INTERACTOR_VERSION = 2;
 const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 const startWithBoxStorageItem = 'startInteractingWithBox';
+const cropRegionStorageItem = 'interactorCropRegion';
+const logitFeedbackStorageItem = 'interactorLogitFeedback';
+const keepTopKRegionsStorageItem = 'interactorKeepTopKRegions';
+const fillHoleFractionStorageItem = 'interactorFillHoleFraction';
+const smoothRadiusStorageItem = 'interactorSmoothRadius';
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -153,12 +160,27 @@ interface TrackedShape {
     trackerModel: MLModel;
 }
 
+interface Sam2Model {
+    key: string;
+    label: string;
+    group: string;
+    cached: boolean;
+    needs_download: boolean;
+}
+
 interface State {
     activeInteractor: MLModel | null;
     activeLabelID: number | null;
     activeTracker: MLModel | null;
     startInteractingWithBox: boolean;
     convertMasksToPolygons: boolean;
+    cropRegion: boolean;
+    logitFeedback: boolean;
+    keepTopKRegions: number;
+    fillHoleFraction: number;
+    smoothRadius: number;
+    sam2Models: Sam2Model[];
+    activeSam2ModelKey: string | null;
     trackedShapes: TrackedShape[];
     fetching: boolean;
     interactorResponseReceived: boolean;
@@ -244,8 +266,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 neg_points: number[][];
                 pos_points: number[][];
                 obj_bbox: number[][];
+                crop_region: boolean;
+                prev_logits: string | null;
+                keep_top_k_regions: number;
+                fill_hole_fraction: number;
+                smooth_radius: number;
+                model_key: string | null;
             };
         } | null;
+        prevLogits: string | null;
         closeFetchingMessage: (() => void) | null;
         noShapesMessage: (() => void) | null;
     };
@@ -258,6 +287,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.state = {
             convertMasksToPolygons: false,
             startInteractingWithBox: (localStorage.getItem(startWithBoxStorageItem) ?? 'true') === 'true',
+            cropRegion: (localStorage.getItem(cropRegionStorageItem) ?? 'true') === 'true',
+            logitFeedback: (localStorage.getItem(logitFeedbackStorageItem) ?? 'true') === 'true',
+            keepTopKRegions: Number(localStorage.getItem(keepTopKRegionsStorageItem) ?? '1'),
+            fillHoleFraction: Number(localStorage.getItem(fillHoleFractionStorageItem) ?? '0.02'),
+            smoothRadius: Number(localStorage.getItem(smoothRadiusStorageItem) ?? '0'),
+            sam2Models: [],
+            activeSam2ModelKey: localStorage.getItem('activeSam2ModelKey'),
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: supportedTrackers.length ? supportedTrackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id as number : null,
@@ -277,6 +313,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             latestPostponedEvent: null,
             latestResponse: [],
             latestRequest: null,
+            prevLogits: null,
             closeFetchingMessage: null,
             noShapesMessage: null,
         };
@@ -294,6 +331,32 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
+
+        this.fetchSam2Models();
+    }
+
+    private async fetchSam2Models(): Promise<void> {
+        const { interactors } = this.props;
+        if (!interactors.length) return;
+
+        // Use the first interactor to query available SAM2 models
+        const interactor = interactors[0];
+        try {
+            const result = await core.lambda.callAction(interactor, 'list_models') as any;
+            if (result?.models) {
+                const { activeSam2ModelKey } = this.state;
+                const models = result.models as Sam2Model[];
+                const defaultKey = models.length ? models[0].key : null;
+                this.setState({
+                    sam2Models: models,
+                    activeSam2ModelKey: activeSam2ModelKey && models.some((m) => m.key === activeSam2ModelKey)
+                        ? activeSam2ModelKey
+                        : defaultKey,
+                });
+            }
+        } catch (error) {
+            // Silently ignore — model list is optional
+        }
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -415,8 +478,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.interaction.latestRequest = null;
 
         try {
+            const activeModel = this.state.sam2Models.find(
+                (m) => m.key === this.state.activeSam2ModelKey,
+            );
+            const downloadHint = activeModel?.needs_download
+                ? ' (downloading model, this may take a moment)' : '';
             this.interaction.closeFetchingMessage = message.loading({
-                content: `Waiting for a response from ${activeInteractor?.name}`,
+                content: `Waiting for a response from ${activeInteractor?.name}${downloadHint}`,
                 duration: 0,
                 className: 'cvat-tracking-notice',
             });
@@ -436,6 +504,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     // new interaction session or the session is aborted
                     return;
                 }
+
+                // Store logits for the next interaction round
+                this.interaction.prevLogits = response.logits ?? null;
 
                 const latestResponse: ToolsControlComponent['interaction']['latestResponse'] = [];
                 let showConfidenceControl = false;
@@ -462,6 +533,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     interactorResponseReceived: !!latestResponse.length,
                     showConfidenceControl,
                 });
+
+                // Refresh model list after successful call so download status updates
+                if (activeModel?.needs_download) {
+                    this.fetchSam2Models();
+                }
             } finally {
                 if (this.interaction.id === interactionId) {
                     this.interaction.closeFetchingMessage?.();
@@ -490,15 +566,27 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             return;
         }
 
+        const isNewSession = !this.interaction.id;
+
         if (!this.interaction.id) {
             this.interaction.id = lodash.uniqueId('interaction_');
         }
 
         const { shapes } = (e as CustomEvent).detail;
         const interactor = activeInteractor as MLModel;
+        const {
+            cropRegion, logitFeedback, keepTopKRegions, fillHoleFraction, smoothRadius,
+            activeSam2ModelKey,
+        } = this.state;
         const boxes = convertShapesForInteractor(shapes, 'rectangle', 'positive');
         const posPoints = convertShapesForInteractor(shapes, 'points', 'positive');
         const negPoints = convertShapesForInteractor(shapes, 'points', 'negative');
+
+        // Clear logits when a new interaction session starts
+        if (isNewSession) {
+            this.interaction.prevLogits = null;
+        }
+
         this.interaction.latestRequest = {
             interactor,
             data: {
@@ -506,6 +594,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 obj_bbox: boxes,
                 pos_points: posPoints,
                 neg_points: negPoints,
+                crop_region: cropRegion && boxes.length > 0,
+                prev_logits: logitFeedback ? this.interaction.prevLogits : null,
+                keep_top_k_regions: keepTopKRegions,
+                fill_hole_fraction: fillHoleFraction,
+                smooth_radius: smoothRadius,
+                model_key: activeSam2ModelKey,
             },
         };
 
@@ -1155,7 +1249,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, canvasInstance, labels, onInteractionStart, interactorExtras,
         } = this.props;
         const {
-            activeInteractor, activeLabelID, fetching, startInteractingWithBox, convertMasksToPolygons,
+            activeInteractor, activeLabelID, fetching, startInteractingWithBox, convertMasksToPolygons, cropRegion,
+            logitFeedback, keepTopKRegions, fillHoleFraction, smoothRadius,
+            sam2Models, activeSam2ModelKey,
         } = this.state;
 
         if (!interactors.length) {
@@ -1222,6 +1318,42 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Popover>
                     </Col>
                 </Row>
+                {sam2Models.length > 0 && (
+                    <>
+                        <Row justify='start' style={{ marginTop: 8 }}>
+                            <Col>
+                                <Text className='cvat-text-color'>SAM2 Model</Text>
+                            </Col>
+                        </Row>
+                        <Row align='middle'>
+                            <Col span={24}>
+                                <Select
+                                    style={{ width: '100%' }}
+                                    value={activeSam2ModelKey ?? undefined}
+                                    onChange={(value: string) => {
+                                        localStorage.setItem('activeSam2ModelKey', value);
+                                        this.interaction.prevLogits = null;
+                                        this.setState({ activeSam2ModelKey: value });
+                                        const model = sam2Models.find((m) => m.key === value);
+                                        if (model?.needs_download) {
+                                            message.info(
+                                                `${model.label} will be downloaded on first use. The first interaction may take longer.`,
+                                                5,
+                                            );
+                                        }
+                                    }}
+                                >
+                                    {sam2Models.map((m) => (
+                                        <Select.Option value={m.key} key={m.key}>
+                                            {m.needs_download && <CloudDownloadOutlined style={{ marginRight: 6 }} />}
+                                            {m.label}
+                                        </Select.Option>
+                                    ))}
+                                </Select>
+                            </Col>
+                        </Row>
+                    </>
+                )}
                 <div className='cvat-tools-interactor-setups'>
                     <div>
                         <Switch
@@ -1245,6 +1377,66 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             <Text>Start with a bounding box</Text>
                         </div>
                     )}
+                    <div>
+                        <Switch
+                            checked={cropRegion}
+                            onChange={(value: boolean) => {
+                                localStorage.setItem(cropRegionStorageItem, value.toString());
+                                this.setState({ cropRegion: value });
+                            }}
+                        />
+                        <Text>Crop region around object</Text>
+                    </div>
+                    <div>
+                        <Switch
+                            checked={logitFeedback}
+                            onChange={(value: boolean) => {
+                                localStorage.setItem(logitFeedbackStorageItem, value.toString());
+                                this.interaction.prevLogits = null;
+                                this.setState({ logitFeedback: value });
+                            }}
+                        />
+                        <Text>Logit feedback</Text>
+                    </div>
+                    <div>
+                        <Text>Regions to keep: </Text>
+                        <InputNumber
+                            min={0}
+                            max={10}
+                            value={keepTopKRegions}
+                            onChange={(value: number | null) => {
+                                const v = value ?? 1;
+                                localStorage.setItem(keepTopKRegionsStorageItem, v.toString());
+                                this.setState({ keepTopKRegions: v });
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <Text>Fill holes (%): </Text>
+                        <InputNumber
+                            min={0}
+                            max={100}
+                            value={Math.round(fillHoleFraction * 100)}
+                            onChange={(value: number | null) => {
+                                const v = (value ?? 2) / 100;
+                                localStorage.setItem(fillHoleFractionStorageItem, v.toString());
+                                this.setState({ fillHoleFraction: v });
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <Text>Smooth radius (0=off): </Text>
+                        <InputNumber
+                            min={0}
+                            max={20}
+                            value={smoothRadius}
+                            onChange={(value: number | null) => {
+                                const v = value ?? 0;
+                                localStorage.setItem(smoothRadiusStorageItem, v.toString());
+                                this.setState({ smoothRadius: v });
+                            }}
+                        />
+                    </div>
                 </div>
                 <div className='cvat-tools-interactor-extras'>
                     {renderedInteractorExtras}

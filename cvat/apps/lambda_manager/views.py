@@ -465,20 +465,59 @@ class LambdaFunction:
                         f"The {desc} is outside the job range", code=status.HTTP_400_BAD_REQUEST
                     )
 
+        crop_offset = None  # set for INTERACTOR when crop_region is requested
+
         if self.kind == FunctionKind.DETECTOR:
             payload.update({"image": self._get_image(db_task, mandatory_arg("frame"))})
         elif self.kind == FunctionKind.INTERACTOR:
-            payload.update(
-                {
-                    "image": self._get_image(db_task, mandatory_arg("frame")),
-                    "pos_points": mandatory_arg("pos_points"),
-                    "neg_points": mandatory_arg("neg_points"),
-                    "obj_bbox": data.get("obj_bbox", None),
-                }
-            )
+            obj_bbox = data.get("obj_bbox", None)
+            crop_region = data.get("crop_region", False)
+
+            if crop_region and obj_bbox:
+                image_b64, cx1, cy1 = self._get_image_cropped(db_task, mandatory_arg("frame"), obj_bbox)
+                crop_offset = (cx1, cy1)
+                # Remap obj_bbox and all points into crop-local coordinates
+                cropped_bbox = [
+                    [obj_bbox[0][0] - cx1, obj_bbox[0][1] - cy1],
+                    [obj_bbox[1][0] - cx1, obj_bbox[1][1] - cy1],
+                ]
+                def _shift(pts):
+                    return [[p[0] - cx1, p[1] - cy1] for p in pts]
+                payload.update(
+                    {
+                        "image": image_b64,
+                        "pos_points": _shift(mandatory_arg("pos_points")),
+                        "neg_points": _shift(mandatory_arg("neg_points")),
+                        "obj_bbox": cropped_bbox,
+                    }
+                )
+            else:
+                payload.update(
+                    {
+                        "image": self._get_image(db_task, mandatory_arg("frame")),
+                        "pos_points": mandatory_arg("pos_points"),
+                        "neg_points": mandatory_arg("neg_points"),
+                        "obj_bbox": obj_bbox,
+                    }
+                )
             text_prompts = data.get("text_prompts", None)
             if text_prompts:
                 payload["text_prompts"] = text_prompts
+            prev_logits = data.get("prev_logits", None)
+            if prev_logits:
+                payload["prev_logits"] = prev_logits
+            keep_top_k_regions = data.get("keep_top_k_regions", None)
+            if keep_top_k_regions is not None:
+                payload["keep_top_k_regions"] = keep_top_k_regions
+            fill_hole_fraction = data.get("fill_hole_fraction", None)
+            if fill_hole_fraction is not None:
+                payload["fill_hole_fraction"] = fill_hole_fraction
+            smooth_radius = data.get("smooth_radius", None)
+            if smooth_radius is not None:
+                payload["smooth_radius"] = smooth_radius
+            model_key = data.get("model_key", None)
+            if model_key is not None:
+                payload["model_key"] = model_key
         elif self.kind == FunctionKind.REID:
             payload.update(
                 {
@@ -561,6 +600,9 @@ class LambdaFunction:
             interactive_function_call_signal.send(sender=self, request=request)
 
         response = self.gateway.invoke(self, payload)
+
+        if self.kind == FunctionKind.INTERACTOR and crop_offset is not None:
+            response = self._remap_interactor_response(response, *crop_offset)
 
         def check_attr_value(value, db_attr):
             if db_attr is None:
@@ -651,6 +693,60 @@ class LambdaFunction:
         image = frame_provider.get_frame(frame)
 
         return base64.b64encode(image.data.getvalue()).decode("utf-8")
+
+    def _get_image_cropped(self, db_task, frame, obj_bbox, context=0.25):
+        """Return a base64-encoded crop around obj_bbox (with padding) and the crop offset.
+
+        Args:
+            obj_bbox: [[x1, y1], [x2, y2]] as sent by the frontend.
+            context:  fractional padding added on each side (default 0.25 = 25 %).
+
+        Returns:
+            (image_b64, cx1, cy1): base64 string of the cropped image and the
+            top-left corner of the crop in full-image pixel coordinates.
+        """
+        from io import BytesIO
+        from PIL import Image as PILImage
+
+        frame_provider = TaskFrameProvider(db_task)
+        raw = frame_provider.get_frame(frame)
+        pil_img = PILImage.open(raw.data)
+        W, H = pil_img.size
+
+        x1, y1 = obj_bbox[0]
+        x2, y2 = obj_bbox[1]
+        bw, bh = x2 - x1, y2 - y1
+
+        pad_x = bw * context
+        pad_y = bh * context
+        cx1 = int(max(0, x1 - pad_x))
+        cy1 = int(max(0, y1 - pad_y))
+        cx2 = int(min(W, x2 + pad_x))
+        cy2 = int(min(H, y2 + pad_y))
+
+        crop = pil_img.crop((cx1, cy1, cx2, cy2))
+        buf = BytesIO()
+        fmt = pil_img.format or "JPEG"
+        crop.save(buf, format=fmt)
+        image_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        return image_b64, cx1, cy1
+
+    @staticmethod
+    def _remap_interactor_response(response, cx1, cy1):
+        """Shift RLE bounding-box coordinates in interactor shapes back to full-image space.
+
+        CVAT RLE format: [...rle_counts..., left, top, right, bottom]
+        The last 4 values are the bbox in the coordinate space of the image that
+        was sent to the model.  When we sent a crop, we need to add (cx1, cy1).
+        """
+        for shape in response.get("shapes", []):
+            pts = shape.get("points")
+            if pts and len(pts) >= 4:
+                pts[-4] += cx1  # left
+                pts[-3] += cy1  # top
+                pts[-2] += cx1  # right
+                pts[-1] += cy1  # bottom
+        return response
 
 
 class LambdaQueue:
@@ -1282,7 +1378,15 @@ class FunctionViewSet(viewsets.ViewSet):
     )
     @return_response()
     def call(self, request, func_id):
+        # list_models is a metadata query — it only needs VIEW permission,
+        # not CALL_ONLINE which requires a task/job context.
+        if request.data.get("action") == "list_models":
+            gateway = LambdaGateway()
+            lambda_func = gateway.get(func_id)
+            return gateway.invoke(lambda_func, {"action": "list_models"})
+
         self.check_object_permissions(request, func_id)
+
         try:
             job_id = request.data.get("job")
             job = None
