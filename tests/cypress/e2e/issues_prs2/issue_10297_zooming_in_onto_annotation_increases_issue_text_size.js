@@ -7,10 +7,13 @@
 context('Zooming onto an annotation must not scale issue text size', () => {
     const issueId = '10297';
     const labelName = `Issue ${issueId}`;
+    const issueDescription = `Issue for bug ${issueId}`;
+    const issueLabelSelector = '.cvat-hidden-issue-label';
+    const shapeSelector = '#cvat_canvas_shape_1';
+    const issueRegionSelector = '.cvat_canvas_issue_region';
 
     let taskID = null;
     let jobID = null;
-    let origDispatchEvent = null;
 
     before(() => {
         cy.visit('/auth/login');
@@ -48,15 +51,6 @@ context('Zooming onto an annotation must not scale issue text size', () => {
         });
     });
 
-    afterEach(() => {
-        cy.window().then((win) => {
-            if (origDispatchEvent) {
-                win.EventTarget.prototype.dispatchEvent = origDispatchEvent;
-                origDispatchEvent = null;
-            }
-        });
-    });
-
     after(() => {
         if (taskID) {
             cy.headlessDeleteTask(taskID);
@@ -64,23 +58,43 @@ context('Zooming onto an annotation must not scale issue text size', () => {
         cy.logout();
     });
 
-    describe(`Testing issue "${issueId}"`, () => {
-        it('Double-click zoom dispatches canvas.zoom event so issue text is not scaled', () => {
-            cy.createIssueFromObject(1, 'Open an issue ...', `Issue for bug ${issueId}`);
+    describe(`Testing issue "${issueId}"`, { scrollBehavior: false }, () => {
+        it('Double-click zoom keeps issue text size visually stable', () => {
+            cy.createIssueFromObject(1, 'Open an issue ...', issueDescription);
 
-            cy.window().then((win) => {
-                const zoomEventFired = { value: false };
-                origDispatchEvent = win.EventTarget.prototype.dispatchEvent;
-                win.EventTarget.prototype.dispatchEvent = function dispatchEvent(event) {
-                    if (event.type === 'canvas.zoom') {
-                        zoomEventFired.value = true;
-                    }
-                    return origDispatchEvent.call(this, event);
-                };
+            let labelRectBefore = null;
+            let regionRectBefore = null;
 
-                cy.get('#cvat_canvas_shape_1').dblclick();
-                cy.wrap(zoomEventFired).its('value').should('be.true');
-            });
+            cy.contains(issueLabelSelector, issueDescription)
+                .should('be.visible')
+                .then(($label) => {
+                    labelRectBefore = $label[0].getBoundingClientRect();
+                });
+
+            cy.get(issueRegionSelector)
+                .should('be.visible')
+                .then(($region) => {
+                    regionRectBefore = $region[0].getBoundingClientRect();
+                });
+
+            cy.get(shapeSelector).dblclick();
+
+            cy.get(issueRegionSelector)
+                .should('be.visible')
+                .then(($region) => {
+                    const regionRectAfter = $region[0].getBoundingClientRect();
+                    expect(regionRectAfter.width).to.be.greaterThan(regionRectBefore.width);
+                    expect(regionRectAfter.height).to.be.greaterThan(regionRectBefore.height);
+                });
+
+            cy.contains(issueLabelSelector, issueDescription)
+                .should('be.visible')
+                .then(($label) => {
+                    const labelRectAfter = $label[0].getBoundingClientRect();
+
+                    expect(Math.abs(labelRectAfter.width - labelRectBefore.width)).to.be.lessThan(2);
+                    expect(Math.abs(labelRectAfter.height - labelRectBefore.height)).to.be.lessThan(2);
+                });
         });
     });
 });
