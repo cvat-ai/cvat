@@ -185,7 +185,7 @@ export function createOpenCVInterface(cv: any): OpenCVInterface {
                 accuracy: number,
                 closed: boolean,
             ): number[] {
-                const minPoints = 3;
+                const minPoints = closed ? 3 : 2;
                 const threshold = thresholdFromAccuracy(accuracy);
                 const minValues = minPoints * 2;
 
