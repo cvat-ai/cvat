@@ -212,6 +212,10 @@
         // opacity 0.53 in sidebar to keep the same look as before on sidebar
         background-color: rgba(var(--state-item-background), 0.53);
     }
+
+    .cvat-objects-sidebar-state-item-elements {
+        background-color: rgba(var(--state-item-background), 0);
+    }
 }
 
 .cvat-objects-sidebar-z-layer-mark {
@@ -479,6 +483,7 @@
 .cvat-objects-sidebar-state-item-elements {
     padding: $grid-unit-size * 0.5;
     border: 1px solid rgba($color: white, $alpha: 0%);
+    background-color: rgba(var(--state-item-background), 1);
 }
 
 .cvat-objects-sidebar-state-item-elements.cvat-objects-sidebar-state-active-element {

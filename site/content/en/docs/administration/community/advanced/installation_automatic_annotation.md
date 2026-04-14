@@ -87,10 +87,51 @@ If you did, make sure all containers are stopped by `docker compose down`.
   Important requirement: you should have the latest versions of Docker Desktop, Nvidia drivers for WSL,
   and the latest updates from the Windows Insider Preview Dev channel.
 
+**Accessing the Nuclio Dashboard (Advanced):**
+
+By default, the Nuclio dashboard port is **not published** to the host.
+CVAT communicates with Nuclio over the internal Docker network,
+so the dashboard is not required for normal operation.
+
+If you need direct access to the Nuclio dashboard
+(e.g. for debugging, manual function management, or when running Nuclio on a separate machine),
+create a `docker-compose.serverless.override.yml` file with the following contents:
+
+```yaml
+services:
+  nuclio:
+    ports:
+      - '127.0.0.1:8070:8070'
+```
+
+Then include it when starting CVAT:
+
+```bash
+docker compose -f docker-compose.yml \
+  -f components/serverless/docker-compose.serverless.yml \
+  -f docker-compose.serverless.override.yml up -d
+```
+
+The dashboard will be available at [localhost:8070](http://localhost:8070).
+
+{{% alert title="Warning" color="warning" %}}
+The Nuclio dashboard **does not require authentication**.
+Do not bind the port to `0.0.0.0` (e.g. `8070:8070`) on a machine reachable from the internet,
+as this would allow anyone to deploy and manage serverless functions on your server.
+{{% /alert %}}
+
 **Troubleshooting Nuclio Functions:**
 
-- You can open nuclio dashboard at [localhost:8070](http://localhost:8070).
-  Make sure status of your functions are up and running without any error.
+- Check the status of your functions using the `nuctl` CLI:
+
+  ```bash
+  nuctl get functions --platform local
+  ```
+
+  Make sure your functions are in a `ready` state with no errors.
+  If you have enabled access to the Nuclio dashboard (see above), you can also
+  check function status at [localhost:8070](http://localhost:8070).
+
 - Test your deployed DL model as a serverless function. The command below should work on Linux and Mac OS.
 
   ```bash
