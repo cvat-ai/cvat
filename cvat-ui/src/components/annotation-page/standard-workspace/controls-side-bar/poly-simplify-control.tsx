@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom';
+import { debounce } from 'lodash';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -33,7 +34,7 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
 
     const originalPointsRef = useRef<number[]>(objectState.points ? [...objectState.points] : []);
 
-    const updatePreview = async (): Promise<void> => {
+    const updatePreview = useCallback(async (): Promise<void> => {
         if (!openCVWrapper.isInitialized) {
             return;
         }
@@ -50,7 +51,12 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
         if (pointsChanged) {
             onUpdatePreview(simplifiedPoints);
         }
-    };
+    }, [approxPolyAccuracy, objectState.shapeType, onUpdatePreview]);
+
+    const debouncedUpdatePreview = useRef(debounce(
+        (updateFn: () => Promise<void>) => updateFn(),
+        100,
+    )).current;
 
     const handleKeyDown = (event: KeyboardEvent): void => {
         if (
@@ -93,8 +99,12 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
     }, [onApply, onCancel]);
 
     useEffect(() => {
-        updatePreview();
-    }, [approxPolyAccuracy]);
+        debouncedUpdatePreview(updatePreview);
+    }, [approxPolyAccuracy, updatePreview]);
+
+    useEffect(() => () => {
+        debouncedUpdatePreview.cancel();
+    }, []);
 
     const target = window.document.getElementsByClassName('cvat-canvas-container')[0];
 
