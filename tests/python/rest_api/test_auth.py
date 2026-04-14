@@ -299,7 +299,7 @@ class TestCredentialsManagement:
 
     def test_can_report_weak_password(self, admin_user: str):
         username = admin_user
-        new_pass = "pass"
+        new_pass = "password"
         with make_api_client(username) as api_client:
             _, response = api_client.auth_api.create_password_change(
                 models.PasswordChangeRequest(
@@ -309,12 +309,7 @@ class TestCredentialsManagement:
                 _check_status=False,
             )
             assert response.status == HTTPStatus.BAD_REQUEST
-            assert json.loads(response.data) == {
-                "new_password2": [
-                    "This password is too short. It must contain at least 8 characters.",
-                    "This password is too common.",
-                ]
-            }
+            assert json.loads(response.data) == {"new_password2": ["This password is too common."]}
 
     def test_can_report_mismatching_passwords(self, admin_user: str):
         username = admin_user

@@ -30,3 +30,11 @@ Before starting, you need to select `Polygon` on the controls sidebar and choose
 - Press `N` again or click the `Done` button on the top panel for completing the shape.
 - After creating the polygon, you can move the points or delete them by right-clicking and selecting `Delete point`
   or clicking with pressed `Alt` key in the context menu.
+
+  ## Additional options
+
+- **Fixed number of points**: Set a specific value in the `Number of points` field to automatically
+  stop drawing after that many points.
+
+- **Enable dragging**: Right-click inside the polygon and choose `Switch pinned property` to enable
+  moving the polygon.

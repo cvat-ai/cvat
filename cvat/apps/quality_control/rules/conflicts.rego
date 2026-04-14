@@ -89,8 +89,6 @@ base_filter := {} if { # Django Q object to filter list of entries
 
 filter := utils.add_organization_filter(base_filter, [
     "report__job__segment__task__organization",
-    "report__job__segment__task__project__organization",
     "report__task__organization",
-    "report__task__project__organization",
     "report__project__organization",
 ])

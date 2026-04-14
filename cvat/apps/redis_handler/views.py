@@ -50,7 +50,7 @@ slogger = ServerLogManager(__name__)
 )
 class RequestViewSet(viewsets.GenericViewSet):
     serializer_class = RequestSerializer
-    iam_organization_field = None
+    iam_supports_organization_params = False
     iam_permission_class = RequestPermission
     filter_backends = [
         NonModelSimpleFilter,

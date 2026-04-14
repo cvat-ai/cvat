@@ -98,7 +98,8 @@
 .cvat-issue-control,
 .cvat-tools-control,
 .cvat-extra-controls-control,
-.cvat-opencv-control {
+.cvat-opencv-control,
+.cvat-snap-tools-control {
     border-radius: $border-radius-base;
     transition: $annotation-view-control-transition;
     transform: scale(0.65);
@@ -116,6 +117,13 @@
     > svg {
         width: 32px;
         height: 32px;
+    }
+
+    &.cvat-snap-tools-active {
+        svg rect {
+            fill: #40a9ff;
+            stroke: #40a9ff;
+        }
     }
 }
 
@@ -157,7 +165,8 @@
 .cvat-draw-shape-popover,
 .cvat-opencv-control-popover,
 .cvat-setup-tag-popover,
-.cvat-tools-control-popover {
+.cvat-tools-control-popover,
+.cvat-snap-tools-control-popover {
     .ant-popover-content > .ant-popover-inner {
         padding: 0;
     }
@@ -333,6 +342,45 @@
     .cvat-propagate-up-to-wrapper > div:first-child {
         margin-bottom: $grid-unit-size;
     }
+}
+
+.cvat-snap-tools-control-popover-content {
+    @extend .cvat-popover-content;
+
+    width: auto;
+    min-width: unset;
+
+    .cvat-snap-tools-row {
+        margin-top: $grid-unit-size;
+
+        > .ant-col:not(:last-child) {
+            margin-right: $grid-unit-size * 1.5;
+        }
+
+        .ant-checkbox-wrapper {
+            align-items: center;
+
+            .ant-checkbox {
+                top: 0;
+            }
+        }
+    }
+}
+
+.cvat-snap-to-contour-button,
+.cvat-snap-to-point-button {
+    padding: $grid-unit-size;
+    width: $grid-unit-size * 5;
+    height: $grid-unit-size * 5;
+
+    > span > i {
+        font-size: 16px;
+    }
+}
+
+.cvat-snap-tool-active {
+    color: #40a9ff;
+    border-color: #40a9ff;
 }
 
 .cvat-remove-object-confirm-wrapper {
