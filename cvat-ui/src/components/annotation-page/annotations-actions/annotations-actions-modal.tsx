@@ -32,7 +32,6 @@ import {
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
 import { clamp } from 'utils/math';
-import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 const core = getCore();
@@ -563,7 +562,6 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                 <hr />
                             </Col>
                             {Object.entries(activeAction.parameters)
-                                .filter(([, { type }]) => type !== ActionParameterType.OPENCV_DEPENDENCY)
                                 .map(([name, {
                                     defaultValue, type, values, tooltip,
                                 }], idx) => (
@@ -640,38 +638,12 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                 };
 
                                 try {
-                                    const { parameters } = activeAction;
-                                    const requiresOpenCV = parameters && Object.values(parameters).some(
-                                        (param) => param.type === ActionParameterType.OPENCV_DEPENDENCY,
-                                    );
-
-                                    const parametersWithCV = { ...actionParameters[activeAction.name] };
-                                    if (requiresOpenCV) {
-                                        if (!openCVWrapper.isInitialized) {
-                                            updateProgressWrapper('Initializing OpenCV', 0);
-                                            await openCVWrapper.initialize(() => {});
-
-                                            if (cancellationRef.current) {
-                                                dispatch(reducerActions.resetAfterRun());
-                                                return;
-                                            }
-                                        }
-
-                                        const { cv } = (window as any);
-                                        if (parameters) {
-                                            Object.entries(parameters).forEach(([name, param]) => {
-                                                if (param.type === ActionParameterType.OPENCV_DEPENDENCY) {
-                                                    parametersWithCV[name] = cv;
-                                                }
-                                            });
-                                        }
-                                    }
-
+                                    const actionParams = { ...actionParameters[activeAction.name] };
                                     const currentFrame = storage.getState().annotation.player.frame.number;
                                     const actionPromise = targetObjectState ? core.actions.call(
                                         jobInstance,
                                         activeAction,
-                                        parametersWithCV,
+                                        actionParams,
                                         currentFrame,
                                         [targetObjectState],
                                         updateProgressWrapper,
@@ -679,7 +651,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                     ) : core.actions.run(
                                         jobInstance,
                                         activeAction,
-                                        parametersWithCV,
+                                        actionParams,
                                         currentFrameAction ? currentFrame : frameFrom,
                                         currentFrameAction ? currentFrame : frameTo,
                                         storage.getState().annotation.annotations.filters,

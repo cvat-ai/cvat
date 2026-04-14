@@ -11,7 +11,6 @@ export enum ActionParameterType {
     NUMBER = 'number',
     CHECKBOX = 'checkbox',
     SLIDER = 'slider',
-    OPENCV_DEPENDENCY = 'opencv_dependency',
 }
 
 // For SELECT values should be a list of possible options

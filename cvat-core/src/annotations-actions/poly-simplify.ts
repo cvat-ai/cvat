@@ -7,71 +7,117 @@ import { ShapeType, ObjectType } from '../enums';
 
 import { ActionParameterType, ActionParameters } from './base-action';
 import { BaseShapesAction, ShapesActionInput, ShapesActionOutput } from './base-shapes-action';
+import { WorkerAction } from './actions-worker';
+import type { SimplifyShape, WorkerRequest, WorkerResponse } from './actions-worker';
 
 export class PolySimplify extends BaseShapesAction {
     #accuracy = 0;
-    #cv: any = null;
+    #worker: Worker | null = null;
+    #opencvPath: string = '';
 
     public async init(_instance: any, parameters: Record<string, any>): Promise<void> {
         this.#accuracy = parameters.Threshold as number;
-        this.#cv = parameters.OpenCV;
+        // Get the OPENCV_PATH from window.cvat.config if available
+        this.#opencvPath = (window as any)?.cvat?.config?.OPENCV_PATH || '/assets/opencv_4.8.0.js';
+
+        return new Promise((resolve, reject) => {
+            this.#worker = new Worker(new URL('./actions-worker.ts', import.meta.url));
+
+            this.#worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
+                const result = event.data;
+                if (result.error) {
+                    reject(new Error(result.error));
+                } else {
+                    resolve();
+                }
+            };
+
+            this.#worker.onerror = (event: ErrorEvent) => {
+                reject(new Error(event.message));
+            };
+
+            this.#worker.postMessage({
+                command: WorkerAction.INITIALIZE,
+                opencvPath: this.#opencvPath,
+            } as WorkerRequest);
+        });
     }
 
     public async destroy(): Promise<void> {
-        // nothing to destroy
+        if (this.#worker) {
+            this.#worker.terminate();
+            this.#worker = null;
+        }
     }
 
     public async run(input: ShapesActionInput): Promise<ShapesActionOutput> {
-        // const { onProgress, cancelled } = input;
+        const { onProgress, cancelled } = input;
 
-        // if (!this.#cv) {
-        //     throw new Error('OpenCV is not loaded. The action modal should have initialized it.');
-        // }
+        if (!this.#worker) {
+            throw new Error('Worker not initialized');
+        }
 
-        // onProgress('Simplifying polygons', 0);
+        if (!input.collection.shapes.length) {
+            return {
+                created: { shapes: [] },
+                deleted: { shapes: [] },
+            };
+        }
 
-        // const simplifyFn = simplifyPoly(this.#cv);
-        // const totalShapes = input.collection.shapes.length;
+        return new Promise((resolve, reject) => {
+            if (cancelled()) {
+                resolve({
+                    created: { shapes: [] },
+                    deleted: { shapes: [] },
+                });
+                return;
+            }
 
-        // const simplifiedShapes = input.collection.shapes.map((shape, index) => {
-        //     if (cancelled()) {
-        //         return shape;
-        //     }
+            onProgress('Simplifying polygons', 0);
 
-        //     if (!shape.points || shape.points.length < 6) {
-        //         return shape;
-        //     }
+            this.#worker!.onmessage = (event: MessageEvent<WorkerResponse>) => {
+                const result = event.data;
+                if (result.error) {
+                    reject(new Error(result.error));
+                } else if (result.shapes) {
+                    onProgress('Simplifying polygons', 100);
 
-        //     const closed = shape.type === ShapeType.POLYGON;
-        //     const result: SimplifyPolyResult = simplifyFn(shape.points, {
-        //         accuracy: this.#accuracy,
-        //         closed,
-        //     });
+                    const simplifiedShapes = result.shapes.map((simplifiedShape) => {
+                        const originalShape = input.collection.shapes.find(
+                            (s) => s.clientID === simplifiedShape.clientID,
+                        );
+                        return {
+                            ...originalShape,
+                            points: simplifiedShape.points,
+                        };
+                    });
 
-        //     // Report progress
-        //     if (totalShapes > 1) {
-        //         const progress = Math.round(((index + 1) / totalShapes) * 100);
-        //         onProgress('Simplifying polygons', progress);
-        //     }
+                    resolve({
+                        created: { shapes: simplifiedShapes },
+                        deleted: { shapes: input.collection.shapes },
+                    });
+                }
+            };
 
-        //     // Return updated shape with new points
-        //     return {
-        //         ...shape,
-        //         points: result.points,
-        //     };
-        // });
+            this.#worker!.onerror = (event: ErrorEvent) => {
+                reject(new Error(event.message));
+            };
 
-        // if (cancelled()) {
-        //     return {
-        //         created: { shapes: [] },
-        //         deleted: { shapes: [] },
-        //     };
-        // }
+            const shapes: SimplifyShape[] = input.collection.shapes.map((shape) => ({
+                clientID: shape.clientID,
+                points: shape.points,
+                shapeType: shape.type as 'polygon' | 'polyline',
+            }));
 
-        // return {
-        //     created: { shapes: simplifiedShapes },
-        //     deleted: { shapes: input.collection.shapes },
-        // };
+            this.#worker!.postMessage({
+                command: WorkerAction.SIMPLIFY_POLYGONS,
+                shapes,
+                options: {
+                    accuracy: this.#accuracy,
+                    closed: true,
+                },
+            } as WorkerRequest);
+        });
     }
 
     public applyFilter(input: ShapesActionInput): ShapesActionInput['collection'] {
@@ -95,11 +141,6 @@ export class PolySimplify extends BaseShapesAction {
 
     public get parameters(): ActionParameters | null {
         return {
-            OpenCV: {
-                type: ActionParameterType.OPENCV_DEPENDENCY,
-                values: [],
-                defaultValue: '',
-            },
             Threshold: {
                 type: ActionParameterType.SLIDER,
                 values: ['0', '13', '1'], // min, max, step

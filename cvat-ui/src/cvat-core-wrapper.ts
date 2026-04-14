@@ -157,7 +157,6 @@ export type {
     ApiTokenModifiableFields,
     ApiTokensFilter,
     SimplifyPolyOptions,
-    SimplifyPolyResult,
     OpenCVInterface,
     MatSpace,
     MatVectorSpace,
