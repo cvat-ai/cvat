@@ -4,7 +4,6 @@
 
 import ObjectState from '../object-state';
 import { ShapeType, ObjectType } from '../enums';
-import { simplifyPoly, type SimplifyPolyResult } from '../opencv/opencv-interface';
 
 import { ActionParameterType, ActionParameters } from './base-action';
 import { BaseShapesAction, ShapesActionInput, ShapesActionOutput } from './base-shapes-action';
@@ -23,56 +22,56 @@ export class PolySimplify extends BaseShapesAction {
     }
 
     public async run(input: ShapesActionInput): Promise<ShapesActionOutput> {
-        const { onProgress, cancelled } = input;
+        // const { onProgress, cancelled } = input;
 
-        if (!this.#cv) {
-            throw new Error('OpenCV is not loaded. The action modal should have initialized it.');
-        }
+        // if (!this.#cv) {
+        //     throw new Error('OpenCV is not loaded. The action modal should have initialized it.');
+        // }
 
-        onProgress('Simplifying polygons', 0);
+        // onProgress('Simplifying polygons', 0);
 
-        const simplifyFn = simplifyPoly(this.#cv);
-        const totalShapes = input.collection.shapes.length;
+        // const simplifyFn = simplifyPoly(this.#cv);
+        // const totalShapes = input.collection.shapes.length;
 
-        const simplifiedShapes = input.collection.shapes.map((shape, index) => {
-            if (cancelled()) {
-                return shape;
-            }
+        // const simplifiedShapes = input.collection.shapes.map((shape, index) => {
+        //     if (cancelled()) {
+        //         return shape;
+        //     }
 
-            if (!shape.points || shape.points.length < 6) {
-                return shape;
-            }
+        //     if (!shape.points || shape.points.length < 6) {
+        //         return shape;
+        //     }
 
-            const closed = shape.type === ShapeType.POLYGON;
-            const result: SimplifyPolyResult = simplifyFn(shape.points, {
-                accuracy: this.#accuracy,
-                closed,
-            });
+        //     const closed = shape.type === ShapeType.POLYGON;
+        //     const result: SimplifyPolyResult = simplifyFn(shape.points, {
+        //         accuracy: this.#accuracy,
+        //         closed,
+        //     });
 
-            // Report progress
-            if (totalShapes > 1) {
-                const progress = Math.round(((index + 1) / totalShapes) * 100);
-                onProgress('Simplifying polygons', progress);
-            }
+        //     // Report progress
+        //     if (totalShapes > 1) {
+        //         const progress = Math.round(((index + 1) / totalShapes) * 100);
+        //         onProgress('Simplifying polygons', progress);
+        //     }
 
-            // Return updated shape with new points
-            return {
-                ...shape,
-                points: result.points,
-            };
-        });
+        //     // Return updated shape with new points
+        //     return {
+        //         ...shape,
+        //         points: result.points,
+        //     };
+        // });
 
-        if (cancelled()) {
-            return {
-                created: { shapes: [] },
-                deleted: { shapes: [] },
-            };
-        }
+        // if (cancelled()) {
+        //     return {
+        //         created: { shapes: [] },
+        //         deleted: { shapes: [] },
+        //     };
+        // }
 
-        return {
-            created: { shapes: simplifiedShapes },
-            deleted: { shapes: input.collection.shapes },
-        };
+        // return {
+        //     created: { shapes: simplifiedShapes },
+        //     deleted: { shapes: input.collection.shapes },
+        // };
     }
 
     public applyFilter(input: ShapesActionInput): ShapesActionInput['collection'] {

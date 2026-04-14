@@ -49,11 +49,11 @@ import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-col
 import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
 import { Request, RequestOperation } from 'cvat-core/src/request';
 import {
-    createOpenCVInterface, simplifyPoly, thresholdFromAccuracy, MatType,
+    createOpenCVInterface, thresholdFromAccuracy, MatType,
     type OpenCVInterface, type MatSpace, type MatVectorSpace, type Contours,
     type IntelligentScissors, type HistogramEqualization, type Segmentation,
     type ImgProc, type TrackerModel, type OpenCVTracker, type Tracking,
-    type SimplifyPolyOptions, type SimplifyPolyResult,
+    type SimplifyPolyOptions,
 } from 'cvat-core/src/opencv/opencv-interface';
 import { ImageProcessing, BaseImageFilter } from 'cvat-core/src/opencv/image-processing';
 import AboutData from 'cvat-core/src/about';
@@ -130,7 +130,6 @@ export {
     StorageLocation,
     MembershipRole,
     AboutData,
-    simplifyPoly,
     createOpenCVInterface,
     MatType,
     thresholdFromAccuracy,

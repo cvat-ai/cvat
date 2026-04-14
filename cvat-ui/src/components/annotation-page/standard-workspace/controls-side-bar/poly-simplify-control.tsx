@@ -40,18 +40,14 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
 
         const closed = objectState.shapeType === ShapeType.POLYGON;
 
-        const result = openCVWrapper.simplifyPolygon(originalPointsRef.current, {
+        const simplifiedPoints = openCVWrapper.contours.simplifyPolygon(originalPointsRef.current, {
             accuracy: approxPolyAccuracy,
             closed,
         });
 
-        const pointsChanged = result.points !== originalPointsRef.current;
-        const pointCount = result.points.length / 2;
-
-        if (pointsChanged && pointCount >= 3) {
-            onUpdatePreview(result.points);
-        } else {
-            onUpdatePreview(originalPointsRef.current);
+        const pointsChanged = simplifiedPoints !== originalPointsRef.current;
+        if (pointsChanged) {
+            onUpdatePreview(simplifiedPoints);
         }
     };
 

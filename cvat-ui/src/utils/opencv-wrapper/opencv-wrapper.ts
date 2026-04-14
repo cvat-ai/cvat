@@ -259,13 +259,6 @@ export class OpenCVWrapper {
             },
         };
     }
-
-    public simplifyPolygon(
-        points: number[],
-        options: SimplifyPolyOptions,
-    ): SimplifyPolyResult {
-        return this.getCVInterface().simplifyPolygon(points, options);
-    }
 }
 
 const openCVWrapper = new OpenCVWrapper();
