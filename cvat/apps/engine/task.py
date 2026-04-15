@@ -43,6 +43,7 @@ from cvat.apps.engine.media_extractors import (
     sort,
 )
 from cvat.apps.engine.media_providers.frame_provider import TaskFrameProvider
+from cvat.apps.engine.media_providers.audio_provider import TaskAudioProvider
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
@@ -1197,21 +1198,22 @@ def _validate_project_media_types(
 def _configure_chunk_types(db_task: models.Task, data: dict[str, Any]) -> None:
     db_data = db_task.require_data()
 
-    if db_task.media_type == models.MediaType.AUDIO:
-        db_data.compressed_chunk_type = models.DataChoice.AUDIO_MP3
-        db_data.original_chunk_type = models.DataChoice.AUDIO_MP3
-    elif db_task.media_type == models.MediaType.VIDEO:
-        db_data.compressed_chunk_type = (
-            models.DataChoice.VIDEO
-            if db_task.mode == "interpolation" and not data["use_zip_chunks"]
-            else models.DataChoice.IMAGESET
-        )
-        db_data.original_chunk_type = models.DataChoice.VIDEO
-    elif db_task.media_type == [models.MediaType.IMAGE, models.MediaType.POINT_CLOUD]:
-        db_data.compressed_chunk_type = models.DataChoice.IMAGESET
-        db_data.original_chunk_type = models.DataChoice.IMAGESET
-    else:
-        assert False, f"Unexpected media type {db_task.media_type}"
+    match db_task.media_type:
+        case models.MediaType.AUDIO:
+            db_data.compressed_chunk_type = models.DataChoice.AUDIO_MP3
+            db_data.original_chunk_type = models.DataChoice.AUDIO_MP3
+        case models.MediaType.VIDEO:
+            db_data.compressed_chunk_type = (
+                models.DataChoice.VIDEO
+                if db_task.mode == "interpolation" and not data["use_zip_chunks"]
+                else models.DataChoice.IMAGESET
+            )
+            db_data.original_chunk_type = models.DataChoice.VIDEO
+        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+            db_data.compressed_chunk_type = models.DataChoice.IMAGESET
+            db_data.original_chunk_type = models.DataChoice.IMAGESET
+        case _ as media_type:
+            assert False, f"Unexpected media type '{media_type}'"
 
 
 def _create_video_dataset_descriptors(
@@ -1919,12 +1921,19 @@ def create_thread(
     ):
         _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
+    if not (is_data_in_cloud and is_backup_restore):
+        _create_task_preview(db_task)
+
+
+def _create_task_preview(db_task: models.Task):
     # Prepare the preview image and save it in the cache
-    if (
-        not (is_data_in_cloud and is_backup_restore)
-        and not db_task.media_type == models.MediaType.AUDIO
-    ):  # TODO: support audio
-        TaskFrameProvider(db_task=db_task).get_preview_image()
+    match db_task.media_type:
+        case models.MediaType.AUDIO:
+            TaskAudioProvider(db_task).get_preview_image()
+        case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD | models.MediaType.VIDEO:
+            TaskFrameProvider(db_task).get_preview_image()
+        case _ as media_type:
+            assert False, f"Unknown media type '{media_type}'"
 
 
 def _create_static_chunks(
