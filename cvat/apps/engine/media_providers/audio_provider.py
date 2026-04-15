@@ -10,15 +10,14 @@ from abc import ABCMeta, abstractmethod
 from bisect import bisect
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
+from enum import Enum
 from io import BytesIO
 from typing import Literal, TypeVar
 
 import av
 import numpy as np
-import PIL.Image
 from attrs import define
 from django.db.models import prefetch_related_objects
-from matplotlib import pyplot as plt
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
@@ -232,7 +231,7 @@ class TaskAudioProvider(IAudioProvider):
         except models.AudioChunkInfo.DoesNotExist:
             chunk_info = models.AudioChunkInfo(data=db_data, audio=db_data.audio, key=chunk_key)
             chunk_info_created = True
-            padding = "auto"
+            padding = PaddingType.auto
         else:
             chunk_info_created = False
             padding = (chunk_info.left_padding, chunk_info.right_padding)
@@ -651,12 +650,19 @@ def add_padding(
     yield from output_frames
 
 
+class PaddingType(str, Enum):
+    auto = "auto"
+
+    def __str__(self):
+        return self.value
+
+
 def create_audio_chunk(
     db_data: models.Data,
     payload_reader: AudioReader,
     *,
     quality: models.FrameQuality,
-    padding: tuple[int, int] | Literal["auto"] | None = None,
+    padding: tuple[int, int] | PaddingType | None = None,
 ) -> tuple[DataWithMime, tuple[int, int, int]]:
     assert db_data.compressed_chunk_type == models.DataChoice.AUDIO_MP3
     assert db_data.original_chunk_type == models.DataChoice.AUDIO_MP3
@@ -668,7 +674,23 @@ def create_audio_chunk(
 
     writer = Mp3ChunkWriter(quality=frame_quality_to_audio_quality[quality])
 
-    if padding == "auto":
+    if (
+        payload_reader.format_name == writer.FORMAT
+        and (padding == PaddingType.auto or padding == (0, 0) or padding is None)
+        and payload_reader.start == 0
+        and (payload_reader.stop is None or payload_reader.length <= payload_reader.stop)
+    ):
+        # Reuse the source file, if it matches the output format
+        chunk_data = BytesIO()
+        with payload_reader._source_path.open("rb") as f:
+            chunk_data.write(f.read())
+
+        chunk_data.seek(0)
+
+        # Writing still can fail with CacheTooLargeDataError
+        return (chunk_data, writer.CHUNK_MIME_TYPE), (0, 0, 0)
+
+    if padding == PaddingType.auto:
         left_padding, right_padding, payload_offset = find_best_padding(
             payload_reader=payload_reader,
             writer=writer,
@@ -708,61 +730,6 @@ class SampleMatcher:
         return collect_samples(output_frames)
 
 
-@define
-class PreviewImageBuilder:
-    sampling_rate: int = 100
-
-    size: tuple[int, int] = (1000, 200)
-    "(w, h)"
-
-    output_color: tuple[int, int, int] = (8, 151, 156)
-    "(r, g, b) color for the waveform"
-
-    def _get_samples(self, frames: Iterator[IMediaReader.AudioFrame]) -> np.ndarray:
-        resampler = av.AudioResampler(format="flt", layout="mono", rate=self.sampling_rate)
-        output_frames = [
-            (resampled_frame, None)
-            for input_frame, _ in frames
-            for resampled_frame in resampler.resample(input_frame)
-        ]
-        return collect_samples(output_frames)
-
-    def create_preview(self, reader: AudioReader) -> PIL.Image.Image:
-        preview = reader.get_preview_image()
-        if preview is None:
-            preview = self.create_from_waveform(reader)
-
-        return preview
-
-    def create_from_waveform(self, reader: AudioReader) -> PIL.Image.Image:
-        samples = self._get_samples(reader)[0]
-        samples_max = np.max(np.abs(samples))
-
-        dpi = 100
-        fig = plt.figure(1, figsize=(self.size[0] // dpi, self.size[1] // dpi), dpi=dpi)
-        plt.plot(
-            range(len(samples)), samples, linewidth=0.125, color=np.asarray(self.output_color) / 255
-        )
-        plt.xticks()
-        plt.yticks()
-        ax = fig.axes[0]
-        ax.set_ylim(-samples_max, samples_max)
-        plt.axis("off")
-        plt.tight_layout()
-
-        output_file = BytesIO()
-
-        fig.savefig(output_file, transparent=True)
-        output_file.seek(0)
-
-        return PIL.Image.open(output_file)
-
-    def create_from_image(self, image: PIL.Image.Image) -> PIL.Image.Image:
-        image = image.copy()
-        image.thumbnail(self.size)
-        return image
-
-
 def collect_samples(frames: Iterator[AudioReader.AudioFrame]) -> np.ndarray | None:
     samples = None
     for frame, _ in frames:
@@ -786,7 +753,6 @@ def find_best_padding(
     min_right_padding: int = 0,
     max_left_padding: int = 1000,
     max_right_padding: int = 1000,
-    debug: bool = False,
 ) -> tuple[int, int]:
     assert max_left_padding >= 0 and max_right_padding >= 0
     assert min_left_padding >= 0 and min_right_padding >= 0
@@ -816,10 +782,6 @@ def find_best_padding(
     ) -> tuple[float | None, int | None, tuple[np.ndarray, np.ndarray, int, int, int] | None]:
         result_file = BytesIO()
 
-        def _cvat_frame_to_sample(frame: int) -> int:
-            return math.ceil(frame / payload_reader.FRAME_RATE * payload_reader.sampling_rate)
-
-        chunk_payload_left_padding = _cvat_frame_to_sample(left_padding)
         chunk_payload_frames = list(
             add_padding(
                 payload_frames_factory(),
@@ -834,11 +796,11 @@ def find_best_padding(
         result_bytes = result_file.getvalue()
         if not result_bytes:
             # If the payload was too small to write anything, there will be an empty file
-            return None, None, None
+            return None, None
 
         result_reader = AudioReader([MemOpenable(result_bytes)])
         if result_reader.length < payload_stop - payload_start + 1:
-            return None, None, None
+            return None, None
 
         result_samples_for_matching = sample_matcher.get_samples_for_matching(
             result_reader.read_frames()
@@ -852,27 +814,11 @@ def find_best_padding(
             max_offset=left_padding_samples,
         )
 
-        if debug:
-            chunk_payload_left_padding_for_preview = int(
-                chunk_payload_left_padding
-                / payload_reader.sampling_rate
-                * sample_matcher.matching_sampling_rate
-            )
-            match_preview = (
-                result_samples_for_matching,
-                sample_matcher.get_samples_for_matching(chunk_payload_frames),
-                payload_samples_for_matching.shape[-1],
-                match_offset,
-                chunk_payload_left_padding_for_preview,
-            )
-        else:
-            match_preview = None
-
         match_offset = int(
             match_offset / sample_matcher.matching_sampling_rate * payload_reader.FRAME_RATE
         )
 
-        return match_score, match_offset, match_preview
+        return match_score, match_offset
 
     # Find the minimal right padding to preserve all the payload
     result_table = {}
@@ -884,12 +830,10 @@ def find_best_padding(
 
     right_padding = min_right_padding
     while right_padding < max_right_padding + 1:
-        match_score, match_offset, match_preview = check_padding(best_left_padding, right_padding)
-        result_table[(best_left_padding, right_padding)] = (
-            match_offset,
-            match_score,
-            match_preview,
-        )
+        match = check_padding(best_left_padding, right_padding)
+        result_table[(best_left_padding, right_padding)] = match
+
+        match_score, match_offset = match
         if match_offset is None:
             right_padding += step
             continue
@@ -904,12 +848,10 @@ def find_best_padding(
     # Find the minimal left padding to preserve all the payload
     left_padding = min_left_padding
     while left_padding < max_left_padding + 1:
-        match_score, match_offset, match_preview = check_padding(left_padding, best_right_padding)
-        result_table[(left_padding, best_right_padding)] = (
-            match_offset,
-            match_score,
-            match_preview,
-        )
+        match = check_padding(left_padding, best_right_padding)
+        result_table[(left_padding, best_right_padding)] = match
+
+        match_offset, match_score = match
         if match_offset is None:
             left_padding += step
             continue

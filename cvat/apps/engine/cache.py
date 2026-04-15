@@ -58,7 +58,7 @@ from cvat.apps.engine.utils import (
     md5_hash,
 )
 from utils.dataset_manifest import ImageManifestManager
-from utils.dataset_manifest.utils import MemOpenable, Openable
+from utils.dataset_manifest.utils import Openable
 
 slogger = ServerLogManager(__name__)
 
@@ -69,6 +69,9 @@ _CacheItem: TypeAlias = tuple[io.BytesIO, str, int, datetime | None]
 
 class CacheTooLargeDataError(Exception):
     pass
+
+
+ASSETS_DIR = Path(__file__).parent / "assets"
 
 
 def enqueue_create_chunk_job(
@@ -1016,32 +1019,17 @@ class MediaCache:
 
         match db_segment.task.media_type:
             case models.MediaType.POINT_CLOUD:
-                # TODO
-                preview = PIL.Image.open(
-                    os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg")
-                )
+                preview = PIL.Image.open(ASSETS_DIR / "pcd_default_preview.jpeg")
             case models.MediaType.AUDIO:
                 from cvat.apps.engine.media_extractors import AudioReader
-                from cvat.apps.engine.media_providers.audio_provider import (
-                    PreviewImageBuilder,
-                    SegmentAudioProvider,
-                )
 
                 preview = None
                 if db_segment.task.data.audio.has_cover_image:
                     source_audio = self.read_raw_audio(db_segment.task)[0]
                     reader = AudioReader([source_audio])
                     preview = reader.get_preview_image()
-
-                if not preview:
-                    segment_media_provider = SegmentAudioProvider(db_segment)
-                    chunk = segment_media_provider.get_chunk(
-                        0,
-                        quality=models.FrameQuality.COMPRESSED,
-                    )
-                    reader = AudioReader([MemOpenable(chunk.data.getvalue())])
-                    preview_builder = PreviewImageBuilder()
-                    preview = preview_builder.create_preview(reader)
+                else:
+                    preview = PIL.Image.open(ASSETS_DIR / "audio_default_preview.png")
             case models.MediaType.IMAGE | models.MediaType.VIDEO:
                 from cvat.apps.engine.media_providers.frame_provider import (  # avoid circular import
                     FrameOutputType,
@@ -1139,14 +1127,25 @@ class MediaCache:
 
 def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     PREVIEW_SIZE = (256, 256)
-    PREVIEW_MIME = "image/jpeg"
+
+    ALLOWED_FORMATS = {"png", "jpg"}
+    FORMAT_MIME = {
+        "PNG": "image/png",
+        "JPG": "image/jpeg",
+    }
 
     image = PIL.ImageOps.exif_transpose(image)
-    image.thumbnail(PREVIEW_SIZE)
 
     output_buf = io.BytesIO()
-    image.convert("RGB").save(output_buf, format="JPEG")
-    return output_buf, PREVIEW_MIME
+    if image.format not in ALLOWED_FORMATS or image.size != PREVIEW_SIZE:
+        image.thumbnail(PREVIEW_SIZE)
+        image.save(output_buf, format="PNG")
+        mime = FORMAT_MIME["PNG"]
+    else:
+        image.save(output_buf)
+        mime = FORMAT_MIME[image.format]
+
+    return output_buf, mime
 
 
 def prepare_image_chunk(
