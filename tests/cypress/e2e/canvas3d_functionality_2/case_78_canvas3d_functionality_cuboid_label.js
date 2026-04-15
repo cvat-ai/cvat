@@ -62,6 +62,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .type(`${secondLabel}{Enter}`);
+            cy.get('.ant-select-dropdown').should('not.be.visible');
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_change_label_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_after_activating_cuboid.png`,
