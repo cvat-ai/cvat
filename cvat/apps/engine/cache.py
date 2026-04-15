@@ -1146,10 +1146,10 @@ class MediaCache:
 def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
     PREVIEW_SIZE = (256, 256)
 
-    ALLOWED_FORMATS = {"png", "jpg"}
+    ALLOWED_FORMATS = {"PNG", "JPEG"}
     FORMAT_MIME = {
         "PNG": "image/png",
-        "JPG": "image/jpeg",
+        "JPEG": "image/jpeg",
     }
 
     image = PIL.ImageOps.exif_transpose(image)
