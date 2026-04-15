@@ -5,10 +5,6 @@ services:
     volumes:
       - shared-data:/shared
     restart: "on-failure"
-#    entrypoint:
-#      - /bin/bash
-#      - -c
-#      - sleep infinity
     environment:
       CVAT_BASE_URL:
       CVAT_ACCESS_TOKEN:
