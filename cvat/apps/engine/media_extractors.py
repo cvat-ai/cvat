@@ -822,7 +822,7 @@ class AudioReader(IMediaReader):
         super().__init__(
             step=1,
             start=start,
-            stop=stop + 1 if stop is not None else stop,
+            stop=stop if stop is not None else stop,
             dimension=DimensionType.DIM_1D,
         )
 
@@ -1044,6 +1044,11 @@ class AudioReader(IMediaReader):
 
             if frame is not None:
                 return frame[0].to_image()
+
+    @cached_property
+    def format_name(self) -> str:
+        with self._open_stream() as (_, stream):
+            return stream.codec.canonical_name
 
 
 class IChunkWriter(ABC):

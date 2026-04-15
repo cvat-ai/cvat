@@ -11,7 +11,7 @@ import shutil
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
 from urllib import parse as urlparse
@@ -62,6 +62,8 @@ if TYPE_CHECKING:
 slogger = ServerLogManager(__name__)
 
 JobFileMapping: TypeAlias = list[list[str]]
+
+MAX_AUDIO_DURATION = timedelta(hours=4)
 
 
 class SegmentParams(NamedTuple):
@@ -1379,18 +1381,17 @@ def _create_image_dataset_descriptors(
 def _create_audio_dataset_descriptors(
     extractor: "AudioReader", *, db_data: models.Data, upload_dir: Path, audio_path: Path
 ) -> tuple[models.Audio, int]:
-    size = extractor.length
-
-    cover_image = extractor.get_preview_image()
-
     audio = models.Audio(
         data=db_data,
         path=audio_path.relative_to(upload_dir),
         sampling_rate=extractor.sampling_rate,
-        has_cover_image=cover_image is not None,
+        has_cover_image=extractor.get_preview_image() is not None,
     )
 
-    return audio, size
+    if MAX_AUDIO_DURATION.total_seconds() < extractor.duration:
+        raise ValidationError(f"Audio files longer than {MAX_AUDIO_DURATION} are not allowed")
+
+    return audio, extractor.length
 
 
 @transaction.atomic
@@ -1839,16 +1840,7 @@ def create_thread(
             db_data=db_data,
         )
         db_data.size = audio_length
-
-        if db_data.chunk_size is None:
-            db_data.chunk_size = 30 * extractor.FRAME_RATE
-
-        # Creating huge chunks is not recommended for smooth playback
-        # Smaller chunks occupy ~5-15% more, but encoded faster
-        # Using too small chunks can lead to encoding failures
-        db_data.chunk_size = max(
-            min(db_data.chunk_size, 2 * 60 * extractor.FRAME_RATE), 5 * extractor.FRAME_RATE
-        )
+        db_data.chunk_size = audio_length  # the UI can't handle chunks yet
     else:
         assert False, f"Unexpected media type {db_task.media_type}"
 
