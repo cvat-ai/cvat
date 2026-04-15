@@ -515,6 +515,10 @@ def local_start(
 
 
 def kube_start(cvat_db_dir, keep_data):
+    if keep_data:
+        wait_for_services()
+        return
+
     kube_restore_data_volumes()
     server_pod_name = _kube_get_server_pod_name()
     db_pod_name = _kube_get_db_pod_name()
@@ -523,18 +527,17 @@ def kube_start(cvat_db_dir, keep_data):
 
     wait_for_services()
 
-    if not keep_data:
-        kube_exec_cvat(
-            ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
-        )
+    kube_exec_cvat(
+        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+    )
 
-        kube_exec_cvat_db(
-            [
-                "/bin/sh",
-                "-c",
-                "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql",
-            ]
-        )
+    kube_exec_cvat_db(
+        [
+            "/bin/sh",
+            "-c",
+            "PGPASSWORD=cvat_postgresql_postgres psql -U postgres -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql",
+        ]
+    )
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:
