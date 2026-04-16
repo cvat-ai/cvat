@@ -309,7 +309,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case AuthActionTypes.REGISTER_SUCCESS: {
-            if (!action.payload.user.isVerified) {
+            if (!action.payload.isVerified) {
                 return {
                     ...state,
                     messages: {
