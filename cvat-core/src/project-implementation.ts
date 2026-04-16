@@ -23,9 +23,12 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                     organizationId: 'organization_id',
                     sourceStorage: 'source_storage',
                     targetStorage: 'target_storage',
-                });
+                }) as Record<string, unknown> & {
+                    assignee_id?: { id: number } | number | null;
+                    labels?: Array<Label | SerializedLabel>;
+                };
 
-                if (projectData.assignee_id) {
+                if (projectData.assignee_id && typeof projectData.assignee_id === 'object') {
                     projectData.assignee_id = projectData.assignee_id.id;
                 }
 
@@ -43,7 +46,8 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
 
                 // leave only new labels to create them via project PATCH request
                 projectData.labels = (projectData.labels || [])
-                    .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
+                    .filter((label): label is Label => label instanceof Label && !Number.isInteger(label.id))
+                    .map((el) => el.toJSON());
                 if (!projectData.labels.length) {
                     delete projectData.labels;
                 }

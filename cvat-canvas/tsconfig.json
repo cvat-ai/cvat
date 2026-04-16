@@ -11,6 +11,7 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "esModuleInterop": true,
+<<<<<<< Updated upstream
     "noEmit": true,
     "declaration": true,
     "declarationDir": "dist/declaration",
@@ -18,6 +19,10 @@
       "cvat-canvas.node": ["dist/cvat-canvas.node"]
     },
     "baseUrl": "."
+=======
+    "isolatedModules": true,
+    "noEmit": true
+>>>>>>> Stashed changes
   },
   "include": ["src/typescript/canvas.ts"]
 }

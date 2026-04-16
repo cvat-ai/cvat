@@ -40,6 +40,37 @@ type Params = {
     save_images?: boolean,
 };
 
+type FormDataCompat = FormData & {
+    set?: (name: string, value: string | Blob) => void;
+    delete?: (name: string) => void;
+};
+
+type JobWritePayload = Partial<Omit<SerializedJob, 'assignee'> & { assignee: number | null }>;
+
+function toFormDataValue(value: unknown): string | Blob {
+    if (value instanceof Blob) {
+        return value;
+    }
+
+    return String(value);
+}
+
+function setFormDataValue(data: FormDataCompat, key: string, value: unknown): void {
+    const normalizedValue = toFormDataValue(value);
+    if (typeof data.set === 'function') {
+        data.set(key, normalizedValue);
+        return;
+    }
+
+    data.append(key, normalizedValue);
+}
+
+function deleteFormDataValue(data: FormDataCompat, key: string): void {
+    if (typeof data.delete === 'function') {
+        data.delete(key);
+    }
+}
+
 tus.defaultOptions.storeFingerprintForResuming = false;
 
 function enableOrganization(): { org: string } {
@@ -241,7 +272,7 @@ function prepareData(details) {
                 data.append(`${key}[${idx}]`, element);
             });
         } else {
-            data.set(key, value);
+            setFormDataValue(data, key, value);
         }
     }
     return data;
@@ -552,7 +583,7 @@ async function authenticated(): Promise<boolean> {
     return true;
 }
 
-async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedRequest>> {
+async function getApiTokens(filter: APIApiTokensFilter = {}): Promise<PaginatedResource<SerializedApiToken>> {
     const { backendAPI } = config;
 
     let response = null;
@@ -768,7 +799,7 @@ async function getProjects(filter: ProjectsFilter = {}): Promise<SerializedProje
     return response.data.results;
 }
 
-async function saveProject(id: number, projectData: Partial<SerializedProject>): Promise<SerializedProject> {
+async function saveProject(id: number, projectData: Record<string, unknown>): Promise<SerializedProject> {
     const { backendAPI } = config;
 
     let response = null;
@@ -840,7 +871,7 @@ async function getTasks(
     return response.data.results;
 }
 
-async function saveTask(id: number, taskData: Partial<SerializedTask>): Promise<SerializedTask> {
+async function saveTask(id: number, taskData: Record<string, unknown>): Promise<SerializedTask> {
     const { backendAPI } = config;
 
     let response = null;
@@ -881,7 +912,10 @@ async function mergeConsensusJobs(id: number, instanceType: string): Promise<str
                 if (status === 202) {
                     resolve(rqID);
                 } else {
-                    reject(generateError(response));
+                    reject(new ServerError(
+                        response.statusText || 'Unexpected response while merging consensus jobs',
+                        response.status,
+                    ));
                 }
             } catch (errorData) {
                 reject(generateError(errorData));
@@ -1156,7 +1190,7 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
 
     try {
         if (isCloudStorage) {
-            params.filename = file;
+            params.filename = typeof file === 'string' ? file : file.name;
             response = await Axios.post(url,
                 new FormData(),
                 {
@@ -1221,7 +1255,7 @@ async function createTask(
                 taskData.append(`${key}[${idx}]`, element);
             });
         } else if (typeof value !== 'object') {
-            taskData.set(key, value);
+            setFormDataValue(taskData, key, value);
         }
     }
 
@@ -1275,7 +1309,7 @@ async function createTask(
                 headers: { 'Upload-Multiple': true },
             });
             for (let i = 0; i < fileBulks[currentChunkNumber].files.length; i++) {
-                taskData.delete(`client_files[${i}]`);
+                deleteFormDataValue(taskData, `client_files[${i}]`);
             }
             totalSentSize += fileBulks[currentChunkNumber].size;
             currentChunkNumber++;
@@ -1367,27 +1401,45 @@ async function getJobs(
 
 async function getIssues(filter) {
     const { backendAPI } = config;
+    type IssueRecord = {
+        id: number;
+        job: number;
+        position: number[];
+        frame: number;
+        comments?: CommentRecord[];
+        owner?: unknown;
+        resolved?: boolean;
+        created_date?: string;
+    };
+    type CommentRecord = {
+        id: number;
+        issue: number;
+        message?: string;
+        created_date?: string;
+        updated_date?: string;
+        owner?: unknown;
+    };
 
-    let response = null;
+    let response: { count: number; results: IssueRecord[] } | null = null;
     try {
         const organization = enableOrganization();
-        response = await fetchAll(`${backendAPI}/issues`, {
+        response = await fetchAll<IssueRecord>(`${backendAPI}/issues`, {
             ...filter,
             ...organization,
         });
 
         if (filter.job_id) {
-            const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
+            const commentsResponse = await fetchAll<CommentRecord>(`${backendAPI}/comments`, {
                 ...filter,
                 ...organization,
             });
 
-            const issuesById = response.results.reduce((acc, val: { id: number }) => {
+            const issuesById = response.results.reduce<Record<number, IssueRecord>>((acc, val) => {
                 acc[val.id] = val;
                 return acc;
             }, {});
 
-            const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
+            const commentsByIssue = commentsResponse.results.reduce<Record<number, CommentRecord[]>>((acc, val) => {
                 acc[val.issue] = acc[val.issue] || [];
                 acc[val.issue].push(val);
                 return acc;
@@ -1464,7 +1516,7 @@ async function deleteIssue(issueID: number): Promise<void> {
     }
 }
 
-async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+async function saveJob(id: number, jobData: JobWritePayload): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1477,7 +1529,7 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
     return response.data;
 }
 
-async function createJob(jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+async function createJob(jobData: JobWritePayload): Promise<SerializedJob> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1522,7 +1574,7 @@ const validationLayout = (instance: 'tasks' | 'jobs') => async (
     }
 };
 
-async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]> {
+async function getUsers(filter: Record<string, string | number | boolean> = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
     let response = null;

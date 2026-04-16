@@ -336,10 +336,6 @@ export default class Collection {
                     keyframes[object.frame + 1].outside = true;
                     keyframes[object.frame + 1].frame++;
                     keyframes[object.frame + 1].attributes = [];
-                    (keyframes[object.frame + 1].elements || []).forEach((el) => {
-                        el.outside = keyframes[object.frame + 1].outside;
-                        el.frame = keyframes[object.frame + 1].frame;
-                    });
                 }
             } else if (object instanceof Track) {
                 // If this object is a track, iterate through all its
@@ -1196,7 +1192,7 @@ export default class Collection {
         // Add constructed objects to a collection
         // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
-        const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+        const importedArray = [...imported.tags, ...imported.tracks, ...imported.shapes];
         const additionalUndo = [];
         const additionalRedo = [];
         const additionalClientIDs = [];

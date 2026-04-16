@@ -833,6 +833,10 @@ export class Task extends Session {
     public readonly validationFramesPercent: number;
     public readonly validationFramesPerJobPercent: number;
     public readonly frameSelectionMethod: string;
+    public readonly _updateTrigger: FieldUpdateTrigger;
+    public serverFiles: string[];
+    public clientFiles: File[];
+    public remoteFiles: string[];
 
     public meta: {
         get: () => Promise<FramesMetaData>;

@@ -5,7 +5,28 @@
 
 import { ArgumentError } from './exceptions';
 
-const plugins = [];
+type WrappedFunction = ((...args: unknown[]) => unknown) & {
+    implementation?: (...args: unknown[]) => unknown;
+};
+
+type PluginDecorator = {
+    callback?: WrappedFunction;
+    enter?: (
+        plugin: RegisteredPlugin,
+        ...args: unknown[]
+    ) => Promise<APIWrapperEnterOptions | undefined> | APIWrapperEnterOptions | undefined;
+    leave?: (
+        plugin: RegisteredPlugin,
+        result: unknown,
+        ...args: unknown[]
+    ) => Promise<unknown> | unknown;
+};
+
+type RegisteredPlugin = Record<string, unknown> & {
+    functions: PluginDecorator[];
+};
+
+const plugins: RegisteredPlugin[] = [];
 
 export interface APIWrapperEnterOptions {
     preventMethodCall?: boolean;
@@ -13,7 +34,7 @@ export interface APIWrapperEnterOptions {
 }
 
 export default class PluginRegistry {
-    static async apiWrapper(wrappedFunc, ...args) {
+    static async apiWrapper(wrappedFunc: WrappedFunction, ...args: unknown[]) {
         const pluginList = await PluginRegistry.list();
         const aggregatedOptions: APIWrapperEnterOptions = {
             preventMethodCall: false,
@@ -40,6 +61,10 @@ export default class PluginRegistry {
         if ('preventMethodCallWithReturn' in aggregatedOptions) {
             result = aggregatedOptions.preventMethodCallWithReturn;
         } else if (!aggregatedOptions.preventMethodCall) {
+            if (typeof wrappedFunc.implementation !== 'function') {
+                throw new Error('Wrapped API function implementation is not registered');
+            }
+
             result = await wrappedFunc.implementation.call(this, ...args);
         }
 
@@ -54,8 +79,8 @@ export default class PluginRegistry {
     }
 
     // Called with cvat context
-    static async register(plug) {
-        const functions = [];
+    static async register(plug: Record<string, unknown>) {
+        const functions: PluginDecorator[] = [];
 
         if (typeof plug !== 'object') {
             throw new ArgumentError(`Plugin should be an object, but got "${typeof plug}"`);
@@ -73,21 +98,24 @@ export default class PluginRegistry {
             throw new ArgumentError('Plugin must not contain a "functions" field');
         }
 
-        function traverse(plugin, api) {
-            const decorator = {};
+        function traverse(plugin: Record<string, unknown>, api: Record<string, unknown> | WrappedFunction): void {
+            const decorator: PluginDecorator = {};
             for (const key in plugin) {
                 if (Object.prototype.hasOwnProperty.call(plugin, key)) {
-                    if (typeof plugin[key] === 'object') {
-                        if (Object.prototype.hasOwnProperty.call(api, key)) {
-                            traverse(plugin[key], api[key]);
+                    if (typeof plugin[key] === 'object' && plugin[key] !== null) {
+                        if (typeof api !== 'function' && Object.prototype.hasOwnProperty.call(api, key)) {
+                            traverse(
+                                plugin[key] as Record<string, unknown>,
+                                api[key] as Record<string, unknown> | WrappedFunction,
+                            );
                         }
                     } else if (
                         ['enter', 'leave'].includes(key) &&
                         typeof api === 'function' &&
-                        typeof (plugin[key] === 'function')
+                        typeof plugin[key] === 'function'
                     ) {
                         decorator.callback = api;
-                        decorator[key] = plugin[key];
+                        decorator[key as 'enter' | 'leave'] = plugin[key] as PluginDecorator['enter'];
                     }
                 }
             }
@@ -97,14 +125,15 @@ export default class PluginRegistry {
             }
         }
 
-        traverse(plug, { cvat: this });
+        traverse(plug, { cvat: this as unknown as Record<string, unknown> });
 
-        Object.defineProperty(plug, 'functions', {
+        const registeredPlugin = plug as RegisteredPlugin;
+        Object.defineProperty(registeredPlugin, 'functions', {
             value: functions,
             writable: false,
         });
 
-        plugins.push(plug);
+        plugins.push(registeredPlugin);
     }
 
     static async list() {

@@ -31,6 +31,7 @@ import {
     SerializedLabel, SerializedTask, SerializedJobValidationLayout,
     SerializedTaskValidationLayout,
 } from './server-response-types';
+import { Label } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -99,7 +100,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             const jobSpec = {
                 ...(this.assignee ? { assignee: this.assignee.id } : {}),
                 ...(this.stage ? { stage: this.stage } : {}),
-                ...(this.state ? { stage: this.state } : {}),
+                ...(this.state ? { state: this.state } : {}),
                 type: this.type,
                 task_id: this.taskId,
             };
@@ -694,13 +695,20 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         sourceStorage: 'source_storage',
                         targetStorage: 'target_storage',
                     }),
+                } as Record<string, unknown> & {
+                    assignee_id?: { id: number } | number | null;
+                    labels?: Array<Label | SerializedLabel>;
                 };
 
-                if (taskData.assignee_id) {
+                if (taskData.assignee_id && typeof taskData.assignee_id === 'object') {
                     taskData.assignee_id = taskData.assignee_id.id;
                 }
 
-                for await (const label of taskData.labels || []) {
+                for (const label of taskData.labels || []) {
+                    if (!(label instanceof Label)) {
+                        continue;
+                    }
+
                     if (label.deleted) {
                         await serverProxy.labels.delete(label.id);
                     } else if (label.patched) {
@@ -710,7 +718,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
 
                 // leave only new labels to create them via task PATCH request
                 taskData.labels = (taskData.labels || [])
-                    .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
+                    .filter((label): label is Label => !Number.isInteger(label.id))
+                    .map((el) => el.toJSON());
                 if (!taskData.labels.length) {
                     delete taskData.labels;
                 }
