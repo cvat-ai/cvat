@@ -11,6 +11,7 @@ jobs:
 
           echo "Bandit version: "$(bandit --version | head -1)
           bandit -a file --ini .bandit --recursive .
+
   black:
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +23,7 @@ jobs:
           echo "Black version: $(black --version)"
 
           black --check --diff .
+
   hadolint:
     runs-on: ubuntu-latest
     steps:
@@ -42,6 +44,7 @@ jobs:
 
           git ls-files -z 'Dockerfile*' '*/Dockerfile*' | xargs -0 "$HADOLINT"
           -t "$VERIFICATION_LEVEL"
+
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -53,6 +56,7 @@ jobs:
           echo "isort version: $(isort --version-number)"
 
           isort --check --diff --resolve-all-configs .
+
   pylint:
     runs-on: ubuntu-latest
     steps:
@@ -98,6 +102,7 @@ jobs:
         run: |
           echo "Pylint version: "$(pylint --version | head -1)
           pylint -j0 .
+
   regal:
     runs-on: ubuntu-latest
     steps:
@@ -107,6 +112,7 @@ jobs:
         with:
           version: v0.21.3
       - run: regal lint --format=github cvat/apps/*/rules
+
   spellcheck:
     runs-on: ubuntu-latest
     steps:
@@ -117,6 +123,7 @@ jobs:
 
           echo "Typos version: $(typos --version )"
           typos
+
   eslint:
     runs-on: ubuntu-latest
     steps:
@@ -165,6 +172,7 @@ jobs:
         run: |
           echo "ESLint version: "$(yarn run eslint --version)
           yarn run eslint .
+
   typescript:
     runs-on: ubuntu-latest
     steps:
@@ -208,6 +216,7 @@ jobs:
           yarn install --immutable
       - name: Run TypeScript checks for cvat-data
         run: yarn run tsc -p cvat-data/tsconfig.json
+
   remark:
     runs-on: ubuntu-latest
     steps:
@@ -253,6 +262,7 @@ jobs:
         run: |
           echo "Remark version: "`npx remark --version`
           npx remark --quiet --frail -i .remarkignore .
+
   stylelint:
     runs-on: ubuntu-latest
     steps:
