@@ -1,6 +1,5 @@
 name: linters
 on: pull_request
-
 jobs:
   bandit:
     runs-on: ubuntu-latest
@@ -13,6 +12,7 @@ jobs:
 
           echo "Bandit version: "$(bandit --version | head -1)
           bandit -a file --ini .bandit --recursive .
+
   black:
     runs-on: ubuntu-latest
     steps:
@@ -30,21 +30,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run checks
         env:
-          HADOLINT: "${{ github.workspace }}/hadolint"
-          HADOLINT_VER: "2.12.0"
-          VERIFICATION_LEVEL: "error"
+          HADOLINT: '${{ github.workspace }}/hadolint'
+          HADOLINT_VER: 2.12.0
+          VERIFICATION_LEVEL: error
         run: |
           curl -sLo "$HADOLINT" "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64"
           chmod +x "$HADOLINT"
           echo "hadolint version: $("$HADOLINT" --version)"
-
           git ls-files -z 'Dockerfile*' '*/Dockerfile*' | xargs -0 "$HADOLINT" -t "$VERIFICATION_LEVEL"
+
   isort:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run checks
         run: |
           pipx install $(grep "^isort" ./dev/requirements.txt)
@@ -102,21 +104,23 @@ jobs:
           echo "Pylint version: "$(pylint --version | head -1)
           pylint -j0 .
 
-
   regal:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Regal
         uses: StyraInc/setup-regal@33a142b1189004e0f14bf42b15972c67eecce776
         with:
           version: v0.21.3
+
       - run: regal lint --format=github cvat/apps/*/rules
 
   spellcheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run checks
         run: |
           pipx install $(grep "^typos==" ./dev/requirements.txt)
@@ -128,140 +132,56 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - uses: ./.github/actions/setup-yarn
         with:
-          node-version: '22.x'
-
-      - name: Enable corepack
-        run: corepack enable yarn
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
-
-      - name: Cache yarn cache
-        uses: actions/cache@v4
-        id: cache-yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Get yarn version
-        id: yarn-version
-        run: |
-          echo "version=$(node --version)" >> $GITHUB_OUTPUT
-
-      - name: Cache node_modules
-        id: cache-node-modules
-        uses: actions/cache@v4
-        with:
-          path: |
+          node-version: 22.x
+          node-modules-path: |
             node_modules
             tests/node_modules
-          key: ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-
-      - name: Install dependencies
-        if: |
-          steps.cache-yarn-cache.outputs.cache-hit != 'true' ||
-          steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: |
-          yarn install --immutable
-          (cd tests && yarn install --immutable)
+          install-command: |
+            yarn install --immutable
+            (cd tests && yarn install --immutable)
 
       - name: Run checks
         run: |
           echo "ESLint version: "$(yarn run eslint --version)
           yarn run eslint .
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-yarn
+        with:
+          node-version: 22.x
+
+      - name: Run TypeScript checks for cvat-data
+        run: yarn run tsc -p cvat-data/tsconfig.json
+
   remark:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-      - name: Enable corepack
-        run: corepack enable yarn
 
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
+      - uses: ./.github/actions/setup-yarn
+        with:
+          node-version: 22.x
 
-      - name: Cache yarn cache
-        uses: actions/cache@v4
-        id: cache-yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Get yarn version
-        id: yarn-version
-        run: |
-          echo "version=$(node --version)" >> $GITHUB_OUTPUT
-      - name: Cache node_modules
-        id: cache-node-modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-
-      - name: Install dependencies
-        if: |
-          steps.cache-yarn-cache.outputs.cache-hit != 'true' ||
-          steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: |
-          yarn install --immutable
       - name: Run checks
         run: |
           echo "Remark version: "`npx remark --version`
           npx remark --quiet --frail -i .remarkignore .
 
-
   stylelint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - uses: ./.github/actions/setup-yarn
         with:
-          node-version: '22.x'
-
-      - name: Enable corepack
-        run: corepack enable yarn
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "dir=$(yarn config get cacheFolder)" >> $GITHUB_OUTPUT
-
-      - name: Cache yarn cache
-        uses: actions/cache@v4
-        id: cache-yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-
-      - name: Get yarn version
-        id: yarn-version
-        run: |
-          echo "version=$(node --version)" >> $GITHUB_OUTPUT
-      - name: Cache node_modules
-        id: cache-node-modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ steps.yarn-version.outputs.version }}-nodemodules-
-      - name: Install dependencies
-        if: |
-          steps.cache-yarn-cache.outputs.cache-hit != 'true' ||
-          steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: |
-          yarn install --immutable
+          node-version: 22.x
 
       - name: Run checks
         run: |
