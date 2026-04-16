@@ -184,8 +184,7 @@ context('Snap tool feature.', () => {
             });
 
             afterEach(() => {
-                // cy.removeAnnotations();
-                cy.saveJob();
+                cy.removeAnnotations();
 
                 // Deactivate snap to contour.
                 toggleSnapTool('contour', false);
@@ -339,8 +338,7 @@ context('Snap tool feature.', () => {
         });
 
         afterEach(() => {
-            // cy.removeAnnotations();
-            cy.saveJob();
+            cy.removeAnnotations();
             toggleSnapTool('point', false);
             rectanglePointsGlobal = null;
         });
