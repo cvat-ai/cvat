@@ -157,8 +157,8 @@ jobs:
         with:
           node-version: 22.x
 
-      - name: Run TypeScript checks for cvat-data
-        run: yarn run tsc -p cvat-data/tsconfig.json
+      - name: Run TypeScript checks for cvat frontend code
+        run: yarn run type-check
 
   remark:
     runs-on: ubuntu-latest

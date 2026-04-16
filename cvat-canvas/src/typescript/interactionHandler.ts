@@ -566,7 +566,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
 
             if (this.settings.removalStrategy === 'last') {
-                this.deletionButtons.values().forEach((deleteBtn) => deleteBtn.hide());
+                this.deletionButtons.forEach((deleteBtn) => deleteBtn.hide());
                 const lastShape = this.allPrompts?.[this.allPrompts.length - 1];
                 if (lastShape) {
                     this.deletionButtons.get(lastShape)?.show();
