@@ -834,9 +834,6 @@ export class Task extends Session {
     public readonly validationFramesPerJobPercent: number;
     public readonly frameSelectionMethod: string;
     public readonly _updateTrigger: FieldUpdateTrigger;
-    public serverFiles: string[];
-    public clientFiles: File[];
-    public remoteFiles: string[];
 
     public meta: {
         get: () => Promise<FramesMetaData>;
@@ -1274,7 +1271,12 @@ export class Task extends Session {
     }
 
     async save(
-        fields: Record<string, any> = {},
+        fields: {
+            [index: string]: any;
+            clientFiles: File[];
+            serverFiles: string[];
+            remoteFiles: string[];
+        },
         options?: { updateStatusCallback?: (updateData: Request | UpdateStatusData) => void },
     ): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, fields, options);

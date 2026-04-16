@@ -751,18 +751,23 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (typeof this.bugTracker !== 'undefined') {
                 taskSpec.bug_tracker = this.bugTracker;
             }
+
             if (typeof this.segmentSize !== 'undefined') {
                 taskSpec.segment_size = this.segmentSize;
             }
+
             if (typeof this.overlap !== 'undefined') {
                 taskSpec.overlap = this.overlap;
             }
+
             if (typeof this.projectId !== 'undefined') {
                 taskSpec.project_id = this.projectId;
             }
+
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
             }
+
             if (typeof this.organizationId !== 'undefined') {
                 taskSpec.organization_id = this.organizationId;
             }
@@ -780,13 +785,13 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             const taskDataSpec = {
-                client_files: this.clientFiles,
-                server_files: this.serverFiles,
-                remote_files: this.remoteFiles,
                 image_quality: this.imageQuality,
                 use_zip_chunks: this.useZipChunks,
                 use_cache: this.useCache,
                 sorting_method: this.sortingMethod,
+                client_files: fields.clientFiles,
+                server_files: fields.serverFiles,
+                remote_files: fields.remoteFiles,
                 ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
                 ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
                 ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
