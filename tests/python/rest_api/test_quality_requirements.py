@@ -142,7 +142,9 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
             )
             assert response.status == HTTPStatus.OK
 
-    def _create_attribute_quality_task(self, user: str, *, name: str) -> tuple[int, dict[str, Any], Any, Any, dict[str, int]]:
+    def _create_attribute_quality_task(
+        self, user: str, *, name: str
+    ) -> tuple[int, dict[str, Any], Any, Any, dict[str, int]]:
         task_id, _ = create_task(
             user,
             spec={
@@ -908,9 +910,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         )
         assert attribute_group["conflict_count"] == expected_report["conflict_count"]
 
-    def test_task_report_data_reports_attribute_conflict_names_and_error_severity(
-        self, admin_user
-    ):
+    def test_task_report_data_reports_attribute_conflict_names_and_error_severity(self, admin_user):
         (
             task_id,
             settings,
@@ -967,13 +967,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert conflicts[0]["attribute_names"] == ["color", "size"]
         assert report_data["comparison_summary"]["error_count"] == 1
         assert report_data["comparison_summary"]["warning_count"] == 0
-        assert (
-            report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 1
-        )
+        assert report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 1
 
-    def test_task_report_deduplicates_aggregated_conflicts_across_requirements(
-        self, admin_user
-    ):
+    def test_task_report_deduplicates_aggregated_conflicts_across_requirements(self, admin_user):
         (
             task_id,
             settings,

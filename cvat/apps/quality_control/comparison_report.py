@@ -206,9 +206,11 @@ class AnnotationConflict(ReportNode):
             frame_id=d["frame_id"],
             type=conflict_type,
             annotation_ids=list(AnnotationId.from_dict(v) for v in d["annotation_ids"]),
-            severity=AnnotationConflictSeverity(d["severity"])
-            if d.get("severity")
-            else cls.default_severity_for_type(conflict_type),
+            severity=(
+                AnnotationConflictSeverity(d["severity"])
+                if d.get("severity")
+                else cls.default_severity_for_type(conflict_type)
+            ),
             attribute_names=sorted(set(d.get("attribute_names") or [])),
         )
 
@@ -219,7 +221,9 @@ _CONFLICT_SEVERITY_RANK = {
 }
 
 
-def _annotation_id_key(annotation_id: AnnotationId) -> tuple[int, int, AnnotationType, ShapeType | None]:
+def _annotation_id_key(
+    annotation_id: AnnotationId,
+) -> tuple[int, int, AnnotationType, ShapeType | None]:
     return (
         annotation_id.obj_id,
         annotation_id.job_id,
@@ -230,11 +234,15 @@ def _annotation_id_key(annotation_id: AnnotationId) -> tuple[int, int, Annotatio
 
 def annotation_conflict_key(
     conflict: AnnotationConflict,
-) -> tuple[int, AnnotationConflictType, tuple[tuple[int, int, AnnotationType, ShapeType | None], ...]]:
+) -> tuple[
+    int, AnnotationConflictType, tuple[tuple[int, int, AnnotationType, ShapeType | None], ...]
+]:
     return (
         conflict.frame_id,
         conflict.type,
-        tuple(sorted(_annotation_id_key(annotation_id) for annotation_id in conflict.annotation_ids)),
+        tuple(
+            sorted(_annotation_id_key(annotation_id) for annotation_id in conflict.annotation_ids)
+        ),
     )
 
 
@@ -255,7 +263,11 @@ def deduplicate_annotation_conflicts(
     conflicts: list[AnnotationConflict],
 ) -> list[AnnotationConflict]:
     deduplicated_conflicts: dict[
-        tuple[int, AnnotationConflictType, tuple[tuple[int, int, AnnotationType, ShapeType | None], ...]],
+        tuple[
+            int,
+            AnnotationConflictType,
+            tuple[tuple[int, int, AnnotationType, ShapeType | None], ...],
+        ],
         AnnotationConflict,
     ] = {}
 
