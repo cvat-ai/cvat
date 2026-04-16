@@ -1,5 +1,5 @@
 name: linters
-'on': pull_request
+on: pull_request
 jobs:
   bandit:
     runs-on: ubuntu-latest
@@ -36,17 +36,11 @@ jobs:
           HADOLINT: '${{ github.workspace }}/hadolint'
           HADOLINT_VER: 2.12.0
           VERIFICATION_LEVEL: error
-        run: >
-          curl -sLo "$HADOLINT"
-          "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64"
-
+        run: |
+          curl -sLo "$HADOLINT" "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64"
           chmod +x "$HADOLINT"
-
           echo "hadolint version: $("$HADOLINT" --version)"
-
-
-          git ls-files -z 'Dockerfile*' '*/Dockerfile*' | xargs -0 "$HADOLINT"
-          -t "$VERIFICATION_LEVEL"
+          git ls-files -z 'Dockerfile*' '*/Dockerfile*' | xargs -0 "$HADOLINT" -t "$VERIFICATION_LEVEL"
 
   isort:
     runs-on: ubuntu-latest
@@ -87,18 +81,17 @@ jobs:
           path: |
             ${{ steps.setup-pipx.outputs.cache_home_dir }}
             ${{ steps.setup-pipx.outputs.cache_bin_dir }}
-          key: >-
-            pipx-pylint-${{ steps.setup-pipx.outputs.version}}-${{
-            steps.setup-pipx.outputs.python_version}}-${{
-            hashFiles('./dev/requirements.txt', './cvat/requirements/base.txt')
-            }}
+          # cache based on pipx version, python version, and both requirements files
+          # nb! we need to keep python version in the key because packages might be not compatible between python versions
+          key: pipx-pylint-${{ steps.setup-pipx.outputs.version}}-${{ steps.setup-pipx.outputs.python_version}}-${{ hashFiles('./dev/requirements.txt', './cvat/requirements/base.txt') }}
 
       - name: Install pylint
         if: steps.cache-pipx.outputs.cache-hit != 'true'
         shell: bash
         env:
-          PIPX_HOME: '${{ steps.setup-pipx.outputs.cache_home_dir }}'
-          PIPX_BIN_DIR: '${{ steps.setup-pipx.outputs.cache_bin_dir }}'
+          # nb! install in our custom cached dir, using /opt will not work because of permission issues
+          PIPX_HOME: ${{ steps.setup-pipx.outputs.cache_home_dir }}
+          PIPX_BIN_DIR: ${{ steps.setup-pipx.outputs.cache_bin_dir }}
         run: |
           pipx install $(grep "^pylint==" ./dev/requirements.txt)
 
