@@ -27,3 +27,16 @@ export function assignAllTo(username, numberOfObjects = null) {
     cy.get('.cvat-user-search-field').type(username, { delay: 0 }); // all at once
     return cy.get('.cvat-user-search-field').type('{enter}');
 }
+
+export function checkAutoborderPointsCount(expectedCount) {
+    if (expectedCount === 0) {
+        cy.get('.cvat_canvas_autoborder_point').should('not.exist');
+    } else {
+        cy.get('.cvat_canvas_autoborder_point')
+            .should('exist')
+            .and('be.visible')
+            .then(($autoborderPoints) => {
+                expect($autoborderPoints.length).to.be.equal(expectedCount);
+            });
+    }
+}

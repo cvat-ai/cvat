@@ -769,6 +769,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.controller.geometry = dragged;
         this.geometry = dragged;
         this.moveCanvas();
+
+        this.canvas.dispatchEvent(
+            new CustomEvent('canvas.zoom', {
+                bubbles: false,
+                cancelable: true,
+            }),
+        );
     };
 
     private moveCanvas(): void {

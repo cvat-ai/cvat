@@ -80,7 +80,7 @@ cvat_db      docker-entrypoint.sh postgres    Up             5432/tcp
 cvat_proxy   /docker-entrypoint.sh /bin ...   Up             0.0.0.0:8080->80/tcp,:::8080->80/tcp
 cvat_redis   docker-entrypoint.sh redis ...   Up             6379/tcp
 cvat_ui      /docker-entrypoint.sh ngin ...   Up             80/tcp
-nuclio       /docker-entrypoint.sh sh - ...   Up (healthy)   80/tcp, 0.0.0.0:8070->8070/tcp,:::8070->8070/tcp
+nuclio       /docker-entrypoint.sh sh - ...   Up (healthy)   80/tcp, 8070/tcp
 ```
 
 Next step is to deploy builtin serverless functions using Nuclio command
@@ -838,7 +838,7 @@ docker ps --filter NAME=^nuclio$
 ```
 ```
 CONTAINER ID   IMAGE                                   COMMAND                  CREATED       STATUS                    PORTS                                               NAMES
-7ab0c076c927   quay.io/nuclio/dashboard:1.5.16-amd64   "/docker-entrypoint.…"   6 weeks ago   Up 46 minutes (healthy)   80/tcp, 0.0.0.0:8070->8070/tcp, :::8070->8070/tcp   nuclio
+7ab0c076c927   quay.io/nuclio/dashboard:1.5.16-amd64   "/docker-entrypoint.…"   6 weeks ago   Up 46 minutes (healthy)   80/tcp, 8070/tcp   nuclio
 ```
 
 Be sure that the model, which doesn't work, is healthy. In my case Inside Outside
