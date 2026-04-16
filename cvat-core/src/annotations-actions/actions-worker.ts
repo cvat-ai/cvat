@@ -22,7 +22,7 @@ export interface WorkerRequest {
     command: WorkerAction;
     opencvPath?: string;
     shapes?: SimplifyShape[];
-    accuracy?: number;
+    threshold?: number;
 }
 
 export interface WorkerResponse {
@@ -39,7 +39,7 @@ class ActionsWorkerManager {
         this.initialized = true;
     }
 
-    public simplifyShapes(shapes: SimplifyShape[], accuracy: number): SimplifyShape[] {
+    public simplifyShapes(shapes: SimplifyShape[], threshold: number): SimplifyShape[] {
         if (!this.initialized || !this.cvInterface) {
             throw new Error('Worker not initialized');
         }
@@ -53,7 +53,7 @@ class ActionsWorkerManager {
                 const closed = shape.shapeType === 'polygon';
                 const simplifiedPoints = this.cvInterface!.contours.simplifyPolygon(
                     shape.points,
-                    accuracy,
+                    threshold,
                     closed,
                 );
 
@@ -97,17 +97,17 @@ if ((self as any).importScripts) {
                     } as WorkerResponse);
                 });
         } else if (command === WorkerAction.SIMPLIFY_POLYGONS) {
-            const { shapes, accuracy } = event.data;
+            const { shapes, threshold } = event.data;
 
-            if (!shapes || accuracy === undefined) {
+            if (!shapes || threshold === undefined) {
                 postMessage({
-                    error: 'Missing shapes or accuracy for simplification',
+                    error: 'Missing shapes or threshold for simplification',
                 } as WorkerResponse);
                 return;
             }
 
             try {
-                const simplifiedShapes = manager.simplifyShapes(shapes, accuracy);
+                const simplifiedShapes = manager.simplifyShapes(shapes, threshold);
                 postMessage({
                     shapes: simplifiedShapes,
                 } as WorkerResponse);

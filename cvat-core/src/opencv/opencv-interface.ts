@@ -46,7 +46,7 @@ export interface OpenCVInterface {
         convexHull: (src: [number, number][][]) => [number, number][];
         findContours: (src: any) => [number, number][][];
         approxPoly: (points: [number, number][], threshold: number, closed?: boolean) => [number, number][];
-        simplifyPolygon: (points: number[], accuracy: number, closed: boolean) => number[];
+        simplifyPolygon: (points: number[], threshold: number, closed: boolean) => number[];
     };
     segmentation: {
         intelligentScissorsFactory: () => IntelligentScissorsInterface;
@@ -182,11 +182,10 @@ export function createOpenCVInterface(cv: any): OpenCVInterface {
 
             simplifyPolygon: function simplifyPolygon(
                 points: number[],
-                accuracy: number,
+                threshold: number,
                 closed: boolean,
             ): number[] {
                 const minPoints = closed ? 3 : 2;
-                const threshold = thresholdFromAccuracy(accuracy);
                 const minValues = minPoints * 2;
 
                 if (points.length < minValues) {

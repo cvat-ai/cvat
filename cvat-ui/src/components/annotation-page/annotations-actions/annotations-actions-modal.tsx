@@ -20,7 +20,8 @@ import Modal from 'antd/lib/modal';
 import Alert from 'antd/lib/alert';
 import InputNumber from 'antd/lib/input-number';
 import Switch from 'antd/lib/switch';
-import Slider from 'antd/lib/slider';
+import Table from 'antd/lib/table';
+import QuestionCircleOutlined from '@ant-design/icons/lib/icons/QuestionCircleOutlined';
 
 import config from 'config';
 import { createAction, ActionUnion } from 'utils/redux';
@@ -246,23 +247,14 @@ const componentStorage = createStore(reducer, {
 
 function ActionParameterComponent(props: ActionParameterProps & {
     onChange: (value: string) => void;
-    parameterName?: string;
-    tooltip?: string;
 }): JSX.Element {
     const {
-        defaultValue, type, values, onChange, parameterName, tooltip,
+        defaultValue, type, values, onChange,
     } = props;
     const store = getCVATStore();
 
     const job = store.getState().annotation.job.instance as Job;
-    let computedDefaultValue = typeof defaultValue === 'function' ? defaultValue({ instance: job }) : defaultValue;
-
-    if (parameterName === 'Threshold') {
-        const savedAccuracy = store.getState().settings.workspace.defaultApproxPolyAccuracy;
-        if (savedAccuracy !== undefined) {
-            computedDefaultValue = String(savedAccuracy);
-        }
-    }
+    const computedDefaultValue = typeof defaultValue === 'function' ? defaultValue({ instance: job }) : defaultValue;
 
     const [value, setValue] = useState(computedDefaultValue);
     useEffect(() => {
@@ -289,35 +281,6 @@ function ActionParameterComponent(props: ActionParameterProps & {
                     setValue(String(val));
                 }}
             />
-        );
-    }
-
-    if (type === ActionParameterType.SLIDER) {
-        const [min, max, step] = computedValues.map((val) => +val);
-
-        return (
-            <div className='cvat-approx-poly-threshold-wrapper cvat-actions-slider-wrapper'>
-                <Slider
-                    value={+value}
-                    min={min}
-                    max={max}
-                    step={step}
-                    dots
-                    tooltip={{
-                        open: false,
-                    }}
-                    onChange={(_value: number) => {
-                        setValue(`${_value}`);
-                    }}
-                />
-                {tooltip ? (
-                    <CVATTooltip title={tooltip}>
-                        <Text type='secondary'>{parameterName?.toLowerCase() || 'value'}</Text>
-                    </CVATTooltip>
-                ) : (
-                    <Text type='secondary'>{parameterName?.toLowerCase() || 'value'}</Text>
-                )}
-            </div>
         );
     }
 
@@ -564,33 +527,64 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                             {Object.entries(activeAction.parameters)
                                 .map(([name, {
                                     defaultValue, type, values, tooltip,
-                                }], idx) => (
-                                    <Col
-                                        key={`${activeAction.name}_${idx}`}
-                                        span={24}
-                                        className='cvat-action-runner-action-parameter'
-                                    >
-                                        {type !== ActionParameterType.SLIDER && (
-                                            tooltip ? (
-                                                <CVATTooltip title={tooltip}>
+                                }], idx) => {
+                                    const renderTooltip = (): React.ReactNode | string | null => {
+                                        if (!tooltip) return null;
+
+                                        const { type: tooltipType, content } = tooltip;
+
+                                        if (typeof tooltipType === 'string' && typeof content === 'string') {
+                                            return content;
+                                        }
+
+                                        if (tooltipType === 'table' && typeof content === 'object') {
+                                            return (
+                                                <div className='cvat-annotation-actions-tooltip-table'>
+                                                    <Table
+                                                        rowKey='key'
+                                                        dataSource={content.data}
+                                                        columns={content.columns}
+                                                        size='small'
+                                                        pagination={false}
+                                                    />
+                                                </div>
+                                            );
+                                        }
+
+                                        return null;
+                                    };
+
+                                    return (
+                                        <Col
+                                            key={`${activeAction.name}_${idx}`}
+                                            span={24}
+                                            className='cvat-action-runner-action-parameter'
+                                        >
+                                            {tooltip ? (
+                                                <CVATTooltip
+                                                    title={renderTooltip()}
+                                                    overlayStyle={{ maxWidth: 450 }}
+                                                >
                                                     <Text>{name}</Text>
+                                                    {' '}
+                                                    <QuestionCircleOutlined />
                                                 </CVATTooltip>
                                             ) : (
                                                 <Text>{name}</Text>
-                                            )
-                                        )}
-                                        <ActionParameterComponent
-                                            onChange={(value: string) => {
-                                                dispatch(reducerActions.updateActionParameter(name, value));
-                                            }}
-                                            defaultValue={actionParameters[activeAction.name]?.[name] ?? defaultValue}
-                                            type={type}
-                                            values={values}
-                                            parameterName={name}
-                                            tooltip={tooltip}
-                                        />
-                                    </Col>
-                                ))}
+                                            )}
+                                            <ActionParameterComponent
+                                                onChange={(value: string) => {
+                                                    dispatch(reducerActions.updateActionParameter(name, value));
+                                                }}
+                                                defaultValue={
+                                                    actionParameters[activeAction.name]?.[name] ?? defaultValue
+                                                }
+                                                type={type}
+                                                values={values}
+                                            />
+                                        </Col>
+                                    );
+                                })}
                         </Row>
                     </Col>
                 ) : null}
@@ -625,7 +619,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                         type='primary'
                         loading={fetching}
                         disabled={!activeAction || fetching}
-                        onClick={async () => {
+                        onClick={() => {
                             const appState = storage.getState();
                             const canvasInstance = appState.annotation.canvas.instance as Canvas;
                             const frameData = appState.annotation.player.frame.data;
@@ -637,53 +631,44 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                     dispatch(reducerActions.updateProgress(_progress, _message));
                                 };
 
-                                try {
-                                    const actionParams = { ...actionParameters[activeAction.name] };
-                                    const currentFrame = storage.getState().annotation.player.frame.number;
-                                    const actionPromise = targetObjectState ? core.actions.call(
-                                        jobInstance,
-                                        activeAction,
-                                        actionParams,
-                                        currentFrame,
-                                        [targetObjectState],
-                                        updateProgressWrapper,
-                                        () => cancellationRef.current,
-                                    ) : core.actions.run(
-                                        jobInstance,
-                                        activeAction,
-                                        actionParams,
-                                        currentFrameAction ? currentFrame : frameFrom,
-                                        currentFrameAction ? currentFrame : frameTo,
-                                        storage.getState().annotation.annotations.filters,
-                                        updateProgressWrapper,
-                                        () => cancellationRef.current,
-                                    );
+                                const actionParams = { ...actionParameters[activeAction.name] };
+                                const currentFrame = storage.getState().annotation.player.frame.number;
+                                const actionPromise = targetObjectState ? core.actions.call(
+                                    jobInstance,
+                                    activeAction,
+                                    actionParams,
+                                    currentFrame,
+                                    [targetObjectState],
+                                    updateProgressWrapper,
+                                    () => cancellationRef.current,
+                                ) : core.actions.run(
+                                    jobInstance,
+                                    activeAction,
+                                    actionParams,
+                                    currentFrameAction ? currentFrame : frameFrom,
+                                    currentFrameAction ? currentFrame : frameTo,
+                                    storage.getState().annotation.annotations.filters,
+                                    updateProgressWrapper,
+                                    () => cancellationRef.current,
+                                );
 
-                                    actionPromise.then(() => {
-                                        if (!cancellationRef.current) {
-                                            canvasInstance.setup(frameData, []);
-                                            storage.dispatch(fetchAnnotationsAsync());
-                                            if (targetObjectState !== null) {
-                                                onClose();
-                                            }
+                                actionPromise.then(() => {
+                                    if (!cancellationRef.current) {
+                                        canvasInstance.setup(frameData, []);
+                                        storage.dispatch(fetchAnnotationsAsync());
+                                        if (targetObjectState !== null) {
+                                            onClose();
                                         }
-                                    }).finally(() => {
-                                        dispatch(reducerActions.resetAfterRun());
-                                    }).catch((error: unknown) => {
-                                        if (error instanceof Error) {
-                                            notification.error({
-                                                message: error.message,
-                                            });
-                                        }
-                                    });
-                                } catch (error: unknown) {
+                                    }
+                                }).finally(() => {
                                     dispatch(reducerActions.resetAfterRun());
+                                }).catch((error: unknown) => {
                                     if (error instanceof Error) {
                                         notification.error({
-                                            message: `Failed to initialize dependencies: ${error.message}`,
+                                            message: error.message,
                                         });
                                     }
-                                }
+                                });
                             }
                         }}
                     >

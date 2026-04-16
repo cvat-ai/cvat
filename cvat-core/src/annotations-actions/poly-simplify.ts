@@ -11,12 +11,12 @@ import { WorkerAction } from './actions-worker';
 import type { SimplifyShape, WorkerRequest, WorkerResponse } from './actions-worker';
 
 export class PolySimplify extends BaseShapesAction {
-    #accuracy = 0;
+    #threshold = 1.0;
     #worker: Worker | null = null;
     #opencvPath: string = '';
 
     public async init(_instance: any, parameters: Record<string, any>): Promise<void> {
-        this.#accuracy = parameters.Threshold as number;
+        this.#threshold = parameters.Distance as number;
         // Get the OPENCV_PATH from window.cvat.config if available
         this.#opencvPath = (window as any)?.cvat?.config?.OPENCV_PATH || '/assets/opencv_4.8.0.js';
 
@@ -112,7 +112,7 @@ export class PolySimplify extends BaseShapesAction {
             this.#worker!.postMessage({
                 command: WorkerAction.SIMPLIFY_POLYGONS,
                 shapes,
-                accuracy: this.#accuracy,
+                threshold: this.#threshold,
             } as WorkerRequest);
         });
     }
@@ -138,11 +138,51 @@ export class PolySimplify extends BaseShapesAction {
 
     public get parameters(): ActionParameters | null {
         return {
-            Threshold: {
-                type: ActionParameterType.SLIDER,
-                values: ['0', '13', '1'], // min, max, step
-                defaultValue: '7',
-                tooltip: 'Lower values create simpler shapes with fewer points. Higher values preserve more detail and points.',
+            Distance: {
+                type: ActionParameterType.NUMBER,
+                values: ['0.1', '64', '0.1'], // min, max, step
+                defaultValue: '1.0',
+                tooltip: {
+                    type: 'table',
+                    content: {
+                        columns: [
+                            {
+                                title: 'Distance',
+                                dataIndex: 'distance',
+                                key: 'distance',
+                            },
+                            {
+                                title: 'Detail',
+                                dataIndex: 'detail',
+                                key: 'detail',
+                            },
+                            {
+                                title: 'Reduction',
+                                dataIndex: 'reduction',
+                                key: 'reduction',
+                            },
+                            {
+                                title: 'Use Case',
+                                dataIndex: 'useCase',
+                                key: 'useCase',
+                            },
+                        ],
+                        data: [
+                            {
+                                distance: '0.5', detail: 'High detail', reduction: '~10%', useCase: 'Precise imaging',
+                            },
+                            {
+                                distance: '1.0', detail: 'Balanced', reduction: '~30-50%', useCase: 'General annotations',
+                            },
+                            {
+                                distance: '2.0', detail: 'Simplified', reduction: '~60-80%', useCase: 'High optimization',
+                            },
+                            {
+                                distance: '5.0+', detail: 'Very simple', reduction: '~90%', useCase: 'Rough shapes',
+                            },
+                        ],
+                    },
+                },
             },
         };
     }
