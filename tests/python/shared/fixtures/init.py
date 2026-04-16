@@ -83,6 +83,11 @@ def pytest_addoption(parser):
         action="store_true",
         help="Update data.json without running tests. (default: %(default)s)",
     )
+    group._addoption(
+        "--keep-data",
+        action="store_true",
+        help="Do not reset volumes and database. (default: %(default)s)",
+    )
 
     group._addoption(
         "--platform",
@@ -418,6 +423,7 @@ def session_start(
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
     rebuild = session.config.getoption("--rebuild")
+    keep_data = session.config.getoption("--keep-data")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
 
@@ -440,6 +446,7 @@ def session_start(
             dumpdb,
             cleanup,
             rebuild,
+            keep_data,
             cvat_root_dir,
             cvat_db_dir,
             extra_dc_files,
@@ -447,11 +454,20 @@ def session_start(
         )
 
     elif platform == "kube":
-        kube_start(cvat_db_dir)
+        kube_start(cvat_db_dir, keep_data)
 
 
 def local_start(
-    start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files, waiting_time
+    start,
+    stop,
+    dumpdb,
+    cleanup,
+    rebuild,
+    keep_data,
+    cvat_root_dir,
+    cvat_db_dir,
+    extra_dc_files,
+    waiting_time,
 ):
     if start and stop:
         raise Exception("--start-services and --stop-services are incompatible")
@@ -480,24 +496,29 @@ def local_start(
 
     start_services(dc_files, rebuild, cvat_root_dir)
 
-    docker_restore_data_volumes()
-    docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
-    docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
+    if not keep_data:
+        docker_restore_data_volumes()
+        docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
+        docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
 
-    wait_for_services(waiting_time)
+        wait_for_services(waiting_time)
 
-    docker_exec_cvat(
-        ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
-    )
-    docker_exec(
-        Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
-    )
+        docker_exec_cvat(
+            ["sh", "-c", "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json"]
+        )
+        docker_exec(
+            Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
+        )
 
     if start:
         pytest.exit("All necessary containers have been created and started.", returncode=0)
 
 
-def kube_start(cvat_db_dir):
+def kube_start(cvat_db_dir, keep_data):
+    if keep_data:
+        wait_for_services()
+        return
+
     kube_restore_data_volumes()
     server_pod_name = _kube_get_server_pod_name()
     db_pod_name = _kube_get_db_pod_name()
