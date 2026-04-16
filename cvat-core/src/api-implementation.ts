@@ -94,8 +94,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.server.register, async (
         ...args: Parameters<typeof serverProxy.server.register>
     ) => {
-        const user = await serverProxy.server.register(...args);
-        return new User(user);
+        await serverProxy.server.register(...args);
     });
     implementationMixin(cvat.server.login, async (
         ...args: Parameters<typeof serverProxy.server.login>

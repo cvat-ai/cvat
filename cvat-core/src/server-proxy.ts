@@ -455,7 +455,7 @@ async function register(
     lastName: string,
     email: string,
     password: string,
-    confirmations: Record<string, string>,
+    confirmations: { name: string; value: boolean; }[],
 ): Promise<SerializedRegister> {
     let response = null;
     try {

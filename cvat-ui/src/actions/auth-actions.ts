@@ -64,7 +64,7 @@ export const authActions = {
         createAction(AuthActionTypes.LOGIN_FAILED, { error, hasEmailVerificationBeenSent })
     ),
     register: () => createAction(AuthActionTypes.REGISTER),
-    registerSuccess: (user: User) => createAction(AuthActionTypes.REGISTER_SUCCESS, { user }),
+    registerSuccess: () => createAction(AuthActionTypes.REGISTER_SUCCESS),
     registerFailed: (error: any) => createAction(AuthActionTypes.REGISTER_FAILED, { error }),
     logout: () => createAction(AuthActionTypes.LOGOUT),
     logoutSuccess: () => createAction(AuthActionTypes.LOGOUT_SUCCESS),
@@ -116,7 +116,7 @@ export const registerAsync = (
     } = registerData;
 
     try {
-        const user = await cvat.server.register(
+        await cvat.server.register(
             username,
             firstName,
             lastName,
@@ -125,7 +125,7 @@ export const registerAsync = (
             confirmations,
         );
 
-        dispatch(authActions.registerSuccess(user));
+        dispatch(authActions.registerSuccess());
     } catch (error) {
         dispatch(authActions.registerFailed(error));
     }

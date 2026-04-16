@@ -24,7 +24,7 @@ export default class User {
     public readonly isVerified: boolean;
     public readonly hasAnalyticsAccess: boolean;
 
-    constructor(initialData: Partial<SerializedUser>) {
+    constructor(initialData: SerializedUser) {
         const data = {
             id: null,
             username: null,
