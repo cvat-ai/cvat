@@ -40,3 +40,26 @@ export function checkAutoborderPointsCount(expectedCount) {
             });
     }
 }
+
+/**
+ * Draw a shape by clicking through an array of points
+ * using cy.trigger events
+ * @param {Array<{x: number, y: number}>} points - Array of points to trigger
+ */
+export function drawWithTriggers(pointsMap) {
+    pointsMap.forEach((p) => {
+        cy.get('.cvat-canvas-container').trigger('mousemove', ...[p.x, p.y]);
+        cy.get('.cvat-canvas-container').trigger('mousedown', ...[p.x, p.y], { button: 0 });
+    });
+}
+
+/**
+ * Draw a shape by clicking through an array of points
+ * using cy.click
+ * @param {Array<{x: number, y: number}>} points - Array of points to click
+ */
+export function drawWithClicks(pointsMap) {
+    pointsMap.forEach((element) => {
+        cy.get('.cvat-canvas-container').click(element.x, element.y);
+    });
+}
