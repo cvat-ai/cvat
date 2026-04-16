@@ -5,6 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run checks
         run: |
           pipx install $(grep "^bandit" ./dev/requirements.txt)
@@ -16,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run checks
         run: |
           pipx install $(grep "^black" ./dev/requirements.txt)
@@ -28,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run checks
         env:
           HADOLINT: '${{ github.workspace }}/hadolint'
@@ -49,6 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run checks
         run: |
           pipx install $(grep "^isort" ./dev/requirements.txt)
@@ -61,6 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - id: setup-pipx
         shell: bash
         run: |
@@ -75,6 +80,7 @@ jobs:
           echo "cache_bin_dir=$cache_bin_dir" >> $GITHUB_OUTPUT
           echo "version=$(pipx --version)" >> $GITHUB_OUTPUT
           echo "python_version=$(python3 --version)" >> $GITHUB_OUTPUT
+
       - id: cache-pipx
         uses: actions/cache@v4
         with:
@@ -86,6 +92,7 @@ jobs:
             steps.setup-pipx.outputs.python_version}}-${{
             hashFiles('./dev/requirements.txt', './cvat/requirements/base.txt')
             }}
+
       - name: Install pylint
         if: steps.cache-pipx.outputs.cache-hit != 'true'
         shell: bash
@@ -98,6 +105,7 @@ jobs:
           pipx inject pylint \
             $(grep "^pylint-.\+==" ./dev/requirements.txt) \
             $(grep "^django==" ./cvat/requirements/base.txt)
+
       - name: Run checks
         run: |
           echo "Pylint version: "$(pylint --version | head -1)
@@ -107,16 +115,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Regal
         uses: StyraInc/setup-regal@33a142b1189004e0f14bf42b15972c67eecce776
         with:
           version: v0.21.3
+
       - run: regal lint --format=github cvat/apps/*/rules
 
   spellcheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run checks
         run: |
           pipx install $(grep "^typos==" ./dev/requirements.txt)
@@ -128,6 +139,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup-yarn
         with:
           node-version: 22.x
@@ -137,6 +149,7 @@ jobs:
           install-command: |
             yarn install --immutable
             (cd tests && yarn install --immutable)
+
       - name: Run checks
         run: |
           echo "ESLint version: "$(yarn run eslint --version)
@@ -146,9 +159,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup-yarn
         with:
           node-version: 22.x
+
       - name: Run TypeScript checks for cvat-data
         run: yarn run tsc -p cvat-data/tsconfig.json
 
@@ -156,9 +171,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup-yarn
         with:
           node-version: 22.x
+
       - name: Run checks
         run: |
           echo "Remark version: "`npx remark --version`
@@ -168,9 +185,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup-yarn
         with:
           node-version: 22.x
+
       - name: Run checks
         run: |
           echo "StyleLint version: "$(yarn run stylelint --version)
