@@ -119,6 +119,11 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
             assert response.status == HTTPStatus.OK
             return json.loads(response.data)
 
+    def _get_report_conflicts(self, user: str, report_id: int) -> list[dict[str, Any]]:
+        response = get_method(user, "quality/conflicts", report_id=report_id)
+        assert response.status_code == HTTPStatus.OK
+        return response.json()["results"]
+
     def _get_task_labels_by_name(self, user: str, *, task_id: int) -> dict[str, Any]:
         with make_api_client(user) as api_client:
             labels, response = api_client.labels_api.list(task_id=task_id)
@@ -136,6 +141,84 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
                 _parse_response=False,
             )
             assert response.status == HTTPStatus.OK
+
+    def _create_attribute_quality_task(self, user: str, *, name: str) -> tuple[int, dict[str, Any], Any, Any, dict[str, int]]:
+        task_id, _ = create_task(
+            user,
+            spec={
+                "name": name,
+                "labels": [
+                    {
+                        "name": "car",
+                        "type": "rectangle",
+                        "attributes": [
+                            {
+                                "name": "color",
+                                "mutable": False,
+                                "input_type": "select",
+                                "default_value": "red",
+                                "values": ["red", "blue"],
+                            },
+                            {
+                                "name": "size",
+                                "mutable": False,
+                                "input_type": "select",
+                                "default_value": "large",
+                                "values": ["large", "small"],
+                            },
+                        ],
+                    }
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(user, task_id=task_id)
+        gt_job = self.create_gt_job(user, task_id, complete=False)
+        labels_by_name = self._get_task_labels_by_name(user, task_id=task_id)
+        car_label = labels_by_name["car"]
+        attribute_ids = {attribute.name: attribute.id for attribute in car_label.attributes}
+        return task_id, settings, gt_job, car_label, attribute_ids
+
+    def _set_attribute_quality_annotations(
+        self,
+        user: str,
+        *,
+        task_id: int,
+        gt_job_id: int,
+        label_id: int,
+        gt_attributes: list[dict[str, Any]],
+        ds_attributes: list[dict[str, Any]],
+    ) -> None:
+        with make_api_client(user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job_id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=label_id,
+                            points=[0, 0, 10, 10],
+                            attributes=gt_attributes,
+                        )
+                    ]
+                },
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=label_id,
+                            points=[0, 0, 10, 10],
+                            attributes=ds_attributes,
+                        )
+                    ]
+                },
+            )
 
     @staticmethod
     def _build_rectangle_shape(
@@ -824,6 +907,158 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             == expected_report["invalid_count"]
         )
         assert attribute_group["conflict_count"] == expected_report["conflict_count"]
+
+    def test_task_report_data_reports_attribute_conflict_names_and_error_severity(
+        self, admin_user
+    ):
+        (
+            task_id,
+            settings,
+            gt_job,
+            car_label,
+            attribute_ids,
+        ) = self._create_attribute_quality_task(
+            admin_user,
+            name="attribute-conflict-names-report",
+        )
+
+        requirement_name = f"boxes-{task_id}"
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    self._build_requirement_payload(
+                        requirement_name,
+                        enabled=True,
+                        required_score=1.0,
+                        annotation_type="rectangle",
+                    )
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        self._set_attribute_quality_annotations(
+            admin_user,
+            task_id=task_id,
+            gt_job_id=gt_job.id,
+            label_id=car_label.id,
+            gt_attributes=[
+                {"spec_id": attribute_ids["color"], "value": "red"},
+                {"spec_id": attribute_ids["size"], "value": "large"},
+            ],
+            ds_attributes=[
+                {"spec_id": attribute_ids["color"], "value": "blue"},
+                {"spec_id": attribute_ids["size"], "value": "small"},
+            ],
+        )
+
+        self._complete_job(admin_user, gt_job.id)
+
+        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+
+        conflicts = report_data["frame_results"]["0"]["conflicts"]
+        assert len(conflicts) == 1
+        assert conflicts[0]["type"] == "mismatching_attributes"
+        assert conflicts[0]["severity"] == "error"
+        assert conflicts[0]["attribute_names"] == ["color", "size"]
+        assert report_data["comparison_summary"]["error_count"] == 1
+        assert report_data["comparison_summary"]["warning_count"] == 0
+        assert (
+            report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 1
+        )
+
+    def test_task_report_deduplicates_aggregated_conflicts_across_requirements(
+        self, admin_user
+    ):
+        (
+            task_id,
+            settings,
+            gt_job,
+            car_label,
+            attribute_ids,
+        ) = self._create_attribute_quality_task(
+            admin_user,
+            name="attribute-conflict-dedup-report",
+        )
+
+        parent_requirement_name = f"boxes-{task_id}"
+        patched_settings, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    self._build_requirement_payload(
+                        parent_requirement_name,
+                        enabled=True,
+                        required_score=1.0,
+                        annotation_type="rectangle",
+                    )
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        parent_requirement = patched_settings["requirements"][0]
+
+        attribute_requirement_name = f"size-{task_id}"
+        _, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                attribute_requirement_name,
+                settings_id=settings["id"],
+                enabled=True,
+                required_score=1.0,
+                annotation_type="attribute",
+                parent_requirement=parent_requirement["id"],
+                filter_expression=json.dumps({"==": [{"var": "attribute.name"}, "size"]}),
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        self._set_attribute_quality_annotations(
+            admin_user,
+            task_id=task_id,
+            gt_job_id=gt_job.id,
+            label_id=car_label.id,
+            gt_attributes=[
+                {"spec_id": attribute_ids["color"], "value": "red"},
+                {"spec_id": attribute_ids["size"], "value": "large"},
+            ],
+            ds_attributes=[
+                {"spec_id": attribute_ids["color"], "value": "red"},
+                {"spec_id": attribute_ids["size"], "value": "small"},
+            ],
+        )
+
+        self._complete_job(admin_user, gt_job.id)
+
+        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+        conflicts = self._get_report_conflicts(admin_user, report["id"])
+
+        assert report_data["comparison_summary"]["conflict_count"] == 1
+        assert report_data["comparison_summary"]["error_count"] == 1
+        assert report_data["comparison_summary"]["warning_count"] == 0
+        assert len(report_data["frame_results"]["0"]["conflicts"]) == 1
+        assert (
+            report_data["groups"][parent_requirement_name]["comparison_summary"]["conflict_count"]
+            == 1
+        )
+        assert (
+            report_data["groups"][attribute_requirement_name]["comparison_summary"][
+                "conflict_count"
+            ]
+            == 1
+        )
+
+        assert len(conflicts) == 1
+        assert conflicts[0]["type"] == "mismatching_attributes"
+        assert conflicts[0]["severity"] == "error"
+        assert conflicts[0]["attribute_names"] == ["size"]
 
     def test_task_report_data_contains_groups_and_targets(
         self, admin_user, find_sandbox_task_without_gt

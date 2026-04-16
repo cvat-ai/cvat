@@ -16,7 +16,7 @@ from typing import Any, ClassVar
 import datumaro as dm
 import json_stream
 import numpy as np
-from attrs import asdict, define, fields_dict
+from attrs import asdict, define, field, fields_dict
 from datumaro.util import dump_json, parse_json
 
 from cvat.apps.engine.models import ShapeType
@@ -169,27 +169,29 @@ class AnnotationConflict(ReportNode):
     frame_id: int
     type: AnnotationConflictType
     annotation_ids: list[AnnotationId]
+    severity: AnnotationConflictSeverity = AnnotationConflictSeverity.WARNING
+    attribute_names: list[str] = field(factory=list)
 
-    @property
-    def severity(self) -> AnnotationConflictSeverity:
-        if self.type in [
+    @staticmethod
+    def default_severity_for_type(
+        conflict_type: AnnotationConflictType,
+    ) -> AnnotationConflictSeverity:
+        if conflict_type in [
             AnnotationConflictType.MISSING_ANNOTATION,
             AnnotationConflictType.EXTRA_ANNOTATION,
             AnnotationConflictType.MISMATCHING_LABEL,
         ]:
-            severity = AnnotationConflictSeverity.ERROR
-        elif self.type in [
+            return AnnotationConflictSeverity.ERROR
+        elif conflict_type in [
             AnnotationConflictType.LOW_OVERLAP,
             AnnotationConflictType.MISMATCHING_ATTRIBUTES,
             AnnotationConflictType.MISMATCHING_DIRECTION,
             AnnotationConflictType.MISMATCHING_GROUPS,
             AnnotationConflictType.COVERED_ANNOTATION,
         ]:
-            severity = AnnotationConflictSeverity.WARNING
+            return AnnotationConflictSeverity.WARNING
         else:
             assert False
-
-        return severity
 
     def _value_serializer(self, v):
         if isinstance(v, (AnnotationConflictType, AnnotationConflictSeverity)):
@@ -199,11 +201,72 @@ class AnnotationConflict(ReportNode):
 
     @classmethod
     def from_dict(cls, d: dict):
+        conflict_type = AnnotationConflictType(d["type"])
         return cls(
             frame_id=d["frame_id"],
-            type=AnnotationConflictType(d["type"]),
+            type=conflict_type,
             annotation_ids=list(AnnotationId.from_dict(v) for v in d["annotation_ids"]),
+            severity=AnnotationConflictSeverity(d["severity"])
+            if d.get("severity")
+            else cls.default_severity_for_type(conflict_type),
+            attribute_names=sorted(set(d.get("attribute_names") or [])),
         )
+
+
+_CONFLICT_SEVERITY_RANK = {
+    AnnotationConflictSeverity.WARNING: 0,
+    AnnotationConflictSeverity.ERROR: 1,
+}
+
+
+def _annotation_id_key(annotation_id: AnnotationId) -> tuple[int, int, AnnotationType, ShapeType | None]:
+    return (
+        annotation_id.obj_id,
+        annotation_id.job_id,
+        annotation_id.type,
+        annotation_id.shape_type,
+    )
+
+
+def annotation_conflict_key(
+    conflict: AnnotationConflict,
+) -> tuple[int, AnnotationConflictType, tuple[tuple[int, int, AnnotationType, ShapeType | None], ...]]:
+    return (
+        conflict.frame_id,
+        conflict.type,
+        tuple(sorted(_annotation_id_key(annotation_id) for annotation_id in conflict.annotation_ids)),
+    )
+
+
+def merge_annotation_conflicts(
+    target: AnnotationConflict, other: AnnotationConflict
+) -> AnnotationConflict:
+    if _CONFLICT_SEVERITY_RANK[other.severity] > _CONFLICT_SEVERITY_RANK[target.severity]:
+        target.severity = other.severity
+
+    merged_attribute_names = sorted(set(target.attribute_names) | set(other.attribute_names))
+    if merged_attribute_names != target.attribute_names:
+        target.attribute_names = merged_attribute_names
+
+    return target
+
+
+def deduplicate_annotation_conflicts(
+    conflicts: list[AnnotationConflict],
+) -> list[AnnotationConflict]:
+    deduplicated_conflicts: dict[
+        tuple[int, AnnotationConflictType, tuple[tuple[int, int, AnnotationType, ShapeType | None], ...]],
+        AnnotationConflict,
+    ] = {}
+
+    for conflict in conflicts:
+        key = annotation_conflict_key(conflict)
+        if key in deduplicated_conflicts:
+            merge_annotation_conflicts(deduplicated_conflicts[key], conflict)
+        else:
+            deduplicated_conflicts[key] = conflict
+
+    return list(deduplicated_conflicts.values())
 
 
 @define(kw_only=True, init=False, slots=False)
@@ -820,7 +883,9 @@ class ComparisonReportRequirementSummary(ReportNode):
         if not self.frame_results:
             return []
 
-        return list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
+        return deduplicate_annotation_conflicts(
+            list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
+        )
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementSummary:
@@ -850,7 +915,9 @@ class ComparisonReport(ReportNode):
         if not self.frame_results:
             return []
 
-        return list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
+        return deduplicate_annotation_conflicts(
+            list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
+        )
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReport:

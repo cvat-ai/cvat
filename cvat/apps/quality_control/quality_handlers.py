@@ -30,6 +30,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportSummary,
     ComparisonReportTargetsSummary,
     ConfusionMatrix,
+    deduplicate_annotation_conflicts,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
@@ -127,7 +128,7 @@ def merge_frame_summaries(
     *,
     current_count: int,
 ) -> None:
-    target.conflicts += other.conflicts
+    target.conflicts = deduplicate_annotation_conflicts([*target.conflicts, *other.conflicts])
     merge_annotations_summary(target.annotations, other.annotations)
     target.annotation_components.accumulate(other.annotation_components)
     target.annotation_components.shape.mean_iou = (
@@ -155,6 +156,7 @@ def build_requirement_report(
         mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
     annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
+    conflicts = deduplicate_annotation_conflicts(conflicts)
 
     conflicts_by_severity = Counter(c.severity for c in conflicts)
     return ComparisonReportRequirementSummary(
@@ -334,6 +336,29 @@ class RequirementHandler(ABC):
     def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
         """Convert Datumaro item to frame ID"""
         return self.context.estimator._dm_item_to_frame_id(item, dataset)
+
+    def _get_conflict_severity(self) -> AnnotationConflictSeverity:
+        return (
+            AnnotationConflictSeverity.ERROR
+            if getattr(self.requirement, "enabled", True)
+            else AnnotationConflictSeverity.WARNING
+        )
+
+    def _make_conflict(
+        self,
+        *,
+        frame_id: int,
+        type: AnnotationConflictType,
+        annotation_ids: list[AnnotationId],
+        attribute_names: list[str] | None = None,
+    ) -> AnnotationConflict:
+        return AnnotationConflict(
+            frame_id=frame_id,
+            type=type,
+            annotation_ids=annotation_ids,
+            severity=self._get_conflict_severity(),
+            attribute_names=sorted(set(attribute_names or [])),
+        )
 
     @classmethod
     def for_requirement(
@@ -530,7 +555,7 @@ class TagRequirementHandler(RequirementHandler):
         for gt_ann, ds_ann in mismatches:
             if gt_ann is not None and ds_ann is not None:
                 conflicts.append(
-                    AnnotationConflict(
+                    self._make_conflict(
                         frame_id=frame_id,
                         type=AnnotationConflictType.MISMATCHING_LABEL,
                         annotation_ids=[
@@ -543,7 +568,7 @@ class TagRequirementHandler(RequirementHandler):
         # Generate conflicts for unmatched GT annotations (missing)
         for unmatched_ann in gt_unmatched:
             conflicts.append(
-                AnnotationConflict(
+                self._make_conflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.MISSING_ANNOTATION,
                     annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
@@ -553,7 +578,7 @@ class TagRequirementHandler(RequirementHandler):
         # Generate conflicts for unmatched DS annotations (extra)
         for unmatched_ann in ds_unmatched:
             conflicts.append(
-                AnnotationConflict(
+                self._make_conflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.EXTRA_ANNOTATION,
                     annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
@@ -666,7 +691,7 @@ class ShapeRequirementHandler(RequirementHandler):
             similarity = _get_similarity(gt_ann, ds_ann)
             if similarity and similarity < self.settings.low_overlap_threshold:
                 conflicts.append(
-                    AnnotationConflict(
+                    self._make_conflict(
                         frame_id=frame_id,
                         type=AnnotationConflictType.LOW_OVERLAP,
                         annotation_ids=[
@@ -678,7 +703,7 @@ class ShapeRequirementHandler(RequirementHandler):
 
         for unmatched_ann in gt_unmatched:
             conflicts.append(
-                AnnotationConflict(
+                self._make_conflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.MISSING_ANNOTATION,
                     annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
@@ -687,7 +712,7 @@ class ShapeRequirementHandler(RequirementHandler):
 
         for unmatched_ann in ds_unmatched:
             conflicts.append(
-                AnnotationConflict(
+                self._make_conflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.EXTRA_ANNOTATION,
                     annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
@@ -696,7 +721,7 @@ class ShapeRequirementHandler(RequirementHandler):
 
         for gt_ann, ds_ann in mismatches:
             conflicts.append(
-                AnnotationConflict(
+                self._make_conflict(
                     frame_id=frame_id,
                     type=AnnotationConflictType.MISMATCHING_LABEL,
                     annotation_ids=[
@@ -748,7 +773,7 @@ class ShapeRequirementHandler(RequirementHandler):
                     > self.settings.line_orientation_threshold
                 ):
                     conflicts.append(
-                        AnnotationConflict(
+                        self._make_conflict(
                             frame_id=frame_id,
                             type=AnnotationConflictType.MISMATCHING_DIRECTION,
                             annotation_ids=[
@@ -763,7 +788,7 @@ class ShapeRequirementHandler(RequirementHandler):
 
             for ds_ann in ds_covered_anns:
                 conflicts.append(
-                    AnnotationConflict(
+                    self._make_conflict(
                         frame_id=frame_id,
                         type=AnnotationConflictType.COVERED_ANNOTATION,
                         annotation_ids=[
@@ -774,16 +799,24 @@ class ShapeRequirementHandler(RequirementHandler):
 
         if self.settings.compare_attributes:
             for gt_ann, ds_ann in matches:
-                attribute_results = self._comparator.match_attrs(gt_ann, ds_ann)
-                if any(attribute_results[1:]):
+                _, mismatching_attributes, missing_attributes, extra_attributes = (
+                    self._comparator.match_attrs(gt_ann, ds_ann)
+                )
+                conflicting_attribute_names = [
+                    *mismatching_attributes,
+                    *missing_attributes,
+                    *extra_attributes,
+                ]
+                if conflicting_attribute_names:
                     conflicts.append(
-                        AnnotationConflict(
+                        self._make_conflict(
                             frame_id=frame_id,
                             type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
                             annotation_ids=[
                                 self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                                 self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
                             ],
+                            attribute_names=conflicting_attribute_names,
                         )
                     )
 
@@ -808,7 +841,7 @@ class ShapeRequirementHandler(RequirementHandler):
                     ds_gt_group != gt_group_map[id(gt_ann)]
                 ):
                     conflicts.append(
-                        AnnotationConflict(
+                        self._make_conflict(
                             frame_id=frame_id,
                             type=AnnotationConflictType.MISMATCHING_GROUPS,
                             annotation_ids=[
@@ -992,13 +1025,14 @@ class AttributeRequirementHandler(RequirementHandler):
                     invalid_attributes += 1
 
                 conflicts.append(
-                    AnnotationConflict(
+                    self._make_conflict(
                         frame_id=frame_id,
                         type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
                         annotation_ids=[
                             self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
                             self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
                         ],
+                        attribute_names=[attr_name],
                     )
                 )
 
@@ -1247,6 +1281,7 @@ class DatasetQualityEstimator:
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
         total_annotation_components.shape.mean_iou = np.mean(mean_ious) if mean_ious else 0
+        conflicts = deduplicate_annotation_conflicts(conflicts)
 
         return (
             all_frame_results,

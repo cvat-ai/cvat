@@ -37,6 +37,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportRequirementSummary,
     ComparisonReportSummary,
     ComparisonReportTaskStats,
+    deduplicate_annotation_conflicts,
 )
 from cvat.apps.quality_control.models import AnnotationConflictSeverity
 from cvat.apps.quality_control.quality_handlers import (
@@ -260,17 +261,11 @@ class TaskQualityCalculator:
                 if task_frame_result is None:
                     task_frame_result = deepcopy(job_frame_result)
                 else:
-                    task_frame_result.conflicts += job_frame_result.conflicts
-
-                    task_frame_result.annotations.accumulate(job_frame_result.annotations)
-                    task_frame_result.annotation_components.accumulate(
-                        job_frame_result.annotation_components
+                    merge_frame_summaries(
+                        task_frame_result,
+                        job_frame_result,
+                        current_count=frame_results_count,
                     )
-
-                    task_frame_result.annotation_components.shape.mean_iou = (
-                        task_frame_result.annotation_components.shape.mean_iou * frame_results_count
-                        + job_frame_result.annotation_components.shape.mean_iou
-                    ) / (frame_results_count + 1)
 
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
@@ -299,6 +294,7 @@ class TaskQualityCalculator:
         task_ann_components_summary.shape.mean_iou = np.mean(
             task_mean_shape_ious or []
         )  # TODO: maybe remove
+        task_conflicts = deduplicate_annotation_conflicts(task_conflicts)
 
         requirement_groups = {
             group_name: build_requirement_report(
@@ -380,6 +376,7 @@ class TaskQualityCalculator:
                     type=conflict["type"],
                     frame=conflict["frame_id"],
                     severity=conflict["severity"],
+                    attribute_names=conflict.get("attribute_names", []),
                 )
                 db_conflicts.append(db_conflict)
 
@@ -651,7 +648,9 @@ class ProjectQualityCalculator:
 
         requirement_groups = {}
         for group_name, parameters in project_group_parameters.items():
-            group_conflicts = project_group_conflicts.get(group_name, [])
+            group_conflicts = deduplicate_annotation_conflicts(
+                project_group_conflicts.get(group_name, [])
+            )
             group_conflicts_by_severity = Counter(c.severity for c in group_conflicts)
             requirement_groups[group_name] = ComparisonReportRequirementSummary(
                 parameters=parameters,
@@ -690,6 +689,7 @@ class ProjectQualityCalculator:
         target_requirements: list = requirements or [
             group_report.parameters for group_report in requirement_groups.values()
         ]
+        project_conflicts = deduplicate_annotation_conflicts(project_conflicts)
         conflicts_by_severity = Counter(c.severity for c in project_conflicts)
         project_report_data = ComparisonReport(
             parameters=quality_params,
