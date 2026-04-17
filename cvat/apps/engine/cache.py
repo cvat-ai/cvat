@@ -70,6 +70,26 @@ class CacheTooLargeDataError(Exception):
     pass
 
 
+class ChunkCreationError(Exception):
+    pass
+
+
+def _build_chunk_job_failure_exception(
+    rq_job: rq.job.Job, job_meta: RQMetaWithFailureInfo
+) -> Exception:
+    exc_type = job_meta.exc_type or Exception
+    exc_args = job_meta.exc_args or ("Cannot create chunk",)
+
+    try:
+        return exc_type(*exc_args)
+    except TypeError:
+        exc_name = getattr(exc_type, "__name__", repr(exc_type))
+        details = job_meta.formatted_exception or repr(exc_args)
+        return ChunkCreationError(
+            f"Chunk job {rq_job.id} failed with {exc_name}: {details.strip()}"
+        )
+
+
 def enqueue_create_chunk_job(
     queue: rq.Queue,
     rq_job_id: str,
@@ -110,9 +130,7 @@ def wait_for_rq_job(rq_job: rq.job.Job):
         elif job_status in ("failed",):
             rq_job.get_meta()  # refresh from Redis
             job_meta = RQMetaWithFailureInfo.for_job(rq_job)
-            exc_type = job_meta.exc_type or Exception
-            exc_args = job_meta.exc_args or ("Cannot create chunk",)
-            raise exc_type(*exc_args)
+            raise _build_chunk_job_failure_exception(rq_job, job_meta)
 
         time.sleep(settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL)
         retries -= 1
