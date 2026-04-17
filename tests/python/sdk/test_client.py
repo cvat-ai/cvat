@@ -288,16 +288,12 @@ def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
         # create a project and task in sandbox
         client.organization_slug = None
         client.projects.create(models.ProjectWriteRequest(name="personal_project"))
-        client.tasks.create_from_data(
-            spec={"name": "personal_task", "labels": [{"name": "a"}]}, resources=[fxt_image_file]
-        )
+        client.tasks.create_from_data(spec={"name": "personal_task"}, resources=[fxt_image_file])
 
         # create a project and task in the organization
         client.organization_slug = org.slug
         client.projects.create(models.ProjectWriteRequest(name="org_project"))
-        client.tasks.create_from_data(
-            spec={"name": "org_task", "labels": [{"name": "a"}]}, resources=[fxt_image_file]
-        )
+        client.tasks.create_from_data(spec={"name": "org_task"}, resources=[fxt_image_file])
 
         # return only non-org objects if org parameter is empty
         client.organization_slug = ""

@@ -510,7 +510,6 @@ class TestPostTasks:
     def test_can_create_with_assignee(self, admin_user, users_by_name, assignee):
         task_spec = {
             "name": "test task creation with assignee",
-            "labels": [{"name": "car"}],
             "assignee_id": users_by_name[assignee]["id"] if assignee else None,
         }
 
@@ -1336,7 +1335,6 @@ class TestWorkWithTask:
 
         task_spec = {
             "name": f"Task with mythical file from cloud storage {cloud_storage_id}",
-            "labels": [{"name": "car"}],
         }
 
         data_spec = {
@@ -2817,11 +2815,6 @@ class TestPatchTask:
 
         task_spec = {
             "name": f"Task with files from foreign cloud storage {storage_id}",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
         data_spec = {
             "image_quality": 75,
