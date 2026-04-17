@@ -67,6 +67,14 @@ class Command(BaseCommand):
         if not data.supports_backing_cs():
             raise CommandError(f"Task #{task_id} does not support backing cloud storage")
 
+        if data.local_storage_backing_cs_id == backing_cs.id:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Task #{task_id} is already backed by cloud storage #{backing_cs.id}"
+                )
+            )
+            return
+
         if data.local_storage_backing_cs_id:
             raise CommandError(
                 f"Task #{task_id} already has a backing cloud storage"

@@ -8026,6 +8026,14 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
         data = Data.objects.get(task__id=task_id)
         assert data.local_storage_backing_cs_id == self.cloud_storage_id
 
+    def test_move_to_backing_cs_with_cli_redundant(self):
+        task = self._create_local_task()
+        task_id = task["id"]
+
+        data = Data.objects.get(task__id=task_id)
+        data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
+        call_command("movetasktobackingcs", str(task_id), str(self.cloud_storage_id))
+
     def test_move_to_backing_cs_with_cli_multiple(self):
         task = self._create_local_task()
         task_id = task["id"]
@@ -8052,6 +8060,12 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase):
 
         data.refresh_from_db()
         assert data.local_storage_backing_cs_id is None
+
+    def test_move_from_backing_cs_with_cli_redundant(self):
+        task = self._create_local_task()
+        task_id = task["id"]
+
+        call_command("movetaskfrombackingcs", str(task_id))
 
     def test_move_from_backing_cs_with_cli_multiple(self):
         task = self._create_local_task()
