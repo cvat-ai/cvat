@@ -341,24 +341,15 @@ Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
 
 Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
     cy.window().its('cvat').should('not.be.undefined').then(async (cvat) => {
-        const task = new cvat.classes.Task({
-            ...taskSpec,
-            ...dataSpec,
-        });
+        const extrasWithData = {
+            ...(extras || {}),
+            clientFiles: dataSpec.client_files || [],
+            serverFiles: dataSpec.server_files || [],
+            remoteFiles: dataSpec.remote_files || [],
+        };
 
-        if (dataSpec.server_files) {
-            task.serverFiles = dataSpec.server_files;
-        }
-
-        if (dataSpec.client_files) {
-            task.clientFiles = dataSpec.client_files;
-        }
-
-        if (dataSpec.remote_files) {
-            task.remoteFiles = dataSpec.remote_files;
-        }
-
-        const result = await task.save(extras || {});
+        const task = new cvat.classes.Task({ ...taskSpec, ...dataSpec });
+        const result = await task.save(extrasWithData);
         return cy.wrap({ taskID: result.id, jobIDs: result.jobs.map((job) => job.id) });
     });
 });
