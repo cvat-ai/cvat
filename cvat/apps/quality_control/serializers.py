@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
+from collections.abc import Mapping
 from enum import Enum
 
 from django.conf import settings as django_settings
@@ -257,6 +258,34 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             The parent requirement. Must be specified if the annotation type is attribute
             """).strip(),
     )
+    point_size = serializers.FloatField(
+        source="oks_sigma",
+        required=False,
+        min_value=0,
+        max_value=1,
+        help_text=textwrap.dedent("""
+            Like IoU threshold, but for points.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
+            Read more: https://cocodataset.org/#keypoints-eval
+            """).strip(),
+    )
+    match_orientation = serializers.BooleanField(
+        source="compare_line_orientation",
+        required=False,
+        help_text="Enables or disables polyline orientation comparison",
+    )
+    match_groups = serializers.BooleanField(
+        source="compare_groups",
+        required=False,
+        help_text="Enables or disables annotation group checks",
+    )
+    match_attributes = serializers.BooleanField(
+        source="compare_attributes",
+        required=False,
+        help_text="Enables or disables annotation attribute comparison",
+    )
 
     @staticmethod
     def _get_requirement_limit() -> int:
@@ -297,6 +326,19 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         )
         return value
 
+    def to_internal_value(self, data):
+        if isinstance(data, Mapping):
+            unexpected_fields = set(data) - set(self.fields)
+            if unexpected_fields:
+                raise serializers.ValidationError(
+                    {
+                        field_name: ["Unexpected field."]
+                        for field_name in sorted(unexpected_fields)
+                    }
+                )
+
+        return super().to_internal_value(data)
+
     class Meta:
         model = models.QualityRequirement
         fields = (
@@ -312,18 +354,18 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "required_score",
             "parent_requirement",
             "iou_threshold",
-            "oks_sigma",
+            "point_size",
             "point_size_base",
             "line_thickness",
             "low_overlap_threshold",
-            "compare_line_orientation",
+            "match_orientation",
             "line_orientation_threshold",
-            "compare_groups",
+            "match_groups",
             "group_match_threshold",
             "check_covered_annotations",
             "object_visibility_threshold",
             "panoptic_comparison",
-            "compare_attributes",
+            "match_attributes",
             "empty_is_annotated",
             "created_date",
             "updated_date",
@@ -338,16 +380,9 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "low_overlap_threshold": """
                 Used for distinction between strong / weak (low_overlap) matches
             """,
-            "oks_sigma": """
-                Like IoU threshold, but for points.
-                The percent of the bbox side, used as the radius of the circle around the GT point,
-                where the checked point is expected to be. For boxes with different width and
-                height, the "side" is computed as a geometric mean of the width and height.
-                Read more: https://cocodataset.org/#keypoints-eval
-            """,
             "point_size_base": """
                 When comparing point annotations (including both separate points and point groups),
-                the OKS sigma parameter defines matching area for each GT point based to the
+                the point size parameter defines matching area for each GT point based to the
                 object size. The point size base parameter allows to configure how to determine
                 the object size.
                 If {image_size}, the image size is used. Useful if each point
@@ -365,16 +400,14 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 The distance to the boundary around the GT line,
                 inside of which the checked line points should be
             """,
-            "compare_line_orientation": "Enables or disables polyline orientation comparison",
             "line_orientation_threshold": """
                 The minimal gain in the GT IoU between the given and reversed line directions
                 to consider the line inverted.
-                Only used when the 'compare_line_orientation' parameter is true
+                Only used when the 'match_orientation' parameter is true
             """,
-            "compare_groups": "Enables or disables annotation group checks",
             "group_match_threshold": """
                 Minimal IoU for groups to be considered matching.
-                Only used when the 'compare_groups' parameter is true
+                Only used when the 'match_groups' parameter is true
             """,
             "check_covered_annotations": """
                 Check for partially-covered annotations, useful in segmentation tasks
@@ -387,7 +420,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "panoptic_comparison": """
                 Use only the visible part of the masks and polygons in comparisons
             """,
-            "compare_attributes": "Enables or disables annotation attribute comparison",
             "empty_is_annotated": """
                 Consider empty frames annotated as "empty". This affects target metrics like
                 accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -401,7 +433,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         for field_name in fields:
             if field_name.endswith("_threshold") or field_name in [
-                "oks_sigma",
+                "point_size",
                 "line_thickness",
                 "required_score",
             ]:

@@ -39,6 +39,10 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         annotation_type: str = "rectangle",
         filter_expression: str | None = None,
         parent_requirement: int | None = None,
+        point_size: float | None = None,
+        match_orientation: bool | None = None,
+        match_attributes: bool | None = None,
+        match_groups: bool | None = None,
     ) -> dict[str, Any]:
         payload = {
             "name": name,
@@ -53,6 +57,14 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
             payload["filter"] = filter_expression
         if parent_requirement is not None:
             payload["parent_requirement"] = parent_requirement
+        if point_size is not None:
+            payload["point_size"] = point_size
+        if match_orientation is not None:
+            payload["match_orientation"] = match_orientation
+        if match_attributes is not None:
+            payload["match_attributes"] = match_attributes
+        if match_groups is not None:
+            payload["match_groups"] = match_groups
         return payload
 
     @classmethod
@@ -311,6 +323,88 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             requirement["name"]: requirement for requirement in listed_requirements
         }
         assert requirement_name in listed_requirements_by_name
+
+    def test_requirement_uses_hld_comparison_field_names(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        created_requirement, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                f"hld-fields-{task['id']}",
+                settings_id=settings["id"],
+                annotation_type="polyline",
+                point_size=0.25,
+                match_orientation=False,
+                match_attributes=False,
+                match_groups=False,
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert created_requirement["point_size"] == 0.25
+        assert created_requirement["match_orientation"] is False
+        assert created_requirement["match_attributes"] is False
+        assert created_requirement["match_groups"] is False
+        for legacy_field_name in (
+            "oks_sigma",
+            "compare_line_orientation",
+            "compare_attributes",
+            "compare_groups",
+        ):
+            assert legacy_field_name not in created_requirement
+
+        updated_requirement, response = self._patch_requirement(
+            admin_user,
+            created_requirement["id"],
+            {
+                "point_size": 0.5,
+                "match_orientation": True,
+                "match_attributes": True,
+                "match_groups": True,
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert updated_requirement["point_size"] == 0.5
+        assert updated_requirement["match_orientation"] is True
+        assert updated_requirement["match_attributes"] is True
+        assert updated_requirement["match_groups"] is True
+        for legacy_field_name in (
+            "oks_sigma",
+            "compare_line_orientation",
+            "compare_attributes",
+            "compare_groups",
+        ):
+            assert legacy_field_name not in updated_requirement
+
+    def test_requirement_rejects_legacy_comparison_field_names(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        _, response = self._create_requirement(
+            admin_user,
+            {
+                **self._build_requirement_payload(
+                    f"legacy-fields-{task['id']}",
+                    settings_id=settings["id"],
+                ),
+                "oks_sigma": 0.25,
+                "compare_line_orientation": False,
+                "compare_attributes": False,
+                "compare_groups": False,
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert set(response.json()) >= {
+            "oks_sigma",
+            "compare_line_orientation",
+            "compare_attributes",
+            "compare_groups",
+        }
 
     def test_settings_patch_can_replace_requirements(
         self, admin_user, find_sandbox_task_without_gt
@@ -1074,6 +1168,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         enabled_requirement_name,
                         enabled=True,
                         required_score=0.0,
+                        point_size=0.25,
+                        match_orientation=False,
+                        match_attributes=False,
+                        match_groups=False,
                     ),
                     self._build_requirement_payload(
                         disabled_requirement_name,
@@ -1103,10 +1201,22 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "enabled": 1,
             "completed": 1,
         }
-        assert report_data["groups"][enabled_requirement_name]["parameters"]["metric"] == "accuracy"
+        parameters = report_data["groups"][enabled_requirement_name]["parameters"]
+        assert parameters["metric"] == "accuracy"
         assert (
-            report_data["groups"][enabled_requirement_name]["parameters"]["required_score"] == 0.0
+            parameters["required_score"] == 0.0
         )
+        assert parameters["point_size"] == 0.25
+        assert parameters["match_orientation"] is False
+        assert parameters["match_attributes"] is False
+        assert parameters["match_groups"] is False
+        for legacy_field_name in (
+            "oks_sigma",
+            "compare_line_orientation",
+            "compare_attributes",
+            "compare_groups",
+        ):
+            assert legacy_field_name not in parameters
         assert (
             report_data["groups"][disabled_requirement_name]["comparison_summary"]["annotations"][
                 "total_count"

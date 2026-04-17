@@ -82,11 +82,18 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
     if "parent_requirement" not in params:
         params["parent_requirement"] = getattr(parent, "id", parent)
 
-    if "target_metric" in params and "metric" not in params:
-        params["metric"] = params.pop("target_metric")
+    for internal_name, public_name in {
+        "target_metric": "metric",
+        "target_metric_threshold": "required_score",
+        "oks_sigma": "point_size",
+        "compare_line_orientation": "match_orientation",
+        "compare_attributes": "match_attributes",
+        "compare_groups": "match_groups",
+    }.items():
+        if public_name not in params and internal_name in params:
+            params[public_name] = params[internal_name]
 
-    if "target_metric_threshold" in params and "required_score" not in params:
-        params["required_score"] = params.pop("target_metric_threshold")
+        params.pop(internal_name, None)
 
     for field in ("id", "settings", "settings_id", "created_date", "updated_date"):
         params.pop(field, None)
