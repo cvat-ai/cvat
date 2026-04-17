@@ -30,6 +30,12 @@ the server calling REST API directly (as it done by users).
    ```shell
    pip install -r ./tests/python/requirements.txt
    ```
+1. Version precheck is strict by default (except explicit `--infra down|restore-db`):
+   - installed `cvat-sdk` and `cvat-cli` major.minor must match repository versions
+   - if server is reachable, `/api/server/about` major.minor must match repository SDK version
+   - otherwise on local platform, fallback check uses `cvat/server:${CVAT_VERSION:-dev}` major.minor
+   If they differ, pytest exits before running tests.
+   Use `--skip-version-check` to bypass this sanity check when needed.
 1. Stop any other CVAT containers which you run previously. They keep ports
 which are used by containers for the testing system.
 
@@ -45,6 +51,170 @@ which are used by containers for the testing system.
   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
   to get more information about tests running.
 
+- Infrastructure lifecycle can be controlled explicitly:
+
+  ```shell
+  # Start infra for a dedicated compose project and exit
+  pytest ./tests/python --run-prefix p1 up
+
+  # Run tests against this running instance (state is reused automatically)
+  pytest ./tests/python --run-prefix p1
+
+  # Stop and remove the project infrastructure
+  pytest ./tests/python --run-prefix p1 down
+
+  # Restore DB from test assets and refresh test_db snapshot
+  pytest ./tests/python --run-prefix p1 restore-db
+  ```
+
+  `restore-db` is a single-instance maintenance command and is not supported with `--parallel`.
+
+- Parallel lanes:
+
+  ```shell
+  # Run with 4 local parallel lanes
+  pytest ./tests/python --parallel 4
+
+  # Explicitly manage infra lifecycle for the same parallel run-prefix
+  pytest ./tests/python --run-prefix p1 --parallel 4 up
+  pytest ./tests/python --run-prefix p1 --parallel 4
+  pytest ./tests/python --run-prefix p1 --parallel 4 down
+  ```
+
+- Kubernetes lifecycle (`--platform kube`):
+
+  Prerequisites: `minikube`, `kubectl`, `helm`, and Docker installed on the host.
+  On macOS, for example:
+
+  ```shell
+  brew install minikube kubectl helm
+  ```
+
+  ```shell
+  # Start minikube cluster (if needed), load images, deploy CVAT via Helm, wait for readiness
+  pytest ./tests/python --platform kube --run-prefix k1 \
+    --kube-cpus 8 --kube-memory 16g up
+
+  # Run tests against the same kube release (runtime port-forwards are handled automatically)
+  pytest ./tests/python --platform kube --run-prefix k1
+
+  # Tear down Helm release and delete the minikube cluster
+  pytest ./tests/python --platform kube --run-prefix k1 down
+  ```
+
+  Notes:
+  - Test runs do not build images automatically (local and kube).
+    Build explicitly with `pytest ./tests/python --infra build-images`.
+  - Images are configured with `--kube-server-image`, `--kube-frontend-image`, `--kube-image-tag`.
+  - `--kube-cpus` and `--kube-memory` are passed to `minikube start`.
+    Current local-development defaults are `8` CPUs and `16g` memory.
+  - The first run is slower because minikube base images/charts and service images are pulled/loaded.
+  - Runtime profiles now include extra startup phase timings for local and kube infra,
+    for example compose/minikube start, image load, Helm install, readiness wait,
+    asset restore, and runtime port-forward setup.
+  - `--cleanup/--dumpdb` are local-only helpers and are not supported with `--platform kube`.
+
+- Lane profiles are selected automatically by the scheduler based on collected
+  tests and `@pytest.mark.infra_profile("simple|standard|full")`.
+
+## Profiles
+
+The Python test infra has three active profiles:
+
+- `simple`
+- `standard`
+- `full`
+
+The profile is selected by `@pytest.mark.infra_profile(...)` with normal pytest
+precedence:
+
+- function overrides class
+- class overrides file
+- file overrides the implicit fallback
+
+Unmarked tests use `simple` by default.
+
+### Profile intent
+
+- `simple`
+  - pure CRUD, permissions, filters, read-only API/SDK behavior
+  - should not require async media processing, MinIO, analytics, webhook delivery, or UI
+- `standard`
+  - media and data path
+  - task/project/job import, export, chunks, previews, backups, cloud storage via MinIO
+- `full`
+  - heavy feature stack
+  - consensus, quality reports, analytics, webhook delivery, UI, audit/event pipeline
+
+### Services by profile
+
+The logical service sets are:
+
+- `simple`
+  - `cvat_server`
+  - `cvat_db`
+  - `traefik`
+  - `cvat_redis_inmem`
+  - `cvat_redis_ondisk`
+  - `cvat_opa`
+- `standard`
+  - everything in `simple`
+  - `cvat_worker_import`
+  - `cvat_worker_export`
+  - `cvat_worker_chunks`
+  - `minio`
+  - `mc` (one-shot MinIO seeding helper)
+- `full`
+  - everything in `standard`
+  - `cvat_worker_annotation`
+  - `cvat_worker_consensus`
+  - `cvat_worker_quality_reports`
+  - `cvat_worker_webhooks`
+  - `cvat_worker_utils`
+  - `cvat_clickhouse`
+  - `cvat_vector`
+  - `cvat_grafana`
+  - `cvat_ui`
+  - `webhook_receiver`
+
+### Notes
+
+- Local and kube are expected to expose the same logical profile capabilities.
+  Platform-specific implementation details can differ, but classification should not.
+- `full` includes `grafana` for stack completeness even though tests currently depend
+  mainly on `clickhouse`, `vector`, `ui`, webhook delivery, and background workers.
+- `full` tests should pass only on `full`.
+- `standard` tests should pass on `standard` and fail on `simple` when they truly
+  require media/MinIO/background data-path services.
+- `simple` tests should pass on `simple`.
+
+- macOS benchmark runs:
+
+  For stable and repeatable benchmark numbers on laptops, prevent sleep during the run:
+
+  ```shell
+  caffeinate -d -i -m -s ./run_benchmark.sh
+  ```
+
+  This affects only the wrapped command runtime and does not require changing system power settings.
+
+- Reusing running lanes with different profiles:
+  Existing stacks are reused when possible. If configuration is incompatible,
+  the runner recreates the affected instances automatically.
+
+- Short aliases are supported for convenience:
+
+  ```shell
+  pytest ./tests/python --run-prefix p1 up
+  pytest ./tests/python --run-prefix p1 down
+  pytest ./tests/python --run-prefix p1 restore-db
+  ```
+
+- Defaults:
+  - `pytest ./tests/python` uses `--run-prefix test`, `--platform local`, `--infra auto`.
+  - `--parallel` accepts a positive integer (`--parallel 2`, `--parallel 4`, ...).
+  - `--parallel 1` behaves like a regular single-process run.
+
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already
@@ -53,7 +223,7 @@ procedure to add them:
 
 1. Run a clean CVAT instance and restore DB and data volume
    ```console
-   pytest tests/python/ --start-services
+   pytest tests/python/ up
    ```
 1. Add new objects (e.g. issues, comments, tasks, projects)
 1. Backup DB and data volume using commands below
@@ -100,7 +270,7 @@ files as well, run the appropriate script:
 
 ```
 cd tests/python
-pytest ./ --start-services
+pytest ./ up
 python shared/utils/dump_objects.py
 ```
 
@@ -121,14 +291,7 @@ Assets directory has two parts:
   successful restoring of test db
   - `cvat_data.tar.bz2` --- archive with data volumes;
   - `data.json` --- file required for DB restoring.
-    Contains all information about test db;
-  - `restore.sql` --- SQL script for creating copy of database and
-  killing connection for `cvat` database.
-  Script should be run with variable declaration:
-  ```
-  # create database <new> with template <existing>
-  psql -U root -d postgres -v from=<existing> -v to=<new> restore.sql
-  ```
+    Contains all information about test db.
 - `*.json` files --- these file contains all necessary data for getting
   expected results from HTTP responses
 
@@ -180,12 +343,10 @@ Assets directory has two parts:
    python3 tests/python/shared/utils/dump_objects.py
    ```
 
-1. If your test infrastructure has been corrupted and you have errors during db restoring.
-   You should to create (or recreate) `cvat` database:
+1. If your test infrastructure has been corrupted and you have DB restore errors,
+   reset DB state from test assets:
    ```
-   docker exec test_cvat_db_1 dropdb --if-exists cvat
-   docker exec test_cvat_db_1 createdb cvat
-   docker exec test_cvat_server_1 python manage.py migrate
+   pytest tests/python --run-prefix test restore-db
    ```
 
 1. Perform migrate when some relation does not exists. Example of error message:
@@ -197,14 +358,8 @@ Assets directory has two parts:
    docker exec test_cvat_server_1 python manage.py migrate
    ```
 
-1. If for some reason you need to recreate cvat database, but using `dropdb`
-   you have error message:
+1. If you get errors related to active DB connections or partial DB state,
+   do not run manual SQL commands. Use:
    ```
-   ERROR:  database "cvat" is being accessed by other users
-   DETAIL:  There are 1 other session(s) using the database.
-   ```
-   In this case you should terminate all existent connections for cvat database,
-   you can perform it with command:
-   ```
-   docker exec test_cvat_db_1 psql -U root -d postgres -v from=cvat_server -v to=test_db -f restore.sql
+   pytest tests/python --run-prefix test restore-db
    ```

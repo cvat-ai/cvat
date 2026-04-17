@@ -134,18 +134,24 @@ jobs:
   rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      PYTEST_ADDOPTS: --platform=local --infra=auto --infra-profile=full --run-prefix=${{ matrix.run_prefix }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - pattern: "test_task_data"
             allow_cache: 'true'
+            run_prefix: rest-api-taskdata-cache-yes
           - pattern: "test_task_data"
             allow_cache: 'no'
+            run_prefix: rest-api-taskdata-cache-no
           - pattern: "not test_task_data"
             allow_cache: 'no'
+            run_prefix: rest-api-other-cache-no
           - pattern: "not test_task_data"
             allow_cache: 'true'
+            run_prefix: rest-api-other-cache-yes
     name: rest_api_testing [${{ matrix.pattern }}, cache-${{ matrix.allow_cache }}]
     steps:
       - uses: actions/checkout@v4
@@ -189,7 +195,8 @@ jobs:
           COVERAGE_PROCESS_START: ".coveragerc"
           CVAT_ALLOW_STATIC_CACHE: ${{ matrix.allow_cache }}
         run: |
-          pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ \
+            -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
       - name: Uploading code coverage results as an artifact
@@ -202,26 +209,15 @@ jobs:
           path: |
             coverage*.json
 
-      - name: Creating a log file from cvat containers
-        if: failure() && steps.run_tests.conclusion == 'failure'
-        env:
-          LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
-        run: |
-            mkdir $LOGS_DIR
-            docker logs test_cvat_server_1 > $LOGS_DIR/cvat_server.log
-            docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
-            docker logs test_cvat_worker_import_1 > $LOGS_DIR/cvat_worker_import.log
-            docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
-
-      - name: Uploading "cvat" container logs as an artifact
+      - name: Upload pytest run artifacts
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: ${{format(
-              'rest_api_container_logs-{0}-cache-{1}',
+              'rest_api_run_artifacts-{0}-cache-{1}',
               matrix.pattern, matrix.allow_cache
             )}}
-          path: "${{ github.workspace }}/rest_api_testing"
+          path: /tmp/cvat_pytest_infra/runs/${{ matrix.run_prefix }}-*
 
       - name: Upload allure results
         if: always()
@@ -427,17 +423,25 @@ jobs:
   helm_rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      RUN_PREFIX: gha-kube-${{ github.run_id }}-${{ github.run_attempt }}
+      PYTEST_ADDOPTS: >-
+        --platform=kube
+        --infra-profile=full
+        --kube-cpus=max
+        --kube-memory=max
+        --run-prefix=gha-kube-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
       - name: Start minikube
         uses: medyagh/setup-minikube@latest
         with:
-          cpus: max
-          memory: max
-
-      - name: Try the cluster
-        run: kubectl get pods -A
+          start: false
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v4
@@ -453,76 +457,40 @@ jobs:
 
       - name: Load images
         run: |
-          eval $(minikube -p minikube docker-env)
+          # Keep images in the host Docker daemon. The pytest kube infra then
+          # loads them into its own active Minikube profile (`cvat-pytest`).
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
           docker image ls -a
 
       - uses: azure/setup-helm@v4
 
-      - name: Update Helm chart dependencies
-        working-directory: helm-chart
-        run: |
-          helm dependency update
-
-      - name: Deploy to minikube
-        run: |
-          printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> helm-chart/test.values.yaml
-          helm upgrade release-${{ github.run_id }}-${{ github.run_attempt }} --install helm-chart \
-            -f helm-chart/cvat.values.yaml \
-            -f helm-chart/test.values.yaml \
-            --set cvat.backend.tag=${{ env.CVAT_VERSION }} \
-            --set cvat.frontend.tag=${{ env.CVAT_VERSION }}
-
-      - name: Update test config
-        run: |
-          sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
-          find tests/python/shared/assets/ -type f -name '*.json' | xargs sed -i -e 's$http://localhost:8080$http://cvat.local$g'
-          echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
-
       - name: Generate SDK
         run: |
-          pip3 install --user -r cvat-sdk/gen/requirements.txt
+          pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-      - name: Install test requirements
+      - name: Install SDK
         run: |
-          pip3 install --user cvat-sdk/ cvat-cli/ -r tests/python/requirements.txt
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
+            --extra-index-url https://download.pytorch.org/whl/cpu
 
-      - name: Wait for CVAT to be ready
+      - name: Run kube REST API and SDK tests
         run: |
-          max_tries=60
-          while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for CVAT pod" && (( max_tries-- )) && sleep 5; done
-          while [[ $(kubectl get pods -l app.kubernetes.io/name=postgresql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for DB pod" && (( max_tries-- )) && sleep 5; done
-          while [[ $(curl -s -o /tmp/server_response -w "%{http_code}" cvat.local/api/server/about) != "200" && max_tries -gt 0 ]]; do echo "waiting for CVAT" && (( max_tries-- )) && sleep 5; done
-          kubectl get pods
-          kubectl logs $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}')
+          pytest tests/python
 
-      - name: REST API and SDK tests
-        # We don't have external services in Helm tests, so we ignore corresponding cases
-        # They are still tested without Helm
-        run: |
-          kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
-          kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
-          pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-cli-level DEBUG
-
-      - name: Creating a log file from "cvat" container logs
-        if: failure()
-        env:
-            LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
-        run: |
-          mkdir ${LOGS_DIR}
-          for backend_pod in $(kubectl get pods -l tier=backend -o 'jsonpath={.items[*].metadata.name}'); do
-            kubectl logs ${backend_pod} >${LOGS_DIR}/${backend_pod}.log
-          done
-          kubectl logs $(kubectl get pods -l app.kubernetes.io/name=traefik -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/traefik.log
-
-      - name: Uploading "cvat" container logs as an artifact
-        if: failure()
+      - name: Upload kube run artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: helm_rest_api_container_logs
-          path: "${{ github.workspace }}/rest_api_testing"
+          name: helm_rest_api_kube_run
+          path: /tmp/cvat_pytest_infra/runs/${{ env.RUN_PREFIX }}-*
+
+      - name: Stop kube test infrastructure
+        if: always()
+        run: |
+          pytest tests/python --infra=down
 
   publish_dev_images:
     if: github.ref == 'refs/heads/develop'

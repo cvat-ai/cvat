@@ -95,6 +95,10 @@ jobs:
   rest_api_testing:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      PYTEST_ADDOPTS: --platform=local --infra=auto --infra-profile=full
+      RUN_PREFIX_MAIN: full-rest-api
+      RUN_PREFIX_TASKDATA_CACHE: full-rest-api-taskdata-cache
     steps:
       - uses: actions/checkout@v4
         with:
@@ -160,28 +164,30 @@ jobs:
             --extra-index-url https://download.pytorch.org/whl/cpu
 
       - name: Running REST API and SDK tests
-        id: run_tests
+        id: run_tests_main
         run: |
-          pytest tests/python/
-          CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python
+          pytest tests/python/ --run-prefix "${RUN_PREFIX_MAIN}"
 
-      - name: Creating a log file from cvat containers
-        if: failure() && steps.run_tests.conclusion == 'failure'
-        env:
-          LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
-        run: |
-            mkdir $LOGS_DIR
-            docker logs test_cvat_server_1 > $LOGS_DIR/cvat_server.log
-            docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
-            docker logs test_cvat_worker_import_1 > $LOGS_DIR/cvat_worker_import.log
-            docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
-
-      - name: Uploading "cvat" container logs as an artifact
-        if: failure() && steps.run_tests.conclusion == 'failure'
+      - name: Upload pytest run artifacts for main REST API run
+        if: failure() && steps.run_tests_main.conclusion == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: rest_api_container_logs
-          path: "${{ github.workspace }}/rest_api_testing"
+          name: rest_api_run_artifacts_main
+          path: /tmp/cvat_pytest_infra/runs/${{ env.RUN_PREFIX_MAIN }}-*
+
+      - name: Running TestTaskData with static cache
+        id: run_tests_taskdata_cache
+        env:
+          CVAT_ALLOW_STATIC_CACHE: "true"
+        run: |
+          pytest -k "TestTaskData" tests/python --run-prefix "${RUN_PREFIX_TASKDATA_CACHE}"
+
+      - name: Upload pytest run artifacts for TestTaskData cache run
+        if: failure() && steps.run_tests_taskdata_cache.conclusion == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rest_api_run_artifacts_taskdata_cache
+          path: /tmp/cvat_pytest_infra/runs/${{ env.RUN_PREFIX_TASKDATA_CACHE }}-*
 
   unit_testing:
     needs: build
