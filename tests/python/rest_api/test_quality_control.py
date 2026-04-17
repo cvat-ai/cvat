@@ -29,6 +29,8 @@ from .utils import (
     wait_background_request,
 )
 
+pytestmark = [pytest.mark.infra_profile("full")]
+
 
 class _PermissionTestBase:
     def create_quality_report(
@@ -330,6 +332,7 @@ class TestListQualityReports(_PermissionTestBase):
 
             assert response.status == HTTPStatus.FORBIDDEN
 
+    @pytest.mark.infra_profile("simple")
     def test_can_list_quality_reports(self, admin_user, quality_reports):
         reports = sorted(quality_reports, key=lambda r: -r["id"])
 
@@ -510,6 +513,7 @@ class TestGetQualityReportData(_PermissionTestBase):
         return response
 
     @pytest.mark.parametrize("target", ["project", "task", "job"])
+    @pytest.mark.infra_profile("simple")
     def test_can_get_full_report_data(self, admin_user, target, quality_reports):
         report = next(
             r for r in quality_reports if r[self.key_field_for_target[target]] is not None
@@ -618,6 +622,7 @@ class TestGetQualityReportData(_PermissionTestBase):
         )
 
     @pytest.mark.parametrize("target", ["project", "task", "job"])
+    @pytest.mark.infra_profile("simple")
     def test_can_get_confusion_matrix_csv(self, admin_user, target, quality_reports):
         report = next(
             r for r in quality_reports if r[self.key_field_for_target[target]] is not None
@@ -678,6 +683,7 @@ class TestPostQualityReports(_PermissionTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         assert models.QualityReport._from_openapi_data(**report)
 
+    @pytest.mark.infra_profile("simple")
     def test_cannot_create_report_without_gt_job(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if t["jobs"]["count"] == 1)
 
@@ -699,6 +705,7 @@ class TestPostQualityReports(_PermissionTestBase):
             ("state", "rejected"),
         ],
     )
+    @pytest.mark.infra_profile("simple")
     def test_cannot_create_report_with_incomplete_gt_job(
         self, admin_user, jobs, field_name, field_value
     ):
@@ -929,6 +936,7 @@ class TestPostQualityReports(_PermissionTestBase):
             wait_background_request(api_client, rq_id)
 
 
+@pytest.mark.infra_profile("simple")
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_class, admin_user, quality_reports, jobs, tasks, projects):
@@ -1013,6 +1021,7 @@ class TestListQualityConflicts(_PermissionTestBase):
 
             assert response.status == HTTPStatus.FORBIDDEN
 
+    @pytest.mark.infra_profile("simple")
     def test_can_list_job_report_conflicts(self, admin_user, quality_reports, quality_conflicts):
         report = next(r for r in quality_reports if r["job_id"])
         conflicts = [c for c in quality_conflicts if c["report_id"] == report["id"]]
@@ -1060,6 +1069,7 @@ class TestListQualityConflicts(_PermissionTestBase):
             self._test_list_conflicts_403(user, report["id"])
 
 
+@pytest.mark.infra_profile("simple")
 class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
     def setup(
@@ -1188,6 +1198,7 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
         assert response.status == HTTPStatus.FORBIDDEN
 
 
+@pytest.mark.infra_profile("simple")
 class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_class, admin_user, quality_settings, tasks, projects):
@@ -1278,6 +1289,7 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.infra_profile("simple")
 class TestListSettings(_PermissionTestBase):
     def _test_list_settings_200(
         self, user: str, task_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
@@ -1340,6 +1352,7 @@ class TestListSettings(_PermissionTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.infra_profile("simple")
 class TestGetSettings(_PermissionTestBase):
     def _test_get_settings_200(
         self, user: str, obj_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
@@ -1402,6 +1415,7 @@ class TestGetSettings(_PermissionTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.infra_profile("simple")
 class TestPatchSettings(_PermissionTestBase):
     def _test_patch_settings_200(
         self,
@@ -1509,6 +1523,7 @@ class TestQualityReportContents(_PermissionTestBase):
     demo_task_id_multiple_jobs = 23  # this task reproduces cases for multiple jobs
 
     @pytest.mark.parametrize("task_id", [demo_task_id])
+    @pytest.mark.infra_profile("simple")
     def test_report_summary(self, task_id, tasks, jobs, quality_reports):
         gt_job = next(j for j in jobs if j["task_id"] == task_id and j["type"] == "ground_truth")
         task = tasks[task_id]
@@ -1668,6 +1683,7 @@ class TestQualityReportContents(_PermissionTestBase):
                 new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
             )
 
+    @pytest.mark.infra_profile("simple")
     def test_old_report_can_be_loaded(self, admin_user, quality_reports):
         report = min((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
         assert report["created_date"] < "2024"
@@ -1951,6 +1967,7 @@ class TestQualityReportContents(_PermissionTestBase):
             assert report["summary"]["valid_count"] == 2
             assert report["summary"]["total_count"] == 2
 
+    @pytest.mark.infra_profile("simple")
     def test_project_report_aggregates_nested_task_reports(self, quality_reports, tasks, jobs):
         project_report = max(
             (r for r in quality_reports if r["target"] == "project"), key=lambda r: r["id"]
@@ -2001,6 +2018,7 @@ class TestQualityReportContents(_PermissionTestBase):
             assert summary[summary_field] == sum(r["summary"][summary_field] for r in task_reports)
 
     @pytest.mark.parametrize("task_id", [demo_task_id])
+    @pytest.mark.infra_profile("simple")
     def test_confusion_matrix_correct(self, admin_user, task_id, quality_reports, labels):
         report_id = next(
             r["id"] for r in quality_reports if r["task_id"] == task_id and r["target"] == "task"
@@ -2253,6 +2271,7 @@ class TestPostProjectQualityReports(_PermissionTestBase):
         else:
             self._test_create_report_403(user=user["username"], project_id=project["id"])
 
+    @pytest.mark.infra_profile("simple")
     def test_cannot_create_report_with_both_task_and_project_id(self, admin_user, tasks):
         task = next(t for t in tasks if t.get("project_id") is not None)
         task_id = task["id"]

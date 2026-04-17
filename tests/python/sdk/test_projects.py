@@ -22,6 +22,8 @@ from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
 from .common import TestDatasetExport
 from .util import make_pbar
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 class TestProjectUsecases(TestDatasetExport):
     @pytest.fixture(autouse=True)
@@ -116,12 +118,14 @@ class TestProjectUsecases(TestDatasetExport):
 
         yield backup_path
 
+    @pytest.mark.infra_profile("simple")
     def test_can_create_empty_project(self):
         project = self.client.projects.create(spec=models.ProjectWriteRequest(name="test project"))
 
         assert project.id != 0
         assert project.name == "test project"
 
+    @pytest.mark.infra_profile("simple")
     def test_can_create_project_with_attribute_with_blank_default(self):
         project = self.client.projects.create(
             spec=models.ProjectWriteRequest(
@@ -185,6 +189,7 @@ class TestProjectUsecases(TestDatasetExport):
             [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
         )
 
+    @pytest.mark.infra_profile("simple")
     def test_can_retrieve_project(self, fxt_new_project: Project):
         project_id = fxt_new_project.id
 
@@ -193,6 +198,7 @@ class TestProjectUsecases(TestDatasetExport):
         assert project.id == project_id
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.infra_profile("simple")
     def test_can_list_projects(self, fxt_new_project: Project):
         project_id = fxt_new_project.id
 
@@ -201,6 +207,7 @@ class TestProjectUsecases(TestDatasetExport):
         assert any(p.id == project_id for p in projects)
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.infra_profile("simple")
     def test_can_update_project(self, fxt_new_project: Project):
         fxt_new_project.update(models.PatchedProjectWriteRequest(name="foo"))
 
@@ -209,6 +216,7 @@ class TestProjectUsecases(TestDatasetExport):
         assert fxt_new_project.name == retrieved_project.name
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.infra_profile("simple")
     def test_can_delete_project(self, fxt_new_project: Project):
         fxt_new_project.remove()
 
@@ -258,28 +266,10 @@ class TestProjectUsecases(TestDatasetExport):
         [
             (fixture_ref("fxt_new_project"), None),
             (fixture_ref("fxt_new_project"), Location.LOCAL),
-            (
-                pytest.param(
-                    fixture_ref("fxt_new_project"),
-                    Location.CLOUD_STORAGE,
-                    marks=pytest.mark.with_external_services,
-                )
-            ),
-            (
-                pytest.param(
-                    fixture_ref("fxt_new_project_with_target_storage"),
-                    None,
-                    marks=pytest.mark.with_external_services,
-                )
-            ),
+            (fixture_ref("fxt_new_project"), Location.CLOUD_STORAGE),
+            (fixture_ref("fxt_new_project_with_target_storage"), None),
             (fixture_ref("fxt_new_project_with_target_storage"), Location.LOCAL),
-            (
-                pytest.param(
-                    fixture_ref("fxt_new_project_with_target_storage"),
-                    Location.CLOUD_STORAGE,
-                    marks=pytest.mark.with_external_services,
-                )
-            ),
+            (fixture_ref("fxt_new_project_with_target_storage"), Location.CLOUD_STORAGE),
         ],
     )
     def test_can_export_dataset(

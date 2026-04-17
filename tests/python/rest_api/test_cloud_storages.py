@@ -16,13 +16,13 @@ from cvat_sdk.api_client.model.file_info import FileInfo
 from deepdiff import DeepDiff
 from PIL import Image
 
-from shared.utils.config import get_method, make_api_client
+from shared.utils.config import get_method, get_runtime_cloud_storage_endpoint_url, make_api_client
 from shared.utils.s3 import make_client as make_s3_client
 
 from .utils import CollectionSimpleFilterTestBase
 
 # https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
-pytestmark = [pytest.mark.with_external_services]
+pytestmark = [pytest.mark.infra_profile("standard")]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -154,7 +154,7 @@ class TestPostCloudStorage:
         "credentials_type": "KEY_SECRET_KEY_PAIR",
         "key": "minio_access_key",
         "secret_key": "minio_secret_key",
-        "specific_attributes": "endpoint_url=http://minio:9000",
+        "specific_attributes": f"endpoint_url={get_runtime_cloud_storage_endpoint_url()}",
         "description": "Some description",
         "manifests": ["images_with_manifest/manifest.jsonl"],
     }
@@ -716,6 +716,7 @@ class TestGetCloudStorageContent:
             partial(
                 s3_client.remove_file,
                 filename=new_directory,
+                ignore_clock_skew=True,
             )
         )
 

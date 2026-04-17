@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import socket
 from contextlib import ExitStack
 from logging import Logger
 
@@ -13,10 +14,15 @@ from cvat_sdk.core.client import AccessTokenCredentials, Config, PasswordCredent
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
 from cvat_sdk.exceptions import ApiException
 
-from shared.utils.config import BASE_URL, USER_PASS
+from shared.utils import config as shared_config
+from shared.utils.config import USER_PASS
 
 
 class TestClientUsecases:
+    @pytest.fixture(autouse=True)
+    def _restore_redis_inmem(self, restore_redis_inmem_per_function):
+        yield
+
     @pytest.fixture(autouse=True)
     def setup(
         self,
@@ -80,52 +86,59 @@ class TestClientUsecases:
 class TestClientFactory:
     def test_can_make_client_with_pat_auth(self, access_tokens_by_username):
         user, token = next((u, t) for u, ts in access_tokens_by_username.items() for t in ts)
-        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        host, port = shared_config.BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
 
         with make_client(host=host, port=port, access_token=token["private_key"]) as client:
             assert client.users.retrieve_current_user().username == user
 
     def test_can_strip_trailing_slash_in_hostname(self, admin_user: str):
-        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        host, port = shared_config.BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
 
         with make_client(host=host + "/", port=port, credentials=(admin_user, USER_PASS)) as client:
-            assert client.api_map.host == BASE_URL
+            assert client.api_map.host == shared_config.BASE_URL
 
     def test_can_strip_trailing_slash_in_hostname_in_client_ctor(self, admin_user: str):
-        with Client(url=BASE_URL + "/") as client:
+        with Client(url=shared_config.BASE_URL + "/") as client:
             client.login((admin_user, USER_PASS))
-            assert client.api_map.host == BASE_URL
+            assert client.api_map.host == shared_config.BASE_URL
 
     def test_can_detect_server_schema_if_not_provided(self):
-        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        host, port = shared_config.BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
         client = make_client(host=host, port=int(port))
         assert client.api_map.host == "http://" + host + ":" + port
 
     def test_can_fail_to_detect_server_schema_if_not_provided(self):
-        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        host, _ = shared_config.BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        # Reserve a local port without starting a server there.
+        # This avoids flaky collisions with other CVAT test lanes where `port + 1`
+        # can accidentally point to another running instance.
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("127.0.0.1", 0))
+            unused_port = sock.getsockname()[1]
+
         with pytest.raises(InvalidHostException) as capture:
-            make_client(host=host, port=int(port) + 1)
+            make_client(host=host, port=unused_port)
 
         assert capture.match(r"Failed to detect host schema automatically")
 
     def test_can_reject_invalid_server_schema(self):
-        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        host, port = shared_config.BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
         with pytest.raises(InvalidHostException) as capture:
             make_client(host="ftp://" + host, port=int(port) + 1)
 
         assert capture.match(r"Invalid url schema 'ftp'")
 
     def test_can_use_server_url(self, admin_user):
-        with make_client(BASE_URL, credentials=(admin_user, USER_PASS)):
+        with make_client(shared_config.BASE_URL, credentials=(admin_user, USER_PASS)):
             pass
 
     def test_cannot_use_server_url_with_port_and_port_parameter(self):
         with pytest.raises(ValueError, match="Please specify only one port"):
-            make_client(BASE_URL, port=1)
+            make_client(shared_config.BASE_URL, port=1)
 
     def test_cannot_use_both_credentials_and_access_token(self):
         with pytest.raises(ValueError, match="'credentials' and 'access_token' cannot"):
-            make_client(BASE_URL, credentials=("name", "pass"), access_token="token")
+            make_client(shared_config.BASE_URL, credentials=("name", "pass"), access_token="token")
 
 
 @pytest.mark.parametrize("raise_exception", (True, False))
@@ -146,7 +159,7 @@ def test_can_warn_on_mismatching_server_version(
             config.allow_unsupported_server = False
             es.enter_context(pytest.raises(IncompatibleVersionException))
 
-        Client(url=BASE_URL, logger=logger, config=config)
+        Client(url=shared_config.BASE_URL, logger=logger, config=config)
 
     assert "Server version '0' is not compatible with SDK version" in logger_stream.getvalue()
 
@@ -169,7 +182,9 @@ def test_can_check_server_version_in_ctor(
         if do_check:
             es.enter_context(pytest.raises(IncompatibleVersionException))
 
-        Client(url=BASE_URL, logger=logger, config=config, check_server_version=do_check)
+        Client(
+            url=shared_config.BASE_URL, logger=logger, config=config, check_server_version=do_check
+        )
 
     assert (
         "Server version '0' is not compatible with SDK version" in logger_stream.getvalue()
@@ -186,7 +201,9 @@ def test_can_check_server_version_in_method(fxt_logger: tuple[Logger, io.StringI
 
     config = Config()
     config.allow_unsupported_server = False
-    client = Client(url=BASE_URL, logger=logger, config=config, check_server_version=False)
+    client = Client(
+        url=shared_config.BASE_URL, logger=logger, config=config, check_server_version=False
+    )
 
     with client, pytest.raises(IncompatibleVersionException):
         client.check_server_version()
@@ -236,20 +253,21 @@ def test_can_check_server_version_compatibility(
         if not expect_supported:
             es.enter_context(pytest.raises(IncompatibleVersionException))
 
-        Client(url=BASE_URL, logger=logger, config=config, check_server_version=True)
+        Client(url=shared_config.BASE_URL, logger=logger, config=config, check_server_version=True)
 
 
 @pytest.mark.parametrize("verify", [True, False])
 def test_can_control_ssl_verification_with_config(verify: bool):
     config = Config(verify_ssl=verify)
 
-    client = Client(BASE_URL, config=config)
+    client = Client(shared_config.BASE_URL, config=config)
 
     assert client.api_client.configuration.verify_ssl == verify
 
 
 def test_organization_contexts(admin_user: str):
-    with make_client(BASE_URL, credentials=(admin_user, USER_PASS)) as client:
+    with Client(shared_config.BASE_URL, check_server_version=False) as client:
+        client.login((admin_user, USER_PASS))
         assert client.organization_slug is None
 
         org = client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
@@ -280,9 +298,11 @@ def test_organization_contexts(admin_user: str):
         client.projects.retrieve(personal_project.id)
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_db_per_function", "restore_redis_inmem_per_function")
+@pytest.mark.infra_profile("standard")
 def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
-    with make_client(BASE_URL, credentials=(regular_lonely_user, USER_PASS)) as client:
+    with Client(shared_config.BASE_URL, check_server_version=False) as client:
+        client.login((regular_lonely_user, USER_PASS))
         org = client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
 
         # create a project and task in sandbox
@@ -318,7 +338,7 @@ def test_organization_filtering(regular_lonely_user: str, fxt_image_file):
 
 
 def test_organization_context_manager():
-    client = Client(BASE_URL)
+    client = Client(shared_config.BASE_URL)
 
     client.organization_slug = "abc"
 

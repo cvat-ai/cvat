@@ -26,6 +26,8 @@ from .utils import (
     wait_background_request,
 )
 
+pytestmark = [pytest.mark.infra_profile("full")]
+
 
 class _PermissionTestBase:
     def merge(
@@ -207,6 +209,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
 
         self.merge(user=admin_user, job_id=job_id)
 
+    @pytest.mark.infra_profile("simple")
     def test_cannot_merge_task_without_consensus_jobs(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if not t["consensus_enabled"])
 
@@ -215,6 +218,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
 
         assert "Consensus is not enabled in this task" in capture.value.body
 
+    @pytest.mark.infra_profile("simple")
     def test_cannot_merge_task_without_mergeable_parent_jobs(self, admin_user, tasks, jobs):
         task_id = next(t["id"] for t in tasks if t["consensus_enabled"])
 
@@ -235,6 +239,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
 
         assert "No annotation jobs in the annotation stage" in capture.value.body
 
+    @pytest.mark.infra_profile("simple")
     def test_cannot_merge_replica_job(self, admin_user, tasks, jobs):
         job_id = next(
             j["id"]
@@ -417,6 +422,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
             wait_background_request(api_client, rq_id)
 
 
+@pytest.mark.infra_profile("simple")
 class TestSimpleConsensusSettingsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
     def setup(self, admin_user, consensus_settings):
@@ -431,6 +437,7 @@ class TestSimpleConsensusSettingsFilters(CollectionSimpleFilterTestBase):
         return super()._test_can_use_simple_filter_for_object_list(field)
 
 
+@pytest.mark.infra_profile("simple")
 class TestListSettings(_PermissionTestBase):
     def _test_list_settings_200(
         self, user: str, task_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
@@ -488,6 +495,7 @@ class TestListSettings(_PermissionTestBase):
             self._test_list_settings_403(user["username"], task["id"], org_id=org_id)
 
 
+@pytest.mark.infra_profile("simple")
 class TestGetSettings(_PermissionTestBase):
     def _test_get_settings_200(
         self, user: str, obj_id: int, *, expected_data: dict[str, Any] | None = None, **kwargs
@@ -545,6 +553,7 @@ class TestGetSettings(_PermissionTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.infra_profile("simple")
 class TestPatchSettings(_PermissionTestBase):
     def _test_patch_settings_200(
         self,

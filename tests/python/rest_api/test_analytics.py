@@ -21,6 +21,8 @@ from shared.utils.helpers import generate_image_files
 
 from .utils import create_task, export_events
 
+pytestmark = [pytest.mark.infra_profile("full")]
+
 
 class TestGetAnalytics:
     endpoint = "analytics"
@@ -54,8 +56,7 @@ class TestGetAnalytics:
             self._test_cannot_see(user)
 
 
-@pytest.mark.usefixtures("restore_db_per_class")
-class TestGetAuditEvents:
+class _AuditEventsBase:
     _USERNAME = "admin1"
 
     @staticmethod
@@ -65,8 +66,7 @@ class TestGetAuditEvents:
             assert response.status == HTTPStatus.CREATED
         return project.id, response.headers.get("X-Request-Id")
 
-    @pytest.fixture(autouse=True)
-    def setup(self, restore_clickhouse_db_per_function, restore_redis_inmem_per_function):
+    def _prepare_audit_events_data(self):
         project_spec = {
             "name": f"Test project created by {self._USERNAME}",
             "labels": [
@@ -85,13 +85,11 @@ class TestGetAuditEvents:
                 }
             ],
         }
-        self.project_id, project_request_id = TestGetAuditEvents._create_project(
-            self._USERNAME, project_spec
-        )
+        project_id, project_request_id = self._create_project(self._USERNAME, project_spec)
         task_spec = {
             "name": f"test {self._USERNAME} to create a task",
             "segment_size": 2,
-            "project_id": self.project_id,
+            "project_id": project_id,
         }
         task_ids = [
             create_task(
@@ -112,10 +110,8 @@ class TestGetAuditEvents:
             ),
         ]
 
-        self.task_ids = [t[0] for t in task_ids]
-
         assert project_request_id is not None
-        assert all(t[1] is not None for t in task_ids)
+        assert all(task_id[1] is not None for task_id in task_ids)
 
         event_filters = [
             (
@@ -133,18 +129,20 @@ class TestGetAuditEvents:
                     (("scope", ["create:job"]),),
                 )
             )
+
         self._wait_for_request_ids(event_filters)
+        return project_id, [task_id[0] for task_id in task_ids]
 
     def _wait_for_request_ids(self, event_filters):
-        MAX_RETRIES = 5
-        SLEEP_INTERVAL = 2
-        while MAX_RETRIES > 0:
+        max_retries = 5
+        sleep_interval = 2
+        while max_retries > 0:
             data = self._test_get_audit_logs_as_csv()
             events = self._csv_to_dict(data)
-            if all(self._filter_events(events, filter) for filter in event_filters):
+            if all(self._filter_events(events, one_filter) for one_filter in event_filters):
                 break
-            MAX_RETRIES -= 1
-            sleep(SLEEP_INTERVAL)
+            max_retries -= 1
+            sleep(sleep_interval)
         else:
             assert False, "Could not wait for expected request IDs"
 
@@ -155,7 +153,6 @@ class TestGetAuditEvents:
             reader = csv.DictReader(f)
             for row in reader:
                 res.append(row)
-
         return res
 
     @staticmethod
@@ -165,12 +162,25 @@ class TestGetAuditEvents:
         for e in events:
             if all(get_value(getter, e) in expected_values for getter, expected_values in filters):
                 res.append(e)
-
         return res
 
     def _test_get_audit_logs_as_csv(self, *, api_version: int = 2, **kwargs):
         with make_api_client(self._USERNAME) as api_client:
             return export_events(api_client, api_version=api_version, **kwargs)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.parallel_group("class")
+class TestGetAuditEventsReadOnly(_AuditEventsBase):
+    @pytest.fixture(autouse=True, scope="class")
+    def setup(
+        self,
+        request,
+        restore_db_per_class,
+        restore_clickhouse_db_per_class,
+        restore_redis_inmem_per_class,
+    ):
+        request.cls.project_id, request.cls.task_ids = self._prepare_audit_events_data()
 
     @pytest.mark.parametrize("api_version", [1, 2])
     def test_entry_to_time_interval(self, api_version: int):
@@ -255,6 +265,44 @@ class TestGetAuditEvents:
             assert request_id
             uuid.UUID(request_id)
 
+    @pytest.mark.parametrize("api_version, allowed", [(1, False), (2, True)])
+    @pytest.mark.parametrize("cloud_storage_id", [3])  # import/export bucket
+    def test_export_to_cloud(
+        self, api_version: int, allowed: bool, cloud_storage_id: int, cloud_storages
+    ):
+        query_params = {
+            "api_version": api_version,
+            "location": "cloud_storage",
+            "cloud_storage_id": cloud_storage_id,
+            "filename": "test.csv",
+            "task_id": self.task_ids[0],
+        }
+        if allowed:
+            data = self._test_get_audit_logs_as_csv(**query_params)
+            assert data is None
+            s3_client = s3.make_client(bucket=cloud_storages[cloud_storage_id]["resource"])
+            data = s3_client.download_fileobj(query_params["filename"])
+            events = self._csv_to_dict(data)
+            assert len(events)
+        else:
+            response = get_method(self._USERNAME, "events", **query_params)
+            assert response.status_code == HTTPStatus.BAD_REQUEST
+            assert (
+                response.json()[0]
+                == "This endpoint does not support exporting events to cloud storage"
+            )
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetAuditEventsMutable(_AuditEventsBase):
+    @pytest.fixture(autouse=True)
+    def setup(
+        self,
+        restore_clickhouse_db_per_function,
+        restore_redis_inmem_per_function,
+    ):
+        self.project_id, self.task_ids = self._prepare_audit_events_data()
+
     @pytest.mark.parametrize("api_version", [1, 2])
     def test_delete_project(self, api_version: int):
         response = delete_method("admin1", f"projects/{self.project_id}")
@@ -294,31 +342,3 @@ class TestGetAuditEvents:
         assert event_count["delete:project"] == 1
         assert event_count["delete:task"] == 2
         assert event_count["delete:job"] == 4
-
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize("api_version, allowed", [(1, False), (2, True)])
-    @pytest.mark.parametrize("cloud_storage_id", [3])  # import/export bucket
-    def test_export_to_cloud(
-        self, api_version: int, allowed: bool, cloud_storage_id: int, cloud_storages
-    ):
-        query_params = {
-            "api_version": api_version,
-            "location": "cloud_storage",
-            "cloud_storage_id": cloud_storage_id,
-            "filename": "test.csv",
-            "task_id": self.task_ids[0],
-        }
-        if allowed:
-            data = self._test_get_audit_logs_as_csv(**query_params)
-            assert data is None
-            s3_client = s3.make_client(bucket=cloud_storages[cloud_storage_id]["resource"])
-            data = s3_client.download_fileobj(query_params["filename"])
-            events = self._csv_to_dict(data)
-            assert len(events)
-        else:
-            response = get_method(self._USERNAME, "events", **query_params)
-            assert response.status_code == HTTPStatus.BAD_REQUEST
-            assert (
-                response.json()[0]
-                == "This endpoint does not support exporting events to cloud storage"
-            )

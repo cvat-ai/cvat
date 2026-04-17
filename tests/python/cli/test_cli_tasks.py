@@ -16,6 +16,8 @@ from shared.utils.helpers import generate_image_file
 
 from .util import TestCliBase, generate_images
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 class TestCliTasks(TestCliBase):
     @pytest.fixture
