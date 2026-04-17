@@ -29,7 +29,11 @@ from pytest_cases import parametrize
 
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
-from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
+from rest_api.utils import (
+    create_task,
+    get_cloud_storage_content,
+    wait_until_task_is_created,
+)
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec
@@ -43,12 +47,15 @@ from shared.utils.helpers import (
     read_video_file,
 )
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.parallel_group("case")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -180,6 +187,8 @@ class TestPostTaskData:
                             assert im.getexif().get(274, 1) == 1
 
     def test_can_create_task_with_big_images(self):
+        # This path uploads a >10MB image and then verifies chunk/raw integrity.
+        # Under parallel lanes, background load can exceed the default per-test timeout.
         # Checks for regressions about the issue
         # https://github.com/cvat-ai/cvat/issues/6878
         # In the case of big files (>2.5 MB by default),
@@ -483,7 +492,6 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, f"jobs/{job_id}/annotations")
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "use_cache, cloud_storage_id, manifest, use_bucket_content",
         [
@@ -571,6 +579,7 @@ class TestPostTaskData:
                 partial(
                     s3_client.remove_file,
                     filename=f"test/video/{video.name}",
+                    ignore_clock_skew=True,
                 )
             )
         else:
@@ -591,6 +600,7 @@ class TestPostTaskData:
                         partial(
                             s3_client.remove_file,
                             filename=f"test/sub_{i}/{image.name}",
+                            ignore_clock_skew=True,
                         )
                     )
 
@@ -615,6 +625,7 @@ class TestPostTaskData:
                         partial(
                             s3_client.remove_file,
                             filename="test/manifest.jsonl",
+                            ignore_clock_skew=True,
                         )
                     )
         task_spec = {
@@ -643,7 +654,6 @@ class TestPostTaskData:
 
         return create_task(self._USERNAME, task_spec, data_spec, org=org)
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
         "use_cache, use_manifest, server_files, server_files_exclude, task_size",
@@ -688,7 +698,6 @@ class TestPostTaskData:
             assert response.status == HTTPStatus.OK
             assert task.size == task_size
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize(
@@ -731,7 +740,6 @@ class TestPostTaskData:
             data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             assert expected_result == [x.name for x in data_meta.frames]
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "storage_id, manifest",
         [
@@ -788,7 +796,6 @@ class TestPostTaskData:
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
     @pytest.mark.parametrize(
         "manifest, filename_pattern, sub_dir, task_size, expected_error",
@@ -840,6 +847,7 @@ class TestPostTaskData:
                     s3_client.remove_file,
                     bucket=cloud_storage["resource"],
                     filename=f"{'test/sub/' if sub_dir else ''}{image.name}",
+                    ignore_clock_skew=True,
                 )
             )
 
@@ -862,6 +870,7 @@ class TestPostTaskData:
                             s3_client.remove_file,
                             bucket=cloud_storage["resource"],
                             filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                            ignore_clock_skew=True,
                         )
                     )
 
@@ -889,7 +898,6 @@ class TestPostTaskData:
             rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert expected_error and expected_error in rq_job_details.message
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize("use_cache", [True, False])
     @pytest.mark.parametrize(
@@ -929,7 +937,6 @@ class TestPostTaskData:
             )
             assert response.status == HTTPStatus.OK
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "filenames, sorting_method",
         [
@@ -972,7 +979,6 @@ class TestPostTaskData:
             for image_name, frame in zip(filenames, data_meta.frames):
                 assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, org",
         [
@@ -1078,7 +1084,6 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize("server_files", [["test/"]])
@@ -1571,7 +1576,6 @@ class TestPostTaskData:
         else:
             assert len(validation_frames) == validation_frames_count
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
         "validation_mode",
@@ -1650,6 +1654,7 @@ class TestPostTaskData:
                     for img, img_meta in zip(chunk_images.values(), job_meta.frames):
                         assert (img.shape[0], img.shape[1]) == (img_meta.height, img_meta.width)
 
+    @pytest.mark.infra_profile("full")
     def test_can_create_task_with_consensus(self, request: pytest.FixtureRequest):
         segment_size = 2
         regular_job_count = 2
@@ -1732,10 +1737,12 @@ class TestPostTaskData:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+# Group by fixture-case so all tests using the same task fixture run together:
+# this preserves class-scoped fixture reuse while avoiding a single huge class chunk.
+@pytest.mark.parallel_group("fixture")
 class TestTaskData(TestTasksBase):
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases_mark_consensus_full)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
-
         with make_api_client(self._USERNAME) as api_client:
             task_meta, response = api_client.tasks_api.retrieve_data_meta(task_id)
             task_meta_raw = json.loads(response.data)
@@ -1768,11 +1775,8 @@ class TestTaskData(TestTasksBase):
                 assert len(task_meta.frames) == task_meta.size
                 assert task_meta.chapters is None
 
-    @pytest.mark.timeout(
-        # This test has to check all the task frames availability, it can make many requests
-        timeout=300
-    )
-    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
+    @pytest.mark.timeout(timeout=300)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases_mark_consensus_full)
     def test_can_get_task_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -1803,20 +1807,18 @@ class TestTaskData(TestTasksBase):
                 frame = Image.open(io.BytesIO(response.data))
                 assert frame_size == frame.size
 
+                must_be_identical = (
+                    task_spec.source_data_type == SourceDataType.images and quality == "original"
+                )
                 self._compare_images(
                     task_spec.read_frame(abs_frame_id),
                     frame,
-                    must_be_identical=(
-                        task_spec.source_data_type == SourceDataType.images
-                        and quality == "original"
-                    ),
+                    must_be_identical=must_be_identical,
+                    source_data_type=task_spec.source_data_type,
                 )
 
-    @pytest.mark.timeout(
-        # This test has to check all the task chunks availability, it can make many requests
-        timeout=300
-    )
-    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
+    @pytest.mark.timeout(timeout=300)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases_mark_consensus_full)
     def test_can_get_task_chunks(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             task, _ = api_client.tasks_api.retrieve(task_id)
@@ -1871,13 +1873,15 @@ class TestTaskData(TestTasksBase):
                 assert sorted(chunk_images.keys()) == list(range(len(expected_chunk_frame_ids)))
 
                 for chunk_frame, abs_frame_id in zip(chunk_images, expected_chunk_frame_ids):
+                    must_be_identical = (
+                        task_spec.source_data_type == SourceDataType.images
+                        and quality == "original"
+                    )
                     self._compare_images(
                         task_spec.read_frame(abs_frame_id),
                         chunk_images[chunk_frame],
-                        must_be_identical=(
-                            task_spec.source_data_type == SourceDataType.images
-                            and quality == "original"
-                        ),
+                        must_be_identical=must_be_identical,
+                        source_data_type=task_spec.source_data_type,
                     )
 
     @pytest.mark.timeout(
@@ -1928,11 +1932,8 @@ class TestTaskData(TestTasksBase):
 
                     self._compare_images(expected_ri, chunk_ri, must_be_identical=False)
 
-    @pytest.mark.timeout(
-        # This test has to check all the task meta availability, it can make many requests
-        timeout=300
-    )
-    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
+    @pytest.mark.timeout(timeout=300)
+    @parametrize("task_spec, task_id", TestTasksBase._all_task_cases_mark_consensus_full)
     def test_can_get_annotation_job_meta(self, task_spec: ITaskSpec, task_id: int):
         segment_params = self._compute_annotation_segment_params(task_spec)
 
@@ -1972,7 +1973,7 @@ class TestTaskData(TestTasksBase):
                 else:
                     assert len(job_meta.frames) == job_meta.size
 
-    @parametrize("task_spec, task_id", TestTasksBase._tasks_with_simple_gt_job_cases)
+    @parametrize("task_spec, task_id", TestTasksBase._simple_gt_job_cases_mark_consensus_full)
     def test_can_get_simple_gt_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -2065,6 +2066,7 @@ class TestTaskData(TestTasksBase):
         # This test has to check the job meta for all jobs, it can make many requests
         timeout=300
     )
+    @pytest.mark.infra_profile("full")
     @parametrize("task_spec, task_id", TestTasksBase._tasks_with_consensus_cases)
     def test_can_get_consensus_replica_job_meta(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -2096,11 +2098,8 @@ class TestTaskData(TestTasksBase):
                     )
                     assert DeepDiff(annotation_job_meta, replica_job_meta) == {}
 
-    @pytest.mark.timeout(
-        # This test has to check all the job frames availability, it can make many requests
-        timeout=300
-    )
-    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
+    @pytest.mark.timeout(timeout=300)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases_mark_consensus_full)
     def test_can_get_job_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -2137,20 +2136,19 @@ class TestTaskData(TestTasksBase):
                     frame = Image.open(io.BytesIO(response.data))
                     assert frame_size == frame.size
 
+                    must_be_identical = (
+                        task_spec.source_data_type == SourceDataType.images
+                        and quality == "original"
+                    )
                     self._compare_images(
                         task_spec.read_frame(abs_frame_id),
                         frame,
-                        must_be_identical=(
-                            task_spec.source_data_type == SourceDataType.images
-                            and quality == "original"
-                        ),
+                        must_be_identical=must_be_identical,
+                        source_data_type=task_spec.source_data_type,
                     )
 
-    @pytest.mark.timeout(
-        # This test has to check all the job chunks availability, it can make many requests
-        timeout=300
-    )
-    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
+    @pytest.mark.timeout(timeout=300)
+    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases_mark_consensus_full)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: ITaskSpec, task_id: int, indexing: str):
         _placeholder_image = Image.fromarray(np.zeros((1, 1, 3), dtype=np.uint8))
@@ -2268,11 +2266,13 @@ class TestTaskData(TestTasksBase):
                         else:
                             expected_image = task_spec.read_frame(abs_frame_id)
 
+                        must_be_identical = (
+                            task_spec.source_data_type == SourceDataType.images
+                            and quality == "original"
+                        )
                         self._compare_images(
                             expected_image,
                             chunk_images[chunk_frame],
-                            must_be_identical=(
-                                task_spec.source_data_type == SourceDataType.images
-                                and quality == "original"
-                            ),
+                            must_be_identical=must_be_identical,
+                            source_data_type=task_spec.source_data_type,
                         )

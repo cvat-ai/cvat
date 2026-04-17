@@ -10,7 +10,13 @@ import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
-from shared.utils.config import delete_method, get_method, patch_method, post_method
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    get_runtime_webhook_target_url,
+    patch_method,
+    post_method,
+)
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -25,7 +31,7 @@ class TestPostWebhooks:
         "is_active": True,
         "project_id": 1,
         "secret": "secret",
-        "target_url": "http://webhooks.internal",
+        "target_url": get_runtime_webhook_target_url(),
         "type": "project",
     }
 
@@ -36,7 +42,7 @@ class TestPostWebhooks:
         "events": ["create:task", "delete:task"],
         "is_active": True,
         "secret": "secret",
-        "target_url": "http://webhooks.internal",
+        "target_url": get_runtime_webhook_target_url(),
         "type": "organization",
     }
 

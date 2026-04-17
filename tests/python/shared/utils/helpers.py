@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 import subprocess
 from collections.abc import Generator
 from fractions import Fraction
@@ -10,8 +11,6 @@ from io import BytesIO
 import av
 import av.video.reformatter
 from PIL import Image
-
-from shared.fixtures.init import get_server_image_tag
 
 
 def generate_image_file(filename="image.png", size=(100, 50), color=(0, 0, 0)):
@@ -108,7 +107,7 @@ def generate_manifest(path: str) -> None:
         f"{path}:/local",
         "--entrypoint",
         "python3",
-        get_server_image_tag(),
+        f"cvat/server:{os.environ.get('CVAT_VERSION', 'dev')}",
         "utils/dataset_manifest/create.py",
         "--output-dir",
         "/local",

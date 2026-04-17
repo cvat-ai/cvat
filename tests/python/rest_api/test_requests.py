@@ -11,9 +11,9 @@ import pytest
 from cvat_sdk.api_client import ApiClient, models
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
+from infra.fixtures import container_exec_redis_inmem
 
 from shared.fixtures.data import Container
-from shared.fixtures.init import docker_exec_redis_inmem, kube_exec_redis_inmem
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
@@ -34,11 +34,7 @@ from .utils import (
 )
 
 
-@pytest.mark.usefixtures("restore_db_per_class")
-@pytest.mark.usefixtures("restore_redis_inmem_per_function")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
-@pytest.mark.timeout(30)
-class TestRequestsListFilters(CollectionSimpleFilterTestBase):
+class _TestRequestsListFiltersBase(CollectionSimpleFilterTestBase):
 
     field_lookups = {
         "target": ["operation", "target"],
@@ -53,13 +49,26 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.requests_api.list_endpoint
 
-    @pytest.fixture(autouse=True)
-    def setup(self, find_users):
-        self.user = find_users(privilege="user")[0]["username"]
 
-    @pytest.fixture
-    def fxt_resources_ids(self):
-        with make_api_client(self.user) as api_client:
+@pytest.mark.infra_profile("standard")
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.timeout(30)
+@pytest.mark.parallel_group("class")
+class TestRequestsListSimpleFilters(_TestRequestsListFiltersBase):
+
+    @pytest.fixture(scope="class")
+    def fxt_username(self, find_users):
+        return find_users(privilege="user")[0]["username"]
+
+    @pytest.fixture(autouse=True)
+    def setup(self, fxt_username):
+        self.user = fxt_username
+
+    @pytest.fixture(scope="class")
+    def fxt_resources_ids(self, fxt_username):
+        with make_api_client(fxt_username) as api_client:
             project_ids = [
                 api_client.projects_api.create(
                     {"name": f"Test project {idx + 1}", "labels": [{"name": "car"}]}
@@ -69,8 +78,8 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
             task_ids = [
                 create_task(
-                    self.user,
-                    spec={"name": f"Test task {idx + 1}"},
+                    fxt_username,
+                    spec={"name": f"Test task {idx + 1}", "labels": [{"name": "car"}]},
                     data={
                         "image_quality": 75,
                         "client_files": generate_image_files(2),
@@ -87,9 +96,10 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
         return project_ids, task_ids, job_ids
 
-    @pytest.fixture
+    @pytest.fixture(scope="class")
     def fxt_make_requests(
         self,
+        fxt_username,
         fxt_make_export_project_requests,
         fxt_make_export_task_requests,
         fxt_make_export_job_requests,
@@ -116,7 +126,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
                     if resource_type == "task" and subresource == "backup":
                         import_task_backup(
-                            self.user,
+                            fxt_username,
                             file_content=tmp_file,
                         )
 
@@ -125,14 +135,14 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
             # import corrupted backup
             import_task_backup(
-                self.user,
+                fxt_username,
                 file_content=empty_file,
             )
 
         return _make_requests
 
-    @pytest.fixture
-    def fxt_download_file(self):
+    @pytest.fixture(scope="class")
+    def fxt_download_file(self, fxt_username):
         def download_file(resource: str, rid: int, subresource: str):
             func = {
                 ("project", "dataset"): lambda *args, **kwargs: export_project_dataset(
@@ -157,22 +167,22 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                 ),
             }[(resource, subresource)]
 
-            data = func(self.user, id=rid, download_result=True)
+            data = func(fxt_username, id=rid, download_result=True)
             assert data, f"Failed to download {resource} {subresource} locally"
             return data
 
         return download_file
 
-    @pytest.fixture
-    def fxt_make_export_project_requests(self):
+    @pytest.fixture(scope="class")
+    def fxt_make_export_project_requests(self, fxt_username):
         def make_requests(project_ids: list[int]):
             for project_id in project_ids:
-                export_project_backup(self.user, id=project_id, download_result=False)
+                export_project_backup(fxt_username, id=project_id, download_result=False)
                 export_project_dataset(
-                    self.user, save_images=True, id=project_id, download_result=False
+                    fxt_username, save_images=True, id=project_id, download_result=False
                 )
                 export_project_dataset(
-                    self.user,
+                    fxt_username,
                     save_images=False,
                     id=project_id,
                     download_result=False,
@@ -180,29 +190,33 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
         return make_requests
 
-    @pytest.fixture
-    def fxt_make_export_task_requests(self):
+    @pytest.fixture(scope="class")
+    def fxt_make_export_task_requests(self, fxt_username):
         def make_requests(task_ids: list[int]):
             for task_id in task_ids:
-                export_task_backup(self.user, id=task_id, download_result=False)
-                export_task_dataset(self.user, save_images=True, id=task_id, download_result=False)
-                export_task_dataset(self.user, save_images=False, id=task_id, download_result=False)
+                export_task_backup(fxt_username, id=task_id, download_result=False)
+                export_task_dataset(
+                    fxt_username, save_images=True, id=task_id, download_result=False
+                )
+                export_task_dataset(
+                    fxt_username, save_images=False, id=task_id, download_result=False
+                )
 
         return make_requests
 
-    @pytest.fixture
-    def fxt_make_export_job_requests(self):
+    @pytest.fixture(scope="class")
+    def fxt_make_export_job_requests(self, fxt_username):
         def make_requests(job_ids: list[int]):
             for job_id in job_ids:
                 export_job_dataset(
-                    self.user,
+                    fxt_username,
                     save_images=True,
                     id=job_id,
                     format="COCO 1.0",
                     download_result=False,
                 )
                 export_job_dataset(
-                    self.user,
+                    fxt_username,
                     save_images=False,
                     id=job_id,
                     format="YOLO 1.1",
@@ -210,6 +224,18 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                 )
 
         return make_requests
+
+    @pytest.fixture(scope="class", autouse=True)
+    def fxt_prepare_requests(
+        self,
+        restore_db_per_class,
+        restore_redis_inmem_per_class,
+        restore_redis_ondisk_per_class,
+        fxt_resources_ids,
+        fxt_make_requests,
+    ):
+        project_ids, task_ids, job_ids = fxt_resources_ids
+        fxt_make_requests(project_ids, task_ids, job_ids)
 
     @pytest.mark.parametrize(
         "simple_filter, values",
@@ -225,10 +251,13 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
         ],
     )
     def test_can_use_simple_filter_for_object_list(
-        self, simple_filter: str, values: list, fxt_resources_ids, fxt_make_requests
+        self,
+        simple_filter: str,
+        values: list,
+        fxt_username: str,
+        fxt_resources_ids: tuple[list[int], list[int], list[int]],
     ):
         project_ids, task_ids, job_ids = fxt_resources_ids
-        fxt_make_requests(project_ids, task_ids, job_ids)
 
         if simple_filter in ("project_id", "task_id", "job_id"):
             # check last project|task|job
@@ -239,12 +268,21 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             else:
                 values = job_ids[-1:]
 
-        with make_api_client(self.user) as api_client:
+        with make_api_client(fxt_username) as api_client:
             self.samples = get_paginated_collection(
                 self._get_endpoint(api_client), return_json=True
             )
 
         return super()._test_can_use_simple_filter_for_object_list(simple_filter, values)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.timeout(30)
+@pytest.mark.parallel_group("case")
+@pytest.mark.infra_profile("standard")
+class TestRequestsListFilters:
 
     def test_list_requests_when_there_is_job_with_non_regular_or_corrupted_meta(
         self, jobs: Container, admin_user: str, request: pytest.FixtureRequest
@@ -263,16 +301,14 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             corrupted_job_key = f"rq:job:{corrupted_job['id']}"
             remove_meta_command = f'redis-cli -e HDEL "{corrupted_job_key}" meta'
 
-            if request.config.getoption("--platform") == "local":
-                stdout = docker_exec_redis_inmem(["sh", "-c", remove_meta_command])
-            else:
-                stdout = kube_exec_redis_inmem(
-                    [
-                        "sh",
-                        "-c",
-                        'export REDISCLI_AUTH="${REDIS_PASSWORD}" && ' + remove_meta_command,
-                    ]
-                )
+            stdout = container_exec_redis_inmem(
+                request,
+                [
+                    "sh",
+                    "-c",
+                    'export REDISCLI_AUTH="${REDIS_PASSWORD}" && ' + remove_meta_command,
+                ],
+            )
             assert bool(int(stdout.strip()))
 
             _, response = api_client.requests_api.list(_check_status=False, _parse_response=False)
@@ -285,6 +321,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.infra_profile("standard")
 class TestGetRequests:
 
     def _test_get_request_200(
@@ -568,6 +605,7 @@ class TestGetRequests:
             legacy_request_id, admin_user, action="create", target_type="task"
         )
 
+    @pytest.mark.infra_profile("full")
     def test_can_retrieve_quality_calculation_requests_using_legacy_ids(self, jobs, tasks):
         gt_job = next(
             j

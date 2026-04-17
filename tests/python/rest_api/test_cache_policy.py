@@ -6,7 +6,11 @@
 import re
 from http import HTTPStatus
 
+import pytest
+
 from shared.utils.config import server_get
+
+pytestmark = [pytest.mark.infra_profile("full")]
 
 
 class TestCachePolicy:

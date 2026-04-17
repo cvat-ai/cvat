@@ -151,6 +151,7 @@ class TestDetectionFunctionSpec:
         )
 
 
+@pytest.mark.infra_profile("standard")
 class TestTaskAutoAnnotation:
     @pytest.fixture(autouse=True)
     def setup(
@@ -1227,6 +1228,7 @@ if torchvision_models is not None:
 
 
 @pytest.mark.skipif(torchvision_models is None, reason="torchvision is not installed")
+@pytest.mark.infra_profile("standard")
 class TestAutoAnnotationFunctions:
     @pytest.fixture(autouse=True)
     def setup(

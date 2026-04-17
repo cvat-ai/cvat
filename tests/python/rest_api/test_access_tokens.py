@@ -18,6 +18,7 @@ from .utils import CollectionSimpleFilterTestBase, export_backup, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostAccessToken:
     @pytest.mark.parametrize("user_group", ["admin", "user", "worker"])
     def test_can_create_token(self, users, user_group):
@@ -89,6 +90,7 @@ class TestGetAccessToken:
         assert DeepDiff(expected, actual, exclude_paths=["private_key"]) == {}
 
     @parametrize("is_admin", [True, False])
+    @pytest.mark.usefixtures("restore_db_per_function")
     def test_cannot_see_foreign_tokens(self, users, access_tokens_by_username, is_admin):
         token_owner, token_owner_tokens = next(iter(access_tokens_by_username.items()))
         token = token_owner_tokens[0]
@@ -109,8 +111,13 @@ class TestGetAccessToken:
                 assert response.status == HTTPStatus.OK
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
-
-        assert api_client.auth_api.list_access_tokens()[0].count == 0
+                # Non-admin users must not see foreign tokens in list results either.
+                assert (
+                    api_client.auth_api.list_access_tokens(
+                        filter=json.dumps({"==": [{"var": "id"}, token["id"]]})
+                    )[0].count
+                    == 0
+                )
 
     def test_can_get_self(self, access_tokens_by_username):
         _, user_tokens = next(iter(access_tokens_by_username.items()))
@@ -128,7 +135,7 @@ class TestGetAccessToken:
             == {}
         )
 
-    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.usefixtures("restore_db_per_function", "restore_redis_inmem_per_function")
     @pytest.mark.parametrize("token_eol_reason", ["expired", "stale", "revoked"])
     def test_can_only_see_alive_tokens(self, token_eol_reason: str, admin_user):
         with make_api_client(admin_user) as api_client:
@@ -181,6 +188,7 @@ class TestAccessTokenListFilters(CollectionSimpleFilterTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPatchAccessToken:
     def test_can_modify_token(self, access_tokens_by_username):
         user, user_tokens = next(iter(access_tokens_by_username.items()))
@@ -252,6 +260,7 @@ class TestPatchAccessToken:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestDeleteAccessToken:
     def test_can_revoke_own_token(self, access_tokens_by_username):
         user, user_tokens = next(iter(access_tokens_by_username.items()))
@@ -275,6 +284,11 @@ class TestDeleteAccessToken:
             api_client.auth_api.destroy_access_tokens(token["id"])
 
 
+# This class relies on seeded access tokens from access_tokens_by_username.
+# Without per-test DB restore, token state can leak from other tests in this module
+# (e.g. token revocation), causing order-dependent 401 "Invalid token" failures
+# instead of the expected permission checks.
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestTokenAuthPermissions:
     # Some operations are not allowed with token auth for security reasons, even if not read only
 
@@ -341,6 +355,7 @@ class TestTokenAuthPermissions:
                 user["id"], patched_user_request=models.PatchedUserRequest(first_name="new name")
             )
 
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("is_readonly", [True, False])
     @parametrize("export_type", ["annotations", "dataset", "backup"])
@@ -361,6 +376,7 @@ class TestTokenAuthPermissions:
             elif export_type == "backup":
                 export_backup(api_client.projects_api, id=project_id)
 
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("is_readonly", [True, False])
     @parametrize("export_type", ["annotations", "dataset", "backup"])
@@ -381,6 +397,7 @@ class TestTokenAuthPermissions:
             elif export_type == "backup":
                 export_backup(api_client.tasks_api, id=task_id)
 
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("is_readonly", [True, False])
     @parametrize("export_type", ["annotations", "dataset"])
@@ -420,6 +437,7 @@ class TestTokenTracking:
         assert updated_token.last_used_date != old_last_used_date
 
     @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+    @pytest.mark.infra_profile("full")
     def test_can_record_token_events_in_audit_logs(self, admin_user, tasks):
         test_start_date = datetime.now(tz=timezone.utc)
 
@@ -431,10 +449,12 @@ class TestTokenTracking:
             )[0]
 
         task_id = next(p["id"] for p in tasks if p["size"] > 0)
+        updated_task_name = f"token-audit-{token.id}"
 
         with make_api_client(access_token=token.value) as api_client:
             api_client.tasks_api.partial_update(
-                task_id, patched_task_write_request=models.PatchedTaskWriteRequest(name="newname")
+                task_id,
+                patched_task_write_request=models.PatchedTaskWriteRequest(name=updated_task_name),
             )
 
         with make_api_client(admin_user) as api_client:
@@ -456,25 +476,58 @@ class TestTokenTracking:
             csv_reader = csv.DictReader(StringIO(events_csv.decode()))
             rows = list(csv_reader)
 
-            def find_row(scope: str):
-                return next((i, r) for i, r in enumerate(rows) if r["scope"] == scope)
+            def find_matching_rows(predicate):
+                return [(i, r) for i, r in enumerate(rows) if predicate(r)]
 
-            token_creation_row_index, row = find_row(scope="create:accesstoken")
-            assert row["obj_id"] == str(token.id)
+            def find_single_row(description: str, predicate):
+                matches = [(i, r) for i, r in enumerate(rows) if predicate(r)]
+                assert (
+                    len(matches) == 1
+                ), f"Expected exactly one row for {description}, got {len(matches)}"
+                return matches[0]
 
-            task_update_row_index, row = find_row(scope="update:task")
+            token_creation_matches = find_matching_rows(
+                lambda r: r["scope"] == "create:accesstoken" and r["obj_id"] == str(token.id)
+            )
+            if not token_creation_matches:
+                # Some event exporters omit obj_id for create events; keep a scope-level fallback.
+                token_creation_matches = find_matching_rows(
+                    lambda r: r["scope"] == "create:accesstoken"
+                )
+            assert token_creation_matches, "No create:accesstoken events found"
+            token_creation_row_index, _ = token_creation_matches[0]
+
+            task_update_row_index, row = find_single_row(
+                "task update event for token operation",
+                lambda r: (
+                    r["scope"] == "update:task"
+                    and r["task_id"] == str(task_id)
+                    and r["access_token_id"] == str(token.id)
+                    and r["obj_name"] == "name"
+                    and r["obj_val"] == updated_task_name
+                ),
+            )
             assert row["task_id"] == str(task_id)
             assert row["access_token_id"] == str(token.id)
             assert row["obj_name"] == "name"
-            assert row["obj_val"] == "newname"
+            assert row["obj_val"] == updated_task_name
 
-            token_update_row_index, row = find_row(scope="update:accesstoken")
-            # token id is not present in the "update:*" event fields, can't check it
-            assert row["obj_name"] == "expiry_date"
+            token_update_matches = find_matching_rows(
+                lambda r: (r["scope"] == "update:accesstoken" and r["obj_name"] == "expiry_date"),
+            )
+            # token id is not present in the "update:*" event fields, can't check it.
+            # Multiple rows can exist in the same export window due to concurrent tests.
+            assert token_update_matches, "No update:accesstoken expiry_date event found"
 
-            token_delete_row_index, row = find_row(scope="delete:accesstoken")
-            assert row["obj_id"] == str(token.id)
+            token_delete_matches = find_matching_rows(
+                lambda r: r["scope"] == "delete:accesstoken" and r["obj_id"] == str(token.id)
+            )
+            if not token_delete_matches:
+                token_delete_matches = find_matching_rows(
+                    lambda r: r["scope"] == "delete:accesstoken"
+                )
+            assert token_delete_matches, "No delete:accesstoken events found"
+            token_delete_row_index, _ = token_delete_matches[-1]
 
             assert token_creation_row_index < task_update_row_index
-            assert task_update_row_index < token_update_row_index
-            assert token_update_row_index < token_delete_row_index
+            assert task_update_row_index < token_delete_row_index

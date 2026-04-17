@@ -52,6 +52,7 @@ class TestCliMisc(TestCliBase):
             for line in stdout.splitlines():
                 int(line)
 
+    @pytest.mark.infra_profile("standard")
     def test_can_control_organization_context(self):
         org = "cli-test-org"
         self.client.organizations.create(models.OrganizationWriteRequest(org))
