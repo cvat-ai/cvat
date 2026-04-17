@@ -1,0 +1,6 @@
+apiVersion: v2
+name: test-chart
+description: Test-only Kubernetes resources for CVAT integration tests
+type: application
+version: 0.1.0
+appVersion: latest

@@ -1,0 +1,158 @@
+cvat:
+  backend:
+    additionalVolumes:
+    - name: allow-minio
+      configMap:
+        name: allow-minio
+        defaultMode: 493 # 0755
+    - name: allow-webhook-receiver
+      configMap:
+        name: allow-webhook-receiver
+        defaultMode: 493 # 0755
+    additionalVolumeMounts:
+    - mountPath: /etc/cvat/init.d/allow_minio.sh
+      name: allow-minio
+      subPath: allow_minio.sh
+    - mountPath: /etc/cvat/init.d/allow_webhook_receiver.sh
+      name: allow-webhook-receiver
+      subPath: allow_webhook_receiver.sh
+    defaultStorage:
+      accessModes:
+      - ReadWriteOnce
+    server:
+      additionalVolumeMounts:
+      - mountPath: /home/django/share
+        name: cvat-backend-data
+        subPath: share
+      additionalEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: cvat.settings.testing_rest
+      - name: CVAT_ACCESS_TOKEN_STALE_PERIOD
+        value: "3153600000"
+      readinessProbe:
+        # In test clusters, probe very early and rely on a generous retry budget
+        # instead of a fixed startup delay.
+        initialDelaySeconds: 5
+        periodSeconds: 3
+        timeoutSeconds: 5
+        failureThreshold: 40
+      livenessProbe:
+        initialDelaySeconds: 180
+        periodSeconds: 15
+        failureThreshold: 8
+    worker:
+      additionalEnv:
+      - name: DJANGO_SETTINGS_MODULE
+        value: cvat.settings.testing_rest
+      - name: CVAT_ACCESS_TOKEN_STALE_PERIOD
+        value: "3153600000"
+      livenessProbe:
+        initialDelaySeconds: 180
+        periodSeconds: 120
+        timeoutSeconds: 10
+        failureThreshold: 8
+      annotation:
+        replicas: 0
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+      chunks:
+        replicas: 0
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+      consensus:
+        replicas: 0
+      export:
+        replicas: 0
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+      import:
+        replicas: 0
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+      qualityreports:
+        replicas: 0
+      webhooks:
+        replicas: 1
+      utils:
+        replicas: 1
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+        extraArgs:
+        - "annotation"
+        - "chunks"
+        - "consensus"
+        - "export"
+        - "import"
+        - "quality_reports"
+    imagePullPolicy: Never
+  frontend:
+    imagePullPolicy: Never
+  opa:
+    # Keep the Compose-compatible OPA service name in tests. The current backend
+    # images still effectively expect a stable `opa` host during Django settings
+    # initialization, so using release-scoped OPA service names breaks
+    # `CVAT_OPA_HOST`/`IAM_OPA_DATA_URL` overrides inside the container process.
+    # Parallel kube lanes should isolate releases by namespace instead.
+    composeCompatibleServiceName: true
+    # In test environments, avoid tying OPA pod health to successful bundle fetches
+    # from the CVAT backend during startup. `/health?bundles` returns 500 until the
+    # backend is ready enough to serve auth rules, which causes false-negative
+    # restarts. Plain `/health` keeps OPA process health separate from backend
+    # warm-up while preserving the stricter default in the main chart.
+    probePath: /health
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 5
+      failureThreshold: 40
+    livenessProbe:
+      initialDelaySeconds: 180
+      periodSeconds: 15
+      failureThreshold: 20
+  kvrocks:
+    readinessProbe:
+      # Probe early in tests and tolerate slow first responses via retries.
+      initialDelaySeconds: 5
+      periodSeconds: 3
+      timeoutSeconds: 5
+      failureThreshold: 40
+    livenessProbe:
+      initialDelaySeconds: 180
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 12
+
+redis:
+  master:
+    disableCommands: []
+    readinessProbe:
+      initialDelaySeconds: 5
+      timeoutSeconds: 5
+      periodSeconds: 3
+      failureThreshold: 40
+    livenessProbe:
+      initialDelaySeconds: 60
+      timeoutSeconds: 10
+      periodSeconds: 10
+      failureThreshold: 12
+
+keydb:
+  resources:
+    requests:
+
+traefik:
+  logs:
+    general:
+      level: DEBUG
+    access:
+      enabled: true
