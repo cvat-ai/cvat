@@ -223,7 +223,7 @@ protobuf==6.33.5
     #   tensorboardx
 psutil==5.9.4
     # via -r cvat/requirements/base.in
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.11
     # via -r cvat/requirements/base.in
 pyarrow==20.0.0
     # via datumaro
