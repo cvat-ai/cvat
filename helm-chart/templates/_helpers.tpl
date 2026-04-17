@@ -119,6 +119,9 @@ The name of the service account to use for backend pods
       name: "{{ tpl (.Values.postgresql.secret.name) . }}"
       key: password
 
+- name: CVAT_OPA_HOST
+  value: {{ if .Values.cvat.opa.composeCompatibleServiceName }}"http://opa:8181"{{ else }}"http://{{ .Release.Name }}-opa-service:8181"{{ end }}
+
 {{- if .Values.analytics.enabled}}
 - name: CVAT_ANALYTICS
   value: "1"

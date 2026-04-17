@@ -41,7 +41,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: {{ .Release.Name }}-frontend-service
+            name: {{ $.Release.Name }}-frontend-service
             port:
               name: http
 {{- end }}
