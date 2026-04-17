@@ -1107,6 +1107,7 @@ class KubeInstance(InfraInstance):
         self._redis_ondisk_port_forward_log = None
         self._api_port_forward_log = None
         self._minio_port_forward_log = None
+        self._auto_started_stack = False
 
     def _runtime_project_name(self) -> str:
         return RuntimeInfraConfig.get_run_prefix_from_config(self.config)
@@ -1308,6 +1309,7 @@ class KubeInstance(InfraInstance):
                     "Reusing healthy minikube/helm stack for run-prefix '%s' (fingerprint matched)",
                     run_prefix,
                 )
+                self._auto_started_stack = False
                 self._copy_file_share()
                 self._seed_minio_test_data()
                 return requested_fingerprint
@@ -1339,6 +1341,7 @@ class KubeInstance(InfraInstance):
             namespace=_kube_namespace(),
         )
         _wait_for_kube_ready(timeout_s=self.deps.waiting_time)
+        self._auto_started_stack = True
         self._copy_file_share()
         self._seed_minio_test_data()
         return _build_kube_fingerprint(
@@ -1391,8 +1394,10 @@ class KubeInstance(InfraInstance):
                     f"--infra={InfraMode.REUSE} fingerprint mismatch for run-prefix '{run_prefix}'. "
                     f"Run '--infra=up' again."
                 )
+            self._auto_started_stack = False
             return current_fingerprint
 
+        self._auto_started_stack = False
         return None
 
     def _copy_file_share(self) -> None:
@@ -1424,6 +1429,24 @@ class KubeInstance(InfraInstance):
                 "fi",
             ]
         )
+
+    def _teardown_kube_stack(self, *, run_prefix: str, delete_profile: bool = False) -> None:
+        _use_minikube_context(_kube_profile())
+        namespace = _kube_namespace()
+        _helm_uninstall(release=_kube_release(), namespace=namespace)
+        _helm_uninstall(release=_kube_test_release(), namespace=namespace)
+        if namespace != _DEFAULT_KUBE_NAMESPACE:
+            try:
+                _delete_kube_namespace(namespace)
+            except Exception:
+                logger.warning(
+                    "Failed to delete test namespace %s during kube teardown",
+                    namespace,
+                    exc_info=True,
+                )
+        if delete_profile:
+            _stop_minikube(_kube_profile())
+        RuntimeInfraConfig.get_project_config(run_prefix).delete_state()
 
     @staticmethod
     def _clear_s3_bucket(client, bucket: str) -> None:
@@ -1803,22 +1826,10 @@ class KubeInstance(InfraInstance):
             self._close_db_restorer()
             self._close_redis_restorer()
             self._close_runtime_port_forwards()
-            _use_minikube_context(_kube_profile())
-            namespace = _kube_namespace()
-            _helm_uninstall(release=_kube_release(), namespace=namespace)
-            _helm_uninstall(release=_kube_test_release(), namespace=namespace)
-            if namespace != _DEFAULT_KUBE_NAMESPACE:
-                try:
-                    _delete_kube_namespace(namespace)
-                except Exception:
-                    logger.warning(
-                        "Failed to delete test namespace %s during kube down",
-                        namespace,
-                        exc_info=True,
-                    )
-            if config.getoption("--kube-delete-profile"):
-                _stop_minikube(_kube_profile())
-            RuntimeInfraConfig.get_project_config(run_prefix).delete_state()
+            self._teardown_kube_stack(
+                run_prefix=run_prefix,
+                delete_profile=bool(config.getoption("--kube-delete-profile")),
+            )
             pytest.exit("Kubernetes test infrastructure has been stopped", returncode=0)
 
         RuntimeInfraConfig.write_context_for_project(run_prefix)
@@ -1865,6 +1876,10 @@ class KubeInstance(InfraInstance):
         self._close_db_restorer()
         self._close_redis_restorer()
         self._close_runtime_port_forwards()
+        infra_mode = getattr(self.config, "_cvat_infra_mode", InfraMode.AUTO)
+        if infra_mode == InfraMode.AUTO and self._auto_started_stack:
+            run_prefix = RuntimeInfraConfig.get_run_prefix_from_config(self.config)
+            self._teardown_kube_stack(run_prefix=run_prefix)
 
     def collect_failure_logs(self) -> None:
         _collect_kube_diagnostics(self.failure_logs_dir())
