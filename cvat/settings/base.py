@@ -454,7 +454,7 @@ EVENTS_LOCAL_DB_ROOT = BASE_DIR / "events"
 EVENTS_LOCAL_DB_ROOT.mkdir(parents=True, exist_ok=True)
 EVENTS_LOCAL_DB_FILE = Path(
     EVENTS_LOCAL_DB_ROOT,
-    os.getenv("CVAT_EVENTS_LOCAL_DB_FILENAME", "events.db"),
+    f"events_{os.getpid()}.db",
 )
 EVENTS_LOCAL_DB_FILE.touch(exist_ok=True)
 
