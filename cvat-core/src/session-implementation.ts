@@ -28,8 +28,7 @@ import {
 } from './frames';
 import Issue from './issue';
 import {
-    SerializedLabel, SerializedTask, SerializedJobValidationLayout,
-    SerializedTaskValidationLayout,
+    SerializedTask, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
 import { Label } from './labels';
 import { checkInEnum, checkObjectType } from './common';
@@ -696,19 +695,19 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         targetStorage: 'target_storage',
                     }),
                 } as Record<string, unknown> & {
-                    assignee_id?: { id: number } | number | null;
-                    labels?: Array<Label | SerializedLabel>;
+                    assignee_id?: { id: number } | null;
+                    labels?: Label[];
                 };
 
-                if (taskData.assignee_id && typeof taskData.assignee_id === 'object') {
-                    taskData.assignee_id = taskData.assignee_id.id;
+                // TODO: update assignee via "fields" instead
+                // It would be better implementation
+                let newAssigneeId: number | null;
+                if ('assignee_id' in taskData) {
+                    newAssigneeId = taskData.assignee_id?.id ?? null;
+                    delete taskData.assignee_id;
                 }
 
-                for (const label of taskData.labels || []) {
-                    if (!(label instanceof Label)) {
-                        continue;
-                    }
-
+                for await (const label of taskData.labels ?? []) {
                     if (label.deleted) {
                         await serverProxy.labels.delete(label.id);
                     } else if (label.patched) {
@@ -717,21 +716,31 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 }
 
                 // leave only new labels to create them via task PATCH request
-                taskData.labels = (taskData.labels || [])
-                    .filter((label): label is Label => !Number.isInteger(label.id))
+                const labelsToCreate = (taskData.labels ?? [])
+                    .filter((label) => Number.isInteger(label.id))
                     .map((el) => el.toJSON());
-                if (!taskData.labels.length) {
-                    delete taskData.labels;
-                }
-
+                delete taskData.labels;
                 this._updateTrigger.reset();
 
                 let serializedTask: SerializedTask = null;
-                if (Object.keys(taskData).length) {
-                    serializedTask = await serverProxy.tasks.save(this.id, taskData);
+                if (
+                    Object.keys(taskData).length ||
+                    labelsToCreate.length ||
+                    typeof newAssigneeId !== 'undefined'
+                ) {
+                    serializedTask = await serverProxy.tasks.save(this.id, {
+                        ...taskData,
+                        ...(typeof newAssigneeId !== 'undefined' ? { assignee_id: newAssigneeId } : {}),
+                        ...(labelsToCreate.length ? { labels: labelsToCreate } : {}),
+                    });
                 } else {
                     [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
                 }
+
+                // TODO: optimize labels fetch
+                // We already have patched labels, we may exclude deleted labels
+                // We only need to fetch labels if they have been created
+                // We do not need to perform any logic above if taskData is empty in the beginning of if branch
 
                 const labels = await serverProxy.labels.get({ task_id: this.id });
                 const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
