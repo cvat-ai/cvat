@@ -18,8 +18,10 @@ from infra.config import (
     InfraProfile,
     RuntimeInfraConfig,
 )
+from infra.db_restore import PsycopgDatabaseRestorer
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.profiler import profile_external_phase
+from infra.redis_restore import RedisStateRestorer
 from infra.system_utils import docker_cp, is_port_free, pick_free_port, run_command
 
 logger = logging.getLogger(__name__)
@@ -626,6 +628,11 @@ def cleanup_after_session(
 class LocalInstance(InfraInstance):
     plugin_class: type[InfraPlugin]
 
+    def __init__(self, session, deps):
+        super().__init__(session, deps)
+        self._db_restorer: PsycopgDatabaseRestorer | None = None
+        self._redis_restorer: RedisStateRestorer | None = None
+
     @classmethod
     def can_handle_config(cls, config) -> bool:
         return config.getoption("--platform") == "local"
@@ -649,6 +656,40 @@ class LocalInstance(InfraInstance):
     def _get_cvat_host(self) -> str:
         project_cfg = RuntimeInfraConfig.get_project_config()
         return project_cfg.prefixed_container_name("cvat_server")
+
+    def _close_db_restorer(self) -> None:
+        if self._db_restorer is None:
+            return
+        self._db_restorer.close()
+        self._db_restorer = None
+
+    def _close_redis_restorer(self) -> None:
+        if self._redis_restorer is None:
+            return
+        self._redis_restorer.close()
+        self._redis_restorer = None
+
+    def _get_db_restorer(self) -> PsycopgDatabaseRestorer:
+        if self._db_restorer is None:
+            project_cfg = RuntimeInfraConfig.get_project_config()
+            self._db_restorer = PsycopgDatabaseRestorer(
+                host="127.0.0.1",
+                port=project_cfg.host_db_port,
+                user="root",
+                postgres_db="postgres",
+            )
+
+        return self._db_restorer
+
+    def _get_redis_restorer(self) -> RedisStateRestorer:
+        if self._redis_restorer is None:
+            project_cfg = RuntimeInfraConfig.get_project_config()
+            self._redis_restorer = RedisStateRestorer(
+                host="127.0.0.1",
+                inmem_port=project_cfg.host_redis_inmem_port,
+                ondisk_port=project_cfg.host_redis_ondisk_port,
+            )
+        return self._redis_restorer
 
     @staticmethod
     def collect_code_coverage_from_containers() -> None:
@@ -706,10 +747,6 @@ class LocalInstance(InfraInstance):
             with profile_external_phase("local.restore_assets_db"):
                 self.restore_cvat_data()
                 docker_cp(
-                    self.deps.cvat_db_dir / "restore.sql",
-                    f"{prefixed_name('cvat_db')}:/tmp/restore.sql",
-                )
-                docker_cp(
                     self.prepare_runtime_db_fixture(),
                     f"{prefixed_name('cvat_server')}:/tmp/data.json",
                 )
@@ -721,25 +758,7 @@ class LocalInstance(InfraInstance):
                         "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json",
                     ]
                 )
-                run_command(
-                    [
-                        "docker",
-                        "exec",
-                        prefixed_name("cvat_db"),
-                        "psql",
-                        "-U",
-                        "root",
-                        "-d",
-                        "postgres",
-                        "-v",
-                        "from=cvat",
-                        "-v",
-                        "to=test_db",
-                        "-f",
-                        "/tmp/restore.sql",
-                    ],
-                    logger=logger,
-                )
+                self._get_db_restorer().restore_from_template(source_db="cvat", target_db="test_db")
                 infra_health.wait_for_auth_login_ready()
 
         def set_auto_started(value: bool) -> None:
@@ -788,6 +807,8 @@ class LocalInstance(InfraInstance):
         )
 
         if infra_mode == InfraMode.DOWN:
+            self._close_db_restorer()
+            self._close_redis_restorer()
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
@@ -811,6 +832,8 @@ class LocalInstance(InfraInstance):
                 project_name,
                 incompatibility_reason,
             )
+            self._close_db_restorer()
+            self._close_redis_restorer()
             stop_services(
                 project_name=project_name,
                 dc_files=dc_files,
@@ -889,6 +912,9 @@ class LocalInstance(InfraInstance):
         if self.should_collect_failure_logs():
             self.collect_failure_logs()
 
+        self._close_db_restorer()
+        self._close_redis_restorer()
+
         if os.environ.get("COVERAGE_PROCESS_START"):
             self.collect_code_coverage_from_containers()
 
@@ -947,25 +973,7 @@ class LocalInstance(InfraInstance):
                     f.write(json.dumps(summary, indent=2, sort_keys=True))
 
     def restore_db(self) -> None:
-        run_command(
-            [
-                "docker",
-                "exec",
-                RuntimeInfraConfig.get_prefixed_container_name("cvat_db"),
-                "psql",
-                "-U",
-                "root",
-                "-d",
-                "postgres",
-                "-v",
-                "from=test_db",
-                "-v",
-                "to=cvat",
-                "-f",
-                "/tmp/restore.sql",
-            ],
-            logger=logger,
-        )
+        self._get_db_restorer().restore_from_template(source_db="test_db", target_db="cvat")
 
     def restore_clickhouse_db(self) -> None:
         self.exec_cvat(
@@ -977,38 +985,10 @@ class LocalInstance(InfraInstance):
         )
 
     def restore_redis_inmem(self) -> None:
-        keep_keys = (
-            "rq:worker:",
-            "rq:workers",
-            "rq:scheduler_instance:",
-            "rq:queues:",
-            "cvat:applied_migrations",
-            "cvat:applied_migration:",
-        )
-        patterns = " ".join(f"-e {key}" for key in keep_keys)
-        self.exec_redis_inmem(
-            [
-                "sh",
-                "-c",
-                (
-                    "redis-cli -n 0 --raw keys '*' | grep -v "
-                    f"{patterns} | xargs --no-run-if-empty redis-cli -n 0 del "
-                    "&& redis-cli -n 1 flushdb"
-                ),
-            ]
-        )
+        self._get_redis_restorer().restore_inmem()
 
     def restore_redis_ondisk(self) -> None:
-        run_command(
-            [
-                "docker",
-                "exec",
-                RuntimeInfraConfig.get_prefixed_container_name("cvat_redis_ondisk"),
-                "redis-cli",
-                "flushall",
-            ],
-            logger=logger,
-        )
+        self._get_redis_restorer().restore_ondisk()
 
 
 class LocalPlugin(InfraPlugin):

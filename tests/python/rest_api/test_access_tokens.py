@@ -18,6 +18,7 @@ from .utils import CollectionSimpleFilterTestBase, export_backup, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostAccessToken:
     @pytest.mark.parametrize("user_group", ["admin", "user", "worker"])
     def test_can_create_token(self, users, user_group):
@@ -128,7 +129,7 @@ class TestGetAccessToken:
             == {}
         )
 
-    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.usefixtures("restore_db_per_function", "restore_redis_inmem_per_function")
     @pytest.mark.parametrize("token_eol_reason", ["expired", "stale", "revoked"])
     def test_can_only_see_alive_tokens(self, token_eol_reason: str, admin_user):
         with make_api_client(admin_user) as api_client:
@@ -181,6 +182,7 @@ class TestAccessTokenListFilters(CollectionSimpleFilterTestBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPatchAccessToken:
     def test_can_modify_token(self, access_tokens_by_username):
         user, user_tokens = next(iter(access_tokens_by_username.items()))
@@ -252,6 +254,7 @@ class TestPatchAccessToken:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestDeleteAccessToken:
     def test_can_revoke_own_token(self, access_tokens_by_username):
         user, user_tokens = next(iter(access_tokens_by_username.items()))
@@ -275,6 +278,7 @@ class TestDeleteAccessToken:
             api_client.auth_api.destroy_access_tokens(token["id"])
 
 
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestTokenAuthPermissions:
     # Some operations are not allowed with token auth for security reasons, even if not read only
 
@@ -403,6 +407,7 @@ class TestTokenAuthPermissions:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTokenTracking:
     def test_can_update_last_use(self, access_tokens_by_username):
         _, user_tokens = next(iter(access_tokens_by_username.items()))

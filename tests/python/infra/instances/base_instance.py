@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from infra.config import RuntimeInfraConfig
+from infra.rq_cleanup import BackgroundJobCleaner
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,7 @@ class InfraInstance(ABC):
         self.deps = deps
         self._cvat_data_archive_host: str | None = None
         self._cvat_data_template_host: str | None = None
+        self._background_job_cleaner: BackgroundJobCleaner | None = None
 
     @classmethod
     @abstractmethod
@@ -143,13 +145,27 @@ class InfraInstance(ABC):
         raise NotImplementedError
 
     def drain_background_jobs(self, profile: str, *, timeout_seconds: int = 20) -> None:
-        _ = profile, timeout_seconds
-        return None
+        queue_names = RuntimeInfraConfig.get_background_queue_names(profile)
+        if not queue_names:
+            return
+
+        cleaner = self._background_job_cleaner
+        if cleaner is None:
+            cleaner = BackgroundJobCleaner(self._get_redis_restorer().inmem_db0)
+            self._background_job_cleaner = cleaner
+
+        # Drain async workers before DB restore; otherwise queued jobs can repopulate
+        # state immediately after the restored snapshot is applied.
+        cleaner.drain(queue_names, timeout_seconds=timeout_seconds)
 
     def exec_cvat(self, command: list[str] | str):
         raise NotImplementedError
 
     def exec_redis_inmem(self, command: list[str] | str):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_redis_restorer(self):
         raise NotImplementedError
 
     @abstractmethod
