@@ -685,6 +685,10 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        # Only transport-level reachability timeouts belong to the degraded health
+        # path. Keep ClientError handling separate to preserve 403/404 semantics,
+        # and let unexpected SDK/runtime failures propagate instead of masking them
+        # as a storage availability problem.
         except (ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError):
             slogger.glob.warning(
                 f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available",
@@ -702,6 +706,10 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        # Only transport-level reachability timeouts belong to the degraded health
+        # path. Keep ClientError handling separate to preserve 403/404 semantics,
+        # and let unexpected SDK/runtime failures propagate instead of masking them
+        # as a storage availability problem.
         except (ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError):
             slogger.glob.warning(
                 f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name}/{key} not available",
