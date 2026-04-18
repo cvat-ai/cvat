@@ -77,13 +77,13 @@ class ChunkCreationError(Exception):
 def _build_chunk_job_failure_exception(
     rq_job: rq.job.Job, job_meta: RQMetaWithFailureInfo
 ) -> Exception:
-    exc_type = job_meta.exc_type or Exception
+    exc_type = job_meta.exc_type or ChunkCreationError
     exc_args = job_meta.exc_args or ("Cannot create chunk",)
 
     try:
         return exc_type(*exc_args)
     except TypeError:
-        exc_name = getattr(exc_type, "__name__", repr(exc_type))
+        exc_name = exc_type.__name__
         details = job_meta.formatted_exception or repr(exc_args)
         return ChunkCreationError(
             f"Chunk job {rq_job.id} failed with {exc_name}: {details.strip()}"

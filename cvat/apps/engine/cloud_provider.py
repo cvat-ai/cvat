@@ -615,19 +615,15 @@ class S3CloudStorage(AbstractCloudStorage):
 
         session = boto3.Session(**kwargs)
         # Status checks are part of the control plane, not the data-transfer path, so
-        # they must fail fast when the endpoint is unreachable or misconfigured. Some
-        # network setups return a transport timeout instead of an immediate connection
-        # refusal for a wrong host/port, which can make a simple bucket health probe
-        # hang long enough to block API requests and propagate failures to unrelated
-        # operations. Use a dedicated low-timeout client for head_bucket/head_object,
-        # while the regular resource/client keep the default pool and retry behavior
-        # for real uploads/downloads. Tests with intentionally broken endpoints confirm
-        # that this distinction is required in practice.
+        # Bucket status probes should fail fast when the endpoint is unreachable or
+        # misconfigured. Keep a dedicated low-timeout client for head_bucket, while
+        # the regular resource/client retain their standard retry behavior for normal
+        # storage operations.
         status_config = Config(
             proxies=PROXIES_FOR_UNTRUSTED_URLS or {},
             connect_timeout=2,
             read_timeout=5,
-            retries={"max_attempts": 1, "mode": "standard"},
+            retries={"total_max_attempts": 1, "mode": "standard"},
         )
         self._s3 = session.resource(
             "s3",
@@ -663,13 +659,11 @@ class S3CloudStorage(AbstractCloudStorage):
         return self._bucket.name
 
     def _head(self):
-        # Bucket status belongs to the fast-fail health path. Do not route it through
-        # the main transfer client, otherwise a bad endpoint can delay normal API work.
+        # Bucket status checks use the dedicated fast-fail client.
         return self._status_client.head_bucket(Bucket=self.name)
 
     def _head_file(self, key: str, /):
-        # Metadata reads are used by normal storage logic as well, not just endpoint
-        # health checks. Keep them on the regular client so they retain normal retry
+        # File metadata reads stay on the regular client so they retain standard retry
         # behavior on slower S3-compatible backends.
         return self._client.head_object(Bucket=self.name, Key=key)
 
@@ -685,6 +679,8 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        # Handle transport-level reachability failures separately from ClientError-
+        # based 403/404 responses.
         except (ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError):
             slogger.glob.warning(
                 f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name} not available",
@@ -702,6 +698,8 @@ class S3CloudStorage(AbstractCloudStorage):
                 return Status.FORBIDDEN
             else:
                 return Status.NOT_FOUND
+        # Handle transport-level reachability failures separately from ClientError-
+        # based 403/404 responses.
         except (ConnectTimeoutError, EndpointConnectionError, ReadTimeoutError):
             slogger.glob.warning(
                 f"CloudStorage S3 {self._client.meta.endpoint_url}, {self.name}/{key} not available",
