@@ -7,6 +7,7 @@ from time import sleep
 from typing import Any, TypeVar
 
 import pytest
+import requests
 
 T = TypeVar("T")
 
@@ -61,16 +62,26 @@ def _wait_request(
     sleep_interval: float = 0.1,
     number_of_checks: int = 100,
 ):
+    last_request_details: dict[str, Any] | None = None
     for _ in range(number_of_checks):
         sleep(sleep_interval)
-        response = get_method(user, f"requests/{request_id}")
+        try:
+            response = get_method(user, f"requests/{request_id}", timeout=5)
+        except (requests.Timeout, requests.ConnectionError):
+            continue
         assert response.status_code == HTTPStatus.OK
 
         request_details = json.loads(response.content)
+        last_request_details = request_details
         status = request_details["status"]
         assert status in {"started", "queued", "finished", "failed"}
         if status in {"finished", "failed"}:
-            return
+            return request_details
+
+    raise AssertionError(
+        f"Timed out waiting for request {request_id!r} to finish; "
+        f"last payload: {last_request_details!r}"
+    )
 
 
 class _CloudStorageResourceTest(ABC):
@@ -96,10 +107,12 @@ class _CloudStorageResourceTest(ABC):
             # check that file doesn't exist on the bucket
             assert not self.client.file_exists(bucket=bucket, filename=filename)
 
-            func(*args, **kwargs)
+            request_details = func(*args, **kwargs)
 
-            # check that file exists on the bucket
-            assert self.client.file_exists(bucket=bucket, filename=filename)
+            assert self.client.file_exists(bucket=bucket, filename=filename), (
+                f"Exported object {filename!r} was not found in bucket {bucket!r} after request "
+                f"{request_details.get('id')!r} finished with payload: {request_details!r}"
+            )
 
         return wrapper
 
@@ -129,7 +142,12 @@ class _CloudStorageResourceTest(ABC):
         rq_id = json.loads(response.content).get("rq_id")
         assert rq_id, "The rq_id was not found in server request"
 
-        _wait_request(user, rq_id)
+        request_details = _wait_request(user, rq_id)
+        assert request_details["status"] == "finished", (
+            f"Export request {rq_id!r} for {obj}/{obj_id}/{resource!r} ended with unexpected "
+            f"payload: {request_details!r}"
+        )
+        return request_details
 
     def _import_resource_from_cloud_storage(
         self, url: str, *, user: str, _expect_status: HTTPStatus = HTTPStatus.ACCEPTED, **kwargs
@@ -144,7 +162,11 @@ class _CloudStorageResourceTest(ABC):
         rq_id = response.json().get("rq_id")
         assert rq_id, "The rq_id parameter was not found in the server response"
 
-        _wait_request(user, rq_id)
+        request_details = _wait_request(user, rq_id)
+        assert request_details["status"] == "finished", (
+            f"Import request {rq_id!r} for {url!r} ended with unexpected payload: "
+            f"{request_details!r}"
+        )
 
     def _import_annotations_from_cloud_storage(
         self,

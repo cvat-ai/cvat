@@ -10,6 +10,8 @@ import pytest
 from shared.utils.config import BASE_URL, make_api_client
 from shared.utils.helpers import generate_image_file
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")

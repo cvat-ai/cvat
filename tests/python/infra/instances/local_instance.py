@@ -13,7 +13,7 @@ from time import sleep
 
 import pytest
 import yaml
-from infra.config import InfraMode, RuntimeInfraConfig
+from infra.config import InfraMode, InfraProfile, RuntimeInfraConfig
 from infra.db_restore import PsycopgDatabaseRestorer
 from infra.instances.base_instance import InfraInstance, InfraPlugin
 from infra.redis_restore import RedisStateRestorer
@@ -32,12 +32,6 @@ _COVERED_CONTAINERS = (
     "cvat_worker_utils",
 )
 _FAILURE_LOG_CONTAINERS = _COVERED_CONTAINERS + ("cvat_opa", "traefik")
-_LOCAL_DC_FILES = (
-    "tests/docker-compose.file_share.yml",
-    "tests/docker-compose.minio.yml",
-    "tests/docker-compose.pat_settings.yml",
-    "tests/docker-compose.test_servers.yml",
-)
 _BACKGROUND_JOB_QUEUES = (
     "import",
     "export",
@@ -87,6 +81,9 @@ def preconfigure_local_runtime_env(config) -> None:
     """
     project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
     infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
+    os.environ["CVAT_TEST_INFRA_PROFILE"] = str(
+        RuntimeInfraConfig.parse_infra_profile(config.getoption("--infra-profile"))
+    )
 
     if config.getoption("--platform") != "local":
         return
@@ -115,6 +112,7 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
     project_cfg.save_state(
         {
             "project_name": project_name,
+            "infra_profile": RuntimeInfraConfig.get_infra_profile(),
             **port_config,
             "base_url": os.environ["CVAT_BASE_URL"],
             "minio_endpoint_url": os.environ["CVAT_MINIO_ENDPOINT_URL"],
@@ -191,10 +189,13 @@ def project_containers_running(project_name: str) -> bool:
 def project_stack_compatible(
     project_name: str,
     *,
+    profile: str,
     expected_db_port: int,
     expected_redis_inmem_port: int,
     expected_redis_ondisk_port: int,
 ) -> tuple[bool, str]:
+    if not profile_services_ready(project_name, profile):
+        return False, f"missing required services for profile '{profile}'"
     if not project_db_port_ready(project_name, expected_db_port):
         return False, "PostgreSQL host port mapping is missing or outdated"
     if not project_redis_ports_ready(
@@ -204,6 +205,44 @@ def project_stack_compatible(
     ):
         return False, "Redis host port mapping is missing or outdated"
     return True, ""
+
+
+def _profile_required_services(profile: str) -> set[str]:
+    normalized = str(RuntimeInfraConfig.parse_infra_profile(profile))
+    if normalized == str(InfraProfile.SIMPLE):
+        return set()
+    if normalized == str(InfraProfile.STANDARD):
+        return {
+            "minio",
+            "cvat_worker_chunks",
+            "cvat_worker_export",
+            "cvat_worker_import",
+        }
+    return {
+        "cvat_clickhouse",
+        "minio",
+        "webhook_receiver",
+        "cvat_ui",
+        "cvat_grafana",
+        "cvat_vector",
+        "cvat_worker_annotation",
+        "cvat_worker_chunks",
+        "cvat_worker_consensus",
+        "cvat_worker_export",
+        "cvat_worker_import",
+        "cvat_worker_quality_reports",
+        "cvat_worker_webhooks",
+        "cvat_worker_utils",
+    }
+
+
+def profile_services_ready(project_name: str, profile: str) -> bool:
+    required = _profile_required_services(profile)
+    if not required:
+        return True
+
+    containers = set(running_containers())
+    return all(f"{project_name}_{service}_1" in containers for service in required)
 
 
 def project_db_port_ready(project_name: str, expected_host_port: int) -> bool:
@@ -463,7 +502,19 @@ def _delete_compose_files(container_name_files: list[Path]):
 
 def stop_project_services_best_effort(*, project_name: str) -> None:
     project_cfg = RuntimeInfraConfig.get_project_config(project_name)
-    dc_files = project_cfg.dc_files + [project_cfg.cvat_root_dir / f for f in _LOCAL_DC_FILES]
+    saved_state = project_cfg.load_state() or {}
+    saved_profile = str(
+        RuntimeInfraConfig.parse_infra_profile(
+            saved_state.get("infra_profile", RuntimeInfraConfig.get_default_infra_profile())
+        )
+    )
+    dc_files = project_cfg.dc_files + [
+        project_cfg.cvat_root_dir / f for f in RuntimeInfraConfig.get_base_dc_files(saved_profile)
+    ]
+    dc_files += [
+        project_cfg.cvat_root_dir / f
+        for f in RuntimeInfraConfig.get_profile_dc_files().get(saved_profile, [])
+    ]
 
     try:
         stop_services(
@@ -536,6 +587,10 @@ class LocalInstance(InfraInstance):
         self._redis_restorer = None
         self._background_job_cleaner = None
 
+    def _reset_runtime_restore_caches(self) -> None:
+        self._cvat_data_archive_host = None
+        self._cvat_data_template_host = None
+
     def _get_db_restorer(self) -> PsycopgDatabaseRestorer:
         if self._db_restorer is None:
             project_cfg = RuntimeInfraConfig.get_project_config()
@@ -589,8 +644,14 @@ class LocalInstance(InfraInstance):
         return cls.can_handle_config(session.config)
 
     def _build_local_dc_files(self, project_cfg) -> list[Path]:
+        active_profile = RuntimeInfraConfig.get_infra_profile()
         dc_files = project_cfg.generated_compose_files + [
-            project_cfg.cvat_root_dir / f for f in _LOCAL_DC_FILES
+            project_cfg.cvat_root_dir / f
+            for f in RuntimeInfraConfig.get_base_dc_files(active_profile)
+        ]
+        dc_files += [
+            project_cfg.cvat_root_dir / f
+            for f in RuntimeInfraConfig.get_profile_dc_files().get(active_profile, [])
         ]
         if self.deps.extra_dc_files is not None:
             dc_files += self.deps.extra_dc_files
@@ -646,6 +707,7 @@ class LocalInstance(InfraInstance):
                 )
             stack_ok, reason = project_stack_compatible(
                 project_name,
+                profile=RuntimeInfraConfig.get_infra_profile(),
                 expected_db_port=project_cfg.host_db_port,
                 expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
                 expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
@@ -667,6 +729,7 @@ class LocalInstance(InfraInstance):
         )
 
         if infra_mode == InfraMode.DOWN:
+            self._reset_runtime_restore_caches()
             self._close_db_restorer()
             self._close_redis_restorer()
             stop_services(
@@ -679,6 +742,7 @@ class LocalInstance(InfraInstance):
 
         stack_ok, incompatibility_reason = project_stack_compatible(
             project_name,
+            profile=RuntimeInfraConfig.get_infra_profile(),
             expected_db_port=project_cfg.host_db_port,
             expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
             expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
@@ -691,6 +755,7 @@ class LocalInstance(InfraInstance):
                 project_name,
                 incompatibility_reason,
             )
+            self._reset_runtime_restore_caches()
             self._close_db_restorer()
             self._close_redis_restorer()
             stop_services(
@@ -752,11 +817,22 @@ class LocalInstance(InfraInstance):
             RuntimeInfraConfig.write_context_for_project(project_name)
             resolve_local_project_context(self.session)
 
+        setattr(self.config, "_cvat_started_infra_profile", RuntimeInfraConfig.get_infra_profile())
         self._run_local_lifecycle(
             infra_mode=infra_mode,
             dumpdb=config.getoption("--dumpdb"),
             cleanup=config.getoption("--cleanup"),
         )
+        setattr(self.config, "_cvat_started_infra_profile", RuntimeInfraConfig.get_infra_profile())
+
+    def reconcile_runtime_profile(self) -> None:
+        infra_mode = getattr(self.config, "_cvat_infra_mode", InfraMode.AUTO)
+        if infra_mode not in {InfraMode.AUTO, InfraMode.REUSE}:
+            return
+
+        resolve_local_project_context(self.session)
+        self._run_local_lifecycle(infra_mode=infra_mode, dumpdb=False, cleanup=False)
+        setattr(self.config, "_cvat_started_infra_profile", RuntimeInfraConfig.get_infra_profile())
 
     def finish(self) -> None:
         if self.config.getoption("--platform") != "local":
@@ -860,6 +936,67 @@ class LocalPlugin(InfraPlugin):
     @classmethod
     def configure(cls, config) -> None:
         preconfigure_local_runtime_env(config)
+
+    @classmethod
+    def collection_modifyitems(cls, config, items) -> None:
+        if config.getoption("--platform") != "local":
+            return
+
+        required_profile = str(InfraProfile.SIMPLE)
+        for item in items:
+            marker = item.get_closest_marker("infra_profile")
+            if marker and marker.args:
+                item_profile = str(RuntimeInfraConfig.parse_infra_profile(marker.args[0]))
+            else:
+                item_profile = str(InfraProfile.SIMPLE)
+
+            if RuntimeInfraConfig.get_infra_profile_rank(
+                item_profile
+            ) > RuntimeInfraConfig.get_infra_profile_rank(required_profile):
+                required_profile = item_profile
+
+        invocation_args = tuple(str(arg) for arg in config.invocation_params.args)
+        explicit_profile_requested = any(
+            arg == "--infra-profile" or arg.startswith("--infra-profile=")
+            for arg in invocation_args
+        )
+        requested_profile = str(config.getoption("--infra-profile") or "").strip()
+        if explicit_profile_requested:
+            selected_profile = str(RuntimeInfraConfig.parse_infra_profile(requested_profile))
+            if RuntimeInfraConfig.get_infra_profile_rank(
+                selected_profile
+            ) < RuntimeInfraConfig.get_infra_profile_rank(required_profile):
+                raise pytest.UsageError(
+                    f"--infra-profile={selected_profile!r} is too small for the collected test set; "
+                    f"required profile is {required_profile!r}"
+                )
+        else:
+            selected_profile = required_profile
+
+        setattr(config, "_cvat_selected_infra_profile", selected_profile)
+        os.environ["CVAT_TEST_INFRA_PROFILE"] = selected_profile
+
+    @classmethod
+    def runtestloop(cls, session):
+        config = session.config
+        if config.getoption("--platform") != "local" or config.getoption("--collect-only"):
+            return None
+
+        selected_profile = getattr(config, "_cvat_selected_infra_profile", None)
+        if not selected_profile:
+            return None
+
+        started_profile = getattr(
+            config, "_cvat_started_infra_profile", RuntimeInfraConfig.get_infra_profile()
+        )
+        if str(started_profile) == str(selected_profile):
+            return None
+
+        os.environ["CVAT_TEST_INFRA_PROFILE"] = str(selected_profile)
+        instance = getattr(config, "_cvat_infra_instance", None)
+        if instance is not None:
+            instance.reconcile_runtime_profile()
+        return None
 
     @classmethod
     def can_handle_config(cls, config) -> bool:

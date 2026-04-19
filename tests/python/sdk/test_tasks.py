@@ -24,6 +24,8 @@ from shared.utils.helpers import generate_image_files
 from .common import TestDatasetExport
 from .util import make_pbar
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 class TestTaskUsecases(TestDatasetExport):
     @pytest.fixture(autouse=True)
@@ -244,28 +246,10 @@ class TestTaskUsecases(TestDatasetExport):
         [
             (fixture_ref("fxt_new_task"), None),
             (fixture_ref("fxt_new_task"), Location.LOCAL),
-            (
-                pytest.param(
-                    fixture_ref("fxt_new_task"),
-                    Location.CLOUD_STORAGE,
-                    marks=pytest.mark.with_external_services,
-                )
-            ),
-            (
-                pytest.param(
-                    fixture_ref("fxt_new_task_with_target_storage"),
-                    None,
-                    marks=pytest.mark.with_external_services,
-                )
-            ),
+            (fixture_ref("fxt_new_task"), Location.CLOUD_STORAGE),
+            (fixture_ref("fxt_new_task_with_target_storage"), None),
             (fixture_ref("fxt_new_task_with_target_storage"), Location.LOCAL),
-            (
-                pytest.param(
-                    fixture_ref("fxt_new_task_with_target_storage"),
-                    Location.CLOUD_STORAGE,
-                    marks=pytest.mark.with_external_services,
-                )
-            ),
+            (fixture_ref("fxt_new_task_with_target_storage"), Location.CLOUD_STORAGE),
         ],
     )
     def test_can_export_dataset(

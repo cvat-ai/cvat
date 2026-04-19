@@ -1322,7 +1322,7 @@ class TestPatchTaskLabel:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
@@ -1421,7 +1421,7 @@ class TestTaskBackups:
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("standard")
     def test_can_export_and_import_backup_task_with_mounted_share(self):
         task_spec = {
             "name": "Task with files from mounted share",
@@ -1450,7 +1450,7 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
         task_spec = {
@@ -1567,7 +1567,7 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("standard")
     def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
         cloud_storage_id = next(cs["id"] for cs in cloud_storages if cs["resource"] == "backingcs")
 
@@ -2799,7 +2799,7 @@ class TestPatchTask:
         assert response.status_code == HTTPStatus.OK
         assert compare_annotations(annotations, response.json(), ignore_spec_ids=True) == {}
 
-    @pytest.mark.with_external_services
+    @pytest.mark.infra_profile("standard")
     @pytest.mark.parametrize(
         "storage_id",
         [
@@ -3189,8 +3189,15 @@ class TestImportTaskAnnotations:
             required_time = ceil(time() - start_time) * 2
             self._delete_annotations(task_id)
 
+            # The SDK uploader accepts an optional logger callback even though pylint
+            # does not see it in the generated signature here.
+            # pylint: disable-next=unexpected-keyword-arg
             response = uploader.upload_file(
-                url, filename, meta=params, query_params=params, logger=self.client.logger.debug
+                url,
+                filename,
+                meta=params,
+                query_params=params,
+                logger=self.client.logger.debug,
             )
             rq_id = json.loads(response.data)["rq_id"]
             assert rq_id

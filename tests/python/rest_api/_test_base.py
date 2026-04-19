@@ -293,7 +293,7 @@ class TestTasksBase:
     @fixture(scope="class")
     @parametrize(
         "cloud_storage_id",
-        [pytest.param(2, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+        [pytest.param(2, marks=[pytest.mark.infra_profile("standard"), pytest.mark.timeout(60)])],
     )
     def fxt_cloud_images_task_with_honeypots_and_changed_real_frames(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
@@ -397,7 +397,7 @@ class TestTasksBase:
     @fixture(scope="class")
     @parametrize(
         "cloud_storage_id",
-        [pytest.param(2, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+        [pytest.param(2, marks=[pytest.mark.infra_profile("standard"), pytest.mark.timeout(60)])],
     )
     def fxt_cloud_images_task_with_related_images(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
@@ -449,7 +449,7 @@ class TestTasksBase:
     @fixture(scope="class")
     @parametrize(
         "cloud_storage_id",
-        [pytest.param(1, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+        [pytest.param(1, marks=[pytest.mark.infra_profile("standard"), pytest.mark.timeout(60)])],
     )
     def fxt_cloud_pcd_task_with_related_images(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
@@ -550,7 +550,7 @@ class TestTasksBase:
     @fixture(scope="class")
     @parametrize(
         "cloud_storage_id",
-        [pytest.param(5, marks=[pytest.mark.with_external_services])],
+        [pytest.param(5, marks=[pytest.mark.infra_profile("standard")])],
     )
     def fxt_backing_cs_images_task_with_related_images(
         self, request: pytest.FixtureRequest, cloud_storage_id: int

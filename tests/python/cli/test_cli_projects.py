@@ -11,6 +11,8 @@ from cvat_sdk.core.proxies.projects import Project
 
 from .util import TestCliBase
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 class TestCliProjects(TestCliBase):
     @pytest.fixture

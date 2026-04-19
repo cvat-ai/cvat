@@ -2,18 +2,26 @@
 #
 # SPDX-License-Identifier: MIT
 
+import time
+from collections.abc import Callable
 from io import BytesIO
+from typing import BinaryIO, TypeVar
 
 import boto3
 from botocore.exceptions import ClientError
 
 from shared.utils.config import MINIO_ENDPOINT_URL, MINIO_KEY, MINIO_SECRET_KEY
 
+T = TypeVar("T")
+
 
 class S3Client:
     def __init__(
         self, endpoint_url: str, *, access_key: str, secret_key: str, bucket: str | None = None
     ) -> None:
+        self.endpoint_url = endpoint_url
+        self.access_key = access_key
+        self.secret_key = secret_key
         self.client = self._make_boto_client(
             endpoint_url=endpoint_url, access_key=access_key, secret_key=secret_key
         )
@@ -29,21 +37,64 @@ class S3Client:
         )
         return s3.meta.client
 
-    def create_file(self, filename: str, data: bytes = b"", *, bucket: str | None = None):
-        bucket = bucket or self.bucket
-        assert bucket
-        self.client.put_object(Body=data, Bucket=bucket, Key=filename)
+    @staticmethod
+    def _is_clock_skew_error(error: ClientError) -> bool:
+        code = error.response.get("Error", {}).get("Code")
+        return code in {"RequestTimeTooSkewed", "RequestExpired"}
 
-    def remove_file(self, filename: str, *, bucket: str | None = None):
+    def _refresh_client(self) -> None:
+        self.client = self._make_boto_client(
+            endpoint_url=self.endpoint_url,
+            access_key=self.access_key,
+            secret_key=self.secret_key,
+        )
+
+    def _call_with_retry(self, callback: Callable[[], T]) -> T:
+        max_retries = 4
+        for attempt in range(max_retries + 1):
+            try:
+                return callback()
+            except ClientError as error:
+                if not self._is_clock_skew_error(error) or attempt == max_retries:
+                    raise
+
+                self._refresh_client()
+                time.sleep(0.5 * (2**attempt))
+
+    def create_file(
+        self, filename: str, data: bytes | BinaryIO = b"", *, bucket: str | None = None
+    ):
         bucket = bucket or self.bucket
         assert bucket
-        self.client.delete_object(Bucket=bucket, Key=filename)
+
+        def _put_object():
+            if hasattr(data, "seek"):
+                data.seek(0)
+            self.client.put_object(Body=data, Bucket=bucket, Key=filename)
+
+        self._call_with_retry(_put_object)
+
+    def remove_file(
+        self,
+        filename: str,
+        *,
+        bucket: str | None = None,
+        ignore_clock_skew: bool = False,
+    ):
+        bucket = bucket or self.bucket
+        assert bucket
+        try:
+            self._call_with_retry(lambda: self.client.delete_object(Bucket=bucket, Key=filename))
+        except ClientError as error:
+            if ignore_clock_skew and self._is_clock_skew_error(error):
+                return
+            raise
 
     def file_exists(self, filename: str, *, bucket: str | None = None) -> bool:
         bucket = bucket or self.bucket
         assert bucket
         try:
-            self.client.head_object(Bucket=bucket, Key=filename)
+            self._call_with_retry(lambda: self.client.head_object(Bucket=bucket, Key=filename))
             return True
         except ClientError as e:
             if e.response["Error"]["Code"] == "404":
@@ -55,7 +106,9 @@ class S3Client:
         bucket = bucket or self.bucket
         assert bucket
         with BytesIO() as data:
-            self.client.download_fileobj(Bucket=bucket, Key=key, Fileobj=data)
+            self._call_with_retry(
+                lambda: self.client.download_fileobj(Bucket=bucket, Key=key, Fileobj=data)
+            )
             return data.getvalue()
 
 

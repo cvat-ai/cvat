@@ -22,6 +22,8 @@ from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
 from .common import TestDatasetExport
 from .util import make_pbar
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 class TestProjectUsecases(TestDatasetExport):
     @pytest.fixture(autouse=True)
@@ -258,28 +260,10 @@ class TestProjectUsecases(TestDatasetExport):
         [
             (fixture_ref("fxt_new_project"), None),
             (fixture_ref("fxt_new_project"), Location.LOCAL),
-            (
-                pytest.param(
-                    fixture_ref("fxt_new_project"),
-                    Location.CLOUD_STORAGE,
-                    marks=pytest.mark.with_external_services,
-                )
-            ),
-            (
-                pytest.param(
-                    fixture_ref("fxt_new_project_with_target_storage"),
-                    None,
-                    marks=pytest.mark.with_external_services,
-                )
-            ),
+            (fixture_ref("fxt_new_project"), Location.CLOUD_STORAGE),
+            (fixture_ref("fxt_new_project_with_target_storage"), None),
             (fixture_ref("fxt_new_project_with_target_storage"), Location.LOCAL),
-            (
-                pytest.param(
-                    fixture_ref("fxt_new_project_with_target_storage"),
-                    Location.CLOUD_STORAGE,
-                    marks=pytest.mark.with_external_services,
-                )
-            ),
+            (fixture_ref("fxt_new_project_with_target_storage"), Location.CLOUD_STORAGE),
         ],
     )
     def test_can_export_dataset(
