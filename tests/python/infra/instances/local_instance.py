@@ -6,6 +6,7 @@ import http.client
 import json
 import logging
 import os
+import shlex
 import socket
 from pathlib import Path
 from subprocess import CalledProcessError, run
@@ -43,6 +44,17 @@ _BACKGROUND_JOB_QUEUES = (
     "cleaning",
     "notifications",
 )
+
+
+def _has_explicit_infra_profile(config) -> bool:
+    option_sources = [
+        *(str(arg) for arg in config.invocation_params.args),
+        *shlex.split(os.environ.get("PYTEST_ADDOPTS", "")),
+        *shlex.split(str(config.getini("addopts") or "")),
+    ]
+    return any(
+        arg == "--infra-profile" or arg.startswith("--infra-profile=") for arg in option_sources
+    )
 
 
 def _configure_runtime_env(
@@ -955,11 +967,7 @@ class LocalPlugin(InfraPlugin):
             ) > RuntimeInfraConfig.get_infra_profile_rank(required_profile):
                 required_profile = item_profile
 
-        invocation_args = tuple(str(arg) for arg in config.invocation_params.args)
-        explicit_profile_requested = any(
-            arg == "--infra-profile" or arg.startswith("--infra-profile=")
-            for arg in invocation_args
-        )
+        explicit_profile_requested = _has_explicit_infra_profile(config)
         requested_profile = str(config.getoption("--infra-profile") or "").strip()
         if explicit_profile_requested:
             selected_profile = str(RuntimeInfraConfig.parse_infra_profile(requested_profile))
