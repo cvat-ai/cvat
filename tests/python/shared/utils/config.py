@@ -47,6 +47,9 @@ def normalize_runtime_asset_urls(
     webhook_url: str | None = None,
     minio_url: str | None = None,
 ):
+    # Repo-tracked fixtures keep stable localhost/internal URLs. Rewrite them at
+    # load time so the same fixture data works for the active runtime ports and
+    # per-run webhook/MinIO endpoints without duplicating fixture snapshots.
     base_url = base_url or os.environ.get("CVAT_BASE_URL", LEGACY_BASE_URL)
     webhook_url = webhook_url or get_runtime_webhook_target_url()
     minio_url = minio_url or get_runtime_cloud_storage_endpoint_url()

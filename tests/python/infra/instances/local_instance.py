@@ -13,6 +13,7 @@ from time import sleep
 
 import pytest
 import yaml
+
 from infra.config import (
     InfraMode,
     InfraProfile,
@@ -669,6 +670,10 @@ class LocalInstance(InfraInstance):
         self._redis_restorer.close()
         self._redis_restorer = None
 
+    def _reset_runtime_restore_caches(self) -> None:
+        self._cvat_data_archive_host = None
+        self._cvat_data_template_host = None
+
     def _get_db_restorer(self) -> PsycopgDatabaseRestorer:
         if self._db_restorer is None:
             project_cfg = RuntimeInfraConfig.get_project_config()
@@ -807,6 +812,7 @@ class LocalInstance(InfraInstance):
         )
 
         if infra_mode == InfraMode.DOWN:
+            self._reset_runtime_restore_caches()
             self._close_db_restorer()
             self._close_redis_restorer()
             stop_services(
@@ -832,6 +838,7 @@ class LocalInstance(InfraInstance):
                 project_name,
                 incompatibility_reason,
             )
+            self._reset_runtime_restore_caches()
             self._close_db_restorer()
             self._close_redis_restorer()
             stop_services(
@@ -896,11 +903,22 @@ class LocalInstance(InfraInstance):
             RuntimeInfraConfig.write_context_for_project(project_name)
             resolve_local_project_context(self.session)
 
+        setattr(config, "_cvat_started_infra_profile", RuntimeInfraConfig.get_infra_profile())
         self._run_local_lifecycle(
             infra_mode=infra_mode,
             dumpdb=config.getoption("--dumpdb"),
             cleanup=config.getoption("--cleanup"),
         )
+        setattr(config, "_cvat_started_infra_profile", RuntimeInfraConfig.get_infra_profile())
+
+    def reconcile_runtime_profile(self) -> None:
+        infra_mode = getattr(self.config, "_cvat_infra_mode", InfraMode.AUTO)
+        if infra_mode not in {InfraMode.AUTO, InfraMode.REUSE}:
+            return
+
+        resolve_local_project_context(self.session)
+        self._run_local_lifecycle(infra_mode=infra_mode, dumpdb=False, cleanup=False)
+        setattr(self.config, "_cvat_started_infra_profile", RuntimeInfraConfig.get_infra_profile())
 
     def finish(self) -> None:
         if self.config.getoption("--platform") != "local":
@@ -999,6 +1017,64 @@ class LocalPlugin(InfraPlugin):
     @classmethod
     def configure(cls, config) -> None:
         preconfigure_local_runtime_env(config)
+
+    @classmethod
+    def collection_modifyitems(cls, config, items) -> None:
+        if config.getoption("--platform") != "local":
+            return
+
+        required_profile = str(InfraProfile.SIMPLE)
+        for item in items:
+            marker = item.get_closest_marker("infra_profile")
+            item_profile = marker.args[0] if marker and marker.args else str(InfraProfile.SIMPLE)
+            item_profile = str(RuntimeInfraConfig.parse_infra_profile(item_profile))
+            if RuntimeInfraConfig.get_infra_profile_rank(
+                item_profile
+            ) > RuntimeInfraConfig.get_infra_profile_rank(required_profile):
+                required_profile = item_profile
+
+        invocation_args = tuple(str(arg) for arg in config.invocation_params.args)
+        explicit_profile_requested = any(
+            arg == "--infra-profile" or arg.startswith("--infra-profile=")
+            for arg in invocation_args
+        )
+        requested_profile = str(config.getoption("--infra-profile") or "").strip()
+        if explicit_profile_requested:
+            selected_profile = str(RuntimeInfraConfig.parse_infra_profile(requested_profile))
+            if RuntimeInfraConfig.get_infra_profile_rank(
+                selected_profile
+            ) < RuntimeInfraConfig.get_infra_profile_rank(required_profile):
+                raise pytest.UsageError(
+                    f"--infra-profile={selected_profile!r} is too small for the collected test set; "
+                    f"required profile is {required_profile!r}"
+                )
+        else:
+            selected_profile = required_profile
+
+        setattr(config, "_cvat_selected_infra_profile", selected_profile)
+        os.environ["CVAT_TEST_INFRA_PROFILE"] = selected_profile
+
+    @classmethod
+    def runtestloop(cls, session):
+        config = session.config
+        if config.getoption("--platform") != "local" or config.getoption("--collect-only"):
+            return None
+
+        selected_profile = getattr(config, "_cvat_selected_infra_profile", None)
+        if not selected_profile:
+            return None
+
+        started_profile = getattr(
+            config, "_cvat_started_infra_profile", RuntimeInfraConfig.get_infra_profile()
+        )
+        if str(started_profile) == str(selected_profile):
+            return None
+
+        os.environ["CVAT_TEST_INFRA_PROFILE"] = str(selected_profile)
+        instance = getattr(config, "_cvat_infra_instance", None)
+        if instance is not None:
+            instance.reconcile_runtime_profile()
+        return None
 
     @classmethod
     def can_handle_config(cls, config) -> bool:
