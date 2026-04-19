@@ -46,33 +46,43 @@ def get_method(username, endpoint, *, timeout=None, **kwargs):
 
 
 def options_method(username, endpoint, **kwargs):
-    return requests.options(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
+    return requests.options(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=60)
 
 
 def delete_method(username, endpoint, **kwargs):
-    return requests.delete(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
+    return requests.delete(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=60)
 
 
 def patch_method(username, endpoint, data, **kwargs):
-    return requests.patch(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
+    return requests.patch(
+        get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS), timeout=60
+    )
 
 
 def post_method(username, endpoint, data, **kwargs):
-    return requests.post(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
+    return requests.post(
+        get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS), timeout=60
+    )
 
 
 def post_files_method(username, endpoint, data, files, **kwargs):
     return requests.post(
-        get_api_url(endpoint, **kwargs), data=data, files=files, auth=(username, USER_PASS)
+        get_api_url(endpoint, **kwargs),
+        data=data,
+        files=files,
+        auth=(username, USER_PASS),
+        timeout=60,
     )
 
 
 def put_method(username, endpoint, data, **kwargs):
-    return requests.put(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
+    return requests.put(
+        get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS), timeout=60
+    )
 
 
 def server_get(username, endpoint, **kwargs):
-    return requests.get(get_server_url(endpoint, **kwargs), auth=(username, USER_PASS))
+    return requests.get(get_server_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=60)
 
 
 def make_api_client(

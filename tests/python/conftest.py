@@ -2,48 +2,37 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-
 import pytest
 from infra import options as infra_options
-from infra.config import (
-    InfraMode,
-    InfraProfile,
-    RuntimeInfraConfig,
-)
+from infra.config import InfraMode, RuntimeInfraConfig
 from infra.instances import InfraInstance, InstanceConfig
-from infra.profiler import RuntimeProfilerPlugin
-from infra.system_utils import run_command
 from infra.version_check import run_sanity_version_check
+
+from shared.fixtures import init as legacy_init
+
+restore_db_per_function = legacy_init.restore_db_per_function
+restore_db_per_class = legacy_init.restore_db_per_class
+restore_cvat_data_per_function = legacy_init.restore_cvat_data_per_function
+restore_cvat_data_per_class = legacy_init.restore_cvat_data_per_class
+restore_clickhouse_db_per_function = legacy_init.restore_clickhouse_db_per_function
+restore_clickhouse_db_per_class = legacy_init.restore_clickhouse_db_per_class
+restore_redis_inmem_per_function = legacy_init.restore_redis_inmem_per_function
+restore_redis_inmem_per_class = legacy_init.restore_redis_inmem_per_class
+restore_redis_ondisk_per_function = legacy_init.restore_redis_ondisk_per_function
+restore_redis_ondisk_per_class = legacy_init.restore_redis_ondisk_per_class
+restore_redis_ondisk_after_class = legacy_init.restore_redis_ondisk_after_class
 
 # Register fixture modules explicitly.
 pytest_plugins = [
     "shared.fixtures.data",
     "shared.fixtures.util",
-    "infra.fixtures",
 ]
 
 
 def pytest_configure(config) -> None:
-    if not config.getoption("--parallel-child"):
-        os_profile = str(config.getoption("--infra-profile") or "").strip()
-        if os_profile:
-            os.environ["CVAT_TEST_INFRA_PROFILE"] = os_profile
-
     RuntimeInfraConfig.initialize(config)
-    for profile in RuntimeInfraConfig.get_infra_profiles():
-        marker_name = RuntimeInfraConfig.get_required_marker_name(profile)
-        config.addinivalue_line(
-            "markers",
-            f"{marker_name}: Auto-assigned marker for tests requiring {profile} profile.",
-        )
-
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.configure(config)
-
-    plugin_name = "cvat_runtime_profiler"
-    if config.pluginmanager.get_plugin(plugin_name) is None:
-        config.pluginmanager.register(RuntimeProfilerPlugin(config), plugin_name)
 
 
 def pytest_addoption(parser):
@@ -71,7 +60,6 @@ def pytest_runtestloop(session):
 def pytest_sessionstart(session) -> None:
     config = session.config
 
-    # Support positional control commands while keeping `--infra` as source of truth.
     infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
     if infra_mode == InfraMode.AUTO:
         args = list(config.args)
@@ -93,7 +81,7 @@ def pytest_sessionstart(session) -> None:
     dumpdb = bool(config.getoption("--dumpdb"))
     collect_only = bool(config.getoption("--collect-only"))
     platform = str(config.getoption("--platform"))
-    parallel = config.getoption("--parallel")
+
     if collect_only and any(
         (
             cleanup,
@@ -108,11 +96,11 @@ def pytest_sessionstart(session) -> None:
         )
     if platform == "kube" and any((cleanup, dumpdb)):
         raise pytest.UsageError("--platform=kube does not support --cleanup/--dumpdb")
-    if infra_mode == InfraMode.RESTORE_DB and parallel is not None:
-        raise pytest.UsageError("--infra=restore-db is not supported with --parallel")
 
     if infra_mode == InfraMode.BUILD_IMAGES:
         cvat_root_dir = RuntimeInfraConfig.get_cvat_root_dir()
+        from infra.system_utils import run_command
+
         run_command(
             [
                 "docker",
@@ -134,10 +122,17 @@ def pytest_sessionstart(session) -> None:
         and infra_mode
         not in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB, InfraMode.BUILD_IMAGES}
         and not any((cleanup, dumpdb))
-        and not bool(config.getoption("--parallel-child"))
         and not bool(config.getoption("--skip-version-check"))
     )
     if collect_only:
+        return
+
+    if platform == "kube":
+        legacy_init.session_start(session)
+        if should_run_version_check:
+            run_sanity_version_check(
+                cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=platform
+            )
         return
 
     instance_config = InstanceConfig(
@@ -145,8 +140,6 @@ def pytest_sessionstart(session) -> None:
         cvat_db_dir=RuntimeInfraConfig.get_cvat_db_dir(),
         waiting_time=300,
         extra_dc_files=None,
-        default_infra_profile=RuntimeInfraConfig.get_default_infra_profile(),
-        profile_dc_files=RuntimeInfraConfig.get_profile_dc_files(),
     )
     instance = InfraInstance.create(session, instance_config)
     setattr(config, "_cvat_infra_instance", instance)
@@ -163,29 +156,25 @@ def pytest_sessionfinish(session, exitstatus: int) -> None:
         return
 
     setattr(session.config, "_cvat_exitstatus", int(exitstatus))
+
+    if session.config.getoption("--platform") == "kube":
+        legacy_init.session_finish(session)
+        return
+
     instance = getattr(session.config, "_cvat_infra_instance", None)
     if instance is not None:
         instance.finish()
 
 
-@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items) -> None:
-    _assign_required_infra_markers(items)
     for plugin_class in _selected_plugin_classes(config):
         plugin_class.collection_modifyitems(config, items)
 
 
-def _assign_required_infra_markers(items) -> None:
-    # Marker assignment happens after runtime config initialization so every collected
-    # test has an explicit minimum profile, even if the test file does not declare one.
-    for item in items:
-        marker = item.get_closest_marker("infra_profile")
-        required = marker.args[0] if marker and marker.args else str(InfraProfile.SIMPLE)
-        required = str(RuntimeInfraConfig.parse_infra_profile(required))
-        item.add_marker(getattr(pytest.mark, RuntimeInfraConfig.get_required_marker_name(required)))
-
-
 def _selected_runtime_class(config):
+    if config.getoption("--platform") != "local":
+        return None
+
     selected = getattr(config, "_cvat_runtime_class", None)
     if selected is None:
         selected = InfraInstance.select_runtime_class_for_config(config)
@@ -194,9 +183,12 @@ def _selected_runtime_class(config):
 
 
 def _selected_plugin_classes(config):
+    if config.getoption("--platform") != "local":
+        return []
+
     classes = getattr(config, "_cvat_plugin_classes", None)
     if classes is None:
-        _selected_runtime_class(config)
-        classes = InfraInstance.select_plugin_classes_for_config(config)
+        runtime_class = _selected_runtime_class(config)
+        classes = [runtime_class.plugin_class] if runtime_class is not None else []
         setattr(config, "_cvat_plugin_classes", classes)
     return classes

@@ -1,3 +1,3 @@
 ### Fixed
 
-- Python tests now use a pytest-managed local runtime foundation with explicit infra lifecycle commands, runtime-specific base URLs, and generated compose project state instead of the old implicit session bootstrap.
+- Python tests now use a pytest-managed local runtime foundation with explicit local infra lifecycle commands, generated runtime state, and runtime-specific base URLs while preserving the existing kube/minikube test path for compatibility.

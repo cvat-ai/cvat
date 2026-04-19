@@ -13,13 +13,8 @@ from time import sleep
 
 import pytest
 import yaml
-from infra.config import (
-    InfraMode,
-    InfraProfile,
-    RuntimeInfraConfig,
-)
+from infra.config import InfraMode, RuntimeInfraConfig
 from infra.instances.base_instance import InfraInstance, InfraPlugin
-from infra.profiler import profile_external_phase
 from infra.system_utils import docker_cp, is_port_free, pick_free_port, run_command
 
 logger = logging.getLogger(__name__)
@@ -34,6 +29,12 @@ _COVERED_CONTAINERS = (
     "cvat_worker_utils",
 )
 _FAILURE_LOG_CONTAINERS = _COVERED_CONTAINERS + ("cvat_opa", "traefik")
+_LOCAL_DC_FILES = (
+    "tests/docker-compose.file_share.yml",
+    "tests/docker-compose.minio.yml",
+    "tests/docker-compose.pat_settings.yml",
+    "tests/docker-compose.test_servers.yml",
+)
 
 
 def _configure_runtime_env(
@@ -72,21 +73,11 @@ def preconfigure_local_runtime_env(config) -> None:
     """
     project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
     infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
-    if config.getoption("--parallel-child"):
-        os.environ["CVAT_TEST_INFRA_PROFILE"] = config.getoption("--parallel-lane-profile")
-    else:
-        os.environ.setdefault(
-            "CVAT_TEST_INFRA_PROFILE", RuntimeInfraConfig.get_default_infra_profile()
-        )
 
     if config.getoption("--platform") != "local":
         return
 
-    if config.getoption("--collect-only"):
-        os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
-        return
-
-    if infra_mode == InfraMode.DOWN:
+    if config.getoption("--collect-only") or infra_mode == InfraMode.DOWN:
         os.environ["CVAT_TEST_RUN_PREFIX"] = project_name
         return
 
@@ -95,9 +86,6 @@ def preconfigure_local_runtime_env(config) -> None:
         project_cfg,
         default_project_name=RuntimeInfraConfig.get_default_project_name(),
     )
-    project_state = project_cfg.load_state() or {}
-    project_running = project_containers_running(project_cfg.project_name)
-    _ = project_state, project_running
     _configure_runtime_env(project_name=project_name, port_config=port_config)
 
 
@@ -113,7 +101,6 @@ def resolve_local_project_context(session) -> tuple[str, dict]:
     project_cfg.save_state(
         {
             "project_name": project_name,
-            "infra_profile": RuntimeInfraConfig.get_infra_profile(),
             **port_config,
             "base_url": os.environ["CVAT_BASE_URL"],
             "minio_endpoint_url": os.environ["CVAT_MINIO_ENDPOINT_URL"],
@@ -187,58 +174,13 @@ def project_containers_running(project_name: str) -> bool:
     return expected.issubset(containers)
 
 
-def _profile_required_services(profile: str) -> set[str]:
-    try:
-        normalized = str(RuntimeInfraConfig.parse_infra_profile(profile))
-    except pytest.UsageError:
-        return set()
-    if normalized == str(InfraProfile.SIMPLE):
-        return set()
-    if normalized == str(InfraProfile.STANDARD):
-        return {
-            "minio",
-            "cvat_worker_chunks",
-            "cvat_worker_export",
-            "cvat_worker_import",
-        }
-    if normalized == str(InfraProfile.FULL):
-        return {
-            "cvat_clickhouse",
-            "minio",
-            "webhook_receiver",
-            "cvat_ui",
-            "cvat_grafana",
-            "cvat_vector",
-            "cvat_worker_annotation",
-            "cvat_worker_chunks",
-            "cvat_worker_consensus",
-            "cvat_worker_export",
-            "cvat_worker_import",
-            "cvat_worker_quality_reports",
-            "cvat_worker_webhooks",
-            "cvat_worker_utils",
-        }
-    return set()
-
-
-def profile_services_ready(project_name: str, profile: str) -> bool:
-    required = _profile_required_services(profile)
-    if not required:
-        return True
-    containers = set(running_containers())
-    return all(f"{project_name}_{service}_1" in containers for service in required)
-
-
 def project_stack_compatible(
     project_name: str,
     *,
-    profile: str,
     expected_db_port: int,
     expected_redis_inmem_port: int,
     expected_redis_ondisk_port: int,
 ) -> tuple[bool, str]:
-    if not profile_services_ready(project_name, profile):
-        return False, f"missing required services for profile '{profile}'"
     if not project_db_port_ready(project_name, expected_db_port):
         return False, "PostgreSQL host port mapping is missing or outdated"
     if not project_redis_ports_ready(
@@ -558,20 +500,9 @@ def _delete_compose_files(container_name_files: list[Path]):
         filename.unlink(missing_ok=True)
 
 
-def stop_project_services_best_effort(
-    *,
-    project_name: str,
-    default_infra_profile: str,
-    profile_dc_files: dict[str, list[str]],
-) -> None:
+def stop_project_services_best_effort(*, project_name: str) -> None:
     project_cfg = RuntimeInfraConfig.get_project_config(project_name)
-    saved_state = project_cfg.load_state() or {}
-    saved_profile = str(saved_state.get("infra_profile") or default_infra_profile)
-
-    dc_files = project_cfg.dc_files
-    profile_files = profile_dc_files.get(saved_profile, [])
-    if profile_files:
-        dc_files += [project_cfg.cvat_root_dir / f for f in profile_files]
+    dc_files = project_cfg.dc_files + [project_cfg.cvat_root_dir / f for f in _LOCAL_DC_FILES]
 
     try:
         stop_services(
@@ -589,38 +520,13 @@ def stop_project_services_best_effort(
         project_cfg.delete_state()
 
 
-def cleanup_after_session(
-    *,
-    infra_mode: InfraMode,
-    run_prefix: str,
-    profiles: list[str],
-    is_parallel_child: bool,
-) -> None:
+def cleanup_after_session(*, infra_mode: InfraMode, run_prefix: str) -> None:
     if infra_mode != InfraMode.AUTO:
         return
 
-    if is_parallel_child:
-        return
-
-    def should_stop_project(project_name: str) -> bool:
-        state = RuntimeInfraConfig.get_project_config(project_name).load_state() or {}
-        return bool(state.get("auto_started", False))
-
-    if profiles and not is_parallel_child:
-        for lane_idx in range(1, len(profiles) + 1):
-            project_name = f"{run_prefix}{lane_idx}" if len(profiles) > 1 else run_prefix
-            if should_stop_project(project_name):
-                stop_project_services_best_effort(
-                    project_name=project_name,
-                    default_infra_profile=RuntimeInfraConfig.get_default_infra_profile(),
-                    profile_dc_files=RuntimeInfraConfig.get_profile_dc_files(),
-                )
-    elif should_stop_project(run_prefix):
-        stop_project_services_best_effort(
-            project_name=run_prefix,
-            default_infra_profile=RuntimeInfraConfig.get_default_infra_profile(),
-            profile_dc_files=RuntimeInfraConfig.get_profile_dc_files(),
-        )
+    state = RuntimeInfraConfig.get_project_config(run_prefix).load_state() or {}
+    if bool(state.get("auto_started", False)):
+        stop_project_services_best_effort(project_name=run_prefix)
 
 
 class LocalInstance(InfraInstance):
@@ -681,14 +587,9 @@ class LocalInstance(InfraInstance):
         return cls.can_handle_config(session.config)
 
     def _build_local_dc_files(self, project_cfg) -> list[Path]:
-        active_profile = RuntimeInfraConfig.get_infra_profile()
         dc_files = project_cfg.generated_compose_files + [
-            project_cfg.cvat_root_dir / f
-            for f in RuntimeInfraConfig.get_base_dc_files(active_profile)
+            project_cfg.cvat_root_dir / f for f in _LOCAL_DC_FILES
         ]
-        active_profile_files = self.deps.profile_dc_files.get(active_profile, [])
-        if active_profile_files:
-            dc_files += [project_cfg.cvat_root_dir / f for f in active_profile_files]
         if self.deps.extra_dc_files is not None:
             dc_files += self.deps.extra_dc_files
         return dc_files
@@ -703,44 +604,43 @@ class LocalInstance(InfraInstance):
         container_name_files = project_cfg.generated_compose_files
 
         def restore_databases_from_assets() -> None:
-            with profile_external_phase("local.restore_assets_db"):
-                self.restore_cvat_data()
-                docker_cp(
-                    self.deps.cvat_db_dir / "restore.sql",
-                    f"{prefixed_name('cvat_db')}:/tmp/restore.sql",
-                )
-                docker_cp(
-                    self.prepare_runtime_db_fixture(),
-                    f"{prefixed_name('cvat_server')}:/tmp/data.json",
-                )
-                infra_health.wait_for_services(self.deps.waiting_time)
-                self.exec_cvat(
-                    [
-                        "sh",
-                        "-c",
-                        "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json",
-                    ]
-                )
-                run_command(
-                    [
-                        "docker",
-                        "exec",
-                        prefixed_name("cvat_db"),
-                        "psql",
-                        "-U",
-                        "root",
-                        "-d",
-                        "postgres",
-                        "-v",
-                        "from=cvat",
-                        "-v",
-                        "to=test_db",
-                        "-f",
-                        "/tmp/restore.sql",
-                    ],
-                    logger=logger,
-                )
-                infra_health.wait_for_auth_login_ready()
+            self.restore_cvat_data()
+            docker_cp(
+                self.deps.cvat_db_dir / "restore.sql",
+                f"{prefixed_name('cvat_db')}:/tmp/restore.sql",
+            )
+            docker_cp(
+                self.prepare_runtime_db_fixture(),
+                f"{prefixed_name('cvat_server')}:/tmp/data.json",
+            )
+            infra_health.wait_for_services(self.deps.waiting_time)
+            self.exec_cvat(
+                [
+                    "sh",
+                    "-c",
+                    "./manage.py flush --no-input && ./manage.py loaddata /tmp/data.json",
+                ]
+            )
+            run_command(
+                [
+                    "docker",
+                    "exec",
+                    prefixed_name("cvat_db"),
+                    "psql",
+                    "-U",
+                    "root",
+                    "-d",
+                    "postgres",
+                    "-v",
+                    "from=cvat",
+                    "-v",
+                    "to=test_db",
+                    "-f",
+                    "/tmp/restore.sql",
+                ],
+                logger=logger,
+            )
+            infra_health.wait_for_auth_login_ready()
 
         def set_auto_started(value: bool) -> None:
             state = project_cfg.load_state() or {}
@@ -766,7 +666,6 @@ class LocalInstance(InfraInstance):
                 )
             stack_ok, reason = project_stack_compatible(
                 project_name,
-                profile=RuntimeInfraConfig.get_infra_profile(),
                 expected_db_port=project_cfg.host_db_port,
                 expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
                 expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
@@ -798,7 +697,6 @@ class LocalInstance(InfraInstance):
 
         stack_ok, incompatibility_reason = project_stack_compatible(
             project_name,
-            profile=RuntimeInfraConfig.get_infra_profile(),
             expected_db_port=project_cfg.host_db_port,
             expected_redis_inmem_port=project_cfg.host_redis_inmem_port,
             expected_redis_ondisk_port=project_cfg.host_redis_ondisk_port,
@@ -820,27 +718,25 @@ class LocalInstance(InfraInstance):
 
         if infra_mode == InfraMode.UP:
             if not project_running:
-                with profile_external_phase("local.compose_up"):
-                    start_services(
-                        project_name=project_name,
-                        default_project_name=RuntimeInfraConfig.get_default_project_name(),
-                        dc_files=dc_files,
-                        project_directory=self.deps.cvat_root_dir,
-                    )
-                    infra_health.wait_for_services(self.deps.waiting_time)
+                start_services(
+                    project_name=project_name,
+                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                    dc_files=dc_files,
+                    project_directory=self.deps.cvat_root_dir,
+                )
+                infra_health.wait_for_services(self.deps.waiting_time)
             restore_databases_from_assets()
             infra_health.wait_for_auth_login_ready()
             pytest.exit("All necessary containers have been created and started.", returncode=0)
 
         if infra_mode == InfraMode.RESTORE_DB:
             if not project_running:
-                with profile_external_phase("local.compose_up"):
-                    start_services(
-                        project_name=project_name,
-                        default_project_name=RuntimeInfraConfig.get_default_project_name(),
-                        dc_files=dc_files,
-                        project_directory=self.deps.cvat_root_dir,
-                    )
+                start_services(
+                    project_name=project_name,
+                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                    dc_files=dc_files,
+                    project_directory=self.deps.cvat_root_dir,
+                )
             restore_databases_from_assets()
             pytest.exit("CVAT database has been restored from test assets.", returncode=0)
 
@@ -849,13 +745,12 @@ class LocalInstance(InfraInstance):
             set_auto_started(not project_running)
 
         if not project_running:
-            with profile_external_phase("local.compose_up"):
-                start_services(
-                    project_name=project_name,
-                    default_project_name=RuntimeInfraConfig.get_default_project_name(),
-                    dc_files=dc_files,
-                    project_directory=self.deps.cvat_root_dir,
-                )
+            start_services(
+                project_name=project_name,
+                default_project_name=RuntimeInfraConfig.get_default_project_name(),
+                dc_files=dc_files,
+                project_directory=self.deps.cvat_root_dir,
+            )
 
         restore_databases_from_assets()
 
@@ -894,14 +789,9 @@ class LocalInstance(InfraInstance):
 
         infra_mode = getattr(self.config, "_cvat_infra_mode", InfraMode.AUTO)
         run_prefix = RuntimeInfraConfig.get_run_prefix_from_config(self.config)
-        profiles: list[str] = []
-        is_parallel_child = False
-
         cleanup_after_session(
             infra_mode=infra_mode,
             run_prefix=run_prefix,
-            profiles=profiles,
-            is_parallel_child=is_parallel_child,
         )
 
     def collect_failure_logs(self) -> None:

@@ -16,8 +16,6 @@ class InstanceConfig:
     cvat_db_dir: Path  # Directory with DB/data restore artifacts.
     waiting_time: int  # Max service readiness wait in seconds.
     extra_dc_files: Any  # Optional extra docker-compose override files.
-    default_infra_profile: Any  # Fallback profile when state/profile is missing.
-    profile_dc_files: Any  # Mapping from infra profile to compose overrides.
 
 
 class InfraPlugin(ABC):
@@ -98,7 +96,6 @@ class InfraInstance(ABC):
     def prepare_runtime_db_fixture(self) -> Path:
         return self.deps.cvat_db_dir / "data.json"
 
-    # Fixture-level data restore capabilities.
     def restore_db(self) -> None:
         raise NotImplementedError
 
@@ -142,10 +139,6 @@ class InfraInstance(ABC):
     def restore_redis_ondisk(self) -> None:
         raise NotImplementedError
 
-    def drain_background_jobs(self, profile: str, *, timeout_seconds: int = 20) -> None:
-        _ = profile, timeout_seconds
-        return None
-
     def exec_cvat(self, command: list[str] | str):
         raise NotImplementedError
 
@@ -183,11 +176,6 @@ class InfraInstance(ABC):
             if candidate.can_handle_config(config):
                 return candidate
         raise RuntimeError("Failed to choose infra instance implementation for config")
-
-    @classmethod
-    def select_plugin_classes_for_config(cls, config):
-        runtime_class = cls.select_runtime_class_for_config(config)
-        return [runtime_class.plugin_class]
 
     @classmethod
     def create(cls, session, deps: InstanceConfig) -> "InfraInstance":
