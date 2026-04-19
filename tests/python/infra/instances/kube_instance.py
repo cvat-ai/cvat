@@ -1947,12 +1947,12 @@ class KubeInstance(InfraInstance):
         self._get_redis_restorer().restore_ondisk()
 
     def drain_background_jobs(self, *, timeout_seconds: int = 20) -> None:
-        if self._background_job_cleaner is None:
-            self._background_job_cleaner = BackgroundJobCleaner(
-                self._get_redis_restorer().inmem_db0
-            )
+        cleaner = getattr(self, "_background_job_cleaner", None)
+        if cleaner is None:
+            cleaner = BackgroundJobCleaner(self._get_redis_restorer().inmem_db0)
+            self._background_job_cleaner = cleaner
 
-        self._background_job_cleaner.drain(_BACKGROUND_JOB_QUEUES, timeout_seconds=timeout_seconds)
+        cleaner.drain(_BACKGROUND_JOB_QUEUES, timeout_seconds=timeout_seconds)
 
     def _open_port_forward_log(self, log_name: str):
         log_dir = RuntimeInfraConfig.get_run_dir() / "port-forwards"
