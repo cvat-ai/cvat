@@ -8,8 +8,6 @@ from infra.config import InfraMode, RuntimeInfraConfig
 from infra.instances import InfraInstance, InstanceConfig
 from infra.version_check import run_sanity_version_check
 
-from shared.fixtures import init as legacy_init
-
 # Register fixture modules explicitly.
 pytest_plugins = [
     "shared.fixtures.data",
@@ -129,14 +127,6 @@ def pytest_sessionstart(session) -> None:
     if collect_only:
         return
 
-    if platform == "kube":
-        legacy_init.session_start(session)
-        if should_run_version_check:
-            run_sanity_version_check(
-                cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=platform
-            )
-        return
-
     instance_config = InstanceConfig(
         cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(),
         cvat_db_dir=RuntimeInfraConfig.get_cvat_db_dir(),
@@ -150,11 +140,11 @@ def pytest_sessionstart(session) -> None:
     if infra_mode in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB}:
         instance.start()
         setattr(config, "_cvat_runtime_started", True)
-    elif infra_mode == InfraMode.REUSE and platform == "local":
-        # Defer local runtime startup until after collection so profile selection can
-        # choose the correct stack shape without a throwaway initial compose cycle.
+    elif infra_mode == InfraMode.REUSE:
+        # Defer runtime startup until after collection so profile selection can choose
+        # the correct stack shape without a throwaway initial start cycle.
         return
-    elif platform == "local":
+    else:
         return
 
     if should_run_version_check and getattr(config, "_cvat_runtime_started", False):
@@ -169,10 +159,6 @@ def pytest_sessionfinish(session, exitstatus: int) -> None:
 
     setattr(session.config, "_cvat_exitstatus", int(exitstatus))
 
-    if session.config.getoption("--platform") == "kube":
-        legacy_init.session_finish(session)
-        return
-
     instance = getattr(session.config, "_cvat_infra_instance", None)
     if instance is not None:
         instance.finish()
@@ -184,9 +170,6 @@ def pytest_collection_modifyitems(config, items) -> None:
 
 
 def _selected_runtime_class(config):
-    if config.getoption("--platform") != "local":
-        return None
-
     selected = getattr(config, "_cvat_runtime_class", None)
     if selected is None:
         selected = InfraInstance.select_runtime_class_for_config(config)
@@ -195,12 +178,9 @@ def _selected_runtime_class(config):
 
 
 def _selected_plugin_classes(config):
-    if config.getoption("--platform") != "local":
-        return []
-
     classes = getattr(config, "_cvat_plugin_classes", None)
     if classes is None:
         runtime_class = _selected_runtime_class(config)
-        classes = [runtime_class.plugin_class] if runtime_class is not None else []
+        classes = [runtime_class.plugin_class]
         setattr(config, "_cvat_plugin_classes", classes)
     return classes

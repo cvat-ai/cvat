@@ -45,6 +45,39 @@ which are used by containers for the testing system.
   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
   to get more information about tests running.
 
+### Kubernetes runs
+
+The Python test runtime also supports `--platform=kube`.
+
+Prerequisites on the host:
+- `minikube`
+- `kubectl`
+- `helm`
+- Docker
+
+Example lifecycle:
+
+```shell
+# Start minikube if needed, load images, deploy Helm releases, and prepare test dependencies
+pytest ./tests/python --platform kube --run-prefix k1 --infra-profile full up
+
+# Run tests against the same kube runtime
+pytest ./tests/python --platform kube --run-prefix k1
+
+# Tear everything down
+pytest ./tests/python --platform kube --run-prefix k1 down
+```
+
+Notes:
+- Kube runs support the same `simple`, `standard`, and `full` profiles as local runs.
+- If `--infra-profile` is not provided, pytest selects the smallest sufficient profile from
+  explicit `@pytest.mark.infra_profile(...)` markers.
+- Use `--kube-cpus` and `--kube-memory` to size the Minikube VM.
+- Use `--kube-server-image`, `--kube-frontend-image`, and `--kube-image-tag` to point the
+  runtime at non-default images.
+- If `--kube-namespace` is not provided, pytest derives a per-run namespace from `--run-prefix`.
+- Run artifacts and kube diagnostics are written under `/tmp/cvat_pytest_infra/runs/<run-id>/`.
+
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already

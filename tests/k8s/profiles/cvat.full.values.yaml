@@ -1,0 +1,27 @@
+analytics:
+  enabled: true
+
+clickhouse:
+  replicaCount: 1
+
+cvat:
+  frontend:
+    replicas: 1
+  backend:
+    worker:
+      export:
+        replicas: 1
+      import:
+        replicas: 1
+      chunks:
+        replicas: 1
+      annotation:
+        replicas: 1
+      webhooks:
+        replicas: 1
+      qualityreports:
+        replicas: 1
+      consensus:
+        replicas: 1
+      utils:
+        replicas: 1
