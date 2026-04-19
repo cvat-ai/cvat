@@ -10,22 +10,11 @@ from infra.version_check import run_sanity_version_check
 
 from shared.fixtures import init as legacy_init
 
-restore_db_per_function = legacy_init.restore_db_per_function
-restore_db_per_class = legacy_init.restore_db_per_class
-restore_cvat_data_per_function = legacy_init.restore_cvat_data_per_function
-restore_cvat_data_per_class = legacy_init.restore_cvat_data_per_class
-restore_clickhouse_db_per_function = legacy_init.restore_clickhouse_db_per_function
-restore_clickhouse_db_per_class = legacy_init.restore_clickhouse_db_per_class
-restore_redis_inmem_per_function = legacy_init.restore_redis_inmem_per_function
-restore_redis_inmem_per_class = legacy_init.restore_redis_inmem_per_class
-restore_redis_ondisk_per_function = legacy_init.restore_redis_ondisk_per_function
-restore_redis_ondisk_per_class = legacy_init.restore_redis_ondisk_per_class
-restore_redis_ondisk_after_class = legacy_init.restore_redis_ondisk_after_class
-
 # Register fixture modules explicitly.
 pytest_plugins = [
     "shared.fixtures.data",
     "shared.fixtures.util",
+    "infra.fixtures",
 ]
 
 

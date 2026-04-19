@@ -25,7 +25,10 @@ class TestBasicAuth:
             assert user.username == username
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures(
+    "restore_db_per_function",
+    "restore_redis_inmem_per_function",
+)
 class TestTokenAuth:
     @staticmethod
     def login(api_client: ApiClient, username: str) -> models.Token:
@@ -107,7 +110,10 @@ class TestTokenAuth:
             assert response.status == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures(
+    "restore_db_per_function",
+    "restore_redis_inmem_per_function",
+)
 class TestSessionAuth:
     @staticmethod
     def login(api_client: ApiClient, username: str) -> models.Token:
@@ -189,7 +195,10 @@ class TestSessionAuth:
             assert response.status == HTTPStatus.UNAUTHORIZED
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures(
+    "restore_db_per_function",
+    "restore_redis_inmem_per_function",
+)
 class TestAccessTokenAuth:
     @classmethod
     @contextmanager
@@ -255,7 +264,10 @@ class TestAccessTokenAuth:
             session_api_client.users_api.retrieve_self()
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures(
+    "restore_db_per_function",
+    "restore_redis_inmem_per_function",
+)
 class TestCredentialsManagement:
     def test_can_register(self):
         username = "newuser"

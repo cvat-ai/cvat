@@ -139,6 +139,9 @@ class InfraInstance(ABC):
     def restore_redis_ondisk(self) -> None:
         raise NotImplementedError
 
+    def drain_background_jobs(self, *, timeout_seconds: int = 20) -> None:
+        raise NotImplementedError
+
     def exec_cvat(self, command: list[str] | str):
         raise NotImplementedError
 
