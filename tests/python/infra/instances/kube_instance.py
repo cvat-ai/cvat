@@ -596,8 +596,11 @@ def preconfigure_kube_runtime_env(config) -> None:
     os.environ["CVAT_TEST_KUBE_SERVER_IMAGE"] = str(config.getoption("--kube-server-image"))
     os.environ["CVAT_TEST_KUBE_FRONTEND_IMAGE"] = str(config.getoption("--kube-frontend-image"))
     os.environ["CVAT_TEST_KUBE_IMAGE_TAG"] = str(config.getoption("--kube-image-tag"))
+    requested_profile = config.getoption("--infra-profile")
     os.environ["CVAT_TEST_INFRA_PROFILE"] = str(
-        RuntimeInfraConfig.parse_infra_profile(config.getoption("--infra-profile"))
+        RuntimeInfraConfig.parse_infra_profile(
+            requested_profile or RuntimeInfraConfig.get_default_infra_profile()
+        )
     )
 
     if infra_mode == InfraMode.DOWN:
@@ -759,6 +762,9 @@ def _kube_api_reachable(context: str) -> bool:
 
 
 def _use_minikube_context(profile: str) -> None:
+    if not _minikube_profile_exists(profile):
+        logger.info("Skipping minikube context update because profile %s does not exist", profile)
+        return
     run_command(["minikube", "-p", profile, "update-context"], capture_output=False, logger=logger)
 
 
@@ -1458,7 +1464,15 @@ class KubeInstance(InfraInstance):
         )
 
     def _teardown_kube_stack(self, *, run_prefix: str, delete_profile: bool = False) -> None:
-        _use_minikube_context(_kube_profile())
+        profile = _kube_profile()
+        if not _minikube_profile_exists(profile):
+            logger.info(
+                "Skipping kube teardown because minikube profile %s does not exist",
+                profile,
+            )
+            return
+
+        _use_minikube_context(profile)
         namespace = _kube_namespace()
         _helm_uninstall(release=_kube_release(), namespace=namespace)
         _helm_uninstall(release=_kube_test_release(), namespace=namespace)
@@ -2315,13 +2329,8 @@ class KubePlugin(InfraPlugin):
             ) > RuntimeInfraConfig.get_infra_profile_rank(required_profile):
                 required_profile = item_profile
 
-        invocation_args = tuple(str(arg) for arg in config.invocation_params.args)
-        explicit_profile_requested = any(
-            arg == "--infra-profile" or arg.startswith("--infra-profile=")
-            for arg in invocation_args
-        )
-        requested_profile = str(config.getoption("--infra-profile") or "").strip()
-        if explicit_profile_requested:
+        requested_profile = config.getoption("--infra-profile")
+        if requested_profile is not None:
             selected_profile = str(RuntimeInfraConfig.parse_infra_profile(requested_profile))
             if RuntimeInfraConfig.get_infra_profile_rank(
                 selected_profile
