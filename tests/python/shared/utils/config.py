@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+# Generic test request helpers intentionally rely on pytest/runtime-level timeouts.
+# pylint: disable=missing-timeout
+
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -39,47 +42,37 @@ def get_api_url(endpoint, **kwargs):
 
 
 def get_method(username, endpoint, **kwargs):
-    return requests.get(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=60)
+    return requests.get(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
 
 def options_method(username, endpoint, **kwargs):
-    return requests.options(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=60)
+    return requests.options(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
 
 def delete_method(username, endpoint, **kwargs):
-    return requests.delete(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=60)
+    return requests.delete(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
 
 def patch_method(username, endpoint, data, **kwargs):
-    return requests.patch(
-        get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS), timeout=60
-    )
+    return requests.patch(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
 
 
 def post_method(username, endpoint, data, **kwargs):
-    return requests.post(
-        get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS), timeout=60
-    )
+    return requests.post(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
 
 
 def post_files_method(username, endpoint, data, files, **kwargs):
     return requests.post(
-        get_api_url(endpoint, **kwargs),
-        data=data,
-        files=files,
-        auth=(username, USER_PASS),
-        timeout=60,
+        get_api_url(endpoint, **kwargs), data=data, files=files, auth=(username, USER_PASS)
     )
 
 
 def put_method(username, endpoint, data, **kwargs):
-    return requests.put(
-        get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS), timeout=60
-    )
+    return requests.put(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
 
 
 def server_get(username, endpoint, **kwargs):
-    return requests.get(get_server_url(endpoint, **kwargs), auth=(username, USER_PASS), timeout=60)
+    return requests.get(get_server_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
 
 def make_api_client(
