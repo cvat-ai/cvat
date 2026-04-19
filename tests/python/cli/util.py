@@ -6,7 +6,6 @@
 import contextlib
 import http.server
 import io
-import os
 import ssl
 import threading
 import unittest
@@ -18,12 +17,8 @@ import pytest
 import requests
 from cvat_sdk import make_client
 
-from shared.utils.config import USER_PASS
+from shared.utils.config import BASE_URL, USER_PASS
 from shared.utils.helpers import generate_image_file
-
-
-def _base_url() -> str:
-    return os.environ.get("CVAT_BASE_URL", "http://localhost:8080")
 
 
 def run_cli(
@@ -87,7 +82,7 @@ class _ProxyHttpRequestHandler(http.server.BaseHTTPRequestHandler):
         headers = {k.lower(): v for k, v in self.headers.items()}
         del headers["host"]
 
-        return {"url": _base_url() + self.path, "headers": headers, "timeout": 60, "stream": True}
+        return {"url": BASE_URL + self.path, "headers": headers, "timeout": 60, "stream": True}
 
     def _translate_response(self, response: requests.Response) -> None:
         self.send_response(response.status_code)
@@ -111,7 +106,7 @@ class TestCliBase:
     ):
         self.tmp_path = tmp_path
         self.stdout = fxt_stdout
-        self.host, self.port = _base_url().rsplit(":", maxsplit=1)
+        self.host, self.port = BASE_URL.rsplit(":", maxsplit=1)
         self.user = admin_user
         self.password = USER_PASS
         self.client = make_client(

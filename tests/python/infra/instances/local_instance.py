@@ -15,7 +15,7 @@ import pytest
 import yaml
 from infra.config import InfraMode, RuntimeInfraConfig
 from infra.instances.base_instance import InfraInstance, InfraPlugin
-from infra.system_utils import docker_cp, is_port_free, pick_free_port, run_command
+from infra.system_utils import docker_cp, run_command
 
 logger = logging.getLogger(__name__)
 
@@ -267,67 +267,14 @@ def resolve_port_config(
     *,
     default_project_name: str,
 ) -> dict:
-    state = project_cfg.load_state() or {}
-
-    if project_cfg.project_name == default_project_name:
-        return {
-            "http_port": int(state.get("http_port", 8080)),
-            "logs_port": int(state.get("logs_port", 8090)),
-            "db_port": int(state.get("db_port", 15432)),
-            "redis_inmem_port": int(state.get("redis_inmem_port", 16379)),
-            "redis_ondisk_port": int(state.get("redis_ondisk_port", 16666)),
-            "minio_port": int(state.get("minio_port", 9000)),
-            "minio_console_port": int(state.get("minio_console_port", 9001)),
-        }
-
-    project_running = project_containers_running(project_cfg.project_name)
-    project_ports = project_host_ports(project_cfg.project_name) if project_running else set()
-    running_service_ports = (
-        project_service_port_map(project_cfg.project_name) if project_running else {}
-    )
-
-    if project_running:
-        traefik_ports = running_service_ports.get("traefik", {})
-        minio_ports = running_service_ports.get("minio", {})
-        redis_inmem_ports = running_service_ports.get("cvat_redis_inmem", {})
-        redis_ondisk_ports = running_service_ports.get("cvat_redis_ondisk", {})
-        return {
-            "http_port": int(traefik_ports.get(8080, state.get("http_port", 18080))),
-            "logs_port": int(traefik_ports.get(8090, state.get("logs_port", 18090))),
-            "db_port": int(
-                running_service_ports.get("cvat_db", {}).get(5432, state.get("db_port", 15432))
-            ),
-            "redis_inmem_port": int(
-                redis_inmem_ports.get(6379, state.get("redis_inmem_port", 16379))
-            ),
-            "redis_ondisk_port": int(
-                redis_ondisk_ports.get(6666, state.get("redis_ondisk_port", 16666))
-            ),
-            "minio_port": int(minio_ports.get(9000, state.get("minio_port", 19000))),
-            "minio_console_port": int(
-                minio_ports.get(9001, state.get("minio_console_port", 19001))
-            ),
-        }
-
-    def _state_port(name: str, default_start: int, used_ports: set[int]) -> int:
-        value = state.get(name)
-        if value is None:
-            return pick_free_port(default_start, used_ports, logger=logger)
-        port = int(value)
-        if is_port_free(port, logger=logger) or (project_running and port in project_ports):
-            used_ports.add(port)
-            return port
-        return pick_free_port(default_start, used_ports, logger=logger)
-
-    used_ports: set[int] = set()
     return {
-        "http_port": _state_port("http_port", 18080, used_ports),
-        "logs_port": _state_port("logs_port", 18090, used_ports),
-        "db_port": _state_port("db_port", 15432, used_ports),
-        "redis_inmem_port": _state_port("redis_inmem_port", 16379, used_ports),
-        "redis_ondisk_port": _state_port("redis_ondisk_port", 16666, used_ports),
-        "minio_port": _state_port("minio_port", 19000, used_ports),
-        "minio_console_port": _state_port("minio_console_port", 19001, used_ports),
+        "http_port": 8080,
+        "logs_port": 8090,
+        "db_port": 15432,
+        "redis_inmem_port": 16379,
+        "redis_ondisk_port": 16666,
+        "minio_port": 9000,
+        "minio_console_port": 9001,
     }
 
 

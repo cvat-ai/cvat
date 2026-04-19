@@ -19,8 +19,8 @@ services:
       - "9000"
       - "9001"
     ports:
-      - ${CVAT_TEST_MINIO_PORT:-9000}:9000
-      - ${CVAT_TEST_MINIO_CONSOLE_PORT:-9001}:9001
+      - 9000:9000
+      - 9001:9001
     environment:
       MINIO_ROOT_USER: "minio_access_key"
       MINIO_ROOT_PASSWORD: "minio_secret_key"
