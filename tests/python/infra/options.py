@@ -51,12 +51,12 @@ def add_infra_options(parser):
     group._addoption(
         "--infra-profile",
         action="store",
-        default=RuntimeInfraConfig.get_default_infra_profile(),
+        default=None,
         choices=RuntimeInfraConfig.get_infra_profiles(),
         help=(
             "Local runtime profile selection. "
-            "Use simple, standard, or full; default auto-selection starts from %(default)s "
-            "and may reconcile upward after collection."
+            "Use simple, standard, or full; if omitted, pytest auto-selects the smallest "
+            "sufficient profile after collection."
         ),
     )
     group._addoption(

@@ -6,7 +6,6 @@ import http.client
 import json
 import logging
 import os
-import shlex
 import socket
 from pathlib import Path
 from subprocess import CalledProcessError, run
@@ -46,17 +45,6 @@ _BACKGROUND_JOB_QUEUES = (
 )
 
 
-def _has_explicit_infra_profile(config) -> bool:
-    option_sources = [
-        *(str(arg) for arg in config.invocation_params.args),
-        *shlex.split(os.environ.get("PYTEST_ADDOPTS", "")),
-        *shlex.split(str(config.getini("addopts") or "")),
-    ]
-    return any(
-        arg == "--infra-profile" or arg.startswith("--infra-profile=") for arg in option_sources
-    )
-
-
 def _configure_runtime_env(
     project_name: str,
     port_config: dict,
@@ -93,8 +81,11 @@ def preconfigure_local_runtime_env(config) -> None:
     """
     project_name = RuntimeInfraConfig.get_run_prefix_from_config(config)
     infra_mode = RuntimeInfraConfig.parse_infra_mode(config.getoption("--infra"))
+    requested_profile = config.getoption("--infra-profile")
     os.environ["CVAT_TEST_INFRA_PROFILE"] = str(
-        RuntimeInfraConfig.parse_infra_profile(config.getoption("--infra-profile"))
+        RuntimeInfraConfig.parse_infra_profile(
+            requested_profile or RuntimeInfraConfig.get_default_infra_profile()
+        )
     )
 
     if config.getoption("--platform") != "local":
@@ -967,9 +958,8 @@ class LocalPlugin(InfraPlugin):
             ) > RuntimeInfraConfig.get_infra_profile_rank(required_profile):
                 required_profile = item_profile
 
-        explicit_profile_requested = _has_explicit_infra_profile(config)
-        requested_profile = str(config.getoption("--infra-profile") or "").strip()
-        if explicit_profile_requested:
+        requested_profile = config.getoption("--infra-profile")
+        if requested_profile is not None:
             selected_profile = str(RuntimeInfraConfig.parse_infra_profile(requested_profile))
             if RuntimeInfraConfig.get_infra_profile_rank(
                 selected_profile
