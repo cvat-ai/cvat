@@ -25,7 +25,7 @@ from django.db import transaction
 from django.forms.models import model_to_dict
 from rest_framework.serializers import ValidationError
 
-from cvat.apps.engine import models
+from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
@@ -388,7 +388,7 @@ def _validate_validation_params(
 
     if (
         params["mode"] == models.ValidationMode.GT
-        and params["frame_selection_method"] == models.JobFrameSelectionMethod.RANDOM_PER_JOB
+        and params.get("frame_selection_method") == models.JobFrameSelectionMethod.RANDOM_PER_JOB
         and (frames_per_job := params.get("frames_per_job_count"))
         and db_task.segment_size <= frames_per_job
     ):
@@ -870,12 +870,31 @@ def _create_validation_jobs(
 ) -> None:
     db_data = db_task.require_data()
 
+    if db_task.media_type == models.MediaType.AUDIO and (
+        validation_params and validation_params["mode"] != models.ValidationMode.GT
+    ):
+        raise ValidationError(
+            "Only the '{}' validation mode is available in audio tasks.".format(
+                models.ValidationMode.GT
+            )
+        )
+
     if validation_params and validation_params["mode"] == models.ValidationMode.GT:
 
         def _to_rel_frame(abs_frame: int) -> int:
             return (abs_frame - db_data.start_frame) // db_data.get_frame_step()
 
         if db_task.media_type == models.MediaType.AUDIO:
+            if "frame_selection_method" in validation_params:
+                field_validation.require_one_of_values(
+                    validation_params, "frame_selection_method", ["random_uniform"]
+                )
+                validation_params.pop("frame_selection_method")
+
+            if "frames" in validation_params:
+                if not validation_params["frames"]:
+                    validation_params.pop("frames")
+
             if extra_params := set(validation_params.keys()) - {"mode"}:
                 raise ValidationError(
                     "Validation parameters {} are not applicable to the '{}' media type.".format(
@@ -886,6 +905,8 @@ def _create_validation_jobs(
 
             validation_frames = []
         else:
+            field_validation.require_field(validation_params, "frame_selection_method")
+
             # The RNG backend must not change to yield reproducible frame picks,
             # so here we specify it explicitly
             from numpy import random

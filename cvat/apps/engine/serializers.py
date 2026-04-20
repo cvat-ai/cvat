@@ -2009,12 +2009,13 @@ class JobFileMapping(serializers.ListField):
 class ValidationParamsSerializer(serializers.ModelSerializer):
     mode = serializers.ChoiceField(choices=models.ValidationMode.choices(), required=True)
     frame_selection_method = serializers.ChoiceField(
-        choices=models.JobFrameSelectionMethod.choices(), required=True
+        choices=models.JobFrameSelectionMethod.choices(), required=False
     )
     frames = serializers.ListField(
         write_only=True,
         child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
         required=False,
+        allow_empty=False,
         help_text=textwrap.dedent("""\
             The list of file names to be included in the validation set.
             Applicable only to the "{}" frame selection method.
@@ -2073,15 +2074,16 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs["mode"] == models.ValidationMode.GT:
-            field_validation.require_one_of_values(
-                attrs,
-                "frame_selection_method",
-                [
-                    models.JobFrameSelectionMethod.MANUAL,
-                    models.JobFrameSelectionMethod.RANDOM_UNIFORM,
-                    models.JobFrameSelectionMethod.RANDOM_PER_JOB,
-                ]
-            )
+            if "frame_selection_method" in attrs:
+                field_validation.require_one_of_values(
+                    attrs,
+                    "frame_selection_method",
+                    [
+                        models.JobFrameSelectionMethod.MANUAL,
+                        models.JobFrameSelectionMethod.RANDOM_UNIFORM,
+                        models.JobFrameSelectionMethod.RANDOM_PER_JOB,
+                    ]
+                )
         elif attrs["mode"] == models.ValidationMode.GT_POOL:
             field_validation.require_one_of_values(
                 attrs,
@@ -2097,24 +2099,25 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
         else:
             assert False, f"Unknown validation mode {attrs['mode']}"
 
-        if attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-            field_validation.require_one_of_fields(attrs, ['frame_count', 'frame_share'])
-        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
-            field_validation.require_one_of_fields(
-                attrs, ['frames_per_job_count', 'frames_per_job_share']
-            )
-        elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
-            field_validation.require_field(attrs, "frames")
-
-        if (
-            'frames' in attrs and
-            attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL
-        ):
-            raise serializers.ValidationError(
-                '"frames" can only be used when "frame_selection_method" is "{}"'.format(
-                    models.JobFrameSelectionMethod.MANUAL
+        if "frame_selection_method" in attrs:
+            if attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                field_validation.require_one_of_fields(attrs, ['frame_count', 'frame_share'])
+            elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
+                field_validation.require_one_of_fields(
+                    attrs, ['frames_per_job_count', 'frames_per_job_share']
                 )
-            )
+            elif attrs['frame_selection_method'] == models.JobFrameSelectionMethod.MANUAL:
+                field_validation.require_field(attrs, "frames")
+
+            if (
+                'frames' in attrs and
+                attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL
+            ):
+                raise serializers.ValidationError(
+                    '"frames" can only be used when "frame_selection_method" is "{}"'.format(
+                        models.JobFrameSelectionMethod.MANUAL
+                    )
+                )
 
         if frames := attrs.get('frames'):
             unique_frames = set(frames)
