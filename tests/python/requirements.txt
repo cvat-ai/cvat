@@ -13,4 +13,7 @@ python-dateutil==2.8.2
 pyyaml==6.0.2
 numpy==2.0.0
 
+librosa==0.11.0
+numba==0.61 # https://github.com/numba/numba/issues/10239
+
 # TODO: update pytest to 7.0.0 and pytest-timeout to 2.3.1 (better debug in vscode)
