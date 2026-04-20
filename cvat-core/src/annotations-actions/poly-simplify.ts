@@ -4,6 +4,7 @@
 
 import ObjectState from '../object-state';
 import { ShapeType, ObjectType } from '../enums';
+import config from '../config';
 
 import { ActionParameterType, ActionParameters } from './base-action';
 import { BaseShapesAction, ShapesActionInput, ShapesActionOutput } from './base-shapes-action';
@@ -13,12 +14,9 @@ import type { SimplifyShape, WorkerRequest, WorkerResponse } from './actions-wor
 export class PolySimplify extends BaseShapesAction {
     #threshold = 1.0;
     #worker: Worker | null = null;
-    #opencvPath: string = '';
 
     public async init(_instance: any, parameters: Record<string, any>): Promise<void> {
         this.#threshold = parameters.Distance as number;
-        // Get the OPENCV_PATH from window.cvat.config if available
-        this.#opencvPath = (window as any)?.cvat?.config?.OPENCV_PATH || '/assets/opencv_4.8.0.js';
 
         return new Promise((resolve, reject) => {
             this.#worker = new Worker(new URL('./actions-worker.ts', import.meta.url));
@@ -38,7 +36,7 @@ export class PolySimplify extends BaseShapesAction {
 
             this.#worker.postMessage({
                 command: WorkerAction.INITIALIZE,
-                opencvPath: this.#opencvPath,
+                opencvPath: config.opencvPath,
             } as WorkerRequest);
         });
     }
@@ -106,7 +104,8 @@ export class PolySimplify extends BaseShapesAction {
             const shapes: SimplifyShape[] = input.collection.shapes.map((shape) => ({
                 clientID: shape.clientID,
                 points: shape.points,
-                shapeType: shape.type as 'polygon' | 'polyline',
+                shapeType: shape.type as ShapeType.POLYGON | ShapeType.POLYLINE,
+                frame: shape.frame,
             }));
 
             this.#worker!.postMessage({

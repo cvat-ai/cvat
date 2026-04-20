@@ -1,4 +1,3 @@
-// Copyright (C) 2020-2022 Intel Corporation
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
@@ -6,30 +5,13 @@
 import IntelligentScissorsImplementation, {
     type IntelligentScissorsInterface,
 } from './intelligent-scissors';
-import HistogramEqualizationImplementation, {
-    type HistogramEqualizationInterface,
-} from './histogram-equalization';
+import HistogramEqualizationImplementation from './histogram-equalization';
 import TrackerMILImplementation, {
     type TrackerMILInterface,
 } from './tracker-mil';
+import type { ImageProcessing } from './image-processing';
 
-export function thresholdFromAccuracy(accuracy: number): number {
-    // Convert accuracy (0-13 scale) to epsilon threshold
-    // This matches the approximation accuracy slider
-    const approxPolyMaxDistance = 13 - accuracy;
-
-    if (approxPolyMaxDistance > 0) {
-        if (approxPolyMaxDistance <= 8) {
-            // Linear interpolation from (1, 0.25) to (8, 3)
-            return (2.75 * approxPolyMaxDistance - 1) / 7;
-        }
-        // Exponential: 4 for 9, 8 for 10, 16 for 11, 32 for 12, 64 for 13
-        return 2 ** (approxPolyMaxDistance - 7);
-    }
-    return 0;
-}
-
-export enum MatType {
+enum MatType {
     CV_8UC1,
     CV_8UC3,
     CV_8UC4,
@@ -52,13 +34,19 @@ export interface OpenCVInterface {
         intelligentScissorsFactory: () => IntelligentScissorsInterface;
     };
     imgproc: {
-        hist: () => HistogramEqualizationInterface;
+        hist: () => ImageProcessing;
     };
     tracking: {
         trackerMIL: {
             model: () => TrackerMILInterface;
         };
     };
+    utils: {
+        thresholdFromAccuracy: (accuracy: number) => number;
+    };
+    enums: {
+        MatType: typeof MatType;
+    }
 }
 
 export function createOpenCVInterface(cv: any): OpenCVInterface {
@@ -219,6 +207,28 @@ export function createOpenCVInterface(cv: any): OpenCVInterface {
             trackerMIL: {
                 model: () => new TrackerMILImplementation(cv),
             },
+        },
+
+        utils: {
+            thresholdFromAccuracy: (accuracy: number): number => {
+                // Convert accuracy (0-13 scale) to epsilon threshold
+                // This matches the approximation accuracy slider
+                const approxPolyMaxDistance = 13 - accuracy;
+
+                if (approxPolyMaxDistance > 0) {
+                    if (approxPolyMaxDistance <= 8) {
+                        // Linear interpolation from (1, 0.25) to (8, 3)
+                        return (2.75 * approxPolyMaxDistance - 1) / 7;
+                    }
+                    // Exponential: 4 for 9, 8 for 10, 16 for 11, 32 for 12, 64 for 13
+                    return 2 ** (approxPolyMaxDistance - 7);
+                }
+                return 0;
+            },
+        },
+
+        enums: {
+            MatType,
         },
     };
 }

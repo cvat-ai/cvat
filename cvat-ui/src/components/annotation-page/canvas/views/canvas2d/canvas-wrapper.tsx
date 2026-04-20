@@ -48,7 +48,7 @@ import {
     canvasErrorOccurred,
     updateEditedStateAsync,
     collapseObjectItems,
-    switchSimplifyVisibility,
+    AnnotationSource,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -133,7 +133,7 @@ interface DispatchToProps {
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateAnnotations(states: ObjectState[]): void;
-    onCreateAnnotations(states: ObjectState[]): Promise<ObjectState[] | null>;
+    onCreateAnnotations(states: ObjectState[], source?: AnnotationSource): Promise<ObjectState[] | null>;
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
@@ -156,7 +156,6 @@ interface DispatchToProps {
     onCanvasErrorOccurred(error: Error): void;
     onStartIssue(position: number[]): void;
     onUpdateEditedObject(editedState: ObjectState | null): void;
-    onSwitchSimplifyVisibility(objectState: ObjectState | null): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -319,8 +318,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        onCreateAnnotations(states: ObjectState[]): Promise<ObjectState[] | null> {
-            return dispatch(createAnnotationsAsync(states));
+        onCreateAnnotations(
+            states: ObjectState[],
+            source: AnnotationSource = AnnotationSource.OTHER,
+        ): Promise<ObjectState[] | null> {
+            return dispatch(createAnnotationsAsync(states, source));
         },
         onMergeAnnotations(states: ObjectState[]): void {
             dispatch(mergeAnnotationsAsync(states));
@@ -391,9 +393,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onUpdateEditedObject(editedState: ObjectState | null): void {
             dispatch(updateEditedStateAsync(editedState));
-        },
-        onSwitchSimplifyVisibility(objectState: ObjectState | null): void {
-            dispatch(switchSimplifyVisibility(objectState));
         },
     };
 }
@@ -693,7 +692,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasShapeDrawn = async (event: any): Promise<void> => {
         const {
             jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
-            onUpdateEditedObject, activeObjectHidden, workspace, onSwitchSimplifyVisibility,
+            onUpdateEditedObject, activeObjectHidden, workspace,
         } = this.props;
 
         if (!event.detail.continue) {
@@ -729,13 +728,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration });
         }
         const objectState = new cvat.classes.ObjectState(state);
-        const states = await onCreateAnnotations([objectState]);
+
+        // Determine the source based on whether simplifyPoly is enabled for polygon/polyline
+        const source = simplifyPoly && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType) ?
+            AnnotationSource.DRAW_SIMPLIFIED_POLY : AnnotationSource.OTHER;
+
+        const states = await onCreateAnnotations([objectState], source);
         if (states) {
             onUpdateEditedObject(null);
-            if (simplifyPoly && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
-                const [createdState] = states;
-                onSwitchSimplifyVisibility(createdState);
-            }
         }
     };
 

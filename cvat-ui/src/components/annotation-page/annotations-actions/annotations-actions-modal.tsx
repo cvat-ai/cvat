@@ -563,7 +563,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                             {tooltip ? (
                                                 <CVATTooltip
                                                     title={renderTooltip()}
-                                                    overlayStyle={{ maxWidth: 450 }}
+                                                    overlayStyle={{ maxWidth: 500 }}
                                                 >
                                                     <Text>{name}</Text>
                                                     {' '}

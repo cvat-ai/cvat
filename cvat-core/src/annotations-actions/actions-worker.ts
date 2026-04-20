@@ -16,6 +16,7 @@ export interface SimplifyShape {
     clientID: number;
     points: number[];
     shapeType: 'polygon' | 'polyline';
+    frame: number;
 }
 
 export interface WorkerRequest {
@@ -34,8 +35,8 @@ class ActionsWorkerManager {
     private cvInterface: OpenCVInterface | null = null;
     private initialized = false;
 
-    public async initialize(): Promise<void> {
-        this.cvInterface = await initializeOpenCVInWorker();
+    public async initialize(opencvPath: string): Promise<void> {
+        this.cvInterface = await initializeOpenCVInWorker(opencvPath);
         this.initialized = true;
     }
 
@@ -46,24 +47,19 @@ class ActionsWorkerManager {
 
         return shapes.map((shape) => {
             try {
-                if (!shape.points || shape.points.length < 6) {
-                    return shape;
-                }
-
                 const closed = shape.shapeType === 'polygon';
                 const simplifiedPoints = this.cvInterface!.contours.simplifyPolygon(
                     shape.points,
                     threshold,
                     closed,
                 );
-
                 return {
                     ...shape,
                     points: simplifiedPoints,
                 };
             } catch (error: unknown) {
                 // If simplification fails, return original shape
-                console.error(`Failed to simplify shape ${shape.clientID}:`, error);
+                console.error(`Failed to simplify shape ${shape.clientID} on frame ${shape.frame}:`, error);
                 return shape;
             }
         });
@@ -82,11 +78,8 @@ if ((self as any).importScripts) {
 
         if (command === WorkerAction.INITIALIZE) {
             const { opencvPath } = event.data;
-            if (opencvPath) {
-                (self as any).OPENCV_PATH = opencvPath;
-            }
 
-            manager.initialize()
+            manager.initialize(opencvPath)
                 .then(() => {
                     postMessage({} as WorkerResponse);
                 })

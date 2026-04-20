@@ -180,6 +180,11 @@ export enum AnnotationActionTypes {
     HOVERED_CHAPTER = 'HOVERED_CHAPTER',
 }
 
+export enum AnnotationSource {
+    DRAW_SIMPLIFIED_POLY = 'draw_simplified_poly',
+    OTHER = 'other',
+}
+
 export function setHoveredChapter(id: number | null): AnyAction {
     return {
         type: AnnotationActionTypes.HOVERED_CHAPTER,
@@ -354,9 +359,8 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     };
 }
 
-export function fetchAnnotationsAsync(): (
-    dispatch: ThunkDispatch, getState: () => CombinedState) => Promise<ObjectState[] | null> {
-    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<ObjectState[] | null> => {
+export function fetchAnnotationsAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
             const {
                 states, history, minZ, maxZ,
@@ -366,7 +370,7 @@ export function fetchAnnotationsAsync(): (
             const finalStates = workspace === Workspace.REVIEW ?
                 wrapStatesForReviewMode(states) : states;
 
-            dispatch({
+            await dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS,
                 payload: {
                     states: finalStates,
@@ -375,7 +379,6 @@ export function fetchAnnotationsAsync(): (
                     maxZ,
                 },
             });
-            return states;
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.FETCH_ANNOTATIONS_FAILED,
@@ -383,7 +386,6 @@ export function fetchAnnotationsAsync(): (
                     error,
                 },
             });
-            return null;
         }
     };
 }
@@ -509,7 +511,11 @@ export function switchPropagateVisibility(visible: boolean): AnyAction {
     };
 }
 
-export function switchSimplifyVisibility(objectState: ObjectState | null): AnyAction {
+export function switchSimplifyVisibility(clientID: number | null): AnyAction {
+    const state = getStore().getState();
+    const objectState = clientID !== null ?
+        state.annotation.annotations.states.find((s: ObjectState) => s.clientID === clientID) || null :
+        null;
     const originalPoints = objectState?.points ? [...objectState.points] : null;
     return {
         type: AnnotationActionTypes.SWITCH_SIMPLIFY_VISIBILITY,
@@ -1258,16 +1264,19 @@ export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
 }
 
 export function createAnnotationsAsync(
-    statesToCreate: any[],
-): (dispatch: ThunkDispatch) => Promise<ObjectState[] | null> {
-    return async (dispatch: ThunkDispatch): Promise<ObjectState[] | null> => {
+    statesToCreate: ObjectState[],
+    source: AnnotationSource = AnnotationSource.OTHER,
+): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
-            const createdIds = await jobInstance.annotations.put(statesToCreate);
-            const annotations = await dispatch(fetchAnnotationsAsync()) as unknown as ObjectState[] | null;
-            return annotations?.filter(
-                (annotation: ObjectState) => (annotation.clientID ? createdIds.includes(annotation.clientID) : false),
-            ) || [];
+            await jobInstance.annotations.put(statesToCreate);
+            await dispatch(fetchAnnotationsAsync());
+
+            if (source === AnnotationSource.DRAW_SIMPLIFIED_POLY && statesToCreate.length === 1) {
+                const [createdState] = statesToCreate;
+                dispatch(switchSimplifyVisibility(createdState.clientID));
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
@@ -1275,7 +1284,6 @@ export function createAnnotationsAsync(
                     error,
                 },
             });
-            return null;
         }
     };
 }

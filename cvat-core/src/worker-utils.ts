@@ -7,7 +7,7 @@
 import { createOpenCVInterface } from './opencv/opencv-interface';
 import type { OpenCVInterface } from './opencv/opencv-interface';
 
-export function initializeOpenCVInWorker(): Promise<OpenCVInterface> {
+export function initializeOpenCVInWorker(opencvPath: string): Promise<OpenCVInterface> {
     return new Promise((resolve, reject) => {
         (self as any).Module = {
             onRuntimeInitialized: () => {
@@ -24,8 +24,7 @@ export function initializeOpenCVInWorker(): Promise<OpenCVInterface> {
         };
 
         try {
-            // OPENCV_PATH should be set in the global scope before calling this function
-            (self as any).importScripts((self as any).OPENCV_PATH);
+            (self as any).importScripts(opencvPath);
         } catch (error: unknown) {
             delete (self as any).Module;
             reject(error);

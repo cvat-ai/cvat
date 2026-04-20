@@ -5,7 +5,7 @@
 
 import { clamp } from './math-utils';
 
-export interface TrackingResult {
+interface TrackingResult {
     updated: boolean;
     points: number[];
 }

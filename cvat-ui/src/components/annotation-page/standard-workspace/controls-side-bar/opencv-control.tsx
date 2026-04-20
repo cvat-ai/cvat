@@ -21,8 +21,7 @@ import { throttle } from 'lodash';
 import { OpenCVIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
-    getCore, IntelligentScissors, Job, ObjectState, ObjectType, OpenCVTracker, ShapeType,
-    thresholdFromAccuracy,
+    getCore, Job, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -56,11 +55,14 @@ interface Props {
 }
 
 interface DispatchToProps {
-    createAnnotations: (states: ObjectState[]) => Promise<void>;
+    createAnnotations: (states: ObjectState[]) => void;
     onInteractionStart: typeof interactWithCanvas;
     enableImageFilter: typeof enableImageFilterAction;
     disableImageFilter: typeof disableImageFilterAction;
 }
+
+type IntelligentScissors = ReturnType<typeof openCVWrapper.segmentation.intelligentScissorsFactory>;
+type OpenCVTracker = (typeof openCVWrapper.tracking)['trackerMIL'];
 
 interface State {
     libraryInitialized: boolean;
@@ -180,7 +182,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             if (isActivated) {
                 const approx = openCVWrapper.contours.approxPoly(
                     this.latestPoints,
-                    thresholdFromAccuracy(approxPolyAccuracy),
+                    openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
                 );
 
                 canvasInstance.interact({
@@ -237,7 +239,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         source: core.enums.Source.SEMI_AUTO,
                         label: labels.filter((label: any) => label.id === activeLabelID)[0],
                         points: openCVWrapper.contours
-                            .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
+                            .approxPoly(
+                                finalPoints,
+                                openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
+                            )
                             .flat(),
                         occluded: false,
                         zOrder: curZOrder,
@@ -252,14 +257,14 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     const [x, y] = this.latestPoints.pop()!;
                     points = openCVWrapper.contours.approxPoly(
                         this.latestPoints,
-                        thresholdFromAccuracy(approxPolyAccuracy),
+                        openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
                         false,
                     );
                     points.push([x, y]);
                 } else {
                     points = openCVWrapper.contours.approxPoly(
                         this.latestPoints,
-                        thresholdFromAccuracy(approxPolyAccuracy),
+                        openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
                         false,
                     );
                 }

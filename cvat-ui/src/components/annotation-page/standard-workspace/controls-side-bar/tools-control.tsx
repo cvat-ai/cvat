@@ -29,7 +29,6 @@ import { Canvas, convertShapesForInteractor, InteractionResult } from 'cvat-canv
 import {
     getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
     MinimalShape, InteractorResults, TrackerResults,
-    thresholdFromAccuracy,
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -73,8 +72,8 @@ interface StateToProps {
 
 interface DispatchToProps {
     updateAnnotations: (states: ObjectState[]) => Promise<void>;
-    createAnnotations: (states: ObjectState[]) => Promise<void>;
-    fetchAnnotations: () => Promise<void>;
+    createAnnotations: (states: ObjectState[]) => void;
+    fetchAnnotations: () => void;
     onInteractionStart: typeof interactWithCanvas;
     onSwitchToolsBlockerState: typeof switchToolsBlockerState;
     switchNavigationBlocked: typeof switchNavigationBlockedAction;
@@ -1047,7 +1046,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const { approxPolyAccuracy } = this.state;
         if (points.length > 3) {
-            const threshold = thresholdFromAccuracy(approxPolyAccuracy);
+            const threshold = openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy);
             return openCVWrapper.contours.approxPoly(points, threshold);
         }
 

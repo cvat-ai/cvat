@@ -12,7 +12,7 @@ import Slider from 'antd/lib/slider';
 import message from 'antd/lib/message';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 
-import { ObjectState, ShapeType, thresholdFromAccuracy } from 'cvat-core-wrapper';
+import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { MAX_ACCURACY } from './approximation-accuracy';
@@ -40,7 +40,7 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
         }
 
         const closed = objectState.shapeType === ShapeType.POLYGON;
-        const threshold = thresholdFromAccuracy(approxPolyAccuracy);
+        const threshold = openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy);
 
         const simplifiedPoints = openCVWrapper.contours.simplifyPolygon(
             originalPointsRef.current,

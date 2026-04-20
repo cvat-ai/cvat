@@ -30,6 +30,7 @@ import QualitySettings from './quality-settings';
 import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
+import { createOpenCVInterface } from './opencv/opencv-interface';
 
 import * as enums from './enums';
 
@@ -300,6 +301,12 @@ function build(): CVATCore {
             set uploadChunkSize(value) {
                 config.uploadChunkSize = value;
             },
+            get opencvPath() {
+                return config.opencvPath;
+            },
+            set opencvPath(value) {
+                config.opencvPath = value;
+            },
             removeUnderlyingMaskPixels: {
                 get enabled() {
                     return config.removeUnderlyingMaskPixels.enabled;
@@ -475,6 +482,9 @@ function build(): CVATCore {
             rle2Mask,
             propagateShapes,
             validateAttributeValue,
+        },
+        opencv: {
+            createOpenCVInterface,
         },
     };
 

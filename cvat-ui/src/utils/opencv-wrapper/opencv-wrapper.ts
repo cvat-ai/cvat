@@ -3,18 +3,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-import {
-    ObjectState,
-    ShapeType,
-    getCore,
-    createOpenCVInterface,
-    MatType,
-    type OpenCVInterface,
-} from 'cvat-core-wrapper';
+import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
 import config from 'config';
 import TrackerMILAction from './annotations-actions/tracker-mil';
 
 const core = getCore();
+
+type OpenCVInterface = ReturnType<typeof core.opencv.createOpenCVInterface>;
 
 type OpenCVTrackingWrapper = OpenCVInterface['tracking'] & {
     trackerMIL: {
@@ -139,7 +134,7 @@ export class OpenCVWrapper {
             }
         });
 
-        this.cvInterface = createOpenCVInterface((window as any).cv);
+        this.cvInterface = core.opencv.createOpenCVInterface((window as any).cv);
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {
@@ -180,6 +175,10 @@ export class OpenCVWrapper {
         return this.getCVInterface().contours;
     }
 
+    public get enums(): OpenCVInterface['enums'] {
+        return this.getCVInterface().enums;
+    }
+
     public getContoursFromStateSync = (
         state: { points: Int32Array; shapeType: ShapeType },
     ): [number, number][][] => {
@@ -193,7 +192,7 @@ export class OpenCVWrapper {
             const height = bottom - top + 1;
 
             const mask = core.utils.rle2Mask(state.points.subarray(0, -4), width, height);
-            const src = this.mat.fromData(width, height, MatType.CV_8UC1, mask);
+            const src = this.mat.fromData(width, height, this.enums.MatType.CV_8UC1, mask);
 
             try {
                 const contours = this.contours.findContours(src);
@@ -239,6 +238,10 @@ export class OpenCVWrapper {
 
     public get imgproc(): OpenCVInterface['imgproc'] {
         return this.getCVInterface().imgproc;
+    }
+
+    public get utils(): OpenCVInterface['utils'] {
+        return this.getCVInterface().utils;
     }
 
     public get tracking(): OpenCVTrackingWrapper {
