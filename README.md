@@ -146,9 +146,6 @@ or sign up for our [newsletter](https://www.cvat.ai/#:~:text=Subscribe%20to%20th
 [ci-img]: https://github.com/cvat-ai/cvat/actions/workflows/main.yml/badge.svg?branch=develop
 [ci-url]: https://github.com/cvat-ai/cvat/actions
 
-[discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
-[discord-url]: https://discord.gg/fNR3eXfk6C
-
 [docs-img]: https://img.shields.io/badge/docs-docs.cvat.ai-blue?style=flat-square
 [docs-url]: https://docs.cvat.ai
 
