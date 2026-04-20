@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import math
 from collections.abc import Generator
 from itertools import product
 from pathlib import Path, PurePosixPath
@@ -153,15 +154,20 @@ class TestAudioTasks:
             resources=[source_path],
         )
 
-        actual = Image.open(task.get_preview())
+        jobs = task.get_jobs()
 
-        if cover_image_path is None:
-            return  # noop, the file should just be a valid default image now
+        for instance in (task, *jobs):
+            actual = Image.open(instance.get_preview())
 
-        expected = Image.open(cover_image_path)
-        expected.thumbnail((256, 256))
+            assert actual.size > (0, 0)
 
-        TestTasksBase._compare_images(expected, actual, must_be_identical=False)
+            if cover_image_path is None:
+                return  # noop, the file should just be a valid default image now
+
+            expected = Image.open(cover_image_path)
+            expected.thumbnail((256, 256))
+
+            TestTasksBase._compare_images(expected, actual, must_be_identical=False)
 
     @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
     def test_can_split_into_jobs(self, task: Task):
@@ -193,9 +199,9 @@ class TestAudioTasks:
         assert task.data_compressed_chunk_type.value == "audio_mp3"
         assert task.data_original_chunk_type.value == "audio_mp3"
 
-        for quality, (chunk_id, chunk_frame_range) in product(
+        for quality, chunk_id in product(
             ["original", "compressed"],
-            [(data_meta.start_frame, data_meta.stop_frame)],
+            range(math.ceil((data_meta.stop_frame - data_meta.start_frame) / data_meta.chunk_size)),
         ):
             response = task.api.retrieve_data(
                 task.id, type="chunk", quality=quality, number=chunk_id, _parse_response=False
@@ -208,6 +214,39 @@ class TestAudioTasks:
 
             assert chunk_audio.shape[0] / sampling_rate >= data_meta.size / 1000
 
-    # def test_can_get_job_chunks(self):
-    # def test_can_get_task_preview(self):
-    # def test_can_get_job_previews(self):
+    @pytest.mark.timeout(
+        # This test has to check all the job chunks availability, it can make many requests
+        timeout=300
+    )
+    @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
+    @parametrize("indexing", ["absolute", "relative"])
+    def test_can_get_job_chunks(self, task: Task, indexing: str):
+        jobs = sorted(task.get_jobs(), key=lambda j: j.start_frame)
+
+        assert len(jobs) == 1  # only 1 job is allowed per task so far
+
+        for job in jobs:
+            job_meta = job.get_meta()
+
+            assert job.data_chunk_size == job.frame_count
+            assert job.data_compressed_chunk_type.value == "audio_mp3"
+            assert job.data_original_chunk_type.value == "audio_mp3"
+
+        for quality, chunk_id in product(
+            ["original", "compressed"],
+            range(math.ceil((job_meta.stop_frame - job_meta.start_frame) / job_meta.chunk_size)),
+        ):
+            response = job.api.retrieve_data(
+                job.id,
+                type="chunk",
+                quality=quality,
+                **({"number": chunk_id} if indexing == "absolute" else {"index": chunk_id}),
+                _parse_response=False,
+            )[1]
+
+            start_offset = int(response.headers["X-Media-Offset"])
+            chunk_file = io.BytesIO(response.data)
+
+            chunk_audio, sampling_rate = read_audio_pcm(chunk_file, offset_ms=start_offset)
+
+            assert chunk_audio.shape[0] / sampling_rate >= job_meta.size / 1000
