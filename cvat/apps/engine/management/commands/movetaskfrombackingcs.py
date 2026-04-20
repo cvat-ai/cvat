@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-import traceback
-
 from django.core.management.base import BaseCommand, CommandError
 
 from cvat.apps.engine.models import Task
-from ..utils import parse_task_ids
+
+from ..utils import parse_task_ids, process_tasks
 
 
 class Command(BaseCommand):
@@ -23,45 +22,21 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         task_ids: list[int] = options["task_ids"]
 
-        succeeded = failed = 0
+        process_tasks(self, task_ids, self._handle_one_task)
 
-        for task_id in task_ids:
-            try:
-                self._handle_one_task(task_id)
-            except Exception:
-                failed += 1
-                self.stderr.write(self.style.ERROR(f"Task #{task_id}: failure"))
-                self.stderr.write(traceback.format_exc(), ending="")
-            else:
-                succeeded += 1
-                self.stdout.write(self.style.SUCCESS(f"Task #{task_id}: success"))
-
-        self.stdout.write(
-            f"Processed {len(task_ids)} task(s): {succeeded} succeeded, {failed} failed"
-        )
-
-        if failed:
-            raise CommandError("Failed to move some task(s)")
-
-    def _handle_one_task(self, task_id: int) -> None:
-        try:
-            task = Task.objects.get(id=task_id)
-        except Task.DoesNotExist as ex:
-            raise CommandError(f"Task #{task_id} does not exist") from ex
-
+    def _handle_one_task(self, task: Task) -> bool:
         data = task.data
         if not data:
-            raise CommandError(f"Task #{task_id} has no attached data")
+            raise CommandError(f"Task #{task.id} has no attached data")
 
         if not data.supports_backing_cs():
-            raise CommandError(f"Task #{task_id} does not support backing cloud storage")
+            raise CommandError(f"Task #{task.id} does not support backing cloud storage")
 
         if not data.local_storage_backing_cs_id:
             self.stdout.write(
-                self.style.WARNING(
-                    f"Task #{task_id} already has no backing cloud storage"
-                )
+                self.style.WARNING(f"Task #{task.id} already has no backing cloud storage")
             )
-            return
+            return False
 
         data.move_from_backing_cs()
+        return True
