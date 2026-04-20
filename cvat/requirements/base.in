@@ -32,6 +32,8 @@ natsort==8.0.0
 numpy~=1.22.2
 opencv-python-headless~=4.8
 
+jiwer==4.0.0
+
 # Partial json reading
 json-stream>=2.0,<3
 
