@@ -717,7 +717,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
 
                 // leave only new labels to create them via task PATCH request
                 const labelsToCreate = (taskData.labels ?? [])
-                    .filter((label) => Number.isInteger(label.id))
+                    .filter((label) => !Number.isInteger(label.id))
                     .map((el) => el.toJSON());
                 delete taskData.labels;
                 this._updateTrigger.reset();

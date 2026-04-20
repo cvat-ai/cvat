@@ -47,7 +47,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
 
                 // leave only new labels to create them via project PATCH request
                 const labelsToCreate = (projectData.labels ?? [])
-                    .filter((label) => Number.isInteger(label.id))
+                    .filter((label) => !Number.isInteger(label.id))
                     .map((el) => el.toJSON());
                 delete projectData.labels;
                 this._updateTrigger.reset();
