@@ -19,10 +19,8 @@ from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
 from shared.tasks.utils import parse_frame_step
-from shared.utils.config import make_api_client
+from shared.utils.config import SHARE_DIR, make_api_client
 from shared.utils.helpers import generate_image_files, generate_video_file
-
-SHARE_DIR = Path(__file__).parents[2] / "mounted_file_share"
 
 
 def read_share_file(path: str) -> io.BytesIO:

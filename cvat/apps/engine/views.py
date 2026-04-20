@@ -633,12 +633,11 @@ class _DataGetter(metaclass=ABCMeta):
         updated_date: datetime,
         *,
         data_start_offset: int | None = None,
-        data_end_offset: int | None = None,
     ) -> dict[str, str]:
         return {
             _DATA_CHECKSUM_HEADER_NAME: str(checksum or ''),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(updated_date),
-            _DATA_START_OFFSET_HEADER_NAME: str(data_start_offset or ''),
+            _DATA_START_OFFSET_HEADER_NAME: str(data_start_offset if data_start_offset is not None else ''),
         }
 
 class _TaskDataGetter(_DataGetter):
