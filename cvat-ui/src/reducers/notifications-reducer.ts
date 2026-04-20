@@ -318,7 +318,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             ...state.messages.auth,
                             registerDone: {
                                 message: `To use your account, you need to confirm the email address. \
-                                We have sent an email with a confirmation link to ${action.payload.user.email}.`,
+                                We have sent an email with a confirmation link to ${action.payload.userEmail}.`,
                             },
                         },
                     },

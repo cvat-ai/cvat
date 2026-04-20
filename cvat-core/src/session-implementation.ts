@@ -789,7 +789,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
-            if (fields.consensus_replicas) {
+            if (fields?.consensus_replicas) {
                 taskSpec.consensus_replicas = fields.consensus_replicas;
             }
 
@@ -798,16 +798,16 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 use_zip_chunks: this.useZipChunks,
                 use_cache: this.useCache,
                 sorting_method: this.sortingMethod,
-                client_files: fields.clientFiles,
-                server_files: fields.serverFiles,
-                remote_files: fields.remoteFiles,
+                client_files: fields?.clientFiles ?? [],
+                server_files: fields?.serverFiles ?? [],
+                remote_files: fields?.remoteFiles ?? [],
                 ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
                 ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
                 ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
                 ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
                 ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
-                ...(fields.validation_params ? { validation_params: fields.validation_params } : {}),
+                ...(fields?.validation_params ? { validation_params: fields.validation_params } : {}),
             };
 
             const { taskID, rqID } = await serverProxy.tasks.create(
