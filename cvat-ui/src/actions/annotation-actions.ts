@@ -1270,12 +1270,12 @@ export function createAnnotationsAsync(
     return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
-            await jobInstance.annotations.put(statesToCreate);
+            const clientIds = await jobInstance.annotations.put(statesToCreate);
             await dispatch(fetchAnnotationsAsync());
 
             if (source === AnnotationSource.DRAW_SIMPLIFIED_POLY && statesToCreate.length === 1) {
-                const [createdState] = statesToCreate;
-                dispatch(switchSimplifyVisibility(createdState.clientID));
+                const [clientId] = clientIds;
+                dispatch(switchSimplifyVisibility(clientId));
             }
         } catch (error) {
             dispatch({
