@@ -39,7 +39,7 @@ def parse_task_ids(value: str) -> list[int]:
 
 
 def move_multiple_tasks(
-    command: BaseCommand, task_ids: Iterable[int], process_one: Callable[[Task], bool]
+    command: BaseCommand, task_ids: Iterable[int], move_one: Callable[[Task], bool]
 ) -> None:
     succeeded = failed = ignored = 0
 
@@ -56,13 +56,13 @@ def move_multiple_tasks(
             if not data:
                 raise CommandError(f"Task #{task_id} has no attached data")
 
-            action_taken = process_one(task)
+            action_was_taken = move_one(task)
         except Exception:
             failed += 1
             command.stderr.write(command.style.ERROR(f"Task #{task_id}: failure"))
             command.stderr.write(traceback.format_exc(), ending="")
         else:
-            if action_taken:
+            if action_was_taken:
                 succeeded += 1
                 time_taken = time_after - time_before
                 mb_moved = (data.content_size or math.nan) / (1024 * 1024)
@@ -76,7 +76,7 @@ def move_multiple_tasks(
                 )
             else:
                 ignored += 1
-                # We're relying on process_one to log the reason for ignoring.
+                # We're relying on move_one to log the reason for ignoring.
 
     processed = succeeded + failed + ignored
 
