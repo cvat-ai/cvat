@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
+import math
+import time
 import traceback
 from collections.abc import Callable, Iterable
 
@@ -36,7 +38,7 @@ def parse_task_ids(value: str) -> list[int]:
     return task_ids
 
 
-def process_tasks(
+def move_multiple_tasks(
     command: BaseCommand, task_ids: Iterable[int], process_one: Callable[[Task], bool]
 ) -> None:
     succeeded = failed = ignored = 0
@@ -44,9 +46,15 @@ def process_tasks(
     for task_id in task_ids:
         try:
             try:
+                time_before = time.perf_counter()
                 task = Task.objects.get(id=task_id)
+                time_after = time.perf_counter()
             except Task.DoesNotExist as ex:
                 raise CommandError(f"Task #{task_id} does not exist") from ex
+
+            data = task.data
+            if not data:
+                raise CommandError(f"Task #{task_id} has no attached data")
 
             action_taken = process_one(task)
         except Exception:
@@ -56,7 +64,16 @@ def process_tasks(
         else:
             if action_taken:
                 succeeded += 1
-                command.stdout.write(command.style.SUCCESS(f"Task #{task_id}: success"))
+                time_taken = time_after - time_before
+                mb_moved = (data.content_size or math.nan) / (1024 * 1024)
+                throughput = mb_moved / time_taken if time_taken > 0 else math.inf
+                command.stdout.write(
+                    command.style.SUCCESS(
+                        f"Task #{task_id}: success;"
+                        f" taken {time_taken:.3f} s for {mb_moved:.3f} MiB"
+                        f" ({throughput:.3f} MiB/s)"
+                    )
+                )
             else:
                 ignored += 1
                 # We're relying on process_one to log the reason for ignoring.

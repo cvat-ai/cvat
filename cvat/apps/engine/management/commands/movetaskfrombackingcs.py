@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from cvat.apps.engine.models import Task
 
-from ..utils import parse_task_ids, process_tasks
+from ..utils import move_multiple_tasks, parse_task_ids
 
 
 class Command(BaseCommand):
@@ -22,12 +22,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         task_ids: list[int] = options["task_ids"]
 
-        process_tasks(self, task_ids, self._handle_one_task)
+        move_multiple_tasks(self, task_ids, self._handle_one_task)
 
     def _handle_one_task(self, task: Task) -> bool:
-        data = task.data
-        if not data:
-            raise CommandError(f"Task #{task.id} has no attached data")
+        data = task.require_data()
 
         if not data.supports_backing_cs():
             raise CommandError(f"Task #{task.id} does not support backing cloud storage")

@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from cvat.apps.engine.models import CloudStorage, Task
 
-from ..utils import parse_task_ids, process_tasks
+from ..utils import move_multiple_tasks, parse_task_ids
 
 
 class Command(BaseCommand):
@@ -33,12 +33,10 @@ class Command(BaseCommand):
         except CloudStorage.DoesNotExist:
             raise CommandError(f"Cloud storage #{backing_cs_id} does not exist")
 
-        process_tasks(self, task_ids, lambda task: self._handle_one_task(task, backing_cs))
+        move_multiple_tasks(self, task_ids, lambda task: self._handle_one_task(task, backing_cs))
 
     def _handle_one_task(self, task: Task, backing_cs: CloudStorage) -> bool:
-        data = task.data
-        if not data:
-            raise CommandError(f"Task #{task.id} has no attached data")
+        data = task.require_data()
 
         if not data.supports_backing_cs():
             raise CommandError(f"Task #{task.id} does not support backing cloud storage")
