@@ -914,12 +914,6 @@ export class Task extends Session {
                 (initialData.progress?.completed || 0),
         };
 
-        data.files = Object.freeze({
-            server_files: [],
-            client_files: [],
-            remote_files: [],
-        });
-
         if (Array.isArray(initialData.labels)) {
             data.labels = initialData.labels
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
@@ -1021,7 +1015,7 @@ export class Task extends Session {
                     get: () => data.assignee,
                     set: (assignee) => {
                         if (assignee !== null && !(assignee instanceof User)) {
-                            throw new ArgumentError('Value must be a user instance');
+                            throw new ArgumentError('Value must be a user instance or null');
                         }
                         updateTrigger.update('assignee');
                         data.assignee = assignee;

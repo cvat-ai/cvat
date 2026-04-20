@@ -1976,12 +1976,6 @@ export class SkeletonShape extends Shape {
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
             });
         });
-        this.syncAggregateState();
-    }
-
-    private syncAggregateState(): void {
-        this.occluded = this.elements.every((element) => element.occluded);
-        this.lock = this.elements.every((element) => element.lock);
     }
 
     static distance(points: number[], x: number, y: number): number {
@@ -2059,7 +2053,7 @@ export class SkeletonShape extends Shape {
         return result;
     }
 
-    public get(frame): ReturnType<Shape['get']> & Pick<Required<SerializedData>, 'elements'> {
+    public get(frame): Omit<Required<SerializedData>, 'keyframe' | 'keyframes'> {
         if (frame !== this.frame) {
             throw new ScriptingError('Received frame is not equal to the frame of the shape');
         }
@@ -2107,7 +2101,6 @@ export class SkeletonShape extends Shape {
             const context = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
             context.updateFromServerResponse(element);
         }
-        this.syncAggregateState();
     }
 
     public clearServerID(): void {
@@ -2161,7 +2154,6 @@ export class SkeletonShape extends Shape {
     }
 
     public save(frame: number, data: ObjectState): ObjectState {
-        this.syncAggregateState();
         if (this.lock && data.lock) {
             return new ObjectState(this.get(frame));
         }
@@ -2208,8 +2200,6 @@ export class SkeletonShape extends Shape {
                 [this.clientID, ...affectedElements.map((element) => element.clientID)],
                 frame,
             );
-
-            this.syncAggregateState();
         };
 
         const updatedPoints = data.elements.filter((el) => el.updateFlags.points);
@@ -2241,7 +2231,6 @@ export class SkeletonShape extends Shape {
         }
 
         const result = Shape.prototype.save.call(this, frame, data);
-        this.syncAggregateState();
         return result;
     }
 }
@@ -2772,24 +2761,21 @@ class PolyTrack extends Track {
         const matching = matchLeftRight(leftOffsetVec, rightOffsetVec);
         const completedMatching = matchRightLeft(leftOffsetVec, rightOffsetVec, matching);
 
-        const interpolatedPoints = Object.keys(
-            completedMatching,
-        ).map((leftPointIdx) => +leftPointIdx).sort((a, b) => a - b).reduce<Point2D[]>((
-            acc,
-            leftPointIdx,
-        ) => {
-            const leftPoint = leftPoints[leftPointIdx];
-            for (const rightPointIdx of completedMatching[leftPointIdx]) {
-                const rightPoint = rightPoints[rightPointIdx];
-                acc.push({
-                    x: leftPoint.x + (rightPoint.x - leftPoint.x) * offset,
-                    y: leftPoint.y + (rightPoint.y - leftPoint.y) * offset,
-                });
-            }
+        const interpolatedPoints = Object.keys(completedMatching)
+            .map((leftPointIdx) => +leftPointIdx)
+            .sort((a, b) => a - b)
+            .reduce((acc, leftPointIdx) => {
+                const leftPoint = leftPoints[leftPointIdx];
+                for (const rightPointIdx of completedMatching[leftPointIdx]) {
+                    const rightPoint = rightPoints[rightPointIdx];
+                    acc.push({
+                        x: leftPoint.x + (rightPoint.x - leftPoint.x) * offset,
+                        y: leftPoint.y + (rightPoint.y - leftPoint.y) * offset,
+                    });
+                }
 
-            return acc;
-        }, [],
-        );
+                return acc;
+            }, []);
 
         const reducedPoints = reduceInterpolation(interpolatedPoints, completedMatching, leftPoints, rightPoints);
 

@@ -40,37 +40,6 @@ type Params = {
     save_images?: boolean,
 };
 
-type FormDataCompat = FormData & {
-    set?: (name: string, value: string | Blob) => void;
-    delete?: (name: string) => void;
-};
-
-type JobWritePayload = Partial<Omit<SerializedJob, 'assignee'> & { assignee: number | null }>;
-
-function toFormDataValue(value: unknown): string | Blob {
-    if (value instanceof Blob) {
-        return value;
-    }
-
-    return String(value);
-}
-
-function setFormDataValue(data: FormDataCompat, key: string, value: unknown): void {
-    const normalizedValue = toFormDataValue(value);
-    if (typeof data.set === 'function') {
-        data.set(key, normalizedValue);
-        return;
-    }
-
-    data.append(key, normalizedValue);
-}
-
-function deleteFormDataValue(data: FormDataCompat, key: string): void {
-    if (typeof data.delete === 'function') {
-        data.delete(key);
-    }
-}
-
 tus.defaultOptions.storeFingerprintForResuming = false;
 
 function enableOrganization(): { org: string } {
@@ -272,7 +241,7 @@ function prepareData(details) {
                 data.append(`${key}[${idx}]`, element);
             });
         } else {
-            setFormDataValue(data, key, value);
+            (data as any).set(key, value);
         }
     }
     return data;
@@ -1190,7 +1159,7 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
 
     try {
         if (isCloudStorage) {
-            params.filename = typeof file === 'string' ? file : file.name;
+            params.filename = file as string;
             response = await Axios.post(url,
                 new FormData(),
                 {
@@ -1255,7 +1224,7 @@ async function createTask(
                 taskData.append(`${key}[${idx}]`, element);
             });
         } else if (typeof value !== 'object') {
-            setFormDataValue(taskData, key, value);
+            (taskData as any).set(key, value);
         }
     }
 
@@ -1309,7 +1278,7 @@ async function createTask(
                 headers: { 'Upload-Multiple': true },
             });
             for (let i = 0; i < fileBulks[currentChunkNumber].files.length; i++) {
-                deleteFormDataValue(taskData, `client_files[${i}]`);
+                (taskData as any).delete(`client_files[${i}]`);
             }
             totalSentSize += fileBulks[currentChunkNumber].size;
             currentChunkNumber++;
@@ -1401,47 +1370,29 @@ async function getJobs(
 
 async function getIssues(filter) {
     const { backendAPI } = config;
-    type IssueRecord = {
-        id: number;
-        job: number;
-        position: number[];
-        frame: number;
-        comments?: CommentRecord[];
-        owner?: unknown;
-        resolved?: boolean;
-        created_date?: string;
-    };
-    type CommentRecord = {
-        id: number;
-        issue: number;
-        message?: string;
-        created_date?: string;
-        updated_date?: string;
-        owner?: unknown;
-    };
 
-    let response: { count: number; results: IssueRecord[] } | null = null;
+    let response = null;
     try {
         const organization = enableOrganization();
-        response = await fetchAll<IssueRecord>(`${backendAPI}/issues`, {
+        response = await fetchAll(`${backendAPI}/issues`, {
             ...filter,
             ...organization,
         });
 
         if (filter.job_id) {
-            const commentsResponse = await fetchAll<CommentRecord>(`${backendAPI}/comments`, {
+            const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
                 ...filter,
                 ...organization,
             });
 
-            const issuesById = response.results.reduce<Record<number, IssueRecord>>((acc, val) => {
+            const issuesById = response.results.reduce((acc, val) => {
                 acc[val.id] = val;
                 return acc;
             }, {});
 
-            const commentsByIssue = commentsResponse.results.reduce<Record<number, CommentRecord[]>>((acc, val) => {
-                acc[val.issue] = acc[val.issue] || [];
-                acc[val.issue].push(val);
+            const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
+                acc[(val as any).issue] = acc[(val as any).issue] ?? [];
+                acc[(val as any).issue].push(val);
                 return acc;
             }, {});
 
@@ -1516,6 +1467,7 @@ async function deleteIssue(issueID: number): Promise<void> {
     }
 }
 
+type JobWritePayload = Partial<Omit<SerializedJob, 'assignee'> & { assignee: number | null }>;
 async function saveJob(id: number, jobData: JobWritePayload): Promise<SerializedJob> {
     const { backendAPI } = config;
 
@@ -1574,7 +1526,7 @@ const validationLayout = (instance: 'tasks' | 'jobs') => async (
     }
 };
 
-async function getUsers(filter: Record<string, string | number | boolean> = { page_size: 'all' }): Promise<SerializedUser[]> {
+async function getUsers(filter: Record<string, unknown> = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
     let response = null;
