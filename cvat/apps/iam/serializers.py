@@ -7,16 +7,25 @@ from allauth.account import app_settings as allauth_settings
 from allauth.account.adapter import get_adapter
 from allauth.account.utils import filter_users_by_email, setup_user_email
 from dj_rest_auth.registration.serializers import RegisterSerializer
-from dj_rest_auth.serializers import LoginSerializer, PasswordResetSerializer
+from dj_rest_auth.serializers import (
+    LoginSerializer,
+    PasswordChangeSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetSerializer,
+)
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext_lazy as _
-from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
+from cvat.apps.iam.password_validation import (
+    DEFAULT_MAX_PASSWORD_LENGTH,
+    DEFAULT_MIN_PASSWORD_LENGTH,
+)
 from cvat.apps.iam.utils import get_dummy_or_regular_user
 
 
@@ -24,6 +33,22 @@ class RegisterSerializerEx(RegisterSerializer):
     # workaround for https://github.com/iMerica/dj-rest-auth/issues/707
     email = serializers.EmailField(
         required=allauth_settings.EMAIL_REQUIRED, max_length=allauth_settings.EMAIL_MAX_LENGTH
+    )
+    # Override the upstream password fields to expose CVAT's explicit password
+    # length contract in the API schema and enforce it at the serializer boundary.
+    password1 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        min_length=DEFAULT_MIN_PASSWORD_LENGTH,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
+    password2 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        min_length=DEFAULT_MIN_PASSWORD_LENGTH,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
     )
 
     first_name = serializers.CharField(
@@ -105,6 +130,50 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
             if hasattr(settings, "UI_PORT") and settings.UI_PORT:
                 domain += ":{}".format(settings.UI_PORT)
         return {"domain_override": domain}
+
+
+@extend_schema_serializer(component_name="PasswordResetConfirm")
+class PasswordResetConfirmSerializerEx(PasswordResetConfirmSerializer):
+    # Keep CVAT's password length policy independent from dj-rest-auth defaults.
+    new_password1 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        min_length=DEFAULT_MIN_PASSWORD_LENGTH,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
+    new_password2 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        min_length=DEFAULT_MIN_PASSWORD_LENGTH,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
+
+
+@extend_schema_serializer(component_name="PasswordChange")
+class PasswordChangeSerializerEx(PasswordChangeSerializer):
+    # Keep old password uncapped here so existing users are not blocked by serializer limits.
+    old_password = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+    )
+    # Keep CVAT's password length policy independent from dj-rest-auth defaults.
+    new_password1 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        min_length=DEFAULT_MIN_PASSWORD_LENGTH,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
+    new_password2 = serializers.CharField(
+        write_only=True,
+        style={"input_type": "password"},
+        trim_whitespace=False,
+        min_length=DEFAULT_MIN_PASSWORD_LENGTH,
+        max_length=DEFAULT_MAX_PASSWORD_LENGTH,
+    )
 
 
 class LoginSerializerEx(LoginSerializer):

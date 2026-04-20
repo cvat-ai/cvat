@@ -1,16 +1,20 @@
 services:
   cvat-function-register:
     volumes:
-      - userdata:/app/data:ro
+      - cache:/home/agent/.cache/huggingface
+    environment:
+      HF_HUB_OFFLINE: 1
   cvat-agent:
     volumes:
-      - userdata:/app/data:ro
+      - cache:/home/agent/.cache/huggingface
+    environment:
+        HF_HUB_OFFLINE: 1
   cvat-function-deregister:
     volumes:
-      - userdata:/app/data:ro
+      - cache:/home/agent/.cache/huggingface
 
 volumes:
-  userdata:
+  cache:
     driver: local
     driver_opts:
       type: none
