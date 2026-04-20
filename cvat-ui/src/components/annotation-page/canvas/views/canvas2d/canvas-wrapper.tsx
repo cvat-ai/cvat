@@ -133,7 +133,7 @@ interface DispatchToProps {
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateAnnotations(states: ObjectState[]): void;
-    onCreateAnnotations(states: ObjectState[], source?: AnnotationSource): Promise<ObjectState[] | null>;
+    onCreateAnnotations(states: ObjectState[], source?: AnnotationSource): void;
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
@@ -321,8 +321,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onCreateAnnotations(
             states: ObjectState[],
             source: AnnotationSource = AnnotationSource.OTHER,
-        ): Promise<ObjectState[] | null> {
-            return dispatch(createAnnotationsAsync(states, source));
+        ): void {
+            dispatch(createAnnotationsAsync(states, source));
         },
         onMergeAnnotations(states: ObjectState[]): void {
             dispatch(mergeAnnotationsAsync(states));
@@ -689,7 +689,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         this.canvasTipsRef.current?.update(messages, topic);
     };
 
-    private onCanvasShapeDrawn = async (event: any): Promise<void> => {
+    private onCanvasShapeDrawn = (event: any): void => {
         const {
             jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
             onUpdateEditedObject, activeObjectHidden, workspace,
@@ -729,14 +729,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
         const objectState = new cvat.classes.ObjectState(state);
 
-        // Determine the source based on whether simplifyPoly is enabled for polygon/polyline
         const source = simplifyPoly && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType) ?
             AnnotationSource.DRAW_SIMPLIFIED_POLY : AnnotationSource.OTHER;
 
-        const states = await onCreateAnnotations([objectState], source);
-        if (states) {
-            onUpdateEditedObject(null);
-        }
+        onCreateAnnotations([objectState], source);
+        onUpdateEditedObject(null);
     };
 
     private onCanvasObjectsMerged = (event: any): void => {

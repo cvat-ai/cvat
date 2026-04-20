@@ -190,7 +190,7 @@ const componentShortcuts = {
     },
     SIMPLIFY_POLYGON: {
         name: 'Simplify polygon',
-        description: 'Activate polygon simplification mode for the selected polygon or polyline',
+        description: 'Activate simplification mode for the selected polygon or polyline',
         sequences: [],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },

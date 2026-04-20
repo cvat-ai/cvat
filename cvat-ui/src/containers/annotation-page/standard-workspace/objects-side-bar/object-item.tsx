@@ -71,7 +71,7 @@ interface DispatchToProps {
     removeObject: (objectState: ObjectState) => void;
     copyShape: (objectState: ObjectState) => void;
     switchPropagateVisibility: (visible: boolean) => void;
-    switchSimplifyVisibility: (objectState: ObjectState | null) => void;
+    switchSimplifyVisibility: (clientID: number | null) => void;
     changeGroupColor(group: number, color: string): void;
     updateActiveControl(activeControl: ActiveControl): void;
     expandObject(objectState: ObjectState): void;
@@ -144,8 +144,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         switchPropagateVisibility(visible: boolean): void {
             dispatch(switchPropagateVisibilityAction(visible));
         },
-        switchSimplifyVisibility(objectState: ObjectState | null): void {
-            dispatch(switchSimplifyVisibilityAction(objectState));
+        switchSimplifyVisibility(clientID: number | null): void {
+            dispatch(switchSimplifyVisibilityAction(clientID));
         },
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));

@@ -631,12 +631,11 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                     dispatch(reducerActions.updateProgress(_progress, _message));
                                 };
 
-                                const actionParams = { ...actionParameters[activeAction.name] };
                                 const currentFrame = storage.getState().annotation.player.frame.number;
                                 const actionPromise = targetObjectState ? core.actions.call(
                                     jobInstance,
                                     activeAction,
-                                    actionParams,
+                                    actionParameters[activeAction.name],
                                     currentFrame,
                                     [targetObjectState],
                                     updateProgressWrapper,
@@ -644,7 +643,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                 ) : core.actions.run(
                                     jobInstance,
                                     activeAction,
-                                    actionParams,
+                                    actionParameters[activeAction.name],
                                     currentFrameAction ? currentFrame : frameFrom,
                                     currentFrameAction ? currentFrame : frameTo,
                                     storage.getState().annotation.annotations.filters,

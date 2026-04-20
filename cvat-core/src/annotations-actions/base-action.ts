@@ -10,11 +10,10 @@ export enum ActionParameterType {
     SELECT = 'select',
     NUMBER = 'number',
     CHECKBOX = 'checkbox',
-    SLIDER = 'slider',
 }
 
 // For SELECT values should be a list of possible options
-// For NUMBER and SLIDER values should be a list with [min, max, step],
+// For NUMBER values should be a list with [min, max, step],
 // or a callback ({ instance }: { instance: Job | Task }) => [min, max, step]
 export type ActionParameters = Record<string, {
     type: ActionParameterType;
@@ -46,7 +45,7 @@ export function prepareActionParameters(declared: ActionParameters, defined: obj
     }
 
     return Object.entries(declared).reduce((acc, [name, { type, defaultValue }]) => {
-        if (type === ActionParameterType.NUMBER || type === ActionParameterType.SLIDER) {
+        if (type === ActionParameterType.NUMBER) {
             acc[name] = +(Object.hasOwn(defined, name) ? defined[name] : defaultValue);
         } else {
             acc[name] = (Object.hasOwn(defined, name) ? defined[name] : defaultValue);
