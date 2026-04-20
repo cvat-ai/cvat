@@ -78,6 +78,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
     private elementCounter: number;
     private draggableElement: SVGElement | null;
     private labels: Record<number, LabelOptColor>;
+    declare context: React.ContextType<typeof ShortcutsContext>;
 
     public constructor(props: Props) {
         super(props);

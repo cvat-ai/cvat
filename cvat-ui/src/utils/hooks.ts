@@ -255,6 +255,7 @@ export function useDropdownEditField(): DropdownEditField {
 interface ResourceQueryDefaultParams {
     page?: number;
     pageSize?: number;
+    filter?: string | null;
 }
 
 export function useResourceQuery<QueryType extends {

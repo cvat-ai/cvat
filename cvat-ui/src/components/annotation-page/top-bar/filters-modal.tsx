@@ -183,7 +183,7 @@ function FiltersModalComponent(): JSX.Element {
             settings: {
                 ...AntdConfig.settings,
                 renderField: (_props: any) => (
-                    <FieldDropdown {...omit(_props)} customProps={omit(_props.customProps, 'showSearch')} />
+                    <FieldDropdown {..._props} customProps={omit(_props.customProps, 'showSearch')} />
                 ),
                 // using FieldDropdown because we cannot use antd because of antd-related bugs
                 // https://github.com/ukrbublik/react-awesome-query-builder/issues/224

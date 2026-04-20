@@ -92,6 +92,10 @@ if ((self as any).importScripts) {
                     results.low_res_masks.getData(),
                 ])
             )).then(([xtl, ytl, xbr, ybr, mask, lowResMask]) => {
+                if (!ArrayBuffer.isView(mask)) {
+                    throw new Error('Unexpected mask tensor type');
+                }
+
                 postMessage({
                     action: WorkerAction.DECODE,
                     payload: [{

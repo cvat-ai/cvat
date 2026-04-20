@@ -27,15 +27,25 @@ function QualityOverviewTab(): JSX.Element {
 function QualityOverviewTabWrap(props: Readonly<Props>): JSX.Element {
     const { instance } = props;
 
-    const overrides = useSelector(
-        (state: CombinedState) => (instance instanceof Project ?
-            state.plugins.overridableComponents.qualityControlPage.project.overviewTab :
-            state.plugins.overridableComponents.qualityControlPage.task.overviewTab),
+    const projectOverrides = useSelector(
+        (state: CombinedState) => state.plugins.overridableComponents.qualityControlPage.project.overviewTab,
+    );
+    const taskOverrides = useSelector(
+        (state: CombinedState) => state.plugins.overridableComponents.qualityControlPage.task.overviewTab,
     );
 
-    if (overrides.length) {
-        const [Component] = overrides.slice(-1);
-        return <Component {...props} />;
+    if (instance instanceof Project) {
+        if (projectOverrides.length) {
+            const [Component] = projectOverrides.slice(-1);
+            return <Component {...props as { instance: Project; qualitySettings: Props['qualitySettings'] }} />;
+        }
+
+        return <QualityOverviewTab />;
+    }
+
+    if (taskOverrides.length) {
+        const [Component] = taskOverrides.slice(-1);
+        return <Component {...props as { instance: Task; qualitySettings: Props['qualitySettings'] }} />;
     }
 
     return <QualityOverviewTab />;

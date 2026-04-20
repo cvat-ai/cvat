@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { PluginsList } from 'reducers';
+import { PluginsList, SupportedPlugins } from 'reducers';
 import { getCore } from 'cvat-core-wrapper';
 import React from 'react';
 
@@ -66,7 +66,10 @@ export type PluginActions = ActionUnion<typeof pluginActions>;
 export const getPluginsAsync = (): ThunkAction => async (dispatch): Promise<void> => {
     dispatch(pluginActions.checkPlugins());
     try {
-        const list: PluginsList = await core.server.installedApps();
+        const installedApps = await core.server.installedApps() as Record<string, boolean>;
+        const list: PluginsList = {
+            [SupportedPlugins.ANALYTICS]: !!installedApps[SupportedPlugins.ANALYTICS],
+        };
         dispatch(pluginActions.checkPluginsSuccess(list));
     } catch (error) {
         dispatch(pluginActions.checkPluginsFailed(error));

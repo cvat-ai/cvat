@@ -46,7 +46,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     stopFrame,
                     assignee,
                     dimension,
-                    status: jobStatus,
+                    state: jobStatus,
                 },
             },
         },

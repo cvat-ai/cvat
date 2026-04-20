@@ -81,17 +81,23 @@ const SortableList = SortableContainer(
         setAppliedSorting: (arg: Record<string, string>) => void;
     }) => (
         <div className='cvat-resource-page-sorting-list'>
-            { items.map((value: string, index: number) => (
-                <SortableItem
-                    key={`item-${value}`}
-                    appliedSorting={appliedSorting}
-                    setAppliedSorting={setAppliedSorting}
-                    index={index}
-                    value={value}
-                    valueIndex={index}
-                    anchorIndex={items.indexOf(ANCHOR_KEYWORD)}
-                />
-            )) }
+            { items.map((value: string, index: number) => {
+                const sortableItemProps = {
+                    appliedSorting,
+                    setAppliedSorting,
+                    index,
+                    value,
+                    valueIndex: index,
+                    anchorIndex: items.indexOf(ANCHOR_KEYWORD),
+                } as any; // react-sortable-hoc typings lose wrapped component props
+
+                return (
+                    <SortableItem
+                        key={`item-${value}`}
+                        {...sortableItemProps}
+                    />
+                );
+            }) }
         </div>
     ),
 );
@@ -182,17 +188,19 @@ function SortingModalComponent(props: Props): JSX.Element {
             overlayInnerStyle={{ padding: 0 }}
             content={(
                 <SortableList
-                    onSortEnd={({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
-                        if (oldIndex !== newIndex) {
-                            const sortingFieldsCopy = [...sortingFields];
-                            sortingFieldsCopy.splice(newIndex, 0, ...sortingFieldsCopy.splice(oldIndex, 1));
-                            setSortingFields(sortingFieldsCopy);
-                        }
-                    }}
-                    helperClass='cvat-sorting-dragged-item'
-                    items={sortingFields}
-                    appliedSorting={appliedSorting}
-                    setAppliedSorting={setAppliedSorting}
+                    {...{
+                        onSortEnd: ({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
+                            if (oldIndex !== newIndex) {
+                                const sortingFieldsCopy = [...sortingFields];
+                                sortingFieldsCopy.splice(newIndex, 0, ...sortingFieldsCopy.splice(oldIndex, 1));
+                                setSortingFields(sortingFieldsCopy);
+                            }
+                        },
+                        helperClass: 'cvat-sorting-dragged-item',
+                        items: sortingFields,
+                        appliedSorting,
+                        setAppliedSorting,
+                    } as any /* react-sortable-hoc typings lose wrapped component props */}
                 />
             )}
         >

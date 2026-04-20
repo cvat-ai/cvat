@@ -4,8 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Select, { SelectProps } from 'antd/lib/select';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
+import type { DefaultOptionType } from 'antd/es/select';
 
 interface Props extends SelectProps<string> {
     labels: any[];
@@ -39,12 +38,11 @@ export default function LabelSelector(props: Props): JSX.Element {
             {...rest}
             {...dynamicProps}
             showSearch
-            filterOption={(input: string, option?: OptionData | OptionGroupData) => {
-                if (option) {
-                    const { children } = option.props;
-                    if (typeof children === 'string') {
-                        return children.toLowerCase().includes(input.toLowerCase());
-                    }
+            filterOption={(input: string, option) => {
+                const normalizedOption = option as DefaultOptionType & { children?: React.ReactNode };
+                const children = normalizedOption?.children ?? normalizedOption?.label;
+                if (typeof children === 'string') {
+                    return children.toLowerCase().includes(input.toLowerCase());
                 }
 
                 return false;

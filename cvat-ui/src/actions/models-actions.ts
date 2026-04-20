@@ -105,9 +105,9 @@ export function getModelsAsync(query?: ModelsQuery): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
         dispatch(modelsActions.getModels(query));
 
-        const filteredQuery = filterNull(query || getState().models.query);
+        filterNull(query || getState().models.query);
         try {
-            const result = await core.lambda.list(filteredQuery);
+            const result = await core.lambda.list();
             const { models, count } = result;
             dispatch(modelsActions.getModelsSuccess(models, count));
         } catch (error) {

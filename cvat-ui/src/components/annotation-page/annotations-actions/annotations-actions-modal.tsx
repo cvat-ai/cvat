@@ -226,7 +226,7 @@ const reducer = (state: State = { ...defaultState }, action: ActionUnion<typeof 
     return state;
 };
 
-type ActionParameterProps = NonNullable<BaseAction['parameters']>[keyof BaseAction['parameters']];
+type ActionParameterProps = NonNullable<BaseAction['parameters']>[string];
 
 const componentStorage = createStore(reducer, {
     actions: [],
@@ -518,7 +518,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                 <Text strong>Setup action parameters </Text>
                                 <hr />
                             </Col>
-                            {Object.entries(activeAction.parameters)
+                            {(Object.entries(activeAction.parameters) as [string, ActionParameterProps][])
                                 .map(([name, { defaultValue, type, values }], idx) => (
                                     <Col
                                         key={`${activeAction.name}_${idx}`}

@@ -80,7 +80,7 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                 `You are going to remove the cloudstorage "${displayName}". Continue?`,
             className: 'cvat-modal-confirm-delete-cloud-storage',
             onOk: () => {
-                dispatch(makeBulkOperationAsync(
+                dispatch(makeBulkOperationAsync<CloudStorage>(
                     cloudStoragesToDelete.length ? cloudStoragesToDelete : [cloudStorage],
                     async (storage) => {
                         await dispatch(deleteCloudStorageAsync(storage));

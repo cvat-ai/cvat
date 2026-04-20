@@ -40,7 +40,7 @@ function RequestsList(props: Readonly<Props>): JSX.Element {
         selectedCount: state.requests.selected.length,
     }), shallowEqual);
 
-    const requestList = Object.values(requests);
+    const requestList = Object.values(requests) as Request[];
     const requestViews = setUpRequestsList(requestList, page, pageSize);
     const requestIds = requestViews.map((request) => request.id).filter((id) => !cancelled[id]);
     const onSelectAll = useCallback(() => {

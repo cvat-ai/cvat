@@ -5,11 +5,18 @@
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AboutActions, AboutActionTypes } from 'actions/about-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
+import { AboutData } from 'cvat-core-wrapper';
 import { AboutState } from '.';
 import pjson from '../../package.json';
 
 const defaultState: AboutState = {
-    server: {},
+    server: new AboutData({
+        description: '',
+        name: '',
+        version: '',
+        logo_url: '',
+        subtitle: '',
+    }),
     packageVersion: {
         ui: pjson.version,
     },

@@ -98,10 +98,10 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         const { shapeType } = props;
         this.satisfiedLabels = props.labels.filter((label: Label) => {
             if (shapeType === ShapeType.SKELETON) {
-                return label.type === ShapeType.SKELETON;
+                return label.type === 'skeleton';
             }
 
-            return ['any', shapeType].includes(label.type);
+            return ['any', shapeType].includes(label.type as string);
         });
 
         const defaultLabelID = this.satisfiedLabels.length ? this.satisfiedLabels[0].id as number : null;

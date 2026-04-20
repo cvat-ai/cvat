@@ -26,7 +26,15 @@ function UpdateWebhookPage(): JSX.Element {
 
     useEffect(() => {
         if (!webhook) {
-            dispatch(getWebhooksAsync({ id }));
+            dispatch(getWebhooksAsync({
+                page: 1,
+                pageSize: 10,
+                id,
+                search: null,
+                filter: null,
+                sort: null,
+                projectId: null,
+            }));
         }
     }, []);
 

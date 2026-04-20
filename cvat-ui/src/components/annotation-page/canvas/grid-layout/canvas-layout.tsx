@@ -248,8 +248,8 @@ function CanvasLayout({ type }: { type?: DimensionType }): JSX.Element {
                             setLayoutConfig(transformedLayout);
                         }
                     }}
-                    resizeHandle={(_: any, ref: React.MutableRefObject<HTMLDivElement>) => (
-                        <div ref={ref} className='cvat-grid-item-resize-handler react-resizable-handle' />
+                    resizeHandle={() => (
+                        <div className='cvat-grid-item-resize-handler react-resizable-handle' />
                     )}
                     draggableHandle='.cvat-grid-item-drag-handler'
                 >

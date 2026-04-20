@@ -41,7 +41,7 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
 
     const onDelete = useCallback(() => {
         const webhooksToDelete = allWebhooks.filter((webhook) => selectedIds.includes(webhook.id));
-        dispatch(makeBulkOperationAsync(
+        dispatch(makeBulkOperationAsync<Webhook>(
             webhooksToDelete.length ? webhooksToDelete : [webhookInstance],
             async (webhook) => {
                 await dispatch(deleteWebhookAsync(webhook));

@@ -4,7 +4,6 @@
 
 import React, { useCallback, useRef } from 'react';
 
-import { ShapeType } from 'cvat-core-wrapper';
 import LabelForm from './label-form';
 import { LabelOptColor, SkeletonConfiguration } from './common';
 import SkeletonConfigurator from './skeleton-configurator';
@@ -48,7 +47,7 @@ function ConstructorUpdater(props: Props): JSX.Element {
                 onCancel={onCancel}
             />
             {
-                type === ShapeType.SKELETON && (
+                type === 'skeleton' && (
                     <SkeletonConfigurator
                         ref={skeletonConfiguratorRef}
                         label={label}
