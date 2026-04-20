@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 import os
 from datetime import timedelta
 from io import BytesIO
@@ -65,7 +64,6 @@ class TestCliMisc(TestCliBase):
             "personal_task",
             ResourceType.LOCAL.name,
             *map(os.fspath, files),
-            "--labels=" + json.dumps([{"name": "person"}]),
             "--completion_verification_period=0.01",
             organization="",
         )
@@ -78,7 +76,6 @@ class TestCliMisc(TestCliBase):
             "org_task",
             ResourceType.LOCAL.name,
             *map(os.fspath, files),
-            "--labels=" + json.dumps([{"name": "person"}]),
             "--completion_verification_period=0.01",
             organization=org,
         )
