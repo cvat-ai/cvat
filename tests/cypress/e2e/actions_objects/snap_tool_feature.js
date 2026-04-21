@@ -14,7 +14,7 @@
 
 import * as allure from 'allure-js-commons';
 import { taskName, labelName } from '../../support/const';
-import { checkAutoborderPointsCount } from '../../support/utils.cy';
+import { checkAutoborderPointsCount, getShapeCoord } from '../../support/utils.cy';
 
 context('Snap tool feature.', () => {
     const createRectangleShape2Points = {
@@ -36,19 +36,6 @@ context('Snap tool feature.', () => {
         ],
     };
     const defaultStartingPoint = { x: 450, y: 150 };
-
-    function getShapeCoord(type, objectId) {
-        const arrToPush = [];
-        if (type === 'rect') {
-            cy.get(objectId).invoke('attr', 'x').then((x) => arrToPush.push(+x));
-            cy.get(objectId).invoke('attr', 'y').then((y) => arrToPush.push(+y));
-            cy.get(objectId).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
-            cy.get(objectId).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
-        } else {
-            cy.get(objectId).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
-        }
-        return cy.wrap(arrToPush);
-    }
 
     function testCollectShapePointRadius(objectId) {
         cy.get(objectId).should('exist').and('be.visible')

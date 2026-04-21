@@ -63,3 +63,16 @@ export function drawWithClicks(pointsMap) {
         cy.get('.cvat-canvas-container').click(element.x, element.y);
     });
 }
+
+export function getShapeCoord(type, objectId) {
+    const arrToPush = [];
+    if (type === 'rect') {
+        cy.get(objectId).invoke('attr', 'x').then((x) => arrToPush.push(+x));
+        cy.get(objectId).invoke('attr', 'y').then((y) => arrToPush.push(+y));
+        cy.get(objectId).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
+        cy.get(objectId).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
+    } else {
+        cy.get(objectId).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
+    }
+    return cy.wrap(arrToPush);
+}
