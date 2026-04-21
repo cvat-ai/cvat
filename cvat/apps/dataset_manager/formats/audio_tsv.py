@@ -19,12 +19,12 @@ def _export(dst_file, temp_dir, instance_data: CommonData, save_images=False):
     field_names = ["id", "filename", "start", "stop", "label", "source", "score"]
 
     # TODO: refactor instance data to provide better access to this
-    attr_names = []
+    attr_names = set()
     for label_attrs in instance_data._attribute_mapping_merged.values():
         for attr_name in label_attrs.values():
-            attr_names.append(attr_name)
+            attr_names.add(attr_name)
 
-    attr_names.sort()
+    attr_names = sorted(attr_names)
     field_names += attr_names
 
     sample_filename = instance_data.db_data.audio.path
