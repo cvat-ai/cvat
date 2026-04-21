@@ -269,7 +269,16 @@ ThunkAction {
             description.consensus_replicas = +data.advanced.consensusReplicas;
         }
 
-        const extras: Record<string, any> = {};
+        const extras: {
+            [index: string]: any;
+            clientFiles: File[];
+            serverFiles: string[];
+            remoteFiles: string[];
+        } = {
+            clientFiles: data.files.local,
+            serverFiles: data.files.share.concat(data.files.cloudStorage),
+            remoteFiles: data.files.remote,
+        };
 
         if (data.quality.validationMode !== ValidationMode.NONE) {
             extras.validation_params = {
@@ -285,9 +294,6 @@ ThunkAction {
         }
 
         const taskInstance = new cvat.classes.Task(description);
-        taskInstance.clientFiles = data.files.local;
-        taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
-        taskInstance.remoteFiles = data.files.remote;
         try {
             const savedTask = await taskInstance.save(extras, {
                 updateStatusCallback(updateData: Request | UpdateStatusData) {

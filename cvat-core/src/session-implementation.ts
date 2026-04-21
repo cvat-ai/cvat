@@ -28,9 +28,9 @@ import {
 } from './frames';
 import Issue from './issue';
 import {
-    SerializedLabel, SerializedTask, SerializedJobValidationLayout,
-    SerializedTaskValidationLayout,
+    SerializedTask, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
+import { Label } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -99,7 +99,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             const jobSpec = {
                 ...(this.assignee ? { assignee: this.assignee.id } : {}),
                 ...(this.stage ? { stage: this.stage } : {}),
-                ...(this.state ? { stage: this.state } : {}),
+                ...(this.state ? { state: this.state } : {}),
                 type: this.type,
                 task_id: this.taskId,
             };
@@ -694,13 +694,20 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         sourceStorage: 'source_storage',
                         targetStorage: 'target_storage',
                     }),
+                } as Record<string, unknown> & {
+                    assignee_id?: { id: number } | null;
+                    labels?: Label[];
                 };
 
-                if (taskData.assignee_id) {
-                    taskData.assignee_id = taskData.assignee_id.id;
+                // TODO: update assignee via "fields" instead
+                // It would be better implementation
+                let newAssigneeId: number | null;
+                if ('assignee_id' in taskData) {
+                    newAssigneeId = taskData.assignee_id?.id ?? null;
+                    delete taskData.assignee_id;
                 }
 
-                for await (const label of taskData.labels || []) {
+                for await (const label of taskData.labels ?? []) {
                     if (label.deleted) {
                         await serverProxy.labels.delete(label.id);
                     } else if (label.patched) {
@@ -709,20 +716,31 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 }
 
                 // leave only new labels to create them via task PATCH request
-                taskData.labels = (taskData.labels || [])
-                    .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
-                if (!taskData.labels.length) {
-                    delete taskData.labels;
-                }
-
+                const labelsToCreate = (taskData.labels ?? [])
+                    .filter((label) => !Number.isInteger(label.id))
+                    .map((el) => el.toJSON());
+                delete taskData.labels;
                 this._updateTrigger.reset();
 
                 let serializedTask: SerializedTask = null;
-                if (Object.keys(taskData).length) {
-                    serializedTask = await serverProxy.tasks.save(this.id, taskData);
+                if (
+                    Object.keys(taskData).length ||
+                    labelsToCreate.length ||
+                    typeof newAssigneeId !== 'undefined'
+                ) {
+                    serializedTask = await serverProxy.tasks.save(this.id, {
+                        ...taskData,
+                        ...(typeof newAssigneeId !== 'undefined' ? { assignee_id: newAssigneeId } : {}),
+                        ...(labelsToCreate.length ? { labels: labelsToCreate } : {}),
+                    });
                 } else {
                     [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
                 }
+
+                // TODO: optimize labels fetch
+                // We already have patched labels, we may exclude deleted labels
+                // We only need to fetch labels if they have been created
+                // We do not need to perform any logic above if taskData is empty in the beginning of if branch
 
                 const labels = await serverProxy.labels.get({ task_id: this.id });
                 const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
@@ -742,18 +760,23 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (typeof this.bugTracker !== 'undefined') {
                 taskSpec.bug_tracker = this.bugTracker;
             }
+
             if (typeof this.segmentSize !== 'undefined') {
                 taskSpec.segment_size = this.segmentSize;
             }
+
             if (typeof this.overlap !== 'undefined') {
                 taskSpec.overlap = this.overlap;
             }
+
             if (typeof this.projectId !== 'undefined') {
                 taskSpec.project_id = this.projectId;
             }
+
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
             }
+
             if (typeof this.organizationId !== 'undefined') {
                 taskSpec.organization_id = this.organizationId;
             }
@@ -766,25 +789,25 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
-            if (fields.consensus_replicas) {
+            if (fields?.consensus_replicas) {
                 taskSpec.consensus_replicas = fields.consensus_replicas;
             }
 
             const taskDataSpec = {
-                client_files: this.clientFiles,
-                server_files: this.serverFiles,
-                remote_files: this.remoteFiles,
                 image_quality: this.imageQuality,
                 use_zip_chunks: this.useZipChunks,
                 use_cache: this.useCache,
                 sorting_method: this.sortingMethod,
+                client_files: fields?.clientFiles ?? [],
+                server_files: fields?.serverFiles ?? [],
+                remote_files: fields?.remoteFiles ?? [],
                 ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
                 ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
                 ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
                 ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
                 ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
-                ...(fields.validation_params ? { validation_params: fields.validation_params } : {}),
+                ...(fields?.validation_params ? { validation_params: fields.validation_params } : {}),
             };
 
             const { taskID, rqID } = await serverProxy.tasks.create(

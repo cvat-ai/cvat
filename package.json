@@ -104,7 +104,7 @@
     "build:cvat-core": "yarn workspace cvat-core run build",
     "build:cvat-data": "yarn workspace cvat-data run build",
     "start:cvat-ui": "yarn workspace cvat-ui run start",
-    "type-check": "status=0; yarn run tsc -p cvat-data/tsconfig.json || status=1; yarn run tsc -p cvat-canvas/tsconfig.json || status=1; exit $status"
+    "type-check": "status=0; yarn run tsc -p cvat-data/tsconfig.json || status=1; yarn run tsc -p cvat-core/tsconfig.json || status=1; yarn run tsc -p cvat-canvas/tsconfig.json || status=1; yarn run tsc -p cvat-canvas3d/tsconfig.json || status=1; exit $status"
   },
   "repository": {
     "type": "git",
