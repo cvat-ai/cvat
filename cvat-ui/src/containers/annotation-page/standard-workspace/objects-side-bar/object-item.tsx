@@ -306,7 +306,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private applySimplification = async (): Promise<void> => {
+    private applySimplification = async (simplifiedPoints: number[]): Promise<void> => {
         const {
             objectState, updateState, switchSimplifyVisibility, jobInstance,
         } = this.props;
@@ -317,8 +317,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             if (!openCVWrapper.isInitialized) {
                 await openCVWrapper.initialize(() => {});
             }
-
-            const simplifiedPoints = objectState.points ? [...objectState.points] : [];
 
             if (originalPoints) {
                 objectState.points = [...originalPoints];

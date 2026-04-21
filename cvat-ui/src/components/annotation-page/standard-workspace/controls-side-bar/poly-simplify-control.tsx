@@ -22,7 +22,7 @@ interface Props {
     approxPolyAccuracy: number;
     repeatDrawShapeShortcut: { sequences: string[] };
     onChangeAccuracy: (value: number) => void;
-    onApply: () => void;
+    onApply: (points: number[]) => void;
     onCancel: () => void;
     onUpdatePreview: (points: number[]) => void;
 }
@@ -34,30 +34,40 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
 
     const originalPointsRef = useRef<number[]>(objectState.points ? [...objectState.points] : []);
 
+    const getSimplifiedPoints = useCallback((): number[] => {
+        const closed = objectState.shapeType === ShapeType.POLYGON;
+        const threshold = openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy);
+
+        return openCVWrapper.contours.simplifyPolygon(
+            originalPointsRef.current,
+            threshold,
+            closed,
+        );
+    }, [approxPolyAccuracy, objectState.shapeType]);
+
     const updatePreview = useCallback(async (): Promise<void> => {
         if (!openCVWrapper.isInitialized) {
             return;
         }
 
-        const closed = objectState.shapeType === ShapeType.POLYGON;
-        const threshold = openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy);
-
-        const simplifiedPoints = openCVWrapper.contours.simplifyPolygon(
-            originalPointsRef.current,
-            threshold,
-            closed,
-        );
-
-        const pointsChanged = simplifiedPoints !== originalPointsRef.current;
-        if (pointsChanged) {
-            onUpdatePreview(simplifiedPoints);
-        }
-    }, [approxPolyAccuracy, objectState.shapeType, onUpdatePreview]);
+        const simplifiedPoints = getSimplifiedPoints();
+        onUpdatePreview(simplifiedPoints);
+    }, [getSimplifiedPoints, onUpdatePreview]);
 
     const debouncedUpdatePreview = useRef(debounce(
         (updateFn: () => Promise<void>) => updateFn(),
         100,
     )).current;
+
+    const handleApply = useCallback((): void => {
+        debouncedUpdatePreview.cancel();
+        onApply(getSimplifiedPoints());
+    }, [debouncedUpdatePreview, getSimplifiedPoints, onApply]);
+
+    const handleCancel = useCallback((): void => {
+        debouncedUpdatePreview.cancel();
+        onCancel();
+    }, [debouncedUpdatePreview, onCancel]);
 
     const handleKeyDown = (event: KeyboardEvent): void => {
         if (
@@ -68,11 +78,11 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
         ) {
             event.preventDefault();
             event.stopImmediatePropagation();
-            onApply();
+            handleApply();
         } else if (event.key === 'Escape') {
             event.preventDefault();
             event.stopImmediatePropagation();
-            onCancel();
+            handleCancel();
         }
     };
 
@@ -97,7 +107,7 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
         return () => {
             window.removeEventListener('keydown', handleKeyDown, true);
         };
-    }, [onApply, onCancel]);
+    }, [handleApply, handleCancel, repeatDrawShapeShortcut.sequences]);
 
     useEffect(() => {
         debouncedUpdatePreview(updatePreview);
@@ -129,13 +139,13 @@ function PolySimplifyControl(props: Props): React.ReactPortal | null {
                     type='primary'
                     size='small'
                     icon={<CheckOutlined />}
-                    onClick={onApply}
+                    onClick={handleApply}
                     style={{ marginRight: 4 }}
                 />
                 <Button
                     size='small'
                     icon={<CloseOutlined />}
-                    onClick={onCancel}
+                    onClick={handleCancel}
                 />
             </Col>
             <CVATTooltip title='Lower values create simpler shapes with fewer points. Higher values preserve more detail and points.'>
