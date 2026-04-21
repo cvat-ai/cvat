@@ -54,7 +54,7 @@ def add_infra_options(parser):
         default=None,
         choices=RuntimeInfraConfig.get_infra_profiles(),
         help=(
-            "Local runtime profile selection. "
+            "Runtime profile selection for local or kube runs. "
             "Use simple, standard, or full; if omitted, pytest auto-selects the smallest "
             "sufficient profile after collection."
         ),

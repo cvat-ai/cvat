@@ -2,12 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from infra.config import RuntimeInfraConfig
+from infra.rq_cleanup import BackgroundJobCleaner
+
+from shared.utils.config import normalize_runtime_asset_urls
 
 
 @dataclass(frozen=True)
@@ -63,6 +67,7 @@ class InfraInstance(ABC):
         self.deps = deps
         self._cvat_data_archive_host: str | None = None
         self._cvat_data_template_host: str | None = None
+        self._background_job_cleaner: BackgroundJobCleaner | None = None
 
     @classmethod
     @abstractmethod
@@ -94,7 +99,13 @@ class InfraInstance(ABC):
         return path
 
     def prepare_runtime_db_fixture(self) -> Path:
-        return self.deps.cvat_db_dir / "data.json"
+        source_path = self.deps.cvat_db_dir / "data.json"
+        runtime_path = RuntimeInfraConfig.get_run_dir() / "data.runtime.json"
+        with open(source_path) as source_file:
+            payload = json.load(source_file)
+        with open(runtime_path, "w") as runtime_file:
+            json.dump(normalize_runtime_asset_urls(payload), runtime_file, indent=2, sort_keys=True)
+        return runtime_path
 
     def restore_db(self) -> None:
         raise NotImplementedError
@@ -158,15 +169,17 @@ class InfraInstance(ABC):
 
     @classmethod
     def runtime_candidates(cls):
+        from infra.instances.kube_instance import KubeInstance
         from infra.instances.local_instance import LocalInstance
 
-        return (LocalInstance,)
+        return (LocalInstance, KubeInstance)
 
     @classmethod
     def plugin_candidates(cls):
+        from infra.instances.kube_instance import KubePlugin
         from infra.instances.local_instance import LocalPlugin
 
-        return (LocalPlugin,)
+        return (LocalPlugin, KubePlugin)
 
     @classmethod
     def register_all_options(cls, group) -> None:

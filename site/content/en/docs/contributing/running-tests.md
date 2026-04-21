@@ -65,6 +65,37 @@ pytest ./tests/python
 
 This command will automatically start all necessary docker containers.
 
+Kubernetes runs use the same pytest entrypoint with `--platform=kube`.
+
+Prerequisites on the host:
+- `minikube`
+- `kubectl`
+- `helm`
+- Docker
+
+Typical kube lifecycle:
+
+```bash
+# Start minikube if needed, load images, deploy Helm releases, and prepare kube-only test dependencies
+pytest ./tests/python --platform kube --run-prefix k1 --infra-profile full up
+
+# Run tests against the same kube runtime
+pytest ./tests/python --platform kube --run-prefix k1
+
+# Tear everything down
+pytest ./tests/python --platform kube --run-prefix k1 down
+```
+
+Notes:
+- `simple`, `standard`, and `full` are supported on kube as well as local.
+- If `--infra-profile` is omitted, pytest selects the smallest sufficient profile from
+  explicit `@pytest.mark.infra_profile(...)` markers.
+- Use `--kube-cpus` and `--kube-memory` to size the Minikube VM.
+- If `--kube-namespace` is not provided, pytest derives a per-run namespace from `--run-prefix`.
+- Use `--kube-delete-profile` with `down` if you want the Minikube profile removed instead
+  of kept warm.
+- Run artifacts and kube diagnostics are written under `/tmp/cvat_pytest_infra/runs/<run-id>/`.
+
 If you want to start/stop these containers without running tests
 use special options for it:
 

@@ -70,12 +70,43 @@ def _run(command, capture_output=True):
     return stdout
 
 
-def _kube_get_pod_name(label_filter):
-    return _run(f"kubectl get pods -l {label_filter} -o jsonpath={{.items[0].metadata.name}}")
+def _kube_namespace() -> str:
+    return os.environ.get("CVAT_TEST_KUBE_NAMESPACE", "")
+
+
+def _kubectl_command(*args: str):
+    command = ["kubectl"]
+    namespace = _kube_namespace().strip()
+    if namespace:
+        command.extend(["-n", namespace])
+    command.extend(args)
+    return command
+
+
+def _kube_get_pod_name(label_filter, *, prefer_substring: str | None = None):
+    # Kube tests can briefly observe an empty pod list while workloads restart or
+    # the API updates the pod set after a rollout. Retry here so legacy helpers
+    # stay usable on top of the pytest-managed kube runtime.
+    command = _kubectl_command(
+        "get", "pods", "-l", label_filter, "-o", "jsonpath={.items[*].metadata.name}"
+    )
+
+    for _ in range(30):
+        names = _run(command).split()
+        if names:
+            if prefer_substring:
+                for name in names:
+                    if prefer_substring in name:
+                        return name
+            return names[0]
+
+        sleep(1)
+
+    raise RuntimeError(f"No pods found for selector: {label_filter}")
 
 
 def _kube_get_server_pod_name():
-    return _kube_get_pod_name("component=server")
+    return _kube_get_pod_name("component=server", prefer_substring="-server-")
 
 
 def _kube_get_db_pod_name():
@@ -87,7 +118,7 @@ def _kube_get_clichouse_pod_name():
 
 
 def _kube_get_redis_inmem_pod_name():
-    return _kube_get_pod_name("app.kubernetes.io/name=redis")
+    return _kube_get_pod_name("app.kubernetes.io/name=redis", prefer_substring="-redis-master-")
 
 
 def _kube_get_redis_ondisk_pod_name():
@@ -114,7 +145,7 @@ def docker_cp(source, target):
 
 
 def kube_cp(source, target):
-    _run(f"kubectl cp {source} {target}")
+    _run(_kubectl_command("cp", str(source), str(target)))
 
 
 def docker_exec(container, command, capture_output=True):
@@ -131,8 +162,8 @@ def docker_exec_cvat(command: list[str] | str):
 
 def kube_exec_cvat(command: list[str] | str):
     pod_name = _kube_get_server_pod_name()
-    base = f"kubectl exec {pod_name} --"
-    _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
+    base = _kubectl_command("exec", pod_name, "--")
+    _command = " ".join(base) + f" {command}" if isinstance(command, str) else base + command
     return _run(_command)
 
 
@@ -148,7 +179,7 @@ def container_exec_cvat(request: pytest.FixtureRequest, command: list[str] | str
 
 def kube_exec_cvat_db(command):
     pod_name = _kube_get_db_pod_name()
-    _run(["kubectl", "exec", pod_name, "--"] + command)
+    _run(_kubectl_command("exec", pod_name, "--") + command)
 
 
 def docker_exec_clickhouse_db(command):
@@ -157,7 +188,7 @@ def docker_exec_clickhouse_db(command):
 
 def kube_exec_clickhouse_db(command):
     pod_name = _kube_get_clichouse_pod_name()
-    _run(["kubectl", "exec", pod_name, "--"] + command)
+    _run(_kubectl_command("exec", pod_name, "--") + command)
 
 
 def docker_exec_redis_inmem(command):
@@ -166,7 +197,7 @@ def docker_exec_redis_inmem(command):
 
 def kube_exec_redis_inmem(command):
     pod_name = _kube_get_redis_inmem_pod_name()
-    return _run(["kubectl", "exec", pod_name, "--"] + command)
+    return _run(_kubectl_command("exec", pod_name, "--") + command)
 
 
 def docker_exec_redis_ondisk(command):
@@ -175,7 +206,7 @@ def docker_exec_redis_ondisk(command):
 
 def kube_exec_redis_ondisk(command):
     pod_name = _kube_get_redis_ondisk_pod_name()
-    _run(["kubectl", "exec", pod_name, "--"] + command)
+    _run(_kubectl_command("exec", pod_name, "--") + command)
 
 
 def docker_restore_db():

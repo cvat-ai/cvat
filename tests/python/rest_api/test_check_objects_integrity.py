@@ -59,7 +59,7 @@ class TestGetResources:
                     )
             else:
                 response = config.get_method("admin1", endpoint, page_size="all")
-                json_objs = json.load(f)
+                json_objs = config.normalize_runtime_asset_urls(json.load(f))
                 resp_objs = response.json()
 
                 assert (

@@ -1,0 +1,9 @@
+smokescreen:
+  allowMinio: true
+  allowWebhookReceiver: false
+
+minio:
+  enabled: true
+
+webhookReceiver:
+  enabled: false
