@@ -65,8 +65,22 @@ resolve_function_name() {
     fi
 }
 
+resolve_visibility() {
+    if [ -z "$VISIBILITY" ]; then
+        echo "Warning: VISIBILITY environment variable not found. Default is private"
+        VISIBILITY_ARGS=(--visibility "$VISIBILITY")
+        if [ "$VISIBILITY" = "public" ]; then
+            echo "This function will be visible to all users of this CVAT instance."
+        fi
+    else
+        VISIBILITY_ARGS=(--visibility private)
+        echo "This function will be visible to you and ORG members if ORG_SLUG is set, but not to other users of this CVAT instance."
+    fi
+}
+
 common_env() {
     validate_access_token
     resolve_base_url
     resolve_org_slug
+    resolve_visibility
 }
