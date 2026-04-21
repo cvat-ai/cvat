@@ -16,7 +16,7 @@ import Popover from 'antd/lib/popover';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
-import { CombinedState } from 'reducers';
+import { CombinedState, Workspace } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
 
@@ -75,10 +75,11 @@ const getAttributesSubfields = (labels: Label[]): Record<string, any> => {
 };
 
 function FiltersModalComponent(): JSX.Element {
-    const { labels, activeFilters, visible } = useSelector(
+    const { labels, activeFilters, visible, workspace } = useSelector(
         (state: CombinedState) => ({
             labels: state.annotation.job.labels,
             activeFilters: state.annotation.annotations.filters,
+            workspace: state.annotation.workspace,
             visible: state.annotation.filtersPanelVisible,
         }),
         shallowEqual,
@@ -90,97 +91,116 @@ function FiltersModalComponent(): JSX.Element {
     const [filters, setFilters] = useState([] as StoredFilter[]);
 
     useEffect(() => {
-        const initialConfig = {
-            ...AntdConfig,
-            fields: {
-                label: {
-                    label: 'Label',
-                    type: 'select',
-                    valueSources: ['value'] as ('value')[],
-                    fieldSettings: {
-                        listValues: labels.map((label: any) => ({
-                            value: label.name,
-                            title: label.name,
-                        })),
-                    },
-                },
-                type: {
-                    label: 'Type',
-                    type: 'select',
-                    fieldSettings: {
-                        listValues: [
-                            { value: 'shape', title: 'Shape' },
-                            { value: 'track', title: 'Track' },
-                            { value: 'tag', title: 'Tag' },
-                        ],
-                    },
-                },
-                shape: {
-                    label: 'Shape',
-                    type: 'select',
-                    fieldSettings: {
-                        listValues: [
-                            { value: 'rectangle', title: 'Rectangle' },
-                            { value: 'points', title: 'Points' },
-                            { value: 'polyline', title: 'Polyline' },
-                            { value: 'polygon', title: 'Polygon' },
-                            { value: 'cuboid', title: 'Cuboid' },
-                            { value: 'ellipse', title: 'Ellipse' },
-                            { value: 'skeleton', title: 'Skeleton' },
-                            { value: 'mask', title: 'Mask' },
-                        ],
-                    },
-                },
-                occluded: {
-                    label: 'Occluded',
-                    type: 'boolean',
-                },
-                width: {
-                    label: 'Width',
-                    type: 'number',
-                    fieldSettings: { min: 0 },
-                },
-                height: {
-                    label: 'Height',
-                    type: 'number',
-                    fieldSettings: { min: 0 },
-                },
-                rotation: {
-                    label: 'Rotation',
-                    type: 'number',
-                    fieldSettings: { min: 0 },
-                },
-                objectID: {
-                    label: 'ObjectID',
-                    type: 'number',
-                    hideForCompare: true,
-                    fieldSettings: { min: 0 },
-                },
-                serverID: {
-                    label: 'ServerID',
-                    type: 'number',
-                    hideForCompare: true,
-                    fieldSettings: { min: 0 },
-                },
-                score: {
-                    label: 'Score',
-                    type: 'number',
-                    fieldSettings: { min: 0, max: 1 },
-                },
-                votes: {
-                    label: 'Votes',
-                    type: 'number',
-                    fieldSettings: { min: 0 },
-                },
-                attr: {
-                    label: 'Attributes',
-                    type: '!struct',
-                    subfields: getAttributesSubfields(labels),
-                    fieldSettings: {
-                        treeSelectOnlyLeafs: true,
-                    },
+        const isAudio = workspace === Workspace.AUDIO;
+
+        const baseFields: Record<string, any> = {
+            label: {
+                label: 'Label',
+                type: 'select',
+                valueSources: ['value'] as ('value')[],
+                fieldSettings: {
+                    listValues: labels.map((label: any) => ({
+                        value: label.name,
+                        title: label.name,
+                    })),
                 },
             },
+            objectID: {
+                label: 'ObjectID',
+                type: 'number',
+                hideForCompare: true,
+                fieldSettings: { min: 0 },
+            },
+            serverID: {
+                label: 'ServerID',
+                type: 'number',
+                hideForCompare: true,
+                fieldSettings: { min: 0 },
+            },
+            score: {
+                label: 'Score',
+                type: 'number',
+                fieldSettings: { min: 0, max: 1 },
+            },
+            votes: {
+                label: 'Votes',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+            attr: {
+                label: 'Attributes',
+                type: '!struct',
+                subfields: getAttributesSubfields(labels),
+                fieldSettings: {
+                    treeSelectOnlyLeafs: true,
+                },
+            },
+        };
+
+        const visualFields: Record<string, any> = {
+            type: {
+                label: 'Type',
+                type: 'select',
+                fieldSettings: {
+                    listValues: [
+                        { value: 'shape', title: 'Shape' },
+                        { value: 'track', title: 'Track' },
+                        { value: 'tag', title: 'Tag' },
+                    ],
+                },
+            },
+            shape: {
+                label: 'Shape',
+                type: 'select',
+                fieldSettings: {
+                    listValues: [
+                        { value: 'rectangle', title: 'Rectangle' },
+                        { value: 'points', title: 'Points' },
+                        { value: 'polyline', title: 'Polyline' },
+                        { value: 'polygon', title: 'Polygon' },
+                        { value: 'cuboid', title: 'Cuboid' },
+                        { value: 'ellipse', title: 'Ellipse' },
+                        { value: 'skeleton', title: 'Skeleton' },
+                        { value: 'mask', title: 'Mask' },
+                    ],
+                },
+            },
+            occluded: {
+                label: 'Occluded',
+                type: 'boolean',
+            },
+            width: {
+                label: 'Width',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+            height: {
+                label: 'Height',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+            rotation: {
+                label: 'Rotation',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+        };
+
+        const audioFields: Record<string, any> = {
+            duration: {
+                label: 'Duration (ms)',
+                type: 'number',
+                fieldSettings: { min: 0 },
+            },
+        };
+
+        const fields = isAudio
+            ? { ...baseFields, ...audioFields }
+            : { ...baseFields, ...visualFields };
+
+        const initialConfig = {
+            ...AntdConfig,
+            fields,
             settings: {
                 ...AntdConfig.settings,
                 renderField: (_props) => (
@@ -198,7 +218,7 @@ function FiltersModalComponent(): JSX.Element {
         } catch (_) {
             setFilters([]);
         }
-    }, []);
+    }, [workspace]);
 
     useEffect(() => {
         window.localStorage.setItem(FILTERS_HISTORY, JSON.stringify(filters));

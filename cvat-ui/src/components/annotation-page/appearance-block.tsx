@@ -154,15 +154,24 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeOrientationVisibility,
         jobInstance,
         keyMap,
+        workspace,
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
     const is3D = jobInstance.dimension === DimensionType.DIMENSION_3D;
-    const nextColorBy = {
+    const isAudio = workspace === Workspace.AUDIO;
+    const nextColorBy: Record<ColorBy, ColorBy> = isAudio ? {
+        [ColorBy.LABEL]: ColorBy.INSTANCE,
+        [ColorBy.INSTANCE]: ColorBy.LABEL,
+        [ColorBy.GROUP]: ColorBy.LABEL,
+    } : {
         [ColorBy.LABEL]: ColorBy.INSTANCE,
         [ColorBy.INSTANCE]: ColorBy.GROUP,
         [ColorBy.GROUP]: ColorBy.LABEL,
     };
+    const colorByOptions = isAudio ?
+        [ColorBy.LABEL, ColorBy.INSTANCE] :
+        [ColorBy.LABEL, ColorBy.INSTANCE, ColorBy.GROUP];
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         SWITCH_COLOR_BY_APPEARANCE: (event: KeyboardEvent | undefined) => {
@@ -189,10 +198,10 @@ function AppearanceBlock(props: Props): JSX.Element {
                         <Text type='secondary'>Color by</Text>
                         <Radio.Group
                             className='cvat-appearance-color-by-radio-group'
-                            value={colorBy}
+                            value={isAudio && colorBy === ColorBy.GROUP ? ColorBy.LABEL : colorBy}
                             onChange={(event: RadioChangeEvent) => changeShapesColorBy(event.target.value)}
                         >
-                            {Object.keys(nextColorBy).map((val) => (
+                            {colorByOptions.map((val) => (
                                 <Radio.Button value={val} key={val}>{val}</Radio.Button>
                             ))}
                         </Radio.Group>
@@ -203,6 +212,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                             value={opacity}
                             min={0}
                             max={100}
+                            tooltip={{ open: false }}
                         />
                         <Text type='secondary'>Selected opacity</Text>
                         <Slider
@@ -211,26 +221,33 @@ function AppearanceBlock(props: Props): JSX.Element {
                             value={selectedOpacity}
                             min={0}
                             max={100}
+                            tooltip={{ open: false }}
                         />
-                        <Checkbox
-                            className='cvat-appearance-outlinded-borders-checkbox'
-                            onChange={(event: CheckboxChangeEvent) => {
-                                changeShapesOutlinedBorders(event.target.checked, outlineColor);
-                            }}
-                            checked={outlined}
-                        >
-                            Outlined borders
-                            <ColorPicker
-                                onChange={(color) => changeShapesOutlinedBorders(outlined, color)}
-                                value={outlineColor}
-                                placement='top'
-                                resetVisible={false}
+                        {!isAudio && (
+                            <Checkbox
+                                className='cvat-appearance-outlinded-borders-checkbox'
+                                onChange={(event: CheckboxChangeEvent) => {
+                                    changeShapesOutlinedBorders(event.target.checked, outlineColor);
+                                }}
+                                checked={outlined}
                             >
-                                <Button className='cvat-appearance-outlined-borders-button' type='link' shape='circle'>
-                                    <ColorizeIcon />
-                                </Button>
-                            </ColorPicker>
-                        </Checkbox>
+                                Outlined borders
+                                <ColorPicker
+                                    onChange={(color) => changeShapesOutlinedBorders(outlined, color)}
+                                    value={outlineColor}
+                                    placement='top'
+                                    resetVisible={false}
+                                >
+                                    <Button
+                                        className='cvat-appearance-outlined-borders-button'
+                                        type='link'
+                                        shape='circle'
+                                    >
+                                        <ColorizeIcon />
+                                    </Button>
+                                </ColorPicker>
+                            </Checkbox>
+                        )}
                         {is3D && (
                             <div className='cvat-appearance-cuboid-orientation-checkboxes'>
                                 <Checkbox
@@ -247,7 +264,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                                 </Checkbox>
                             </div>
                         )}
-                        {is2D && (
+                        {is2D && !isAudio && (
                             <Checkbox
                                 className='cvat-appearance-bitmap-checkbox'
                                 onChange={changeShowBitmap}
@@ -256,7 +273,7 @@ function AppearanceBlock(props: Props): JSX.Element {
                                 Show bitmap
                             </Checkbox>
                         )}
-                        {is2D && (
+                        {is2D && !isAudio && (
                             <Checkbox
                                 className='cvat-appearance-cuboid-projections-checkbox'
                                 onChange={changeShowProjections}

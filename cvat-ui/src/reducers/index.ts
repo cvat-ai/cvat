@@ -19,6 +19,21 @@ import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { ImageFilter } from 'utils/image-processing';
 
+export interface AudioRegion {
+    id: string;
+    start: number;
+    end: number;
+    labelId: number | null;
+    attributes: Record<number, string>;
+    serverId?: number;
+    source?: string;
+    group?: number;
+    color?: string;
+    hidden?: boolean;
+    locked?: boolean;
+    zOrder: number;
+}
+
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
@@ -780,6 +795,8 @@ export enum ActiveControl {
     AI_TOOLS = 'ai_tools',
     PHOTO_CONTEXT = 'PHOTO_CONTEXT',
     OPENCV_TOOLS = 'opencv_tools',
+    AUDIO_REGION_CREATE = 'audio_region_create',
+    AUDIO_REGION_EDIT = 'audio_region_edit',
 }
 
 export enum StatesOrdering {
@@ -877,6 +894,48 @@ export interface AnnotationState {
         frameAngles: number[];
         hoveredChapter: number | null;
     };
+    audioPlayer: {
+        playing: boolean;
+        currentTime: number;
+        duration: number;
+        playbackRate: number;
+        zoom: number;
+        volume: number;
+        loop: boolean;
+        regions: AudioRegion[];
+        activeRegionId: string | null;
+        hoveredRegionId: string | null;
+        audioUrl: string | null;
+        audioLoading: boolean;
+        audioError: string | null;
+        waveformReady: boolean;
+        activeLabelId: number | null;
+        hasUnsavedChanges: boolean;
+        version: number;
+    };
+    audioHistory: {
+        undo: Array<{
+            actionName: string;
+            diffs: Array<
+                | { kind: 'added'; region: AudioRegion }
+                | { kind: 'removed'; region: AudioRegion }
+                | { kind: 'updated'; before: AudioRegion; after: AudioRegion }
+            >;
+            activeRegionIdBefore: string | null;
+            activeRegionIdAfter: string | null;
+        }>;
+        redo: Array<{
+            actionName: string;
+            diffs: Array<
+                | { kind: 'added'; region: AudioRegion }
+                | { kind: 'removed'; region: AudioRegion }
+                | { kind: 'updated'; before: AudioRegion; after: AudioRegion }
+            >;
+            activeRegionIdBefore: string | null;
+            activeRegionIdAfter: string | null;
+        }>;
+    };
+
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
         activeInteractorParameters: Partial<{
@@ -946,6 +1005,7 @@ export enum Workspace {
     SINGLE_SHAPE = 'Single shape',
     TAGS = 'Tag annotation',
     REVIEW = 'Review',
+    AUDIO = 'Audio',
 }
 
 export enum GridColor {

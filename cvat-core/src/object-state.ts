@@ -8,7 +8,7 @@ import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import { isEnum } from './common';
-import { SerializedShape, SerializedTag, SerializedTrack } from './server-response-types';
+import { SerializedShape, SerializedTag, SerializedTrack, SerializedInterval } from './server-response-types';
 
 interface UpdateFlags {
     label: boolean;
@@ -184,9 +184,10 @@ export default class ObjectState {
             objectType: serialized.objectType,
             shapeType: serialized.shapeType || null,
             updateFlags,
-            // score and votes are only available for shapes (not tracks or tags)
-            score: serialized.objectType === ObjectType.SHAPE ? (serialized.score ?? 1.0) : undefined,
-            votes: serialized.objectType === ObjectType.SHAPE ? (serialized.votes ?? 0) : undefined,
+            score: [ObjectType.SHAPE, ObjectType.INTERVAL].includes(serialized.objectType) ?
+                (serialized.score ?? 1.0) : undefined,
+            votes: [ObjectType.SHAPE, ObjectType.INTERVAL].includes(serialized.objectType) ?
+                (serialized.votes ?? 0) : undefined,
         };
 
         Object.defineProperties(
@@ -522,7 +523,7 @@ export default class ObjectState {
         return result;
     }
 
-    async export(): Promise<SerializedShape | SerializedTrack | SerializedTag> {
+    async export(): Promise<SerializedShape | SerializedTrack | SerializedTag | SerializedInterval> {
         const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.export);
         return result;
     }

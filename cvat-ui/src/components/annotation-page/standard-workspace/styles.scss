@@ -99,7 +99,9 @@
 .cvat-tools-control,
 .cvat-extra-controls-control,
 .cvat-opencv-control,
-.cvat-snap-tools-control {
+.cvat-snap-tools-control,
+.cvat-audio-create-region-control,
+.cvat-audio-edit-region-control {
     border-radius: $border-radius-base;
     transition: $annotation-view-control-transition;
     transform: scale(0.65);

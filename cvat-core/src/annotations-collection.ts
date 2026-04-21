@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    shapeFactory, trackFactory, Track, Shape, Tag,
+    shapeFactory, trackFactory, Track, Shape, Tag, Interval,
     MaskShape, BasicInjection, SkeletonShape,
     SkeletonTrack, PolygonShape, CuboidShape,
     RectangleShape, PolylineShape, PointsShape, EllipseShape,
@@ -57,7 +57,8 @@ export default class Collection {
     private shapes: Record<number, Shape[]>;
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
-    private objects: Record<number, Shape | Tag | Track>;
+    private intervals: Interval[];
+    private objects: Record<number, Shape | Tag | Track | Interval>;
     private groups: { max: number };
     private injection: BasicInjection;
 
@@ -86,6 +87,7 @@ export default class Collection {
         this.shapes = {}; // key is a frame
         this.tags = {}; // key is a frame
         this.tracks = [];
+        this.intervals = [];
         this.objects = {}; // key is a client id
         this.flush = false;
         this.groups = {
@@ -111,11 +113,13 @@ export default class Collection {
         tags: Tag[];
         shapes: Shape[];
         tracks: Track[];
+        intervals: Interval[];
     } {
         const result = {
             tags: [],
             shapes: [],
             tracks: [],
+            intervals: [],
         };
 
         for (const tag of data.tags) {
@@ -151,6 +155,16 @@ export default class Collection {
             }
         }
 
+        for (const interval of (data.intervals || [])) {
+            const clientID = this.injection.nextClientID();
+            const color = colors[clientID % colors.length];
+            const intervalModel = new Interval(interval, clientID, color, this.injection);
+            this.intervals.push(intervalModel);
+            this.objects[clientID] = intervalModel;
+
+            result.intervals.push(intervalModel);
+        }
+
         return result;
     }
 
@@ -158,21 +172,23 @@ export default class Collection {
         appended: Omit<SerializedCollection, 'version'>,
         removed: Omit<SerializedCollection, 'version'>,
         frame: number,
-    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; } {
-        const isCollectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
-            .every((object) => typeof object.clientID === 'number' &&
-                Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
+    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; intervals: Interval[]; } {
+        const isCollectionConsistent = [].concat(
+            removed.shapes, removed.tags, removed.tracks, removed.intervals,
+        ).every((object) => typeof object.clientID === 'number' &&
+            Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
 
         if (!isCollectionConsistent) {
             throw new ArgumentError('Objects required to be deleted were not found in the collection');
         }
 
-        const removedCollection: (Shape | Tag | Track)[] = [].concat(removed.shapes, removed.tags, removed.tracks)
-            .map((object) => this.objects[object.clientID as number]);
+        const removedCollection: (Shape | Tag | Track | Interval)[] = [].concat(
+            removed.shapes, removed.tags, removed.tracks, removed.intervals,
+        ).map((object) => this.objects[object.clientID as number]);
 
         const imported = this.import(appended);
-        const appendedCollection = ([] as (Shape | Tag | Track)[])
-            .concat(imported.shapes, imported.tags, imported.tracks);
+        const appendedCollection = ([] as (Shape | Tag | Track | Interval)[])
+            .concat(imported.shapes, imported.tags, imported.tracks, imported.intervals);
         if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
             // nothing to commit
             return;
@@ -212,7 +228,7 @@ export default class Collection {
         );
     }
 
-    public export(): Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags'> {
+    public export(): Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags' | 'intervals'> {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed)
                 .map((track) => track.toJSON() as SerializedTrack),
@@ -230,6 +246,8 @@ export default class Collection {
                 }, [])
                 .filter((tag) => !tag.removed)
                 .map((tag) => tag.toJSON()),
+            intervals: this.intervals.filter((interval) => !interval.removed)
+                .map((interval) => interval.toJSON()),
         };
 
         return data;
@@ -243,8 +261,11 @@ export default class Collection {
         const { tracks } = this;
         const shapes = this.shapes[frame] ?? [];
         const tags = this.tags[frame] ?? [];
+        const intervals = this.intervals.filter(
+            (interval) => frame >= interval.start && (interval.stop === null || frame <= interval.stop),
+        );
 
-        const objects = [].concat(tracks, shapes, tags);
+        const objects = [].concat(tracks, shapes, tags, intervals);
         const visible = [];
 
         for (const object of objects) {
@@ -490,6 +511,7 @@ export default class Collection {
             tracks: [track],
             tags: [],
             shapes: [],
+            intervals: [],
         });
 
         // Remove other shapes
@@ -603,6 +625,7 @@ export default class Collection {
             tracks: [prev, next],
             tags: [],
             shapes: [],
+            intervals: [],
         });
 
         // Remove source object
@@ -739,6 +762,7 @@ export default class Collection {
                 shapes: shapesToCreate,
                 tracks: [],
                 tags: [],
+                intervals: [],
             });
 
             // and remove joined shapes
@@ -835,6 +859,7 @@ export default class Collection {
             }],
             tracks: [],
             tags: [],
+            intervals: [],
         });
         slicedObject.removed = true;
 
@@ -868,6 +893,7 @@ export default class Collection {
             this.shapes = {};
             this.tags = {};
             this.tracks = [];
+            this.intervals = [];
             this.objects = {};
 
             this.flush = true;
@@ -880,6 +906,10 @@ export default class Collection {
                 this.shapes[frame] = [];
                 this.tags[frame] = [];
             }
+
+            this.intervals = this.intervals.filter(
+                (interval) => interval.start > to || (interval.stop !== null && interval.stop < from),
+            );
 
             this.tracks.slice(0).forEach((track) => {
                 if (track.frame <= to) {
@@ -1060,6 +1090,7 @@ export default class Collection {
             shapes: [],
             tracks: [],
             tags: [],
+            intervals: [],
         };
 
         for (const state of objectStates) {
@@ -1086,6 +1117,15 @@ export default class Collection {
                     label_id: state.label.id,
                     group: 0,
                     source: state.source,
+                });
+            } else if (state.objectType === 'interval') {
+                constructed.intervals.push({
+                    attributes,
+                    label_id: state.label.id,
+                    group: 0,
+                    source: state.source,
+                    start: state.frame,
+                    stop: null,
                 });
             } else {
                 checkObjectType('state occluded', state.occluded, 'boolean');
@@ -1196,8 +1236,9 @@ export default class Collection {
         // Add constructed objects to a collection
         // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
-        const importedArray = ([] as (Tag | Track | Shape)[])
-            .concat(imported.tags, imported.tracks, imported.shapes);
+        const importedArray: (Tag | Track | Shape | Interval)[] = [
+            ...imported.tags, ...imported.tracks, ...imported.shapes, ...imported.intervals,
+        ];
         const additionalUndo = [];
         const additionalRedo = [];
         const additionalClientIDs = [];

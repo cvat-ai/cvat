@@ -18,7 +18,7 @@ import { BaseAction, prepareActionParameters, validateClientIDs } from './base-a
 export interface CollectionActionInput {
     onProgress(message: string, percent: number): void;
     cancelled(): boolean;
-    collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>;
+    collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks' | 'intervals'>;
     frameData: {
         width: number;
         height: number;
@@ -90,6 +90,7 @@ export async function run(
             shapes: filteredCollectionIDs.shapes.map((clientID) => mapID2Obj[clientID]),
             tags: filteredCollectionIDs.tags.map((clientID) => mapID2Obj[clientID]),
             tracks: filteredCollectionIDs.tracks.map((clientID) => mapID2Obj[clientID]),
+            intervals: filteredCollectionIDs.intervals.map((clientID) => mapID2Obj[clientID]),
         };
         mapID2Obj = [].concat(filteredByUser.shapes, filteredByUser.tags, filteredByUser.tracks)
             .reduce((acc, object) => {
@@ -148,7 +149,7 @@ export async function call(
             }
 
             return acc;
-        }, { shapes: [], tags: [], tracks: [] });
+        }, { shapes: [], tags: [], tracks: [], intervals: [] });
 
         const frameData = await Object.getPrototypeOf(instance).frames.get.implementation.call(instance, frame);
         const filteredByAction = action.applyFilter({ collection: exportedCollection, frameData });

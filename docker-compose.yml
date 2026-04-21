@@ -45,7 +45,7 @@ services:
       POSTGRES_DB: cvat
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-      - cvat_db:/var/lib/postgresql/data
+      - cvat_db_audio_dev:/var/lib/postgresql/data
     networks:
       - cvat
 
@@ -109,7 +109,7 @@ services:
           || PathPrefix(`/django-rq`))
       traefik.http.routers.cvat.entrypoints: web
     volumes:
-      - cvat_data:/home/django/data
+      - cvat_data_audio_dev:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
@@ -128,7 +128,7 @@ services:
       NUMPROCS: 1
     command: run worker notifications cleaning
     volumes:
-      - cvat_data:/home/django/data
+      - cvat_data_audio_dev:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
@@ -144,7 +144,7 @@ services:
       NUMPROCS: 2
     command: run worker import
     volumes:
-      - cvat_data:/home/django/data
+      - cvat_data_audio_dev:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
@@ -160,7 +160,7 @@ services:
       NUMPROCS: 2
     command: run worker export
     volumes:
-      - cvat_data:/home/django/data
+      - cvat_data_audio_dev:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
@@ -176,7 +176,7 @@ services:
       NUMPROCS: 1
     command: run worker annotation
     volumes:
-      - cvat_data:/home/django/data
+      - cvat_data_audio_dev:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
@@ -192,7 +192,7 @@ services:
       NUMPROCS: 1
     command: run worker webhooks
     volumes:
-      - cvat_data:/home/django/data
+      - cvat_data_audio_dev:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
@@ -208,7 +208,7 @@ services:
       NUMPROCS: 1
     command: run worker quality_reports
     volumes:
-      - cvat_data:/home/django/data
+      - cvat_data_audio_dev:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
@@ -224,7 +224,7 @@ services:
       NUMPROCS: 2
     command: run worker chunks
     volumes:
-      - cvat_data:/home/django/data
+      - cvat_data_audio_dev:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
@@ -240,7 +240,7 @@ services:
       NUMPROCS: 1
     command: run worker consensus
     volumes:
-      - cvat_data:/home/django/data
+      - cvat_data_audio_dev:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
     networks:
@@ -419,8 +419,8 @@ services:
           - grafana
 
 volumes:
-  cvat_db:
-  cvat_data:
+  cvat_db_audio_dev:
+  cvat_data_audio_dev:
   cvat_keys:
   cvat_logs:
   cvat_inmem_db:

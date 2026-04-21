@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
-import { SerializedQualitySettingsData } from './server-response-types';
+import { SerializedQualitySettingsData, SerializedTranscriptionRequirement } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
@@ -47,6 +47,7 @@ export default class QualitySettings {
     #emptyIsAnnotated: boolean;
     #jobFilter: string;
     #inherit: boolean;
+    #transcriptionRequirements: SerializedTranscriptionRequirement[];
     #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
@@ -71,6 +72,7 @@ export default class QualitySettings {
         this.#emptyIsAnnotated = initialData.empty_is_annotated;
         this.#jobFilter = initialData.job_filter || '';
         this.#inherit = initialData.inherit;
+        this.#transcriptionRequirements = initialData.transcription_requirements || [];
         this.#descriptions = initialData.descriptions;
     }
 
@@ -156,6 +158,10 @@ export default class QualitySettings {
 
     get inherit(): boolean {
         return this.#inherit;
+    }
+
+    get transcriptionRequirements(): SerializedTranscriptionRequirement[] {
+        return [...this.#transcriptionRequirements];
     }
 
     get descriptions(): Record<string, string> {

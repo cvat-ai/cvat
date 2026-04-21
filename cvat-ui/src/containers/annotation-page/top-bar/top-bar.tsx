@@ -25,8 +25,12 @@ import {
     showStatistics as showStatisticsAction,
     switchNavigationBlocked as switchNavigationBlockedAction,
     switchPlay,
+    switchAudioPlay,
+    setAudioCurrentTime,
     switchShowSearchFramesModal as switchShowSearchFramesModalAction,
     undoActionAsync,
+    audioUndoAction,
+    audioRedoAction,
 } from 'actions/annotation-actions';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -42,6 +46,7 @@ import { writeLatestFrame } from 'utils/remember-latest-frame';
 import { finishDraw } from 'utils/drawing';
 import { toClipboard } from 'utils/to-clipboard';
 import { Chapter } from 'cvat-core/src/frames';
+import { getCVATStore } from 'cvat-store';
 
 interface StateToProps {
     chapters: Chapter[];
@@ -74,6 +79,9 @@ interface StateToProps {
     initialOpenGuide: boolean;
     navigationType: NavigationType;
     showSearchFrameByName: boolean;
+    audioCurrentTime?: number;
+    audioDuration?: number;
+    audioHasUnsavedChanges: boolean;
 }
 
 interface DispatchToProps {
@@ -85,6 +93,8 @@ interface DispatchToProps {
     showFilters(): void;
     undo(): void;
     redo(): void;
+    audioUndo(): void;
+    audioRedo(): void;
     searchAnnotations(
         sessionInstance: Job,
         frameFrom: number,
@@ -106,16 +116,18 @@ interface DispatchToProps {
     restoreFrame(frame: number): void;
     switchNavigationBlocked(blocked: boolean): void;
     setNavigationType(navigationType: NavigationType): void;
+    onAudioPlayPause?(): void;
+    onAudioSeek?(time: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             player: {
-                playing,
+                playing: playerPlaying,
                 ranges,
                 frame: {
-                    data: { deleted: frameIsDeleted },
+                    data: frameData,
                     filename: frameFilename,
                     number: frameNumber,
                     delay: frameDelay,
@@ -124,6 +136,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 navigationType,
                 hoveredChapter,
             },
+            audioPlayer: {
+                playing: audioPlaying,
+                currentTime: audioCurrentTime,
+                duration: audioDuration,
+                hasUnsavedChanges: audioHasUnsavedChanges,
+            },
             annotations: {
                 saving: { uploading: saving, forceExit },
                 history,
@@ -131,6 +149,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
             job: { instance: jobInstance, queryParameters: { initialOpenGuide }, meta },
             canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
+            audioHistory,
             workspace,
         },
         settings: {
@@ -154,6 +173,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     const chapters = meta?.chapters ?? [];
 
+    const playing = workspace === Workspace.AUDIO ? audioPlaying : playerPlaying;
+    const isAudio = workspace === Workspace.AUDIO;
+    const frameIsDeleted = frameData?.deleted ?? false;
+
     return {
         chapters,
         frameIsDeleted,
@@ -168,8 +191,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameNumber,
         frameFilename,
         jobInstance: jobInstance as Job,
-        undoAction: history.undo.length ? history.undo[history.undo.length - 1][0] : undefined,
-        redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
+        undoAction: isAudio
+            ? (audioHistory.undo.length
+                ? audioHistory.undo[audioHistory.undo.length - 1].actionName : undefined)
+            : (history.undo.length ? history.undo[history.undo.length - 1][0] : undefined),
+        redoAction: isAudio
+            ? (audioHistory.redo.length
+                ? audioHistory.redo[audioHistory.redo.length - 1].actionName : undefined)
+            : (history.redo.length ? history.redo[history.redo.length - 1][0] : undefined),
         autoSave,
         autoSaveInterval,
         toolsBlockerState,
@@ -185,6 +214,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         initialOpenGuide,
         navigationType,
         showSearchFrameByName,
+        audioCurrentTime,
+        audioDuration,
+        audioHasUnsavedChanges,
     };
 }
 
@@ -214,6 +246,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         redo(): void {
             dispatch(redoActionAsync());
+        },
+        audioUndo(): void {
+            dispatch(audioUndoAction());
+        },
+        audioRedo(): void {
+            dispatch(audioRedoAction());
         },
         searchAnnotations(
             sessionInstance: Job,
@@ -256,6 +294,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         setNavigationType(navigationType: NavigationType): void {
             dispatch(setNavigationTypeAction(navigationType));
         },
+        onAudioPlayPause(): void {
+            const store = getCVATStore();
+            const { audioPlayer } = store.getState().annotation;
+            dispatch(switchAudioPlay(!audioPlayer.playing));
+        },
+        onAudioSeek(time: number): void {
+            dispatch(setAudioCurrentTime(time));
+        },
     };
 }
 
@@ -286,7 +332,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             writeLatestFrame(jobInstance.id, frameNumber);
 
             if (
-                jobInstance.annotations.hasUnsavedChanges() &&
+                (jobInstance.annotations.hasUnsavedChanges() || self.props.audioHasUnsavedChanges) &&
                 location.pathname !== `/tasks/${taskID}/jobs/${jobID}` &&
                 !forceExit
             ) {
@@ -364,17 +410,27 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 
     private undo = (): void => {
-        const { undo, undoAction } = this.props;
+        const {
+            undo, audioUndo, undoAction, workspace,
+        } = this.props;
+        if (!undoAction) return;
 
-        if (isAbleToChangeFrame() && undoAction) {
+        if (workspace === Workspace.AUDIO) {
+            audioUndo();
+        } else if (isAbleToChangeFrame()) {
             undo();
         }
     };
 
     private redo = (): void => {
-        const { redo, redoAction } = this.props;
+        const {
+            redo, audioRedo, redoAction, workspace,
+        } = this.props;
+        if (!redoAction) return;
 
-        if (isAbleToChangeFrame() && redoAction) {
+        if (workspace === Workspace.AUDIO) {
+            audioRedo();
+        } else if (isAbleToChangeFrame()) {
             redo();
         }
     };
@@ -664,11 +720,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     };
 
     private beforeUnloadCallback = (event: BeforeUnloadEvent): string | undefined => {
-        const { jobInstance, forceExit, setForceExitAnnotationFlag } = this.props;
+        const {
+            jobInstance, forceExit, setForceExitAnnotationFlag, audioHasUnsavedChanges,
+        } = this.props;
         const { frameNumber } = this.props;
 
         writeLatestFrame(jobInstance.id, frameNumber);
-        if (jobInstance.annotations.hasUnsavedChanges() && !forceExit) {
+        if ((jobInstance.annotations.hasUnsavedChanges() || audioHasUnsavedChanges) && !forceExit) {
             const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
             // eslint-disable-next-line no-param-reassign
             event.returnValue = confirmationMessage;
@@ -722,6 +780,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             setNavigationType,
             switchShowSearchPallet,
             showSearchFrameByName,
+            audioCurrentTime,
+            audioDuration,
+            onAudioPlayPause,
+            onAudioSeek,
         } = this.props;
 
         return (
@@ -787,6 +849,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 toolsBlockerState={toolsBlockerState}
                 jobInstance={jobInstance}
                 activeControl={activeControl}
+                audioCurrentTime={audioCurrentTime}
+                audioDuration={audioDuration}
+                onAudioPlayPause={onAudioPlayPause}
+                onAudioSeek={onAudioSeek}
             />
         );
     }

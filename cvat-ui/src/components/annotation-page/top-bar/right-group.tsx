@@ -157,6 +157,16 @@ function RightGroup(props: Props): JSX.Element {
                     value={workspace}
                 >
                     {Object.values(Workspace).map((ws) => {
+                        if (jobInstance.dimension === DimensionType.DIMENSION_1D) {
+                            if (ws === Workspace.AUDIO) {
+                                return (
+                                    <Select.Option key={ws} value={ws}>
+                                        {ws}
+                                    </Select.Option>
+                                );
+                            }
+                            return null;
+                        }
                         if (jobInstance.dimension === DimensionType.DIMENSION_3D) {
                             if (ws === Workspace.STANDARD) {
                                 return null;
@@ -167,7 +177,7 @@ function RightGroup(props: Props): JSX.Element {
                                 </Select.Option>
                             );
                         }
-                        if (ws !== Workspace.STANDARD3D) {
+                        if (ws !== Workspace.STANDARD3D && ws !== Workspace.AUDIO) {
                             return (
                                 <Select.Option key={ws} value={ws}>
                                     {ws}

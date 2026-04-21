@@ -68,7 +68,7 @@ export class AnnotationConflict {
 
 export default class QualityConflict {
     #id: number;
-    #frame: number;
+    #frame: number | null;
     #type: QualityConflictType;
     #annotationConflicts: AnnotationConflict[];
     #severity: ConflictSeverity;
@@ -76,7 +76,7 @@ export default class QualityConflict {
 
     constructor(initialData: SerializedQualityConflictData) {
         this.#id = initialData.id;
-        this.#frame = initialData.frame;
+        this.#frame = initialData.frame ?? null;
         this.#type = initialData.type as QualityConflictType;
         this.#severity = initialData.severity as ConflictSeverity;
         this.#annotationConflicts = initialData.annotation_ids
@@ -94,7 +94,7 @@ export default class QualityConflict {
         return this.#id;
     }
 
-    get frame(): number {
+    get frame(): number | null {
         return this.#frame;
     }
 

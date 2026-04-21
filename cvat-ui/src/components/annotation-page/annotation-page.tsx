@@ -21,6 +21,7 @@ import FiltersModalComponent from 'components/annotation-page/top-bar/filters-mo
 import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
+import AudioWorkspaceContainer from 'containers/annotation-page/audio-workspace/audio-workspace';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
@@ -155,6 +156,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 {workspace === Workspace.ATTRIBUTES && <AttributeAnnotationWorkspace />}
                 {workspace === Workspace.TAGS && <TagAnnotationWorkspace />}
                 {workspace === Workspace.REVIEW && <ReviewAnnotationsWorkspace />}
+                {workspace === Workspace.AUDIO && <AudioWorkspaceContainer />}
             </Layout.Content>
             <FiltersModalComponent />
             <StatisticsModalComponent />

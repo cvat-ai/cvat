@@ -4,7 +4,7 @@
 
 import {
     ChunkType,
-    DimensionType, JobStage, JobState, JobType, ProjectStatus,
+    DimensionType, JobStage, JobState, JobType, MediaType, ProjectStatus,
     ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
@@ -111,6 +111,7 @@ export interface SerializedTask {
     data_original_chunk_type: ChunkType;
     data_cloud_storage_id: number | null;
     dimension: DimensionType;
+    media_type?: MediaType | null;
     id: number;
     image_quality: number;
     jobs: {
@@ -145,6 +146,7 @@ export interface SerializedJob {
     data_chunk_size: number | null;
     data_compressed_chunk_type: ChunkType
     dimension: DimensionType;
+    media_type?: MediaType;
     id: number;
     issues: { count: number; url: string };
     labels: { count: number; url: string };
@@ -293,6 +295,13 @@ export interface SerializedQualitySettingsData {
     descriptions?: Record<string, string>;
     inherit?: boolean;
     job_filter?: string;
+    transcription_requirements?: SerializedTranscriptionRequirement[];
+}
+
+export interface SerializedTranscriptionRequirement {
+    attribute_id: number | null;
+    metric: 'wer' | 'cer';
+    acceptance_threshold: number;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {
@@ -311,9 +320,10 @@ export interface SerializedAnnotationConflictData {
 
 export interface SerializedQualityConflictData {
     id?: number;
-    frame?: number;
+    frame?: number | null;
     type?: string;
     annotation_ids?: SerializedAnnotationConflictData[];
+    attributes?: string[];
     data?: string;
     severity?: string;
     description?: string;
@@ -468,10 +478,23 @@ export interface SerializedTag {
     attributes: { spec_id: number; value: string }[];
 }
 
+export interface SerializedInterval {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    start: number;
+    stop: number | null;
+    group: number;
+    source: Source;
+    score?: number;
+    attributes: { spec_id: number; value: string }[];
+}
+
 export interface SerializedCollection {
     tags: SerializedTag[];
     shapes: SerializedShape[];
     tracks: SerializedTrack[];
+    intervals: SerializedInterval[];
     version: number;
 }
 
@@ -508,6 +531,8 @@ export interface SerializedChapter {
 }
 
 export interface SerializedFramesMetaData {
+    dimension: DimensionType;
+    media_type: MediaType;
     chunk_size: number;
     chapters: SerializedChapter[] | null
     deleted_frames: number[];
@@ -515,8 +540,8 @@ export interface SerializedFramesMetaData {
     frame_filter: string;
     chunks_updated_date: string;
     frames: {
-        width: number;
-        height: number;
+        width?: number;
+        height?: number;
         name: string;
         related_files: number;
     }[];

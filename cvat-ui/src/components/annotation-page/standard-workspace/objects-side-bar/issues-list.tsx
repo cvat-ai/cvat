@@ -62,7 +62,9 @@ export default function LabelsListComponent(): JSX.Element {
 
     if (showGroundTruth) {
         const conflictFrames = conflicts
-            .map((conflict): number => conflict.frame).sort((a: number, b: number) => +a - +b);
+            .map((conflict) => conflict.frame)
+            .filter((f): f is number => f !== null)
+            .sort((a, b) => a - b);
         frames = [...new Set([...frames, ...conflictFrames])];
     }
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];

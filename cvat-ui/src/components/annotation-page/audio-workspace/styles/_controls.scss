@@ -1,0 +1,55 @@
+.cvat-audio-slider-popover-overlay {
+    .cvat-audio-slider-popover {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        height: 160px;
+
+        .cvat-audio-slider-popover-slider {
+            flex: 1;
+        }
+
+        .cvat-audio-slider-popover-value {
+            font-size: 11px;
+            color: #595959;
+            min-width: 32px;
+            text-align: center;
+        }
+    }
+}
+
+.cvat-canvas-controls-sidebar {
+    .cvat-audio-loop-control,
+    .cvat-audio-zoom-control,
+    .cvat-audio-speed-control,
+    .cvat-audio-volume-control {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 8px 0;
+        font-size: 18px;
+        color: #595959;
+        cursor: pointer;
+        transition: color 0.2s ease, background-color 0.2s ease;
+
+        &:hover {
+            background-color: #f0f0f0;
+            color: #262626;
+        }
+
+        &.cvat-active-canvas-control {
+            color: #1890ff;
+        }
+    }
+
+    span.cvat-audio-zoom-control,
+    span.cvat-audio-speed-control,
+    span.cvat-audio-volume-control {
+        width: 44px;
+        height: 36px;
+        cursor: pointer;
+    }
+}

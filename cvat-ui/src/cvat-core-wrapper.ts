@@ -16,7 +16,7 @@ import {
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
     OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken,
-    ApiTokensFilter,
+    ApiTokensFilter, SerializedInterval,
 } from 'cvat-core/src/server-response-types';
 import { ApiTokenModifiableFields } from 'cvat-core/src/server-request-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
@@ -50,6 +50,7 @@ import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actio
 import { Request, RequestOperation } from 'cvat-core/src/request';
 import AboutData from 'cvat-core/src/about';
 import { MinimalShape, TrackerResults, InteractorResults } from 'cvat-core/src/lambda-manager';
+import { fetchAndAssembleAudio } from 'cvat-core/src/audio-data';
 
 const cvat: CVATCore = _cvat;
 
@@ -122,6 +123,7 @@ export {
     StorageLocation,
     MembershipRole,
     AboutData,
+    fetchAndAssembleAudio,
 };
 
 export type {
@@ -144,4 +146,5 @@ export type {
     TrackerResults,
     ApiTokenModifiableFields,
     ApiTokensFilter,
+    SerializedInterval,
 };

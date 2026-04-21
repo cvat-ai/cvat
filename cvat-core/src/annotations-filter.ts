@@ -74,6 +74,7 @@ interface ConvertedObjectData {
     width: number | null;
     height: number | null;
     rotation: number | null;
+    duration?: number | null;
     attr: Record<string, ConvertedAttributes>;
     label: string;
     serverID: number;
@@ -81,6 +82,16 @@ interface ConvertedObjectData {
     type: ObjectType;
     shape: ShapeType;
     occluded: boolean;
+    score: number | null;
+    votes: number | null;
+}
+
+interface ConvertedIntervalData {
+    duration: number | null;
+    attr: Record<string, ConvertedAttributes>;
+    label: string;
+    serverID: number | null;
+    objectID: number | null;
     score: number | null;
     votes: number | null;
 }
@@ -138,7 +149,12 @@ export default class AnnotationsFilter {
     private _convertSerializedCollection(
         collection: Omit<SerializedCollection, 'version'>,
         labelsSpec: Label[],
-    ): { shapes: ConvertedObjectData[]; tags: ConvertedObjectData[]; tracks: ConvertedObjectData[]; } {
+    ): {
+        shapes: ConvertedObjectData[];
+        tags: ConvertedObjectData[];
+        tracks: ConvertedObjectData[];
+        intervals: ConvertedIntervalData[];
+    } {
         const labelByID = labelsSpec.reduce<Record<number, Label>>((acc, label) => ({
             [label.id]: label,
             ...acc,
@@ -227,6 +243,21 @@ export default class AnnotationsFilter {
                     votes: null,
                 };
             }),
+            intervals: (collection.intervals ?? []).map((interval): ConvertedIntervalData => {
+                const label = labelByID[interval.label_id];
+
+                return {
+                    duration: interval.stop != null ? interval.stop - interval.start : null,
+                    attr: {
+                        [adjustName(label.name)]: convertAttributes(interval.attributes),
+                    },
+                    label: label.name,
+                    serverID: interval.id ?? null,
+                    objectID: null,
+                    score: interval.score ?? null,
+                    votes: null,
+                };
+            }),
         };
     }
 
@@ -245,12 +276,15 @@ export default class AnnotationsFilter {
         collection: Omit<SerializedCollection, 'version'>,
         labelsSpec: Label[],
         filters: object[],
-    ): { shapes: number[]; tags: number[]; tracks: number[]; } {
+    ): { shapes: number[]; tags: number[]; tracks: number[]; intervals: number[]; } {
         if (!filters.length) {
             return {
                 shapes: collection.shapes.map((shape) => shape.clientID),
                 tags: collection.tags.map((tag) => tag.clientID),
                 tracks: collection.tracks.map((track) => track.clientID),
+                intervals: (collection.intervals ?? []).map((interval) => interval.id).filter(
+                    (id): id is number => id != null,
+                ),
             };
         }
 
@@ -262,6 +296,10 @@ export default class AnnotationsFilter {
                 .filter((_, index) => jsonLogic.apply(filters[0], converted.tags[index])),
             tracks: converted.tracks.map((shape) => shape.objectID)
                 .filter((_, index) => jsonLogic.apply(filters[0], converted.tracks[index])),
+            intervals: converted.intervals
+                .filter((_, index) => jsonLogic.apply(filters[0], converted.intervals[index]))
+                .map((interval) => interval.serverID)
+                .filter((id): id is number => id != null),
         };
     }
 }

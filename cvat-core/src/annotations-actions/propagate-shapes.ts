@@ -30,8 +30,8 @@ export class PropagateShapes extends BaseCollectionAction {
         const { collection, frameData: { number } } = input;
         if (number === this.#targetFrame) {
             return {
-                created: { shapes: [], tags: [], tracks: [] },
-                deleted: { shapes: [], tags: [], tracks: [] },
+                created: { shapes: [], tags: [], tracks: [], intervals: [] },
+                deleted: { shapes: [], tags: [], tracks: [], intervals: [] },
             };
         }
 
@@ -42,8 +42,8 @@ export class PropagateShapes extends BaseCollectionAction {
         );
 
         return {
-            created: { shapes: propagatedShapes, tags: [], tracks: [] },
-            deleted: { shapes: [], tags: [], tracks: [] },
+            created: { shapes: propagatedShapes, tags: [], tracks: [], intervals: [] },
+            deleted: { shapes: [], tags: [], tracks: [], intervals: [] },
         };
     }
 
@@ -52,6 +52,7 @@ export class PropagateShapes extends BaseCollectionAction {
             shapes: input.collection.shapes.filter((shape) => shape.frame === input.frameData.number),
             tags: [],
             tracks: [],
+            intervals: [],
         };
     }
 

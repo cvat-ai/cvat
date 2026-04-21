@@ -32,6 +32,7 @@
     "@types/redux-logger": "^3.0.9",
     "@types/resize-observer-browser": "^0.1.6",
     "@uiw/react-md-editor": "^3.22.0",
+    "@wavesurfer/react": "^1.0.12",
     "antd": "5.17.1",
     "chart.js": "^4.4.8",
     "chartjs-plugin-datalabels": "^2.2.0",
@@ -60,6 +61,7 @@
     "redux": "^4.1.1",
     "redux-devtools-extension": "^2.13.9",
     "redux-logger": "^4.0.0",
-    "redux-thunk": "^2.3.0"
+    "redux-thunk": "^2.3.0",
+    "wavesurfer.js": "^7.12.5"
   }
 }
