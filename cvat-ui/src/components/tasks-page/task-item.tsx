@@ -122,7 +122,6 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
                                 <StatusMessage
                                     status={importingState.state}
                                     message={importingState.message}
-                                    cancelled={false}
                                 />
                             </div>
                             {importingState.state !== RQStatus.FAILED && (

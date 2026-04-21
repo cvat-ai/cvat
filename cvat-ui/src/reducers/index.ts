@@ -446,7 +446,7 @@ export interface PluginsState {
 }
 
 export interface AboutState {
-    server: AboutData;
+    server: AboutData | null;
     packageVersion: {
         ui: string;
     };

@@ -12,7 +12,7 @@ import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 
 import {
-    User, getCore, Project, Task, FramesMetaData, SerializedLabel, CloudStorage,
+    User, getCore, Project, Task, FramesMetaData, CloudStorage,
 } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
@@ -178,7 +178,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             <Row>
                 <Col span={24}>
                     <LabelsEditorComponent
-                        labels={taskInstance.labels.map((label: any): SerializedLabel => label.toJSON())}
+                        labels={taskInstance.labels.map((label) => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
                             taskInstance.labels = labels.map((labelData): any => new core.classes.Label(labelData));
                             onUpdateTask(taskInstance);

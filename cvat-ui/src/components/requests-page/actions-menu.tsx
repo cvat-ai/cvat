@@ -35,7 +35,7 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
         cancelled: state.requests.cancelled,
     }), shallowEqual);
 
-    const allRequests = Object.values(requestsMap) as Request[];
+    const allRequests = Object.values(requestsMap);
     const isCardMenu = !dropdownTrigger;
 
     const downloadable = (_request: Request): boolean => !!_request.url && !cancelled[_request.id];
@@ -71,7 +71,7 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
             return;
         }
 
-        dispatch(makeBulkOperationAsync<Request>(
+        dispatch(makeBulkOperationAsync(
             requestsToCancel,
             async (request) => {
                 await dispatch(cancelRequestAsync(request));
