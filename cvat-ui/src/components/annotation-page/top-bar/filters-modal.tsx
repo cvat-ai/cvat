@@ -182,7 +182,7 @@ function FiltersModalComponent(): JSX.Element {
             },
             settings: {
                 ...AntdConfig.settings,
-                renderField: (_props: any) => (
+                renderField: (_props) => (
                     <FieldDropdown {..._props} customProps={omit(_props.customProps, 'showSearch')} />
                 ),
                 // using FieldDropdown because we cannot use antd because of antd-related bugs

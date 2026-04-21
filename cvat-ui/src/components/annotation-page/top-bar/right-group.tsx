@@ -66,7 +66,7 @@ function RightGroup(props: Props): JSX.Element {
         }).catch((error: unknown) => {
             notification.error({
                 message: 'Could not receive annotation guide',
-                description: error instanceof Error ? error.message : 'Unknown error, please check console',
+                description: error instanceof Error ? error.message : 'Unknown error',
             });
         });
     }, [jobInstance]);

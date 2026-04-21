@@ -1140,7 +1140,7 @@ export function finishCurrentJobAsync(onSuccess: () => void): ThunkAction {
 
         for await (const callback of beforeCallbacks) {
             const result = await callback();
-            if (result && result.preventJobStatusChange) {
+            if (result?.preventJobStatusChange) {
                 return;
             }
         }

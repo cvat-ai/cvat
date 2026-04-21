@@ -10,7 +10,6 @@ import {
 import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
-type WebhookData = ConstructorParameters<typeof Webhook>[0];
 
 export enum WebhooksActionsTypes {
     GET_WEBHOOKS = 'GET_WEBHOOKS',
@@ -68,6 +67,7 @@ export const getWebhooksAsync = (query: WebhooksQuery): ThunkAction => (
     }
 );
 
+type WebhookData = ConstructorParameters<typeof Webhook>[0];
 export function createWebhookAsync(webhookData: WebhookData): ThunkAction {
     return async function (dispatch) {
         const webhook = new cvat.classes.Webhook(webhookData);

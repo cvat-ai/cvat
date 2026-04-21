@@ -8,7 +8,6 @@ import {
     ActiveInference, ModelsQuery,
 } from 'reducers';
 import { getCore, MLModel, RQStatus } from 'cvat-core-wrapper';
-import { filterNull } from 'utils/filter-null';
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
@@ -102,10 +101,8 @@ export type ModelsActions = ActionUnion<typeof modelsActions>;
 const core = getCore();
 
 export function getModelsAsync(query?: ModelsQuery): ThunkAction {
-    return async (dispatch, getState): Promise<void> => {
+    return async (dispatch): Promise<void> => {
         dispatch(modelsActions.getModels(query));
-
-        filterNull(query || getState().models.query);
         try {
             const result = await core.lambda.list();
             const { models, count } = result;

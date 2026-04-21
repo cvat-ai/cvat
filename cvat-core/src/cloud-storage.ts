@@ -32,7 +32,7 @@ export default class CloudStorage {
     public connectionString: string;
     public resource: string;
     public manifestPath: string;
-    public provider_type: CloudStorageProviderType;
+    public providerType: CloudStorageProviderType;
     public credentials_type: CloudStorageCredentialsType;
     public specificAttributes: string;
     public manifests: string[];

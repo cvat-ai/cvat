@@ -7,7 +7,7 @@ import './styles.scss';
 import React, { useEffect, useRef, useState } from 'react';
 import { createStore } from 'redux';
 import {
-    Provider, shallowEqual, useDispatch, useSelector,
+    Provider, useDispatch, useSelector,
 } from 'react-redux';
 import { createRoot } from 'react-dom/client';
 import Button from 'antd/lib/button';
@@ -22,7 +22,7 @@ import InputNumber from 'antd/lib/input-number';
 import Switch from 'antd/lib/switch';
 
 import config from 'config';
-import { createAction, ActionUnion } from 'utils/redux';
+import { createAction, ActionUnion, shallowEqual } from 'utils/redux';
 import { getCVATStore } from 'cvat-store';
 import {
     BaseCollectionAction, BaseAction, Job, getCore,
@@ -226,7 +226,7 @@ const reducer = (state: State = { ...defaultState }, action: ActionUnion<typeof 
     return state;
 };
 
-type ActionParameterProps = NonNullable<BaseAction['parameters']>[string];
+type ActionParameterProps = NonNullable<BaseAction['parameters']>[keyof BaseAction['parameters']];
 
 const componentStorage = createStore(reducer, {
     actions: [],
@@ -518,7 +518,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                 <Text strong>Setup action parameters </Text>
                                 <hr />
                             </Col>
-                            {(Object.entries(activeAction.parameters) as [string, ActionParameterProps][])
+                            {Object.entries(activeAction.parameters)
                                 .map(([name, { defaultValue, type, values }], idx) => (
                                     <Col
                                         key={`${activeAction.name}_${idx}`}

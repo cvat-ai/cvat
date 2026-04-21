@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import dayjs from 'dayjs';
 import { QuestionCircleOutlined, MoreOutlined } from '@ant-design/icons';
@@ -15,7 +15,8 @@ import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 
-import { CloudStorage, CombinedState } from 'reducers';
+import { shallowEqual } from 'utils/redux';
+import { CombinedState } from 'reducers';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -25,7 +26,7 @@ import CloudStorageActionsMenu from './cloud-storage-actions-menu';
 import Status from './cloud-storage-status';
 
 interface Props {
-    cloudStorage: CloudStorage;
+    cloudStorage: CombinedState['cloudStorages']['current'][number];
     selected: boolean;
     onClick: () => void;
 }
@@ -80,7 +81,7 @@ export default function CloudStorageItemComponent(props: Readonly<Props>): JSX.E
                 `You are going to remove the cloudstorage "${displayName}". Continue?`,
             className: 'cvat-modal-confirm-delete-cloud-storage',
             onOk: () => {
-                dispatch(makeBulkOperationAsync<CloudStorage>(
+                dispatch(makeBulkOperationAsync(
                     cloudStoragesToDelete.length ? cloudStoragesToDelete : [cloudStorage],
                     async (storage) => {
                         await dispatch(deleteCloudStorageAsync(storage));

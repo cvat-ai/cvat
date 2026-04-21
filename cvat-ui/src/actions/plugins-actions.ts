@@ -66,11 +66,10 @@ export type PluginActions = ActionUnion<typeof pluginActions>;
 export const getPluginsAsync = (): ThunkAction => async (dispatch): Promise<void> => {
     dispatch(pluginActions.checkPlugins());
     try {
-        const installedApps = await core.server.installedApps() as Record<string, boolean>;
-        const list: PluginsList = {
-            [SupportedPlugins.ANALYTICS]: !!installedApps[SupportedPlugins.ANALYTICS],
-        };
-        dispatch(pluginActions.checkPluginsSuccess(list));
+        const installedApps = await core.server.installedApps();
+        dispatch(pluginActions.checkPluginsSuccess({
+            [SupportedPlugins.ANALYTICS]: installedApps[SupportedPlugins.ANALYTICS] ?? false,
+        }));
     } catch (error) {
         dispatch(pluginActions.checkPluginsFailed(error));
     }
