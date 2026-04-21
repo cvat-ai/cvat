@@ -6,9 +6,7 @@ import './styles.scss';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { createStore } from 'redux';
-import {
-    Provider, useDispatch, useSelector,
-} from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { createRoot } from 'react-dom/client';
 import Button from 'antd/lib/button';
 import { Col, Row } from 'antd/lib/grid';

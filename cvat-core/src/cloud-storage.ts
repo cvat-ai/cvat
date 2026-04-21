@@ -33,7 +33,7 @@ export default class CloudStorage {
     public resource: string;
     public manifestPath: string;
     public providerType: CloudStorageProviderType;
-    public credentials_type: CloudStorageCredentialsType;
+    public credentialsType: CloudStorageCredentialsType;
     public specificAttributes: string;
     public manifests: string[];
     public readonly owner: User;
@@ -348,7 +348,11 @@ Object.defineProperties(CloudStorage.prototype.getContent, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(path: string, nextToken?: string): ReturnType<CloudStorage['getContent']> {
+        value: async function implementation(
+            this: CloudStorage,
+            path: string,
+            nextToken?: string,
+        ): ReturnType<CloudStorage['getContent']> {
             const result = await serverProxy.cloudStorages.getContent(this.id, path, nextToken, this.manifestPath);
             return {
                 next: result.next,

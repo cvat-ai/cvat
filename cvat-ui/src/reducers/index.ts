@@ -13,6 +13,7 @@ import {
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken,
     Membership, AnnotationFormats, CloudStorage,
 } from 'cvat-core-wrapper';
+
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';

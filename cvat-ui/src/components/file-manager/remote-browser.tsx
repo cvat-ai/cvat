@@ -22,9 +22,9 @@ import {
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, CloudStorage } from 'cvat-core-wrapper';
 import config from 'config';
-import { CloudStorage, RemoteFileType } from 'reducers';
+import { RemoteFileType } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
 
 interface Node {
@@ -171,14 +171,14 @@ function RemoteBrowser(props: Props): JSX.Element {
             try {
                 let nodes: Node[] = [];
                 if (resource === 'share') {
-                    const files = await (core.server.share as (
-                        directory: string,
-                        searchPrefix?: string,
-                    ) => Promise<RemoteNode[]>)(path, searchString);
+                    const files: RemoteNode[] = await core.server.share(path, searchString);
                     nodes = convertChildren(files);
                 } else {
                     const response: { next: string | null, content: RemoteNode[] } =
-                        await resource.getContent(`${path}${(searchString) || ''}`, dataSource.nextToken, manifestPath);
+                        await resource.getContent(
+                            `${path}${(searchString) ?? ''}`,
+                            dataSource.nextToken,
+                        );
                     const { next, content: files } = response;
                     dataSource.nextToken = next;
                     nodes = convertChildren(files);

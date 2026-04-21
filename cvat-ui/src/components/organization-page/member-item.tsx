@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import dayjs from 'dayjs';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
