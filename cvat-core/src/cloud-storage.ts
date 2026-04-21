@@ -229,7 +229,7 @@ export default class CloudStorage {
         return result;
     }
 
-    public async getContent(path: string, nextToken?: string): Promise<{
+    public async getContent(path?: string, nextToken?: string): Promise<{
         next: string | null,
         content: (Omit<SerializedRemoteFile, 'mime_type'> & { mimeType: string })[],
     }> {
@@ -237,7 +237,7 @@ export default class CloudStorage {
         return result;
     }
 
-    public async preview(): Promise<string | ArrayBuffer> {
+    public async preview(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.preview);
         return result;
     }
@@ -350,7 +350,7 @@ Object.defineProperties(CloudStorage.prototype.getContent, {
         enumerable: false,
         value: async function implementation(
             this: CloudStorage,
-            path: string,
+            path?: string,
             nextToken?: string,
         ): ReturnType<CloudStorage['getContent']> {
             const result = await serverProxy.cloudStorages.getContent(this.id, path, nextToken, this.manifestPath);
