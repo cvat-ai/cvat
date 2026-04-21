@@ -64,7 +64,7 @@ function MemberItem(props: Readonly<Props>): JSX.Element {
             return;
         }
 
-        dispatch(makeBulkOperationAsync<Membership>(
+        dispatch(makeBulkOperationAsync(
             membershipsNeedingUpdate,
             async (m) => {
                 await dispatch(updateOrganizationMemberAsync(organizationInstance, m, newRole));

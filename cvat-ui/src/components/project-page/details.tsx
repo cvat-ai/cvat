@@ -9,7 +9,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 
-import { getCore, Project, SerializedLabel } from 'cvat-core-wrapper';
+import { getCore, Project } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
 import UserSelector from 'components/task-page/user-selector';
@@ -73,7 +73,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 </Col>
             </Row>
             <LabelsEditor
-                labels={project.labels.map((label: any): SerializedLabel => label.toJSON())}
+                labels={project.labels.map((label) => label.toJSON())}
                 onSubmit={(labels: any[]): void => {
                     project.labels = labels.map((labelData): any => new core.classes.Label(labelData));
                     onUpdateProject(project);

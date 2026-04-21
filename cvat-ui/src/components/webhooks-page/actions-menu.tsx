@@ -42,12 +42,12 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
 
     const onDelete = useCallback(() => {
         const webhooksToDelete = allWebhooks.filter((webhook) => selectedIds.includes(webhook.id));
-        dispatch(makeBulkOperationAsync<Webhook>(
+        dispatch(makeBulkOperationAsync(
             webhooksToDelete.length ? webhooksToDelete : [webhookInstance],
             async (webhook) => {
                 await dispatch(deleteWebhookAsync(webhook));
             },
-            (project, idx, total) => `Deleting project #${project.id} (${idx + 1}/${total})`,
+            (webhook, idx, total) => `Deleting webhook #${webhook.id} (${idx + 1}/${total})`,
         ));
     }, [dispatch, webhookInstance]);
 

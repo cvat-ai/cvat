@@ -159,7 +159,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 'All related data (images, annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-delete-task',
             onOk: () => {
-                dispatch(makeBulkOperationAsync<Task>(
+                dispatch(makeBulkOperationAsync(
                     tasksToDelete.length ? tasksToDelete : [taskInstance],
                     async (task) => {
                         await dispatch(deleteTaskAsync(task));

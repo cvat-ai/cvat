@@ -12,7 +12,9 @@ import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
-import { Label, ObjectType, ShapeType } from 'cvat-core-wrapper';
+import {
+    Label, ObjectType, ShapeType, LabelType,
+} from 'cvat-core-wrapper';
 
 interface OwnProps {
     shapeType: ShapeType;
@@ -98,7 +100,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         const { shapeType } = props;
         this.satisfiedLabels = props.labels.filter((label: Label) => {
             if (shapeType === ShapeType.SKELETON) {
-                return label.type === 'skeleton';
+                return label.type === LabelType.SKELETON;
             }
 
             return ['any', shapeType].includes(label.type as string);
