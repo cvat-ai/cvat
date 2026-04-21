@@ -27,6 +27,8 @@ from shared.utils.s3 import make_client as make_s3_client
 
 from .utils import create_task
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 class _S3ResourceTest(_CloudStorageResourceTest):
     @staticmethod
@@ -34,7 +36,6 @@ class _S3ResourceTest(_CloudStorageResourceTest):
         return make_s3_client()
 
 
-@pytest.mark.with_external_services
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestExportResourceToS3(_S3ResourceTest):
     @pytest.mark.usefixtures("restore_redis_inmem_per_function")
@@ -179,7 +180,6 @@ class TestExportResourceToS3(_S3ResourceTest):
         )
 
 
-@pytest.mark.with_external_services
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 class TestImportResourceFromS3(_S3ResourceTest):

@@ -38,8 +38,20 @@ def pytest_report_header(config):
 
 
 def pytest_runtestloop(session):
+    config = session.config
+    instance = getattr(config, "_cvat_infra_instance", None)
+    if instance is not None and not getattr(config, "_cvat_runtime_started", False):
+        instance.start()
+        setattr(config, "_cvat_runtime_started", True)
+
+        if getattr(config, "_cvat_should_run_version_check", False):
+            run_sanity_version_check(
+                cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(),
+                platform=str(config.getoption("--platform")),
+            )
+
     result = None
-    for plugin_class in _selected_plugin_classes(session.config):
+    for plugin_class in _selected_plugin_classes(config):
         hook_result = plugin_class.runtestloop(session)
         if hook_result is not None:
             result = hook_result
@@ -113,6 +125,7 @@ def pytest_sessionstart(session) -> None:
         and not any((cleanup, dumpdb))
         and not bool(config.getoption("--skip-version-check"))
     )
+    setattr(config, "_cvat_should_run_version_check", should_run_version_check)
     if collect_only:
         return
 
@@ -132,9 +145,19 @@ def pytest_sessionstart(session) -> None:
     )
     instance = InfraInstance.create(session, instance_config)
     setattr(config, "_cvat_infra_instance", instance)
-    instance.start()
+    setattr(config, "_cvat_runtime_started", False)
 
-    if should_run_version_check:
+    if infra_mode in {InfraMode.UP, InfraMode.DOWN, InfraMode.RESTORE_DB}:
+        instance.start()
+        setattr(config, "_cvat_runtime_started", True)
+    elif infra_mode == InfraMode.REUSE and platform == "local":
+        # Defer local runtime startup until after collection so profile selection can
+        # choose the correct stack shape without a throwaway initial compose cycle.
+        return
+    elif platform == "local":
+        return
+
+    if should_run_version_check and getattr(config, "_cvat_runtime_started", False):
         run_sanity_version_check(
             cvat_root_dir=RuntimeInfraConfig.get_cvat_root_dir(), platform=platform
         )

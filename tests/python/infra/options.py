@@ -49,6 +49,17 @@ def add_infra_options(parser):
         ),
     )
     group._addoption(
+        "--infra-profile",
+        action="store",
+        default=None,
+        choices=RuntimeInfraConfig.get_infra_profiles(),
+        help=(
+            "Local runtime profile selection. "
+            "Use simple, standard, or full; if omitted, pytest auto-selects the smallest "
+            "sufficient profile after collection."
+        ),
+    )
+    group._addoption(
         "--skip-version-check",
         action="store_true",
         default=False,

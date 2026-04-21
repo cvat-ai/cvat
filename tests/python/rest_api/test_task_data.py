@@ -43,6 +43,8 @@ from shared.utils.helpers import (
     read_video_file,
 )
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
@@ -483,7 +485,6 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, f"jobs/{job_id}/annotations")
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "use_cache, cloud_storage_id, manifest, use_bucket_content",
         [
@@ -643,7 +644,6 @@ class TestPostTaskData:
 
         return create_task(self._USERNAME, task_spec, data_spec, org=org)
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
         "use_cache, use_manifest, server_files, server_files_exclude, task_size",
@@ -688,7 +688,6 @@ class TestPostTaskData:
             assert response.status == HTTPStatus.OK
             assert task.size == task_size
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize(
@@ -731,7 +730,6 @@ class TestPostTaskData:
             data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
             assert expected_result == [x.name for x in data_meta.frames]
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "storage_id, manifest",
         [
@@ -788,7 +786,6 @@ class TestPostTaskData:
 
         assert capture.value.status == HTTPStatus.FORBIDDEN
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
     @pytest.mark.parametrize(
         "manifest, filename_pattern, sub_dir, task_size, expected_error",
@@ -889,7 +886,6 @@ class TestPostTaskData:
             rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert expected_error and expected_error in rq_job_details.message
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize("use_cache", [True, False])
     @pytest.mark.parametrize(
@@ -929,7 +925,6 @@ class TestPostTaskData:
             )
             assert response.status == HTTPStatus.OK
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "filenames, sorting_method",
         [
@@ -972,7 +967,6 @@ class TestPostTaskData:
             for image_name, frame in zip(filenames, data_meta.frames):
                 assert frame.name.rsplit("/", maxsplit=1)[1] == image_name
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, org",
         [
@@ -1078,7 +1072,6 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize("server_files", [["test/"]])
@@ -1571,7 +1564,6 @@ class TestPostTaskData:
         else:
             assert len(validation_frames) == validation_frames_count
 
-    @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
         "validation_mode",

@@ -33,6 +33,8 @@ from .utils import (
     wait_background_request,
 )
 
+pytestmark = [pytest.mark.infra_profile("standard")]
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")

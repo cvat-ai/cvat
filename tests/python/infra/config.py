@@ -40,7 +40,45 @@ class InfraMode(str, Enum):
         return self.value
 
 
+class InfraProfile(str, Enum):
+    SIMPLE = "simple"
+    STANDARD = "standard"
+    FULL = "full"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 _INFRA_MODES = tuple(str(mode) for mode in InfraMode)
+_DEFAULT_INFRA_PROFILE = str(InfraProfile.SIMPLE)
+_INFRA_PROFILES = tuple(str(profile) for profile in InfraProfile)
+_INFRA_PROFILE_RANK = {
+    str(InfraProfile.SIMPLE): 0,
+    str(InfraProfile.STANDARD): 1,
+    str(InfraProfile.FULL): 2,
+}
+_PROFILE_BASE_DC_FILES = {
+    str(InfraProfile.SIMPLE): [
+        "tests/docker-compose.file_share.yml",
+        "tests/docker-compose.pat_settings.yml",
+    ],
+    str(InfraProfile.STANDARD): [
+        "tests/docker-compose.file_share.yml",
+        "tests/docker-compose.minio.yml",
+        "tests/docker-compose.pat_settings.yml",
+    ],
+    str(InfraProfile.FULL): [
+        "tests/docker-compose.file_share.yml",
+        "tests/docker-compose.minio.yml",
+        "tests/docker-compose.pat_settings.yml",
+        "tests/docker-compose.test_servers.yml",
+    ],
+}
+_PROFILE_DC_FILES = {
+    str(InfraProfile.SIMPLE): ["tests/docker-compose.simple.profile.yml"],
+    str(InfraProfile.STANDARD): ["tests/docker-compose.standard.profile.yml"],
+    str(InfraProfile.FULL): [],
+}
 
 
 def _validate_project_name(name: str) -> str:
@@ -212,8 +250,30 @@ class RuntimeInfraConfig:
         return _DEFAULT_INFRA_MODE
 
     @classmethod
+    def get_default_infra_profile(cls) -> str:
+        return _DEFAULT_INFRA_PROFILE
+
+    @classmethod
     def get_infra_modes(cls) -> tuple[str, ...]:
         return _INFRA_MODES
+
+    @classmethod
+    def get_infra_profiles(cls) -> tuple[str, ...]:
+        return _INFRA_PROFILES
+
+    @classmethod
+    def get_infra_profile_rank(cls, profile: str) -> int:
+        normalized = str(cls.parse_infra_profile(profile))
+        return _INFRA_PROFILE_RANK[normalized]
+
+    @classmethod
+    def get_base_dc_files(cls, profile: str) -> list[str]:
+        normalized = str(cls.parse_infra_profile(profile))
+        return list(_PROFILE_BASE_DC_FILES[normalized])
+
+    @classmethod
+    def get_profile_dc_files(cls) -> dict[str, list[str]]:
+        return {profile: list(files) for profile, files in _PROFILE_DC_FILES.items()}
 
     @classmethod
     def get_clickhouse_init_script(cls) -> str:
@@ -227,6 +287,20 @@ class RuntimeInfraConfig:
             raise pytest.UsageError(
                 f"Unknown infra mode {value!r}. Allowed: {', '.join(_INFRA_MODES)}"
             ) from ex
+
+    @classmethod
+    def parse_infra_profile(cls, value: str) -> InfraProfile:
+        try:
+            return InfraProfile(value)
+        except ValueError as ex:
+            raise pytest.UsageError(
+                f"Unknown infra profile {value!r}. Allowed: {', '.join(_INFRA_PROFILES)}"
+            ) from ex
+
+    @classmethod
+    def get_infra_profile(cls) -> str:
+        profile = os.environ.get("CVAT_TEST_INFRA_PROFILE", _DEFAULT_INFRA_PROFILE)
+        return str(cls.parse_infra_profile(profile))
 
     @classmethod
     def get_server_url(cls, endpoint: str, **kwargs) -> str:

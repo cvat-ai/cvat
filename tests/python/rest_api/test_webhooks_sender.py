@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os
 from http import HTTPStatus
 from time import sleep, time
 
 import pytest
 from deepdiff import DeepDiff
+from infra.config import RuntimeInfraConfig
 
-from shared.fixtures.init import CVAT_ROOT_DIR
 from shared.utils.config import delete_method, get_method, patch_method, post_method
 
 # Testing webhook functionality:
@@ -21,12 +22,17 @@ from shared.utils.config import delete_method, get_method, patch_method, post_me
 #  2) check that webhook is sent by checking value of `response` field for the last delivery of this webhook
 
 # https://docs.pytest.org/en/7.1.x/example/markers.html#marking-whole-classes-or-modules
-pytestmark = [pytest.mark.with_external_services]
+pytestmark = [pytest.mark.infra_profile("full")]
 
 
 def target_url():
+    if webhook_receiver_url := os.environ.get("CVAT_TEST_WEBHOOK_RECEIVER_URL"):
+        return webhook_receiver_url
+
     env_data = {}
-    with open(CVAT_ROOT_DIR / "tests/python/webhook_receiver/.env", "r") as f:
+    with open(
+        RuntimeInfraConfig.get_cvat_root_dir() / "tests/python/webhook_receiver/.env", "r"
+    ) as f:
         for line in f:
             name, value = tuple(line.strip().split("="))
             env_data[name] = value
