@@ -185,19 +185,17 @@ function SortingModalComponent(props: Props): JSX.Element {
             overlayInnerStyle={{ padding: 0 }}
             content={(
                 <SortableList
-                    {...{
-                        onSortEnd: ({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
-                            if (oldIndex !== newIndex) {
-                                const sortingFieldsCopy = [...sortingFields];
-                                sortingFieldsCopy.splice(newIndex, 0, ...sortingFieldsCopy.splice(oldIndex, 1));
-                                setSortingFields(sortingFieldsCopy);
-                            }
-                        },
-                        helperClass: 'cvat-sorting-dragged-item',
-                        items: sortingFields,
-                        appliedSorting,
-                        setAppliedSorting,
-                    } as any /* react-sortable-hoc typings lose wrapped component props */}
+                    onSortEnd={({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
+                        if (oldIndex !== newIndex) {
+                            const sortingFieldsCopy = [...sortingFields];
+                            sortingFieldsCopy.splice(newIndex, 0, ...sortingFieldsCopy.splice(oldIndex, 1));
+                            setSortingFields(sortingFieldsCopy);
+                        }
+                    }}
+                    helperClass='cvat-sorting-dragged-item'
+                    items={sortingFields}
+                    appliedSorting={appliedSorting}
+                    setAppliedSorting={setAppliedSorting}
                 />
             )}
         >
