@@ -235,7 +235,7 @@ So now we can see that the tracker has finished and the annotations are updated 
 To update the configuration (e.g. change replicas or model parameters):
 
 ```bash
-helm upgrade my-agent ./chart -n cvat-agents
+helm upgrade my-agent . -n cvat-agents
 ```
 
 The pre-upgrade hook will re-run the registration Job with the new parameters.

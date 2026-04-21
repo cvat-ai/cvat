@@ -17,37 +17,37 @@ started with deploying their agents in CVAT.
 
 In this guide we will cover the following topics:
 
-- High-level overview of the Docker compose approach for deploying CVAT agents
-- How to prepare your machine for running CVAT agents with Docker compose
-- How to configure docker compose to run your CVAT agent
-- How to run CVAT agent with Docker compose
-- How to clean up after running CVAT agent with Docker compose
-- Troubleshooting common issues with Docker compose deployment
+- High-level overview of the Docker Compose approach for deploying CVAT agents
+- How to prepare your machine for running CVAT agents with Docker Compose
+- How to configure Docker Compose to run your CVAT agent
+- How to run CVAT agent with Docker Compose
+- How to clean up after running CVAT agent with Docker Compose
+- Troubleshooting common issues with Docker Compose deployment
 
-## High-level overview of the Docker compose approach for deploying CVAT agents
+## High-level overview of the Docker Compose approach for deploying CVAT agents
 
-In general the docker compose workflow consists of the following steps:
+In general the Docker Compose workflow consists of the following steps:
 
 1. Register your model as a function in CVAT using [`cvat-cli`](/docs/api_sdk/cli/_index.md)
 2. Run your agent that will be polling CVAT for new tasks and processing them with your model.
 3. When agent is not needed anymore, deregister function in CVAT to clean up.
 
 
-## How to prepare your machine for running CVAT agents with Docker compose
+## How to prepare your machine for running CVAT agents with Docker Compose
 
-To run CVAT agents with Docker compose, you need to have the following software installed on your machine:
+To run CVAT agents with Docker Compose, you need to have the following software installed on your machine:
 
 - [Docker](https://docs.docker.com/engine/install/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
-Please refer to the official documentation for instructions on how to install Docker and Docker compose on your machine.
+Please refer to the official documentation for instructions on how to install Docker and Docker Compose on your machine.
 
 Also, it has to be mentioned that your machine should have network access to the CVAT instance
 where you want to deploy your agent, and you should have an API key for authentication in [CVAT](https://app.cvat.ai/profile#security).
 
-## How to configure docker compose to run your CVAT agent
+## How to configure Docker Compose to run your CVAT agent
 
-First of all you need to clone the CVAT repository to get access to docker compose files and templates:
+First of all you need to clone the CVAT repository to get access to Docker Compose files and templates:
 
 ```bash
 git clone git@github.com:cvat-ai/cvat.git
@@ -62,7 +62,7 @@ cd cvat/ai-models/agents_deployment/sam2
 In this folder you will find all necessary files to either build your own images based on the provided Dockerfile or
 to use already build images that are available on our [Dockerhub](https://hub.docker.com/r/cvat/sam2_agent/tags).
 
-To configure docker compose you need to provide the following information in the `.env` file:
+To configure Docker Compose you need to provide the following information in the `.env` file:
 
 CVAT_BASE_URL - URL of the CVAT instance where you want to deploy your agent. Defaults to <https://app.cvat.ai>
 
@@ -73,15 +73,15 @@ use the one from our repo: <https://hub.docker.com/r/cvat/>
 AGENTS_COUNT - Number of agent replicas to run. Depends on the model.
 ORG_SLUG - Your org slug. This is important if you want to share your function across the organization.
 USE_CUDA - Whether to use GPU or not. Please make sure that you are running Docker image that was
-build with CUDA support.
+built with CUDA support.
 
 MODEL_CONFIG_PARAMS - Parameters to pass to the adapter function. Differs for each model.
 Refer to the model documentation.
 Also, some explanatory example could be found in `cvat/ai-models/agents_deployment/transformers/.env`
 
-## How to run CVAT agent with Docker compose
+## How to run CVAT agent with Docker Compose
 
-To run CVAT agent with Docker compose, you need to run the following command in the terminal:
+To run CVAT agent with Docker Compose, you need to run the following command in the terminal:
 
 ```bash
 docker compose up
@@ -89,7 +89,6 @@ docker compose up
 
 Now the image specified in the `.env` file will be pulled (if it is not already available locally):
 
-IMAGE
 
 ![SAM2 agent image download](images/sam2-agent-download-image.png)
 
@@ -103,7 +102,7 @@ So now you can go to CVAT UI and check that the model is registered:
 
 Now lets test and track something to ensure that the agent is working properly.
 
-So in this example i will do the following:
+So in this example I will do the following:
 
 - Open my existing job
 - Draw a new polygon
@@ -123,7 +122,7 @@ After that you can move forward through frames and see that the polygon is being
 
 ![Tracking confirmation](images/img.png)
 
-## How to clean up after running CVAT agent with Docker compose
+## How to clean up after running CVAT agent with Docker Compose
 
 Now, when you are done with testing your agent, you can stop it by pressing `CTRL + C` in the
 terminal where you ran `docker compose up` command.
@@ -137,13 +136,13 @@ docker compose run --rm cvat-function-deregister
 
 ![Deregistering the function](images/sam2-agent-deregister.png)
 
-## Troubleshooting common issues with Docker compose deployment
+## Troubleshooting common issues with Docker Compose deployment
 
-So most of the issues with Docker compose deployment are related to the following:
+So most of the issues with Docker Compose deployment are related to the following:
 
 - Incorrect configuration in the `.env` file. Please make sure that you have provided
 correct CVAT_BASE_URL, CVAT_ACCESS_TOKEN, FUNCTION_NAME, IMAGE_URL and MODEL_CONFIG_PARAMS.
-- In rare case in theory there could be some issues with data on shared volume. You can check
+- In rare cases, there could be some issues with data on shared volume. You can check
 that by running the following command in the terminal:
 
 ```bash
@@ -153,7 +152,7 @@ docker run --rm -v sam2_shared-data:/mnt alpine cat /mnt/FUNCTION_ID
 Or you just can delete everything and start from scratch by running:
 
 ```bash
-docker copose down -v
+docker compose down -v
 ```
 
 - Also there could be issues with MODEL_CONFIG_PARAMS. Please make sure that you have provided correct parameters for the model you are using. You can check the model documentation for more details on that.
