@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedCollection } from 'server-response-types';
+import { SerializedCollection } from '../server-response-types';
 import ObjectState from '../object-state';
 import { Job, Task } from '../session';
 

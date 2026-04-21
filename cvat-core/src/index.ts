@@ -76,7 +76,7 @@ export default interface CVATCore {
         userAgreements: typeof serverProxy.server.userAgreements,
         register: (
             ...args: Parameters<typeof serverProxy.server.register>
-        ) => Promise<User>;
+        ) => ReturnType<typeof serverProxy.server.register>;
         login: typeof serverProxy.server.login;
         logout: typeof serverProxy.server.logout;
         changePassword: typeof serverProxy.server.changePassword;

@@ -70,7 +70,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             task_ids = [
                 create_task(
                     self.user,
-                    spec={"name": f"Test task {idx + 1}", "labels": [{"name": "car"}]},
+                    spec={"name": f"Test task {idx + 1}"},
                     data={
                         "image_quality": 75,
                         "client_files": generate_image_files(2),
@@ -555,7 +555,7 @@ class TestGetRequests:
     def test_can_retrieve_task_creation_requests_using_legacy_ids(self, admin_user: str):
         task_id = create_task(
             admin_user,
-            spec={"name": "Test task", "labels": [{"name": "car"}]},
+            spec={"name": "Test task"},
             data={
                 "image_quality": 75,
                 "client_files": generate_image_files(2),

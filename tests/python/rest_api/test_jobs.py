@@ -837,7 +837,6 @@ class TestGetGtJobData:
             admin_user,
             spec={
                 "name": "test complex frame setup",
-                "labels": [{"name": "cat"}],
             },
             data={
                 "image_quality": 75,

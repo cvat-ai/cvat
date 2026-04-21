@@ -586,7 +586,6 @@ class Data(models.Model):
         assert cloud_storage_instance
 
         upload_dir = self.get_upload_dirname()
-        assert (upload_dir / self.MANIFEST_FILENAME).is_file()
 
         rel_paths_to_move = self.get_all_media_rel_paths()
 
