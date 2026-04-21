@@ -25,16 +25,18 @@ interface Props {
 
 const ANCHOR_KEYWORD = '__anchor__';
 
-const SortableItem = SortableElement(
+interface SortableItemProps {
+    value: string;
+    valueIndex: number;
+    anchorIndex: number;
+    appliedSorting: Record<string, string>;
+    setAppliedSorting: (arg: Record<string, string>) => void;
+}
+
+const SortableItem = SortableElement<SortableItemProps>(
     ({
         value, appliedSorting, setAppliedSorting, valueIndex, anchorIndex,
-    }: {
-        value: string;
-        valueIndex: number;
-        anchorIndex: number;
-        appliedSorting: Record<string, string>;
-        setAppliedSorting: (arg: Record<string, string>) => void;
-    }): JSX.Element => {
+    }: SortableItemProps): JSX.Element => {
         const isActiveField = value in appliedSorting;
         const isAscendingField = isActiveField && !appliedSorting[value]?.startsWith('-');
         const isDescendingField = isActiveField && !isAscendingField;
@@ -73,31 +75,26 @@ const SortableItem = SortableElement(
     },
 );
 
-const SortableList = SortableContainer(
-    ({ items, appliedSorting, setAppliedSorting } :
-    {
-        items: string[];
-        appliedSorting: Record<string, string>;
-        setAppliedSorting: (arg: Record<string, string>) => void;
-    }) => (
-        <div className='cvat-resource-page-sorting-list'>
-            { items.map((value: string, index: number) => {
-                const sortableItemProps = {
-                    appliedSorting,
-                    setAppliedSorting,
-                    index,
-                    value,
-                    valueIndex: index,
-                    anchorIndex: items.indexOf(ANCHOR_KEYWORD),
-                } as any; // react-sortable-hoc typings lose wrapped component props
+interface SortableListProps {
+    items: string[];
+    appliedSorting: Record<string, string>;
+    setAppliedSorting: (arg: Record<string, string>) => void;
+}
 
-                return (
-                    <SortableItem
-                        key={`item-${value}`}
-                        {...sortableItemProps}
-                    />
-                );
-            }) }
+const SortableList = SortableContainer<SortableListProps>(
+    ({ items, appliedSorting, setAppliedSorting } : SortableListProps) => (
+        <div className='cvat-resource-page-sorting-list'>
+            { items.map((value: string, index: number) => (
+                <SortableItem
+                    key={`item-${value}`}
+                    appliedSorting={appliedSorting}
+                    setAppliedSorting={setAppliedSorting}
+                    index={index}
+                    value={value}
+                    valueIndex={index}
+                    anchorIndex={items.indexOf(ANCHOR_KEYWORD)}
+                />
+            )) }
         </div>
     ),
 );

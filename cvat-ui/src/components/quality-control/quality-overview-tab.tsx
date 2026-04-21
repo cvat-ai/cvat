@@ -9,6 +9,7 @@ import config from 'config';
 import { Project, QualitySettings, Task } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
+import { shallowEqual } from 'utils/redux';
 
 interface Props {
     instance: Project | Task;
@@ -27,25 +28,21 @@ function QualityOverviewTab(): JSX.Element {
 function QualityOverviewTabWrap(props: Readonly<Props>): JSX.Element {
     const { instance } = props;
 
-    const projectOverrides = useSelector(
-        (state: CombinedState) => state.plugins.overridableComponents.qualityControlPage.project.overviewTab,
-    );
-    const taskOverrides = useSelector(
-        (state: CombinedState) => state.plugins.overridableComponents.qualityControlPage.task.overviewTab,
-    );
+    const {
+        taskOverrides, projectOverrides,
+    } = useSelector((state: CombinedState) => ({
+        taskOverrides: state.plugins.overridableComponents.qualityControlPage.task.overviewTab,
+        projectOverrides: state.plugins.overridableComponents.qualityControlPage.project.overviewTab,
+    }), shallowEqual);
 
-    if (instance instanceof Project) {
-        if (projectOverrides.length) {
-            const [Component] = projectOverrides.slice(-1);
-            return <Component {...props as { instance: Project; qualitySettings: Props['qualitySettings'] }} />;
-        }
-
-        return <QualityOverviewTab />;
+    if (instance instanceof Task && taskOverrides.length) {
+        const [Component] = taskOverrides.slice(-1);
+        return <Component {...props} instance={instance} />;
     }
 
-    if (taskOverrides.length) {
-        const [Component] = taskOverrides.slice(-1);
-        return <Component {...props as { instance: Task; qualitySettings: Props['qualitySettings'] }} />;
+    if (instance instanceof Project && projectOverrides.length) {
+        const [Component] = projectOverrides.slice(-1);
+        return <Component {...props} instance={instance} />;
     }
 
     return <QualityOverviewTab />;
