@@ -12,9 +12,11 @@ from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
-from typing import Literal, TypeVar
+from typing import TypeVar
 
 import av
+import av.audio
+import av.audio.frame
 import numpy as np
 from attrs import define
 from django.db.models import prefetch_related_objects
@@ -722,24 +724,35 @@ class SampleMatcher:
         self, frames: Iterator[IMediaReader.AudioFrame]
     ) -> np.ndarray | None:
         resampler = av.AudioResampler(format="s16p", rate=self.matching_sampling_rate)
-        output_frames = [
+        output_frames = (
             (resampled_frame, None)
             for input_frame, _ in frames
             for resampled_frame in resampler.resample(input_frame)
-        ]
+        )
         return collect_samples(output_frames)
 
 
-def collect_samples(frames: Iterator[AudioReader.AudioFrame]) -> np.ndarray | None:
-    samples = None
-    for frame, _ in frames:
-        frame_samples = frame.to_ndarray()
-        if samples is None:
-            samples = frame_samples
-        else:
-            samples = np.append(samples, frame_samples, axis=1)
+def collect_samples(frames: Iterable[AudioReader.AudioFrame]) -> np.ndarray | None:
+    frames_iter = iter(frames)
+    frame = next(frames_iter, None)
+    if frame is None:
+        return None
 
-    return samples
+    frame = frame[0]
+    samples = frame.to_ndarray().T.copy()
+    insert_pos = samples.shape[0]
+
+    for frame, _ in frames_iter:
+        frame_samples = frame.to_ndarray().T
+
+        if insert_pos + frame_samples.shape[0] > samples.shape[0]:
+            new_size = max(insert_pos + frame_samples.shape[0], samples.shape[0] * 2)
+            samples.resize((new_size, *samples.shape[1:]), refcheck=False)
+
+        samples[insert_pos : insert_pos + frame_samples.shape[0]] = frame_samples
+        insert_pos += frame_samples.shape[0]
+
+    return samples[:insert_pos].T.copy()
 
 
 def find_best_padding(
