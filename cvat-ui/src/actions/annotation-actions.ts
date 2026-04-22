@@ -624,14 +624,23 @@ export function activateObject(
     activatedStateID: number | null,
     activatedElementID: number | null,
     activatedAttributeID: number | null,
-): AnyAction {
-    return {
-        type: AnnotationActionTypes.ACTIVATE_OBJECT,
-        payload: {
-            activatedStateID,
-            activatedElementID,
-            activatedAttributeID,
-        },
+): ThunkAction<void> {
+    return (dispatch: ThunkDispatch, getState: () => CombinedState): void => {
+        const state = getState();
+        const lockedClientID = state.annotation.simplify.objectState?.clientID ?? null;
+
+        if (lockedClientID !== null && activatedStateID !== lockedClientID) {
+            return;
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.ACTIVATE_OBJECT,
+            payload: {
+                activatedStateID,
+                activatedElementID,
+                activatedAttributeID,
+            },
+        });
     };
 }
 
