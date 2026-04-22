@@ -194,9 +194,12 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     };
 
     private onChangePoints = (value: number | undefined): void => {
-        this.setState({
-            numberOfPoints: value,
-            simplifyPoly: this.isPolyShape && typeof value !== 'undefined' ? false : this.state.simplifyPoly,
+        this.setState((prevState) => {
+            const { simplifyPoly } = prevState;
+            return {
+                numberOfPoints: value,
+                simplifyPoly: this.isPolyShape && typeof value !== 'undefined' ? false : simplifyPoly,
+            };
         });
     };
 
