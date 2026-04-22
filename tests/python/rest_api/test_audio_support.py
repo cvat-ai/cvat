@@ -8,8 +8,6 @@ from collections.abc import Generator
 from itertools import product
 from pathlib import Path, PurePosixPath
 
-import librosa
-import numpy as np
 import pytest
 from cvat_sdk import models
 from cvat_sdk.core.exceptions import BackgroundRequestException
@@ -23,19 +21,9 @@ from shared.utils.config import (
     SHARE_DIR,
     make_sdk_client,
 )
+from shared.utils.helpers import read_audio_pcm
 
 from ._test_base import TestTasksBase
-
-
-def read_audio_pcm(
-    f: Path | io.IOBase, *, offset_ms: int = 0, rate: int = 8000
-) -> tuple[np.ndarray, float]:
-    return librosa.load(f, mono=True, sr=rate, offset=offset_ms / 1000)
-
-
-@fixture(scope="session")
-def fxt_local_audio_file_path() -> Generator[Path, None, None]:
-    yield SHARE_DIR / "audio" / "sample1.mp3"
 
 
 @fixture(scope="session")
@@ -77,7 +65,7 @@ class TestAudioTasks:
             yield
 
     @fixture(scope="class")
-    @parametrize("source_filename", [fixture_ref(fxt_local_audio_file_path)], scope="session")
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")], scope="session")
     def fxt_audio_task_from_uploaded_data(
         cls, request: pytest.FixtureRequest, admin_user, source_filename: Path
     ):
@@ -147,7 +135,7 @@ class TestAudioTasks:
     @parametrize(
         "source_path, cover_image_path",
         [
-            (fixture_ref(fxt_local_audio_file_path), None),
+            (fixture_ref("fxt_local_audio_file_path"), None),
             fixture_ref(fxt_local_audio_with_cover),
         ],
     )
@@ -177,7 +165,7 @@ class TestAudioTasks:
         # Only 1 job is allowed for audio data
         assert task.jobs.count == 1
 
-    @parametrize("source_filename", [fixture_ref(fxt_local_audio_file_path)])
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
     def test_cant_use_segment_size(self, source_filename: Path, fxt_test_name: str):
         with pytest.raises(BackgroundRequestException) as capture:
             self.client.tasks.create_from_data(
@@ -263,7 +251,7 @@ class TestAudioTasks:
         assert gt_job.type == "ground_truth"
         assert gt_job.frame_count == task.size
 
-    @parametrize("source_filename", [fixture_ref(fxt_local_audio_file_path)])
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
     def test_can_create_task_with_gt_job(self, fxt_test_name: str, source_filename: Path):
         task = self.client.tasks.create_from_data(
             spec={
@@ -300,7 +288,7 @@ class TestAudioQuality:
             yield
 
     @fixture(scope="class")
-    @parametrize("source_filename", [fixture_ref(fxt_local_audio_file_path)], scope="session")
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")], scope="session")
     def fxt_audio_task_with_gt_job(
         cls, request: pytest.FixtureRequest, admin_user, source_filename: Path
     ):
@@ -445,7 +433,7 @@ class TestAudioQuality:
         assert report["comparison_summary"]["annotations"]["valid_count"] == 2
         assert report["comparison_summary"]["annotations"]["total_count"] == 2
 
-    @parametrize("source_filename", [fixture_ref(fxt_local_audio_file_path)])
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
     def test_transcription_matching_affects_overall_matches(
         self, fxt_test_name: str, source_filename: Path
     ):
@@ -570,7 +558,7 @@ class TestAudioQuality:
             assert other_attr_stats["valid_count"] == 1
             assert other_attr_stats["total_count"] == 1
 
-    @parametrize("source_filename", [fixture_ref(fxt_local_audio_file_path)])
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
     def test_only_transcription_attributes_affect_shape_matching(
         self, fxt_test_name: str, source_filename: Path
     ):

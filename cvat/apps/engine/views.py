@@ -23,6 +23,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
+from django.db.models import prefetch_related_objects
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.utils import timezone
@@ -1504,13 +1505,39 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request: ExtendedRequest, pk: int):
-        self.get_object() #force to call check_object_permissions
-        db_task = models.Task.objects.prefetch_related(
-            'segment_set',
-            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
-        ).get(pk=pk)
+        db_task = self.get_object() #force to call check_object_permissions
+
+        def prefetch():
+            data_queryset = models.Data.objects.select_related("validation_layout")
+
+            match db_task.media_type:
+                case models.MediaType.AUDIO:
+                    data_queryset = data_queryset.select_related("audio")
+                case models.MediaType.VIDEO:
+                    data_queryset = data_queryset.select_related("video")
+                case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
+                    data_queryset = data_queryset.prefetch_related(
+                        Prefetch(
+                            'images',
+                            queryset=(
+                                models.Image.objects
+                                .prefetch_related('related_files')
+                                .order_by('frame')
+                            )
+                        )
+                    )
+                case None:
+                    pass # noop, nothing to load
+                case _ as media_type:
+                    assert False, f"Unknown media type '{media_type}'"
+
+            prefetch_related_objects(
+                [db_task],
+                "segment_set",
+                Prefetch("data", queryset=data_queryset)
+            )
+
+        prefetch()
 
         if request.method == 'PATCH':
             if db_task.media_type == models.MediaType.AUDIO:
