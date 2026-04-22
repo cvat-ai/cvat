@@ -1797,7 +1797,7 @@ def create_thread(
         if job_file_mapping:
             raise ValidationError("The 'job_file_mapping' parameter cannot be used in audio tasks")
 
-        if db_task.segment_size or data.get("segment_size"):
+        if not is_backup_restore and (db_task.segment_size or data.get("segment_size")):
             raise ValidationError("The 'segment_size' parameter cannot be used in audio tasks")
 
     # replace manifest file (e.g was uploaded 'subdir/manifest.jsonl' or 'some_manifest.jsonl')
