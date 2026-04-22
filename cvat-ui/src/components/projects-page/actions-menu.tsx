@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
@@ -169,7 +170,7 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
                 'All related data (images, annotations) will be lost. Continue?',
             className: 'cvat-modal-confirm-remove-project',
             onOk: () => {
-                dispatch(makeBulkOperationAsync(
+                dispatch(makeBulkOperationAsync<Project>(
                     projectsToDelete.length ? projectsToDelete : [projectInstance],
                     async (project) => {
                         await dispatch(deleteProjectAsync(project));

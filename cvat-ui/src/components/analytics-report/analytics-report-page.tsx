@@ -5,7 +5,7 @@
 import './styles.scss';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { shallowEqual, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import notification from 'antd/lib/notification';
 import { Row, Col } from 'antd/lib/grid';
 
@@ -13,6 +13,7 @@ import {
     Project, Task, Job, getCore, MembershipRole, AnalyticsEventsFilter,
 } from 'cvat-core-wrapper';
 import { useInstanceType, useInstanceId } from 'utils/hooks';
+import { shallowEqual } from 'utils/redux';
 import { CombinedState, InstanceType } from 'reducers';
 import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
