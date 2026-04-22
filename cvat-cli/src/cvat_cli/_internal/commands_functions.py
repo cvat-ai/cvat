@@ -34,6 +34,12 @@ class FunctionCreateNative:
             "name",
             help="a human-readable name for the function",
         )
+        parser.add_argument(
+            "--visibility",
+            choices=("private", "public"),
+            default="private",
+            help="visibility setting for the function",
+        )
 
         configure_function_implementation_arguments(parser)
 
@@ -65,6 +71,7 @@ class FunctionCreateNative:
         client: Client,
         *,
         name: str,
+        visibility: str,
         function_loader: FunctionLoader,
     ) -> None:
         function = function_loader.load()
@@ -72,6 +79,7 @@ class FunctionCreateNative:
         remote_function: dict[str, Any] = {
             "provider": FUNCTION_PROVIDER_NATIVE,
             "name": name,
+            "visibility": visibility,
         }
 
         spec = function.spec

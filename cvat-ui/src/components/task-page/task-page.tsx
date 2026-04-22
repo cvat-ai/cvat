@@ -6,7 +6,8 @@
 import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
@@ -21,7 +22,7 @@ import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
-import { CombinedState, CloudStorage } from 'reducers';
+import { CombinedState } from 'reducers';
 import { updateTaskAsync, updateTaskMetadataAsync } from 'actions/tasks-actions';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
@@ -35,7 +36,9 @@ function TaskPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
     const [taskMeta, setTaskMeta] = useState<FramesMetaData | null>(null);
-    const [cloudStorageInstance, setCloudStorageInstance] = useState<CloudStorage | null>(null);
+    const [
+        cloudStorageInstance, setCloudStorageInstance,
+    ] = useState<CombinedState['cloudStorages']['current'][number] | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
 
     const {

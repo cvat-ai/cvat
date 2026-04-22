@@ -7,7 +7,6 @@ import serverProxy from './server-proxy';
 import { decodePreview } from './frames';
 import ProjectClass from './project';
 import { exportDataset, importDataset } from './annotations';
-import { SerializedLabel } from './server-response-types';
 import { Label } from './labels';
 import AnnotationGuide from './guide';
 
@@ -23,35 +22,47 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                     organizationId: 'organization_id',
                     sourceStorage: 'source_storage',
                     targetStorage: 'target_storage',
-                });
+                }) as Record<string, unknown> & {
+                    assignee_id?: { id: number } | null;
+                    labels?: Label[];
+                };
 
-                if (projectData.assignee_id) {
-                    projectData.assignee_id = projectData.assignee_id.id;
+                // TODO: update assignee via "fields" instead
+                // It would be better implementation
+                let newAssigneeId: number | null;
+                if ('assignee_id' in projectData) {
+                    newAssigneeId = projectData.assignee_id?.id ?? null;
+                    delete projectData.assignee_id;
                 }
 
-                await Promise.all((projectData.labels || []).map((label: Label): Promise<unknown> => {
+                for await (const label of projectData.labels ?? []) {
                     if (label.deleted) {
-                        return serverProxy.labels.delete(label.id);
+                        await serverProxy.labels.delete(label.id);
                     }
 
                     if (label.patched) {
-                        return serverProxy.labels.update(label.id, label.toJSON());
+                        await serverProxy.labels.update(label.id, label.toJSON());
                     }
-
-                    return Promise.resolve();
-                }));
-
-                // leave only new labels to create them via project PATCH request
-                projectData.labels = (projectData.labels || [])
-                    .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
-                if (!projectData.labels.length) {
-                    delete projectData.labels;
                 }
 
+                // leave only new labels to create them via project PATCH request
+                const labelsToCreate = (projectData.labels ?? [])
+                    .filter((label) => !Number.isInteger(label.id))
+                    .map((el) => el.toJSON());
+                delete projectData.labels;
                 this._updateTrigger.reset();
+
                 let serializedProject = null;
-                if (Object.keys(projectData).length) {
-                    serializedProject = await serverProxy.projects.save(this.id, projectData);
+                if (
+                    Object.keys(projectData).length ||
+                    labelsToCreate.length ||
+                    typeof newAssigneeId !== 'undefined'
+                ) {
+                    serializedProject = await serverProxy.projects.save(this.id, {
+                        ...projectData,
+                        ...(typeof newAssigneeId !== 'undefined' ? { assignee_id: newAssigneeId } : {}),
+                        ...(labelsToCreate.length ? { labels: labelsToCreate } : {}),
+                    });
                 } else {
                     [serializedProject] = (await serverProxy.projects.get({ id: this.id }));
                 }

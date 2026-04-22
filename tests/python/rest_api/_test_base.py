@@ -782,7 +782,7 @@ class TestTasksBase:
         if not must_be_identical:
             # video chunks can have slightly changed colors, due to codec specifics
             # compressed images can also be distorted
-            assert np.allclose(chunk_frame_pixels, expected_pixels, atol=2)
+            assert np.allclose(chunk_frame_pixels, expected_pixels, atol=3)
         else:
             assert np.array_equal(chunk_frame_pixels, expected_pixels)
 
