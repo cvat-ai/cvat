@@ -59,6 +59,11 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
+    const simplifyDisabled = typeof numberOfPoints !== 'undefined';
+    const simplifyTooltip = simplifyDisabled ?
+        'Simplification is unavailable when a predefined number of points is set' :
+        'Automatically start polygon/polyline simplification after shape is drawn';
+
     return (
         <div className='cvat-draw-shape-popover-content'>
             <Row justify='start'>
@@ -157,7 +162,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                     {[ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType) && (
-                        <CVATTooltip title='Automatically start polygon/polyline simplification after shape is drawn'>
+                        <CVATTooltip title={simplifyTooltip}>
                             <Row justify='space-around' align='middle'>
                                 <Col span={14}>
                                     <Text className='cvat-text-color'> Simplify </Text>
@@ -165,6 +170,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                 <Col span={10}>
                                     <Switch
                                         checked={simplifyPoly}
+                                        disabled={simplifyDisabled}
                                         onChange={onChangeSimplifyPoly}
                                         className='cvat-draw-shape-popover-simplify-checkbox'
                                     />

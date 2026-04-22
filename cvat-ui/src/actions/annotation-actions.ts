@@ -1622,6 +1622,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 dispatch(createAnnotationsAsync([objectState]));
             }
         } else if (canvasInstance) {
+            const effectiveSimplifyPoly = typeof activeNumOfPoints !== 'undefined' ? false : activeSimplifyPoly;
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
@@ -1630,7 +1631,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(activeShapeType),
                 skeletonSVG: activeShapeType === ShapeType.SKELETON ? activeLabel.structure!.svg : undefined,
-                simplifyPoly: activeSimplifyPoly,
+                simplifyPoly: effectiveSimplifyPoly,
             });
         }
     };

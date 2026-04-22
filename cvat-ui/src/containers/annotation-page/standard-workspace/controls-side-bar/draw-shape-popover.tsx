@@ -101,10 +101,13 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     private minimumPoints = 3;
     private satisfiedLabels: Label[];
 
+    private isPolyShape: boolean;
+
     constructor(props: Props) {
         super(props);
 
         const { shapeType, activeSimplifyPoly } = props;
+        this.isPolyShape = [ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType);
         this.satisfiedLabels = props.labels.filter((label: Label) => {
             if (shapeType === ShapeType.SKELETON) {
                 return label.type === LabelType.SKELETON;
@@ -140,6 +143,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         const {
             rectDrawingMethod, cuboidDrawingMethod, numberOfPoints, selectedLabelID, simplifyPoly,
         } = this.state;
+        const effectiveSimplifyPoly = this.isPolyShape && typeof numberOfPoints !== 'undefined' ? false : simplifyPoly;
 
         canvasInstance.cancel();
 
@@ -151,7 +155,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 cuboidDrawingMethod,
                 numberOfPoints,
                 shapeType,
-                simplifyPoly,
+                simplifyPoly: effectiveSimplifyPoly,
                 skeletonSVG: selectedLabel && selectedLabel.type === ShapeType.SKELETON ?
                     selectedLabel.structure.svg : undefined,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(shapeType),
@@ -164,7 +168,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 numberOfPoints,
                 rectDrawingMethod,
                 cuboidDrawingMethod,
-                simplifyPoly,
+                effectiveSimplifyPoly,
             );
         }
     }
@@ -192,6 +196,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     private onChangePoints = (value: number | undefined): void => {
         this.setState({
             numberOfPoints: value,
+            simplifyPoly: this.isPolyShape && typeof value !== 'undefined' ? false : this.state.simplifyPoly,
         });
     };
 
@@ -200,6 +205,11 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     };
 
     private onChangeSimplifyPoly = (value: boolean): void => {
+        const { numberOfPoints } = this.state;
+        if (this.isPolyShape && typeof numberOfPoints !== 'undefined' && value) {
+            return;
+        }
+
         this.setState({ simplifyPoly: value });
     };
 
