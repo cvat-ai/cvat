@@ -1140,8 +1140,16 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                     data={
                         "task_id": self._db_task.id,
                         "type": job_type.value,
-                        "frame_selection_method": models.JobFrameSelectionMethod.MANUAL.value,
-                        "frames": job["frames"],
+                        **(
+                            {
+                                "frame_selection_method": (
+                                    models.JobFrameSelectionMethod.MANUAL.value
+                                ),
+                                "frames": job["frames"],
+                            }
+                            if self._db_task.media_type != models.MediaType.AUDIO
+                            else {}
+                        ),
                     }
                 )
                 job_serializer.is_valid(raise_exception=True)
