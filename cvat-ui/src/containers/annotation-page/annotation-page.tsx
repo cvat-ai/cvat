@@ -73,9 +73,8 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const parsedPointsCount = +(searchParams.get('defaultPointsCount') || 'NaN');
     const defaultLabel = searchParams.get('defaultLabel') || null;
     const defaultPointsCount = Number.isInteger(parsedPointsCount) && parsedPointsCount >= 1 ? parsedPointsCount : null;
-    const initialWorkspace = Object.entries(Workspace).find(([key]) => (
-        key === searchParams.get('defaultWorkspace')?.toUpperCase()
-    )) || null;
+    const defaultWorkspace = searchParams.get('defaultWorkspace')?.toUpperCase();
+    const initialWorkspace = Object.entries(Workspace).find(([key]) => (key === defaultWorkspace)) ?? null;
 
     const parsedFrame = +(searchParams.get('frame') || 'NaN');
     const initialFrame = Number.isInteger(parsedFrame) && parsedFrame >= 0 ? parsedFrame : null;
@@ -111,7 +110,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
                     initialOpenGuide,
                     defaultLabel,
                     defaultPointsCount,
-                    ...(initialWorkspace ? { initialWorkspace: initialWorkspace[1] } : { initialWorkspace }),
+                    ...(initialWorkspace ? { initialWorkspace: initialWorkspace[1] } : { initialWorkspace: null }),
                 },
             }));
         },

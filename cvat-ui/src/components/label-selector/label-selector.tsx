@@ -1,11 +1,10 @@
+// Copyright (C) CVAT.ai Corporation
 // Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
 import Select, { SelectProps } from 'antd/lib/select';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 
 interface Props extends SelectProps<string> {
     labels: any[];
@@ -39,7 +38,7 @@ export default function LabelSelector(props: Props): JSX.Element {
             {...rest}
             {...dynamicProps}
             showSearch
-            filterOption={(input: string, option?: OptionData | OptionGroupData) => {
+            filterOption={(input: string, option) => {
                 if (option) {
                     const { children } = option.props;
                     if (typeof children === 'string') {

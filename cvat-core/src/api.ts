@@ -209,7 +209,7 @@ function build(): CVATCore {
                 actionsParameters: Record<string, string>,
                 frameFrom: number,
                 frameTo: number,
-                filters: string[],
+                filters: object[],
                 onProgress: (
                     message: string,
                     progress: number,

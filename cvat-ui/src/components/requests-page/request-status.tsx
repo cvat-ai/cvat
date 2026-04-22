@@ -29,7 +29,7 @@ function statusMessage(message: string, defaultMessage: string, postfix?: JSX.El
 export interface Props {
     status: RQStatus | null;
     message: string | null;
-    cancelled: boolean;
+    cancelled?: boolean;
 }
 
 function StatusMessage(props: Props): JSX.Element {

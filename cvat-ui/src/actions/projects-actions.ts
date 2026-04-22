@@ -136,8 +136,8 @@ export function getProjectsAsync(
     };
 }
 
-export function createProjectAsync(data: any): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+export function createProjectAsync(data: any): ThunkAction<Promise<Project>> {
+    return async (dispatch: ThunkDispatch): Promise<Project> => {
         const projectInstance = new cvat.classes.Project(data);
 
         dispatch(projectActions.createProject());
