@@ -49,7 +49,7 @@ import { BaseShapesAction } from 'cvat-core/src/annotations-actions/base-shapes-
 import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-collection-action';
 import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
 import { Request, RequestOperation } from 'cvat-core/src/request';
-import { ImageProcessing, BaseImageFilter } from 'cvat-core/src/opencv/image-processing';
+import { ImageProcessing, BaseImageFilter, SerializedImageFilter } from 'cvat-core/src/opencv/image-processing';
 import AboutData from 'cvat-core/src/about';
 import { MinimalShape, TrackerResults, InteractorResults } from 'cvat-core/src/lambda-manager';
 
@@ -149,4 +149,5 @@ export type {
     ApiTokenModifiableFields,
     ApiTokensFilter,
     ImageProcessing,
+    SerializedImageFilter,
 };

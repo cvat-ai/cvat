@@ -10,6 +10,7 @@ import TrackerMILAction from './annotations-actions/tracker-mil';
 const core = getCore();
 
 type OpenCVInterface = ReturnType<typeof core.opencv.createOpenCVInterface>;
+export type IntelligentScissors = ReturnType<OpenCVInterface['segmentation']['intelligentScissorsFactory']>;
 
 type OpenCVTrackingWrapper = OpenCVInterface['tracking'] & {
     trackerMIL: {
@@ -19,6 +20,7 @@ type OpenCVTrackingWrapper = OpenCVInterface['tracking'] & {
         kind: string,
     }
 };
+export type OpenCVTracker = OpenCVTrackingWrapper['trackerMIL'];
 
 export class OpenCVWrapper {
     private initialized: boolean;

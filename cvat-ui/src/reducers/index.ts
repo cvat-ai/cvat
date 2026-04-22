@@ -14,9 +14,8 @@ import {
     Membership, AnnotationFormats, CloudStorage,
 } from 'cvat-core-wrapper';
 
-import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
+import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
-import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { ImageFilter } from 'utils/image-processing';
 
 export interface AuthState {
